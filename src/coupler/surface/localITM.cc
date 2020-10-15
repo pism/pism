@@ -70,7 +70,7 @@ ITMMassBalance::ITMMassBalance(Config::ConstPtr config, units::System::Ptr syste
   pdd_threshold_temp = m_config->get_number("surface.pdd.positive_threshold_temp");
   
 
-//FIXME use itm instead of pdd! 
+  //FIXME use itm instead of pdd! 
 
   m_method = "insolation temperature melt";
 }
@@ -171,31 +171,43 @@ double ITMMassBalance::get_albedo(double melt, double snow_depth, double firn_de
 }
 
 
-// double ITMMassBalance::get_albedo(double melt, double snow_depth, int mask_value, bool print){
-//   double albedo = 0. ;
-//   const double albedo_dry_snow = 0.8;
-//   const double albedo_melting_snow = 0.6;
-//   const double albedo_ice = 0.4; 
-//   // const double albedo_melting_ice = 0.3;
-//   const double albedo_land = 0.2;
-//   const double albedo_ocean = 0.1;
-//   const double snow_depth_crit = m_config->get_number("surface.itm.snow_depth_crit");
+double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtseries, bool print){
+  const double ice_density = m_config->get_number("constants.ice.density");
+  double albedo =  0.82;
+  const double albedo_land = 0.2;
+  const double albedo_ocean = 0.1;
+  // melt has a unit of meters ice equivalent
+  // dtseries has a unit of seconds
+  double intersection = 0.82; //FIXME: make those part of the config file
+  double slope = -790; 
 
-//   double background_albedo = 0. ;
-//   if (mask_value == 0){ // mask value for bedrock
-//       background_albedo =  albedo_land;
-//     }
-//   if (mask_value == 2 || mask_value == 3){ // mask value for grounded or floating ice
-//       background_albedo = albedo_ice;
-//     }
- 
-//   albedo = albedo_dry_snow - exp(- snow_depth / snow_depth_crit) * (albedo_dry_snow - background_albedo);
+  if (mask_value == 4){ // mask value for ice free ocean
+      albedo = albedo_ocean;
+  }
+  if (mask_value == 0){ // mask value for bedrock
+      albedo =  albedo_land;
+  }
+  else {
+      albedo = intersection + slope * melt * ice_density / (dtseries); //check if this is fine. 
+      if (albedo < 0.47){
+        albedo = 0.47;
+      }
+  }
 
-//   if (mask_value == 4){ // mask value for ice free ocean
-//       albedo = albedo_ocean;
-//     }
-//   return albedo;
-// }
+  if(print){
+    std::cout << "25. function get albedo melt\n" 
+              << "26. melt input  = " << melt << '\n'
+              << "27. time step = " << dtseries << '\n'
+              << "28. with conversion = " << melt * ice_density   / (dtseries) << '\n'
+              << "29. slope = " << slope << '\n'
+              << "30. interserction = " << intersection << '\n'
+              << "31. ----------------\n"
+              << "32. resulting albedo = " << albedo  
+              << "33. -------\n";
+  }
+  return albedo;
+}
+
 
 
 //! 
@@ -208,18 +220,20 @@ double ITMMassBalance::get_albedo(double melt, double snow_depth, double firn_de
  * @param[out] melt pointer to a pre-allocated array with N-1 elements
  * output in mm water equivalent
  */
-ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(double dt_series,
-                                         const double &S,
-                                         const double &T,
-                                         const double &surface_elevation,
-                                         const double &delta,
-                                         const double &lat,
-                                         double &albedo, bool print) {
+ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(
+  double dt_series,
+  const double &S, 
+  const double &T, 
+  const double &surface_elevation, 
+  const double &delta, 
+  const double &lat, 
+  double &albedo,
+  bool print) {
+
 
 
   Melt ITM_melt;
 
-  // std::cout << "inside calculate_ITM_melt\n";
   // double ITM_melt = 0.;
   // double T_melt = 0.;
   // double I_melt = 0.; 
@@ -243,6 +257,8 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(double dt_series,
   double h_0 = acos(input_h_0_clipped);
   double q_insol;
 
+
+
   if (h_0 == 0. ){
     q_insol = 0;
   }
@@ -251,9 +267,10 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(double dt_series,
   }
 
 
+
   double Teff = 0.;
   if (background_melting){
-     Teff = CalovGreveIntegrand(S, T - pdd_threshold_temp);
+    Teff = CalovGreveIntegrand(S, T - pdd_threshold_temp);
     if (Teff < 1.e-4){ Teff = 0;}
     ITM_melt.T_melt = dt_series / (rho_w * L_m) * itm_lambda * (Teff);
     if (T < bm_temp){
@@ -267,7 +284,6 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(double dt_series,
     ITM_melt.ITM_melt = dt_series / (rho_w * L_m) * (tau_a*(1. - albedo) * q_insol + itm_c + itm_lambda * (T - 273.15 ));
     ITM_melt.T_melt = dt_series / (rho_w * L_m) * itm_lambda * (T - 273.15);
   }
-
 
 
   if (print){
@@ -294,25 +310,19 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(double dt_series,
   ITM_melt.I_melt = dt_series / (rho_w * L_m) * (tau_a*(1. - albedo) * q_insol);
   ITM_melt.c_melt = dt_series / (rho_w * L_m) * itm_c;
 
-
-    //T - 273.15));
-  //FIXME Teff )); // hier muss irgendwo die Formel (16) from Robinson2010;
-
   if (print){
     std::cout << "in calculate ITM melt: temp melt rate = " << ITM_melt.T_melt  / dt_series << "\n";
     std::cout << "in calculate ITM melt: insol melt rate = " << ITM_melt.I_melt / dt_series << "\n";
     std::cout << "in calculate ITM melt: itm melt rate = " << ITM_melt.ITM_melt / dt_series << "\n";
     std::cout << "in calculate ITM melt: c melt rate = " << ITM_melt.c_melt / dt_series << "\n";
     std::cout << "\n prefactor " << dt_series / (rho_w * L_m) << "\n###### \n";
-
-
   }
 
   return ITM_melt;
 }
 
 /*
-comput diurnal melt scheme by equation (6) by Uta Krebs-Kanzow, The Cryosphere, 2018
+compute diurnal melt scheme  by equation (6) by Uta Krebs-Kanzow, The Cryosphere, 2018
 */
 
 ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
@@ -323,13 +333,12 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
                                          const double &lat,
                                          double &albedo, bool print ) {
 
-
   Melt ETIM_melt;
 
   const double rho_w = 1e3;    // mass density of water //FIXME in config
   const double L_m = 3.34e5;      // latent heat of ice melting //FIXME in config
-  double z = surface_elevation;               // surface elevation 
-  double tau_a = 0.65 +  0.000032 * z;  // transmissivity of the atmosphere, linear fit, plug in values //FIXME parameters in config
+  const double z = surface_elevation;               // surface elevation 
+  const double tau_a = 0.65 +  0.000032 * z;  // transmissivity of the atmosphere, linear fit, plug in values //FIXME parameters in config
   const double itm_c = m_config->get_number("surface.itm.itm_c");
   const double itm_lambda = m_config->get_number("surface.itm.itm_lambda");
   const double bm_temp    = m_config->get_number("surface.itm.background_melting_temp");
@@ -346,6 +355,11 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
   double quotient_delta_t =  h_phi /M_PI ;
   double q_insol;
 
+
+  ETIM_melt.transmissivity = tau_a;
+
+
+
   if (h_phi == 0. ){
     q_insol = 0;
   }
@@ -353,11 +367,12 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
     q_insol = 1367. * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
   }
   
+  ETIM_melt.TOA_insol = q_insol; 
 
   assert(dt_series > 0.0);
   double Teff = 0;
   if (background_melting){
-     Teff = CalovGreveIntegrand(S, T - pdd_threshold_temp);
+    Teff = CalovGreveIntegrand(S, T - pdd_threshold_temp);
     if (Teff < 1.e-4){ Teff = 0;}
 
     ETIM_melt.T_melt = quotient_delta_t * dt_series / (rho_w * L_m) * itm_lambda * (Teff);
@@ -372,6 +387,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
   else{
     ETIM_melt.ITM_melt = quotient_delta_t * dt_series / (rho_w * L_m) * (tau_a*(1. - albedo) * q_insol + itm_c + itm_lambda * (T - 273.15 ));
     ETIM_melt.T_melt = dt_series  * quotient_delta_t / (rho_w * L_m) * itm_lambda * (T - 273.15);
+
   }
   
   ETIM_melt.I_melt = dt_series / (rho_w * L_m) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
@@ -382,24 +398,23 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
 
 
   if (print){
-    std::cout << "timestep dt = " << dt_series << '\n';
-    // std::cout << "input temperature as seen by itm melt \n T = " << T << "\n";
-    std::cout << "\n######\n\n";
-    std::cout << "surface elevation z = " << z << "\n";
-    std::cout << "delta = " << delta << "\n";
-    std::cout << "lat = " << lat << "\n";
-    std::cout << "input_h_phi = " << input_h_phi << "\n";
-    std::cout << "input_h_phi_clipped = " << input_h_phi_clipped << "\n";
-    std::cout << "h_phi = " << h_phi << "\n";
-    std::cout << "qdeltat = " << quotient_delta_t << "\n";
-    std::cout << "q_insol = " << q_insol <<"\n";
-    std::cout << "swd = " << q_insol * tau_a << "\n";
-    std::cout << "albedo a = " <<  albedo << "\n";
-    std::cout << "insolation melt = " << tau_a*(1. - albedo) * q_insol << "\n";
-    std::cout << "temperature T = " << T << "\n";
-    std::cout << "effective temperature Teff = " << Teff << "\n";
-    std::cout << "temperature melt = " << itm_lambda * (Teff ) << "\n";
-    std::cout << "itm_c = " << itm_c << '\n';
+    std::cout << " 3. ######\n";
+    std::cout << " 4. surface elevation z = " << z << "\n";
+    std::cout << " 5. delta = " << delta << "\n";
+    std::cout << " 6. lat = " << lat << "\n";
+    std::cout << " 7. input_h_phi = " << input_h_phi << "\n";
+    std::cout << " 8. input_h_phi_clipped = " << input_h_phi_clipped << "\n";
+    std::cout << " 9. h_phi = " << h_phi << "\n";
+    std::cout << "10. qdeltat = " << quotient_delta_t << "\n";
+    std::cout << "11. q_insol = " << q_insol <<"\n";
+    std::cout << "12. swd = " << q_insol * tau_a << "\n";
+    std::cout << "13. albedo a = " <<  albedo << "\n";
+    std::cout << "14. insolation melt = " << tau_a*(1. - albedo) * q_insol << "\n";
+    std::cout << "15. temperature T = " << T << "\n";
+    std::cout << "16. effective temperature Teff = " << Teff << "\n";
+    std::cout << "17. temperature melt = " << itm_lambda * (Teff ) << "\n";
+    std::cout << "18. itm_c = " << itm_c << '\n';
+    std::cout << "19. prefactor = " << dt_series / (rho_w * L_m) * quotient_delta_t << '\n';
   }
 
   //T - 273.15));
@@ -407,11 +422,11 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
 
 
   if (print){
-    std::cout << "in calculate ETIM melt: temp melt rate = " << ETIM_melt.T_melt  / dt_series << "\n";
-    std::cout << "in calculate ETIM melt: insol melt rate = " << ETIM_melt.I_melt / dt_series << "\n";
-    std::cout << "in calculate ETIM melt: itm melt rate = " << ETIM_melt.ITM_melt / dt_series << "\n";
-    std::cout << "in calculate ETIM melt: c melt rate = " << ETIM_melt.c_melt / dt_series << "\n";
-    std::cout << "\n prefactor " << dt_series / (rho_w * L_m)  * quotient_delta_t << "\n###### \n";
+    std::cout << "20. in calculate ETIM melt: temp melt rate (m) = " << ETIM_melt.T_melt << "\n";
+    std::cout << "21. in calculate ETIM melt: insol melt rate (m) = " << ETIM_melt.I_melt  << "\n";
+    std::cout << "22. in calculate ETIM melt: c melt rate (m) = " << ETIM_melt.c_melt  << "\n";
+    std::cout << "23. ---> in calculate ETIM melt: total melt rate (m) = " << "bla bla " << "\n";
+    std::cout << "24. ###### \n";
 
 
   }
@@ -496,6 +511,7 @@ double ITMMassBalance::get_refreeze_fraction(const double &T) {
  */
 ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_factor,
                                              const double &refreeze_fraction,
+                                             double thickness,
                                              double ITM_melt,
                                              double old_firn_depth,
                                              double old_snow_depth,
@@ -509,13 +525,47 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
   }
   double
     firn_depth      = old_firn_depth,
-    snow_depth      = old_snow_depth + accumulation,
+    snow_depth      = old_snow_depth,
     max_snow_melted = ITM_melt,
     firn_melted     = 0.0,
     snow_melted     = 0.0,
     excess_melt     = 0.0;
+
     // FIXME check if itm melt is read in correctly!!!!!
 
+  // if (old_snow_depth > 0){
+  //   std::cout << "initial snow depth " << old_snow_depth << '\n';
+  //   std::cout << "snow depth before accumulation " << snow_depth << '\n';
+  //   std::cout << "accumulation " << accumulation << '\n';
+  //   std::cout << "melt " << ITM_melt << '\n';
+  // }
+  assert(thickness >= 0);
+
+  // snow depth cannot exceed total thickness
+  snow_depth = std::min(snow_depth, thickness);
+
+  assert(snow_depth >= 0);
+
+
+  // firn depth cannot exceed thickness - snow_depth
+  firn_depth = std::min(firn_depth, thickness - snow_depth);
+
+  // if (old_snow_depth > 0){
+  //   std::cout << "thickness = " << thickness << " snow depth = " << snow_depth << '\n';
+  //   std::cout << "firn depth " << firn_depth << '\n';
+  // }
+
+  assert(firn_depth >= 0);
+
+  double ice_thickness = thickness - snow_depth - firn_depth;
+
+  assert(ice_thickness >= 0);
+
+  snow_depth += accumulation;
+  // if (old_snow_depth > 0){
+  //   std::cout << "snow depth after accumulation " << snow_depth << '\n';
+  // }
+  
   if (ITM_melt <= 0.0) {            // The "no melt" case.
     snow_melted = 0.0;
     firn_melted = 0.0,
@@ -551,6 +601,10 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
     "\n ITM melt " << ITM_melt << "\n melt " << melt << "\n **** \n";
   }
 
+  // if (old_snow_depth > 0){
+  // std::cout << "snow melted " << snow_melted << '\n';
+  // }
+
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * refreeze_fraction;
   } else {
@@ -558,35 +612,42 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
     ice_created_by_refreeze = (firn_melted + snow_melted) * refreeze_fraction;
   }
 
-  firn_depth -= firn_melted;
+
+  snow_depth = std::max(snow_depth - snow_melted, 0.0);
+  // if (old_snow_depth > 0){
+  // std::cout << "snow depth after checking " << snow_depth << '\n';
+  // }
+  firn_depth = std::max(firn_depth - firn_melted, 0.0);
   // FIXME: need to add snow that hasn't melted, is this correct?
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
   // firn_depth -= accumulation *  m_config->get_number("surface.pdd.firn_compaction_to_accumulation_ratio");
 
-  if (firn_depth < 0.0) {
-    firn_depth = 0.0;
-  }
-  snow_depth -= snow_melted;
-  if (snow_depth < 0.0) {
-    snow_depth = 0.0;
-  }
+  
 
   const double runoff = melt - ice_created_by_refreeze;
+  const double smb = accumulation - runoff;
 
   result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;
   result.melt       = melt;
   result.runoff     = runoff;
-  result.smb        = accumulation - runoff;
+  // result.smb        = accumulation - runoff;
+  result.smb        = thickness + smb >= 0 ? smb : -thickness;
 
-  if (print){
-    std::cout << "ITM melt " << ITM_melt << '\n';
-    std::cout << "accumulation " << accumulation << '\n';
-    std::cout << "snow melted " << snow_melted << '\n';
-    std::cout << "result snow depth " << result.snow_depth << '\n';
+  // if (print){
+    // std::cout << "ITM melt " << ITM_melt << '\n';
+    // std::cout << "accumulation " << accumulation << '\n';
+    // if (old_snow_depth > 0){
+    // // std::cout << "initial snow depth " << old_snow_depth << '\n';
+    // std::cout << "new snow depth " << snow_depth << '\n';
+    // std::cout << "snow melted " << snow_melted << '\n';
+    // std::cout << "changes snow depth " << result.snow_depth << "\n _______________________ \n";
+
+    // }
     // std::cout << "now at the end of step function \n the melt calculated is ==== " << melt << " \n but melt returned is ==== " << result.melt << "\n ** \n ";
-  }
+  // }
+  assert(thickness + result.smb >= 0);
 
   return result;
 

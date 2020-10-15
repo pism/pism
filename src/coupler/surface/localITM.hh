@@ -69,6 +69,8 @@ public:
 
   virtual double get_albedo_pdd(double T, double S,  int mask_value, bool print) = 0; 
 
+  virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print) = 0;
+
   /*! Remove rain from precipitation. */
   virtual void get_snow_accumulationITM(const std::vector<double> &T,
                                      std::vector<double> &precip_rate) = 0;
@@ -94,6 +96,8 @@ public:
     double I_melt; 
     double c_melt; 
     double ITM_melt;
+    double transmissivity; 
+    double TOA_insol;
   };
 
 
@@ -131,6 +135,7 @@ public:
    */
   virtual Changes step(const double &melt_conversion_factor,
                        const double &refreeze_fraction,
+                       double thickness,
                        double ITM_melt,
                        double old_firn_depth,
                        double old_snow_depth,
@@ -165,6 +170,8 @@ public:
 
   virtual double get_albedo_pdd(double T, double S,  int mask_value, bool print);
 
+  virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print);
+
   virtual double get_refreeze_fraction(const double &T);
   
   virtual Melt calculate_ITM_melt(double dt_series,
@@ -188,6 +195,7 @@ public:
 
   virtual Changes step(const double &melt_conversion_factor,
                        const double &refreeze_fraction,
+                       double thickness,
                        double ITM_melt,
                        double firn_depth,
                        double snow_depth,

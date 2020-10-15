@@ -48,9 +48,16 @@ public:
   const IceModelVec2S& snow_depth() const;
   // these represent totals (not rates) over the time step
   const IceModelVec2S& air_temp_sd() const;
-  const IceModelVec2S& accumulation() const;
-  const IceModelVec2S& melt() const;
-  const IceModelVec2S& runoff() const;
+  const IceModelVec2S& accumulation_impl() const;
+  const IceModelVec2S& melt_impl() const;
+  const IceModelVec2S& runoff_impl() const;
+  //???
+  const IceModelVec2S& surface_insolation_melt() const;
+  const IceModelVec2S& surface_temperature_melt() const;
+  const IceModelVec2S& surface_offset_melt() const;
+  const IceModelVec2S& albedo() const;
+  const IceModelVec2S& transmissivity() const;
+  const IceModelVec2S& TOAinsol() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -67,6 +74,9 @@ protected:
   virtual const IceModelVec2S& temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
+  bool albedo_anomaly_true(double time, int n) ;
+
+
 protected:
   //! mass balance scheme to use
 
@@ -121,6 +131,13 @@ protected:
 
   //! albedo field
   IceModelVec2S m_albedo;
+
+  //! transmissivity field
+  IceModelVec2S m_transmissivity;
+
+  //! TOA insol field
+  IceModelVec2S m_TOAinsol;
+
 
 
   bool m_sd_use_param, m_sd_file_set;

@@ -34,6 +34,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
+#include <iostream>
 
 namespace pism {
 namespace surface {
@@ -45,8 +46,14 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
     m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
-    m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS) {
-
+    m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
+    m_insolmelt(m_grid, "surface_insolation_melt_flux", WITHOUT_GHOSTS),
+    m_tempmelt(m_grid, "surface_temperature_melt_flux", WITHOUT_GHOSTS),
+    m_cmelt(m_grid, "surface_offset_melt_flux", WITHOUT_GHOSTS),
+    m_albedo(m_grid, "albedo", WITHOUT_GHOSTS),
+    m_transmissivity(m_grid, "transmissivity", WITHOUT_GHOSTS),
+    m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS) {
+// so 
   m_sd_period                  = 0;
   // m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
   // m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
@@ -67,10 +74,10 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
   std::string method = m_config->get_string("surface.itm.method");
 
   
-// FIXME Do I want to include repeatable random process or not? 
-  // if (method == "repeatable_random_process") {
+  // FIXME Do I want to include repeatable random process or not? 
+    // if (method == "repeatable_random_process") {
     // m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE));
-  // } else if (method == "random_process") {
+    // } else if (method == "random_process") {
     // m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::NOT_REPEATABLE));
   
   if (method == "albedo_forcing"){
@@ -85,28 +92,53 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
 
   
   // initialize the spatially-variable air temperature standard deviation
-  {
-    std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
-    if (sd_file.empty()) {
-      m_log->message(2,
-                     "  Using constant standard deviation of near-surface temperature.\n");
-      m_air_temp_sd->init_constant(m_base_pddStdDev);
-    } else {
-      m_log->message(2,
-                     "  Reading standard deviation of near-surface temperature from '%s'...\n",
-                     sd_file.c_str());
+  
+  std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
-      auto sd_ref_time = m_config->get_number("surface.pdd.std_dev.reference_year", "seconds");
+  //   if (sd_file.empty()) {
+    //     m_log->message(2,
+    //                    "  Using constant standard deviation of near-surface temperature.\n");
+    //     //const char msg[40];
+    //     //sprintf(msg, "The standard deviation is %f\n", VARIABLE);
+    //     //m_log->message(2, msg);
+    //     m_log->message(2,
+    //                    "  The standard deviation is %f \n", m_base_pddStdDev);
+    //     m_air_temp_sd->init_constant(m_base_pddStdDev);
+    //     m_log->message(2,
+    //                    "  test test \n");
+    //   } else {
+    //     m_log->message(2,
+    //                    "  Reading standard deviation of near-surface temperature from '%s'...\n",
+    //                    sd_file.c_str());
 
-      m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
-    }
+    //     auto sd_ref_time = m_config->get_number("surface.pdd.std_dev.reference_year", "seconds");
+
+    //     m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
+    //   }
+    // }
+
+  if (not sd_file.empty()) {
+    int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
+    int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
+
+    File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
+    m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
+                                                "air_temp_sd", "",
+                                                max_buffer_size,
+                                                evaluations_per_year,
+                                                m_sd_period > 0,
+                                                LINEAR);
+    m_sd_file_set = true;
+  } 
+  else {
+    m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1, 1));
+    m_sd_file_set = false;
   }
 
   m_air_temp_sd->set_attrs("climate_forcing",
                            "standard deviation of near-surface air temperature",
                            "Kelvin", "Kelvin", "", 0);
 
-  m_mass_flux.create(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS);
   m_mass_flux.set_attrs("diagnostic",
                         "instantaneous surface mass balance (accumulation/ablation) rate",
                         "kg m-2 s-1", "kg m-2 s-1",
@@ -119,32 +151,47 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
     m_accumulation = allocate_accumulation(g);
     m_melt = allocate_melt(g);
     m_runoff = allocate_runoff(g);
+    m_temperature = allocate_temperature(g);
 
-    m_tempmelt.create(m_grid, "surface_temperature_melt_flux", WITHOUT_GHOSTS);
+
+
     m_tempmelt.set_attrs("diagnostic", "surface temp melt", "kg m-2","kg m-2", "",0);
+    m_tempmelt.set(0.0);
 
-    m_insolmelt.create(m_grid, "surface_insolation_melt_flux", WITHOUT_GHOSTS);
     m_insolmelt.set_attrs("diagnostic", "surface insol melt", "kg m-2","kg m-2", "",0);
+    m_insolmelt.set(0.0);
 
-    m_cmelt.create(m_grid, "surface_offset_melt_flux", WITHOUT_GHOSTS);
     m_cmelt.set_attrs("diagnostic", "surface c melt", "kg m-2","kg m-2", "",0);
+    m_cmelt.set(0.0);
 
   }
 
-  m_snow_depth.create(m_grid, "snow_depth", WITHOUT_GHOSTS);
   m_snow_depth.set_attrs("diagnostic",
                          "snow cover depth (set to zero once a year)",
                          "m", "m", "", 0);
   m_snow_depth.set(0.0);
-
-  m_firn_depth.create(m_grid, "firn_depth", WITHOUT_GHOSTS);
+  
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "m", "", 0);
   m_firn_depth.metadata().set_number("valid_min", 0.0);
   m_firn_depth.set(0.0);
 
-  m_temperature = allocate_temperature(g);
+  m_albedo.set_attrs("diagnostic",
+                         "albedo",
+                         "", "", "", 0);
+  m_albedo.set(0.0);
+
+  m_transmissivity.set_attrs("diagnostic",
+                              "transmissivity", 
+                              "", "", "", 0);
+  m_transmissivity.set(0.0);
+ 
+  m_TOAinsol.set_attrs("diagnostic",
+                              "TOAinsol", 
+                              "", "", "", 0);
+  m_TOAinsol.set(0.0);
+
 }
 
 TemperatureIndexITM::~TemperatureIndexITM() {
@@ -159,13 +206,13 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   // report user's modeling choices
   {
     m_log->message(2,
-                   "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+                   "* Initializing insolation based surface processes scheme.\n"
                    "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
                    "  Surface mass balance and ice upper surface temperature are outputs.\n"
                    "  See PISM User's Manual for control of degree-day factors.\n");
 
     m_log->message(2,
-                   "  Computing number of positive degree-days by: %s.\n",
+                   "  Computing melt: %s.\n",
                    m_mbscheme->method().c_str());
 
     // if (m_faustogreve) {
@@ -179,7 +226,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
 
   // initialize the spatially-variable air temperature standard deviation
   {
-    std::string sd_file = m_config->get_string("surface.pdd.temperature_standard_deviation_file");
+    std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
@@ -244,6 +291,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
     m_accumulation->set(0.0);
     m_melt->set(0.0);
     m_runoff->set(0.0);
+    // m_albedo->set(0.0);
   }
 }
 
@@ -265,6 +313,32 @@ double TemperatureIndexITM::compute_next_balance_year_start(double time) {
   return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
 }
 
+
+bool TemperatureIndexITM::albedo_anomaly_true(double time, int n) {
+  // compute the time corresponding to the beginning of the next balance year
+  double
+    anomaly_start_day = m_config->get_number("surface.itm.anomaly_start_day"),
+    anomaly_end_day = m_config->get_number("surface.itm.anomaly_end_day"),
+    one_day         = units::convert(m_sys, 1.0, "days", "seconds"),
+    one_year        = units::convert(m_sys, 1.0, "years", "seconds"),
+    year_start      = m_grid->ctx()->time()->calendar_year_start(time),
+    frequency       = m_config->get_number("surface.itm.anomaly_frequency"),
+    anomaly_start   = year_start + (anomaly_start_day - 1.0) * one_day,
+    anomaly_end   = year_start + (anomaly_end_day - 1.0) * one_day;
+
+  if (n * one_year + anomaly_start > time) {
+    return false;
+  }
+  else if( time >= n * one_year + anomaly_start and time <= n * one_year + anomaly_end){
+    return true;
+  }
+  else {
+    n += frequency; 
+    albedo_anomaly_true( time,  n);
+    // return false;
+  }
+}
+
 void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double dt) {
 
   // make a copy of the pointer to convince clang static analyzer that its value does not
@@ -272,7 +346,10 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   // FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
 
   // update to ensure that temperature and precipitation time series are correct:
+
   m_atmosphere->update(geometry, t, dt);
+
+
 
   m_temperature->copy_from(m_atmosphere->mean_annual_temp());
 
@@ -280,11 +357,12 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   int N = m_mbscheme->get_timeseries_length(dt);
 
   const double dtseries = dt / N;
-  std::vector<double> ts(N), T(N), S(N), P(N), PDDs(N);
+  std::vector<double> ts(N), T(N), S(N), P(N);
   LocalMassBalanceITM::Melt  ETIM_melt;
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
   }
+
 
   // update standard deviation time series
   if (m_sd_file_set) {
@@ -292,42 +370,32 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
     m_air_temp_sd->init_interpolation(ts);
   }
 
+
   const IceModelVec2CellType &mask      = geometry.cell_type;
   const IceModelVec2S        &H         = geometry.ice_thickness;
-  const IceModelVec2S        &lat_degN  = geometry.latitude; 
-  const IceModelVec2S &surface_altitude = geometry.ice_surface_elevation; 
+  const IceModelVec2S       *latitude   = nullptr;  
+                              latitude  = &geometry.latitude; 
+  const IceModelVec2S *surface_altitude  = &geometry.ice_surface_elevation;               
+
 
   IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
       &m_firn_depth, &m_snow_depth,  m_accumulation.get(), m_melt.get(), m_runoff.get(),
-      &m_tempmelt,&m_insolmelt, &m_cmelt, &m_albedo, &lat_degN};
+      &m_tempmelt,&m_insolmelt, &m_cmelt, &m_albedo, &m_transmissivity, &m_TOAinsol};
+
+  list.add(*latitude);
+  list.add(*surface_altitude);
+
 
   const double
     sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
-  const IceModelVec2S *latitude = nullptr;
-  // if (fausto_greve or sigmalapserate != 0.0) {
-  //   latitude = &geometry.latitude;
+  double albedo = 0.81;
+  const bool force_albedo = m_config->get_flag("surface.itm.anomaly"); 
 
-  //   list.add(*latitude);
-  // }
-
-  // if (fausto_greve) {
-  //   const IceModelVec2S
-  //     *longitude        = &geometry.latitude,
-  //     *surface_altitude = &geometry.ice_surface_elevation;
-
-  //   fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
-  // }
-
-  double albedo = 0.;
-
-  // LocalMassBalance::DegreeDayFactors ddf = m_base_ddf;
 
   m_atmosphere->init_timeseries(ts);
-
   m_atmosphere->begin_pointwise_access();
-
   const double ice_density = m_config->get_number("constants.ice.density");
 
   ParallelSection loop(m_grid->com);
@@ -335,8 +403,11 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      // print output in only one (three) cells
       bool print = 0;
-      if (i == 73 and j == 155) print = 1;
+      if (i <= 177 and i >= 175 and j == 100) {
+        print = 1;
+      }
 
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -368,15 +439,12 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
         }
       }
 
-      // if (fausto_greve) {
-      //   // we have been asked to set mass balance parameters according to
-      //   //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
-      //   ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
-      // }
 
       // apply standard deviation lapse rate on top of prescribed values
+      double lat = (*latitude)(i, j);
+
       if (sigmalapserate != 0.0) {
-        double lat = (*latitude)(i, j);
+        
         for (int k = 0; k < N; ++k) {
           S[k] += sigmalapserate * (lat - sigmabaselat);
         }
@@ -394,45 +462,43 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
         (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
       }
 
-      // Use temperature time series, the "positive" threshhold, and
-      // the standard deviation of the daily variability to get the
-      // number of positive degree days (PDDs)
-      if (mask.ice_free_ocean(i, j)) {
-        for (int k = 0; k < N; ++k) {
-          PDDs[k] = 0.0;
-        }
-      } //else {
-        // m_mbscheme->get_PDDs(dtseries, S, T, // inputs
-                             // PDDs);          // output
-
-        // m_mbscheme->calculate_ETIM_melt(dtseries, S, T[k], surface_altitude(i,j),
-        //                                  delta,
-        //                                  lat_degN(i,j) * M_PI / 180.,
-        //                                  albedo, print);
-      //}
-
-      // Use temperature time series to remove rainfall from precipitation
+     // Use temperature time series to remove rainfall from precipitation
       m_mbscheme->get_snow_accumulationITM(T,  // air temperature (input)
                                         P); // precipitation rate (input-output)
+
+
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
       // balance (and diagnostics: accumulation, melt, runoff)
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
+
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
         double
           ice  = H(i, j),
           firn = m_firn_depth(i, j),
-          snow = m_snow_depth(i, j);
+          snow = m_snow_depth(i, j),
+          surfelev = (*surface_altitude)(i,j);
+
+
+
+        // double surfelev = (*surface_altitude)(i, j);
 
         // accumulation, melt, runoff over this time-step
         double
           A   = 0.0,
           M   = 0.0,
           R   = 0.0,
-          SMB = 0.0;
+          SMB = 0.0,
+          Mi  = 0.0, // insolation melt
+          Mt  = 0.0, // temperature melt 
+          Mc  = 0.0, // offset melt
+          Tr  = 0.0, // transmissivity, this is just for testing
+          Ti  = 0.0, // top of the atmosphere insolation
+          Al  = 0.0; 
+
 
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
@@ -444,64 +510,89 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
           const double accumulation = P[k] * dtseries;
 
-          albedo = m_mbscheme->get_albedo_pdd(T[k],S[k],  mask(i, j), 0);
-          // if (force_albedo){
-          //   if (albedo_anomaly_true(t,0)){
-          //     albedo = 0.4;
-          //   }
-          // }
+          LocalMassBalanceITM::Changes changes;
+     
+          if (force_albedo){
+            if (albedo_anomaly_true(t,0)){
+              albedo = 0.5;
+            }
+          }
 
-      // if (print) std::cout << "albedo " << albedo << "\n";
 
           int time_in_days  = ts[k] / (24. * 60. * 60.);
           int day_of_year = time_in_days % 365 ;
 
 
-          double delta = M_PI / 180. * (-23.44) * cos(2 * M_PI / 365. * (double(day_of_year) + 10.));
-          // if (print){ std::cout << "day_of_year = " << day_of_year << "\n"; 
-          //             std::cout << "delta = " << delta << "\n";}
-          
 
-          ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surface_altitude(i,j),
+          double delta = M_PI / 180. * (-23.44) * cos(2 * M_PI / 365. * (double(day_of_year) + 10.));
+
+        
+
+          if (print){
+            std::cout << " 0.\n 1. i = " << i << " j = " << j << "\n 2. ~~~~~~~~~~ new internal timestep k " << k << "\n";
+          }
+
+
+
+          ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev,
                                          delta,
-                                         lat_degN(i,j) * M_PI / 180.,
+                                         lat * M_PI / 180.,
                                          albedo, print);
           
 
 
 
+          
+          changes =  m_mbscheme->step(m_melt_conversion_factor, m_refreeze_fraction, ice,
+            ETIM_melt.ITM_melt, firn, snow, accumulation, 0);
 
-          LocalMassBalanceITM::Changes changes;
-          changes =  m_mbscheme->step(m_melt_conversion_factor, m_refreeze_fraction, 
-            ETIM_melt.ITM_melt, m_firn_depth(i, j), m_snow_depth(i, j), accumulation, 0);
-          // m_mbscheme->step(ddf, PDDs[k],
-                                     // ice, firn, snow, accumulation);
+          albedo = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
+          if (force_albedo){
+            if (albedo_anomaly_true(t,0)){
+              albedo = 0.5;
+            }
+          }
+          
+          if (print){
+            std::cout << "34. albedo after get albedo, a = " << albedo << '\n';
+          }
 
 
           // update ice thickness
           ice += changes.smb;
           assert(ice >= 0);
-
           // update firn depth
           firn += changes.firn_depth;
           assert(firn >= 0);
-
           // update snow depth
           snow += changes.snow_depth;
           assert(snow >= 0);
-
           // update total accumulation, melt, and runoff
           {
             A   += accumulation;
             M   += changes.melt;
+            Mt  += ETIM_melt.T_melt;
+            Mi  += ETIM_melt.I_melt;
+            Mc  += ETIM_melt.c_melt;
             R   += changes.runoff;
-            SMB += changes.smb;
+            SMB += changes.smb,
+            Tr  += ETIM_melt.transmissivity;
+            Ti  += ETIM_melt.TOA_insol;
+            Al  += albedo;
           }
         } // end of the time-stepping loop
-
         // set firn and snow depths
         m_firn_depth(i, j) = firn;
         m_snow_depth(i, j) = snow;
+        m_albedo(i,j)      = Al / N;
+        m_transmissivity(i,j) = Tr / N; //ETIM_melt.transmissivity; 
+        m_TOAinsol(i,j)    = Ti / N;
+
+        // set melt terms at this point, converting
+        // from "meters, ice equivalent" to "kg / m^2"        
+        m_tempmelt(i,j)    = Mt * ice_density;
+        m_insolmelt(i,j)   = Mi * ice_density;
+        m_cmelt(i,j)       = Mc * ice_density;
 
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
@@ -513,8 +604,25 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           // rate. m * (kg / m^3) / second = kg / m^2 / second
           m_mass_flux(i, j) = SMB * ice_density / dt;
         }
-      }
 
+        if (print){
+          std::cout << "A 1.\nA 2.        ~~~\n";
+          std::cout << "A 3. end of time stepping loop\n";
+          std::cout << "A 4.   * coordinates i = " << i << " j = " << j << '\n';
+          std::cout << "A 5.   * surface elevation z = " << surfelev << '\n';
+          std::cout << "A 6.   * TOA insolation = " << m_TOAinsol(i,j) << '\n';
+          std::cout << "A 7.   * transmissivity = " << m_transmissivity(i,j) << '\n';
+          std::cout << "A 8.   * albedo = " << m_albedo(i,j) << '\n';
+          std::cout << "A 9.   * last temperature = " << T[N-1] << '\n';
+          std::cout << "A10. =====> insolation melt = " << m_insolmelt(i,j) << '\n';
+          std::cout << "A11. =====> temperature melt = " << m_tempmelt(i,j) << '\n';
+          std::cout << "A12. =====> offset melt = " << m_cmelt(i,j) << '\n';
+          std::cout << "A13. =====> sum of all = " <<  m_insolmelt(i,j) + m_tempmelt(i,j) + m_cmelt(i,j) << '\n';
+          std::cout << "A14. ~~~~~~~> surface melt = " << (*m_melt)(i,j) << '\n';
+          std::cout << "A15.\nA16. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nA17.\n";
+
+        }
+      }
       if (mask.ice_free_ocean(i, j)) {
         m_firn_depth(i, j) = 0.0;  // no firn in the ocean
         m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
@@ -528,7 +636,10 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   m_atmosphere->end_pointwise_access();
 
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
+
 }
+
+
 
 const IceModelVec2S &TemperatureIndexITM::mass_flux_impl() const {
   return m_mass_flux;
@@ -538,15 +649,15 @@ const IceModelVec2S &TemperatureIndexITM::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& TemperatureIndexITM::accumulation() const {
+const IceModelVec2S& TemperatureIndexITM::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndexITM::melt() const {
+const IceModelVec2S& TemperatureIndexITM::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& TemperatureIndexITM::runoff() const {
+const IceModelVec2S& TemperatureIndexITM::runoff_impl() const {
   return *m_runoff;
 }
 
@@ -560,6 +671,30 @@ const IceModelVec2S& TemperatureIndexITM::snow_depth() const {
 
 const IceModelVec2S& TemperatureIndexITM::air_temp_sd() const {
   return *m_air_temp_sd;
+}
+
+const IceModelVec2S& TemperatureIndexITM::surface_insolation_melt() const {
+  return m_insolmelt;
+}
+
+const IceModelVec2S& TemperatureIndexITM::surface_temperature_melt() const {
+  return m_tempmelt;
+}
+
+const IceModelVec2S& TemperatureIndexITM::surface_offset_melt() const {
+  return m_cmelt;
+}
+
+const IceModelVec2S& TemperatureIndexITM::albedo() const {
+  return m_albedo;
+}
+
+const IceModelVec2S& TemperatureIndexITM::transmissivity() const {
+  return m_transmissivity;
+}
+
+const IceModelVec2S& TemperatureIndexITM::TOAinsol() const {
+  return m_TOAinsol;
 }
 
 void TemperatureIndexITM::define_model_state_impl(const File &output) const {
@@ -700,6 +835,194 @@ protected:
 private:
   AmountKind m_kind;
   IceModelVec2S m_runoff_mass;
+};
+
+//FIXME
+
+/*! @brief Report surface insolation melt, averaged over the reporting interval */
+class SurfaceInsolationMelt : public DiagAverageRate<TemperatureIndexITM>
+{
+public:
+  SurfaceInsolationMelt(const TemperatureIndexITM *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndexITM>(m,
+                                        kind == AMOUNT
+                                        ? "surface_insolation_melt_flux"
+                                        : "surface_insolation_melt_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
+
+    std::string
+      name              = "surface_insolation_melt_flux",
+      long_name         = "surface insolation melt, averaged over the reporting interval",
+      standard_name     = "surface_insolation_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_insolation_melt_rate";
+      standard_name     = "",
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+
+      m_insolation_melt_mass.create(m_grid, "insolation_melt_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
+    m_vars[0].set_number("_FillValue", fill_value);
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    const IceModelVec2S &insolation_melt_amount = model->surface_insolation_melt();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      IceModelVec::AccessList list{&m_insolation_melt_mass, &insolation_melt_amount};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_insolation_melt_mass(i, j) = insolation_melt_amount(i, j) * cell_area;
+      }
+      return m_insolation_melt_mass;
+    } else {
+      return insolation_melt_amount;
+    }
+  }
+private:
+  AmountKind m_kind;
+  IceModelVec2S m_insolation_melt_mass;
+};
+
+/*! @brief Report surface temperature melt, averaged over the reporting interval */
+class SurfaceTemperatureMelt : public DiagAverageRate<TemperatureIndexITM>
+{
+public:
+  SurfaceTemperatureMelt(const TemperatureIndexITM *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndexITM>(m,
+                                        kind == AMOUNT
+                                        ? "surface_temperature_melt_flux"
+                                        : "surface_temperature_melt_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
+
+    std::string
+      name              = "surface_temperature_melt_flux",
+      long_name         = "surface temperature melt, averaged over the reporting interval",
+      standard_name     = "surface_temperature_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_temperature_melt_rate";
+      standard_name     = "",
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+
+      m_temperature_melt_mass.create(m_grid, "temperature_melt_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
+    m_vars[0].set_number("_FillValue", fill_value);
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    const IceModelVec2S &temperature_melt_amount = model->surface_temperature_melt();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      IceModelVec::AccessList list{&m_temperature_melt_mass, &temperature_melt_amount};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_temperature_melt_mass(i, j) = temperature_melt_amount(i, j) * cell_area;
+      }
+      return m_temperature_melt_mass;
+    } else {
+      return temperature_melt_amount;
+    }
+  }
+private:
+  AmountKind m_kind;
+  IceModelVec2S m_temperature_melt_mass;
+};
+
+/*! @brief Report surface offset melt, averaged over the reporting interval */
+class SurfaceOffsetMelt : public DiagAverageRate<TemperatureIndexITM>
+{
+public:
+  SurfaceOffsetMelt(const TemperatureIndexITM *m, AmountKind kind)
+    : DiagAverageRate<TemperatureIndexITM>(m,
+                                        kind == AMOUNT
+                                        ? "surface_offset_melt_flux"
+                                        : "surface_offset_melt_rate",
+                                        TOTAL_CHANGE),
+    m_kind(kind) {
+
+    std::string
+      name              = "surface_offset_melt_flux",
+      long_name         = "surface offset melt, averaged over the reporting interval",
+      standard_name     = "surface_offset_melt_flux",
+      accumulator_units = "kg m-2",
+      internal_units    = "kg m-2 second-1",
+      external_units    = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "surface_offset_melt_rate";
+      standard_name     = "",
+      accumulator_units = "kg",
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1" ;
+
+      m_offset_melt_mass.create(m_grid, "offset_melt_mass", WITHOUT_GHOSTS);
+    }
+
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_accumulator.metadata().set_string("units", accumulator_units);
+
+    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars[0].set_string("cell_methods", "time: mean");
+
+    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
+    m_vars[0].set_number("_FillValue", fill_value);
+  }
+
+protected:
+  const IceModelVec2S& model_input() {
+    const IceModelVec2S &offset_melt_amount = model->surface_offset_melt();
+
+    if (m_kind == MASS) {
+      double cell_area = m_grid->cell_area();
+
+      IceModelVec::AccessList list{&m_offset_melt_mass, &offset_melt_amount};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_offset_melt_mass(i, j) = offset_melt_amount(i, j) * cell_area;
+      }
+      return m_offset_melt_mass;
+    } else {
+      return offset_melt_amount;
+    }
+  }
+private:
+  AmountKind m_kind;
+  IceModelVec2S m_offset_melt_mass;
 };
 
 /*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
@@ -853,9 +1176,18 @@ DiagnosticList TemperatureIndexITM::diagnostics_impl() const {
     {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
     {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoff(this, AMOUNT))},
     {"surface_runoff_rate",       Diagnostic::Ptr(new SurfaceRunoff(this, MASS))},
+    {"surface_insolation_melt_flux",   Diagnostic::Ptr(new SurfaceInsolationMelt(this,AMOUNT))},
+    {"surface_insolation_melt_rate",   Diagnostic::Ptr(new SurfaceInsolationMelt(this,MASS))},
+    {"surface_temperature_melt_flux",   Diagnostic::Ptr(new SurfaceTemperatureMelt(this,AMOUNT))},
+    {"surface_temperature_melt_rate",   Diagnostic::Ptr(new SurfaceTemperatureMelt(this,MASS))},
+    {"surface_offset_melt_flux",   Diagnostic::Ptr(new SurfaceOffsetMelt(this,AMOUNT))},
+    {"surface_offset_melt_rate",   Diagnostic::Ptr(new SurfaceOffsetMelt(this,MASS))},
     {"air_temp_sd",               Diagnostic::wrap(*m_air_temp_sd)},
     {"snow_depth",                Diagnostic::wrap(m_snow_depth)},
     {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
+    {"albedo",                    Diagnostic::wrap(m_albedo)},
+    {"transmissivity",            Diagnostic::wrap(m_transmissivity)},
+    {"TOAinsol",                  Diagnostic::wrap(m_TOAinsol)}
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
