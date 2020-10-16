@@ -425,7 +425,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
     std::cout << "20. in calculate ETIM melt: temp melt rate (m) = " << ETIM_melt.T_melt << "\n";
     std::cout << "21. in calculate ETIM melt: insol melt rate (m) = " << ETIM_melt.I_melt  << "\n";
     std::cout << "22. in calculate ETIM melt: c melt rate (m) = " << ETIM_melt.c_melt  << "\n";
-    std::cout << "23. ---> in calculate ETIM melt: total melt rate (m) = " << "bla bla " << "\n";
+    std::cout << "23. ---> in calculate ETIM melt: total melt rate (m) = " << ETIM_melt.ITM_melt << "\n";
     std::cout << "24. ###### \n";
 
 
