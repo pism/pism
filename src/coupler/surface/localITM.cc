@@ -194,17 +194,7 @@ double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtser
       }
   }
 
-  if(print){
-    std::cout << "25. function get albedo melt\n" 
-              << "26. melt input  = " << melt << '\n'
-              << "27. time step = " << dtseries << '\n'
-              << "28. with conversion = " << melt * ice_density   / (dtseries) << '\n'
-              << "29. slope = " << slope << '\n'
-              << "30. interserction = " << intersection << '\n'
-              << "31. ----------------\n"
-              << "32. resulting albedo = " << albedo << '\n' 
-              << "33. -------\n";
-  }
+
   return albedo;
 }
 
@@ -286,37 +276,11 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ITM_melt(
   }
 
 
-  if (print){
-    std::cout << "timestep dt = " << dt_series << '\n';
-    // std::cout << "input temperature as seen by itm melt \n T = " << T << "\n";
-    std::cout << "\n######\n\n";
-    std::cout << "surface elevation z = " << z << "\n";
-    std::cout << "delta = " << delta << "\n";
-    std::cout << "input_h_0 = " << input_h_0 << "\n";
-    std::cout << "input_h_0_clipped = " << input_h_0_clipped << "\n";
-    std::cout << "h_0 = " << h_0 << "\n";
-    std::cout << "lat = " << lat << "\n";
-    std::cout << "insolation i = " << q_insol <<"\n";
-    std::cout << "swd = " << q_insol * tau_a << "\n";
-    std::cout << "albedo a = " <<  albedo << "\n";
-    std::cout << "insolation melt = " << tau_a*(1. - albedo) * q_insol << "\n";
-    std::cout << "temperature T = " << T << "\n";
-    std::cout << "effective temperature Teff = " << Teff << "\n";
-    std::cout << "temperature melt = " << itm_lambda * (Teff ) << "\n";
-    std::cout << "itm_c = " << itm_c << '\n';
-  }
 
 
   ITM_melt.I_melt = dt_series / (rho_w * L_m) * (tau_a*(1. - albedo) * q_insol);
   ITM_melt.c_melt = dt_series / (rho_w * L_m) * itm_c;
 
-  if (print){
-    std::cout << "in calculate ITM melt: temp melt rate = " << ITM_melt.T_melt  / dt_series << "\n";
-    std::cout << "in calculate ITM melt: insol melt rate = " << ITM_melt.I_melt / dt_series << "\n";
-    std::cout << "in calculate ITM melt: itm melt rate = " << ITM_melt.ITM_melt / dt_series << "\n";
-    std::cout << "in calculate ITM melt: c melt rate = " << ITM_melt.c_melt / dt_series << "\n";
-    std::cout << "\n prefactor " << dt_series / (rho_w * L_m) << "\n###### \n";
-  }
 
   return ITM_melt;
 }
@@ -393,43 +357,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
   ETIM_melt.I_melt = dt_series / (rho_w * L_m) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
   ETIM_melt.c_melt = dt_series / (rho_w * L_m) * itm_c * quotient_delta_t;
 
-  // TODO: check units!!!!
 
-
-
-  if (print){
-    std::cout << " 3. ######\n";
-    std::cout << " 4. surface elevation z = " << z << "\n";
-    std::cout << " 5. delta = " << delta << "\n";
-    std::cout << " 6. lat = " << lat << "\n";
-    std::cout << " 7. input_h_phi = " << input_h_phi << "\n";
-    std::cout << " 8. input_h_phi_clipped = " << input_h_phi_clipped << "\n";
-    std::cout << " 9. h_phi = " << h_phi << "\n";
-    std::cout << "10. qdeltat = " << quotient_delta_t << "\n";
-    std::cout << "11. q_insol = " << q_insol <<"\n";
-    std::cout << "12. swd = " << q_insol * tau_a << "\n";
-    std::cout << "13. albedo a = " <<  albedo << "\n";
-    std::cout << "14. insolation melt = " << tau_a*(1. - albedo) * q_insol << "\n";
-    std::cout << "15. temperature T = " << T << "\n";
-    std::cout << "16. effective temperature Teff = " << Teff << "\n";
-    std::cout << "17. temperature melt = " << itm_lambda * (Teff ) << "\n";
-    std::cout << "18. itm_c = " << itm_c << '\n';
-    std::cout << "19. prefactor = " << dt_series / (rho_w * L_m) * quotient_delta_t << '\n';
-  }
-
-  //T - 273.15));
-  //FIXME Teff )); // hier muss irgendwo die Formel (16) from Robinson2010;
-
-
-  if (print){
-    std::cout << "20. in calculate ETIM melt: temp melt rate (m) = " << ETIM_melt.T_melt << "\n";
-    std::cout << "21. in calculate ETIM melt: insol melt rate (m) = " << ETIM_melt.I_melt  << "\n";
-    std::cout << "22. in calculate ETIM melt: c melt rate (m) = " << ETIM_melt.c_melt  << "\n";
-    std::cout << "23. ---> in calculate ETIM melt: total melt rate (m) = " << ETIM_melt.ITM_melt << "\n";
-    std::cout << "24. ###### \n";
-
-
-  }
 
   return ETIM_melt;
 }
@@ -520,9 +448,7 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
 
   Changes result;
 
-  if (print){
-    // std::cout<<"** this comes from the step function \n read in variables are \n ITM melt = " << ITM_melt << "\n old_firn_depth = " << old_firn_depth << "\n old snow depth = " << old_snow_depth << "\n accumulation = " << accumulation << "\n **** \n";
-  }
+
   double
     firn_depth      = old_firn_depth,
     snow_depth      = old_snow_depth,
@@ -570,7 +496,6 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
     snow_melted = 0.0;
     firn_melted = 0.0,
     excess_melt = 0.0;
-    if (print) {std::cout << "no melt case \n";}
   } else if (max_snow_melted <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of
     // the energy available for melt was used up in melting snow.
@@ -596,10 +521,6 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
     melt                    = snow_melted + firn_melted + ice_melted,
     ice_created_by_refreeze = 0.0;
 
-  if (print){
-    std::cout<< " snow melted  = " << snow_melted << "\n firn melted = " << firn_melted << "\n ice_melted = " << ice_melted <<  
-    "\n ITM melt " << ITM_melt << "\n melt " << melt << "\n **** \n";
-  }
 
   // if (old_snow_depth > 0){
   // std::cout << "snow melted " << snow_melted << '\n';
@@ -635,18 +556,7 @@ ITMMassBalance::Changes ITMMassBalance::step(const double &melt_conversion_facto
   // result.smb        = accumulation - runoff;
   result.smb        = thickness + smb >= 0 ? smb : -thickness;
 
-  // if (print){
-    // std::cout << "ITM melt " << ITM_melt << '\n';
-    // std::cout << "accumulation " << accumulation << '\n';
-    // if (old_snow_depth > 0){
-    // // std::cout << "initial snow depth " << old_snow_depth << '\n';
-    // std::cout << "new snow depth " << snow_depth << '\n';
-    // std::cout << "snow melted " << snow_melted << '\n';
-    // std::cout << "changes snow depth " << result.snow_depth << "\n _______________________ \n";
 
-    // }
-    // std::cout << "now at the end of step function \n the melt calculated is ==== " << melt << " \n but melt returned is ==== " << result.melt << "\n ** \n ";
-  // }
   assert(thickness + result.smb >= 0);
 
   return result;

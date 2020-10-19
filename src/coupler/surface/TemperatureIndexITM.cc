@@ -530,11 +530,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
         
 
-          if (print){
-            std::cout << " 0.\n 1. i = " << i << " j = " << j << "\n 2. ~~~~~~~~~~ new internal timestep k " << k << "\n";
-            std::cout << "2a. test albedo = " << albedo_loc << '\n';
-          }
-
 
 
           ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev,
@@ -556,9 +551,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             }
           }
           
-          if (print){
-            std::cout << "34. albedo after get albedo, a = " << albedo_loc << '\n';
-          }
+
 
 
           // update ice thickness
@@ -608,23 +601,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           m_mass_flux(i, j) = SMB * ice_density / dt;
         }
 
-        if (print){
-          std::cout << "A 1.\nA 2.        ~~~\n";
-          std::cout << "A 3. end of time stepping loop\n";
-          std::cout << "A 4.   * coordinates i = " << i << " j = " << j << '\n';
-          std::cout << "A 5.   * surface elevation z = " << surfelev << '\n';
-          std::cout << "A 6.   * TOA insolation = " << m_TOAinsol(i,j) << '\n';
-          std::cout << "A 7.   * transmissivity = " << m_transmissivity(i,j) << '\n';
-          std::cout << "A 8.   * albedo = " << m_albedo(i,j) << '\n';
-          std::cout << "A 9.   * last temperature = " << T[N-1] << '\n';
-          std::cout << "A10. =====> insolation melt = " << m_insolmelt(i,j) << '\n';
-          std::cout << "A11. =====> temperature melt = " << m_tempmelt(i,j) << '\n';
-          std::cout << "A12. =====> offset melt = " << m_cmelt(i,j) << '\n';
-          std::cout << "A13. =====> sum of all = " <<  m_insolmelt(i,j) + m_tempmelt(i,j) + m_cmelt(i,j) << '\n';
-          std::cout << "A14. ~~~~~~~> surface melt = " << (*m_melt)(i,j) << '\n';
-          std::cout << "A15.\nA16. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\nA17.\n";
-
-        }
       }
       if (mask.ice_free_ocean(i, j)) {
         m_firn_depth(i, j) = 0.0;  // no firn in the ocean
