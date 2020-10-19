@@ -2354,7 +2354,7 @@ netcdf pism_config {
 
     pism_config:surface.itm.albedo_land = 0.2;
     pism_config:surface.itm.albedo_land_doc = "albedo value over land, if no ice is present";
-    pism_config:surface.itm.albedo_land_type = "number"
+    pism_config:surface.itm.albedo_land_type = "number";
 
     pism_config:surface.itm.albedo_ocean = 0.1;
     pism_config:surface.itm.albedo_ocean_docs = "albedo value over ocean";
@@ -2363,7 +2363,7 @@ netcdf pism_config {
     pism_config:surface.itm.albedo_slope = -790;
     pism_config:surface.itm.albedo_slope_docs = "slope in albedo parametrization";
     pism_config:surface.itm.albedo_slope_type = "number";
-    pism_config:surface.itm.albedo_slope_units = "m2 s kg-1"
+    pism_config:surface.itm.albedo_slope_units = "m2 s kg-1";
 
     pism_config:surface.itm.albedo_ice = 0.47;
     pism_config:surface.itm.albedo_ice_docs = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
