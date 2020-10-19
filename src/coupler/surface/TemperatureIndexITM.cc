@@ -390,7 +390,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
     sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
-  double albedo = 0.81;
   const bool force_albedo = m_config->get_flag("surface.itm.anomaly"); 
 
 
@@ -405,7 +404,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
       // print output in only one (three) cells
       bool print = 0;
-      if (i <= 177 and i >= 175 and j == 100) {
+      if ( i == 176 and j == 100) {// i <= 177 and i >= 175 and j == 100) {
         print = 1;
       }
 
@@ -500,6 +499,9 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           Al  = 0.0; 
 
 
+        double albedo_loc = 0.81;
+
+
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
             snow = 0.0;
@@ -514,7 +516,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
      
           if (force_albedo){
             if (albedo_anomaly_true(t,0)){
-              albedo = 0.5;
+              albedo_loc = 0.5;
             }
           }
 
@@ -530,6 +532,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
           if (print){
             std::cout << " 0.\n 1. i = " << i << " j = " << j << "\n 2. ~~~~~~~~~~ new internal timestep k " << k << "\n";
+            std::cout << "2a. test albedo = " << albedo_loc << '\n';
           }
 
 
@@ -537,7 +540,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev,
                                          delta,
                                          lat * M_PI / 180.,
-                                         albedo, print);
+                                         albedo_loc, print);
           
 
 
@@ -546,15 +549,15 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           changes =  m_mbscheme->step(m_melt_conversion_factor, m_refreeze_fraction, ice,
             ETIM_melt.ITM_melt, firn, snow, accumulation, 0);
 
-          albedo = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
+          albedo_loc = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
           if (force_albedo){
             if (albedo_anomaly_true(t,0)){
-              albedo = 0.5;
+              albedo_loc = 0.5;
             }
           }
           
           if (print){
-            std::cout << "34. albedo after get albedo, a = " << albedo << '\n';
+            std::cout << "34. albedo after get albedo, a = " << albedo_loc << '\n';
           }
 
 
@@ -578,7 +581,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             SMB += changes.smb,
             Tr  += ETIM_melt.transmissivity;
             Ti  += ETIM_melt.TOA_insol;
-            Al  += albedo;
+            Al  += albedo_loc;
           }
         } // end of the time-stepping loop
         // set firn and snow depths

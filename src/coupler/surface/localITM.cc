@@ -202,7 +202,7 @@ double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtser
               << "29. slope = " << slope << '\n'
               << "30. interserction = " << intersection << '\n'
               << "31. ----------------\n"
-              << "32. resulting albedo = " << albedo  
+              << "32. resulting albedo = " << albedo << '\n' 
               << "33. -------\n";
   }
   return albedo;
@@ -331,7 +331,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
                                          const double &surface_elevation,
                                          const double &delta,
                                          const double &lat,
-                                         double &albedo, bool print ) {
+                                         const double &albedo, bool print ) {
 
   Melt ETIM_melt;
 

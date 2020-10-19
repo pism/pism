@@ -120,7 +120,7 @@ public:
                                          const double &surface_elevation,
                                          const double &delta,
                                          const double &lat,
-                                         double &albedo, bool print ) = 0;
+                                         const double &albedo, bool print ) = 0;
 
 
   /** 
@@ -188,7 +188,7 @@ public:
                                          const double &surface_elevation,
                                          const double &delta,
                                          const double &lat,
-                                         double &albedo, bool print );
+                                         const double &albedo, bool print );
 
   virtual void get_snow_accumulationITM(const std::vector<double> &T,
                                      std::vector<double> &precip_rate);
