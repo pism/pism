@@ -173,13 +173,14 @@ double ITMMassBalance::get_albedo(double melt, double snow_depth, double firn_de
 
 double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtseries, bool print){
   const double ice_density = m_config->get_number("constants.ice.density");
-  double albedo =  0.82;
-  const double albedo_land = 0.2;
-  const double albedo_ocean = 0.1;
+  double albedo =  m_config->get_number("surface.itm.albedo_snow");
+  const double albedo_land = m_config->get_number("surface.itm.albedo_land"); //0.2
+  const double albedo_ocean = m_config->get_number("surface.itm.albedo_ocean"); // 0.1;
   // melt has a unit of meters ice equivalent
   // dtseries has a unit of seconds
-  double intersection = 0.82; //FIXME: make those part of the config file
-  double slope = -790; 
+  double intersection = m_config->get_number("surface.itm.albedo_snow");//0.82; 
+  double slope = m_config->get_number("surface.itm.albedo_slope"); //-790; 
+  double albedo_ice = m_config->get_number("surface.itm.albedo_ice");
 
   if (mask_value == 4){ // mask value for ice free ocean
       albedo = albedo_ocean;
@@ -189,8 +190,8 @@ double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtser
   }
   else {
       albedo = intersection + slope * melt * ice_density / (dtseries); //check if this is fine. 
-      if (albedo < 0.47){
-        albedo = 0.47;
+      if (albedo < albedo_ice){
+        albedo = albedo_ice; //0.47;
       }
   }
 

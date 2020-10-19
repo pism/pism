@@ -404,7 +404,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
       // print output in only one (three) cells
       bool print = 0;
-      if ( i == 176 and j == 100) {// i <= 177 and i >= 175 and j == 100) {
+      if ( i == 176 and j == 100) {
         print = 1;
       }
 
