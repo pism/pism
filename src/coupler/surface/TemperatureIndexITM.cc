@@ -499,7 +499,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           Al  = 0.0; 
 
 
-        double albedo_loc = 0.81;
+        double albedo_loc = m_config->get_number("surface.itm.albedo_snow");
 
 
         for (int k = 0; k < N; ++k) {
@@ -516,7 +516,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
      
           if (force_albedo){
             if (albedo_anomaly_true(t,0)){
-              albedo_loc = 0.5;
+              albedo_loc = m_config->get_number("surface.itm.albedo_ice");
             }
           }
 
