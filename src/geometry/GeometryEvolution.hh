@@ -119,9 +119,11 @@ protected:
                                                       IceModelVec2S              &effective_SMB,
                                                       IceModelVec2S              &effective_BMB);
 
-  //virtual void enforce_grounded_icearea(const IceModelVec2S &old_ice_thickness);
-  //                                      const IceModelVec2CellType &old_mask);
+  enum ThicknessChangeFlag {FLOW, SOURCE};
   virtual void ensure_grounded_icearea(const Geometry &geometry,
+                                       IceModelVec2S &effective_SMB,
+                                       IceModelVec2S &effective_BMB,
+                                       ThicknessChangeFlag flag,
                                        IceModelVec2S &thickness_change,
                                        IceModelVec2S &conservation_error);
 

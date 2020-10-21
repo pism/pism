@@ -319,16 +319,18 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
 
   // calving is a separate issue
 
-
+  ///////////////////////////////////////////////////////////////////////////////////
   bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
   if (prescribe_gl) {
-    m_impl->profile.begin("ge.ensure_grounded_icearea_fdiv");
+    m_impl->profile.begin("ge.ensure_grounded_icearea_flow");
     ensure_grounded_icearea(geometry,                                // in
+                            m_impl->effective_SMB,                   // in (not used here)
+                            m_impl->effective_BMB,                   // in (not used here)
+                            FLOW,
                             m_impl->thickness_change,                // in/out
                             m_impl->conservation_error);             // out
-    m_impl->profile.end("ge.ensure_grounded_icearea_fdiv");
-  }
-
+    m_impl->profile.end("ge.ensure_grounded_icearea_flow");
+  } /////////////////////////////////////////////////////////////////////////////////
 
 }
 
@@ -348,14 +350,18 @@ void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
                                          m_impl->effective_BMB);    // out
   m_impl->profile.end("ge.source_terms");
 
+  ///////////////////////////////////////////////////////////////////////////////////
   bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
   if (prescribe_gl) {
-    m_impl->profile.begin("ge.ensure_grounded_icearea_mbal");
+    m_impl->profile.begin("ge.ensure_grounded_icearea_source");
     ensure_grounded_icearea(geometry,                                // in
+                            m_impl->effective_SMB,                   // in
+                            m_impl->effective_BMB,                   // in
+                            SOURCE,                                  
                             m_impl->thickness_change,                // in/out
                             m_impl->conservation_error);             // out
-    m_impl->profile.end("ge.ensure_grounded_icearea_mbal");
-  }
+    m_impl->profile.end("ge.ensure_grounded_icearea_source");
+  } /////////////////////////////////////////////////////////////////////////////////
 }
 
 /*!
@@ -378,6 +384,14 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
     &dH_SMB  = top_surface_mass_balance(),
     &dH_BMB  = bottom_surface_mass_balance();
   IceModelVec2S &H = geometry.ice_thickness;
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////
+  bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
+  if (prescribe_gl) {
+    const IceModelVec2S
+      &dH  = thickness_change_due_to_flow();
+  } ////////////////////////////////////////////////////////////////////////////////////
 
   IceModelVec::AccessList list{&H, &dH_SMB, &dH_BMB};
   ParallelSection loop(m_grid->com);
@@ -403,6 +417,12 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
     loop.failed();
   }
   loop.check();
+
+  ///////////////////////////////////////////////////////////////
+  if (prescribe_gl) {
+    geometry.ice_thickness.add(1.0, m_impl->thickness_change);
+  } /////////////////////////////////////////////////////////////
+
 }
 
 
@@ -1082,11 +1102,17 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
  * the two previously mentioned conditions.
  *
  * @param[in] geometry (ice_thickness (m), bed_elevation (m), sea_level_elevation (m), cell_type)
+ * @param[in] smb_rate top surface mass balance rate, kg m-2 s-1
+ * @param[in] basal_melt_rate basal melt rate, m s-1
+ * @param[in] flag for step (FLOW,SOURCE)
  * @param[in,out] thickness_change "proposed" thickness change (m)
  * @param[out] conservation_error computed conservation error (m)
  *
  */
 void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
+                                                      IceModelVec2S &smb_flux,
+                                                      IceModelVec2S &basal_melt_rate,
+                                                      ThicknessChangeFlag flag,
                                                       IceModelVec2S &thickness_change,
                                                       IceModelVec2S &conservation_error) {
 
@@ -1096,11 +1122,15 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
                       &sl = geometry.sea_level_elevation;
   const IceModelVec2CellType &mask = geometry.cell_type;
 
-
   double ocean_density = m_config->get_number("constants.sea_water.density");
   double ice_density   = m_config->get_number("constants.ice.density");
+  double icefree_thickness = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec::AccessList list{&H, &bed, &sl, &mask, &thickness_change, &conservation_error};
+  if (flag == SOURCE) {
+    thickness_change.set(0.0);
+  }        
+
+  IceModelVec::AccessList list{&H, &bed, &sl, &mask, &smb_flux, &basal_melt_rate, &thickness_change, &conservation_error};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1108,49 +1138,36 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
       const int i = p.i(), j = p.j();
 
       const double
-        //Hold      = old_ice_thickness(i, j),
-        //rho_ratio = m_impl->ocean_density/m_impl->ice_density,
         rho_ratio = ocean_density/ice_density,
-        Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio,
-        Hnew      = H(i,j) + thickness_change(i,j);
-        //Hnmb      = (H(i, j) + dH_SMB(i, j)) + dH_BMB(i, j);
-
-        //if (H + dH < 0.0) {
-        //  thickness_change(i, j)    = H;
-        //  conservation_error(i, j) += - (H + dH);
-        //}
+        Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio + icefree_thickness,
+        Hnew      = (flag == SOURCE ? (H(i, j) + smb_flux(i, j)) + basal_melt_rate(i, j) : H(i,j) + thickness_change(i,j));
 
         // prevent grounded parts form becoming afloat, assuming that mask has not been updated yet
-        //if (mask.grounded(i, j)) { //if (H(i, j) > Hfl)
         if (H(i, j) >= Hfl) {
           if (Hnew < Hfl) { //if(H-Hfl + dH < 0.0)
-               thickness_change(i, j) = -(H(i, j) - Hfl);
-               conservation_error(i, j) += - (Hnew - Hfl);  //-(H-Hfl + dH) = -( Hnew - Hfl)
+               thickness_change(i, j) = (flag == SOURCE ? -(Hnew - Hfl) : -(H(i, j) - Hfl));
+               conservation_error(i, j) += -(Hnew - Hfl);  //-(H-Hfl + dH) = -( Hnew - Hfl)
           }
-          //H(i, j) = std::max( H(i, j), Hfl );
-
         }
-        //else if (H(i, j) != Hold) {
         else if (H(i, j) != Hnew) { //if (H-H + dH < 0) 
 
-          //avoid artefacts for floating cells surrounded by grounded neighbors
+          // avoid artefacts for floating cells surrounded by grounded neighbors
           bool floating_lake = (mask.grounded(i-1,j) && mask.grounded(i+1,j) &&
                                 mask.grounded(i,j-1) && mask.grounded(i,j+1));
 
-          //floating ice shelves thickness remains unchanged
+
+          // floating ice shelves thickness remains unchanged
           if (floating_lake == false) {
-            //H(i, j) = Hold;
-            thickness_change(i, j) = 0.0;
+            thickness_change(i, j) = (flag == SOURCE ? -(Hnew - H(i,j)) : 0.0);
             conservation_error(i, j) += -(Hnew - H(i,j));
           }
-        }
+        } // else (all areas with constant or absent ice thickness
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
 }
-
 
 
 namespace diagnostics {
