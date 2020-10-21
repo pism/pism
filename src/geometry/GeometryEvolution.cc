@@ -385,14 +385,6 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
     &dH_BMB  = bottom_surface_mass_balance();
   IceModelVec2S &H = geometry.ice_thickness;
 
-
-  ///////////////////////////////////////////////////////////////////////////////////////
-  bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
-  if (prescribe_gl) {
-    const IceModelVec2S
-      &dH  = thickness_change_due_to_flow();
-  } ////////////////////////////////////////////////////////////////////////////////////
-
   IceModelVec::AccessList list{&H, &dH_SMB, &dH_BMB};
   ParallelSection loop(m_grid->com);
   try {
@@ -419,6 +411,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
   loop.check();
 
   ///////////////////////////////////////////////////////////////
+  bool prescribe_gl  = m_config->get_flag("geometry.update.prescribe_groundingline");
   if (prescribe_gl) {
     geometry.ice_thickness.add(1.0, m_impl->thickness_change);
   } /////////////////////////////////////////////////////////////
@@ -1092,14 +1085,17 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
 /*!
  * Prevents ice thickness at grounded locations from decreasing enough to make it floating
  * and prevents changes in ice thickness of floating ice 
- * (except for locations with four grounded neighbors)
  *
- * Correct `thickness_change` so that applying it will 
+ * This method is applied at the end of flow_step() and of source_term_step(), in order to
  * a) keep grounded ice from becoming floating and 
  * b) prevent changes of the thickness of floating ice and ice free ocean.
  *
  * Compute the `conservation_error`, i.e. the amount of ice that is added to ensure
  * the two previously mentioned conditions.
+ *
+ * In the FLOW case `thickness_change` is corrected and then applied in apply_flux_divergence().
+ * In the SOURCE case `thickness_change` is calculated according to the sum of `smb_flux`
+ * and `basal_melt_rate`, and then applied at the end of apply_mass_fluxes().
  *
  * @param[in] geometry (ice_thickness (m), bed_elevation (m), sea_level_elevation (m), cell_type)
  * @param[in] smb_rate top surface mass balance rate, kg m-2 s-1
@@ -1151,16 +1147,10 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
         }
         else if (H(i, j) != Hnew) { //if (H-H + dH < 0) 
 
-          // avoid artefacts for floating cells surrounded by grounded neighbors
-          bool floating_lake = (mask.grounded(i-1,j) && mask.grounded(i+1,j) &&
-                                mask.grounded(i,j-1) && mask.grounded(i,j+1));
-
-
           // floating ice shelves thickness remains unchanged
-          if (floating_lake == false) {
             thickness_change(i, j) = (flag == SOURCE ? -(Hnew - H(i,j)) : 0.0);
             conservation_error(i, j) += -(Hnew - H(i,j));
-          }
+            
         } // else (all areas with constant or absent ice thickness
     }
   } catch (...) {
