@@ -296,65 +296,84 @@ same :var:`tillphi` field which was set in the first run.
 Till friction angle optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. include:: ../../../math-definitions.txt
+In *grounded* areas the distribution of till friction angle `\phi` (see
+:eq:`eq-mohrcoulomb`) can be iteratively optimized in a forward equilibrium simulation.
+[#f1]_
 
-The distribution of till friction angle `\phi=` :var:`tillphi` in :eq:`eq-mohrcoulomb` can be 
-iteratively optimized in a forward equlibrium simulation with respect to the mismatch to observed 
-modern surface elevation `\Delta h_{\mathrm{obs}}` :cite:`BEDMAP02`, analogous to the simple inversion method 
-:cite:`PollardDeConto2012SLIDE`, which is optimizing for the basal sliding coefficient `\tau_c` instead. 
+At each grid location the value of `\phi` is adjusted according to the mismatch `\Delta
+h_{\mathrm{obs}}` between reference (usually observed present day, :cite:`BEDMAP02`) and
+modeled surface elevations.
 
-.. -iterative_phi 2,5,70,1,250,500,-300,700,1e-3
+The iterations starts from an initial :var:`tillphi` field initialized using
+:opt:`-plastic_phi`, :opt:`-topg_to_phi`, or read from an input file.
 
-It takes the following command-line options:
+At each iteration the till friction angle adjustment `\Delta \phi` is set to the ratio of
+the surface elevation mismatch at a given point to the *reference mismatch* `\dhinv`:
 
-- :opt:`-yield_stress mohr_coulomb_iter`: activates the iterative adjustment of till friction angle.
-- :opt:`-iterative_phi phi_min,phi_minup,phi_max,dphi,dt,h_inv,topg_min,topg_max,dh_conv`: 
-  specifies 9 parameter, which are described in more detail below. 
-- :opt:`-iterative_phi_file usurf_target_file` specifies the file with the 
-  target surface elevation `h_{\mathrm{obs}}`= :var:`usurf`.
-- :opt:`-prescribe_gl`: prescribes ice thickness in the ice shelf and ocean regions and prevents 
-  grounded ice sheet areas from becoming afloat, such that the position of the grounding line remains 
-  fixed, when neither bed deformation nor sea-level forcing is applied. Hence, modeled surface 
-  elevation can be compared to the target surface elevation in the prescribed grounded area. 
-  Be aware that this method breaks mass conservation, which is accounted for in the :var:`conservation_error`. 
-
-Thus the user supplies 9 configuration parameters in :opt:`-iterative_phi`: 
-
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.phi_min`: lower bound of till friction angle `\phimin`.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup`: lower bound for till friction angle `\phiminup` 
-  for non-marine regions above `\bmax`.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.phi_max`: upper bound for till friction angle `\phimax`.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.dphi`: maximal increment of `\dphiup` per iteration.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.dt`: time step of optimization `\dtinv` in years.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.h_inv`: a typical anomaly in surface elevation `\dhinv`.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_min`: lower bed elevation level `\bmin`, below which
-  `\phimin` applies as lower boundary.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_max`: upper bed elevation level `\bmax`, above which
-  `\phimax` applies as upper boundary. Between `\bmin` and `\bmax` the lower bound for :var:`tillphi` changes 
-  linearily between `\phimin` and `\phiminup`, analogous to :eq:`eq-phipiecewise`.
-- :config:`basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv`: local convergence criterion of relative change 
-  in surface elevation for subsequent iterations `\dhdtconv`, see equations :eq:`eq-phiiterative` below.
-
-
-The iterations starts from an initial :var:`tillphi` field using :opt:`-plastic_phi`, :opt:`-topg_to_phi` 
-or from a given distribution in the input file. 
-
-In each iteration step `\dtinv`, with maximal steps of `\dphiup=1^{\circ}` and 
-`\dphidown = -0.5 \cdot \dphiup`, :var:`tillphi` is updated as 
-
-.. \Delta h(x,y,T+\dtinv)_{\mathrm{obs}} &= h(x,y,T+\dtinv)_{\mathrm{mod}}-h(x,y)_{\mathrm{obs}}
 .. math::
-   :name: eq-phiiterative
+
+   \Delta \phi = \frac{\Delta h_{\mathrm{obs}}}{\dhinv}
+
+Then, `\Delta \phi` is clipped to ensure `\Delta \phi \in [-\dphiup\, /\, 2, \dphiup]`.
+
+The resulting adjustment is applied to `\phi` and the result clipped to ensure that `\phi
+\in [\phimin, \phimax]`. (FIXME: explain the different "marine" and "continental" lower
+limits, and the use of the piecewise-linear `\phi` as a lower bound. What are the roles of
+:config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_min` and
+:config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_max`?).
+
+To allow ice geometry to respond to changes in the till friction angle the simulation goes
+on for `\dtinv` years between iterations.
+
+The iteration stops when... (FIXME: describe the stopping criterion.)
+
+.. FIXME: I'm not sure if the equation below is helpful: an explanation in English may be
+   easier to understand.
+
+.. math::
+   :label: eq-phiiterative
 
    \phi_{(x,y,T+\dtinv)} &=  \max ( \phimin , \min [ \phimax , \phi_{(x,y,T)} + \Delta\phi]) \\
    \Delta\phi &= \min \left( \dphiup , \max \left[ \dphidown , \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dhinv} \right] \right), \\
    &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
 
-As diagnostic fields for the optimization simulation output variables can be called 
-:opt:`-extra_vars tillphi,diff_usurf,diff_mask`. :opt:`diff_usurf` indicates the mismatch to observed 
-modern surface elevation `\Delta h_{\mathrm{obs}} and :opt:`diff_mask` the area, where the till friction
-angle is iteratively adjusted or where the convergence criterion is hit.
+.. -iterative_phi 2,5,70,1,250,500,-300,700,1e-3
 
+This model is controlled by the following parameters (prefix:
+``basal_yield_stress.mohr_coulomb.iterative_phi.``):
+
+.. pism-parameters::
+   :prefix: basal_yield_stress.mohr_coulomb.iterative_phi.
+
+Nine of these can be set all at once using the command-line option :opt:`iterative_phi`:
+
+.. code-block:: none
+
+   -iterative_phi phi_min,phi_minup,phi_max,dphi,dt,h_inv,topg_min,topg_max,dh_conv
+
+When the domain contains a grounding line, the mismatch between modeled and observed
+surface elevation is meaningful only if the ice is grounded in *both* data sets. A retreat
+of the grounding line would make it impossible to optimize the till friction angle in
+areas that are observed to contain grounded ice but are covered by water in a simulation.
+The mechanism triggered by :config:`geometry.update.prescribe_groundingline` avoids this
+issue by adjusting ice thickness changes applied **during the mass-continuity step** in a
+way that keeps grounded ice from thinning enough to come afloat.
+
+.. FIXME: There's more to it. Describe this mechanism in more detail.
+
+.. note::
+
+   :config:`geometry.update.prescribe_groundingline` adds or removes ice *in violation of
+   mass conservation*. The added (or removed) ice mass is accounted for as a part of the
+   :var:`conservation_error` variable (see :ref:`sec-mass-conservation`).
+
+This code provides the following diagnostic quantities:
+
+#. :var:`diff_usurf` reports the mismatch between modeled and reference surface elevation
+   fields `\Delta h_{\mathrm{obs}}`
+#. :var:`diff_mask` reports the area where the till friction angle is iteratively adjusted
+   or where the convergence criterion is met.
+#. :var:`target_usurf` reports the reference (target) ice surface elevation in use.
 
 
 .. _sec-effective-pressure:
@@ -429,3 +448,7 @@ when using other 2D time-dependent forcing, set
 ..
    FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
    configuration flag is set then the above formula becomes...
+
+.. [#f1] This is similar to the simple inversion method described in
+   :cite:`PollardDeConto2012SLIDE` which optimizes the basal sliding coefficient `\tau_c`
+   instead.
