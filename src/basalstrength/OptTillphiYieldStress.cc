@@ -140,10 +140,7 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
 
   MohrCoulombYieldStress::bootstrap_impl(input_file, inputs);
 
-  
   //Optimization scheme for till friction angle anlogous to Pollard et al. (2012) /////////
-
-  //m_iterative_phi = m_config->get_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled");
 
   auto iterative_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.iterative_phi.file");
 
@@ -245,11 +242,6 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
                                                 const IceModelVec2S &bed_topography,
                                                 const IceModelVec2CellType &mask) {
 
-  //if (not m_config->get_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled")) {
-  //  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-  //                                "basal_yield_stress.mohr_coulomb.iterative_phi.enabled is not set");
-  //}
-
   m_log->message(2,"\n* Perform iterative step for optimization of till friction angle phi!\n\n");
 
   const IceModelVec2S &usurf = ice_surface_elevation;
@@ -260,8 +252,10 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
 
   const double
         h_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv"),
+    // FIXME: check units of dhdt_conv
     dhdt_conv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv"),
-         dphi = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi"),
+     dphi_max = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi"),
+     dphi_min = -0.5 * dphi_max,
       phi_min = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min"),
     phi_minup = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup"),
      phi_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_max"),
@@ -281,12 +275,12 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
 
   if (phi_min >= phi_max) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "invalid -inverse_phi arguments: phi_min < phi_max is required");
+                       "invalid -iterative_phi arguments: phi_min < phi_max is required");
   }
 
   if (topg_min >= topg_max) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "invalid -invrse_phi arguments: topg_min < topg_max is required");
+                       "invalid -iterative_phi arguments: topg_min < topg_max is required");
   }
 
   for (Points p(*m_grid); p; p.next()) {
@@ -302,25 +296,24 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
         if (dh_step / dt_phi_inv > dhdt_conv) {
           m_diff_mask(i,j)=1.0;
 
-          // Do incremental steps of maximum 0.5*dphi down and dphi up
-          m_till_phi(i,j) -= std::min(dphi,std::max(-dphi*0.5,m_diff_usurf(i,j)/h_inv));
+          double dphi = pism::clip(m_diff_usurf(i, j) / h_inv, dphi_min, dphi_max);
+          m_till_phi(i, j) -= dphi;
 
           // Different lower constraints for marine (b<topg_min) and continental (b>topg_max) areas)
-          if (bed_topography(i,j) > topg_max){
-            m_till_phi(i,j) = std::max(phi_minup,m_till_phi(i,j));
+          if (bed_topography(i,j) > topg_max) {
+            m_till_phi(i, j) = std::max(phi_minup, m_till_phi(i,j));
 
           // Apply smooth transition between marine and continental areas
-          } else if (bed_topography(i,j) <= topg_max && bed_topography(i,j) >= topg_min){
+          } else if (bed_topography(i,j) <= topg_max && bed_topography(i,j) >= topg_min) {
             m_till_phi(i, j) = std::max((phi_min + (bed_topography(i,j) - topg_min) * slope),m_till_phi(i,j));
 
           // Apply absolute upper and lower bounds
           } else {
-            m_till_phi(i,j) = std::max(phi_min,m_till_phi(i,j));
-            m_till_phi(i,j) = std::min(phi_max,m_till_phi(i,j));
+            m_till_phi(i, j) = pism::clip(m_till_phi(i, j), phi_min, phi_max);
           }
 
         } else {
-          m_diff_mask(i,j)=0.0;
+          m_diff_mask(i, j)=0.0;
         }
 
       // Floating and ice free ocean

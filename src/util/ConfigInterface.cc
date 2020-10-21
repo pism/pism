@@ -703,7 +703,6 @@ void set_config_from_options(Config &config) {
                                       "option -iterative_phi expected 9 numbers; got %d",
                                       (int)iterative_phi->size());
       }
-      config.set_flag("basal_yield_stress.mohr_coulomb.iterative_phi.enabled", true);
 
       config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min", iterative_phi[0]);
       config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup", iterative_phi[1]);
