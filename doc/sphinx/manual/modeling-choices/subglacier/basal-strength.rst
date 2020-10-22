@@ -317,25 +317,31 @@ the surface elevation mismatch at a given point to the *reference mismatch* `\dh
 Then, `\Delta \phi` is clipped to ensure `\Delta \phi \in [-\dphiup\, /\, 2, \dphiup]`.
 
 The resulting adjustment is applied to `\phi` and the result clipped to ensure that `\phi
-\in [\phimin, \phimax]`. (FIXME: explain the different "marine" and "continental" lower
-limits, and the use of the piecewise-linear `\phi` as a lower bound. What are the roles of
-:config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_min` and
-:config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_max`?).
+\in [\phimin, \phimax]`. Here, the lower bound `\phimin` is a piecewise-linear function 
+of the bed topography, similar to :eq:`eq-phipiecewise`, assuming that "marine" sediments 
+(below :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_min`) can be much weaker 
+than rather "continental" bedrock material 
+(above :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_max`), where we assign 
+a slightly larger lower limit of `\phiminup`. In sensitivity experiments we found a strong 
+sensitivity of the Antarctic Ice Sheet's ice volume in particular to the choice of `\phimin` 
+(see :cite:`Albrecht2020PaleoSensitivity`).
+
 
 To allow ice geometry to respond to changes in the till friction angle the simulation goes
-on for `\dtinv` years between iterations.
-
-The iteration stops when... (FIXME: describe the stopping criterion.)
-
-.. FIXME: I'm not sure if the equation below is helpful: an explanation in English may be
-   easier to understand.
+on for `\dtinv` years between iterations. When the change in surface elevation between 
+subsequent iterations falls below a threshold, iterations stop for this 
+grid cell and the :var:`diff_mask` is set to value 0:
 
 .. math::
    :label: eq-phiiterative
 
-   \phi_{(x,y,T+\dtinv)} &=  \max ( \phimin , \min [ \phimax , \phi_{(x,y,T)} + \Delta\phi]) \\
-   \Delta\phi &= \min \left( \dphiup , \max \left[ \dphidown , \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dhinv} \right] \right), \\
-   &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
+   \frac{( h_{(x,y,T+\dtinv)} - h_{(x,y,T)} )}{\dtinv} /leq \dhdtconv
+
+..   \frac{(\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)} - \Delta h_{\mathrm{obs}\,(x,y,T)}    )}{\dtinv} > \dhdtconv
+
+..   \phi_{(x,y,T+\dtinv)} &=  \max ( \phimin , \min [ \phimax , \phi_{(x,y,T)} + \Delta\phi]) \\
+..   \Delta\phi &= \min \left( \dphiup , \max \left[ \dphidown , \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dhinv} \right] \right), \\
+..   &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
 
 .. -iterative_phi 2,5,70,1,250,500,-300,700,1e-3
 
@@ -357,9 +363,10 @@ of the grounding line would make it impossible to optimize the till friction ang
 areas that are observed to contain grounded ice but are covered by water in a simulation.
 The mechanism triggered by :config:`geometry.update.prescribe_groundingline` avoids this
 issue by adjusting ice thickness changes applied **during the mass-continuity step** in a
-way that keeps grounded ice from thinning enough to come afloat.
+way that keeps grounded ice from thinning enough to come afloat, while the ice thickness in 
+the ice shelves remains constant.
 
-.. FIXME: There's more to it. Describe this mechanism in more detail.
+.. FIXME: There's more to it. Describe this mechanism in more detail. To be continued...
 
 .. note::
 
