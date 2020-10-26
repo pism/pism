@@ -74,32 +74,36 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
       for (int s = t; s < Nk; ++s) {
         auto phi = element.chi(q, s);
 
+        // partial derivatives of gamma with respect to u_i and v_i
         double
           gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
           gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
 
+        // partial derivatives of eta with respect to u_i and v_i, using chain rule
         double
           eta_u = deta * gamma_u,
           eta_v = deta * gamma_v;
 
-        // Picard part
-        K[t * 2 + 0][s * 2 + 0] += W * eta * (4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz);
-        K[t * 2 + 0][s * 2 + 1] += W * eta * (2.0 * psi.dx * phi.dy + psi.dy * phi.dx);
-        K[t * 2 + 1][s * 2 + 0] += W * eta * (2.0 * psi.dy * phi.dx + psi.dx * phi.dy);
-        K[t * 2 + 1][s * 2 + 1] += W * eta * (4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz);
-        // extra Newton terms
-        K[t * 2 + 0][s * 2 + 0] += W * eta_u * (psi.dx * (4.0 * ux + 2.0 * vy) +
-                                                psi.dy * (uy + vx) +
-                                                psi.dz * uz);
-        K[t * 2 + 0][s * 2 + 1] += W * eta_v * (psi.dx * (4.0 * ux + 2.0 * vy) +
-                                                psi.dy * (uy + vx) +
-                                                psi.dz * uz);
-        K[t * 2 + 1][s * 2 + 0] += W * eta_u * (psi.dx * (uy + vx) +
-                                                psi.dy * (4.0 * vy + 2.0 * ux) +
-                                                psi.dz * vz);
-        K[t * 2 + 1][s * 2 + 1] += W * eta_v * (psi.dx * (uy + vx) +
-                                                psi.dy * (4.0 * vy + 2.0 * ux) +
-                                                psi.dz * vz);
+        // F_u = grad(psi) . (4ux + 2vy, uy + vx, uz) and
+        // F_v = grad(psi) . (uy + vx, 4vy + 2ux, vz)
+        double
+          F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
+          F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
+
+        // partial derivatives of F_u with respect to u_i and v_i
+        double
+          F_uu = 4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz,
+          F_uv = 2.0 * psi.dx * phi.dy + psi.dy * phi.dx;
+
+        // partial derivatives of F_v with respect to u_i and v_i
+        double
+          F_vu = 2.0 * psi.dy * phi.dx + psi.dx * phi.dy,
+          F_vv = 4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz;
+
+        K[t * 2 + 0][s * 2 + 0] += W * (eta * F_uu + eta_u * F_u);
+        K[t * 2 + 0][s * 2 + 1] += W * (eta * F_uv + eta_v * F_u);
+        K[t * 2 + 1][s * 2 + 0] += W * (eta * F_vu + eta_u * F_v);
+        K[t * 2 + 1][s * 2 + 1] += W * (eta * F_vv + eta_v * F_v);
       }
     }
   } // end of the loop over q
