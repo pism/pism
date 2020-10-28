@@ -907,59 +907,87 @@ Testing and verification
 Verification test XY
 ####################
 
-This test uses a constant ice hardness, `n = 3`, and has no variation in the `z`
-direction. It is similar but not identical to the `x-y` MMS verification test in
-:cite:`Tezaur2015`, section 4.1 (we use Dirichlet boundary conditions along the whole
-lateral boundary instead of Robin conditions derived from the chosen exact solution).
+:Exact solution:
+   .. math::
 
-.. math::
+      u &= \exp(x) \sin(2 \pi y)
 
-   u &= \exp(x) \sin(2 \pi y)
+      v &= \exp(x) \cos(2 \pi y)
 
-   v &= \exp(x) \cos(2 \pi y)
+:Domain: `x \in [0, 1]`, `y \in [0, 1]`
+:Boundary conditions: Dirichlet BC corresponding to the exact solution on all lateral
+   boundaries (`x = 0`, `x = 1`, `y = 0`, `y = 1`). Natural BC at the top and bottom
+   boundaries.
 
-on a square `x \in [0, 1]`, `y \in [0, 1]` with Dirichlet BC at all the lateral boundaries
-(`x = 0`, `x = 1`, `y = 0`, `y = 1`).
+:Comments: This test uses a constant ice hardness, `n = 3`, and has no variation in the `z`
+   direction. It is similar but not identical to the `x-y` MMS verification test in
+   :cite:`Tezaur2015`, section 4.1 (we use Dirichlet boundary conditions along the whole
+   lateral boundary instead of Robin conditions derived from the chosen exact solution).
 
-The compensatory term is computed using SymPy; please see the code in
-``src/stressbalance/blatter/verification``.
+   The compensatory term is computed using SymPy; please see the code in
+   ``src/stressbalance/blatter/verification``.
 
 .. _sec-bp-verificaion-xz:
 
 Verification test XZ
 ####################
 
-This test uses a constant ice hardness, `n = 3` and has no variation in the `y` direction.
-It is similar but not identical to the `x-z` MMS verification test :cite:`Tezaur2015`,
-section 4.2 (again, we use Dirichlet boundary conditions at lateral boundaries instead of
-Robin conditions stated in the paper).
+:Exact solution:
+   .. math::
 
-.. math::
+      u &= \frac{2 A (g \rho)^{n} \left((s - z)^{n + 1} - H^{n + 1}\right) \left|s_x\right|^{n - 1} s_x}{n + 1} - \frac{H g \rho s_x}{\beta}
 
-   u &= \frac{2 A (g \rho)^{n} \left((s - z)^{n + 1} - H^{n + 1}\right) \left|s_x\right|^{n - 1} s_x}{n + 1} - \frac{H g \rho s_x}{\beta}
+      v &= 0
+:Domain:
+   .. math::
 
-   v &= 0
+      x &\in [-L, L],
 
-Please see :cite:`Tezaur2015` and the code in ``src/stressbalance/blatter/verification``
-for details.
+      z &\in [s(x) - H, s(x)],
+
+      s(x) &= s_0 - \alpha\, x^2.
+
+:Boundary conditions:
+   - Dirichlet BC corresponding to the exact solution at `x = -L` and `x = L`.
+   - Basal (`z = s(x) - H`) BC is a combination (i.e. sum) of the BC in
+     :ref:`sec-bp-bc-basal` and a compensatory term derived using the exact solution.
+   - Top surface (`z = s(x)`) BC is derived using the exact solution.
+:Comments:
+   This test
+
+   - uses a constant ice hardness,
+   - Glen exponent `n = 3`,
+   - has no variation (and is periodic) in the `y` direction,
+   - uses a constant basal resistance coefficient `\beta`.
+
+   It is similar but not identical to the `x-z` MMS verification test :cite:`Tezaur2015`,
+   section 4.2 (again, we use Dirichlet BC at lateral boundaries instead of Robin
+   conditions stated in the paper).
+
+
+   See :cite:`Tezaur2015` and the code in ``src/stressbalance/blatter/verification`` for
+   details.
 
 .. _sec-bp-verificaion-xz-cfbc:
 
 Verification test XZ-CFBC
 #########################
 
-This test uses a constant viscosity (`n = 1`) and has no variation in the `y` direction.
+:Exact solution:
+   .. math::
 
-.. math::
+      u &= \frac{(\rho - \rho_w) g L}{2 B \pi} \sin\p{\frac{\pi x}L} z,
 
-   u &= \frac{(\rho - \rho_w) g L}{2 B \pi} \sin\p{\frac{\pi x}L} z,
+      v &= 0
+:Domain: `x \in [0, L]`, `z \in [-H, 0]`
+:Boundary conditions:
+   - Dirichlet BC at `x = 0`.
+   - Uses the BC described in :ref:`sec-bp-bc-lateral` at `x = L`.
+:Comments: This test uses the Glen exponent of `1` (constant viscosity) and has no
+   variation in the `y` direction.
 
-   v &= 0
-
-on the rectangle `x \in [0, L]`, `z \in [-H, 0]`, where `\rho_w` is the density of sea
-water and `H` is the constant ice thickness. The sea level is set to `0`, overriding the
-floatation criterion. Dirichlet BC at `x = 0`. This test uses the stress BC at the lateral
-boundary (`x = L`) that is identical to the one used in ice sheet simulations.
+   The sea level is set to `0`, overriding the floatation criterion to ensure that *all*
+   the ice is submerged.
 
 .. _sec-bp-ismip-hom:
 
