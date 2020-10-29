@@ -25,7 +25,7 @@ TestTemplate::TestTemplate(IceGrid::ConstPtr grid, int Mz, int n_levels, int coa
   // empty
 }
 
-bool TestTemplate::neumann_bc_face(int face, const int *node_type) {
+bool TestTemplate::vertical_cliff_face(int face, const int *node_type) {
   (void) face;
   (void) node_type;
 

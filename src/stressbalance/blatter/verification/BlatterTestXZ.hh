@@ -48,7 +48,7 @@ public:
   BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
 private:
-  bool neumann_bc_face(int face, const int *node_type);
+  bool vertical_cliff_face(int face, const int *node_type);
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

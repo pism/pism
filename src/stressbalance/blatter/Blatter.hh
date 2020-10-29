@@ -115,7 +115,7 @@ protected:
                                       double *surface,
                                       double *sea_level) const;
 
-  virtual bool neumann_bc_face(int face, const int *node_type);
+  virtual bool vertical_cliff_face(int face, const int *node_type);
 
   virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

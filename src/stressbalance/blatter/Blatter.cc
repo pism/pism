@@ -217,13 +217,14 @@ bool Blatter::partially_submerged_face(int face, const double *z, const double *
 }
 
 /*!
- * Return true if the current face is a part of the Neumann boundary, false otherwise.
+ * Return true if the current face is a part of the lateral ice boundary (i.e. at a
+ * vertical cliff), false otherwise.
  *
- * A face is a part of the Neumann boundary if all four nodes are Neumann nodes. If a node
- * is *both* a Neumann and a Dirichlet node (this may happen), then we treat it as a
- * Neumann node here: element.add_contribution() will do the right thing in this case.
+ * A face is a part of the lateral boundary if all four nodes are boundary nodes. If a node
+ * is *both* a boundary and a Dirichlet node (this may happen), then we treat it as a
+ * boundary node here: element.add_contribution() will do the right thing in this case.
  */
-bool Blatter::neumann_bc_face(int face, const int *node_type) {
+bool Blatter::vertical_cliff_face(int face, const int *node_type) {
   auto nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face

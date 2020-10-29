@@ -57,7 +57,7 @@ BlatterTestXZ::BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int n_levels, int c
   m_g   = m_config->get_number("constants.standard_gravity");
 }
 
-bool BlatterTestXZ::neumann_bc_face(int face, const int *node_type) {
+bool BlatterTestXZ::vertical_cliff_face(int face, const int *node_type) {
   (void) face;
   (void) node_type;
 

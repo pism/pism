@@ -39,7 +39,7 @@ BlatterTestXY::BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int c
   m_B = m_flow_law->hardness(1e5, 0);
 }
 
-bool BlatterTestXY::neumann_bc_face(int face, const int *node_type) {
+bool BlatterTestXY::vertical_cliff_face(int face, const int *node_type) {
   (void) face;
   (void) node_type;
 
