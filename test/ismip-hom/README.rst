@@ -3,16 +3,14 @@
 This directory contains scripts that run ISMIP-HOM_ experiments A-D and plot resulting
 surface ice velocities at y=0.25 (in scaled coordinates).
 
-In short, download and unpack the ISMIP-HOM_ supplement, then run:
+Run
 
 .. code::
 
-   python3 run-ismiphom.py
+   make all
 
-   ln -s path/to/ismip_all .
-
-   python3 convert-ismiphom.py
-   python3 plot-ismiphom.py
+to download and unpack the ISMIP-HOM_ supplement, run PISM, and produce ice velocity
+figures (including the one below).
 
 The script `run-ismiphom.py` uses PISM's Python bindings to run the Blatter solver in
 PISM. See the top of this script for details.
