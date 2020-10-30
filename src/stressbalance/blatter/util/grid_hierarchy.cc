@@ -96,14 +96,7 @@ double grid_z(double b, double H, int Mz, int k) {
  * @return padding amount
  */
 int grid_padding(int N, int factor, int n_levels) {
-  // number of spaces
-  int k = N - 1;
-  int C = 1;
-  for (int n = 0; n < n_levels; ++n) {
-    C *= factor;
-    k = (k % factor ? k + (factor - (k % factor)): k) / factor;
-  }
-  return (C * k + 1) - N;
+  return N - ((int)pow(factor, n_levels) + 1);
 }
 
 /* Transpose a DMDALocalInfo structure to map from PETSc's ordering to PISM's order needed
