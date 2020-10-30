@@ -430,7 +430,7 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz, int n
   {
     ierr = SNESCreate(m_grid->com, m_snes.rawptr()); CHKERRQ(ierr);
 
-    // ierr = SNESSetOptionsPrefix(m_snes, "blatter_"); CHKERRQ(ierr);
+    ierr = SNESSetOptionsPrefix(m_snes, "bp_"); CHKERRQ(ierr);
 
     ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
 

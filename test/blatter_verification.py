@@ -64,15 +64,15 @@ class TestXY(TestCase):
                           PISM.util.convert(1e-4, "Pa-3 year-1", "Pa-3 s-1"))
 
         # the default preconditioner is seems to be ineffective
-        opt.setValue("-pc_type", "gamg")
-        opt.setValue("-snes_monitor", "")
+        opt.setValue("-bp_pc_type", "gamg")
+        opt.setValue("-bp_snes_monitor", "")
 
     def tearDown(self):
         "Clear PETSc options"
         config.set_number("flow_law.isothermal_Glen.ice_softness", self.A_old)
 
-        self.opt.delValue("-pc_type")
-        self.opt.delValue("-snes_monitor")
+        self.opt.delValue("-bp_pc_type")
+        self.opt.delValue("-bp_snes_monitor")
 
     def inputs(self, N):
         "Allocate stress balance inputs for a given grid size"
@@ -251,9 +251,9 @@ class TestXZ(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-snes_monitor": "",
-                     "-pc_type": "mg",
-                     "-pc_mg_levels": "1", # added here to make tearDown clean it up
+        self.opts = {"-bp_snes_monitor": "",
+                     "-bp_pc_type": "mg",
+                     "-bp_pc_mg_levels": "1", # added here to make tearDown clean it up
                      }
 
         for k, v in self.opts.items():
@@ -369,7 +369,7 @@ class TestXZ(TestCase):
         geometry, enthalpy, yield_stress = self.inputs(N)
 
         # set the number of multigrid levels
-        self.opt.setValue("-pc_mg_levels", n_mg)
+        self.opt.setValue("-bp_pc_mg_levels", n_mg)
 
         grid = enthalpy.grid()
 
@@ -470,7 +470,7 @@ class TestCFBC(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-snes_monitor": ""}
+        self.opts = {"-bp_snes_monitor": ""}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
