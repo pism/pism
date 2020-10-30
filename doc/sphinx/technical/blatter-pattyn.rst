@@ -5,7 +5,7 @@
    \newcommand{\exponent}{\frac{1-n}{2n}}
    \newcommand{\diff}[2]{\frac{\partial {#1}}{\partial {#2}}}
    \newcommand{\p}[1]{\left(#1\right)}
-   \newcommand{\f}{\rho g \nabla s}
+   \newcommand{\f}{\rho\, g\, \nabla s}
    \newcommand{\Id}{\int_{\Omega}}
    \newcommand{\Ib}{\int_{\partial\Omega}}
    \newcommand{\Ibase}{\int_{\text{base}}}
@@ -86,9 +86,12 @@ Using this notation, the Blatter-Pattyn (BP) stress balance equations are
 .. math::
    :label: eq-bp
 
-   - \nabla \cdot (\eta\, \E) + \rho g \nabla s = 0,
+   - \nabla \cdot (\eta\, \E_1) + \rho\, g\, s_x &= 0,
 
-with the ice viscosity given by
+   - \nabla \cdot (\eta\, \E_2) + \rho\, g\, s_y &= 0.
+
+Here "`\nabla\cdot`" is the three-dimensional divergence operator and ice viscosity `\eta`
+is defined by
 
 .. math::
    :label: eq-bp-viscosity
@@ -121,28 +124,46 @@ Weak form
    \Ib: integral over the boundary
    \f: body force
 
-Omitting discussions of function spaces (see :cite:`Tezaur2015`, :cite:`Perego2012` and
-other references mentioned above), we multiply :eq:`eq-bp` by a test function and
-integrate by parts:
+We omit discussions of function spaces; see :cite:`Tezaur2015`, :cite:`Perego2012` and
+other references mentioned above for details.
+
+To obtain the weak form, we multiply both equations in :eq:`eq-bp` by a *scalar* test
+function `\psi` and integrate over the domain `\Omega`. For the first equation, we get
+
+.. math::
+   :label: eq-bp-weak-form-x
+
+   \Id \psi \left( - \nabla\cdot (\eta\, \E_1) + \rho\, g\, s_x \right) &= 0,
+
+   -\Id \psi \nabla\cdot\left( \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &= 0,
+
+   -\Id \left( \nabla \cdot \left( \psi \eta\, \E_1 \right) - \nabla \psi \cdot \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &= 0,
+
+   -\Id \nabla \cdot \left(\psi \eta\, \E_1\right) + \Id \nabla \psi \cdot \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &= 0,
+
+   {-\Ib \left(\psi \eta\, \E_1\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &= 0.
+
+Similarly, multiplying the second equation by `\psi` and integrating by parts yields
+
+.. math::
+   :label: eq-bp-weak-form-y
+
+   {-\Ib \left(\psi \eta\, \E_2\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.
+
+We combine these and say that the weak form of :eq:`eq-bp` is
 
 .. math::
    :label: eq-bp-weak-form
 
-   \Id \psi (- \nabla\cdot (\eta\, \E) + \f) &= 0,
+   {-\Ib \left(\psi \eta\, \E\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,
 
-   -\Id \psi \nabla\cdot(\eta\, \E) +  \Id \f &= 0,
-
-   -\Id (\nabla \cdot (\psi \eta\, \E) - \nabla \psi \cdot \eta\, \E) + \Id \f &= 0,
-
-   -\Id \nabla \cdot (\psi \eta\, \E) + \Id \nabla \psi \cdot \eta\, \E + \Id \f &= 0,
-
-   {-\Ib (\psi \eta\, \E) \cdot \N\, ds} + \Id \nabla \psi \cdot \eta\, \E + {\Id \f} &= 0.
+where `\nabla s = ( s_x, s_y )`.
 
 The first term corresponds to :ref:`Neumann and Robin boundary conditions <sec-bp-bc>`; it
-vanishes if no part of the boundary uses stress BC not equivalent to "natural" BC. The
-third one corresponds to the gravitational driving stress and is replaced by a
-compensatory term in :ref:`verification tests <sec-bp-testing-verification>` that use
-manufactured solutions.
+vanishes "natural" BC `\left( \eta\, \E \right) \cdot \N = 0`. In the basal and lateral
+cases this stress is nonzero. The third one corresponds to the gravitational driving
+stress and is replaced by a compensatory term in :ref:`verification tests
+<sec-bp-testing-verification>` that use manufactured solutions.
 
 .. _sec-bp-bc:
 
@@ -169,6 +190,15 @@ In addition to this we support Dirichlet boundary conditions for :ref:`verificat
 <sec-bp-testing-verification>` and to :ref:`de-couple unknowns at ice-free locations
 <sec-bp-ice-extent>`.
 
+.. note::
+
+   Our implementation supports Dirichlet boundary conditions, but this feature is not
+   exposed to the rest of PISM.
+
+   Unlike :cite:`BrownSmithAhmadia2013` we *do not* support "no-slip" BC at the base. This
+   allows us to avoid Jacobian scaling tricks they needed to achieve good multigrid
+   performance.
+
 For each node in the Dirichlet boundary we assemble a "trivial" equations
 
 .. math::
@@ -177,18 +207,12 @@ For each node in the Dirichlet boundary we assemble a "trivial" equations
 
    v &= v_0,
 
-where `(u_0, v_0)` are given. (The implementation avoids adding contributions from
-adjacent elements to residual and Jacobian entries corresponding to Dirichlet locations.)
+where `(u_0, v_0)` are given.
 
-To achieve complete de-coupling of Dirichlet locations from the rest of the system
-prescribed velocity values are substituted into the equations that depend on them (see
-section 3.2 of :cite:`BrownSmithAhmadia2013` for details).
-
-.. note::
-
-   Unlike :cite:`BrownSmithAhmadia2013` we *do not* support "no-slip" BC at the base. This
-   allows us to avoid Jacobian scaling tricks they needed to achieve good multigrid
-   performance.
+The implementation avoids adding contributions from adjacent elements to residual and
+Jacobian entries corresponding to Dirichlet locations. Prescribed velocity values are
+substituted into equations that depend on them (see section 3.2 of
+:cite:`BrownSmithAhmadia2013` for details).
 
 .. _sec-bp-bc-basal:
 
@@ -238,16 +262,19 @@ there. This is similar to the SEP3 parameterization described in :cite:`Seroussi
 Lateral boundary
 ################
 
-The Neumann boundary condition at lateral boundaries (ice margins) is
+We assume that the lateral boundary of the domain is *vertical*, i.e. the outward-pointing
+normal vector has the form `\N = (\cdot,\cdot,0)`.
+
+The Neumann boundary condition at ice margins is
 
 .. math::
    :label: eq-bp-lateral-bc
 
    \eta\, \E \cdot \N &= p_{\text{ice}} - p_{\text{water}},\;\text{where}
 
-   p_{\text{ice}} &= \rho\, g\, (s - z)
+   p_{\text{ice}} &= \rho\, g\, (s - z),
 
-   p_{\text{water}} &= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0)
+   p_{\text{water}} &= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).
 
 In other words, this boundary condition corresponds to the difference between the
 cryostatic pressure of the ice on one side of the interface and the hydrostatic pressure
@@ -281,8 +308,40 @@ the margin on a fixed horizontal grid. However, the ice thickness threshold used
 determine if a map-plane location is ice-free or icy tends to be rather small, so the
 error due to omitting this BC should be relatively small.
 
+.. _sec-bp-solver:
+
 Solver implementation
 ---------------------
+
+.. _sec-bp-discretization:
+
+Discretization
+##############
+
+To create a non-linear algebraic system of equations approximating :eq:`eq-bp-weak-form`,
+we create a hexahedral mesh on the domain `\Omega` and use `Q_1` Galerkin finite elements.
+
+Let `\phi_j` be the scalar trial function associated with the node `j`, then the FE
+approximation of the solution `\U` has the form
+
+.. math::
+   :label: eq-bp-basis-expansion
+
+   u &= \sum_j \phi_j u_j,
+
+   v &= \sum_j \phi_j v_j.
+
+Then the problem is
+
+  Find `u_j`, `v_j` (`j = 1,\dots,N`) so that
+
+  .. math::
+
+     {-\Ib \left(\psi_i \eta\, \E\right) \cdot \N\, ds} +
+     {\Id \nabla \psi_i \cdot \eta\, \E} +
+     {\Id \psi_i\, \rho\, g\, \nabla s} = 0
+
+holds for all `i = 1,\dots,N`, where `N` is the number of nodes in the mesh.
 
 As in section 3 of :cite:`BrownSmithAhmadia2013`, we write the discretization of
 :eq:`eq-bp-weak-form` as an algebraic system `F(U) = 0` with Jacobian `J(U)` and solve
@@ -304,7 +363,7 @@ where
 
    F^2 &= \Id \nabla \psi \cdot \eta\, \E,
 
-   F^3 &= \Id \f.
+   F^3 &= \Id \psi\, \f.
 
 (compare to :eq:`eq-bp-weak-form`) and `J(U)` is a square sparse matrix containing one row
 per node in the mesh and at most 54 non-zero entries per row (there are `2` unknowns per
@@ -317,14 +376,8 @@ Residual evaluation
 ###################
 
 The residual evaluation is performed in the usual manner, by iterating over all the
-elements containing ice (see :ref:`sec-bp-mesh-structure`) and adding element
+elements containing ice (see :ref:`sec-bp-mesh`) and adding element
 contributions to the "global" residual vector.
-
-.. note::
-
-   We integrate over the whole domain (`\Omega`) below (see :eq:`eq-bp-residual-ii`) for
-   simplicity. In actuality each integral is over the *intersection of supports of test
-   and trial functions* appearing in the integrand.
 
 The residual itself can be broken up into the following parts:
 
@@ -338,6 +391,12 @@ The residual itself can be broken up into the following parts:
 
 This decomposition makes it possible to use source terms dictated by the choice of a
 manufactured solution while keeping (and testing) the rest of the code.
+
+.. note::
+
+   We integrate over the whole domain (`\Omega`) below (see :eq:`eq-bp-residual-ii`) for
+   simplicity. In actuality each integral is over the *intersection of supports of test
+   and trial functions* appearing in the integrand.
 
 .. _sec-bp-residual-main:
 
@@ -377,9 +436,9 @@ Basal contribution
 .. math::
    :label: eq-bp-residual-i-base
 
-   F^1_{i, u} &= \Id \psi_i\, \beta\, u,
+   F^1_{i, u} &= \Ibase \psi_i\, \beta\, u,
 
-   F^1_{i, v} &= \Id \psi_i\, \beta\, v.
+   F^1_{i, v} &= \Ibase \psi_i\, \beta\, v.
 
 .. _sec-bp-residual-lateral:
 
@@ -389,9 +448,9 @@ Lateral boundary contribution
 .. math::
    :label: eq-bp-residual-i-margin
 
-   F^1_{i, u} &= - \Id \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_x,
+   F^1_{i, u} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_x,
 
-   F^1_{i, v} &= - \Id \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_y,
+   F^1_{i, v} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_y,
 
 where
 
@@ -513,15 +572,8 @@ The derivatives of `G_{\cdot, \cdot}` are
    \diff{G_{i, 2}}{v_j} &= 4\dpsi{y}\dphi[j]{y} + \dpsi{x}\dphi[j]{x} + \dpsi{z}\dphi[j]{z}.
 
 To compute `\diff{\gamma}{u_j}` :eq:`eq-bp-dgamma-duj` and `\diff{G_{\cdot,
-\cdot}}{\cdot}` :eq:`eq-bp-dg-duj` we use FE basis expansions of `u` and `v`:
-
-.. math::
-
-   u &= \sum_j \phi_j u_j,
-
-   v &= \sum_j \phi_j v_j,
-
-which imply that
+\cdot}}{\cdot}` :eq:`eq-bp-dg-duj` we use FE basis expansions of `u` and `v`
+:eq:`eq-bp-basis-expansion`, which imply:
 
 .. math::
 
@@ -601,6 +653,18 @@ More specifically (due to the interleaved ordering of the unknowns: `u_j`, `v_j`
 `u_{j+1}`, `v_{v+1}`, ...) this requires setting the corresponding block of the Jacobian
 to the `2 \times 2` identity matrix.
 
+.. note::
+
+   It may be interesting to see if varying the scaling of residual and Jacobian entries at
+   Dirichlet nodes affects the condition number of the Jacobian matrix. See the variable
+   ``scaling`` in the code and set
+
+   .. code-block:: bash
+
+      -bp_ksp_view_singularvalues
+
+   to see if it has an effect.
+
 .. _sec-bc-iceberg-elimination:
 
 Iceberg elimination
@@ -631,7 +695,7 @@ larger number of multigrid levels needed: semi-coarsening gives a smaller reduct
 number of unknowns from one level to the next (factor of 2 instead of 8 in the full
 multigrid approach). Our tests show that "aggressive" semi-coarsening (i.e. using
 coarsening factors larger than 2 and as high as 8) appears to be effective, allowing one
-to achieve similar reductions in the number of unknowns from one level to the next in the
+to achieve similar reductions in the number of unknowns from one level to the next in a
 multigrid hierarchy.
 
 The second argument against semi-coarsening is deeper: spatial variations in the sliding
@@ -652,8 +716,6 @@ direct solver, which is PETSc's default.)
 In addition to this, we follow :cite:`BrownSmithAhmadia2013` in ordering unknowns so that
 columns are contiguous (and `u` and `v` are interleaved), allowing ILU factorization to
 compute a good approximation of ice velocities in areas where SIA applicable.
-
-- number of vertical levels and padding of the vertical grid
 
 .. _sec-bp-pc-grid-padding:
 
@@ -678,10 +740,10 @@ so that the mesh hierarchy containing `k` levels will include levels with
 nodes in the `z` direction.
 
 This means that for a given :config:`stress_balance.blatter.coarsening_factor` and number
-of multigrid levels ``-bp_pc_mg_levels k`` the value of
-:config:`stress_balance.blatter.Mz` cannot be chosen at random. If the parameter
-:config:`stress_balance.blatter.n_levels` is set, PISM will choose the smallest number
-`M_z` exceeding :config:`stress_balance.blatter.Mz` what has the form :eq:`eq-bp-mz`.
+of multigrid levels ``-bp_pc_mg_levels k`` the value of `M_z` cannot be chosen at random.
+If the parameter :config:`stress_balance.blatter.n_levels` is set, PISM will choose the
+smallest number `M_z` exceeding :config:`stress_balance.blatter.Mz` what has the form
+:eq:`eq-bp-mz`.
 
 .. _sec-bp-pc-options:
 
@@ -719,6 +781,19 @@ An "aggressive" (i.e. greater than 2) coarsening factor may work well. Use
 See :ref:`sec-bp-pc-grid-padding` for the discussion of the relationship between the
 number of vertical levels, number of multigrid levels, and the coarsening factor.
 
+Set
+
+.. code-block:: bash
+
+   -bp_mg_coarse_pc_type gamg
+
+to use PETSc's GAMG on the coarsest multigrid level.
+
+.. note::
+
+   It would be interesting to compare different preconditioning options on the coarsest MG
+   level (GAMG, Hypre, BoomerAMG, ...).
+
 .. _sec-bp-pc-implementation:
 
 Additional code needed to support geometric multigrid
@@ -753,7 +828,7 @@ solution, then use it as an initial guess for the next solve with a reduced
 
    Not implemented yet.
 
-.. _sec-bp-mesh-structure:
+.. _sec-bp-mesh:
 
 Model domain and mesh structure
 ###############################
@@ -771,7 +846,8 @@ The domain is
 where `[x_{\text{min}}, x_{\text{max}}] \times [y_{\text{min}}, y_{\text{max}}]` is the
 "map plane" domain corresponding to the maximum ice extent, `z_{\text{min}}` is the bottom
 ice surface elevation (equal to bed elevation where ice is grounded and determined using
-sea level, ice thickness, and the floatation criterion where floating).
+sea level, ice thickness, and the floatation criterion where floating) and `s` is the top
+surface elevation (i.e. ice thickness `H = s - z_{\text{min}}`).
 
 Coordinates of the mesh nodes have the form
 
@@ -809,19 +885,19 @@ boundaries we compute the "type" of each node in the mesh. Given a threshold `\H
 
    Only elements containing ice are included in the residual and Jacobian evaluation.
 
-Exterior elements are treated as Dirichlet BC locations with the zero `(0, 0)` velocity
-prescribed.
+We prescribe zero `(0, 0)` velocity at exterior nodes by marking them as Dirichlet BC
+locations.
 
-In order to prescribe stress boundary conditions at ice margins we need to identify
-element faces that are in the "Neumann" part of the boundary.
+In addition to this, we need to identify vertical faces of elements at :ref:`lateral
+boundaries <sec-bp-bc-lateral>`.
 
-   An element face is a part of the Neumann boundary is all four of its nodes are
+   An element face is a part of the lateral boundary if all four of its nodes are
    *boundary* nodes.
 
 .. _sec-bp-inputs-outputs:
 
 Solver inputs and outputs
-%%%%%%%%%%%%%%%%%%%%%%%%%
+#########################
 
 The BP solver uses the following inputs:
 
@@ -833,8 +909,8 @@ The BP solver uses the following inputs:
 
 And provides the following outputs:
 
-- `u` and `v` components of ice velocity on the `\sigma` vertical grid (saved to output
-  files to be used as an initial guess later)
+- `u` and `v` components of ice velocity at the :ref:`nodes of the mesh <sec-bp-mesh>`
+  (saved to output files to be used as an initial guess later)
 - vertically-averaged `u` and `v` (used in the mass continuity step, i.e. to update ice
   geometry)
 - basal frictional heating (used to couple stress balance to energy conservation)
@@ -842,12 +918,12 @@ And provides the following outputs:
 .. _sec-bp-computation-steps:
 
 Steps performed by the solver
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#############################
 
 #. Compute ice bottom elevation.
 #. Compute floatation function `f` (`f \le 0` if ice is grounded, `f > 0` if floating).
 #. Compute :ref:`node type <sec-bp-ice-extent>`.
-#. Compute ice hardness on the `\sigma` grid.
+#. Compute ice hardness at the :ref:`nodes of the mesh <sec-bp-mesh>`.
 #. Call PETSc's ``SNESSolve()``.
 #. Extract basal velocity and compute basal frictional heating.
 #. Compute vertically-averaged ice velocity.
@@ -855,14 +931,26 @@ Steps performed by the solver
 .. _sec-bp-pism-integration:
 
 Integration with the rest of PISM
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#################################
+
+.. _sec-bp-pism-time-stepping:
+
+Time stepping
+%%%%%%%%%%%%%
 
 PISM's explicit in time mass continuity code is *conditionally stable*. When used with the
 SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
 criterion :cite:`MortonMayers` and the maximum diffusivity of the SIA flow
 :cite:`BBssasliding`. This time step restriction does not disappear when the same mass
-continuity code is used with a stress balance model that does not explicitly compute
-"advective" and "diffusive" parts of the flow. We need a work-around.
+continuity code is used with a different stress balance model like BP that does not
+explicitly compute "advective" and "diffusive" parts of the flow. We need a work-around.
+
+.. note::
+
+   Very little is known about stability of explicit time stepping methods of the mass
+   continuity equation coupled to a "generic" stress balance model.
+
+   We don't have a rigorous justification for the approach described below.
 
 When this BP solver is coupled to PISM, the vertically-averaged ice velocity is used in
 place of the "advective" ("sliding") velocity from the SSA. As a result, the CFL-based
@@ -884,9 +972,16 @@ We solve this for the diffusivity `D`:
 .. math::
    :label: eq-bp-max-diffusivity
 
-   D = \frac{H\, \bar{\U}}{|\nabla s| + \epsilon}
+   D = \frac{H\, |\bar{\U}|}{|\nabla s| + \epsilon}
+
+.. FIXME: talk about \epsilon.
 
 and use the maximum of this quantity for adaptive time stepping.
+
+.. _sec-bp-pism-energy-conservation:
+
+Conservation of energy
+%%%%%%%%%%%%%%%%%%%%%%
 
 Coupling to PISM's energy balance models requires
 
@@ -964,7 +1059,6 @@ Verification test XZ
    section 4.2 (again, we use Dirichlet BC at lateral boundaries instead of Robin
    conditions stated in the paper).
 
-
    See :cite:`Tezaur2015` and the code in ``src/stressbalance/blatter/verification`` for
    details.
 
@@ -972,6 +1066,8 @@ Verification test XZ
 
 Verification test XZ-CFBC
 #########################
+
+This setup tests the "calving front boundary condition" (CFBC).
 
 :Exact solution:
    .. math::
