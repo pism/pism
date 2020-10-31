@@ -89,14 +89,24 @@ double grid_z(double b, double H, int Mz, int k) {
 /*!
  * Compute the padding needed to allow for `n_levels` of coarsening.
  *
- * @param[in] N number of grid points (nodes)
+ * @param[in] Mz number of grid points (nodes)
  * @param[in] factor coarsening factor
  * @param[in] n_levels number of coarsening levels
  *
  * @return padding amount
  */
-int grid_padding(int N, int factor, int n_levels) {
-  return N - ((int)pow(factor, n_levels) + 1);
+int grid_padding(int Mz, int factor, int n_levels) {
+  if (n_levels < 1) {
+    return 0;
+  }
+
+  int
+    n = pow(factor, n_levels - 1),
+    mz = 1;
+  while (mz < Mz) {
+    mz += n;
+  }
+  return mz - Mz;
 }
 
 /* Transpose a DMDALocalInfo structure to map from PETSc's ordering to PISM's order needed
