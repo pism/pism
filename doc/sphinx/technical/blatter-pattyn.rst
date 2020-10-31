@@ -160,9 +160,9 @@ We combine these and say that the weak form of :eq:`eq-bp` is
 where `\nabla s = ( s_x, s_y )`.
 
 The first term corresponds to :ref:`Neumann and Robin boundary conditions <sec-bp-bc>`; it
-vanishes "natural" BC `\left( \eta\, \E \right) \cdot \N = 0`. In the basal and lateral
-cases this stress is nonzero. The third one corresponds to the gravitational driving
-stress and is replaced by a compensatory term in :ref:`verification tests
+vanishes for "natural" BC `\left( \eta\, \E \right) \cdot \N = 0`. In the basal and
+lateral cases this stress is nonzero. The third one corresponds to the gravitational
+driving stress and is replaced by a compensatory term in :ref:`verification tests
 <sec-bp-testing-verification>` that use manufactured solutions.
 
 .. _sec-bp-bc:
@@ -341,7 +341,8 @@ Then the problem is
      {\Id \nabla \psi_i \cdot \eta\, \E} +
      {\Id \psi_i\, \rho\, g\, \nabla s} = 0
 
-holds for all `i = 1,\dots,N`, where `N` is the number of nodes in the mesh.
+holds for all `i = 1,\dots,N`, where `N` is the number of nodes in the mesh, subject to
+the :ref:`boundary conditions <sec-bp-bc>`.
 
 As in section 3 of :cite:`BrownSmithAhmadia2013`, we write the discretization of
 :eq:`eq-bp-weak-form` as an algebraic system `F(U) = 0` with Jacobian `J(U)` and solve
@@ -655,9 +656,9 @@ to the `2 \times 2` identity matrix.
 
 .. note::
 
-   It may be interesting to see if varying the scaling of residual and Jacobian entries at
-   Dirichlet nodes affects the condition number of the Jacobian matrix. See the variable
-   ``scaling`` in the code and set
+   It may be interesting to see if varying the scaling of Jacobian entries at Dirichlet
+   nodes affects the condition number of the Jacobian matrix. See the variable ``scaling``
+   in the code and set
 
    .. code-block:: bash
 
@@ -841,13 +842,13 @@ The domain is
 
    y &\in [y_{\text{min}}, y_{\text{max}}],
 
-   z &\in [z_{\text{min}}, s],
+   z &\in [z_{\text{min}}, z_{\text{min}} + H],
 
 where `[x_{\text{min}}, x_{\text{max}}] \times [y_{\text{min}}, y_{\text{max}}]` is the
 "map plane" domain corresponding to the maximum ice extent, `z_{\text{min}}` is the bottom
 ice surface elevation (equal to bed elevation where ice is grounded and determined using
-sea level, ice thickness, and the floatation criterion where floating) and `s` is the top
-surface elevation (i.e. ice thickness `H = s - z_{\text{min}}`).
+sea level, ice thickness, and the floatation criterion where floating) and `H` is the ice
+thickness.
 
 Coordinates of the mesh nodes have the form
 
@@ -858,13 +859,13 @@ Coordinates of the mesh nodes have the form
 
    y_j &= y_{\text{min}} + j \cdot \Delta y,
 
-   z_k &= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1},
+   z_k &= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.
 
-where `H` is the ice thickness. Each element's projection onto the plane `z = 0` is a
-rectangle with sides `\Delta x` and `\Delta y`, but the spacing between nodes in the
-vertical direction is *not* constant: each vertical column of nodes contains `M_z` nodes
-with the spacing of `H / (M_z - 1)`. This mesh structure is *exactly the same* as the one
-used in :cite:`BrownSmithAhmadia2013` and CISM 2.1 :cite:`Lipscomb2019`.
+Each element's projection onto the plane `z = 0` is a rectangle with sides `\Delta x` and
+`\Delta y`, but the spacing between nodes in the vertical direction is *not* constant:
+each vertical column of nodes contains `M_z` nodes with the spacing of `H / (M_z - 1)`.
+This mesh structure is *exactly the same* as the one used in :cite:`BrownSmithAhmadia2013`
+and CISM 2.1 :cite:`Lipscomb2019`.
 
 .. _sec-bp-ice-extent:
 
