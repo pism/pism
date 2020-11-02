@@ -115,7 +115,48 @@ if __name__ == "__main__":
 
     print(u.shape)
 
-# check if shapes of elements play a role in this by changing the bed topography to match
-# surface elevation (i.e. use constant ice thickness)
-
-# try changing ice hardness and see what effect it has
+# try
+#
+# - refinement in x
+#
+# - refinement in z
+#
+# - changing ice hardness
+#
+# - changing the Glen exponent
+#
+# - changing the viscosity regularization parameter
+#
+# - changing the basal yield stress
+#
+# - extending the ice at grounded margins by an extra (very thin) "buffer", moving the
+#   margin by 1 grid point and reducing the thickness of the ice at the margin (sort of
+#   like the implementation in MALI)
+#
+# - changing bed topography and ice thickness (keeping surface elevation constant) so that
+#   all elements have approximately the same shape (right now elements at the margin are
+#   more deformed than the ones near the dome)
+#
+# - solving the same problem, but with the surface gradient computed *analytically* at
+#   quadrature points
+#
+# - changing the number of quadrature points
+#
+# - Observing the maximum dh/dx as the grid is refined in x. Is there a relationship
+#   between max. slope and the presence (absence) of the spike?
+#
+# - it looks like element distortion plays a role. I need to check if ice thicknesses such
+#   that H_{n+1} <= 0.75 H_n *in the middle of the domain* cause issues. This would
+#   indicate that lateral BC (and the accuracy of prescribing it) does not explain the
+#   spike in ice speed at the margin.
+#
+# - I need to make sure that the lateral BC is correct: the BP model has the cryostatic
+#   pressure built in, so I'm not sure we need to have it in the BC. Gotta check this.
+#
+# - I need to add a flag that toggles using the lateral BC at grounded margins.
+#
+# - I need to set up an X-Z test using the van der Veen profile. In this case I have exact
+#   SSA velocities corresponding to the (known to be correct) lateral BC for the SSA
+#   system. The BP solution should be close to the SSA. This should tell me if the BP
+#   lateral BC I have are wrong (in the sense of "using the right equations", not
+#   "correctly implementing chosen equations").
