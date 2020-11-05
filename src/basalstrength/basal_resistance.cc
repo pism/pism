@@ -171,8 +171,8 @@ double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double v
 //! Compute the drag coefficient and its derivative with respect to @f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) @f$
 /**
  * @f{align*}{
- * \beta &= \frac{\tau_{c}}{u_{\text{threshold}}}\cdot (|u|^{2})^{\frac{q-1}{2}} \\
- * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= \frac{\tau_{c}}{u_{\text{threshold}}}\cdot \frac{q-1}{2}\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} - 1}\cdot 2 \\
+ * \beta &= \frac{\tau_{c}}{u_{\text{threshold}}^q}\cdot (|u|^{2})^{\frac{q-1}{2}} \\
+ * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= \frac{\tau_{c}}{u_{\text{threshold}}^q}\cdot \frac{q-1}{2}\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} - 1}\cdot 2 \\
  * &= \frac{q-1}{|\mathbf{u}|^{2}}\cdot \beta(\mathbf{u}) \\
  * @f}
  */
@@ -193,5 +193,80 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
   }
 
 }
+
+
+
+/* Regularized Coulomb */
+
+IceBasalResistanceRegularizedLaw::IceBasalResistanceRegularizedLaw(const Config &config)
+  : IceBasalResistancePlasticLaw(config) {
+  m_pseudo_q = config.get_number("basal_resistance.pseudo_plastic.q");
+  m_pseudo_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
+  m_sliding_scale_factor_reduces_tauc = config.get_number("basal_resistance.pseudo_plastic.sliding_scale_factor");
+}
+
+IceBasalResistanceRegularizedLaw::~IceBasalResistanceRegularizedLaw() {
+  // empty
+}
+
+void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,
+                                                    int threshold,
+                                                    units::System::Ptr system) const {
+
+    log.message(threshold,
+                 "Using regularized Coulomb till with eps = %10.5e m year-1, q = %.4f,"
+                 " and u_threshold = %.2f m year-1.\n",
+                 units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
+                 m_pseudo_q,
+                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
+  
+}
+
+
+
+double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy) const {
+  const double magreg2sqr = pow(square(m_plastic_regularize) + square(vx) + square(vy),0.5),
+               adjfactor  = pow(2.0,m_pseudo_q);
+
+  if (m_sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
+    return (tauc / Aq) * adjfactor * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+  } else {
+    return tauc * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+  }
+}
+
+
+//! Compute the drag coefficient and its derivative with respect to @f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) @f$
+/**
+ * @f{align*}{
+ * \beta &= \frac{\tau_{c}}{ \left( (|u|^{2})^{\frac12} + u_{\text{threshold}} \right)^{q} }\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2}} \\
+ * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= \frac{\tau_{c}}{ \left( (|\mathbf{u}|^{2})^{\frac12} + u_{\text{threshold}}\right)^{q} }\cdot \frac{q-1}{2}\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} - 1}\cdot 2  -  \frac{\tau_{c}}{ \left( (|\mathbf{u}|^{2})^{\frac12} + u_{\text{threshold}}\right)^{q+1} }\cdot \frac{2 \cdot q }{(|\mathbf{u}|^{2})^{\frac12}} \cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} }    \\
+ * &= \left( \frac{q-1}{|\mathbf{u}|^{2}} - \frac{q}{|\mathbf{u}| \cdot ( |\mathbf{u}| + u_{\text{threshold}}) }    \right) \cdot \beta(\mathbf{u})\\
+ * @f}
+ * It should be noted, that in the original equation (3) in Zoet et al., 2020 the exponent @f$ q=1/p @f$ is used. 
+ * Otherwise, same parameter are used as in the pseudo-plastic case, namely m_pseudo_q, m_pseudo_u_threshold and m_sliding_scale_factor_reduces_tauc. 
+ * Also, a constant adjustment factor is used here, such that for @f$ |\mathbf{u}| = u_{\text{threshold}} @f$ we obtain the same drag as in the pseudo plastic case.
+ */ 
+void IceBasalResistanceRegularizedLaw::drag_with_derivative(double tauc, double vx, double vy,
+                                                              double *beta, double *dbeta) const
+{
+  const double magreg2    = square(m_plastic_regularize) + square(vx) + square(vy),
+               magreg2sqr = pow(magreg2,0.5),
+               adjfactor  = pow(2.0,m_pseudo_q);;
+
+  if (m_sliding_scale_factor_reduces_tauc > 0.0) {
+    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
+    *beta = (tauc / Aq) * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+  } else {
+    *beta =  tauc * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+  }
+
+  if (dbeta) {
+    *dbeta = ( ( (m_pseudo_q - 1) / magreg2 ) - ( m_pseudo_q / ( magreg2sqr * (magreg2sqr + m_pseudo_u_threshold) ) ) ) * (*beta);
+  }
+
+}
+
 
 } // end of namespace pism
