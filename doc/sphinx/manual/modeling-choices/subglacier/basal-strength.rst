@@ -154,6 +154,33 @@ where `C` is a constant, as for example in sections :ref:`sec-MISMIP` and
    -yield_stress constant \
    -tauc C
 
+
+Also the slip law by :cite:`ZoetIverson20` is implemented, that combines processes of hard-bedded sliding (Coulomb behavior) 
+and viscous bed deformation, without required knowledge of the bed type, approximated by
+
+.. math::
+   :label: eq-regularizedcoulomb
+
+   \boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{ \left( |\mathbf{u}| + u_{\text{threshold}} \right)^{q} |\mathbf{u}|^{1-q}},
+
+
+In the original equation (3) in :cite:`ZoetIverson20` the exponent `q=1/p` is used. Otherwise, same configuration parameters 
+can be used as in the pseudo-plastic case, but they should have different values, namely `q`=0.2, `u_{\text{threshold}}`=40-80 m/year`:
+
+
+.. code-block:: none
+
+   -regularized_coulomb \
+   -pseudo_plastic_q 0.2 \
+   -pseudo_plastic_uthreshold 50.0 
+
+
+The model's performance should be close to the pseudo-plastic implementation (Eq. :eq:`eq-pseudoplastic`), 
+although there ought to be slightly more fast sliding, and a less diffuse onset of sliding.
+
+
+
+
 .. _sec-lateral-drag:
 
 Lateral drag

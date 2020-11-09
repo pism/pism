@@ -225,17 +225,15 @@ void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,
 
 
 double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy) const {
-  const double magreg2sqr = pow(square(m_plastic_regularize) + square(vx) + square(vy),0.5),
-               adjfactor  = pow(2.0,m_pseudo_q);
-
+  const double magreg2sqr = sqrt(square(m_plastic_regularize) + square(vx) + square(vy));
+  
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    return (tauc / Aq) * adjfactor * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    return (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
   } else {
-    return tauc * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    return tauc * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
   }
 }
-
 
 //! Compute the drag coefficient and its derivative with respect to @f$ \alpha = \frac 1 2 (u_x^2 + u_y^2) @f$
 /**
@@ -244,28 +242,25 @@ double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy)
  * \diff{\beta}{\frac12 |\mathbf{u}|^{2}} &= \frac{\tau_{c}}{ \left( (|\mathbf{u}|^{2})^{\frac12} + u_{\text{threshold}}\right)^{q} }\cdot \frac{q-1}{2}\cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} - 1}\cdot 2  -  \frac{\tau_{c}}{ \left( (|\mathbf{u}|^{2})^{\frac12} + u_{\text{threshold}}\right)^{q+1} }\cdot \frac{2 \cdot q }{(|\mathbf{u}|^{2})^{\frac12}} \cdot (|\mathbf{u}|^{2})^{\frac{q-1}{2} }    \\
  * &= \left( \frac{q-1}{|\mathbf{u}|^{2}} - \frac{q}{|\mathbf{u}| \cdot ( |\mathbf{u}| + u_{\text{threshold}}) }    \right) \cdot \beta(\mathbf{u})\\
  * @f}
+ * Same parameters are used as in the pseudo-plastic case, namely @f$ q, u_{\text{threshold}}, A_q @f$.
  * It should be noted, that in the original equation (3) in Zoet et al., 2020 the exponent @f$ q=1/p @f$ is used. 
- * Otherwise, same parameter are used as in the pseudo-plastic case, namely m_pseudo_q, m_pseudo_u_threshold and m_sliding_scale_factor_reduces_tauc. 
- * Also, a constant adjustment factor is used here, such that for @f$ |\mathbf{u}| = u_{\text{threshold}} @f$ we obtain the same drag as in the pseudo plastic case.
  */ 
 void IceBasalResistanceRegularizedLaw::drag_with_derivative(double tauc, double vx, double vy,
                                                               double *beta, double *dbeta) const
 {
   const double magreg2    = square(m_plastic_regularize) + square(vx) + square(vy),
-               magreg2sqr = pow(magreg2,0.5),
-               adjfactor  = pow(2.0,m_pseudo_q);;
-
+               magreg2sqr = sqrt(magreg2);
+  
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    *beta = (tauc / Aq) * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    *beta = (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
   } else {
-    *beta =  tauc * adjfactor *pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
+    *beta =  tauc * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
   }
 
   if (dbeta) {
     *dbeta = ( ( (m_pseudo_q - 1) / magreg2 ) - ( m_pseudo_q / ( magreg2sqr * (magreg2sqr + m_pseudo_u_threshold) ) ) ) * (*beta);
   }
-
 }
 
 

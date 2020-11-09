@@ -388,7 +388,7 @@ netcdf pism_config {
     pism_config:basal_resistance.pseudo_plastic.u_threshold_units = "meter / year";
 
     pism_config:basal_resistance.regularized_coulomb.enabled = "no";
-    pism_config:basal_resistance.regularized_coulomb.enabled_doc = "Use the regularized Coulomb till friction model (basal sliding law) as in equation (3) in Zoet et al., Science 368, 76–78 (2020).";
+    pism_config:basal_resistance.regularized_coulomb.enabled_doc = "Use the regularized Coulomb till friction model (basal sliding law) as in equation (3) in :cite:`ZoetIverson20`";
     pism_config:basal_resistance.regularized_coulomb.enabled_option = "regularized_coulomb";
     pism_config:basal_resistance.regularized_coulomb.enabled_type = "flag";
 
