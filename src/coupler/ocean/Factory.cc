@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2023 PISM Authors
+/* Copyright (C) 2015--2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,6 +30,7 @@
 #include "pism/coupler/ocean/Frac_MBP.hh"
 #include "pism/coupler/ocean/Frac_SMB.hh"
 #include "pism/coupler/ocean/ISMIP6.hh"
+#include "pism/coupler/ocean/ISMIP6_NL.hh"
 #include "pism/coupler/ocean/Runoff_SMB.hh"
 #include "pism/coupler/ocean/Cache.hh"
 #include "pism/coupler/ocean/GivenTH.hh"
@@ -47,6 +48,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   add_model<Pico>("pico");
   add_model<Given>("given");
   add_model<ISMIP6>("ismip6");
+  add_model<ISMIP6nl>("ismip6nl");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");

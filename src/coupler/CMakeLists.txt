@@ -34,6 +34,7 @@ add_library (boundary OBJECT
   ./ocean/GivenClimate.cc
   ./ocean/GivenTH.cc
   ./ocean/ISMIP6.cc
+  ./ocean/ISMIP6_NL.cc
   ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
