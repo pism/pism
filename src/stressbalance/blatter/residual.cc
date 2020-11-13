@@ -176,6 +176,13 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
                                const double *z_nodal,
                                const double *sl_nodal,
                                Vector2 *residual) {
+  // FIXME: so far it seems like I need to apply lateral BC at marine margins and *not* at
+  // grounded margins.
+  //
+  // Tests I'm working on use grounded setups and so (for now) I'm disabling lateral BC
+  // altogether.
+  return;
+
   double
     *z         = m_work[0],
     *s         = m_work[1],
