@@ -33,11 +33,18 @@ def H(H_max, R_max, r):
     else:
         return 0.0
 
-def H0(H_max, R_max, r):
-    return H_max * np.sqrt(max(1.0 - (r / R_max)**2, 0.0))
+def H1(H_max, R_max, r):
+    n = 4.0 / 3.0
+    return H_max * np.sqrt(max(1.0 - (r / R_max)**n, 0.0))
+
+def H2(H_max, R_max, r):
+    if r < 0.5 * R_max:
+        return 0.5 * H_max
+    else:
+        return H_max * max(1.0 - r / R_max, 0.0)
 
 def allocate(Mx, Mz):
-    H_max = 1000.0
+    H_max = 500.0
     R_max = 750e3
 
     P = PISM.GridParameters(config)
