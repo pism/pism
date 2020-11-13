@@ -23,4 +23,8 @@ Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, 
 
 Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, double g);
 
+Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, double rho_i, double g, double B);
+
+Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B);
+
 } // end of namespace pism

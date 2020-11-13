@@ -53,10 +53,12 @@ def main(header=False):
     import test_xy
     import test_xz
     import test_xz_cfbc
+    import test_xz_halfar
 
     test_xy.print_code(header)
     test_xz.print_code(header)
     test_xz_cfbc.print_code(header)
+    test_xz_halfar.print_code(header)
 
     print("")
     print("} // end of namespace pism")
