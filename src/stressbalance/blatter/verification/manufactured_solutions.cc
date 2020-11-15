@@ -188,4 +188,28 @@ Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, dou
   };
 }
 
+Vector2 blatter_xz_halfar_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B)
+{
+  double x0 = pow(B, -3);
+  double x1 = pow(H_0, 3);
+  double x2 = pow(g, 3);
+  double x3 = pow(rho_i, 3);
+  double x4 = pow(H_0, 4);
+  double x5 = pow(R_0, -4.0/3.0);
+  double x6 = pow(x, 4.0/3.0);
+  double x7 = -x5*x6 + 1;
+  double x8 = pow(x7, 12.0/7.0);
+  double x9 = H_0*pow(x7, 3.0/7.0) - z;
+  double x10 = x0*x1*x2*x3*(x4*x8 - pow(x9, 4));
+  double x11 = 1/(pow(R_0, 4)*x8);
+  double x12 = x10*x11;
+  double x13 = x10*x6/(pow(R_0, 16.0/3.0)*pow(x7, 19.0/7.0));
+  double x14 = (16.0/7.0)*cbrt(x)*x5;
+  double x15 = x*x0*x1*x11*x2*x3*(H_0*x14*pow(x9, 3)/pow(x7, 4.0/7.0) - x14*x4*pow(x7, 5.0/7.0));
+  return {
+    (1.0/2.0)*B*((128.0/343.0)*x12 + (2048.0/2401.0)*x13 + (128.0/343.0)*x15)/cbrt(pow((32.0/343.0)*x12 + (512.0/2401.0)*x13 + (32.0/343.0)*x15, 2) + (4096.0/117649.0)*pow(H_0, 6)*pow(g, 6)*pow(rho_i, 6)*pow(x, 2)*pow(x9, 6)/(pow(B, 6)*pow(R_0, 8)*pow(x7, 24.0/7.0))),
+    0.0
+  };
+}
+
 } // end of namespace pism

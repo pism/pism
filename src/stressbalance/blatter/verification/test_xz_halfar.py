@@ -1,11 +1,15 @@
 import sympy
 from sympy import S
 
-from blatter import x, y, z, B, source_term, eta
+from blatter import x, y, z, B, source_term, eta, M
 from manufactured_solutions import define, declare
 
 sympy.var("R_0 H_0 t_0 t s rho_i g C_0 C_1 C_2", positive=True)
 h = sympy.Function("h", positive=True)(x)
+
+nx, ny, nz = sympy.var("n_(x:z)")
+
+N = sympy.Matrix([nx, ny, nz])
 
 # Glen exponents n
 n = 3
@@ -44,11 +48,16 @@ def exact():
 
     return u0, v0
 
+def lateral_bc(u0, v0):
+
+    return (eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 1, ny: 0, nz : 0}), 0.0
+
 def print_code(header=False):
     args = ["x", "z", "H_0", "R_0", "rho_i", "g", "B"]
     if header:
         declare(name="blatter_xz_halfar_exact", args=args)
         declare(name="blatter_xz_halfar_source", args=args)
+        declare(name="blatter_xz_halfar_lateral", args=args)
         return
 
     u0, v0 = exact()
@@ -58,3 +67,7 @@ def print_code(header=False):
     f_u, f_v = source_term(eta(u0, v0, n), u0, v0)
     f_u = f_u.subs(definitions).doit()
     define(f_u, f_v, name="blatter_xz_halfar_source", args=args)
+
+    f_u, f_v = lateral_bc(u0, v0)
+    f_u = f_u.subs(definitions).doit()
+    define(f_u, f_v, name="blatter_xz_halfar_lateral", args=args)
