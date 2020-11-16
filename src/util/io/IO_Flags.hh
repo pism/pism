@@ -39,7 +39,8 @@ enum IO_Type {
 };
 
 enum IO_Backend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_PARALLEL, PISM_PNETCDF,
-                 PISM_PIO_PNETCDF, PISM_PIO_NETCDF, PISM_PIO_NETCDF4C, PISM_PIO_NETCDF4P};
+                 PISM_PIO_PNETCDF, PISM_PIO_NETCDF, PISM_PIO_NETCDF4C, PISM_PIO_NETCDF4P,
+                 PISM_CDI};
 
 // This is a subset of NetCDF file modes. Use values that don't match
 // NetCDF flags so that we can detect errors caused by passing these

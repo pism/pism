@@ -29,6 +29,7 @@
 #include <netcdf.h>
 
 #include "pism_type_conversion.hh"
+#include "pism_cdi_type_conversion.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 

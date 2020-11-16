@@ -33,6 +33,10 @@
 #include <pio.h>
 #endif
 
+#if (Pism_USE_CDI==1)
+#include <cdi.h>
+#endif
+
 namespace pism {
 
 class Context::Impl {

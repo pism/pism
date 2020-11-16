@@ -78,6 +78,9 @@ IO_Backend string_to_backend(const std::string &backend) {
   if (backend == "pio_netcdf4p") {
     return PISM_PIO_NETCDF4P;
   }
+  if (backend == "cdi") {
+    return PISM_CDI;
+  }
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %s", backend.c_str());
 }
@@ -140,6 +143,11 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
   }
 #else
   (void) iosysid;               // silence a compiler warning
+#endif
+#if (Pism_USE_CDI==1)
+  if (backend == PISM_CDI) {
+    return io::NCFile::Ptr(new io::CDI(com));
+  }
 #endif
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %d", backend);
