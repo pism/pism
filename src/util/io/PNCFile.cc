@@ -23,6 +23,7 @@
 #include "PNCFile.hh"
 
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
+#include "pism_cdi_type_conversion.hh"
 
 #include "pism/util/error_handling.hh"
 

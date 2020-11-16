@@ -31,6 +31,7 @@
 #include "pism/util/error_handling.hh"
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+#include "pism_cdi_type_conversion.hh"
 
 namespace pism {
 namespace io {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2014, 2015, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,7 +39,8 @@ enum IO_Type {
 };
 
 enum IO_Backend {PISM_GUESS, PISM_NETCDF3, PISM_NETCDF4_SERIAL, PISM_NETCDF4_PARALLEL,
-  PISM_PNETCDF, PISM_PIO_PNETCDF, PISM_PIO_NETCDF, PISM_PIO_NETCDF4C, PISM_PIO_NETCDF4P};
+                 PISM_PNETCDF, PISM_PIO_PNETCDF, PISM_PIO_NETCDF, PISM_PIO_NETCDF4C, PISM_PIO_NETCDF4P,
+                 PISM_CDI};
 
 // This is a subset of NetCDF file modes. Use values that don't match
 // NetCDF flags so that we can detect errors caused by passing these

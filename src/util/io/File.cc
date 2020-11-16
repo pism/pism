@@ -68,6 +68,7 @@ IO_Backend string_to_backend(const std::string &backend) {
      {"pio_netcdf4p", PISM_PIO_NETCDF4P},
      {"pio_pnetcdf", PISM_PIO_PNETCDF},
      {"pnetcdf", PISM_PNETCDF},
+     {"cdi", PISM_CDI},
   };
 
   if (backends.find(backend) != backends.end()) {
@@ -165,11 +166,13 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 #else
     break;
 #endif
-
+#if (Pism_USE_CDI==1)
+  case PISM_CDI:
+    return io::NCFile::Ptr(new io::CDI(com));
+#endif
   case PISM_GUESS:
     break;
   } // end of switch (backend)
-
 
   auto backend_name = backend_to_string(backend);
 
