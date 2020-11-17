@@ -114,6 +114,7 @@ protected:
 
   // new functions empty because of CDI class
   void create_grid_impl(int lengthx, int lengthy) const;
+  void define_timestep_impl(int tsID) const;
 
 private:
   std::vector<std::string> m_mpi_io_hints;

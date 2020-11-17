@@ -492,7 +492,7 @@ void ParallelIO::create_grid_impl(int lengthx, int lengthy) const {
   (void) lengthy;
 }
 
-void ParallelIO::new_timestep(int tsID) const {
+void ParallelIO::define_timestep_impl(int tsID) const {
   (void) tsID;
 }
 
