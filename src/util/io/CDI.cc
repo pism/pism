@@ -265,7 +265,7 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
 	m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
 }
 
-void CDI::new_timestep(int tsID) const {
+void CDI::define_timestep_impl(int tsID) const {
 	streamDefTimestep(m_file_id, tsID);
 }
 

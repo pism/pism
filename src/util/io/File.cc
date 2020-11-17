@@ -811,7 +811,7 @@ void File::new_grid(int lengthx, int lengthy) const {
   try {
     m_impl->nc->create_grid(lengthx, lengthy);
   } catch (RuntimeError &e) {
-    e.add_context("getting the name of %d-th variable in '%s'", id, filename().c_str());
+    e.add_context("setting a new grid in '%s'", filename().c_str());
     throw;
   }
 }
@@ -820,7 +820,7 @@ void File::new_timestep(int tsID) const {
   try {
     m_impl->nc->define_timestep(tsID);
   } catch (RuntimeError &e) {
-    e.add_context("getting the name of %d-th variable in '%s'", id, filename().c_str());
+    e.add_context("setting a new timestep in '%s'", filename().c_str());
     throw;
   }
 }
