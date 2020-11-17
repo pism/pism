@@ -80,6 +80,8 @@ public:
 
   void set_time_independent(bool flag);
   void set_output_type(IO_Type type);
+  void set_written(bool flag) const;
+  bool get_written() const;
 
   void clear_all_doubles();
   void clear_all_strings();
@@ -125,6 +127,7 @@ private:
   bool m_time_independent;
 
   IO_Type m_output_type;
+  mutable bool m_written;
 };
 
 bool set_contains(const std::set<std::string> &S, const VariableMetadata &field);

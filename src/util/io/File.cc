@@ -187,6 +187,21 @@ File::~File() {
   delete m_impl;
 }
 
+void File::set_dimatt() const {
+  m_dimatt[std::string("x")] = std::string("not written");
+  m_dimatt[std::string("y")] = std::string("not written");
+  m_dimatt[std::string("zb")] = std::string("not written");
+  m_dimatt[std::string("z")] = std::string("not written");
+}
+
+std::string File::get_dimatt_value(std::string &dim_name) const {
+  return m_dimatt[dim_name];
+}
+
+void File::set_dimatt_value(std::string &dim_name, std::string &dimatt_value) const {
+  m_dimatt[dim_name] = dimatt_value;
+}
+
 MPI_Comm File::com() const {
   return m_impl->com;
 }

@@ -234,7 +234,7 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
-
+  file.set_dimatt();
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
