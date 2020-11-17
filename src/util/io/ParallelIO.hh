@@ -106,6 +106,11 @@ protected:
   void set_fill_impl(int fillmode, int &old_modep) const;
 
   void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
+  // new functions empty because of CDI class
+  void create_grid_impl(int lengthx, int lengthy) const;
+  void define_timestep_impl(int tsID) const;
+
 private:
   int m_iosysid;
   int m_iotype;

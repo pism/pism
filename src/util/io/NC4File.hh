@@ -101,6 +101,11 @@ protected:
   virtual void set_fill_impl(int fillmode, int &old_modep) const;
 
   virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
+  // new functions empty because of CDI class
+  virtual void create_grid_impl(int lengthx, int lengthy) const;
+  virtual void define_timestep_impl(int tsID) const;
+
 protected:
   virtual void set_access_mode(int varid, bool mapped) const;
   virtual void get_put_var_double(const std::string &variable_name,

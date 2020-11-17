@@ -146,6 +146,10 @@ public:
 
   void del_att(const std::string &variable_name, const std::string &att_name) const;
 
+  //new functions because of CDI class
+  void create_grid(int lengthx, int lengthy) const;
+  void define_timestep(int tsID) const;
+
 protected:
   // implementations:
 
@@ -225,6 +229,10 @@ protected:
   virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
 
   virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
+
+  //new functions because of CDI class
+  virtual void create_grid_impl(int lengthx, int lengthy) const = 0;
+  virtual void define_timestep_impl(int tsID) const = 0;
 
 protected:                      // data members
 

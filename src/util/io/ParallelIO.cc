@@ -487,5 +487,14 @@ int ParallelIO::get_varid(const std::string &variable_name) const {
   }
 }
 
+void ParallelIO::create_grid_impl(int lengthx, int lengthy) const {
+  (void) lengthx;
+  (void) lengthy;
+}
+
+void ParallelIO::new_timestep(int tsID) const {
+  (void) tsID;
+}
+
 } // end of namespace io
 } // end of namespace pism

@@ -36,6 +36,7 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_zID = -1;
 	m_zbID = -1;
 	m_zsID = -1;
+	m_tID = -1;
 }
 
 CDI::~CDI() {
@@ -60,6 +61,17 @@ void CDI::sync_impl() const {
 void CDI::close_impl() {
 	streamClose(m_file_id);
 	m_file_id = -1;
+	destroy_objs();
+}
+
+void CDI::destroy_objs() {
+	vlistDestroy(m_vlistID);
+	taxisDestroy(m_tID);
+	zaxisDestroy(m_zID);
+	zaxisDestroy(m_zbID);
+	zaxisDestroy(m_zsID);
+	gridDestroy(m_gridID);
+	m_varsID.clear();
 }
 
 void CDI::enddef_impl() const {
@@ -67,10 +79,6 @@ void CDI::enddef_impl() const {
 
 void CDI::redef_impl() const {
 }
-
-//void CDI::create_grid(int lengthx, int lengthy) {
-//	m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
-//}
 
 void CDI::def_dim_impl(const std::string &name, size_t length) const {
 	if (m_gridID != -1) {
@@ -86,7 +94,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length) const {
 		} else if (strcmp(name.c_str(),"zb")==0 && m_zbID==-1) {
 			m_zbID = zaxisCreate(ZAXIS_GENERIC, (int)length);
 			zaxisDefName(m_zbID,name.c_str());
-		} else if (strcmp(name.c_str(),"time")==0) {
+		} else if (strcmp(name.c_str(),"time")==0 && m_tID==-1) {
 			m_tID = taxisCreate(TAXIS_ABSOLUTE);
 		}
 		if (m_zsID == -1) {
@@ -251,6 +259,14 @@ void CDI::inq_atttype_impl(const std::string &variable_name,
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
 	(void) fillmode;
 	(void) old_modep;
+}
+
+void CDI::create_grid_impl(int lengthx, int lengthy) const {
+	m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
+}
+
+void CDI::new_timestep(int tsID) const {
+	streamDefTimestep(m_file_id, tsID);
 }
 
 
