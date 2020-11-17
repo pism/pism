@@ -22,6 +22,7 @@
 #include <vector>
 #include <string>
 #include <mpi.h>
+#include <map>
 
 #include "pism/util/Units.hh"
 #include "pism/util/io/IO_Flags.hh"
