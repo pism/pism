@@ -128,37 +128,13 @@ if __name__ == "__main__":
 #
 # - refinement in z
 #
-# - changing ice hardness
-#
-# - changing the Glen exponent
-#
-# - changing the viscosity regularization parameter
-#
-# - changing the basal yield stress
-#
-# - extending the ice at grounded margins by an extra (very thin) "buffer", moving the
-#   margin by 1 grid point and reducing the thickness of the ice at the margin (sort of
-#   like the implementation in MALI)
-#
 # - changing bed topography and ice thickness (keeping surface elevation constant) so that
 #   all elements have approximately the same shape (right now elements at the margin are
 #   more deformed than the ones near the dome)
 #
 # - solving the same problem, but with the surface gradient computed *analytically* at
-#   quadrature points
-#
-# - changing the number of quadrature points
-#
-# - Observing the maximum dh/dx as the grid is refined in x. Is there a relationship
-#   between max. slope and the presence (absence) of the spike?
-#
-# - it looks like element distortion plays a role. I need to check if ice thicknesses such
-#   that H_{n+1} <= 0.75 H_n *in the middle of the domain* cause issues. This would
-#   indicate that lateral BC (and the accuracy of prescribing it) does not explain the
-#   spike in ice speed at the margin.
-#
-# - I need to make sure that the lateral BC is correct: the BP model has the cryostatic
-#   pressure built in, so I'm not sure we need to have it in the BC. Gotta check this.
+#   quadrature points. Looks like using formulas (instead of FE basis expansions) for the
+#   surface gradient makes a difference.
 #
 # - I need to add a flag that toggles using the lateral BC at grounded margins.
 #
@@ -167,3 +143,24 @@ if __name__ == "__main__":
 #   system. The BP solution should be close to the SSA. This should tell me if the BP
 #   lateral BC I have are wrong (in the sense of "using the right equations", not
 #   "correctly implementing chosen equations").
+#
+#   It turns out that in the absence of basal drag the van der Veen SSA solution solves
+#   the BP system. In this case the solution is constant in depth, so the lateral boundary
+#   condition has to be constant in depth as well, i.e. my interpretation of the lateral
+#   BC is wrong (at least in this case).
+#
+#   The lateral BC I derived *differ* from SSA CFBC by a constant factor. I need to figure
+#   out why.
+#
+#   Also, I should use this to set up a verification test.
+#
+# - It looks like wiggles may show up at the onset of the flow as well as at the margin.
+#   Luckily this is (probably) a smaller issue. I need to set up a test to document this
+#   issue.
+#
+# - Next step: try using the eta transformation (like in SIAFD) to compute the surface
+#   gradient.
+#
+# - Element distortion does not appear to matter: the Halfar dome setup behaves relatively
+#   well, except for the fact that errors near the margin are large. No wiggles, though --
+#   as long as I use formulas to compute the surface gradient.
