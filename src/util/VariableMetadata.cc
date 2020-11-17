@@ -65,12 +65,20 @@ void VariableMetadata::set_time_independent(bool flag) {
   m_time_independent = flag;
 }
 
+void VariableMetadata::set_written(bool flag) const {
+  m_written = flag;
+}
+
 void VariableMetadata::set_output_type(IO_Type type) {
   m_output_type = type;
 }
 
 bool VariableMetadata::get_time_independent() const {
   return m_time_independent;
+}
+
+bool VariableMetadata::get_written() const {
+  return m_written;
 }
 
 IO_Type VariableMetadata::get_output_type() const {

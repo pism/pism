@@ -283,7 +283,6 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(file, grid.Mx(), var.get_x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});
-    file.write_attribute(x_name, "not_written", PISM_INT, {1.0});
   }
 
   // y
@@ -292,7 +291,6 @@ static void define_dimensions(const SpatialVariableMetadata& var,
     define_dimension(file, grid.My(), var.get_y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
                          {grid.y(1) - grid.y(0)});
-    file.write_attribute(y_name, "not_written", PISM_INT, {1.0});
   }
 
   // z
@@ -303,8 +301,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(file, nlevels, var.get_z());
-      file.write_attribute(z_name, "not_written", PISM_INT, {1.0});
-
+      
       bool spatial_dim = not var.get_z().get_string("axis").empty();
 
       if (nlevels > 1 and spatial_dim) {
@@ -328,11 +325,18 @@ static void define_dimensions(const SpatialVariableMetadata& var,
 
 static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
-  bool written = file.attribute_type(name, "not_written") == PISM_NAT;
+  bool written;
+  std::string nname = name;
+  std::string value = file.get_dimatt_value(nname);
+  std::string svalue = "written";
+  if (value.compare("written")==0) {
+    written = true;
+  } else {
+    written = false;
+  }
   if (not written) {
     file.write_variable(name, {0}, {(unsigned int)data.size()}, data.data());
-    file.redef();
-    file.remove_attribute(name, "not_written");
+    file.set_dimatt_value(nname, svalue);
   }
 }
 
@@ -606,7 +610,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   if (var.get_time_independent()) {
     // mark this variable as "not written" so that write_spatial_variable can avoid
     // writing it more than once.
-    file.write_attribute(var.get_name(), "not_written", PISM_INT, {1.0});
+    var.set_written(false);
   }
 }
 
@@ -734,12 +738,14 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
   if (var.get_time_independent()) {
-    bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
+    bool written = var.get_written();
+//    bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
     if (written) {
       return;
     } else {
-      file.redef();
-      file.remove_attribute(var.get_name(), "not_written");
+      var.set_written(true);
+//      file.redef();
+//      file.remove_attribute(var.get_name(), "not_written");
     }
   }
 

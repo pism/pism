@@ -58,6 +58,12 @@ public:
 
   MPI_Comm com() const;
 
+  void set_dimatt() const;
+
+  std::string get_dimatt_value(std::string &dim_name) const; 
+
+  void set_dimatt_value(std::string &dim_name, std::string &dimatt_value) const; 
+
   void close();
 
   void redef() const;
@@ -153,7 +159,7 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
-
+  mutable std::map<std::string, std::string> m_dimatt;
   void open(const std::string &filename, IO_Mode mode);
 
   // disable copying and assignments
