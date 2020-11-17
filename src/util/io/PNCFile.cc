@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -458,6 +458,15 @@ void PNCFile::init_hints() {
 void PNCFile::set_compression_level_impl(int level) const {
   (void) level;
   // NetCDF-3 does not support compression.
+}
+
+void PNCFile::create_grid_impl(int lengthx, int lengthy) const {
+  (void) lengthx;
+  (void) lengthy;
+}
+
+void PNCFile::define_timestep_impl(int tsID) const {
+  (void) tsID;
 }
 
 } // end of namespace io

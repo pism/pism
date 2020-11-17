@@ -292,5 +292,15 @@ void NCFile::del_att(const std::string &variable_name, const std::string &att_na
   this->del_att_impl(variable_name, att_name);
 }
 
+// new functions because of CDI class
+void NCFile::create_grid(int lengthx, int lengthy) const {
+  this->create_grid_impl(lengthx, lengthy);
+}
+
+void NCFile::define_timestep(int tsID) const {
+  this->define_timestep_impl(tsID);
+}
+
+
 } // end of namespace io
 } // end of namespace pism

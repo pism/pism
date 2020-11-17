@@ -807,5 +807,23 @@ std::string File::variable_name(unsigned int id) const {
   return result;
 }
 
+void File::new_grid(int lengthx, int lengthy) const {
+  try {
+    m_impl->nc->create_grid(lengthx, lengthy);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the name of %d-th variable in '%s'", id, filename().c_str());
+    throw;
+  }
+}
+
+void File::new_timestep(int tsID) const {
+  try {
+    m_impl->nc->define_timestep(tsID);
+  } catch (RuntimeError &e) {
+    e.add_context("getting the name of %d-th variable in '%s'", id, filename().c_str());
+    throw;
+  }
+}
+
 
 } // end of namespace pism

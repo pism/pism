@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -106,6 +106,11 @@ protected:
 
   void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 
+  // new functions empty because of CDI class
+  void create_grid_impl(int lengthx, int lengthy) const;
+  void define_timestep_impl(int tsID) const;
+
+private:
   int m_rank;
 
   int get_varid(const std::string &variable_name) const;

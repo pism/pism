@@ -104,14 +104,19 @@ protected:
 
 	void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 
+	// new functions
+	void create_grid_impl(int lengthx, int lengthy) const;
+	void define_timestep_impl(int tsID) const;
+
 private:
 	mutable int m_gridID;
 	mutable int m_zID;
 	mutable int m_zbID;
-        mutable int m_zsID;
+    mutable int m_zsID;
 	mutable int m_tID;
 	mutable int m_vlistID;
 	mutable std::map<std::string, int> m_varsID;
+	void destroy_objs();
 };
 }
 }

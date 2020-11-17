@@ -145,6 +145,11 @@ public:
   std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
 
   void append_history(const std::string &history) const;
+
+  //new functions because of CDI class
+  void new_grid(int lengthx, int lengthy) const;
+  void new_timestep(int tsID) const;
+
 private:
   struct Impl;
   Impl *m_impl;
