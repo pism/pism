@@ -64,23 +64,25 @@ void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
   (void) surface;
 
   // compute x and y coordinates of quadrature points
-  const int Nq = element.n_pts();
-  std::vector<double> x(Nq), y(Nq);
+  double
+    *x = m_work[0],
+    *y = m_work[1];
   {
-    const int Nk = fem::q13d::n_chi;
-    double x_nodal[Nk], y_nodal[Nk];
+    double
+      *x_nodal = m_work[2],
+      *y_nodal = m_work[3];
 
-    for (int n = 0; n < Nk; ++n) {
+    for (int n = 0; n < element.n_chi(); ++n) {
       x_nodal[n] = element.x(n);
       y_nodal[n] = element.y(n);
     }
 
-    element.evaluate(x_nodal, x.data());
-    element.evaluate(y_nodal, y.data());
+    element.evaluate(x_nodal, x);
+    element.evaluate(y_nodal, y);
   }
 
   // loop over all quadrature points
-  for (int q = 0; q < Nq; ++q) {
+  for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q);
 
     // loop over all test functions
