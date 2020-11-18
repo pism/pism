@@ -36,6 +36,10 @@
 #include "pism/util/projection.hh"
 #include "pism/pism_config.hh"
 
+#if (Pism_USE_CDI==1)
+#include <yaxt.h>
+#endif
+
 #if (Pism_USE_PIO==1)
 // Why do I need this???
 #define _NETCDF
@@ -117,6 +121,9 @@ struct IceGrid::Impl {
 
   //! ParallelIO I/O decompositions.
   std::map<int, int> io_decompositions;
+
+  // Yaxt decompositions
+  std::map<int, Xt_idxlist> yaxt_decompositions;
 };
 
 IceGrid::Impl::Impl(Context::ConstPtr context)
@@ -1481,6 +1488,33 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   (void) output_datatype;
 #endif
   return result;
+}
+
+Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
+#if (Pism_USE_CDI==1)
+  if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
+    std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
+    std::vector<long int> start{ys(), xs(), 0};
+    std::vector<long int> count{ym(), xm(), dof};
+    int *idx;
+    int idxlen = count[0] * count[1] * count[2];
+    idx = (int*) malloc(idxlen * sizeof(int));
+    int i = 0;
+    for (int y = 0; y < count[0]; y++) {
+       for (int x = 0; x < count[1]; x++) {
+        for (int d = 0; d < count[2]; d++) {
+          idx[i] = ((y+start[0]) * gdimlen[1] + (x+start[1])) * gdimlen[2] + (d+start[2]);
+          i++;
+        }
+      }
+    }
+    Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
+    m_impl->yaxt_decompositions[dof] = decomp;
+  } else {
+    return m_impl->yaxt_decompositions[dof];
+  }
+#endif
+
 }
 
 } // end of namespace pism

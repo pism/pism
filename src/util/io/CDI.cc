@@ -17,6 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "cdi.h"
+#include "cdipio.h"
+#include <yaxt.h>
+
 #include <sstream>
 #include <string.h>
 #include <map>
@@ -267,6 +270,20 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
 
 void CDI::define_timestep_impl(int tsID) const {
 	streamDefTimestep(m_file_id, tsID);
+}
+
+void CDI::write_darray_impl(const std::string &variable_name,
+                                   const IceGrid &grid,
+                                   unsigned int z_count,
+                                   unsigned int record,
+                                   const double *input) {
+  
+  // ATTENTION: need to transpose the input before writing: not done yet
+  int varid = m_varsID[variable_name];
+  Xt_idxlist decomp = grid.yaxt_decomposition(z_count);
+  size_t nmiss = 0;
+  
+  streamWriteVarPart(m_file_id, varid, input, nmiss, decomp);
 }
 
 

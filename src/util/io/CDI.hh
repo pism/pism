@@ -70,6 +70,12 @@ protected:
                       const std::vector<unsigned int> &imap,
                       double *ip) const;
 
+	void write_darray_impl(const std::string &variable_name,
+                      const IceGrid &grid,
+                      unsigned int z_count,
+                      unsigned int record,
+                      const double *input);
+
 	void inq_nvars_impl(int &result) const;
 
 	void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const;
