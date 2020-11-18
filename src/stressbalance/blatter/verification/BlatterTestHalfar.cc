@@ -44,18 +44,11 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
   m_R0 = 2.0 * grid->Lx();
 
   // ice thickness (m)
-  m_H0 = 1000.0;
+  m_H0 = 3600.0;
 
   m_rho = m_config->get_number("constants.ice.density");
 
   m_g   = m_config->get_number("constants.standard_gravity");
-}
-
-bool BlatterTestHalfar::vertical_cliff_face(int face, const int *node_type) {
-  (void) face;
-  (void) node_type;
-
-  return false;
 }
 
 bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
@@ -73,6 +66,7 @@ Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) {
 void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
                                              const double *surface,
                                              Vector2 *residual) {
+
   (void) surface;
 
   // compute x and z coordinates of quadrature points
@@ -102,6 +96,51 @@ void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
       const auto &psi = element.chi(q, t);
 
       residual[t] += W * psi.val * blatter_xz_halfar_source(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
+    }
+  }
+}
+
+void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
+                                         const fem::Q1Element3Face &face,
+                                         const double *surface_nodal,
+                                         const double *z_nodal,
+                                         const double *sl_nodal,
+                                         Vector2 *residual) {
+  (void) surface_nodal;
+  (void) sl_nodal;
+
+  // compute x and z coordinates of quadrature points
+  double
+    *x = m_work[0],
+    *z = m_work[1];
+  {
+    double
+      *x_nodal = m_work[2];
+
+    for (int n = 0; n < fem::q13d::n_chi; ++n) {
+      x_nodal[n] = element.x(n);
+    }
+
+    face.evaluate(x_nodal, x);
+    face.evaluate(z_nodal, z);
+  }
+
+  // loop over all quadrature points
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      auto psi = face.chi(q, t);
+
+      Vector2 F(0.0, 0.0);
+      if (x[q] > 0.0) {
+        // this lateral BC does not apply at the left (x = 0) boundary.
+        F = blatter_xz_halfar_lateral(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
+      }
+
+      // N = (1, 0, 0) is implied ("right" boundary)
+      residual[t] += W * psi * F;
     }
   }
 }

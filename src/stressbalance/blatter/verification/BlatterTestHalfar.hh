@@ -33,8 +33,6 @@ public:
   BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
 private:
-  bool vertical_cliff_face(int face, const int *node_type);
-
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
   Vector2 u_bc(double x, double y, double z);
@@ -42,6 +40,13 @@ private:
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,
                             Vector2 *residual);
+
+  void residual_lateral(const fem::Q1Element3 &element,
+                        const fem::Q1Element3Face &face,
+                        const double *surface_nodal,
+                        const double *z_nodal,
+                        const double *sl_nodal,
+                        Vector2 *residual);
 
   double m_B;
 
