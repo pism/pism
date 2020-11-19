@@ -23,12 +23,14 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include "pism/pism_config.hh"
 
-//#if (Pism_USE_CDI==1)
-//#include "cdi.h"
-#include "cdipio.h"
-//#include "yaxt.h"
-//#endif
+#if (Pism_USE_CDIPIO==1)
+#include <mpi.h>
+extern "C"{
+#include "yaxt.h"
+}
+#endif
 
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"

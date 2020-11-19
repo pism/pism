@@ -33,8 +33,10 @@
 #include <pio.h>
 #endif
 
-#if (Pism_USE_CDI==1)
+#if (Pism_USE_CDIPIO==1)
+extern "C"{
 #include <cdi.h>
+}
 #endif
 
 namespace pism {

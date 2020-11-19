@@ -15,11 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-
-#include "cdi.h"
-#include "cdipio.h"
-#include "yaxt.h"
-
+#include <mpi.h>
 #include <sstream>
 #include <string.h>
 #include <map>
@@ -30,6 +26,12 @@
 #include "pism/util/IceGrid.hh"
 
 #include "pism/util/error_handling.hh"
+
+extern "C"{
+#include "cdipio.h"
+#include "cdi.h"
+#include "yaxt.h"
+}
 
 namespace pism {
 namespace io {
@@ -284,7 +286,7 @@ void CDI::write_darray_impl(const std::string &variable_name,
   Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
   size_t nmiss = 0;
   
-//  streamWriteVarPart(m_file_id, varid, input, nmiss, decompid);
+  streamWriteVarPart(m_file_id, varid, input, nmiss, decompid);
 }
 
 
