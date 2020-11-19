@@ -24,6 +24,12 @@
 #include <string>
 #include <memory>
 
+//#if (Pism_USE_CDI==1)
+//#include "cdi.h"
+#include "cdipio.h"
+//#include "yaxt.h"
+//#endif
+
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/petscwrappers/DM.hh"
@@ -296,6 +302,7 @@ public:
   const Vars& variables() const;
 
   int pio_io_decomposition(int dof, int output_datatype) const;
+  Xt_idxlist yaxt_decomposition(int dof) const;
 
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
