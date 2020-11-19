@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <mpi.h>
 #include <cassert>
-
 #include <map>
 #include <numeric>
 #include <petscsys.h>
@@ -38,11 +38,11 @@
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
-//#if (Pism_USE_CDI==1)
-#include "cdi.h"
-#include "cdipio.h"
-//#include "yaxt.h"
-//#endif
+#if (Pism_USE_CDIPIO==1)
+extern "C"{
+#include "yaxt.h"
+}
+#endif
 
 #if (Pism_USE_PIO==1)
 // Why do I need this???
@@ -1495,14 +1495,14 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
 }
 
 Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
-//#if (Pism_USE_CDI==1)
+#if (Pism_USE_CDIPIO==1)
   if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
     std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
-    std::vector<long int> start{ys(), xs(), 0};
-    std::vector<long int> count{ym(), xm(), dof};
-    int *idx;
+    std::vector<int> start{ys(), xs(), 0};
+    std::vector<int> count{ym(), xm(), dof};
+    Xt_int *idx;
     int idxlen = count[0] * count[1] * count[2];
-    idx = (int*) malloc(idxlen * sizeof(int));
+    idx = (Xt_int*) malloc(idxlen * sizeof(Xt_int));
     int i = 0;
     for (int y = 0; y < count[0]; y++) {
        for (int x = 0; x < count[1]; x++) {
@@ -1512,14 +1512,15 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
         }
       }
     }
-    Xt_idxlist decomp;
-//    decomp = xt_idxvec_new(idx, idxlen);
+    Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
     m_impl->yaxt_decompositions[dof] = decomp;
     return m_impl->yaxt_decompositions[dof];
   } else {
     return m_impl->yaxt_decompositions[dof];
   }
-//#endif
+#else
+  (void) dof;
+#endif
 
 }
 

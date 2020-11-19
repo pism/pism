@@ -26,11 +26,13 @@
 
 #include <mpi.h>                // MPI_Comm
 
-//#if (Pism_USE_CDI==1)
-//#include "cdi.h"
-#include "cdipio.h"
-//#include "yaxt.h"
-//#endif
+#include "pism/pism_config.hh"
+
+#if (Pism_USE_CDIPIO==1)
+extern "C" {
+#include "yaxt.h"
+}
+#endif
 
 namespace pism {
 

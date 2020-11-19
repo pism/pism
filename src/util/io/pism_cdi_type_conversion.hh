@@ -19,7 +19,13 @@
 
 //! Convert PISM's IO types into NetCDF types and back. Note that NC_* may be
 //! macros, so you need to include the appropriate NetCDF header first.
+#include "pism/pism_config.hh"
+#if (Pism_USE_CDIPIO==1)
+extern "C"{
 #include "cdi.h"
+}
+#endif
+
 namespace pism {
 
 static int pism_type_to_cdi_type(pism::IO_Type input) {
