@@ -21,7 +21,6 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/bk0993/k202136/pnetcdf-1.12.1-inte
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/bk0993/k202136/pio-2.5.2-intel18-intelmpi2018/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/bk0993/k202136/cdi-1.9.9-intel18-intelmpi2018-parallel/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/work/bk0993/k202136/yaxt-0.9.0-intel18-intelmpi2018/lib
-#export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/dkrz/k202136/echam6-PalMod/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/util/udunits-2.2.17-intel15/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64/lib
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/sw/rhel6-x64/numerics/gsl-2.5-gcc48/lib
@@ -47,7 +46,7 @@ export CMAKE=cmake
 mkdir build
 cd build
 
-$CMAKE -DCMAKE_FIND_ROOT_PATH="/work/bk0993/k202136/netcdf-c-4.7.4-intel18-intelmpi2018;/work/bk0993/k202136/pnetcdf-1.12.1-intel18-intelmpi2018;/work/bk0993/k202136/pio-2.5.2-intel18-intelmpi2018;/work/bk0993/k202136/cdi-1.9.9-intel18-intelmpi2018-parallel;/work/bk0993/k202136/yaxt-0.9.0-intel18-intelmpi2018" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX=$PISM_INSTALL_PREFIX -DPism_BUILD_EXTRA_EXECS:BOOL=OFF -DPETSC_EXECUTABLE_RUNS=ON -DPism_USE_JANSSON=NO -DPism_USE_PIO=YES -DPism_USE_PARALLEL_NETCDF4=YES -DPism_USE_PNETCDF=YES -DPism_USE_YAXT=YES -DPism_USE_CDI=YES -DPism_USE_CDIPIO=YES -DMPIEXEC=srun -DHDF5_C_LIBRARY_z=$ZLIBROOT/lib/libz.so -DHDF5_C_LIBRARY_hdf5=$HDF5ROOT/lib/libhdf5.so -DHDF5_C_LIBRARY_hdf5_hl=$HDF5ROOT/lib/libhdf5_hl.so --debug-trycompile ../.
+$CMAKE -DCMAKE_FIND_ROOT_PATH="/work/bk0993/k202136/netcdf-c-4.7.4-intel18-intelmpi2018;/work/bk0993/k202136/pnetcdf-1.12.1-intel18-intelmpi2018;/work/bk0993/k202136/cdi-1.9.9-intel18-intelmpi2018-parallel;/work/bk0993/k202136/yaxt-0.9.0-intel18-intelmpi2018" -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -DCMAKE_INSTALL_PREFIX=$PISM_INSTALL_PREFIX -DPism_BUILD_EXTRA_EXECS:BOOL=OFF -DPETSC_EXECUTABLE_RUNS=ON -DPism_USE_JANSSON=NO -DPism_USE_PARALLEL_NETCDF4=YES -DPism_USE_PNETCDF=YES -DPism_USE_PIO=YES -DPism_USE_CDIPIO=YES -DMPIEXEC=srun -DHDF5_C_LIBRARY_z=$ZLIBROOT/lib/libz.so -DHDF5_C_LIBRARY_hdf5=$HDF5ROOT/lib/libhdf5.so -DHDF5_C_LIBRARY_hdf5_hl=$HDF5ROOT/lib/libhdf5_hl.so --debug-trycompile ../.
 
 make install
 
