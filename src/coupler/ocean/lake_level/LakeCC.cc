@@ -49,7 +49,8 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
                         "meter second-1", "meter year-1", "lake_fill_rate", 0);
   m_fill_rate.metadata().set_number("_FillValue", m_fill_value);
 
-  //Patch
+  //Patch (deprecated - should not be used anymore)
+  //max_update_interval should be set to 0 (default)
   m_patch_iter = m_config->get_number(m_option + ".max_patch_iterations");
   m_max_update_interval_years = m_config->get_number(m_option + ".max_update_interval",
                                 "years");
@@ -75,6 +76,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
     m_filter_size = 0;
   }
 
+  //check_sl_diagonal (deprecated - only use default value *true*)
   m_check_sl_diagonal = m_config->get_flag(m_option + ".check_sl_diagonal");
   m_keep_existing_lakes = m_config->get_flag(m_option + ".keep_existing_lakes");
 
@@ -86,6 +88,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
   //Gradual
   m_max_lake_fill_rate = m_config->get_number(m_option + ".max_fill_rate", "meter second-1");
 
+  //use_const_fill_rate (deprecated - only use default option *true*)
   m_use_const_fill_rate = m_config->get_flag(m_option + ".use_constant_fill_rate");
 
   if (m_use_const_fill_rate) {
@@ -164,10 +167,18 @@ void LakeCC::init_impl(const Geometry &geometry) {
     m_lake_level.copy_from(tmp);
   }
 
-  m_log->message(3, "  LakeCC: number of iterations used by patch-algorithm: %d \n",
-                 m_patch_iter);
-  m_log->message(3, "  LakeCC: maximum interval of full update: %d years \n",
-                 m_max_update_interval_years);
+  if (m_max_update_interval_years > 0) {
+    m_log->message(1, "  LakeCC: number of iterations used by patch-algorithm: %d \n",
+                  m_patch_iter);
+    m_log->message(1, "  LakeCC: maximum interval of full update: %d years \n",
+                  m_max_update_interval_years);
+    m_log->message(1, "  -> Warning! This option is deprecated; only the default value should be used: 0 years \n");
+  }
+
+  if (not m_use_const_fill_rate) {
+    m_log->message(1, "  LakeCC: use of constant fill rate disabled. \n");
+    m_log->message(1, "  -> Warning! This option is deprecated; only the default value should be used: true \n");
+  }
 
   double max_fill_rate_m_y = m_config->get_number(m_option + ".max_fill_rate", "meter year-1");
   m_log->message(3, "  LakeCC: maximum fill rate: %g meter/year \n",
@@ -192,10 +203,12 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   //Check is a complete update is due!
+  //By defualt this is alway true (upadte every timestep)
   if ((t >= m_next_update_time) or (fabs(t - m_next_update_time) < 1.0)) {
     full_update = true;
   }
 
+  //By default this is skipped
   if (!full_update) {
     //Full update when ocean basins have vanished.
     full_update = checkOceanBasinsVanished(bed,
@@ -203,6 +216,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
                                            new_sl);
   }
 
+  //By default this is skipped
   if (!full_update) {
     //Full update when patch iteration does not finish.
     full_update = iterativelyPatchTargetLevel(bed,
@@ -230,6 +244,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
   //Gradually fill
   {
 
+    //By default this is skipped
     if (not m_use_const_fill_rate) {
       const IceModelVec2S &bmb               = *m_grid->variables().get_2d_scalar("effective_BMB"),
                           &tc_calving        = *m_grid->variables().get_2d_scalar("thickness_change_due_to_calving"),
