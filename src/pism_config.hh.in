@@ -62,6 +62,9 @@ extern const char *cmake_version;
 /* Equal to 1 if PISM was built with NCAR's ParallelIO. */
 #cmakedefine01 Pism_USE_PIO
 
+/* Equal to 1 if PISM was built with CDI. */
+#cmakedefine01 Pism_USE_CDIPIO
+
 /* Equal to 1 if PISM's Python bindings were built, 0 otherwise. */
 #cmakedefine01 Pism_BUILD_PYTHON_BINDINGS
 
