@@ -60,7 +60,7 @@ option (Pism_USE_PROJ "Use PROJ to compute longitudes and latitudes." OFF)
 option (Pism_USE_PIO "Use NCAR's ParallelIO for I/O." OFF)
 option (Pism_USE_PARALLEL_NETCDF4 "Enables parallel NetCDF-4 I/O." OFF)
 option (Pism_USE_PNETCDF "Enables parallel NetCDF-3 I/O using PnetCDF." OFF)
-option (Pism_USE_CDI "Enables CDI." OFF)
+option (Pism_USE_CDIPIO "Enables CDI." OFF)
 option (Pism_ENABLE_DOCUMENTATION "Enable targets building PISM's documentation." ON)
 
 # PISM will eventually use Jansson to read configuration files.
