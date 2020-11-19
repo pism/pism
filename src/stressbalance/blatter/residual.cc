@@ -90,14 +90,53 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
  */
 void Blatter::residual_source_term(const fem::Q1Element3 &element,
                                    const double *surface,
+                                   const double *bed,
                                    Vector2 *residual) {
-  double
-    *s   = m_work[0],
-    *s_x = m_work[1],
-    *s_y = m_work[2],
-    *s_z = m_work[3];
 
-  element.evaluate(surface, s, s_x, s_y, s_z);
+  // compute s_x and s_y
+  double
+    *s_x = m_work[0],
+    *s_y = m_work[1];
+
+  if (m_eta_transform) {
+    // use the same storage for eta_x and eta_y
+    double
+      *eta_nodal = m_work[2],
+      *eta       = m_work[3],
+      *eta_x     = s_x,
+      *eta_y     = s_y,
+      *eta_z     = m_work[4];
+    double
+      *b   = m_work[5],
+      *b_x = m_work[6],
+      *b_y = m_work[7],
+      *b_z = m_work[8];
+
+    double
+      n = m_glen_exponent,
+      p = (2.0 * n + 2.0) / n;
+
+    for (int k = 0; k < 8; ++k) {
+      eta_nodal[k] = pow(surface[k] - bed[k], p);
+    }
+
+    element.evaluate(eta_nodal, eta, eta_x, eta_y, eta_z);
+    element.evaluate(bed, b, b_x, b_y, b_z);
+
+    for (int q = 0; q < element.n_pts(); ++q) {
+      double C = pow(eta[q], 1.0 / p - 1.0) / p;
+
+      s_x[q] = C * eta_x[q] + b_x[q];
+      s_y[q] = C * eta_y[q] + b_y[q];
+    }
+  } else {
+    // these arrays are needed by the call below (but results are discarded)
+    double
+      *s   = m_work[2],
+      *s_z = m_work[3];
+
+    element.evaluate(surface, s, s_x, s_y, s_z);
+  }
 
   for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q);
@@ -370,7 +409,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         residual_f(element, velocity, B, R_nodal);
 
         // the "source term" (driving stress)
-        residual_source_term(element, surface_elevation, R_nodal);
+        residual_source_term(element, surface_elevation, bottom_elevation, R_nodal);
 
         // basal boundary
         if (k == 0) {

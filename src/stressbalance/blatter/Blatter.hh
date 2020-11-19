@@ -83,8 +83,11 @@ protected:
   double m_rho_ice_g;
   double m_rho_ocean_g;
 
+  double m_glen_exponent;
+  bool m_eta_transform;
+
   static const int m_Nq = 100;
-  static const int m_n_work = 4;
+  static const int m_n_work = 9;
 
   double m_work[m_n_work][m_Nq];
 
@@ -150,6 +153,7 @@ protected:
 
   virtual void residual_source_term(const fem::Q1Element3 &element,
                                     const double *surface,
+                                    const double *bed,
                                     Vector2 *residual);
 
   virtual void residual_basal(const fem::Q1Element3 &element,

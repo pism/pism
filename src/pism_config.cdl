@@ -2105,6 +2105,10 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.n_levels = 1;
     pism_config:stress_balance.blatter.n_levels_doc = "Number of multigrid levels to pad the grid for";
 
+    pism_config:stress_balance.blatter.use_eta_transform_type = "flag";
+    pism_config:stress_balance.blatter.use_eta_transform = "no";
+    pism_config:stress_balance.blatter.use_eta_transform_doc = "Use the `\\eta` transform to improve the accuracy of the surface gradient approximation near grounded margins (see :cite:`BLKCB` for details).";
+
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";

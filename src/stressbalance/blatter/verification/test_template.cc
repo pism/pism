@@ -48,9 +48,11 @@ Vector2 TestTemplate::u_bc(double x, double y, double z) {
 
 void TestTemplate::residual_source_term(const fem::Q1Element3 &element,
                                         const double *surface,
+                                        const double *bed,
                                         Vector2 *residual) {
   (void) element;
   (void) surface;
+  (void) bed;
   (void) residual;
 }
 

@@ -294,6 +294,10 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_fa
 
   m_rho_ice_g = m_config->get_number("constants.ice.density") * g;
   m_rho_ocean_g = m_config->get_number("constants.sea_water.density") * g;
+
+  m_eta_transform = m_config->get_flag("stress_balance.blatter.use_eta_transform");
+
+  m_glen_exponent = m_flow_law->exponent();
 }
 
 /*!

@@ -39,6 +39,7 @@ private:
 
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,
+                            const double *bed,
                             Vector2 *residual);
 
   void residual_lateral(const fem::Q1Element3 &element,

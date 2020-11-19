@@ -56,6 +56,7 @@ protected:
 
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,
+                            const double *bed,
                             Vector2 *residual);
   //! constant ice hardness
   double m_B;
