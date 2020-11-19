@@ -321,7 +321,7 @@ void compute_grounded_cell_fraction(double ice_density,
 
       double
         f_o  = f.ij,
-        f_sw = 0.25 + (f.sw + f.s + f.ij + f.w),
+        f_sw = 0.25 * (f.sw + f.s + f.ij + f.w),
         f_se = 0.25 * (f.s + f.se + f.e + f.ij),
         f_ne = 0.25 * (f.ij + f.e + f.ne + f.n),
         f_nw = 0.25 * (f.w + f.ij + f.n + f.nw);

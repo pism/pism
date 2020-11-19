@@ -997,7 +997,7 @@ void IceModel::init_calving() {
   }
 
   // allocate front retreat code if necessary
-  if ((m_eigen_calving or m_vonmises_calving) and
+  if ((m_eigen_calving or m_vonmises_calving  or m_hayhurst_calving) and
       not m_front_retreat) {
     m_front_retreat.reset(new FrontRetreat(m_grid));
   }
