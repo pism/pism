@@ -38,9 +38,11 @@
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
-#if (Pism_USE_CDI==1)
-#include <yaxt.h>
-#endif
+//#if (Pism_USE_CDI==1)
+#include "cdi.h"
+#include "cdipio.h"
+//#include "yaxt.h"
+//#endif
 
 #if (Pism_USE_PIO==1)
 // Why do I need this???
@@ -1493,7 +1495,7 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
 }
 
 Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
-#if (Pism_USE_CDI==1)
+//#if (Pism_USE_CDI==1)
   if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
     std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
     std::vector<long int> start{ys(), xs(), 0};
@@ -1510,12 +1512,14 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
         }
       }
     }
-    Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
+    Xt_idxlist decomp;
+//    decomp = xt_idxvec_new(idx, idxlen);
     m_impl->yaxt_decompositions[dof] = decomp;
+    return m_impl->yaxt_decompositions[dof];
   } else {
     return m_impl->yaxt_decompositions[dof];
   }
-#endif
+//#endif
 
 }
 

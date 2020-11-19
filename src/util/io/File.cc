@@ -46,6 +46,8 @@ using std::shared_ptr;
 #include "ParallelIO.hh"
 #endif
 
+#include "CDI.hh"
+
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 

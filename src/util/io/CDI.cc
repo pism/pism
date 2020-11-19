@@ -18,7 +18,7 @@
 
 #include "cdi.h"
 #include "cdipio.h"
-#include <yaxt.h>
+#include "yaxt.h"
 
 #include <sstream>
 #include <string.h>
@@ -27,6 +27,7 @@
 #include "CDI.hh"
 
 #include "pism/util/io/pism_cdi_type_conversion.hh"
+#include "pism/util/IceGrid.hh"
 
 #include "pism/util/error_handling.hh"
 
@@ -280,10 +281,10 @@ void CDI::write_darray_impl(const std::string &variable_name,
   
   // ATTENTION: need to transpose the input before writing: not done yet
   int varid = m_varsID[variable_name];
-  Xt_idxlist decomp = grid.yaxt_decomposition(z_count);
+  Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
   size_t nmiss = 0;
   
-  streamWriteVarPart(m_file_id, varid, input, nmiss, decomp);
+//  streamWriteVarPart(m_file_id, varid, input, nmiss, decompid);
 }
 
 

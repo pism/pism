@@ -185,8 +185,17 @@ macro(pism_find_prerequisites)
     find_package (ParallelIO REQUIRED)
   endif()
 
+  if (Pism_USE_YAXT)
+    find_package (YAXT REQUIRED)
+    find_package (YAXT_C REQUIRED)
+  endif()
+
   if (Pism_USE_CDI)
     find_package (CDI REQUIRED)
+  endif()
+
+  if (Pism_USE_CDIPIO)
+    find_package (CDIPIO REQUIRED)
   endif()
 
   if (Pism_USE_PARALLEL_NETCDF4)
@@ -271,9 +280,21 @@ macro(pism_set_dependencies)
     list (APPEND Pism_EXTERNAL_LIBS ${ParallelIO_LIBRARIES})
   endif()
 
+  if (Pism_USE_YAXT)
+    include_directories (${YAXT_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${YAXT_LIBRARIES})
+    include_directories (${YAXT_C_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${YAXT_C_LIBRARIES})
+  endif()
+
   if (Pism_USE_CDI)
     include_directories (${CDI_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${CDI_LIBRARIES})
+  endif()
+
+  if (Pism_USE_CDIPIO)
+    include_directories (${CDIPIO_INCLUDES})
+    list (APPEND Pism_EXTERNAL_LIBS ${CDIPIO_LIBRARIES})
   endif()
 
   if (Pism_USE_PNETCDF)

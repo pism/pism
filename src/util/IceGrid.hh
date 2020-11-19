@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,12 @@
 #include <memory>               // shared_ptr
 
 #include <mpi.h>                // MPI_Comm
+
+//#if (Pism_USE_CDI==1)
+//#include "cdi.h"
+#include "cdipio.h"
+//#include "yaxt.h"
+//#endif
 
 namespace pism {
 
@@ -202,7 +208,7 @@ private:
   \endcode
 
   For finite difference (and some other) computations we often need to know
-  values at map-plane neighbors of a grid point. 
+  values at map-plane neighbors of a grid point.
 
   We say that a patch owned by a processor is surrounded by a strip of "ghost"
   grid points belonging to patches next to the one in question. This lets us to
@@ -314,6 +320,7 @@ public:
   const Vars& variables() const;
 
   int pio_io_decomposition(int dof, int output_datatype) const;
+  Xt_idxlist yaxt_decomposition(int dof) const;
 
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
