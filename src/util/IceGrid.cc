@@ -1497,21 +1497,22 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
 Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
 #if (Pism_USE_CDIPIO==1)
   if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
-    std::vector<int> gdimlen{(int)My(), (int)Mx(), dof};
-    std::vector<int> start{ys(), xs(), 0};
-    std::vector<int> count{ym(), xm(), dof};
+    // domain decomposition for transposed data
+    std::vector<int> gdimlen{dof, (int)My(), (int)Mx()};
+    std::vector<int> start{0, ys(), xs()};
+    std::vector<int> count{dof, ym(), xm()};
     Xt_int *idx;
     int idxlen = count[0] * count[1] * count[2];
     idx = (Xt_int*) malloc(idxlen * sizeof(Xt_int));
-    int i = 0;
-    for (int y = 0; y < count[0]; y++) {
-       for (int x = 0; x < count[1]; x++) {
-        for (int d = 0; d < count[2]; d++) {
-          idx[i] = ((y+start[0]) * gdimlen[1] + (x+start[1])) * gdimlen[2] + (d+start[2]);
-          i++;
+
+    for (int z = 0; z < count[0]; z++) {
+      for (int y = 0; y < count[1]; y++) {
+        for (int x = 0; x < count[2]; x++) {
+          idx[(z*count[1]+y)*count[2]+x] = ((z+start[0]) * gdimlen[1] + (y+start[1])) * gdimlen[2] + (x+start[2]);
         }
       }
     }
+
     Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
     m_impl->yaxt_decompositions[dof] = decomp;
     return m_impl->yaxt_decompositions[dof];
@@ -1522,6 +1523,31 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
   (void) dof;
 #endif
 
+}
+
+int IceGrid::local_length(int dof) const {
+#if (Pism_USE_CDIPIO==1)
+  return xm() * ym() * dof;
+#else
+(void) dof;
+#endif
+}
+
+void IceGrid::io_transpose(const double* input, double* inputIO, int dof) const {
+#if (Pism_USE_CDIPIO==1)
+  int countx = xm(), county = ym(), countz = dof;
+
+  for (int y = 0; y < county; y++) {
+    for (int x = 0; x < countx; x++) {
+      for (int z = 0; z < countz; z++) {
+        inputIO[(z*county+y)*countx+x] = input[(y*countx+x)*countz+z];
+      }
+    }
+  }
+#else
+  (void) input;
+  (void) inputIO;
+#endif
 }
 
 } // end of namespace pism

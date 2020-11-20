@@ -323,6 +323,8 @@ public:
 
   int pio_io_decomposition(int dof, int output_datatype) const;
   Xt_idxlist yaxt_decomposition(int dof) const;
+  int local_length(int dof) const;
+  void io_transpose(const double* input, double* inputIO, int dof) const;
 
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
