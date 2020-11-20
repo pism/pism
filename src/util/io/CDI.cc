@@ -281,12 +281,18 @@ void CDI::write_darray_impl(const std::string &variable_name,
                                    unsigned int record,
                                    const double *input) {
   
-  // ATTENTION: need to transpose the input before writing: not done yet
-  int varid = m_varsID[variable_name];
-  Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
-  size_t nmiss = 0;
+	// transpose input data
+	int dim = grid.local_length((int)z_count);
+	double *inputIO;
+	inputIO = (double*) malloc(dim * sizeof(double));
+	grid.io_transpose(input, inputIO, (int)z_count);
+
+	int varid = m_varsID[variable_name];
+	// create decomposition if new
+	Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
+	size_t nmiss = 0;
   
-  streamWriteVarPart(m_file_id, varid, input, nmiss, decompid);
+	streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
 }
 
 
