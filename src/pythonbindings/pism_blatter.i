@@ -14,6 +14,9 @@ pism_class(pism::stressbalance::BlatterTestCFBC,
 pism_class(pism::stressbalance::BlatterTestHalfar,
            "pism/stressbalance/blatter/verification/BlatterTestHalfar.hh")
 
+pism_class(pism::stressbalance::BlatterTestvanderVeen,
+           "pism/stressbalance/blatter/verification/BlatterTestvanderVeen.hh")
+
 pism_class(pism::stressbalance::BlatterISMIPHOM,
            "pism/stressbalance/blatter/ismip-hom/BlatterISMIPHOM.hh")
 
