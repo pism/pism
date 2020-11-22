@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""This script runs the Blatter stress balance solver.
+"""This script simplifies flow line tests using the Blatter-Pattyn solver.
 """
 
 import numpy as np
 import PISM
-import PISM.testing
 
 ctx = PISM.Context()
 config = ctx.config
 
 config.set_string("stress_balance.blatter.flow_law", "isothermal_glen")
 
-def H(H_max, R_max, r):
+def H_Halfar(H_max, R_max, r):
     SperA = 31556926.0
     n = 3.0
     H0 = 3600.0
@@ -26,6 +25,7 @@ def H(H_max, R_max, r):
     t0 = 422.45 * SperA
 
     Rmargin = R0 * pow(t / t0, beta);
+
     if (r < Rmargin):
         H = H0 * pow(t / t0, -alpha) * pow(1.0 - pow(pow(t / t0, -beta) * (r / R0), (n + 1) / n),
                                            n / (2*n + 1))
@@ -33,94 +33,91 @@ def H(H_max, R_max, r):
     else:
         return 0.0
 
-def H1(H_max, R_max, r):
-    n = 4.0 / 3.0
-    return H_max * np.sqrt(max(1.0 - (r / R_max)**n, 0.0))
+class BlatterFlowline(object):
 
-def H2(H_max, R_max, r):
-    if r < 0.5 * R_max:
-        return 0.5 * H_max
-    else:
-        return H_max * max(1.0 - r / R_max, 0.0)
+    def __init__(self, Mx, Mz, Lx, Lz, mg_levels, coarsening_factor):
+        P = PISM.GridParameters(config)
 
-def allocate(Mx, Mz):
-    H_max = 500.0
-    R_max = 750e3
+        P.Mx = Mx
+        P.Lx = Lx
+        P.x0 = 0.0
 
-    P = PISM.GridParameters(config)
+        dx = (2 * P.Lx) / (P.Mx - 1)
 
-    P.Mx = Mx
-    P.Lx = 800e3
-    P.x0 = 0.0
+        P.Ly = dx
+        P.My = 3
+        P.y0 = 0.0
 
-    dx = (2 * P.Lx) / (P.Mx - 1)
+        P.registration = PISM.CELL_CORNER
+        P.periodicity = PISM.Y_PERIODIC
+        P.z = PISM.DoubleVector([0.0, Lz])
 
-    P.Ly = dx
-    P.My = 3
-    P.y0 = 0.0
+        P.ownership_ranges_from_options(ctx.size)
 
-    P.registration = PISM.CELL_CORNER
-    P.periodicity = PISM.Y_PERIODIC
-    P.z = PISM.DoubleVector([0.0, 5000.0])
+        grid = PISM.IceGrid(ctx.ctx, P)
 
-    P.ownership_ranges_from_options(ctx.size)
+        geometry = PISM.Geometry(grid)
 
-    grid = PISM.IceGrid(ctx.ctx, P)
+        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
 
-    geometry = PISM.Geometry(grid)
+        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
 
-    enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
-    enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
+        # this value is not important (we use an isothermal flow law)
+        enthalpy.set(1e5)
 
-    yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
-    yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
+        self.grid = grid
+        self.geometry = geometry
+        self.enthalpy = enthalpy
+        self.yield_stress = yield_stress
+        self.Mz = Mz
+        self.mg_levels = mg_levels
+        self.coarsening_factor = coarsening_factor
 
-    with PISM.vec.Access(nocomm=[geometry.bed_elevation, geometry.ice_thickness]):
-        for (i, j) in grid.points():
-            r = abs(grid.x(i))
-            geometry.bed_elevation[i, j] = 0.0
-            geometry.ice_thickness[i, j] = H(H_max, R_max, r)
+    def initialize(self, ice_thickness, bed_elevation, yield_stress):
 
-    geometry.sea_level_elevation.set(0.0)
+        geometry = self.geometry
+        tauc = self.yield_stress
+        with PISM.vec.Access([geometry.bed_elevation,
+                              geometry.ice_thickness,
+                              tauc]):
+            for (i, j) in self.grid.points():
+                x = self.grid.x(i)
+                geometry.bed_elevation[i, j] = bed_elevation(x)
+                geometry.ice_thickness[i, j] = ice_thickness(x)
+                tauc[i, j]                   = yield_stress(x)
 
-    geometry.ensure_consistency(0.0)
+        geometry.sea_level_elevation.set(0.0)
 
-    # this value is not important (we use an isothermal flow law)
-    enthalpy.set(1e5)
+        geometry.ensure_consistency(0.0)
 
-    # this has to be high enough to prevent sliding
-    yield_stress.set(10 * config.get_number("basal_yield_stress.constant.value"))
+    def run(self):
 
-    return grid, geometry, enthalpy, yield_stress
+        self.model = PISM.Blatter(self.grid, self.Mz, self.mg_levels, self.coarsening_factor)
 
-def run(Mx, Mz, glen_exponent):
-    grid, geometry, enthalpy, yield_stress = allocate(Mx, Mz)
+        inputs = PISM.StressBalanceInputs()
 
-    n_levels          = int(config.get_number("stress_balance.blatter.n_levels"))
-    coarsening_factor = int(config.get_number("stress_balance.blatter.coarsening_factor"))
+        inputs.geometry           = self.geometry
+        inputs.basal_yield_stress = self.yield_stress
+        inputs.enthalpy           = self.enthalpy
 
-    config.set_number("stress_balance.blatter.Glen_exponent", glen_exponent)
+        self.model.update(inputs, True)
 
-    model = PISM.Blatter(grid, Mz, n_levels, coarsening_factor)
+    def x(self):
+        return np.array(self.grid.x())
 
-    inputs = PISM.StressBalanceInputs()
+    def bed(self):
+        return self.geometry.bed_elevation.numpy()[1, :]
 
-    inputs.geometry = geometry
-    inputs.basal_yield_stress = yield_stress
-    inputs.enthalpy = enthalpy
+    def surface(self):
+        return self.geometry.ice_surface_elevation.numpy()[1, :]
 
-    model.update(inputs, True)
+    def ice_thickness(self):
+        return self.geometry.ice_thickness.numpy()[1, :]
 
-    return grid.x(), geometry.ice_thickness.numpy(), model.velocity_u_sigma().numpy()
-
-if __name__ == "__main__":
-
-    Mx = int(config.get_number("grid.Mx"))
-    Mz = int(config.get_number("stress_balance.blatter.Mz"))
-
-    x, u = run(Mx, Mz, 3)
-
-    print(u.shape)
+    def velocity(self):
+        return self.model.velocity_u_sigma().numpy()[1, :, :]
 
 # try
 #
