@@ -292,6 +292,9 @@ void NCFile::define_timestep(int tsID) const {
   this->define_timestep_impl(tsID);
 }
 
+void NCFile::write_timestep() const{
+  this->write_timestep_impl();
+}
 
 } // end of namespace io
 } // end of namespace pism

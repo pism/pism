@@ -496,5 +496,8 @@ void ParallelIO::define_timestep_impl(int tsID) const {
   (void) tsID;
 }
 
+void ParallelIO::write_timestep_impl() const {
+}
+
 } // end of namespace io
 } // end of namespace pism

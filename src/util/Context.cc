@@ -33,9 +33,12 @@
 #include <pio.h>
 #endif
 
+
 #if (Pism_USE_CDIPIO==1)
+#include <mpi.h>
 extern "C"{
-#include <cdi.h>
+#include "cdipio.h"
+#include "cdi.h"
 }
 #endif
 
@@ -51,7 +54,7 @@ public:
        LoggerPtr log,
        const std::string &p)
     : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
-      logger(log), pio_iosys_id(-1) {
+      logger(log), pio_iosys_id(-1), local_comm(MPI_COMM_NULL) {
     // empty
   }
   MPI_Comm com;
@@ -63,6 +66,7 @@ public:
   Profiling profiling;
   LoggerPtr logger;
   int pio_iosys_id;
+  MPI_Comm local_comm;
 };
 
 Context::Context(MPI_Comm c, UnitsSystemPtr sys,
@@ -80,6 +84,10 @@ Context::~Context() {
       PIOc_free_iosystem(m_impl->pio_iosys_id) != PIO_NOERR) {
     m_impl->logger->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
   }
+#endif
+
+#if (Pism_USE_CDIPIO==1)
+  pioFinalize();
 #endif
 
   delete m_impl;
@@ -172,6 +180,48 @@ int Context::pio_iosys_id() const {
   }
 #endif
   return m_impl->pio_iosys_id;
+}
+
+void Context::cdipio_init() const {
+#if (Pism_USE_CDIPIO==1)
+  if (m_impl->local_comm == MPI_COMM_NULL) {
+    int n_writers = config()->get_number("output.pio.n_writers");
+    int IOmode = config()->get_number("output.pio.mode");
+    float partInflate = 1.1;
+    int pioNamespace = 1;
+    m_impl->local_comm = pioInit(MPI_COMM_WORLD, n_writers, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
+    if (m_impl->local_comm == MPI_COMM_NULL)
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize CDI-PIO library");
+  }
+#endif
+}
+
+int Context::get_n_writers() const {
+  int n_writers = 0;
+#if (Pism_USE_CDIPIO==1)
+  n_writers = config()->get_number("output.pio.n_writers");
+#endif
+  return n_writers;
+}
+
+bool Context::get_async() const {
+  bool async = false;
+#if (Pism_USE_CDIPIO==1)
+  async = config()->get_flag("output.pio.async");
+#endif
+  return async;
+}
+
+int Context::get_IOmode() const {
+  int IOmode=0;
+  #if (Pism_USE_CDIPIO==1)
+  IOmode = config()->get_number("output.pio.mode");
+#endif
+  return IOmode;
+}
+
+MPI_Comm Context::get_compute_comm() const {
+  return m_impl->local_comm;
 }
 
 Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {

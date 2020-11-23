@@ -1906,6 +1906,15 @@ netcdf pism_config {
     pism_config:output.pio.stride_type = "integer";
     pism_config:output.pio.stride_units = "count";
 
+    pism_config:output.pio.async = "no";
+    pism_config:output.pio.async_doc = "Whether to use asynchronous IO";
+    pism_config:output.pio.async_type = "flag";
+
+    pism_config:output.pio.mode = 6;
+    pism_config:output.pio.mode_doc = "Mode to use for asynchronous IO";
+    pism_config:output.pio.mode_type = "integer";
+    pism_config:output.pio.mode_units = "count";
+
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";
     pism_config:output.runtime.area_scale_factor_log10_option = "summary_area_scale_factor_log10";

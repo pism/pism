@@ -154,6 +154,7 @@ public:
   //new functions because of CDI class
   void new_grid(int lengthx, int lengthy) const;
   void new_timestep(int tsID) const;
+  void expose_windows() const;
 
 private:
   struct Impl;
