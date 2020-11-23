@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-  MPI_Comm = local_comm;
+  MPI_Comm local_comm;
   int nwriters, IOmode;
   com = PETSC_COMM_WORLD;
 
