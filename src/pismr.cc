@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,17 +36,43 @@ static char help[] =
 #include "pism/regional/IceGrid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
+#if (Pism_USE_CDIPIO==1)
+#include <mpi.h>
+extern "C"{
+#include "cdipio.h"
+#include "yaxt.h"
+}
+#endif
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-
+  MPI_Comm = local_comm;
+  int nwriters, IOmode;
   com = PETSC_COMM_WORLD;
 
   try {
-    std::shared_ptr<Context> ctx = context_from_options(com, "pismr");
+#if (Pism_USE_CDIPIO==1)
+    {
+      Context::Ptr ctx = context_from_options(com, "pismr");
+      nwriters = ctx->get_n_writers();
+      IOmode = ctx->get_IOmode();
+    }
+    xt_initialize(com);
+    int pioNamespace = 1;
+    float partInflate = 1.1;
+    local_comm = pioInit(com, nwriters, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
+    if (local_comm == MPI_COMM_NULL)
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize CDI-PIO library");
+    PETSC_COMM_WORLD = local_comm;
+    petsc::Initializer petsc(argc, argv, help);
+#else
+    local_comm = PETSC_COMM_WORLD;
+#endif
+    Context::Ptr ctx = context_from_options(local_comm, "pismr");
     Logger::Ptr log = ctx->log();
 
     std::string usage =
@@ -117,6 +143,8 @@ int main(int argc, char *argv[]) {
     handle_fatal_errors(com);
     return 1;
   }
+
+  xt_finalize();
 
   return 0;
 }

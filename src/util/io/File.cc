@@ -842,5 +842,14 @@ void File::new_timestep(int tsID) const {
   }
 }
 
+void File::expose_windows() const {
+  try {
+    m_impl->nc->write_timestep(tsID);
+  } catch (RuntimeError &e) {
+    e.add_context("setting windows exposure in '%s'", filename().c_str());
+    throw;
+  }
+}
+
 
 } // end of namespace pism

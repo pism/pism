@@ -476,5 +476,8 @@ void NC4File::define_timestep_impl(int tsID) const {
   (void) tsID;
 }
 
+void NC4File::write_timestep_impl() const {
+}
+
 } // end of namespace io
 } // end of namespace pism

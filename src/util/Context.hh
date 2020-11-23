@@ -55,6 +55,11 @@ public:
   ~Context();
 
   MPI_Comm com() const;
+  int get_n_writers() const;
+  bool get_async() const;
+  int get_IOmode() const;
+  MPI_Comm get_compute_comm() const;
+  void cdipio_init() const;
   int size() const;
   int rank() const;
   UnitsSystemPtr unit_system() const;

@@ -81,6 +81,7 @@ void CDI::destroy_objs() {
 }
 
 void CDI::enddef_impl() const {
+	pioEndDef();
 }
 
 void CDI::redef_impl() const {
@@ -273,6 +274,10 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
 
 void CDI::define_timestep_impl(int tsID) const {
 	streamDefTimestep(m_file_id, tsID);
+}
+
+void CDI::write_timestep_impl() const {
+	pioWriteTimestep();
 }
 
 void CDI::write_darray_impl(const std::string &variable_name,

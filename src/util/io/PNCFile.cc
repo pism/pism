@@ -469,5 +469,8 @@ void PNCFile::define_timestep_impl(int tsID) const {
   (void) tsID;
 }
 
+void PNCFile::write_timestep_impl() const {
+}
+
 } // end of namespace io
 } // end of namespace pism
