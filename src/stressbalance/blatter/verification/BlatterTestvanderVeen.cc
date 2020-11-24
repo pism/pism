@@ -67,7 +67,7 @@ bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
   return I.i == 0 or I.i == info.mx - 1; /*  FIXME: remove Dirichlet BC at the right end point */
 }
 
-Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) {
+Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
   (void) y;
   (void) z;
 

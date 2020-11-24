@@ -69,7 +69,7 @@ bool BlatterTestXZ::dirichlet_node(const DMDALocalInfo &info, const fem::Element
   return (I.i == 0 or I.i == info.mx - 1);
 }
 
-Vector2 BlatterTestXZ::u_bc(double x, double y, double z) {
+Vector2 BlatterTestXZ::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_exact(x, z, m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);

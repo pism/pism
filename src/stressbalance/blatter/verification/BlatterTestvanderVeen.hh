@@ -47,7 +47,7 @@ public:
 private:
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  Vector2 u_bc(double x, double y, double z);
+  Vector2 u_bc(double x, double y, double z) const;
 
   void residual_lateral(const fem::Q1Element3 &element,
                         const fem::Q1Element3Face &face,

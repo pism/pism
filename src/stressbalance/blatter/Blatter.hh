@@ -122,7 +122,7 @@ protected:
 
   virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  virtual Vector2 u_bc(double x, double y, double z);
+  virtual Vector2 u_bc(double x, double y, double z) const;
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
 

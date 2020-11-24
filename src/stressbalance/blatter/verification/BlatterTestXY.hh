@@ -52,7 +52,7 @@ protected:
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  Vector2 u_bc(double x, double y, double z);
+  Vector2 u_bc(double x, double y, double z) const;
 
   void residual_source_term(const fem::Q1Element3 &element,
                             const double *surface,

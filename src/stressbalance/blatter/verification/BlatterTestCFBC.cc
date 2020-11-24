@@ -51,7 +51,7 @@ bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
   return I.i == 0;
 }
 
-Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) {
+Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_cfbc_exact(x, z, m_B, m_L, m_rho_i, m_rho_w, m_g);

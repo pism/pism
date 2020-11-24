@@ -134,7 +134,7 @@ bool Blatter::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::Glo
 
 /*! Dirichlet BC
 */
-Vector2 Blatter::u_bc(double x, double y, double z) {
+Vector2 Blatter::u_bc(double x, double y, double z) const {
   (void) x;
   (void) y;
   (void) z;

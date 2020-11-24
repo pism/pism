@@ -57,7 +57,7 @@ bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info, const fem::Ele
   return I.i == 0;
 }
 
-Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) {
+Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_halfar_exact(x, z, m_H0, m_R0, m_rho, m_g, m_B);

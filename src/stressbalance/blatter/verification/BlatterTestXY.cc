@@ -52,7 +52,7 @@ bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::Element
           I.j == 0 or I.j == info.my - 1);
 }
 
-Vector2 BlatterTestXY::u_bc(double x, double y, double z) {
+Vector2 BlatterTestXY::u_bc(double x, double y, double z) const {
   (void) z;
 
   return blatter_xy_exact(x, y);
