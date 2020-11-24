@@ -263,7 +263,7 @@ void append_time(const File &file, const Config &config, double time_seconds) {
 void append_time(const File &file, const std::string &name, double value) {
   try {
 #if (Pism_USE_CDIPIO==1)
-    file.reference_date(time);
+    file.reference_date(value);
     file.new_timestep(0);
 #else
     unsigned int start = file.dimension_length(name);
@@ -287,7 +287,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string x_name = var.get_x().get_name();
   std::string y_name = var.get_y().get_name();
   if ( (not file.find_dimension(x_name)) && (not file.find_dimension(y_name)) ) {
-    new_grid(grid.Mx(), grid.My());
+    file.new_grid(grid.Mx(), grid.My());
     define_dimension(file, grid.Mx(), var.get_x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});

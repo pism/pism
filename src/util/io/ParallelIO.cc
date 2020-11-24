@@ -499,5 +499,9 @@ void ParallelIO::define_timestep_impl(int tsID) const {
 void ParallelIO::write_timestep_impl() const {
 }
 
+void ParallelIO::def_ref_date_impl(double time) const {
+  (void) time;
+}
+
 } // end of namespace io
 } // end of namespace pism

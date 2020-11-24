@@ -467,5 +467,9 @@ void PNCFile::define_timestep_impl(int tsID) const {
 void PNCFile::write_timestep_impl() const {
 }
 
+void PNCFile::def_ref_date_impl(double time) const {
+  (void) time;
+}
+
 } // end of namespace io
 } // end of namespace pism
