@@ -32,6 +32,9 @@ class BlatterTestHalfar : public Blatter {
 public:
   BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
+  double H_exact(double x) const;
+
+  double u_exact(double x, double z) const;
 private:
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

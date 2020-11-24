@@ -38,10 +38,10 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
   // make sure the grid is periodic in the Y direction
   assert(m_grid->periodicity() == Y_PERIODIC);
 
-  // store constant ice softness (enthalpy and pressure values are irrelevant)
+  // store constant ice hardness (enthalpy and pressure values are irrelevant)
   m_B = m_flow_law->hardness(1e5, 0);
 
-  m_R0 = 2.0 * grid->Lx();
+  m_R0 = 750e3;
 
   // ice thickness (m)
   m_H0 = 3600.0;
@@ -52,15 +52,22 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
 }
 
 bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
-  (void) info;
-  // use Dirichlet BC at x == 0
-  return I.i == 0;
+  // use Dirichlet BC at x == 0 and the "cliff" near the right boundary
+  return I.i == 0 or I.i >= info.mx - 2;
 }
 
 Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_halfar_exact(x, z, m_H0, m_R0, m_rho, m_g, m_B);
+}
+
+double BlatterTestHalfar::H_exact(double x) const {
+  return m_H0 * pow(1.0 - pow(fabs(x) / m_R0, 4.0 / 3.0), 3.0 / 7.0);
+}
+
+double BlatterTestHalfar::u_exact(double x, double z) const {
+  return u_bc(x, 0.0, z).u;
 }
 
 void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
@@ -119,7 +126,7 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
     double
       *x_nodal = m_work[2];
 
-    for (int n = 0; n < fem::q13d::n_chi; ++n) {
+    for (int n = 0; n < element.n_chi(); ++n) {
       x_nodal[n] = element.x(n);
     }
 
@@ -130,19 +137,20 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
+    auto N3 = face.normal(q);
+    Vector2 N = {N3.x, N3.y};
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      Vector2 F(0.0, 0.0);
+      double F = 0.0;
       if (x[q] > 0.0) {
-        // this lateral BC does not apply at the left (x = 0) boundary.
-        F = blatter_xz_halfar_lateral(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
+        // this lateral BC is not defined at the left (x = 0) boundary
+        F = blatter_xz_halfar_lateral(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B).u;
       }
 
-      // N = (1, 0, 0) is implied ("right" boundary)
-      residual[t] += W * psi * F;
+      residual[t] += W * psi * F * N;
     }
   }
 }
