@@ -214,7 +214,7 @@ bool Context::get_async() const {
 
 int Context::get_IOmode() const {
   int IOmode=0;
-  #if (Pism_USE_CDIPIO==1)
+#if (Pism_USE_CDIPIO==1)
   IOmode = config()->get_number("output.pio.mode");
 #endif
   return IOmode;

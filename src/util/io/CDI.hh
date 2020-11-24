@@ -114,6 +114,7 @@ protected:
 	void create_grid_impl(int lengthx, int lengthy) const;
 	void define_timestep_impl(int tsID) const;
 	void write_timestep_impl() const;
+	void def_ref_date_impl(double time) const;
 
 private:
 	mutable int m_gridID;

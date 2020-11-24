@@ -819,5 +819,13 @@ void File::expose_windows() const {
   }
 }
 
+void File::reference_date(double time) const {
+  try {
+    m_impl->nc->def_ref_date(time);
+  } catch (RuntimeError &e) {
+    e.add_context("setting reference date in '%s'", filename().c_str());
+    throw;
+  }
+}
 
 } // end of namespace pism
