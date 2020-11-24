@@ -202,8 +202,10 @@ void IceModel::save_variables(const File &file,
     define_model_state(file);
   }
   define_diagnostics(file, variables, default_diagnostics_type);
-
   // Done defining variables
+
+  // append to the time dimension
+  io::append_time(file, *m_config, time);
 
   {
     // Note: we don't use "variables" (an argument of this method) here because it
@@ -253,6 +255,7 @@ void IceModel::save_variables(const File &file,
     io::write_timeseries(file, m_timestamp, start,
                          {wall_clock_hours(m_grid->com, m_start_time)});
   }
+  file.expose_windows();
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,

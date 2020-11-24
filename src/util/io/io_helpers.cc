@@ -261,12 +261,17 @@ void append_time(const File &file, const Config &config, double time_seconds) {
 //! \brief Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
   try {
+#if (Pism_USE_CDIPIO==1)
+    file.reference_date(time);
+    file.new_timestep(0);
+#else
     unsigned int start = file.dimension_length(name);
 
     file.write_variable(name, {start}, {1}, &value);
 
     // PIO's I/O type PnetCDF requires this
     file.sync();
+#endif
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
     throw;
@@ -276,18 +281,15 @@ void append_time(const File &file, const std::string &name, double value) {
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
                               const IceGrid& grid, const File &file) {
-
-  // x
+  // x and y need to be defined together because of CDI
+  // x && y
   std::string x_name = var.get_x().get_name();
-  if (not file.find_dimension(x_name)) {
+  std::string y_name = var.get_y().get_name();
+  if ( (not file.find_dimension(x_name)) && (not file.find_dimension(y_name)) ) {
+    new_grid(grid.Mx(), grid.My());
     define_dimension(file, grid.Mx(), var.get_x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});
-  }
-
-  // y
-  std::string y_name = var.get_y().get_name();
-  if (not file.find_dimension(y_name)) {
     define_dimension(file, grid.My(), var.get_y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
                          {grid.y(1) - grid.y(0)});

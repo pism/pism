@@ -301,8 +301,12 @@ void NCFile::define_timestep(int tsID) const {
   this->define_timestep_impl(tsID);
 }
 
-void NCFile::write_timestep() const{
+void NCFile::write_timestep() const {
   this->write_timestep_impl();
+}
+
+void NCFile::def_ref_date(double time) const {
+  this->def_ref_date_impl(time);
 }
 
 } // end of namespace io

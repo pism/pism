@@ -157,6 +157,7 @@ public:
   void new_grid(int lengthx, int lengthy) const;
   void new_timestep(int tsID) const;
   void expose_windows() const;
+  void reference_date(double time) const;
 
 private:
   struct Impl;

@@ -152,6 +152,7 @@ public:
   void create_grid(int lengthx, int lengthy) const;
   void define_timestep(int tsID) const;
   void write_timestep() const;
+  void def_ref_date(double time) const;
 
 protected:
   // implementations:
@@ -239,6 +240,7 @@ protected:
   virtual void create_grid_impl(int lengthx, int lengthy) const = 0;
   virtual void define_timestep_impl(int tsID) const = 0;
   virtual void write_timestep_impl() const=0;
+  virtual void def_ref_date_impl(double time) const = 0;
 
 protected:                      // data members
 

@@ -81,7 +81,7 @@ void CDI::destroy_objs() {
 }
 
 void CDI::enddef_impl() const {
-	pioEndDef();
+//	pioEndDef(); concept of STAGES does not exist anymore
 }
 
 void CDI::redef_impl() const {
@@ -108,6 +108,18 @@ void CDI::def_dim_impl(const std::string &name, size_t length) const {
 			m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 		}
 	}
+}
+
+void CDI::def_ref_date_impl(double time) const {
+	double nyearsf = - time / 365 / 24 / 60 / 60;
+	taxisDefVdate(m_tID, -(long int)nyearsf);
+	long int seconds = (nyearsf - (long int)nyearsf) * 86400;
+	long int minutes, hours;
+	hours = seconds / 3600;
+	minutes = (seconds - (3600*hours)) / 60;
+	seconds = (seconds - (3600*hours) - minutes*60);
+	long int daytime = hours * 10000 + minutes * 100 + seconds;
+	taxisDefVtime(m_tID, daytime);
 }
 
 void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
@@ -269,7 +281,8 @@ void CDI::set_fill_impl(int fillmode, int &old_modep) const {
 }
 
 void CDI::create_grid_impl(int lengthx, int lengthy) const {
-	m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
+	if (m_gridID ==-1)
+		m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
 }
 
 void CDI::define_timestep_impl(int tsID) const {
