@@ -37,13 +37,13 @@ public:
   BlatterTestvanderVeen(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
   // Exact ice velocity
-  Vector2 u_exact(double x);
+  Vector2 u_exact(double x) const;
 
   // Exact ice thickness
-  double H_exact(double x);
+  double H_exact(double x) const;
 
   // Exact sliding coefficient beta
-  double beta_exact(double x);
+  double beta_exact(double x) const;
 private:
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

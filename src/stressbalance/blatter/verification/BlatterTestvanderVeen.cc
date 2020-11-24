@@ -74,17 +74,17 @@ Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
   return u_exact(x);
 }
 
-Vector2 BlatterTestvanderVeen::u_exact(double x) {
+Vector2 BlatterTestvanderVeen::u_exact(double x) const {
   double Q0 = m_H0 * m_V0;
   return { Q0 / H_exact(x), 0.0 };
 }
 
-double BlatterTestvanderVeen::H_exact(double x) {
+double BlatterTestvanderVeen::H_exact(double x) const {
   double Q0 = m_H0 * m_V0;
   return pow(4 * m_C0 * x / Q0 + pow(m_H0, -4), -1.0 / 4.0);
 }
 
-double BlatterTestvanderVeen::beta_exact(double x) {
+double BlatterTestvanderVeen::beta_exact(double x) const {
   double
     H     = H_exact(x),
     Q0    = m_H0 * m_V0,
