@@ -718,13 +718,10 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   // extra_files)
   if (var.get_time_independent()) {
     bool written = var.get_written();
-//    bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
     if (written) {
       return;
     } else {
       var.set_written(true);
-//      file.redef();
-//      file.remove_attribute(var.get_name(), "not_written");
     }
   }
 

@@ -250,13 +250,25 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
-	cdiDefAttFlt(m_vlistID, m_varsID[variable_name], att_name.c_str(), CDI_DATATYPE_FLT64, data.size(), &data[0]);
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name]
+	}
+	cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), CDI_DATATYPE_FLT64, data.size(), &data[0]);
 }
 
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
-	cdiDefAttTxt(m_vlistID, m_varsID[variable_name], att_name.c_str(), value.size(), value.c_str());
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name]
+	}
+	cdiDefAttTxt(m_vlistID, varID, att_name.c_str(), value.size(), value.c_str());
 }
 
 void CDI::inq_attname_impl(const std::string &variable_name,
