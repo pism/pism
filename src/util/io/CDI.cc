@@ -49,11 +49,14 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 CDI::~CDI() {
 }
 
-void CDI::open_impl(const std::string &fname, IO_Mode mode) {
+void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
 	if (mode == PISM_READONLY) {
         m_file_id = streamOpenRead(fname.c_str());
 	} else {
-        m_file_id = streamOpenWrite(fname.c_str(), CDI_FILETYPE_NC4);
+        m_file_id = streamOpenAppend(fname.c_str());
+        m_vlistID = streamInqVlist(m_file_id);
+	m_tID = vlistInqTaxis(m_vlistID);
+        m_varsID = varsi;
 	}
 }
 

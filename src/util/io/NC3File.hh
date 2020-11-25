@@ -20,6 +20,7 @@
 #define _PISMNC3FILE_H_
 
 #include "NCFile.hh"
+#include <map>
 
 namespace pism {
 namespace io {
@@ -35,7 +36,7 @@ public:
 protected:
   // implementations:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode);
+  void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>());
 
   void create_impl(const std::string &filename);
 

@@ -28,7 +28,7 @@ public:
 	CDI(MPI_Comm com);
 	virtual ~CDI();
 protected:
-	void open_impl(const std::string &filename, IO_Mode mode);
+	void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>());
 
 	void create_impl(const std::string &filename);
 

@@ -26,6 +26,7 @@
 #include <netcdf.h>
 #include <cstring>              // memset
 #include <cstdio>               // stderr, fprintf
+#include <map>
 
 #include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
@@ -68,7 +69,7 @@ NC3File::~NC3File() {
 }
 
 // open/create/close
-void NC3File::open_impl(const std::string &fname, IO_Mode mode) {
+void NC3File::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;

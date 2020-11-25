@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cstdio>
 #include <memory>
+#include <map>
 using std::shared_ptr;
 
 #include <petscvec.h>
@@ -156,7 +157,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 }
 
 File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-           int iosysid)
+           int iosysid, const std::map<std::string, int> &varsi)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -173,7 +174,7 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
 
-  this->open(filename, mode);
+  this->open(filename, mode, varsi);
 }
 
 File::~File() {
@@ -212,13 +213,13 @@ IO_Backend File::backend() const {
   return m_impl->backend;
 }
 
-void File::open(const std::string &filename, IO_Mode mode) {
+void File::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi) {
   try {
 
     // opening for reading
     if (mode == PISM_READONLY) {
 
-      m_impl->nc->open(filename, mode);
+      m_impl->nc->open(filename, mode, varsi);
 
     } else if (mode == PISM_READWRITE_CLOBBER or mode == PISM_READWRITE_MOVE) {
 
@@ -234,7 +235,7 @@ void File::open(const std::string &filename, IO_Mode mode) {
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
 
-      m_impl->nc->open(filename, mode);
+      m_impl->nc->open(filename, mode, varsi);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
