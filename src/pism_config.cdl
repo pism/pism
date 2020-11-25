@@ -1947,7 +1947,7 @@ netcdf pism_config {
     pism_config:output.fill_value_units = "none";
 
     pism_config:output.format = "netcdf3";
-    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf,pio_pnetcdf,pio_netcdf4p,pio_netcdf4c,pio_netcdf";
+    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf,pio_pnetcdf,pio_netcdf4p,pio_netcdf4c,pio_netcdf,cdi";
     pism_config:output.format_doc = "The I/O format used for spatial fields; ``netcdf3`` is the default, ``netcd4_parallel`` is available if PISM was built with parallel NetCDF-4, and ``pnetcdf`` is available if PISM was built with PnetCDF.";
     pism_config:output.format_option = "o_format";
     pism_config:output.format_type = "keyword";
