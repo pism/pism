@@ -43,10 +43,10 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   m_B = m_flow_law->hardness(1e5, 0);
 
   // ice thickness (m)
-  m_H0 = 100.0;
+  m_H0 = 600.0;
 
   // ice velocity (m / s)
-  m_V0 = convert(m_sys, 100.0, "m / year", "m / s");
+  m_V0 = convert(m_sys, 300.0, "m / year", "m / s");
 
   m_rho_i = m_config->get_number("constants.ice.density");
 
