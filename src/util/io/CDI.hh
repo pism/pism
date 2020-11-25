@@ -118,13 +118,17 @@ protected:
 
 private:
 	mutable int m_gridID;
+	mutable int m_gridsID;
 	mutable int m_zID;
 	mutable int m_zbID;
-    mutable int m_zsID;
+	mutable int m_zsID;
 	mutable int m_tID;
 	mutable int m_vlistID;
 	mutable std::map<std::string, int> m_varsID;
 	void destroy_objs();
+	void def_var_scalar_impl(const std::string &name, IO_Type nctype) const;
+        void def_var_multi_impl(const std::string &name, IO_Type nctype,
+              const std::vector<std::string> &dims) const;
 };
 }
 }
