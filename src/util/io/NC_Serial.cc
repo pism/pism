@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 #include <netcdf.h>
 
 #include <cstdio>               // stderr, fprintf
+#include <map>
 
 #include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
@@ -73,7 +74,7 @@ void NC_Serial::set_compression_level_impl(int level) const {
 }
 
 // open/create/close
-void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
+void NC_Serial::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //

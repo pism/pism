@@ -62,8 +62,8 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 }
 
 
-void NCFile::open(const std::string &filename, IO_Mode mode) {
-  this->open_impl(filename, mode);
+void NCFile::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi) {
+  this->open_impl(filename, mode, varsi);
   m_filename = filename;
   m_define_mode = false;
 }

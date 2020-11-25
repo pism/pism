@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -90,7 +90,7 @@ void ParallelIO::set_compression_level_impl(int level) const {
   // FIXME: it may make sense to implement this for PIO IO types using HDF5.
 }
 
-void ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
+void ParallelIO::open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi) {
   int open_mode = mode == PISM_READONLY ? PIO_NOWRITE : PIO_WRITE;
 
   int stat = PIOc_open(m_iosysid, filename.c_str(), open_mode, &m_file_id);
