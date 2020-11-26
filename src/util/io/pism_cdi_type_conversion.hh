@@ -52,8 +52,8 @@ static pism::IO_Type cdi_type_to_pism_type(int input) {
   case CDI_DATATYPE_INT8:
     return PISM_BYTE;
   //case : //to be clarified
-  //case : //to be clarified              // treat NC_CHAR and NC_STRING as equivalent
-  //  return PISM_CHAR;
+  case CDI_DATATYPE_TXT: // treat NC_CHAR and NC_STRING as equivalent
+    return PISM_CHAR;
   case CDI_DATATYPE_INT16:
     return PISM_SHORT;
   case CDI_DATATYPE_INT32:
