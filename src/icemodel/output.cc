@@ -176,7 +176,8 @@ void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type) {
+                              IO_Type default_diagnostics_type,
+                              int tID) {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -205,7 +206,7 @@ void IceModel::save_variables(const File &file,
   // Done defining variables
 
   // append to the time dimension
-  io::append_time(file, *m_config, time);
+  io::append_time(file, *m_config, time, tID);
 
   {
     // Note: we don't use "variables" (an argument of this method) here because it
