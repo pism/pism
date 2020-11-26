@@ -34,6 +34,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace io {
@@ -255,24 +256,38 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
 //! Prepare a file for output.
 void append_time(const File &file, const Config &config, double time_seconds) {
-  append_time(file, config.get_string("time.dimension_name"),
-              time_seconds);
+  IO_Backend backend = file.backend();
+  if (backend == PISM_CDI) {
+    append_time(file, time_seconds);
+  } else {
+    append_time(file, config.get_string("time.dimension_name"),
+                time_seconds);
+}
 }
 
 //! \brief Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
   try {
-#if (Pism_USE_CDIPIO==1)
-    file.reference_date(value);
-    file.new_timestep(0);
-#else
+
     unsigned int start = file.dimension_length(name);
 
     file.write_variable(name, {start}, {1}, &value);
 
     // PIO's I/O type PnetCDF requires this
     file.sync();
-#endif
+
+  } catch (RuntimeError &e) {
+    e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
+    throw;
+  }
+}
+
+void append_time(const File &file, double value) { //specific for CDI library
+  try {
+
+    file.reference_date(value);
+    file.new_timestep(0); // need to be fixed - before find the length of time dimension
+
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
     throw;

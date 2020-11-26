@@ -242,7 +242,13 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 }
 
 void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-	cdiInqNatts(m_vlistID, m_varsID[variable_name], &result);
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	cdiInqNatts(m_vlistID, varID, &result);
 }
 
 void CDI::inq_varid_impl(const std::string &variable_name, bool &exists) const {
@@ -261,20 +267,44 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
 void CDI::get_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   std::vector<double> &result) const {
-	(void) variable_name;
-	(void) att_name;
-	(void) result;
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+
+	if (cdilen == 0) {
+    	result.clear();
+    	return;
+  	}
+  	result.resize(cdilen);
+
+  	cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), cdilen, result.data());
 }
 
 void CDI::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-	(void) variable_name;
-	(void) att_name;
-	(void) result;
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	std::vector<char> str(cdilen + 1, 0);
+	cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), cdilen, str.data());
+	result = str.data();
 }
 
 void CDI::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
-	(void) variable_name;
-	(void) att_name;
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	cdiDelAtt(m_vlistID, varID, att_name.c_str());
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
@@ -310,9 +340,14 @@ void CDI::inq_attname_impl(const std::string &variable_name,
 void CDI::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
                                IO_Type &result) const {
-	(void) variable_name;
-	(void) att_name;
-	(void) result;
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	int cditype = cdiInqAttType(m_vlistID, varID, att_name.c_str());
+	result = cdi_type_to_pism_type(cditype);
 }
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
