@@ -55,7 +55,7 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
 	} else {
         m_file_id = streamOpenAppend(fname.c_str());
         m_vlistID = streamInqVlist(m_file_id);
-	m_tID = vlistInqTaxis(m_vlistID);
+		m_tID = vlistInqTaxis(m_vlistID);
         m_varsID = varsi;
 	}
 }
@@ -351,6 +351,10 @@ void CDI::write_darray_impl(const std::string &variable_name,
 	size_t nmiss = 0;
   
 	streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
+}
+
+std::map<std::string, int> CDI::get_var_map_impl() {
+	return m_varsID;
 }
 
 

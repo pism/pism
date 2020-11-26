@@ -309,5 +309,14 @@ void NCFile::def_ref_date(double time) const {
   this->def_ref_date_impl(time);
 }
 
+std::map<std::string, int> NCFile::get_var_map() {
+  return this->get_var_map_impl();
+}
+
+std::map<std::string, int> NCFile::get_var_map_impl() {
+  std::map<std::string, int> emptymap;
+  return emptymap;
+}
+
 } // end of namespace io
 } // end of namespace pism
