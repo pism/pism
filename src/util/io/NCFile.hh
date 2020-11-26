@@ -151,6 +151,7 @@ public:
   void define_timestep(int tsID) const;
   void write_timestep() const;
   void def_ref_date(double time) const;
+  std::map<std::string, int> get_var_map();
 
 protected:
   // implementations:
@@ -237,6 +238,7 @@ protected:
   virtual void define_timestep_impl(int tsID) const = 0;
   virtual void write_timestep_impl() const=0;
   virtual void def_ref_date_impl(double time) const = 0;
+  virtual std::map<std::string, int> get_var_map_impl();
 
 protected:                      // data members
 

@@ -829,4 +829,9 @@ void File::reference_date(double time) const {
   }
 }
 
+std::map<std::string, int> File::get_variables_map() const {
+  return m_impl->nc->ger_var_map();
+}
+
+
 } // end of namespace pism

@@ -401,6 +401,7 @@ protected:
   unsigned int m_current_snapshot;
   void init_snapshots();
   void write_snapshot();
+  std::map<std::string, int> SnapMap;
   MaxTimestep save_max_timestep(double my_t);
 
   //! file to write scalar time-series to
@@ -423,6 +424,7 @@ protected:
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
+  std::map<std::string, int> ExtraMap;
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups

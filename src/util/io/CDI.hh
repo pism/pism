@@ -115,6 +115,7 @@ protected:
 	void define_timestep_impl(int tsID) const;
 	void write_timestep_impl() const;
 	void def_ref_date_impl(double time) const;
+	std::map<std::string, int> get_var_map_impl();
 
 private:
 	mutable int m_gridID;
@@ -127,7 +128,7 @@ private:
 	mutable std::map<std::string, int> m_varsID;
 	void destroy_objs();
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype) const;
-        void def_var_multi_impl(const std::string &name, IO_Type nctype,
+    void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
 };
 }
