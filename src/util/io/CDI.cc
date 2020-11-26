@@ -127,8 +127,15 @@ void CDI::def_ref_date_impl(double time) const {
 }
 
 void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
-	(void) dimension_name;
-	(void) exists;
+	if (strcmp(name.c_str(),"x")==0 || strcmp(name.c_str(),"y")==0) {
+		exists = m_gridID != -1 ? true : false;
+	} else if (strcmp(name.c_str(),"z")==0) {
+		exists = m_zID != -1 ? true : false;
+	} else if (strcmp(name.c_str(),"zb")==0) {
+		exists = m_zbID != -1 ? true : false;
+	} else if (strcmp(name.c_str(),"time")==0) {
+		exists = m_tID != -1 ? true : false;
+	}
 }
 
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
@@ -144,7 +151,7 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 }
 
 void CDI::inq_unlimdim_impl(std::string &result) const {
-	(void) result;
+	result = "time"; // limitation of CDI: cannot set time variable name
 }
 
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
@@ -152,52 +159,52 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
 		m_vlistID = vlistCreate();
 	}
 
-        if (dims.empty()) { // scalar variable
+    if (dims.empty()) { // scalar variable
 		def_var_scalar_impl(name, nctype);
-        } else {         // multi-dimensional variable
+    } else {         // multi-dimensional variable
 		def_var_multi_impl(name, nctype, dims);
-        }
+    }
 }
 
 void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype) const {
 	if (m_gridsID == -1) {
-                m_gridsID = gridCreate(GRID_GENERIC, 1);
-                gridDefXsize(m_gridsID, 0);
-                gridDefYsize(m_gridsID, 0);
-        }
-        if (m_zsID == -1) {
-                m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
-        }
-        int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, TIME_CONSTANT);
-        vlistDefVarName(m_vlistID, varID, name.c_str());
-        vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
-        m_varsID[name] = varID;
+        m_gridsID = gridCreate(GRID_GENERIC, 1);
+        gridDefXsize(m_gridsID, 0);
+        gridDefYsize(m_gridsID, 0);
+    }
+    if (m_zsID == -1) {
+        m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+    }
+    int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, TIME_CONSTANT);
+    vlistDefVarName(m_vlistID, varID, name.c_str());
+    vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
+    m_varsID[name] = varID;
 }
 
 void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
 	int zaxisID = -1;
-        int tsteptype = -1;
+    int tsteptype = -1;
 
-        for (auto d : dims) {
-                if (strcmp(d.c_str(),"z")==0) {
-                        zaxisID = m_zID;
-                } else if (strcmp(d.c_str(),"zb")==0) {
-                        zaxisID = m_zbID;
-                }
-                if (strcmp(d.c_str(),"time")==0) {
-                        tsteptype = TIME_VARYING;
-                } else {
-                        tsteptype = TIME_CONSTANT;
-                }
+    for (auto d : dims) {
+        if (strcmp(d.c_str(),"z")==0) {
+            zaxisID = m_zID;
+        } else if (strcmp(d.c_str(),"zb")==0) {
+            zaxisID = m_zbID;
         }
-        if (zaxisID == -1) {
-                zaxisID = m_zsID;
+        if (strcmp(d.c_str(),"time")==0) {
+            tsteptype = TIME_VARYING;
+    	} else {
+        	tsteptype = TIME_CONSTANT;
         }
+    }
+    if (zaxisID == -1) {
+        zaxisID = m_zsID;
+    }
 
-        int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
-        vlistDefVarName(m_vlistID, varID, name.c_str());
-        vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
-        m_varsID[name] = varID;
+    int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
+    vlistDefVarName(m_vlistID, varID, name.c_str());
+    vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
+    m_varsID[name] = varID;
 }
 
 void CDI::get_vara_double_impl(const std::string &variable_name,
@@ -214,10 +221,17 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
-	(void) variable_name;
-	(void) start;
-	(void) count;
-	(void) op;
+	// write dimensions values and scalar variables
+	if (strcmp(variable_name.c_str(),"x")==0) {
+		gridDefXvals(m_gridID, op);
+	} else if (strcmp(variable_name.c_str(),"y")==0) {
+		gridDefYvals(m_gridID, op);
+	} else if (strcmp(variable_name.c_str(),"z")==0) {
+		zaxisDefLevels(m_zID, op);
+	} else if (strcmp(variable_name.c_str(),"zb")==0) {
+		zaxisDefLevels(m_zbID, op);
+	}
+	// need to be generalised to write scalars
 }
 
 void CDI::get_varm_double_impl(const std::string &variable_name,
@@ -237,8 +251,39 @@ void CDI::inq_nvars_impl(int &result) const {
 }
 
 void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
-	(void) variable_name;
-	(void) result;
+	int varID = m_varsID[variable_name];
+	int type = 0;
+	int current_grid = vlistInqVarGrid(m_vlistID, varID);
+	if (current_grid == m_gridID) {
+		int current_z = vlistInqVarZaxis(m_vlistID, varID);
+		if (current_z == m_zID) {
+			type = type + 2;
+		} else if (current_z == m_zbID) {
+			type = type + 4;
+		}
+		int current_t = vlistInqVarTimetype(m_vlistID, varID);
+		if (current_t == TIME_VARYING) {
+			type++;
+		}
+	} else {
+		result.clear();
+		return;
+	}
+    // todo: inquire the name - don't write it directly
+	switch (type) {
+		case 0:
+			result.resize(2); result[0] = "y"; result[1] = "x";
+		case 1:
+			result.resize(3); result[0] = "time"; result[1] = "y"; result[2] = "x";
+		case 2:
+			result.resize(3); result[0] = "z"; result[1] = "y"; result[2] = "x";
+		case 3:
+			result.resize(4); result[0] = "time"; result[1] = "z"; result[2] = "y"; result[3] = "x";
+		case 4:
+			result.resize(3); result[0] = "zb"; result[1] = "y"; result[2] = "x";
+		case 5:
+			result.resize(4); result[0] = "time"; result[1] = "zb"; result[2] = "y"; result[3] = "x";
+	}
 }
 
 void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const {
