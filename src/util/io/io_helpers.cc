@@ -254,10 +254,10 @@ void define_time(const File &file, const std::string &name, const std::string &c
 }
 
 //! Prepare a file for output.
-void append_time(const File &file, const Config &config, double time_seconds, int tID) {
+void append_time(const File &file, const Config &config, double time_seconds) {
   IO_Backend backend = file.backend();
   if (backend == PISM_CDI) {
-    append_time(file, time_seconds, tID);
+    append_time(file, time_seconds);
   } else {
     append_time(file, config.get_string("time.dimension_name"),
                 time_seconds);
@@ -281,9 +281,9 @@ void append_time(const File &file, const std::string &name, double value) {
   }
 }
 
-void append_time(const File &file, double value, int tID) { //specific for CDI library
+void append_time(const File &file, double value) { //specific for CDI library
   try {
-
+    unsigned int tID = file.dimension_length(name);
     file.reference_date(value);
     file.new_timestep(tID);
 

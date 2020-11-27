@@ -147,7 +147,18 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 		result = zaxisInqSize(m_zID);
 	} else if (strcmp(dimension_name.c_str(),"zb")==0) {
 		result = zaxisInqSize(m_zbID);
+	} else if (strcmp(dimension_name.c_str(),"time")==0) {
+		result = inq_current_timestep();
 	}
+}
+
+int CDI::inq_current_timestep() const {
+	int timesID = -1, nrec = -1;
+	while (nrec != -1) {
+		timesID++;
+		nrec = streamInqTimestep(m_file_id, timesID);
+	}
+	return timesID;
 }
 
 void CDI::inq_unlimdim_impl(std::string &result) const {
