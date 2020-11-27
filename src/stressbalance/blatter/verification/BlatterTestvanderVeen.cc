@@ -48,23 +48,17 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   // ice velocity (m / s)
   m_V0 = convert(m_sys, 300.0, "m / year", "m / s");
 
-  m_rho_i = m_config->get_number("constants.ice.density");
+  // s = alpha * H, where s is surface elevation and H ice thickness
+  m_alpha = 3.0 / 2.0;
 
-  m_rho_w = m_config->get_number("constants.sea_water.density");
-
-  m_g = m_config->get_number("constants.standard_gravity");
-
-  {
-    double alpha = 1.0 - m_rho_i / m_rho_w;
-    m_C0 = pow(alpha * m_g * m_rho_i / (2.0 * m_B), 3.0);
-  }
+  m_C0 = pow(m_alpha * m_rho_ice_g / (2.0 * m_B), 3.0);
 }
 
 bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
                                            const fem::Element3::GlobalIndex& I) {
   (void) info;
   // use Dirichlet BC at x == 0
-  return I.i == 0 or I.i == info.mx - 1; /*  FIXME: remove Dirichlet BC at the right end point */
+  return I.i == 0 or I.i == info.mx - 1;
 }
 
 Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
@@ -84,13 +78,17 @@ double BlatterTestvanderVeen::H_exact(double x) const {
   return pow(4 * m_C0 * x / Q0 + pow(m_H0, -4), -1.0 / 4.0);
 }
 
+double BlatterTestvanderVeen::b_exact(double x) const {
+  return (m_alpha - 1.0) * H_exact(x);
+}
+
 double BlatterTestvanderVeen::beta_exact(double x) const {
   double
-    H     = H_exact(x),
-    Q0    = m_H0 * m_V0,
-    alpha = 1.0 - m_rho_i / m_rho_w;
+    H  = H_exact(x),
+    Q0 = m_H0 * m_V0;
 
-  return 2 * m_B * pow(m_C0, 4.0 / 3.0) * (1 - alpha) * pow(H, 7) / pow(Q0, 2);
+  return 2 * m_B * pow(m_C0, 4.0 / 3.0) * (m_alpha - 1) * pow(H, 7) /
+    (Q0 * sqrt(pow(m_C0, 2) * pow(m_alpha - 1, 2) * pow(H, 10) + pow(Q0, 2)));
 }
 
 void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
@@ -121,7 +119,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 
-    double F = m_g * m_rho_i * (1.0 - m_rho_i / m_rho_w) * H_exact(x[q]);
+    double F = m_rho_ice_g * m_alpha * H_exact(x[q]);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {

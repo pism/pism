@@ -42,6 +42,9 @@ public:
   // Exact ice thickness
   double H_exact(double x) const;
 
+  // Exact bed elevation
+  double b_exact(double x) const;
+
   // Exact sliding coefficient beta
   double beta_exact(double x) const;
 private:
@@ -65,17 +68,11 @@ private:
   // velocity at the inflow boundary
   double m_V0;
 
+  // ratio of surface elevation to ice thickness
+  double m_alpha;
+
   // just a constant used to simplify formulas (see the code for the definition)
   double m_C0;
-
-  // ice density
-  double m_rho_i;
-
-  // water density
-  double m_rho_w;
-
-  // acceleration due to gravity
-  double m_g;
 };
 
 } // end of namespace stressbalance
