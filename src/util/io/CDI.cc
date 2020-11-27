@@ -18,6 +18,7 @@
 #include <mpi.h>
 #include <sstream>
 #include <string.h>
+#include <algorithm>
 #include <map>
 
 #include "CDI.hh"
@@ -58,11 +59,13 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
 		m_tID = vlistInqTaxis(m_vlistID);
         m_varsID = varsi;
 	}
+	m_firststep = false;
 }
 
 void CDI::create_impl(const std::string &filename) {
 	int mode = CDI_FILETYPE_NC4;
 	m_file_id = streamOpenWrite(filename.c_str(), mode);
+	m_firststep = true;
 }
 
 void CDI::sync_impl() const {
@@ -92,29 +95,39 @@ void CDI::redef_impl() const {
 }
 
 void CDI::def_dim_impl(const std::string &name, size_t length) const {
-	if (m_gridID != -1) {
-		if (strcmp(name.c_str(),"x")==0) {
-			gridDefXsize(m_gridID, (int)length);
-			gridDefXname(m_gridID, name.c_str());
-		} else if (strcmp(name.c_str(),"y")==0) {
-			gridDefYsize(m_gridID, (int)length);
-			gridDefYname(m_gridID, name.c_str());
-		} else if (strcmp(name.c_str(),"z")==0 && m_zID==-1) {
-			m_zID = zaxisCreate(ZAXIS_GENERIC, (int)length);
-			zaxisDefName(m_zID,name.c_str());
-		} else if (strcmp(name.c_str(),"zb")==0 && m_zbID==-1) {
-			m_zbID = zaxisCreate(ZAXIS_GENERIC, (int)length);
-			zaxisDefName(m_zbID,name.c_str());
-		} else if (strcmp(name.c_str(),"time")==0 && m_tID==-1) {
-			m_tID = taxisCreate(TAXIS_ABSOLUTE);
-		}
-		if (m_zsID == -1) {
-			m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
-		}
+	if (m_vlistID == -1) {
+        	m_vlistID = vlistCreate();
+    	}
+
+
+	if (strcmp(name.c_str(),"x")==0) {
+		gridDefXsize(m_gridID, (int)length);
+		gridDefXname(m_gridID, name.c_str());
+                m_dims_name.push_back(name);
+	} else if (strcmp(name.c_str(),"y")==0) {
+		gridDefYsize(m_gridID, (int)length);
+		gridDefYname(m_gridID, name.c_str());
+		m_dims_name.push_back(name);
+	} else if (strcmp(name.c_str(),"z")==0 && m_zID==-1) {
+		m_zID = zaxisCreate(ZAXIS_GENERIC, (int)length);
+		zaxisDefName(m_zID,name.c_str());
+		m_dims_name.push_back(name);
+	} else if (strcmp(name.c_str(),"zb")==0 && m_zbID==-1) {
+		m_zbID = zaxisCreate(ZAXIS_GENERIC, (int)length);
+		zaxisDefName(m_zbID,name.c_str());
+		m_dims_name.push_back(name);
+	} else if (strcmp(name.c_str(),"time")==0 && m_tID==-1) {
+		m_tID = taxisCreate(TAXIS_ABSOLUTE);
+		vlistDefTaxis(m_vlistID, m_tID);
+		m_dims_name.push_back(name);
+	}
+	if (m_zsID == -1) {
+		m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 	}
 }
 
 void CDI::def_ref_date_impl(double time) const {
+	// Taking into account only standard calendar right now
 	double nyearsf = - time / 365 / 24 / 60 / 60;
 	taxisDefVdate(m_tID, -(long int)nyearsf);
 	long int seconds = (nyearsf - (long int)nyearsf) * 86400;
@@ -154,9 +167,13 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 
 int CDI::inq_current_timestep() const {
 	int timesID = -1, nrec = -1;
-	while (nrec != -1) {
+	if (m_firststep) {
+		timesID = 0;
+	} else { 
+	while (nrec != 0) {
 		timesID++;
 		nrec = streamInqTimestep(m_file_id, timesID);
+	}
 	}
 	return timesID;
 }
@@ -166,9 +183,16 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 }
 
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
-	if (m_vlistID == -1) {
-		m_vlistID = vlistCreate();
-	}
+    // No need to define the dimensions as variables
+    if (std::find(m_dims_name.begin(), m_dims_name.end(), name) != m_dims_name.end())
+    {
+        return;
+    }
+    
+    // Define variables
+    if (m_vlistID == -1) {
+	m_vlistID = vlistCreate();
+    }
 
     if (dims.empty()) { // scalar variable
 		def_var_scalar_impl(name, nctype);
@@ -193,20 +217,17 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype) const {
 }
 
 void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
-	int zaxisID = -1;
-    int tsteptype = -1;
+    int zaxisID = -1;
+    int tsteptype = TIME_CONSTANT;
 
     for (auto d : dims) {
         if (strcmp(d.c_str(),"z")==0) {
             zaxisID = m_zID;
         } else if (strcmp(d.c_str(),"zb")==0) {
             zaxisID = m_zbID;
-        }
-        if (strcmp(d.c_str(),"time")==0) {
+        } else if (strcmp(d.c_str(),"time")==0) {
             tsteptype = TIME_VARYING;
-    	} else {
-        	tsteptype = TIME_CONSTANT;
-        }
+    	}
     }
     if (zaxisID == -1) {
         zaxisID = m_zsID;
@@ -348,6 +369,11 @@ void CDI::get_att_text_impl(const std::string &variable_name, const std::string 
 		varID = m_varsID[variable_name];
 	}
 	int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	if (cdilen == -1 || cdilen==0) {
+		result.clear();
+    		return;
+	}
+	result.resize(cdilen);
 	std::vector<char> str(cdilen + 1, 0);
 	cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), cdilen, str.data());
 	result = str.data();
@@ -418,6 +444,7 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
 
 void CDI::define_timestep_impl(int tsID) const {
 	streamDefTimestep(m_file_id, tsID);
+	if (tsID==0) m_firststep = false;
 }
 
 void CDI::write_timestep_impl() const {
@@ -446,6 +473,10 @@ void CDI::write_darray_impl(const std::string &variable_name,
 
 std::map<std::string, int> CDI::get_var_map_impl() {
 	return m_varsID;
+}
+
+void CDI::def_vlist_impl() const {
+	streamDefVlist(m_file_id, m_vlistID);
 }
 
 

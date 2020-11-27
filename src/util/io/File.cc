@@ -865,5 +865,15 @@ std::map<std::string, int> File::get_variables_map() const {
   return m_impl->nc->get_var_map();
 }
 
+void File::define_vlist() const {
+    try {
+    m_impl->nc->def_vlist();
+  } catch (RuntimeError &e) {
+    e.add_context("defining vlist in '%s'", filename().c_str());
+    throw;
+  }
+
+}
+
 
 } // end of namespace pism

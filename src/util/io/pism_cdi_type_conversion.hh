@@ -62,8 +62,8 @@ static pism::IO_Type cdi_type_to_pism_type(int input) {
     return PISM_FLOAT;
   case CDI_DATATYPE_FLT64:
     return PISM_DOUBLE;
-  //default:
-  //  return -1; //to be clarified
+  default:
+    return PISM_NAT; //to be clarified
   }
 }
 
