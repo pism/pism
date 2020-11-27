@@ -127,13 +127,13 @@ void CDI::def_ref_date_impl(double time) const {
 }
 
 void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
-	if (strcmp(name.c_str(),"x")==0 || strcmp(name.c_str(),"y")==0) {
+	if (strcmp(dimension_name.c_str(),"x")==0 || strcmp(dimension_name.c_str(),"y")==0) {
 		exists = m_gridID != -1 ? true : false;
-	} else if (strcmp(name.c_str(),"z")==0) {
+	} else if (strcmp(dimension_name.c_str(),"z")==0) {
 		exists = m_zID != -1 ? true : false;
-	} else if (strcmp(name.c_str(),"zb")==0) {
+	} else if (strcmp(dimension_name.c_str(),"zb")==0) {
 		exists = m_zbID != -1 ? true : false;
-	} else if (strcmp(name.c_str(),"time")==0) {
+	} else if (strcmp(dimension_name.c_str(),"time")==0) {
 		exists = m_tID != -1 ? true : false;
 	}
 }

@@ -318,7 +318,7 @@ void IceModel::write_extras() {
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
-                                  m_ctx->pio_iosys_id()), ExtraMap);
+                                  m_ctx->pio_iosys_id(), ExtraMap));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");
