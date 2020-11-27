@@ -76,7 +76,6 @@ void define_time(const File &nc, const std::string &name, const std::string &cal
 
 void append_time(const File &file, const Config &ctx, double time_seconds);
 void append_time(const File &nc, const std::string &name, double time_seconds);
-void append_time(const File &file, double value);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const IceGrid &grid, const File &nc,

@@ -255,38 +255,23 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
 //! Prepare a file for output.
 void append_time(const File &file, const Config &config, double time_seconds) {
-  IO_Backend backend = file.backend();
-  if (backend == PISM_CDI) {
-    append_time(file, time_seconds);
-  } else {
     append_time(file, config.get_string("time.dimension_name"),
                 time_seconds);
-  }
 }
 
 //! \brief Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
   try {
-
     unsigned int start = file.dimension_length(name);
-
-    file.write_variable(name, {start}, {1}, &value);
-
-    // PIO's I/O type PnetCDF requires this
-    file.sync();
-
-  } catch (RuntimeError &e) {
-    e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
-    throw;
-  }
-}
-
-void append_time(const File &file, double value) { //specific for CDI library
-  try {
-    unsigned int tID = file.dimension_length(name);
-    file.reference_date(value);
-    file.new_timestep(tID);
-
+    IO_Backend backend = file.backend();
+    if (backend == PISM_CDI) {
+        file.reference_date(value);
+        file.new_timestep(start);
+    } else {
+        file.write_variable(name, {start}, {1}, &value);
+        // PIO's I/O type PnetCDF requires this
+        file.sync();
+    }
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
     throw;
