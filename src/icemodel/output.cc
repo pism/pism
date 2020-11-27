@@ -176,8 +176,7 @@ void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type,
-                              int tID) {
+                              IO_Type default_diagnostics_type) {
 
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
@@ -198,7 +197,7 @@ void IceModel::save_variables(const File &file,
   // Done defining variables
 
   // append to the time dimension
-  io::append_time(file, *m_config, time, tID);
+  io::append_time(file, *m_config, time);
   
   {
     // Note: we don't use "variables" (an argument of this method) here because it

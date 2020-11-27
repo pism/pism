@@ -342,8 +342,7 @@ void IceModel::write_extras() {
                    m_extra_vars,
                    0.5 * (m_last_extra + current_time), // use the mid-point of the
                                                         // current reporting interval
-                   PISM_FLOAT,
-                   current_extra);
+                   PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
     unsigned int time_length = m_extra_file->dimension_length(time_name);

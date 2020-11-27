@@ -130,6 +130,7 @@ private:
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype) const;
     void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
+    int inq_current_timestep() const;
 };
 }
 }
