@@ -309,5 +309,12 @@ std::map<std::string, int> NCFile::get_var_map_impl() {
   return emptymap;
 }
 
+void NCFile::def_vlist() const {
+  this->def_vlist_impl();
+}
+
+void NCFile::def_vlist_impl() const {
+}
+
 } // end of namespace io
 } // end of namespace pism

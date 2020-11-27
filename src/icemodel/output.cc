@@ -195,7 +195,7 @@ void IceModel::save_variables(const File &file,
   }
   define_diagnostics(file, variables, default_diagnostics_type);
   // Done defining variables
-
+  file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
   // append to the time dimension
   io::append_time(file, *m_config, time);
   

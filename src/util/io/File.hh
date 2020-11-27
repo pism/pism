@@ -157,6 +157,7 @@ public:
   void expose_windows() const;
   void reference_date(double time) const;
   std::map<std::string, int> get_variables_map() const;
+  void define_vlist() const;
 
 private:
   struct Impl;
