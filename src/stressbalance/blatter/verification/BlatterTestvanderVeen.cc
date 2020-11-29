@@ -49,9 +49,9 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   m_V0 = convert(m_sys, 300.0, "m / year", "m / s");
 
   // s = alpha * H, where s is surface elevation and H ice thickness
-  m_alpha = 3.0 / 2.0;
+  m_alpha = 1.0;
 
-  m_C0 = pow(m_alpha * m_rho_ice_g / (2.0 * m_B), 3.0);
+  m_C = pow(m_alpha * m_rho_ice_g / (4.0 * m_B), 3.0);
 }
 
 bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
@@ -75,7 +75,7 @@ Vector2 BlatterTestvanderVeen::u_exact(double x) const {
 
 double BlatterTestvanderVeen::H_exact(double x) const {
   double Q0 = m_H0 * m_V0;
-  return pow(4 * m_C0 * x / Q0 + pow(m_H0, -4), -1.0 / 4.0);
+  return pow(4 * m_C * x / Q0 + pow(m_H0, -4), -1.0 / 4.0);
 }
 
 double BlatterTestvanderVeen::b_exact(double x) const {
@@ -87,8 +87,8 @@ double BlatterTestvanderVeen::beta_exact(double x) const {
     H  = H_exact(x),
     Q0 = m_H0 * m_V0;
 
-  return 2 * m_B * pow(m_C0, 4.0 / 3.0) * (m_alpha - 1) * pow(H, 7) /
-    (Q0 * sqrt(pow(m_C0, 2) * pow(m_alpha - 1, 2) * pow(H, 10) + pow(Q0, 2)));
+  return 2 * m_B * pow(m_C, 4.0 / 3.0) * (m_alpha - 1) * pow(H, 7) /
+    (Q0 * sqrt(pow(m_C, 2) * pow(m_alpha - 1, 2) * pow(H, 10) + pow(Q0, 2)));
 }
 
 void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,

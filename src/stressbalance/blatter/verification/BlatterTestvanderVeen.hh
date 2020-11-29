@@ -72,7 +72,7 @@ private:
   double m_alpha;
 
   // just a constant used to simplify formulas (see the code for the definition)
-  double m_C0;
+  double m_C;
 };
 
 } // end of namespace stressbalance
