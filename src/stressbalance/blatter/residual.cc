@@ -116,7 +116,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
       n = m_glen_exponent,
       p = (2.0 * n + 2.0) / n;
 
-    for (int k = 0; k < 8; ++k) {
+    for (int k = 0; k < element.n_chi(); ++k) {
       eta_nodal[k] = pow(surface[k] - bed[k], p);
     }
 
