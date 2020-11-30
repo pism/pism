@@ -74,7 +74,7 @@ protected:
   virtual const IceModelVec2S& temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
-  bool albedo_anomaly_true(double time, int n) ;
+  bool albedo_anomaly_true(double time, int n, bool print) ;
 
 
 protected:

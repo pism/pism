@@ -283,7 +283,9 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
     regrid("PDD surface model", m_snow_depth);
     regrid("PDD surface model", m_firn_depth);
   }
-
+  const bool force_albedo = m_config->get_flag("surface.itm.anomaly");  
+  if (force_albedo) m_log->message(2, 
+                                  " Albedo forcing sets summer albedo values to bare ice value\n");
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
@@ -314,7 +316,7 @@ double TemperatureIndexITM::compute_next_balance_year_start(double time) {
 }
 
 
-bool TemperatureIndexITM::albedo_anomaly_true(double time, int n) {
+bool TemperatureIndexITM::albedo_anomaly_true(double time, int n, bool print ) {
   // compute the time corresponding to the beginning of the next balance year
   double
     anomaly_start_day = m_config->get_number("surface.itm.anomaly_start_day"),
@@ -326,6 +328,8 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time, int n) {
     anomaly_start   = year_start + (anomaly_start_day - 1.0) * one_day,
     anomaly_end   = year_start + (anomaly_end_day - 1.0) * one_day;
 
+
+
   if (n * one_year + anomaly_start > time) {
     return false;
   }
@@ -334,7 +338,7 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time, int n) {
   }
   else {
     n += frequency; 
-    albedo_anomaly_true( time,  n);
+    albedo_anomaly_true( time,  n, print);
     // return false;
   }
 }
@@ -404,9 +408,9 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
       // print output in only one (three) cells
       bool print = 0;
-      if ( i == 176 and j == 100) {
-        print = 1;
-      }
+      // if ( i == 176 and j == 100) {
+      //   print = 1;
+      // }
 
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -510,12 +514,15 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             }
           }
 
+
+
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalanceITM::Changes changes;
      
           if (force_albedo){
-            if (albedo_anomaly_true(t,0)){
+
+            if (albedo_anomaly_true(ts[k],0, print)){
               albedo_loc = m_config->get_number("surface.itm.albedo_ice");
             }
           }
@@ -546,10 +553,11 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
           albedo_loc = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
           if (force_albedo){
-            if (albedo_anomaly_true(t,0)){
-              albedo_loc = 0.5;
+            if (albedo_anomaly_true(ts[k],0, print)){
+              albedo_loc = m_config->get_number("surface.itm.albedo_ice");
             }
           }
+
           
 
 
