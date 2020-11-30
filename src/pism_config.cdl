@@ -2351,23 +2351,27 @@ netcdf pism_config {
     pism_config:surface.itm.albedo_snow = 0.82;
     pism_config:surface.itm.albedo_snow_doc = "albedo value for fresh snow, i.e. albedo without melting, in albedo parametrization";
     pism_config:surface.itm.albedo_snow_type = "number";
+    pism_config:surface.itm.albedo_snow_units = "";
 
     pism_config:surface.itm.albedo_land = 0.2;
     pism_config:surface.itm.albedo_land_doc = "albedo value over land, if no ice is present";
     pism_config:surface.itm.albedo_land_type = "number";
+    pism_config:surface.itm.albedo_land_units = "";
 
     pism_config:surface.itm.albedo_ocean = 0.1;
-    pism_config:surface.itm.albedo_ocean_docs = "albedo value over ocean";
+    pism_config:surface.itm.albedo_ocean_doc = "albedo value over ocean";
     pism_config:surface.itm.albedo_ocean_type = "number";
+    pism_config:surface.itm.albedo_ocean_units = "";
 
     pism_config:surface.itm.albedo_slope = -790;
-    pism_config:surface.itm.albedo_slope_docs = "slope in albedo parametrization";
+    pism_config:surface.itm.albedo_slope_doc = "slope in albedo parametrization";
     pism_config:surface.itm.albedo_slope_type = "number";
     pism_config:surface.itm.albedo_slope_units = "m2 s kg-1";
 
     pism_config:surface.itm.albedo_ice = 0.47;
-    pism_config:surface.itm.albedo_ice_docs = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
+    pism_config:surface.itm.albedo_ice_doc = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
     pism_config:surface.itm.albedo_ice_type = "number";
+    pism_config:surface.itm.albedo_ice_units = "";
 
     pism_config:surface.itm.anomaly = "no";
     pism_config:surface.itm.anomaly_doc = "if yes, bare ice albedo is applied everywhere between start day and end day with a frequency on frequency years, set frequeqncy larger simulation time in order to apply albedo forcing only once";
