@@ -45,6 +45,7 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_zbID = -1;
 	m_zsID = -1;
 	m_tID = -1;
+	m_varsID.clear();
 }
 
 CDI::~CDI() {
@@ -161,7 +162,7 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 	} else if (strcmp(dimension_name.c_str(),"zb")==0) {
 		result = zaxisInqSize(m_zbID);
 	} else if (strcmp(dimension_name.c_str(),"time")==0) {
-		result = inq_current_timestep();
+		result = inq_current_timestep() + 1;
 	}
 }
 
@@ -317,16 +318,22 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 	switch (type) {
 		case 0:
 			result.resize(2); result[0] = "y"; result[1] = "x";
+			break;
 		case 1:
 			result.resize(3); result[0] = "time"; result[1] = "y"; result[2] = "x";
+			break;
 		case 2:
 			result.resize(3); result[0] = "z"; result[1] = "y"; result[2] = "x";
+			break;
 		case 3:
 			result.resize(4); result[0] = "time"; result[1] = "z"; result[2] = "y"; result[3] = "x";
+			break;
 		case 4:
 			result.resize(3); result[0] = "zb"; result[1] = "y"; result[2] = "x";
+			break;
 		case 5:
 			result.resize(4); result[0] = "time"; result[1] = "zb"; result[2] = "y"; result[3] = "x";
+			break;
 	}
 }
 
@@ -402,6 +409,10 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
+	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
+    	{
+        	return;
+    	}
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
@@ -414,6 +425,10 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
+        if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
+        {
+                return;
+        }
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;

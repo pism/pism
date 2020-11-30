@@ -266,7 +266,7 @@ void append_time(const File &file, const std::string &name, double value) {
     IO_Backend backend = file.backend();
     if (backend == PISM_CDI) {
         file.reference_date(value);
-        file.new_timestep(start);
+        file.new_timestep(start-1);
     } else {
         file.write_variable(name, {start}, {1}, &value);
         // PIO's I/O type PnetCDF requires this
