@@ -55,9 +55,7 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
     m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS) {
 // so 
   m_sd_period                  = 0;
-  // m_base_ddf.snow              = m_config->get_double("surface.pdd.factor_snow");
-  // m_base_ddf.ice               = m_config->get_double("surface.pdd.factor_ice");
-  // m_base_ddf.refreeze_fraction = m_config->get_double("surface.pdd.refreeze");
+
   m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
   m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev_use_param");
   m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
@@ -259,9 +257,11 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
 
     m_firn_depth.read(input.filename, input.record);
     m_snow_depth.read(input.filename, input.record);
+    m_albedo.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
 
     m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
+    m_albedo.regrid(input.filename, OPTIONAL, 0.0);
 
     if (firn_file.empty()) {
       m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
@@ -271,6 +271,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   } else {
 
     m_snow_depth.set(0.0);
+    m_albedo.set(m_config->get_number("surface.itm.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.set(0.0);
@@ -293,7 +294,6 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
     m_accumulation->set(0.0);
     m_melt->set(0.0);
     m_runoff->set(0.0);
-    // m_albedo->set(0.0);
   }
 }
 
@@ -483,7 +483,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           ice  = H(i, j),
           firn = m_firn_depth(i, j),
           snow = m_snow_depth(i, j),
-          surfelev = (*surface_altitude)(i,j);
+          surfelev = (*surface_altitude)(i,j),
+          albedo_loc = m_albedo(i,j);
 
 
 
@@ -502,8 +503,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           Ti  = 0.0, // top of the atmosphere insolation
           Al  = 0.0; 
 
-
-        double albedo_loc = m_config->get_number("surface.itm.albedo_snow");
 
 
         for (int k = 0; k < N; ++k) {
