@@ -194,15 +194,15 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
 	m_vlistID = vlistCreate();
     }
 
-    if (dims.empty()) { // scalar variable
-		def_var_scalar_impl(name, nctype);
+    if (dims.empty() || dims.size()<2) { // scalar variable
+		def_var_scalar_impl(name, nctype, dims);
     } else {         // multi-dimensional variable
 		def_var_multi_impl(name, nctype, dims);
     }
 }
 
-void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype) const {
-	if (m_gridsID == -1) {
+void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const std::vector<std::string> &dims) const {
+    if (m_gridsID == -1) {
         m_gridsID = gridCreate(GRID_GENERIC, 1);
         gridDefXsize(m_gridsID, 0);
         gridDefYsize(m_gridsID, 0);
@@ -210,9 +210,20 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype) const {
     if (m_zsID == -1) {
         m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
     }
-    int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, TIME_CONSTANT);
+
+    int tsteptype;
+    if (dims.empty()) {
+        tsteptype = TIME_CONSTANT;
+    } else {
+        for (auto d : dims) {
+            if (strcmp(d.c_str(),"time")==0) tsteptype = TIME_VARYING;
+        }
+    }
+
+    int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
     vlistDefVarName(m_vlistID, varID, name.c_str());
-    vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
+    int type = pism_type_to_cdi_type(nctype);
+    vlistDefVarDatatype(m_vlistID, varID, type);
     m_varsID[name] = varID;
 }
 
@@ -235,7 +246,8 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
 
     int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
     vlistDefVarName(m_vlistID, varID, name.c_str());
-    vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
+    int type = pism_type_to_cdi_type(nctype);
+    vlistDefVarDatatype(m_vlistID, varID, type);
     m_varsID[name] = varID;
 }
 
