@@ -130,10 +130,11 @@ private:
         mutable std::vector<std::string> m_dims_name;
 	mutable bool m_firststep;
 	void destroy_objs();
-	void def_var_scalar_impl(const std::string &name, IO_Type nctype) const;
-    void def_var_multi_impl(const std::string &name, IO_Type nctype,
+	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
+	      const std::vector<std::string> &dims) const;
+        void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
-    int inq_current_timestep() const;
+        int inq_current_timestep() const;
 };
 }
 }
