@@ -57,7 +57,7 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
 	} else {
         m_file_id = streamOpenAppend(fname.c_str());
         m_vlistID = streamInqVlist(m_file_id);
-		m_tID = vlistInqTaxis(m_vlistID);
+	m_tID = vlistInqTaxis(m_vlistID);
         m_varsID = varsi;
 	}
 	m_firststep = false;
@@ -79,12 +79,13 @@ void CDI::close_impl() {
 }
 
 void CDI::destroy_objs() {
-	vlistDestroy(m_vlistID);
-	taxisDestroy(m_tID);
-	zaxisDestroy(m_zID);
-	zaxisDestroy(m_zbID);
-	zaxisDestroy(m_zsID);
-	gridDestroy(m_gridID);
+	if (m_vlistID != -1) vlistDestroy(m_vlistID);
+	if (m_tID != -1) taxisDestroy(m_tID);
+	if (m_zID != -1) zaxisDestroy(m_zID);
+	if (m_zbID != -1) zaxisDestroy(m_zbID);
+	if (m_zsID != -1) zaxisDestroy(m_zsID);
+	if (m_gridID != -1) gridDestroy(m_gridID);
+        if (m_gridsID != -1) gridDestroy(m_gridsID);
 	m_varsID.clear();
 }
 
@@ -204,9 +205,10 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
 
 void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const std::vector<std::string> &dims) const {
     if (m_gridsID == -1) {
-        m_gridsID = gridCreate(GRID_GENERIC, 1);
-        gridDefXsize(m_gridsID, 0);
+        m_gridsID = gridCreate(GRID_LONLAT, 1);
+        gridDefXsize(m_gridsID, 1);
         gridDefYsize(m_gridsID, 0);
+	gridDefXname(m_gridsID, "xd");
     }
     if (m_zsID == -1) {
         m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
@@ -266,6 +268,7 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
+	return;
 	// write dimensions values and scalar variables
 	if (strcmp(variable_name.c_str(),"x")==0) {
 		gridDefXvals(m_gridID, op);
@@ -466,7 +469,7 @@ void CDI::set_fill_impl(int fillmode, int &old_modep) const {
 
 void CDI::create_grid_impl(int lengthx, int lengthy) const {
 	if (m_gridID ==-1)
-		m_gridID = gridCreate(GRID_GENERIC, lengthx*lengthy);
+		m_gridID = gridCreate(GRID_LONLAT, lengthx*lengthy);
 }
 
 void CDI::define_timestep_impl(int tsID) const {
@@ -483,7 +486,6 @@ void CDI::write_darray_impl(const std::string &variable_name,
                                    unsigned int z_count,
                                    unsigned int record,
                                    const double *input) {
-  
 	// transpose input data
 	int dim = grid.local_length((int)z_count);
 	double *inputIO;
@@ -491,10 +493,10 @@ void CDI::write_darray_impl(const std::string &variable_name,
 	grid.io_transpose(input, inputIO, (int)z_count);
 
 	int varid = m_varsID[variable_name];
+	
 	// create decomposition if new
 	Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
 	size_t nmiss = 0;
-  
 	streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
 }
 

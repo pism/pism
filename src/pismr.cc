@@ -41,18 +41,21 @@ static char help[] =
 extern "C"{
 #include "cdipio.h"
 #include "yaxt.h"
+#include "cdi.h"
 }
 #endif
 
 using namespace pism;
 
 int main(int argc, char *argv[]) {
+  MPI_Init(&argc,&argv);
 
   MPI_Comm com = MPI_COMM_WORLD;
-  petsc::Initializer petsc(argc, argv, help);
+  //petsc::Initializer petsc(argc, argv, help);
   MPI_Comm local_comm;
   int nwriters, IOmode;
-  com = PETSC_COMM_WORLD;
+  //com = PETSC_COMM_WORLD;
+  petsc::Initializer petsc(argc, argv, help);
 
   try {
 #if (Pism_USE_CDIPIO==1)
@@ -62,11 +65,12 @@ int main(int argc, char *argv[]) {
       IOmode = ctx->get_IOmode();
     }
     xt_initialize(com);
-    int pioNamespace = 1;
-    float partInflate = 1.1;
+    int pioNamespace;
+    float partInflate = 1.0;
     local_comm = pioInit(com, nwriters, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
-    if (local_comm == MPI_COMM_NULL)
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize CDI-PIO library");
+    if (local_comm != MPI_COMM_NULL) {
+      namespaceSetActive(pioNamespace);
+    }
     PETSC_COMM_WORLD = local_comm;
     petsc::Initializer petsc(argc, argv, help);
 #else
@@ -145,6 +149,6 @@ int main(int argc, char *argv[]) {
   }
 
   xt_finalize();
-
+  MPI_Finalize();
   return 0;
 }
