@@ -325,5 +325,21 @@ void NCFile::def_vlist() const {
 void NCFile::def_vlist_impl() const {
 }
 
+void NCFile::set_diagvars(const std::set<std::string> &variables) const {
+  this->set_diagvars_impl(variables);
+}
+
+void NCFile::set_diagvars_impl(const std::set<std::string> &variables) const {
+  (void) variables;
+}
+
+void NCFile::set_bdiag(bool value) const {
+  this->set_bdiag_impl(value);
+}
+
+void NCFile::set_bdiag_impl(bool value) const {
+  (void) value;
+}
+
 } // end of namespace io
 } // end of namespace pism

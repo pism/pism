@@ -875,5 +875,18 @@ void File::define_vlist() const {
 
 }
 
+void File::send_diagnostics(const std::set<std::string> &variables) const {
+  try {
+    m_impl->nc->set_diagvars(variables);
+  } catch (RuntimeError &e) {
+    e.add_context("setting diagvars in '%s'", filename().c_str());
+    throw;
+  }
+
+}
+
+void File::set_beforediag(bool value) const {
+  m_impl->nc->set_bdiag(value);
+}
 
 } // end of namespace pism

@@ -243,9 +243,11 @@ void IceModel::save_variables(const File &file,
     }
   }
   file.set_dimatt();
+  file.send_diagnostics(variables);
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
+  file.set_beforediag(false);
   write_diagnostics(file, variables);
 
   // find out how much time passed since the beginning of the run and save it to the output file
@@ -297,7 +299,7 @@ void IceModel::define_model_state(const File &file) {
 
 void IceModel::write_model_state(const File &file) {
   for (auto v : m_model_state) {
-    v->write(file);
+      v->write(file);
   }
 
   for (auto m : m_submodels) {

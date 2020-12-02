@@ -23,6 +23,7 @@
 #include <string>
 #include <mpi.h>
 #include <map>
+#include <set>
 
 #include "pism/util/Units.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -160,6 +161,8 @@ public:
   void reference_date(double time) const;
   std::map<std::string, int> get_variables_map() const;
   void define_vlist() const;
+  void send_diagnostics(const std::set<std::string> &variables) const;
+  void set_beforediag(bool value) const;
 
 private:
   struct Impl;

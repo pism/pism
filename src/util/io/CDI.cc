@@ -46,6 +46,7 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_zsID = -1;
 	m_tID = -1;
 	m_varsID.clear();
+	m_beforediag = true;
 }
 
 CDI::~CDI() {
@@ -268,7 +269,6 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
-	return;
 	// write dimensions values and scalar variables
 	if (strcmp(variable_name.c_str(),"x")==0) {
 		gridDefXvals(m_gridID, op);
@@ -412,6 +412,7 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
+	//return;
 	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
     	{
         	return;
@@ -428,6 +429,7 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
+	//return;
         if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
         {
                 return;
@@ -497,7 +499,9 @@ void CDI::write_darray_impl(const std::string &variable_name,
 	// create decomposition if new
 	Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
 	size_t nmiss = 0;
-	streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
+	if (!m_beforediag || m_diagvars.count(variable_name)==0) {
+		streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
+	}
 }
 
 std::map<std::string, int> CDI::get_var_map_impl() {
@@ -506,6 +510,14 @@ std::map<std::string, int> CDI::get_var_map_impl() {
 
 void CDI::def_vlist_impl() const {
 	streamDefVlist(m_file_id, m_vlistID);
+}
+
+void CDI::set_diagvars_impl(const std::set<std::string> &variables) const {
+	m_diagvars = variables;
+}
+
+void CDI::set_bdiag_impl(bool value) const {
+	m_beforediag = value;
 }
 
 

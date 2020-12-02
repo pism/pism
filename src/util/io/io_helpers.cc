@@ -609,6 +609,11 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
                          mapping.get_name());
   }
 
+  // CDI needs to write dimensions before vlist definition
+  if (file.backend() == PISM_CDI) {
+    write_dimensions(var, grid, file);
+  }
+
   if (var.get_time_independent()) {
     // mark this variable as "not written" so that write_spatial_variable can avoid
     // writing it more than once.
@@ -726,7 +731,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
                             const File &file,
                             const double *input) {
-
+  const Logger &log = *grid.ctx()->log();
   auto name = var.get_name();
 
   if (not file.find_variable(name)) {
@@ -734,9 +739,11 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                                   name.c_str(),
                                   file.filename().c_str());
   }
-
-  write_dimensions(var, grid, file);
-
+  if (file.backend() == PISM_CDI) {
+    log.message(2, "CDI: dimensions already written\n");
+  } else {
+    write_dimensions(var, grid, file);
+  }
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
   if (var.get_time_independent()) {

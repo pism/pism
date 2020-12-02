@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <mpi.h>
 
 #include "IO_Flags.hh"
@@ -155,6 +156,8 @@ public:
   void def_ref_date(double time) const;
   std::map<std::string, int> get_var_map();
   void def_vlist() const;
+  void set_diagvars(const std::set<std::string> &variables) const;
+  void set_bdiag(bool value) const;
 
 protected:
   // implementations:
@@ -245,6 +248,8 @@ protected:
   virtual void def_ref_date_impl(double time) const = 0;
   virtual std::map<std::string, int> get_var_map_impl();
   virtual void def_vlist_impl() const;
+  virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
+  virtual void set_bdiag_impl(bool value) const;
 
 protected:                      // data members
 
