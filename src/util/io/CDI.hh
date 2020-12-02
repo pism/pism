@@ -18,6 +18,7 @@
 
 #include "NCFile.hh"
 #include <map>
+#include <set>
 
 namespace pism {
 namespace io {
@@ -117,6 +118,8 @@ protected:
 	void def_ref_date_impl(double time) const;
 	std::map<std::string, int> get_var_map_impl();
         void def_vlist_impl() const;
+	void set_diagvars_impl(const std::set<std::string> &variables) const;
+	void set_bdiag_impl(bool value) const;
 
 private:
 	mutable int m_gridID;
@@ -129,6 +132,8 @@ private:
 	mutable std::map<std::string,int> m_varsID;
         mutable std::vector<std::string> m_dims_name;
 	mutable bool m_firststep;
+	mutable bool m_beforediag;
+	mutable std::set<std::string> m_diagvars;
 	void destroy_objs();
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
 	      const std::vector<std::string> &dims) const;
