@@ -120,6 +120,10 @@ protected:
         void def_vlist_impl() const;
 	void set_diagvars_impl(const std::set<std::string> &variables) const;
 	void set_bdiag_impl(bool value) const;
+	void set_ncgridIDs_impl(const std::vector<int>& gridIDs) const;
+	std::vector<int> get_ncgridIDs_impl() const;
+	int get_ncstreamID_impl() const;
+	int get_ncvlistID_impl() const;
 
 private:
 	mutable int m_gridID;
@@ -134,6 +138,8 @@ private:
 	mutable bool m_firststep;
 	mutable bool m_beforediag;
 	mutable std::set<std::string> m_diagvars;
+	mutable bool m_gridexist;
+	mutable bool m_istimedef;
 	void destroy_objs();
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
 	      const std::vector<std::string> &dims) const;

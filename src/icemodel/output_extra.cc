@@ -318,7 +318,7 @@ void IceModel::write_extras() {
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
-                                  m_ctx->pio_iosys_id(), ExtraMap));
+                                  m_ctx->pio_iosys_id(), ExtraMap, gridIDs));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -352,7 +352,12 @@ void IceModel::write_extras() {
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file->sync();
-    ExtraMap = m_extra_file->get_variables_map();
+    if (m_extra_file->backend() == PISM_CDI) {
+      streamIDs[filename] = m_extra_file->get_streamID();
+      vlistIDs[filename] = m_extra_file->get_vlistID();
+      if (gridIDs.size()==0) gridIDs = m_extra_file->get_gridIDs();
+      ExtraMap = m_extra_file->get_variables_map();
+    }
   }
   profiling.end("io.extra_file");
 

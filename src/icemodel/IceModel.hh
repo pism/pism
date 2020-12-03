@@ -120,6 +120,7 @@ public:
 
   /** Run PISM in the "standalone" mode. */
   virtual void run();
+  virtual void close_files();
 
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
@@ -403,6 +404,8 @@ protected:
   void write_snapshot();
   std::map<std::string, int> SnapMap;
   MaxTimestep save_max_timestep(double my_t);
+  std::map<std::string, int> streamIDs, vlistIDs;
+  std::vector<int> gridIDs;
 
   //! file to write scalar time-series to
   std::string m_ts_filename;

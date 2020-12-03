@@ -53,7 +53,8 @@ class File
 {
 public:
   File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-       int iosysid = -1, const std::map<std::string, int> &varsi = std::map<std::string, int>());
+       int iosysid = -1, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+       const std::vector<int>& gridIDs = std::vector<int>());
   ~File();
 
   IO_Backend backend() const;
@@ -161,6 +162,10 @@ public:
   void define_vlist() const;
   void send_diagnostics(const std::set<std::string> &variables) const;
   void set_beforediag(bool value) const;
+  void set_gridIDs(const std::vector<int>& gridIDs = std::vector<int>()) const;
+  std::vector<int> get_gridIDs() const;
+  int get_streamID() const;
+  int get_vlistID() const;
 
 private:
   struct Impl;

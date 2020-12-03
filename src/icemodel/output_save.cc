@@ -157,7 +157,7 @@ void IceModel::write_snapshot() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap);
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs);
 
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -166,9 +166,17 @@ void IceModel::write_snapshot() {
     }
 
     write_run_stats(file);
-
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
-    SnapMap = file.get_variables_map();
+    
+    if (file.backend() == PISM_CDI) {
+      streamIDs[filename] = file.get_streamID();
+      vlistIDs[filename] = file.get_vlistID();
+      if (gridIDs.size()==0) {
+        gridIDs.resize(6);
+        gridIDs = file.get_gridIDs();
+      }
+      SnapMap = file.get_variables_map();
+    }
   }
   profiling.end("io.snapshots");
 }
