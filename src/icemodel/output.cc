@@ -40,6 +40,10 @@
 #include "pism/energy/utilities.hh"
 
 
+extern "C"{
+#include "cdi.h"
+}
+
 namespace pism {
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
@@ -142,6 +146,14 @@ void IceModel::save_results() {
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
+    if (file.backend() == PISM_CDI) {
+      streamIDs[filename] = file.get_streamID();
+      vlistIDs[filename] = file.get_vlistID();
+      if (gridIDs.size()==0) {
+        gridIDs.resize(6);
+        gridIDs = file.get_gridIDs();
+      }
+    }
   }
   profiling.end("io.model_state");
 }
@@ -258,6 +270,17 @@ void IceModel::save_variables(const File &file,
                          {wall_clock_hours(m_grid->com, m_start_time)});
   }
   file.expose_windows();
+}
+
+void IceModel::close_files() {
+#if (Pism_USE_CDIPIO==1)
+  for (auto const& streamID : streamIDs) {
+    streamClose(streamID.second);
+  }
+  for (auto const& vlistID : vlistIDs) {
+    vlistDestroy(vlistID.second);
+  }
+#endif
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,

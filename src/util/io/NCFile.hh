@@ -65,6 +65,9 @@ public:
   // open/create/close
   void open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>());
 
+  void set_ncgridIDs(const std::vector<int>& gridIDs = std::vector<int>()) const;
+  virtual std::vector<int> get_ncgridIDs() const;
+
   void create(const std::string &filename);
 
   void sync() const;
@@ -158,6 +161,8 @@ public:
   void def_vlist() const;
   void set_diagvars(const std::set<std::string> &variables) const;
   void set_bdiag(bool value) const;
+  int get_ncstreamID() const;
+  int get_ncvlistID() const;
 
 protected:
   // implementations:
@@ -250,6 +255,10 @@ protected:
   virtual void def_vlist_impl() const;
   virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
   virtual void set_bdiag_impl(bool value) const;
+  virtual void set_ncgridIDs_impl(const std::vector<int>& gridIDs = std::vector<int>()) const;
+  virtual std::vector<int> get_ncgridIDs_impl() const;
+  virtual int get_ncstreamID_impl() const;
+  virtual int get_ncvlistID_impl() const;
 
 protected:                      // data members
 

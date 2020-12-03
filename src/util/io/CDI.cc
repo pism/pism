@@ -20,6 +20,7 @@
 #include <string.h>
 #include <algorithm>
 #include <map>
+ #include <iostream>
 
 #include "CDI.hh"
 
@@ -38,15 +39,17 @@ namespace pism {
 namespace io {
 
 CDI::CDI(MPI_Comm c) : NCFile(c) {
-	m_gridID = -1;
-	m_gridsID = -1;
+//	m_gridID = -1;
+//	m_gridsID = -1;
 	m_vlistID = -1;
-	m_zID = -1;
-	m_zbID = -1;
-	m_zsID = -1;
-	m_tID = -1;
+//	m_zID = -1;
+//	m_zbID = -1;
+//	m_zsID = -1;
+//	m_tID = -1;
 	m_varsID.clear();
 	m_beforediag = true;
+	m_gridexist = false;
+	m_istimedef = false;
 }
 
 CDI::~CDI() {
@@ -64,6 +67,31 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
 	m_firststep = false;
 }
 
+void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
+	if (gridIDs.empty()) {
+		m_gridID = -1;
+		m_gridsID = -1;
+		m_tID = -1;
+		m_zID = -1;
+		m_zbID = -1;
+		m_zsID = -1;		
+	} else {
+		m_gridID = gridIDs[0];
+		m_gridsID = gridIDs[1];
+		m_tID = gridIDs[2];
+		m_zID = gridIDs[3];
+		m_zbID = gridIDs[4];
+		m_zsID = gridIDs[5];
+		m_gridexist = true;
+	}
+}
+
+std::vector<int> CDI::get_ncgridIDs_impl() const {
+	std::vector<int> gridIDs{m_gridID, m_gridsID, m_tID, m_zID, m_zbID, m_zsID};
+	return gridIDs;
+}
+
+
 void CDI::create_impl(const std::string &filename) {
 	int mode = CDI_FILETYPE_NC4;
 	m_file_id = streamOpenWrite(filename.c_str(), mode);
@@ -74,19 +102,15 @@ void CDI::sync_impl() const {
 }
 
 void CDI::close_impl() {
-	streamClose(m_file_id);
+	//double time_start = MPI_Wtime();
+	//streamClose(m_file_id);
+	//double time_end = MPI_Wtime();
+	//std::cout << "streamClose() time = " << time_end-time_start;
 	m_file_id = -1;
 	destroy_objs();
 }
 
 void CDI::destroy_objs() {
-	if (m_vlistID != -1) vlistDestroy(m_vlistID);
-	if (m_tID != -1) taxisDestroy(m_tID);
-	if (m_zID != -1) zaxisDestroy(m_zID);
-	if (m_zbID != -1) zaxisDestroy(m_zbID);
-	if (m_zsID != -1) zaxisDestroy(m_zsID);
-	if (m_gridID != -1) gridDestroy(m_gridID);
-        if (m_gridsID != -1) gridDestroy(m_gridsID);
 	m_varsID.clear();
 }
 
@@ -102,7 +126,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length) const {
         	m_vlistID = vlistCreate();
     	}
 
-
+	if (!m_gridexist) {
 	if (strcmp(name.c_str(),"x")==0) {
 		gridDefXsize(m_gridID, (int)length);
 		gridDefXname(m_gridID, name.c_str());
@@ -126,6 +150,17 @@ void CDI::def_dim_impl(const std::string &name, size_t length) const {
 	}
 	if (m_zsID == -1) {
 		m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+	}
+	} else {
+		if (!m_istimedef) {
+			m_dims_name.push_back("x");
+			m_dims_name.push_back("y");
+			m_dims_name.push_back("z");
+			m_dims_name.push_back("zb");
+			m_dims_name.push_back("time");
+			vlistDefTaxis(m_vlistID, m_tID);
+			m_istimedef = true;
+		}
 	}
 }
 
@@ -270,6 +305,7 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
 	// write dimensions values and scalar variables
+	if (!m_gridexist) {	
 	if (strcmp(variable_name.c_str(),"x")==0) {
 		gridDefXvals(m_gridID, op);
 	} else if (strcmp(variable_name.c_str(),"y")==0) {
@@ -278,6 +314,7 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
 		zaxisDefLevels(m_zID, op);
 	} else if (strcmp(variable_name.c_str(),"zb")==0) {
 		zaxisDefLevels(m_zbID, op);
+	}
 	}
 	// need to be generalised to write scalars
 }
@@ -412,7 +449,6 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
-	//return;
 	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
     	{
         	return;
@@ -423,13 +459,16 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), CDI_DATATYPE_FLT64, data.size(), &data[0]);
+	int type = vlistInqVarDatatype(m_vlistID,varID);
+	if (type != CDI_DATATYPE_FLT32 && type != CDI_DATATYPE_FLT64) {
+		type = CDI_DATATYPE_FLT32;
+	}
+	cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), type, data.size(), &data[0]);
 }
 
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
-	//return;
         if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
         {
                 return;
@@ -520,6 +559,13 @@ void CDI::set_bdiag_impl(bool value) const {
 	m_beforediag = value;
 }
 
+int CDI::get_ncstreamID_impl() const {
+	return m_file_id;
+}
+
+int CDI::get_ncvlistID_impl() const {
+	return m_vlistID;
+}
 
 } // end of namespace io
 } // end of namespace pism

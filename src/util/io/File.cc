@@ -185,7 +185,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 }
 
 File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-           int iosysid, const std::map<std::string, int> &varsi)
+           int iosysid, const std::map<std::string, int> &varsi, const std::vector<int>& gridIDs)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -201,7 +201,7 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
 
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
-
+  this->set_gridIDs(gridIDs);
   this->open(filename, mode, varsi);
 }
 
@@ -216,6 +216,22 @@ File::~File() {
     }
   }
   delete m_impl;
+}
+
+void File::set_gridIDs(const std::vector<int>& gridIDs) const {
+ m_impl->nc->set_ncgridIDs(gridIDs); 
+}
+
+std::vector<int> File::get_gridIDs() const {
+ return m_impl->nc->get_ncgridIDs();
+}
+
+int File::get_streamID() const {
+  return m_impl->nc->get_ncstreamID();
+}
+
+int File::get_vlistID() const {
+  return m_impl->nc->get_ncvlistID();
 }
 
 void File::set_dimatt() const {

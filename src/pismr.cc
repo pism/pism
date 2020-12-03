@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
       log->message(2, "... done with run\n");
 
       model->save_results();
+      model->close_files();
     }
     print_unused_parameters(*log, 3, *config);
 

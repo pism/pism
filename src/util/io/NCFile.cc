@@ -68,6 +68,14 @@ void NCFile::open(const std::string &filename, IO_Mode mode, const std::map<std:
   m_define_mode = false;
 }
 
+void NCFile::set_ncgridIDs(const std::vector<int>& gridIDs) const {
+  this->set_ncgridIDs_impl(gridIDs);
+}
+
+std::vector<int> NCFile::get_ncgridIDs() const {
+  return this->get_ncgridIDs_impl();
+}
+
 void NCFile::create(const std::string &filename) {
   this->create_impl(filename);
   m_filename = filename;
@@ -339,6 +347,27 @@ void NCFile::set_bdiag(bool value) const {
 
 void NCFile::set_bdiag_impl(bool value) const {
   (void) value;
+}
+
+void NCFile::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
+  (void) gridIDs;
+}
+
+std::vector<int> NCFile::get_ncgridIDs_impl() const {
+}
+
+int NCFile::get_ncstreamID() const {
+  return this->get_ncstreamID_impl();
+}
+
+int NCFile::get_ncvlistID() const {
+  return this->get_ncvlistID_impl();
+}
+
+int NCFile::get_ncstreamID_impl() const {
+}
+
+int NCFile::get_ncvlistID_impl() const {
 }
 
 } // end of namespace io
