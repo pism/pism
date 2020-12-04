@@ -81,7 +81,7 @@ endif()
 # Check if CDI is enabled and add a source code file if necessary.
 if (Pism_USE_CDIPIO)
   list(APPEND PISMUTIL_SRC io/CDI.cc)
-  list(APPEND PISMUTIL_SRC CDIPIOInitializer.cc
+  list(APPEND PISMUTIL_SRC cdipio/CDIPIOInitializer.cc)
 endif()
 
 add_library (util OBJECT ${PISMUTIL_SRC})

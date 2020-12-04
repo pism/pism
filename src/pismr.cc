@@ -45,6 +45,8 @@ extern "C"{
 }
 #endif
 
+#include "pism/util/cdipio/CDIPIOInitializer.hh"
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
