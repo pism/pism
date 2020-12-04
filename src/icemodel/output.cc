@@ -139,7 +139,7 @@ void IceModel::save_results() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 

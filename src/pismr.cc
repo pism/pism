@@ -56,23 +56,31 @@ int main(int argc, char *argv[]) {
   int nwriters, IOmode;
   //com = PETSC_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
-
-  try {
-#if (Pism_USE_CDIPIO==1)
-    {
+  {
       Context::Ptr ctx = context_from_options(com, "pismr");
       nwriters = ctx->get_n_writers();
       IOmode = ctx->get_IOmode();
-    }
-    xt_initialize(com);
-    int pioNamespace;
-    float partInflate = 1.0;
-    local_comm = pioInit(com, nwriters, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
+  }
+  xt_initialize(com);
+  int pioNamespace;
+  float partInflate = 1.0;
+  local_comm = pioInit(com, nwriters, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
+
+  try {
+#if (Pism_USE_CDIPIO==1)
+//    {
+//      Context::Ptr ctx = context_from_options(com, "pismr");
+//      nwriters = ctx->get_n_writers();
+//      IOmode = ctx->get_IOmode();
+//    }
+//    xt_initialize(com);
+//    int pioNamespace;
+//    float partInflate = 1.0;
+//    local_comm = pioInit(com, nwriters, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
     if (local_comm != MPI_COMM_NULL) {
       namespaceSetActive(pioNamespace);
-    }
-    PETSC_COMM_WORLD = local_comm;
-    petsc::Initializer petsc(argc, argv, help);
+      PETSC_COMM_WORLD = local_comm;
+      petsc::Initializer petsc(argc, argv, help);
 #else
     local_comm = PETSC_COMM_WORLD;
 #endif
@@ -143,13 +151,15 @@ int main(int argc, char *argv[]) {
     if (profiling_log.is_set()) {
       ctx->profiling().report(profiling_log);
     }
+#if (Pism_USE_CDIPIO==1)
+   }
+#endif
   }
   catch (...) {
     handle_fatal_errors(com);
     return 1;
   }
-
+  pioFinalize();
   xt_finalize();
-  MPI_Finalize();
   return 0;
 }

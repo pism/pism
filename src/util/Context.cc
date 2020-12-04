@@ -87,7 +87,7 @@ Context::~Context() {
 #endif
 
 #if (Pism_USE_CDIPIO==1)
-  pioFinalize();
+//  pioFinalize();
 #endif
 
   delete m_impl;
@@ -187,11 +187,9 @@ void Context::cdipio_init() const {
   if (m_impl->local_comm == MPI_COMM_NULL) {
     int n_writers = config()->get_number("output.pio.n_writers");
     int IOmode = config()->get_number("output.pio.mode");
-    float partInflate = 1.1;
-    int pioNamespace = 1;
+    float partInflate = 1.0;
+    int pioNamespace;
     m_impl->local_comm = pioInit(MPI_COMM_WORLD, n_writers, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
-    if (m_impl->local_comm == MPI_COMM_NULL)
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to initialize CDI-PIO library");
   }
 #endif
 }
