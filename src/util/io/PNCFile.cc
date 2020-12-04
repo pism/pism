@@ -46,7 +46,7 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-void PNCFile::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
+void PNCFile::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
   int stat;
 
   init_hints();

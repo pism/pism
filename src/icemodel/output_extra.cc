@@ -293,13 +293,15 @@ void IceModel::write_extras() {
     // This check makes sure that this never happens.
     return;
   }
-
+  
+  int fileID = -1;
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
              m_extra_filename.c_str(), m_time->date().c_str());
   } else {
     strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    if (streamIDs.count(filename) > 0) fileID = streamIDs[filename];
   }
 
   m_log->message(3,
@@ -318,7 +320,7 @@ void IceModel::write_extras() {
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
-                                  m_ctx->pio_iosys_id(), ExtraMap, gridIDs));
+                                  m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");

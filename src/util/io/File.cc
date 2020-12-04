@@ -157,7 +157,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 }
 
 File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-           int iosysid, const std::map<std::string, int> &varsi, const std::vector<int>& gridIDs)
+           int iosysid, const std::map<std::string, int> &varsi, const std::vector<int>& gridIDs, int FileID)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -174,7 +174,7 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
   this->set_gridIDs(gridIDs);
-  this->open(filename, mode, varsi);
+  this->open(filename, mode, varsi, FileID);
 }
 
 File::~File() {
@@ -229,7 +229,7 @@ IO_Backend File::backend() const {
   return m_impl->backend;
 }
 
-void File::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi) {
+void File::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
   try {
 
     // opening for reading
@@ -251,7 +251,7 @@ void File::open(const std::string &filename, IO_Mode mode, const std::map<std::s
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
 
-      m_impl->nc->open(filename, mode, varsi);
+      m_impl->nc->open(filename, mode, varsi, FileID);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);

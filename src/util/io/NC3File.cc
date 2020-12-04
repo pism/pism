@@ -69,7 +69,7 @@ NC3File::~NC3File() {
 }
 
 // open/create/close
-void NC3File::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
+void NC3File::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;

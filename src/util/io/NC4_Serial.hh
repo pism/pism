@@ -32,7 +32,8 @@ public:
   virtual ~NC4_Serial() {}
 protected:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>());
+  void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+                 int FileID = -1);
 
   void create_impl(const std::string &filename);
 };

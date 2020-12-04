@@ -55,13 +55,17 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 CDI::~CDI() {
 }
 
-void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi) {
+void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
 	if (mode == PISM_READONLY) {
         m_file_id = streamOpenRead(fname.c_str());
 	} else {
-        m_file_id = streamOpenAppend(fname.c_str());
+	if (FileID == -1) {
+        	m_file_id = streamOpenAppend(fname.c_str());
+	} else {
+		m_file_id = FileID;
+	}
         m_vlistID = streamInqVlist(m_file_id);
-	m_tID = vlistInqTaxis(m_vlistID);
+	//m_tID = vlistInqTaxis(m_vlistID);
         m_varsID = varsi;
 	}
 	m_firststep = false;
@@ -158,7 +162,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length) const {
 			m_dims_name.push_back("z");
 			m_dims_name.push_back("zb");
 			m_dims_name.push_back("time");
-			vlistDefTaxis(m_vlistID, m_tID);
+			if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
 			m_istimedef = true;
 		}
 	}
@@ -204,16 +208,17 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 }
 
 int CDI::inq_current_timestep() const {
-	int timesID = -1, nrec = -1;
-	if (m_firststep) {
-		timesID = 0;
-	} else { 
-	while (nrec != 0) {
-		timesID++;
-		nrec = streamInqTimestep(m_file_id, timesID);
-	}
-	}
-	return timesID;
+//	int timesID = -1, nrec = -1;
+//	if (m_firststep) {
+//		timesID = 0;
+//	} else { 
+	return streamInqCurTimestepID(m_file_id) + 1;
+//	while (nrec != 0) {
+//		timesID++;
+//		nrec = streamInqTimestep(m_file_id, timesID);
+//	}
+//	}
+//	return timesID;
 }
 
 void CDI::inq_unlimdim_impl(std::string &result) const {
@@ -449,6 +454,7 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
+	if (!m_firststep) return;
 	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
     	{
         	return;
@@ -469,6 +475,7 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
+	if (!m_firststep) return;
         if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
         {
                 return;
@@ -548,7 +555,7 @@ std::map<std::string, int> CDI::get_var_map_impl() {
 }
 
 void CDI::def_vlist_impl() const {
-	streamDefVlist(m_file_id, m_vlistID);
+	if (m_firststep) streamDefVlist(m_file_id, m_vlistID);
 }
 
 void CDI::set_diagvars_impl(const std::set<std::string> &variables) const {
