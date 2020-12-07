@@ -20,6 +20,13 @@ Changes since v1.2
   within the domain).
 - Add optional arguments `time_units` and `calendar` to `PISM.util.prepare_output()` in
   the Python bindings.
+- Add surface elevation smoothing to the orographic precipitation model. High-frequency
+  modes in the surface elevation that can develop in runs with evolving ice geometry
+  (consider grounded ice margins) may cause oscillations in the computed precipitation
+  field (probably due to the Gibbs phenomenon). These oscillations may result in an even
+  rougher topography, triggering a feedback loop polluting model results. Set
+  :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` (in meters)
+  to smooth the ice surface elevation to reduce this effect.
 
 Changes from v1.1 to v1.2
 =========================

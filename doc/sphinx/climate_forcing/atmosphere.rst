@@ -382,7 +382,7 @@ where `h` is the surface elevation, `C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gam
 relates the condensation rate to vertical motion (see the appendix of
 :cite:`SmithBarstad2004`), `m` is the vertical wavenumber (see equation 6 in
 :cite:`SmithBarstadBonneau2005`), and `\sigma` is the intrinsic frequency. The rest of the
-constants are defined in the table below.
+constants are defined below.
 
 The spatial pattern of precipitation is recovered using an inverse Fourier transform
 followed by post-processing:
@@ -391,6 +391,26 @@ followed by post-processing:
    :label: eq-orographic-post-processing
 
    P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.
+
+.. note::
+
+   - Discontinuities in the surface gradient (e.g. at ice margins) may cause oscillations
+     in the computed precipitation field probably due to the Gibbs phenomenon. To address
+     this our implementation includes the ability to smooth the surface topography using a
+     Gaussian filter. Set
+     :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` to a
+     positive number to enable smoothing. Values around `\Delta x` appear to be effective.
+
+   - The spectral method used to implement this model requires that the input (i.e.
+     surface elevation `h`) is periodic in `x` and `y`. To simulate periodic `h` the
+     implementation uses an extended grid (see
+     :config:`atmosphere.orographic_precipitation.grid_size_factor`) and pads modeled
+     surface elevation with zeros.
+
+     It is worth noting that the resulting precipitation field `P_{\text{LT}}` *is also
+     periodic* in `x` and `y` on the *extended* grid. The appropriate size of this
+     extended grid may differ depending on the spatial scale of the domain and values of
+     model parameters.
 
 It is implemented as a "modifier" that overrides the precipitation field provided by an
 input model. Use it with a model providing air temperatures to get a complete model. For
