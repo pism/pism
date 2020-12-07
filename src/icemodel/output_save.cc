@@ -134,14 +134,17 @@ void IceModel::write_snapshot() {
 
   // flush time-series buffers
   flush_timeseries();
-
+  int fileID = -1;
   if (m_split_snapshots) {
     m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     filename = pism::printf("%s_%s.nc",
                             m_snapshots_filename.c_str(),
                             m_time->date(saving_after).c_str());
   } else {
-    filename = m_snapshots_filename.c_str();
+    filename = m_snapshots_filename;
+    if (streamIDs.count(filename) > 0) {
+      fileID = streamIDs[filename];
+    }
   }
 
   m_log->message(2,
@@ -158,8 +161,7 @@ void IceModel::write_snapshot() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs);
-
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -168,7 +170,7 @@ void IceModel::write_snapshot() {
 
     write_run_stats(file);
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
-    
+
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
       vlistIDs[filename] = file.get_vlistID();

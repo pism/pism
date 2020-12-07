@@ -476,6 +476,7 @@ void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
 	if (!m_firststep) return;
+	if (value.empty() || att_name.empty()) return;
         if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
         {
                 return;
