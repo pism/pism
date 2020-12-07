@@ -41,9 +41,16 @@
 #include "pism/energy/utilities.hh"
 
 
+//extern "C"{
+//#include "cdi.h"
+//}
+#include <mpi.h>
 extern "C"{
+#include "cdipio.h"
 #include "cdi.h"
+#include "yaxt.h"
 }
+
 
 namespace pism {
 
@@ -131,6 +138,12 @@ void IceModel::save_results() {
   }
 
   const Profiling &profiling = m_ctx->profiling();
+  int fileID = -1;
+  IO_Mode mode = PISM_READWRITE_MOVE;
+  if (streamIDs.count(filename) > 0) {
+    fileID = streamIDs[filename];
+    mode = PISM_READWRITE;
+  }
 
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
@@ -138,8 +151,8 @@ void IceModel::save_results() {
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs);
+              mode,
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -267,12 +280,15 @@ void IceModel::save_variables(const File &file,
 
 void IceModel::close_files() {
 #if (Pism_USE_CDIPIO==1)
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("io.close_streams");
   for (auto const& streamID : streamIDs) {
     streamClose(streamID.second);
   }
   for (auto const& vlistID : vlistIDs) {
     vlistDestroy(vlistID.second);
   }
+  profiling.end("io.close_streams");
 #endif
 }
 

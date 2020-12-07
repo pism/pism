@@ -134,13 +134,14 @@ void IceModel::write_snapshot() {
 
   // flush time-series buffers
   flush_timeseries();
-
+  int fileID = -1;
   if (m_split_snapshots) {
     m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
              m_snapshots_filename.c_str(), m_time->date(saving_after).c_str());
   } else {
     strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    if (streamIDs.count(filename) > 0) fileID = streamIDs[filename];
   }
 
   m_log->message(2,
@@ -157,8 +158,7 @@ void IceModel::write_snapshot() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs);
-
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
