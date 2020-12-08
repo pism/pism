@@ -118,8 +118,12 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 //! Flush scalar time-series.
 void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
+  {
+  File file(m_grid->com, m_ts_diagnostics.begin()->second->get_output_filename(), PISM_NETCDF3, PISM_READWRITE);
   for (auto d : m_ts_diagnostics) {
-    d.second->flush();
+//    d.second->flush();
+    d.second->flush(file);
+  }
   }
 
   // update run_stats in the time series output file

@@ -378,6 +378,39 @@ void TSDiagnostic::flush() {
   m_ts.reset();
 }
 
+std::string TSDiagnostic::get_output_filename() {
+  return m_output_filename;
+}
+
+void TSDiagnostic::flush(File &file) {
+
+  if (m_ts.times().empty()) {
+    return;
+  }
+
+  std::string dimension_name = m_ts.dimension().get_name();
+
+  unsigned int len = file.dimension_length(dimension_name);
+
+  if (len > 0) {
+    double last_time = vector_max(file.read_dimension(dimension_name));
+
+    if (last_time < m_ts.times().front()) {
+      m_start = len;
+    }
+  }
+
+  if (len == m_start) {
+    io::write_timeseries(file, m_ts.dimension(), m_start, m_ts.times());
+    io::write_time_bounds(file, m_ts.bounds(), m_start, m_ts.time_bounds());
+  }
+  io::write_timeseries(file, m_ts.variable(), m_start, m_ts.values());
+
+  m_start += m_ts.times().size();
+
+  m_ts.reset();
+}
+
 void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
   m_output_filename = output_file.filename();

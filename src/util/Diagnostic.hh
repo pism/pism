@@ -277,6 +277,10 @@ public:
 
   void flush();
 
+  std::string get_output_filename();
+
+  void flush(File &file);
+
   void init(const File &output_file,
             std::shared_ptr<std::vector<double>> requested_times);
 
