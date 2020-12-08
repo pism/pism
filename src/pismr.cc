@@ -129,6 +129,7 @@ int main(int argc, char *argv[]) {
     } else if (list_json) {
       model->list_diagnostics_json();
     } else {
+      //model->open_files();
       model->run();
 
       log->message(2, "... done with run\n");

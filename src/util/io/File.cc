@@ -277,7 +277,7 @@ void File::open(const std::string &filename, IO_Mode mode, const std::map<std::s
         io::remove_if_exists(m_impl->com, filename);
       }
 
-      m_impl->nc->create(filename);
+      m_impl->nc->create(filename, FileID);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);

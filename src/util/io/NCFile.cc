@@ -76,8 +76,8 @@ std::vector<int> NCFile::get_ncgridIDs() const {
   return this->get_ncgridIDs_impl();
 }
 
-void NCFile::create(const std::string &filename) {
-  this->create_impl(filename);
+void NCFile::create(const std::string &filename, int FileID) {
+  this->create_impl(filename, FileID);
   m_filename = filename;
   m_define_mode = true;
 }

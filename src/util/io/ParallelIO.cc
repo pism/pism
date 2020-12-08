@@ -97,7 +97,7 @@ void ParallelIO::open_impl(const std::string &filename, IO_Mode mode, const std:
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void ParallelIO::create_impl(const std::string &filename) {
+void ParallelIO::create_impl(const std::string &filename, int FileID) {
 
   int mode = NC_CLOBBER;
   if (m_iotype == PIO_IOTYPE_PNETCDF) {

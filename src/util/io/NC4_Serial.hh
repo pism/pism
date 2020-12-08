@@ -33,7 +33,8 @@ public:
 protected:
   void set_compression_level_impl(int level) const;
 
-  void create_impl(const std::string &filename);
+  void create_impl(const std::string &filename, int FileID = -1);
+};
 
   void def_var_impl(const std::string &name, IO_Type nctype,
                     const std::vector<std::string> &dims) const;

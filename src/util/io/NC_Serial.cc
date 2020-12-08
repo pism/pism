@@ -91,7 +91,7 @@ void NC_Serial::open_impl(const std::string &fname, IO_Mode mode, const std::map
 }
 
 //! \brief Create a NetCDF file.
-void NC_Serial::create_impl(const std::string &fname) {
+void NC_Serial::create_impl(const std::string &fname, int FileID) {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
