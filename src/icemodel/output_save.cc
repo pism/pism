@@ -181,6 +181,7 @@ void IceModel::write_snapshot() {
       SnapMap = file.get_variables_map();
     }
   }
+  if (m_current_snapshot<m_snapshot_times.size()) m_sthwritten = true;
   profiling.end("io.snapshots");
 }
 
