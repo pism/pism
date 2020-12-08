@@ -121,6 +121,7 @@ public:
   /** Run PISM in the "standalone" mode. */
   virtual void run();
   virtual void close_files();
+  virtual void open_files();
 
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
@@ -207,7 +208,8 @@ protected:
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type = PISM_FLOAT);
+                              IO_Type default_diagnostics_type = PISM_FLOAT,
+                              bool realsave = true);
 
   virtual void define_model_state(const File &file);
   virtual void write_model_state(const File &file);
@@ -245,6 +247,8 @@ protected:
 
   //! run statistics
   VariableMetadata m_run_stats;
+
+  bool m_opened;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;

@@ -35,7 +35,7 @@ protected:
   virtual void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
                          int FileID = -1);
 
-  virtual void create_impl(const std::string &filename);
+  virtual void create_impl(const std::string &filename, int FileID = -1);
 
   virtual void set_access_mode(int varid, bool mapped) const;
 };

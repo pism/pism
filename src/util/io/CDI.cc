@@ -96,9 +96,13 @@ std::vector<int> CDI::get_ncgridIDs_impl() const {
 }
 
 
-void CDI::create_impl(const std::string &filename) {
+void CDI::create_impl(const std::string &filename, int FileID) {
+        if (FileID == -1) {
 	int mode = CDI_FILETYPE_NC4;
 	m_file_id = streamOpenWrite(filename.c_str(), mode);
+        } else {
+        m_file_id = FileID;
+        }
 	m_firststep = true;
 }
 

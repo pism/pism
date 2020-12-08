@@ -58,7 +58,7 @@ void PNCFile::open_impl(const std::string &fname, IO_Mode mode, const std::map<s
 }
 
 
-void PNCFile::create_impl(const std::string &fname) {
+void PNCFile::create_impl(const std::string &fname, int FileID) {
   int stat;
 
   init_hints();

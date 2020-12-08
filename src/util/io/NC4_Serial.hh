@@ -35,7 +35,7 @@ protected:
   void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
                  int FileID = -1);
 
-  void create_impl(const std::string &filename);
+  void create_impl(const std::string &filename, int FileID = -1);
 };
 
 

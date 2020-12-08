@@ -68,7 +68,7 @@ public:
   void set_ncgridIDs(const std::vector<int>& gridIDs = std::vector<int>()) const;
   virtual std::vector<int> get_ncgridIDs() const;
 
-  void create(const std::string &filename);
+  void create(const std::string &filename, int FileID = -1);
 
   void sync() const;
 
@@ -167,7 +167,7 @@ protected:
 
   // open/create/close
   virtual void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(), int FileID = -1) = 0;
-  virtual void create_impl(const std::string &filename) = 0;
+  virtual void create_impl(const std::string &filename, int FileID = -1) = 0;
   virtual void sync_impl() const = 0;
   virtual void close_impl() = 0;
 

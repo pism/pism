@@ -50,7 +50,7 @@ void NC4_Par::open_impl(const std::string &fname, IO_Mode mode, const std::map<s
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4_Par::create_impl(const std::string &fname) {
+void NC4_Par::create_impl(const std::string &fname, int FileID) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 

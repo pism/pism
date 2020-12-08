@@ -202,7 +202,8 @@ void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type) {
+                              IO_Type default_diagnostics_type,
+                              bool realsave) {
 
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
@@ -223,6 +224,8 @@ void IceModel::save_variables(const File &file,
   // Done defining variables
   file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
   // append to the time dimension
+  if (not realsave) return;  
+
   io::append_time(file, *m_config, time);
   
   {
@@ -276,6 +279,99 @@ void IceModel::save_variables(const File &file,
                          wall_clock_hours(m_grid->com, m_start_time));
   }
   file.expose_windows();
+  
+}
+
+void IceModel::open_files() {
+  if (not m_split_snapshots) {
+    char filename[PETSC_MAX_PATH_LEN];
+    strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    int fileID = -1;
+    IO_Mode mode = PISM_READWRITE_MOVE;
+    {
+    File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              mode,
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+    streamIDs[filename] = file.get_streamID();
+
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    m_snapshots_file_is_ready = true;
+    write_run_stats(file);
+
+    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
+    vlistIDs[filename] = file.get_vlistID();
+    if (gridIDs.size()==0) {
+        gridIDs.resize(6);
+        gridIDs = file.get_gridIDs();
+    }
+    SnapMap = file.get_variables_map();
+    }
+  }
+
+  //if (not m_split_extra) {
+  //  char filename[PETSC_MAX_PATH_LEN];
+  //  strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+  //  int fileID = -1;
+  //  IO_Mode mode = PISM_READWRITE_MOVE;
+  //  {
+  //  m_extra_file.reset(new File(m_grid->com,
+  //                                filename,
+  //                                string_to_backend(m_config->get_string("output.format")),
+  //                                mode,
+  //                                m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID));
+  //  streamIDs[filename] = m_extra_file->get_streamID();
+
+  //  std::string time_name = m_config->get_string("time.dimension_name");
+  //  io::define_time(*m_extra_file, *m_ctx);
+  //  m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
+  //  io::define_time_bounds(m_extra_bounds, *m_extra_file);
+  //  write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
+  // m_extra_file_is_ready = true;
+  //  write_run_stats(*m_extra_file);
+
+  //  save_variables(*m_extra_file,
+  //                 m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+  //                m_extra_vars,
+  //                 0,
+  //                 PISM_FLOAT,
+  //                 false);
+  //  if (m_extra_file->backend() == PISM_CDI) {
+  //    vlistIDs[filename] = m_extra_file->get_vlistID();
+  //    if (gridIDs.size()==0) gridIDs = m_extra_file->get_gridIDs();
+  //    ExtraMap = m_extra_file->get_variables_map();
+  //  }
+  //  }
+  //}
+  
+  
+  {
+  std::string filename = m_config->get_string("output.file_name");
+  if (filename.empty()) {
+    m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+    filename = "unnamed.nc";
+  }
+  if (not ends_with(filename, ".nc")) {
+    m_log->message(2,
+                   "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+  }
+  int fileID = -1;
+  IO_Mode mode = PISM_READWRITE_MOVE;
+  File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              mode,
+              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+  streamIDs[filename] = file.get_streamID();
+
+  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
+  write_run_stats(file);
+
+  save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+                   m_time->current(), PISM_FLOAT, false);
+  }
 }
 
 void IceModel::close_files() {
@@ -285,9 +381,9 @@ void IceModel::close_files() {
   for (auto const& streamID : streamIDs) {
     streamClose(streamID.second);
   }
-  for (auto const& vlistID : vlistIDs) {
-    vlistDestroy(vlistID.second);
-  }
+  //for (auto const& vlistID : vlistIDs) {
+  //  vlistDestroy(vlistID.second);
+  //}
   profiling.end("io.close_streams");
 #endif
 }

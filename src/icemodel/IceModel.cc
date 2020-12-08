@@ -62,6 +62,7 @@ namespace pism {
 
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
   : m_grid(g),
+    m_opened(false),
     m_config(context->config()),
     m_ctx(context),
     m_sys(context->unit_system()),
@@ -812,6 +813,10 @@ void IceModel::run() {
 
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
+    if (not m_opened) {
+      open_files();
+      m_opened = true;
+    }
     write_snapshot();
     write_extras();
     write_backup();
