@@ -100,10 +100,11 @@ void CDI::create_impl(const std::string &filename, int FileID) {
         if (FileID == -1) {
 	int mode = CDI_FILETYPE_NC4;
 	m_file_id = streamOpenWrite(filename.c_str(), mode);
+        m_firststep = true;
         } else {
         m_file_id = FileID;
+         m_firststep = false;
         }
-	m_firststep = true;
 }
 
 void CDI::sync_impl() const {

@@ -249,6 +249,7 @@ protected:
   VariableMetadata m_run_stats;
 
   bool m_opened;
+  bool m_sthwritten;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;

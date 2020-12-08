@@ -58,6 +58,13 @@
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 
+#include <mpi.h>
+extern "C"{
+#include "cdipio.h"
+#include "cdi.h"
+#include "yaxt.h"
+}
+
 namespace pism {
 
 IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
@@ -820,6 +827,10 @@ void IceModel::run() {
     write_snapshot();
     write_extras();
     write_backup();
+    if (m_sthwritten) {
+      pioWriteTimestep();
+      m_sthwritten = false;
+    }
     profiling.end("io");
 
     if (stepcount >= 0) {

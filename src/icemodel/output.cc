@@ -148,25 +148,32 @@ void IceModel::save_results() {
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
+    profiling.begin("io.open");
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+    profiling.end("io.open");
 
+    profiling.begin("io.initdef");
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
     write_run_stats(file);
+    profiling.end("io.initdef");
 
+    profiling.begin("io.def+write");
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
+    pioWriteTimestep();
+    profiling.end("io.def+write");
+
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
       vlistIDs[filename] = file.get_vlistID();
-      if (gridIDs.size()==0) {
-        gridIDs.resize(6);
-        gridIDs = file.get_gridIDs();
-      }
+//      if (gridIDs.size()==0) {
+//        gridIDs.resize(6);
+//        gridIDs = file.get_gridIDs();
+//      }
     }
   }
   profiling.end("io.model_state");
@@ -204,7 +211,6 @@ void IceModel::save_variables(const File &file,
                               double time,
                               IO_Type default_diagnostics_type,
                               bool realsave) {
-
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
@@ -223,11 +229,7 @@ void IceModel::save_variables(const File &file,
   define_diagnostics(file, variables, default_diagnostics_type);
   // Done defining variables
   file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
-  // append to the time dimension
-  if (not realsave) return;  
 
-  io::append_time(file, *m_config, time);
-  
   {
     // Note: we don't use "variables" (an argument of this method) here because it
     // contains PISM's names of diagnostic quantities which (in some cases) map to more
@@ -263,6 +265,9 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
+  if (not realsave) return;
+  io::append_time(file, *m_config, time);
+
   file.set_dimatt();
   file.send_diagnostics(variables);
   if (kind == INCLUDE_MODEL_STATE) {
@@ -278,8 +283,6 @@ void IceModel::save_variables(const File &file,
     io::write_timeseries(file, m_timestamp, start,
                          wall_clock_hours(m_grid->com, m_start_time));
   }
-  file.expose_windows();
-  
 }
 
 void IceModel::open_files() {
@@ -370,7 +373,7 @@ void IceModel::open_files() {
   write_run_stats(file);
 
   save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
-                   m_time->current(), PISM_FLOAT, false);
+                   0, PISM_FLOAT, false);
   }
 }
 
