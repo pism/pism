@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -64,6 +64,9 @@ private:
   void mass_flux(const IceModelVec2S &thermal_forcing, const IceModelVec2Int &m_basin_mask, std::vector<double> &basin_TF, IceModelVec2S &result) ;
 
   int m_n_basins;
+
+  // temporary storage
+  IceModelVec2S m_thermal_forcing;
 };
 
 } // end of namespace ocean

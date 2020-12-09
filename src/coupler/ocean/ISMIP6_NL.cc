@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -39,7 +39,8 @@ namespace ocean {
 
 ISMIP6nl::ISMIP6nl(IceGrid::ConstPtr g)
   :  CompleteOceanModel(g, std::shared_ptr<OceanModel>()),
-     m_basin_mask(m_grid, "basin_mask", WITH_GHOSTS) {
+     m_basin_mask(m_grid, "basin_mask", WITH_GHOSTS),
+     m_thermal_forcing(m_grid, "thermal_forcing", WITHOUT_GHOSTS) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
@@ -128,17 +129,16 @@ void ISMIP6nl::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &H = geometry.ice_thickness;
   const IceModelVec2CellType &cell_type = geometry.cell_type;
 
-  IceModelVec2S thermal_forcing;
   std::vector<double> basin_TF(m_n_basins);
 
   m_log->message(2, "*BEFORE COMPUTING TF\n");
-  compute_thermal_forcing(H, *m_shelfbtemp, *m_salinity_ocean, thermal_forcing);
+  compute_thermal_forcing(H, *m_shelfbtemp, *m_salinity_ocean, m_thermal_forcing);
 
   m_log->message(2, "*BEFORE COMPUTING AVG_TF\n");
-  compute_avg_thermal_forcing(cell_type, m_basin_mask, thermal_forcing, basin_TF); // per basin
+  compute_avg_thermal_forcing(cell_type, m_basin_mask, m_thermal_forcing, basin_TF); // per basin
 
   m_log->message(2, "*BEFORE COMPUTING MASS_FLUX\n");
-  mass_flux(thermal_forcing, m_basin_mask, basin_TF, *m_shelf_base_mass_flux); // call to ISMIP6 quadratic parametrisation
+  mass_flux(m_thermal_forcing, m_basin_mask, basin_TF, *m_shelf_base_mass_flux); // call to ISMIP6 quadratic parametrisation
 
   // Set shelf base temperature to the melting temperature at the base (depth within the
   // ice equal to ice thickness).
