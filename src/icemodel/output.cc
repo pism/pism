@@ -321,40 +321,42 @@ void IceModel::open_files() {
     }
   }
 
-  //if (not m_split_extra) {
-  //  char filename[PETSC_MAX_PATH_LEN];
-  //  strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
-  //  int fileID = -1;
-  //  IO_Mode mode = PISM_READWRITE_MOVE;
-  //  {
-  //  m_extra_file.reset(new File(m_grid->com,
-  //                                filename,
-  //                                string_to_backend(m_config->get_string("output.format")),
-  //                                mode,
-  //                                m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID));
-  //  streamIDs[filename] = m_extra_file->get_streamID();
+  if (not m_split_extra) {
+    char filename[PETSC_MAX_PATH_LEN];
+    strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    int fileID = -1;
+    IO_Mode mode = PISM_READWRITE_MOVE;
+    {
+    File file(m_grid->com,
+              filename,
+              string_to_backend(m_config->get_string("output.format")),
+              mode,
+              m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID);
+    streamIDs[filename] = file.get_streamID();
 
-  //  std::string time_name = m_config->get_string("time.dimension_name");
-  //  io::define_time(*m_extra_file, *m_ctx);
-  //  m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
-  //  io::define_time_bounds(m_extra_bounds, *m_extra_file);
-  //  write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
-  // m_extra_file_is_ready = true;
-  //  write_run_stats(*m_extra_file);
+    std::string time_name = m_config->get_string("time.dimension_name");
+    io::define_time(file, *m_ctx);
+    file.write_attribute(time_name, "bounds", "time_bounds");
+    io::define_time_bounds(m_extra_bounds, file);
+    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+    m_extra_file_is_ready = true;
+    write_run_stats(file);
 
-  //  save_variables(*m_extra_file,
-  //                 m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-  //                m_extra_vars,
-  //                 0,
-  //                 PISM_FLOAT,
-  //                 false);
-  //  if (m_extra_file->backend() == PISM_CDI) {
-  //    vlistIDs[filename] = m_extra_file->get_vlistID();
-  //    if (gridIDs.size()==0) gridIDs = m_extra_file->get_gridIDs();
-  //    ExtraMap = m_extra_file->get_variables_map();
-  //  }
-  //  }
-  //}
+    save_variables(file,
+                   m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                   m_extra_vars,
+                   0,
+                   PISM_FLOAT,
+                   false);
+
+    if (file.backend() == PISM_CDI) {
+      vlistIDs[filename] = file.get_vlistID();
+      if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
+      ExtraMap = file.get_variables_map();
+    }
+
+    }
+  }
 
 
   {
