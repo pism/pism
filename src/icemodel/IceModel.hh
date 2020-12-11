@@ -124,6 +124,7 @@ public:
   virtual void run();
   virtual void close_files();
   virtual void open_files();
+  virtual void expose_windows();
 
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
