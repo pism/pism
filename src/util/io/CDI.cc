@@ -98,7 +98,7 @@ std::vector<int> CDI::get_ncgridIDs_impl() const {
 
 void CDI::create_impl(const std::string &filename, int FileID) {
         if (FileID == -1) {
-	int mode = CDI_FILETYPE_NC4;
+	int mode = CDI_FILETYPE_NC2;
 	m_file_id = streamOpenWrite(filename.c_str(), mode);
         m_firststep = true;
         } else {
@@ -265,7 +265,7 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const st
         tsteptype = TIME_CONSTANT;
     } else {
         for (auto d : dims) {
-            if (strcmp(d.c_str(),"time")==0) tsteptype = TIME_VARYING;
+            if (strcmp(d.c_str(),"time")==0) tsteptype = TIME_VARIABLE;
         }
     }
 
@@ -286,7 +286,7 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
         } else if (strcmp(d.c_str(),"zb")==0) {
             zaxisID = m_zbID;
         } else if (strcmp(d.c_str(),"time")==0) {
-            tsteptype = TIME_VARYING;
+            tsteptype = TIME_VARIABLE;
     	}
     }
     if (zaxisID == -1) {
@@ -356,8 +356,9 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 		} else if (current_z == m_zbID) {
 			type = type + 4;
 		}
-		int current_t = vlistInqVarTimetype(m_vlistID, varID);
-		if (current_t == TIME_VARYING) {
+                int current_t = vlistInqVarTsteptype(m_vlistID, varID);
+		//int current_t = vlistInqVarTimetype(m_vlistID, varID);
+		if (current_t == TIME_VARIABLE) {
 			type++;
 		}
 	} else {
@@ -413,13 +414,15 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
 void CDI::get_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   std::vector<double> &result) const {
+        return;
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	//int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	int cdilen = 0;
 
 	if (cdilen == 0) {
     	result.clear();
@@ -431,13 +434,15 @@ void CDI::get_att_double_impl(const std::string &variable_name,
 }
 
 void CDI::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+        return;
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	//int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
+	int cdilen = 0;
 	if (cdilen == -1 || cdilen==0) {
 		result.clear();
     		return;
@@ -512,7 +517,8 @@ void CDI::inq_atttype_impl(const std::string &variable_name,
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	int cditype = cdiInqAttType(m_vlistID, varID, att_name.c_str());
+	//int cditype = cdiInqAttType(m_vlistID, varID, att_name.c_str());
+        int cditype = -1;
 	result = cdi_type_to_pism_type(cditype);
 }
 

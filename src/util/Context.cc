@@ -197,7 +197,7 @@ void Context::cdipio_init() const {
 int Context::get_n_writers() const {
   int n_writers = 0;
 #if (Pism_USE_CDIPIO==1)
-  n_writers = config()->get_number("output.pio.n_writers");
+  n_writers = config()->get_number("output.pio.a_writers");
 #endif
   return n_writers;
 }
