@@ -141,7 +141,11 @@ void IceModel::write_snapshot() {
              m_snapshots_filename.c_str(), m_time->date(saving_after).c_str());
   } else {
     strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
-    if (streamIDs.count(filename) > 0) fileID = streamIDs[filename];
+  }
+
+  if (streamIDs.count(filename) > 0) {
+    fileID = streamIDs[filename];
+    m_snapshots_file_is_ready = true;
   }
 
   m_log->message(2,
@@ -170,11 +174,7 @@ void IceModel::write_snapshot() {
     
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
-      vlistIDs[filename] = file.get_vlistID();
-      if (gridIDs.size()==0) {
-        gridIDs.resize(6);
-        gridIDs = file.get_gridIDs();
-      }
+      //vlistIDs[filename] = file.get_vlistID();
       SnapMap = file.get_variables_map();
     }
   }

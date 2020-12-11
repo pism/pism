@@ -18,6 +18,8 @@
 
 #include <cstring>              // strncpy
 #include <cstdio>               // snprintf
+#include <iomanip>
+#include <sstream>
 
 #include <algorithm>
 #include <set>
@@ -153,7 +155,7 @@ void IceModel::save_results() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(), OutMap, gridIDs, fileID);
     profiling.end("io.open");
 
     profiling.begin("io.initdef");
@@ -169,11 +171,7 @@ void IceModel::save_results() {
 
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
-      vlistIDs[filename] = file.get_vlistID();
-//      if (gridIDs.size()==0) {
-//        gridIDs.resize(6);
-//        gridIDs = file.get_gridIDs();
-//      }
+      //vlistIDs[filename] = file.get_vlistID();
     }
   }
   profiling.end("io.model_state");
@@ -211,9 +209,7 @@ void IceModel::save_variables(const File &file,
                               double time,
                               IO_Type default_diagnostics_type,
                               bool realsave) {
-  const Profiling &profiling = m_ctx->profiling();
   // define the time dimension if necessary (no-op if it is already defined)
-  if (not realsave) {
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
@@ -267,22 +263,16 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
-  return;
-  }
-  //if (not realsave) return;
-//  profiling.begin("io.append_time");
-  io::append_time(file, *m_config, time);
-//  profiling.end("io.append_time");
+  if (not realsave) return;
 
+  io::append_time(file, *m_config, time);
   file.set_dimatt();
   file.send_diagnostics(variables);
-//  profiling.begin("io.write");
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
   file.set_beforediag(false);
   write_diagnostics(file, variables);
-//  profiling.end("io.write");
   // find out how much time passed since the beginning of the run and save it to the output file
   {
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
@@ -293,9 +283,32 @@ void IceModel::save_variables(const File &file,
 }
 
 void IceModel::open_files() {
-  if (not m_split_snapshots) {
+// CDI does not support split of extra file (runs with lower performance)
+#if (Pism_USE_CDIPIO==1)
+if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+  // Open snap file/s
+  if (m_save_snapshots) {
     char filename[PETSC_MAX_PATH_LEN];
-    strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    int nsnap;
+    if (not m_split_snapshots) {
+        nsnap = 1;
+    } else {
+        nsnap = m_snapshot_times.size();
+    }
+
+    for (int sn = 0; sn<nsnap; sn++) {
+    if (not m_split_snapshots) {
+        strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    } else {
+        double tt = m_snapshot_times[sn];
+        tt = tt / 365 / 24 / 60 / 60;
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(3) << tt;
+        std::string tts = stream.str();
+        snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+             m_snapshots_filename.c_str(), tts.c_str());
+    }
+
     int fileID = -1;
     IO_Mode mode = PISM_READWRITE_MOVE;
     {
@@ -318,12 +331,42 @@ void IceModel::open_files() {
     }
     SnapMap = file.get_variables_map();
     }
+    m_snapshots_file_is_ready = false;
+    }
+    m_snapshots_file_is_ready = true;
   }
 
-  if (not m_split_extra) {
-//  if (false) {
+  // Open Extra file
+  if (m_save_extra) {
     char filename[PETSC_MAX_PATH_LEN];
-    strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    int nsnap;
+    if (not m_split_extra) {
+      nsnap = 1;
+    } else {
+      if (not m_config->get_flag("output.ISMIP6")) {
+        nsnap = m_extra_times.size() - 1; // First one is never saved
+      } else {
+        nsnap = m_extra_times.size();
+      }
+    }
+
+    for (int sn = 0; sn<nsnap; sn++) {
+    if (not m_split_extra) {
+      strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    } else {
+      double tt;
+      if (not m_config->get_flag("output.ISMIP6")) {
+        tt = m_extra_times[sn+1];
+      } else {
+        tt = m_extra_times[sn];
+      }
+      tt = tt / 365 / 24 / 60 / 60;
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(3) << tt;
+      std::string tts = stream.str();
+      snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+               m_extra_filename.c_str(), tts.c_str());
+    }
     int fileID = -1;
     IO_Mode mode = PISM_READWRITE_MOVE;
     {
@@ -354,11 +397,14 @@ void IceModel::open_files() {
       if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
       ExtraMap = file.get_variables_map();
     }
-
     }
+    m_extra_file_is_ready = false;
+    }
+    m_extra_file_is_ready = true;
   }
   
-  
+  // Open Output file
+  if (m_config->get_string("output.size") != "none")
   {
   std::string filename = m_config->get_string("output.file_name");
   if (filename.empty()) {
@@ -375,7 +421,7 @@ void IceModel::open_files() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(), OutMap, gridIDs, fileID);
   streamIDs[filename] = file.get_streamID();
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -384,20 +430,31 @@ void IceModel::open_files() {
 
   save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    0, PISM_FLOAT, false);
+  if (file.backend() == PISM_CDI) {
+      vlistIDs[filename] = file.get_vlistID();
+      if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
+      OutMap = file.get_variables_map();
   }
+  }
+}
+#endif
 }
 
 void IceModel::close_files() {
 #if (Pism_USE_CDIPIO==1)
+if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.close_streams");
+  // Close all files
   for (auto const& streamID : streamIDs) {
     streamClose(streamID.second);
   }
-  //for (auto const& vlistID : vlistIDs) {
-  //  vlistDestroy(vlistID.second);
-  //}
+  // Destroy all streams
+  for (auto const& vlistID : vlistIDs) {   
+    vlistDestroy(vlistID.second);
+  }
   profiling.end("io.close_streams");
+}
 #endif
 }
 
