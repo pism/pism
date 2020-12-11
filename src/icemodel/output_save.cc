@@ -174,11 +174,10 @@ void IceModel::write_snapshot() {
     
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
-      //vlistIDs[filename] = file.get_vlistID();
       SnapMap = file.get_variables_map();
     }
   }
-  if (m_current_snapshot<m_snapshot_times.size()) m_sthwritten = true;
+  if (m_current_snapshot < m_snapshot_times.size()) m_sthwritten = true;
   profiling.end("io.snapshots");
 }
 

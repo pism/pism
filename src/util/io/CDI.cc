@@ -39,13 +39,7 @@ namespace pism {
 namespace io {
 
 CDI::CDI(MPI_Comm c) : NCFile(c) {
-//	m_gridID = -1;
-//	m_gridsID = -1;
 	m_vlistID = -1;
-//	m_zID = -1;
-//	m_zbID = -1;
-//	m_zsID = -1;
-//	m_tID = -1;
 	m_varsID.clear();
 	m_beforediag = true;
 	m_gridexist = false;
@@ -65,7 +59,6 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
 		m_file_id = FileID;
 	}
         m_vlistID = streamInqVlist(m_file_id);
-	//m_tID = vlistInqTaxis(m_vlistID);
         m_varsID = varsi;
 	}
 	m_firststep = false;
@@ -111,10 +104,6 @@ void CDI::sync_impl() const {
 }
 
 void CDI::close_impl() {
-	//double time_start = MPI_Wtime();
-	//streamClose(m_file_id);
-	//double time_end = MPI_Wtime();
-	//std::cout << "streamClose() time = " << time_end-time_start;
 	m_file_id = -1;
 	destroy_objs();
 }
@@ -124,10 +113,11 @@ void CDI::destroy_objs() {
 }
 
 void CDI::enddef_impl() const {
-//	pioEndDef(); concept of STAGES does not exist anymore
+// not needed
 }
 
 void CDI::redef_impl() const {
+// not needed
 }
 
 void CDI::def_dim_impl(const std::string &name, size_t length) const {
@@ -213,17 +203,7 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 }
 
 int CDI::inq_current_timestep() const {
-//	int timesID = -1, nrec = -1;
-//	if (m_firststep) {
-//		timesID = 0;
-//	} else { 
 	return streamInqCurTimestepID(m_file_id) + 1;
-//	while (nrec != 0) {
-//		timesID++;
-//		nrec = streamInqTimestep(m_file_id, timesID);
-//	}
-//	}
-//	return timesID;
 }
 
 void CDI::inq_unlimdim_impl(std::string &result) const {
@@ -244,7 +224,7 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
 
     if (dims.empty() || dims.size()<2) { // scalar variable
 		def_var_scalar_impl(name, nctype, dims);
-    } else {         // multi-dimensional variable
+    } else {                             // multi-dimensional variable
 		def_var_multi_impl(name, nctype, dims);
     }
 }
@@ -304,6 +284,7 @@ void CDI::get_vara_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &start,
                                  const std::vector<unsigned int> &count,
                                  double *ip) const {
+// not needed
 	(void) variable_name;
 	(void) start;
 	(void) count;
@@ -334,6 +315,7 @@ void CDI::get_varm_double_impl(const std::string &variable_name,
                                  const std::vector<unsigned int> &count,
                                  const std::vector<unsigned int> &imap,
                                  double *ip) const {
+// not needed
 	(void) variable_name;
 	(void) start;
 	(void) count;
@@ -357,7 +339,6 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 			type = type + 4;
 		}
                 int current_t = vlistInqVarTsteptype(m_vlistID, varID);
-		//int current_t = vlistInqVarTimetype(m_vlistID, varID);
 		if (current_t == TIME_VARIABLE) {
 			type++;
 		}
@@ -365,7 +346,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 		result.clear();
 		return;
 	}
-    // todo: inquire the name - don't write it directly
+        // todo: inquire the name - don't write it directly
 	switch (type) {
 		case 0:
 			result.resize(2); result[0] = "y"; result[1] = "x";
@@ -414,43 +395,11 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
 void CDI::get_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   std::vector<double> &result) const {
-        return;
-	int varID = -1;
-	if (variable_name == "PISM_GLOBAL") {
-		varID = CDI_GLOBAL;
-	} else {
-		varID = m_varsID[variable_name];
-	}
-	//int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
-	int cdilen = 0;
-
-	if (cdilen == 0) {
-    	result.clear();
-    	return;
-  	}
-  	result.resize(cdilen);
-
-  	cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), cdilen, result.data());
+// not needed
 }
 
 void CDI::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-        return;
-	int varID = -1;
-	if (variable_name == "PISM_GLOBAL") {
-		varID = CDI_GLOBAL;
-	} else {
-		varID = m_varsID[variable_name];
-	}
-	//int cdilen = cdiInqAttLen(m_vlistID, varID, att_name.c_str());
-	int cdilen = 0;
-	if (cdilen == -1 || cdilen==0) {
-		result.clear();
-    		return;
-	}
-	result.resize(cdilen);
-	std::vector<char> str(cdilen + 1, 0);
-	cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), cdilen, str.data());
-	result = str.data();
+// not needed
 }
 
 void CDI::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
@@ -503,6 +452,7 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 void CDI::inq_attname_impl(const std::string &variable_name,
                                unsigned int n,
                                std::string &result) const {
+// not needed
 	(void) variable_name;
 	(void) n;
 	(void) result;
@@ -511,6 +461,7 @@ void CDI::inq_attname_impl(const std::string &variable_name,
 void CDI::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
                                IO_Type &result) const {
+// to be implemented - not working with cdi-1.8
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
@@ -523,6 +474,7 @@ void CDI::inq_atttype_impl(const std::string &variable_name,
 }
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
+// not needed
 	(void) fillmode;
 	(void) old_modep;
 }

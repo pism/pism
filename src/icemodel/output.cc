@@ -166,12 +166,12 @@ void IceModel::save_results() {
     profiling.begin("io.def+write");
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
-    pioWriteTimestep();
+    m_sthwritten = true;
+    expose_windows();
     profiling.end("io.def+write");
 
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
-      //vlistIDs[filename] = file.get_vlistID();
     }
   }
   profiling.end("io.model_state");
@@ -283,9 +283,10 @@ void IceModel::save_variables(const File &file,
 }
 
 void IceModel::open_files() {
-// CDI does not support split of extra file (runs with lower performance)
 #if (Pism_USE_CDIPIO==1)
 if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+  if (not m_opened) {
+  m_opened = true;
   // Open snap file/s
   if (m_save_snapshots) {
     char filename[PETSC_MAX_PATH_LEN];
@@ -336,7 +337,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     m_snapshots_file_is_ready = true;
   }
 
-  // Open Extra file
+  // Open Extra file/s
   if (m_save_extra) {
     char filename[PETSC_MAX_PATH_LEN];
     int nsnap;
@@ -436,6 +437,18 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
       OutMap = file.get_variables_map();
   }
   }
+  }
+}
+#endif
+}
+
+void IceModel::expose_windows() {
+#if (Pism_USE_CDIPIO==1)
+if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+    if (m_sthwritten) {
+      pioWriteTimestep();
+      m_sthwritten = false;
+    }
 }
 #endif
 }

@@ -820,17 +820,11 @@ void IceModel::run() {
 
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
-    if (not m_opened) {
-      open_files();
-      m_opened = true;
-    }
+    open_files();
     write_snapshot();
     write_extras();
     write_backup();
-    if (m_sthwritten) {
-      pioWriteTimestep();
-      m_sthwritten = false;
-    }
+    expose_windows();
     profiling.end("io");
 
     if (stepcount >= 0) {

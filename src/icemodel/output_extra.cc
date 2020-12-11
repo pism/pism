@@ -330,7 +330,6 @@ void IceModel::write_extras() {
       m_extra_file.reset(new File(m_grid->com,
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
-//                                  string_to_backend("pio_pnetcdf"),
                                   mode,
                                   m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID));
     }
@@ -368,7 +367,6 @@ void IceModel::write_extras() {
     m_extra_file->sync();
     if (m_extra_file->backend() == PISM_CDI) {
       streamIDs[filename] = m_extra_file->get_streamID();
-      //vlistIDs[filename] = m_extra_file->get_vlistID();
       ExtraMap = m_extra_file->get_variables_map();
     }
   }
