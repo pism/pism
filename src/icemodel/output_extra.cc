@@ -28,6 +28,13 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 
+#include <mpi.h>
+extern "C"{
+#include "cdipio.h"
+#include "cdi.h"
+#include "yaxt.h"
+}
+
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
@@ -319,6 +326,7 @@ void IceModel::write_extras() {
       m_extra_file.reset(new File(m_grid->com,
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
+//                                  string_to_backend("pio_pnetcdf"),
                                   mode,
                                   m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID));
     }

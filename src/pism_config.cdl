@@ -1901,6 +1901,11 @@ netcdf pism_config {
     pism_config:output.pio.n_writers_type = "integer";
     pism_config:output.pio.n_writers_units = "count";
 
+    pism_config:output.pio.a_writers = 1;
+    pism_config:output.pio.a_writers_doc = "Number of I/O tasks to use for asynch writing";
+    pism_config:output.pio.a_writers_type = "integer";
+    pism_config:output.pio.a_writers_units = "count";
+
     pism_config:output.pio.stride = 1;
     pism_config:output.pio.stride_doc = "Offset between I/O tasks";
     pism_config:output.pio.stride_type = "integer";

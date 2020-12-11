@@ -211,7 +211,9 @@ void IceModel::save_variables(const File &file,
                               double time,
                               IO_Type default_diagnostics_type,
                               bool realsave) {
+  const Profiling &profiling = m_ctx->profiling();
   // define the time dimension if necessary (no-op if it is already defined)
+  if (not realsave) {
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
@@ -265,17 +267,22 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
-  if (not realsave) return;
+  return;
+  }
+  //if (not realsave) return;
+//  profiling.begin("io.append_time");
   io::append_time(file, *m_config, time);
+//  profiling.end("io.append_time");
 
   file.set_dimatt();
   file.send_diagnostics(variables);
+//  profiling.begin("io.write");
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
   file.set_beforediag(false);
   write_diagnostics(file, variables);
-
+//  profiling.end("io.write");
   // find out how much time passed since the beginning of the run and save it to the output file
   {
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
@@ -314,6 +321,7 @@ void IceModel::open_files() {
   }
 
   if (not m_split_extra) {
+//  if (false) {
     char filename[PETSC_MAX_PATH_LEN];
     strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
     int fileID = -1;
