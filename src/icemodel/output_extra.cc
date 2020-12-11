@@ -309,9 +309,11 @@ void IceModel::write_extras() {
                             m_time->date().c_str());
   } else {
     filename = m_extra_filename;
-    if (streamIDs.count(filename) > 0) {
-      fileID = streamIDs[filename];
-    }
+  }
+
+  if (streamIDs.count(filename) > 0) {
+    fileID = streamIDs[filename];
+    m_extra_file_is_ready = true;
   }
 
   m_log->message(3,
@@ -368,8 +370,7 @@ void IceModel::write_extras() {
     m_extra_file->sync();
     if (m_extra_file->backend() == PISM_CDI) {
       streamIDs[filename] = m_extra_file->get_streamID();
-      vlistIDs[filename] = m_extra_file->get_vlistID();
-      if (gridIDs.size()==0) gridIDs = m_extra_file->get_gridIDs();
+      //vlistIDs[filename] = m_extra_file->get_vlistID();
       ExtraMap = m_extra_file->get_variables_map();
     }
   }

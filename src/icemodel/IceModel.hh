@@ -422,6 +422,7 @@ protected:
   void init_snapshots();
   void write_snapshot();
   std::map<std::string, int> SnapMap;
+  std::map<std::string, int> OutMap;
   MaxTimestep save_max_timestep(double my_t);
   std::map<std::string, int> streamIDs, vlistIDs;
   std::vector<int> gridIDs;
