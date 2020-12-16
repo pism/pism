@@ -13,13 +13,14 @@ netcdf_prefix=~/local/netcdf
 pnetcdf_prefix=~/local/pnetcdf
 
 url=https://github.com/NCAR/ParallelIO.git
+branch=master
 build=~/local/build/parallelio
 prefix=$HOME/local/parallelio
 
 rm -rf ${build}
 mkdir -p ${build}/build ${build}/sources
 
-git clone --depth=1 -b pio_2_5_1 ${url} ${build}/sources
+git clone --depth=1 -b ${branch} ${url} ${build}/sources
 
 pushd ${build}/build
 
