@@ -28,21 +28,18 @@ def run(commands):
 
 def preprocess_ice_velocity():
     """
-    Download and preprocess the ~332Mb Antarctic ice velocity dataset from NASA MEASURES project
-    http://nsidc.org/data/nsidc-0484.html
+    Download and preprocess the latest Antarctic ice velocity dataset from NASA MEASURES project
+    https://nsidc.org/data/NSIDC-0484/versions/2
     """
-    url = " ftp://n5eil01u.ecs.nsidc.org/SAN/MEASURES/NSIDC-0484.001/1996.01.01/"
-    input_filename = "antarctica_ice_velocity_900m.nc"
+    input_filename = "antarctica_ice_velocity_450m_v2.nc"
+
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    commands = ["ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)]
-
     if not os.path.exists(input_filename):
-        print("Please downlaod the InSAR velocity dataset from http://nsidc.org/data/nsidc-0484.html")
-        print("Version 1 (900m spacing) can be found here: https://n5eil01u.ecs.nsidc.org/MEASURES/NSIDC-0484.001/")
+        print("Please downlaod the InSAR velocity dataset from https://nsidc.org/data/NSIDC-0484/versions/2")
+        print("See overview of MEaSUREs data products at https://nsidc.org/data/measures/aiv")
         exit(1)
 
-    run(commands)
 
     nc = NC.Dataset(input_filename, 'a')
 
@@ -84,9 +81,17 @@ def preprocess_ice_velocity():
         nc.close()
 
     if not os.path.exists(output_filename):
+
+        #cmd = "ncatted -O -a grid_mapping,VX,d,, -a grid_mapping,VY,d,, %s" % (input_filename)
+        #run(cmd)
+
         # modify this command to cut-out a different region
-        cmd = "ncks -d x,2200,3700 -d y,3500,4700 -O %s %s" % (input_filename, output_filename)
+        cmd = "ncks -d x,3500,7500 -d y,6000,10000 -O %s %s" % (input_filename, output_filename)
         run(cmd)
+
+        cmd = "ncrename -O -v VX,vx -v VY,vy %s" % (output_filename)
+        run(cmd)
+
 
         nc = NC.Dataset(output_filename, 'a')
 
@@ -130,7 +135,7 @@ def preprocess_albmap():
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
     run(commands)
-
+    
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
@@ -164,7 +169,7 @@ def preprocess_albmap():
     # Remove usrf and lsrf variables:
     command = "ncks -x -v usrf,lsrf -O %s %s" % (output_filename, output_filename)
     run(command)
-
+    
     return output_filename
 
 
@@ -257,8 +262,8 @@ if __name__ == "__main__":
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc"  # ice velocity on the ALBMAP grid
     output = "Ross_combined.nc"
 
-    commands = ["nc2cdo.py %s" % velocity,
-                "nc2cdo.py %s" % albmap,
+    commands = ["./nc2cdo.py %s" % velocity,
+                "./nc2cdo.py %s" % albmap,
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
