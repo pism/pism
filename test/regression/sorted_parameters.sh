@@ -17,6 +17,9 @@ cat ${pism_config_cdl} | \
   sed "s/^ *pism_config://" | \
   sed "s/ =.*//" > ${temp_dir}/raw_config.txt
 
+# Avoid locale-dependent "sort" results:
+export LC_COLLATE=C
+
 cat ${temp_dir}/raw_config.txt | sort > ${temp_dir}/sorted_config.txt
 
 diff -u ${temp_dir}/raw_config.txt ${temp_dir}/sorted_config.txt
