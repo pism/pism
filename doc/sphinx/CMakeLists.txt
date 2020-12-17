@@ -25,7 +25,7 @@ if (SPHINX_EXECUTABLE)
 
   if (SPHINX_AUTOBUILD_EXECUTABLE)
     add_custom_target (manual_autobuild
-      COMMAND ${SPHINX_AUTOBUILD_EXECUTABLE} --port 8080 -B ${CMAKE_CURRENT_SOURCE_DIR} -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_BINARY_DIR}/manual-tmp
+      COMMAND ${SPHINX_AUTOBUILD_EXECUTABLE} --open-browser --port 8080 ${CMAKE_CURRENT_SOURCE_DIR} -D pism_config_file=${CMAKE_CURRENT_BINARY_DIR}/pism_config.nc ${CMAKE_CURRENT_BINARY_DIR}/manual-tmp
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       DEPENDS pism_config.nc)
   endif()

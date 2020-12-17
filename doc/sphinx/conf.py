@@ -27,6 +27,7 @@ extensions = ['sphinx.ext.mathjax',
               'sphinx.ext.githubpages',
               'sphinxcontrib.bibtex',
               'pism_config']
+bibtex_bibfiles=["../ice-bib.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
