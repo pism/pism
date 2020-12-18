@@ -36,7 +36,7 @@ def preprocess_ice_velocity():
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
     if not os.path.exists(input_filename):
-        print("Please downlaod the InSAR velocity dataset from https://nsidc.org/data/NSIDC-0484/versions/2")
+        print("Please download the InSAR velocity dataset from https://nsidc.org/data/NSIDC-0484/versions/2")
         print("See overview of MEaSUREs data products at https://nsidc.org/data/measures/aiv")
         exit(1)
 
