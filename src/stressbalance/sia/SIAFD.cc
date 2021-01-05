@@ -717,9 +717,15 @@ void SIAFD::compute_diffusivity(bool full_update,
         // this adjustment lets us avoid taking very small time-steps
         // because of the possible thickness and bed elevation
         // "discontinuities" at the boundary.)
-        if (i < 0 || i >= (int)Mx - 1 ||
-            j < 0 || j >= (int)My - 1) {
-          D = 0.0;
+        {
+          if ((i < 0 or i >= (int)Mx - 1) and
+              not (m_grid->periodicity() & X_PERIODIC)) {
+            D = 0.0;
+          }
+          if ((j < 0 or j >= (int)My - 1) and
+              not (m_grid->periodicity() & Y_PERIODIC)) {
+            D = 0.0;
+          }
         }
 
         if (limit_diffusivity and D >= D_limit) {
