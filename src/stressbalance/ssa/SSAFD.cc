@@ -268,7 +268,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   const bool
     use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_flag("ocean.always_grounded");
+    is_dry_simulation = m_config->get_flag("ocean.always_grounded"),
+    flow_line_mode    = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode");
 
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
@@ -297,6 +298,13 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
+
+    Vector2 taud = m_taud(i, j);
+
+    if (flow_line_mode) {
+      // no cross-flow driving stress in the flow line mode
+      taud.v = 0.0;
+    }
 
     if (inputs.bc_values and inputs.bc_mask->as_int(i, j) == 1) {
       m_b(i, j).u = m_scaling * (*inputs.bc_values)(i, j).u;
@@ -394,8 +402,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         //
         // Note: signs below (+E, -W, etc) are explained by directions of outward
         // normal vectors at corresponding cell faces.
-        m_b(i, j).u = m_taud(i,j).u + (E - W) * delta_p / dx;
-        m_b(i, j).v = m_taud(i,j).v + (N - S) * delta_p / dy;
+        m_b(i, j).u = taud.u + (E - W) * delta_p / dx;
+        m_b(i, j).v = taud.v + (N - S) * delta_p / dy;
 
         continue;
       } // end of "if (is_marginal(i, j))"
@@ -406,8 +414,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     }   // end of "if (use_cfbc)"
 
     // usual case: use already computed driving stress
-    m_b(i, j).u = m_taud(i, j).u;
-    m_b(i, j).v = m_taud(i, j).v;
+    m_b(i, j) = taud;
   }
 }
 
@@ -508,12 +515,13 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
     beta_lateral_margin   = m_config->get_number("basal_resistance.beta_lateral_margin"),
     beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
-  const bool use_cfbc     = m_config->get_flag("stress_balance.calving_front_stress_bc");
-  const bool replace_zero_diagonal_entries =
+  const bool
+    // FIXME: bedrock_boundary is a misleading name
+    bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc"),
+    flow_line_mode = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode"),
+    use_cfbc       = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+    replace_zero_diagonal_entries =
     m_config->get_flag("stress_balance.ssa.fd.replace_zero_diagonal_entries");
-
-  // FIXME: bedrock_boundary is a misleading name
-  const bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
@@ -793,6 +801,14 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       // add beta to diagonal entries
       eq1[4]  += beta_u;
       eq2[13] += beta_v;
+
+      if (flow_line_mode) {
+        // set values corresponding to a trivial equation v = 0
+        for (int k = 0; k < n_nonzeros; ++k) {
+          eq2[k] = 0.0;
+        }
+        eq2[13] = m_scaling;
+      }
 
       // check diagonal entries:
       const double eps = 1e-16;

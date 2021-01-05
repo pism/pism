@@ -2193,6 +2193,10 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_type = "number";
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_units = "1";
 
+    pism_config:stress_balance.ssa.fd.flow_line_mode = "false";
+    pism_config:stress_balance.ssa.fd.flow_line_mode_doc = "Set `v` (the `y` component of the ice velocity) to zero when assembling the system";
+    pism_config:stress_balance.ssa.fd.flow_line_mode_type = "flag";
+
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled = "false";
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "flag";
