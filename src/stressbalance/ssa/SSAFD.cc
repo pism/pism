@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2021 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -350,17 +350,16 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
             S = 1;
         }
 
-        double delta_p = 0.0;
-        if (not (grid_edge(*m_grid, i, j) and mask::grounded(M.ij))) {
+        double delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
+                                                    H_ij, bed(i, j), sea_level(i, j),
+                                                    rho_ice, rho_ocean, standard_gravity);
+
+        if (grid_edge(*m_grid, i, j) and
+            not (flow_line_mode or mask::grounded(M.ij))) {
           // In regional setups grounded ice may extend to the edge of the domain. This
           // condition ensures that at a domain edge the ice behaves as if it extends past
           // the edge without a change in geometry.
-          //
-          // We don't treat floating ice the same way because doing so would affect an
-          // existing "flowline" setup.
-          delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
-                                               H_ij, bed(i, j), sea_level(i, j),
-                                               rho_ice, rho_ocean, standard_gravity);
+          delta_p = 0.0;
         }
 
         if (melange_back_pressure) {
