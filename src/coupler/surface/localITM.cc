@@ -195,6 +195,10 @@ double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtser
       }
   }
 
+  // if (print){
+  //   const double dt_days = units::convert(m_unit_system, dtseries, "seconds", "days");
+  //   std::cout << "internal time step (days) " <<  dt_days << '\n';
+  // }
 
   return albedo;
 }

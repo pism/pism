@@ -261,7 +261,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   } else if (input.type == INIT_BOOTSTRAP) {
 
     m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
-    m_albedo.regrid(input.filename, OPTIONAL, 0.0);
+    m_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.itm.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
@@ -506,6 +506,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
 
         for (int k = 0; k < N; ++k) {
+
           if (ts[k] >= next_snow_depth_reset) {
             snow = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
@@ -551,6 +552,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             ETIM_melt.ITM_melt, firn, snow, accumulation, 0);
 
           albedo_loc = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
+          
           if (force_albedo){
             if (albedo_anomaly_true(ts[k],0, print)){
               albedo_loc = m_config->get_number("surface.itm.albedo_ice");
