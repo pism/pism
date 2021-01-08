@@ -75,6 +75,8 @@ protected:
 
   double compute_next_balance_year_start(double time);
   bool albedo_anomaly_true(double time, int n, bool print) ;
+  double get_distance2(double time);
+  double get_delta(double time);
 
 
 protected:

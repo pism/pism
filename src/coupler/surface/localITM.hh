@@ -119,6 +119,7 @@ public:
                                          const double &T,
                                          const double &surface_elevation,
                                          const double &delta,
+                                         const double &distance2,
                                          const double &lat,
                                          const double &albedo, bool print ) = 0;
 
@@ -187,6 +188,7 @@ public:
                                          const double &T,
                                          const double &surface_elevation,
                                          const double &delta,
+                                         const double &distance2,
                                          const double &lat,
                                          const double &albedo, bool print );
 

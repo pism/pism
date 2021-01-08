@@ -299,6 +299,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
                                          const double &T,
                                          const double &surface_elevation,
                                          const double &delta,
+                                         const double &distance2,
                                          const double &lat,
                                          const double &albedo, bool print ) {
 
@@ -333,7 +334,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
     q_insol = 0;
   }
   else{
-    q_insol = 1367. * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
+    q_insol = 1367. * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
   }
   
   ETIM_melt.TOA_insol = q_insol; 

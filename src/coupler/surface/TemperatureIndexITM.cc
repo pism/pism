@@ -343,6 +343,43 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time, int n, bool print ) {
   }
 }
 
+
+double TemperatureIndexITM::get_distance2(double time){
+  double 
+    a0 = 1.000110,
+    a1 = 0.034221,
+    a2 = 0.000719,
+    b0 = 0.,
+    b1 = 0.001280,
+    b2 = 0.000077,
+    distance2 = 1;
+
+  double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
+  distance2 = a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2 * t) + b2 * sin(2 * t);
+
+  return distance2;
+}
+
+
+double TemperatureIndexITM::get_delta(double time){
+  double 
+    a0 = 0.006918,
+    a1 = -0.399912,
+    a2 = -0.006758,
+    a3 = -0.002697,
+    b0 = 0.,
+    b1 = 0.070257,
+    b2 = 0.000907,
+    b3 = 0.000148,
+    delta = 1;
+
+  double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
+  delta = a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2 * t) + b2 * sin(2 * t) + a3 * cos(3 * t) + b3 * sin(3 * t);
+
+  return delta;
+}
+
+
 void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double dt) {
 
   // make a copy of the pointer to convince clang static analyzer that its value does not
@@ -528,19 +565,25 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           }
 
 
-          int time_in_days  = ts[k] / (24. * 60. * 60.);
-          int day_of_year = time_in_days % 365 ;
+          // This is not the best way to get the day of the year, ignores possibilities for different calendars! 
+          // int time_in_days  = ts[k] / (24. * 60. * 60.);
+          // int day_of_year = time_in_days % 365 ;
+
+          // Same here. Although the representation of delta is quite okay otherwise. 
+          // double delta = M_PI / 180. * (-23.44) * cos(2 * M_PI / 365. * (double(day_of_year) + 10.))
 
 
+          double 
+            delta =  get_delta(ts[k]),
+            distance2 = get_distance2(ts[k]);
 
-          double delta = M_PI / 180. * (-23.44) * cos(2 * M_PI / 365. * (double(day_of_year) + 10.));
 
         
 
 
 
           ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev,
-                                         delta,
+                                         delta, distance2,
                                          lat * M_PI / 180.,
                                          albedo_loc, print);
           
@@ -552,7 +595,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             ETIM_melt.ITM_melt, firn, snow, accumulation, 0);
 
           albedo_loc = m_mbscheme->get_albedo_melt(changes.melt,  mask(i, j), dtseries, print);
-          
+
           if (force_albedo){
             if (albedo_anomaly_true(ts[k],0, print)){
               albedo_loc = m_config->get_number("surface.itm.albedo_ice");
