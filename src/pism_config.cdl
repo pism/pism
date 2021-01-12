@@ -2431,6 +2431,26 @@ netcdf pism_config {
     pism_config:surface.itm.method_option = "itm_method";
     pism_config:surface.itm.method_type = "keyword";
 
+    pism_config:surface.itm.paleo.enabled = "false";
+    pism_config:surface.itm.paleo.enabled.enabled_doc = "Use orbital parameters to compute insolation at TOA";
+    pism_config:surface.itm.paleo.enabled_option = "itm_paleo";
+    pism_config:surface.itm.paleo.enabled_type = "flag";
+
+    pism_config:surface.itm.paleo.eccentricity =  0.0167;
+    pism_config:surface.itm.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
+    pism_config:surface.itm.paleo.eccentricity_type = "number";
+    pism_config:surface.itm.paleo.eccentricity_units = "1";
+
+    pism_config:surface.itm.paleo.obliquity =  23.44;
+    pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
+    pism_config:surface.itm.paleo.obliquity_type = "number";
+    pism_config:surface.itm.paleo.obliquity_units = "degree";   
+
+    pism_config:surface.itm.paleo.long_peri =  102.94719;
+    pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
+    pism_config:surface.itm.paleo.long_peri_type = "number";
+    pism_config:surface.itm.paleo.long_peri_units = "degree";
+
     pism_config:surface.itm.refreeze = 0.6;
     pism_config:surface.itm.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
     pism_config:surface.itm.refreeze_type = "number";

@@ -77,6 +77,9 @@ protected:
   bool albedo_anomaly_true(double time, int n, bool print) ;
   double get_distance2(double time);
   double get_delta(double time);
+  double get_distance2_paleo(double time); 
+  double get_lambda_paleo(double time);
+  double get_delta_paleo(double time);
 
 
 protected:
