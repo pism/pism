@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2020, 2021 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,7 +195,7 @@ Vec OrographicPrecipitationSerial::precipitation() const {
 void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   // solves:
   // Phat(k,l) = (Cw * i * sigma * Hhat(k,l)) /
-  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc);
+  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauf);
   // see equation (49) in
   // R. B. Smith and I. Barstad, 2004:
   // A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.
@@ -275,7 +275,7 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
 
   fftw_execute(m_dft_inverse);
 
-  // get m_fftw_output and put it into m_p
+  // get m_fftw_output and put it into m_precipitation
   get_real_part(m_fftw_output,
                 1.0 / (m_Nx * m_Ny),
                 m_Mx, m_My,
