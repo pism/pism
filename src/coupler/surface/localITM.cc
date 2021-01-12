@@ -314,6 +314,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
   const double bm_temp    = m_config->get_number("surface.itm.background_melting_temp");
   // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp. 
   const bool background_melting = m_config->get_flag("surface.itm.background_melting");
+  const double solar_constant = m_config->get_number("surface.itm.solar_constant");
 
 
 
@@ -334,7 +335,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
     q_insol = 0;
   }
   else{
-    q_insol = 1367. * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
+    q_insol = solar_constant * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
   }
   
   ETIM_melt.TOA_insol = q_insol; 

@@ -2441,7 +2441,7 @@ netcdf pism_config {
     pism_config:surface.itm.snow_depth_crit_type = "number";
     pism_config:surface.itm.snow_depth_crit_units = "m";
 
-    pism_config:surface.itm.solar_constant = 1367.;
+    pism_config:surface.itm.solar_constant = 1361.;
     pism_config:surface.itm.solar_constant_doc = "constant for solar radiation";
     pism_config:surface.itm.solar_constant_type = "number";
     pism_config:surface.itm.solar_constant_units = "W m-2";
