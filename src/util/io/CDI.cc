@@ -384,12 +384,12 @@ void CDI::inq_varid_impl(const std::string &variable_name, bool &exists) const {
 }
 
 void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
-	for (auto &i : m_varsID) {
-      if (i.second == j) {
-         result = i.first;
-         break; // to stop searching
+      for (auto &i : m_varsID) {
+          if (i.second == j) {
+              result = i.first;
+              break; // to stop searching
+          }
       }
-   }
 }
 
 void CDI::get_att_double_impl(const std::string &variable_name,

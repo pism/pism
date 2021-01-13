@@ -226,7 +226,6 @@ void IceModel::save_variables(const File &file,
   }
   define_diagnostics(file, variables, default_diagnostics_type);
   // Done defining variables
-  file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
 
   {
     // Note: we don't use "variables" (an argument of this method) here because it
@@ -236,7 +235,8 @@ void IceModel::save_variables(const File &file,
     std::set<std::string> var_names;
     unsigned int n_vars = file.nvariables();
     for (unsigned int k = 0; k < n_vars; ++k) {
-      var_names.insert(file.variable_name(k));
+      std::string vname = file.variable_name(k);
+      var_names.insert(vname);
     }
 
     // If this output file contains variables lat and lon...
@@ -263,6 +263,7 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
+  file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
   if (not realsave) return;
 
   io::append_time(file, *m_config, time);
