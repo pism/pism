@@ -18,6 +18,8 @@ Changes since v1.2
 - Stop with an error message if some values of a variable read from a file match the
   `_FillValue` attribute (PISM expects input files to contain data at all grid points
   within the domain).
+- Add optional arguments `time_units` and `calendar` to `PISM.util.prepare_output()` in
+  the Python bindings.
 
 Changes from v1.1 to v1.2
 =========================
