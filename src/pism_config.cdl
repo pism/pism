@@ -2432,7 +2432,7 @@ netcdf pism_config {
     pism_config:surface.itm.method_type = "keyword";
 
     pism_config:surface.itm.paleo.enabled = "false";
-    pism_config:surface.itm.paleo.enabled.enabled_doc = "Use orbital parameters to compute insolation at TOA";
+    pism_config:surface.itm.paleo.enabled_doc = "Use orbital parameters to compute insolation at TOA";
     pism_config:surface.itm.paleo.enabled_option = "itm_paleo";
     pism_config:surface.itm.paleo.enabled_type = "flag";
 
