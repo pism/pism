@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,10 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMMOHRCOULOMBYIELDSTRESS_H_
-#define _PISMMOHRCOULOMBYIELDSTRESS_H_
+#ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
+#define _PISMOPTTILLPHIYIELDSTRESS_H_
 
 #include "YieldStress.hh"
+#include "MohrCoulombYieldStress.hh"
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/iceModelVec2T.hh"
@@ -28,48 +29,40 @@ namespace pism {
 
 class IceModelVec2CellType;
 
-//! @brief PISM's default basal yield stress model which applies the
-//! Mohr-Coulomb model of deformable, pressurized till.
-class MohrCoulombYieldStress : public YieldStress {
+//! @brief PISM's iteratively optimized basal yield stress model which applies the
+//! Mohr-Coulomb model of deformable, pressurized till, with adjusted till friction angle.
+class OptTillphiYieldStress : public MohrCoulombYieldStress {
 public:
-  MohrCoulombYieldStress(IceGrid::ConstPtr g);
-  virtual ~MohrCoulombYieldStress();
+  OptTillphiYieldStress(IceGrid::ConstPtr g);
+  virtual ~OptTillphiYieldStress();
 
-  void set_till_friction_angle(const IceModelVec2S &input);
 private:
 
   DiagnosticList diagnostics_impl() const;
 
 private:
-  void till_friction_angle(const IceModelVec2S &bed_topography,
-                           IceModelVec2S &result);
+
+  void iterative_phi_step(const IceModelVec2S &ice_surface_elevation,
+                          const IceModelVec2S &bed_topography,
+                          const IceModelVec2CellType &mask);
 
 protected:
-  void till_friction_angle(const IceModelVec2S &basal_yield_stress,
-                           const IceModelVec2S &till_water_thickness,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec2CellType &cell_type,
-                           IceModelVec2S &result);
 
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
 
   void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
   void restart_impl(const File &input_file, int record);
-  void init_impl(const YieldStressInputs &inputs);
-
-  void define_model_state_impl(const File &output) const;
-  void write_model_state_impl(const File &output) const;
-
-  void finish_initialization(const YieldStressInputs &inputs);
+  //void init_impl(const YieldStressInputs &inputs);
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2S m_till_phi;
+  bool m_iterative_phi;
+  IceModelVec2S m_target_usurf,m_diff_usurf,m_usurf,m_diff_mask;
+  double m_last_time,m_last_inverse_time,dt_phi_inv;
 
-  IceModelVec2T::Ptr m_delta;
 };
 
 } // end of namespace pism
 
-#endif /* _PISMMOHRCOULOMBYIELDSTRESS_H_ */
+#endif /* _PISMOPTTILLPHIYIELDSTRESS_H_ */

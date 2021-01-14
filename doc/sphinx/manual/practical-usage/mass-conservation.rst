@@ -66,9 +66,8 @@ Comments
 - `tendency_of_ice_mass_due_to_flow` is the change in ice mass corresponding to flux
   divergence
 - `tendency_of_ice_mass_due_to_conservation_error` is the artificial change in ice mass
-  needed to preserve non-negativity of ice thickness. While PISM's mass transport scheme
-  is not proven to be mass-conserving *in every case* (see
-  :cite:`JaroschSchoofAnslow2013`), in most simulations the field is uniformly zero.
+  needed to "balance the books". This includes changes needed to preserve non-negativity
+  of ice thickness. [#f1]_
 - `tendency_of_ice_mass_due_to_surface_mass_balance` is the change due to the surface
   mass balance; note that this is *not* the same as the provided SMB: in ablation areas
   this is the *effective* mass balance taking into account the amount of ice present
@@ -149,3 +148,7 @@ To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
 .. [#] We keep track of :math:`W_{\text{till}} + W`, i.e. the sum of the effective
        thickness of subglacial water stored in till *and* the effective thickness of
        subglacial water in the transport layer (if applicable).
+
+.. [#f1] While PISM's mass transport scheme is not proven to be mass-conserving *in every
+   case* (see :cite:`JaroschSchoofAnslow2013`), in most simulations the field is uniformly
+   zero.
