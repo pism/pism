@@ -229,7 +229,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.lapse_rate_units = "K / km";
 
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate = -6.5;
-    pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_doc = "Water vapor scale height";
+    pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_doc = "Moist adiabatic lapse rate";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_option = "moist_adiabatic_lapse_rate";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_type = "number";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_units = "K / km";
