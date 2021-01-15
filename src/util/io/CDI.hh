@@ -147,6 +147,12 @@ private:
         void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
         int inq_current_timestep() const;
+        void put_att_text_dims_impl(const std::string &variable_name, const std::string &att_name,
+                   const std::string &value) const;
+	void put_att_text_x_impl(const std::string &att_name, const std::string &value) const;
+	void put_att_text_y_impl(const std::string &att_name, const std::string &value) const;
+	void put_att_text_z_impl(int zaxisID, const std::string &att_name,
+                                const std::string &value) const;
 };
 }
 }

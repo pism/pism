@@ -431,6 +431,47 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
 	cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), type, data.size(), &data[0]);
 }
 
+void CDI::put_att_text_x_impl(const std::string &att_name,
+                                const std::string &value) const {
+	if (att_name == "units") {
+		gridDefXunits(m_gridID, value.c_str());
+	} else if (att_name == "long_name") {
+		gridDefXlongname(m_gridID, value.c_str());
+	}
+}
+
+void CDI::put_att_text_y_impl(const std::string &att_name,
+                                const std::string &value) const {
+	if (att_name == "units") {
+                gridDefYunits(m_gridID, value.c_str());
+        } else if (att_name == "long_name") {
+                gridDefYlongname(m_gridID, value.c_str());
+        } 
+}
+
+void CDI::put_att_text_z_impl(int zaxisID, const std::string &att_name,
+                                const std::string &value) const {
+	if (att_name == "units") {
+		zaxisDefUnits(zaxisID, value.c_str());
+	} else if (att_name == "long_name") {
+		zaxisDefLongname(zaxisID, value.c_str());
+	}
+}
+
+void CDI::put_att_text_dims_impl(const std::string &variable_name,
+                                const std::string &att_name,
+                                const std::string &value) const {
+	if (variable_name == "x") {
+		put_att_text_x_impl(att_name, value);
+	} else if (variable_name == "y") {
+		put_att_text_y_impl(att_name, value);
+	} else if (variable_name == "z") {
+		put_att_text_z_impl(m_zID, att_name, value);
+	} else if (variable_name == "zb") {
+		put_att_text_z_impl(m_zbID, att_name, value);
+	}
+}
+
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
@@ -438,6 +479,7 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 	if (value.empty() || att_name.empty()) return;
         if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
         {
+                put_att_text_dims_impl(variable_name, att_name, value);
                 return;
         }
 	int varID = -1;
