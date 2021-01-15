@@ -105,7 +105,6 @@ protected:
   // new functions empty because of CDI class
   virtual void create_grid_impl(int lengthx, int lengthy) const;
   virtual void define_timestep_impl(int tsID) const;
-  virtual void write_timestep_impl() const;
   virtual void def_ref_date_impl(double time) const;
 
 protected:

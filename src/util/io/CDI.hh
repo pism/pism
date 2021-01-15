@@ -115,7 +115,6 @@ protected:
 	// new functions
 	void create_grid_impl(int lengthx, int lengthy) const;
 	void define_timestep_impl(int tsID) const;
-	void write_timestep_impl() const;
 	void def_ref_date_impl(double time) const;
 	std::map<std::string, int> get_var_map_impl();
         void def_vlist_impl() const;
@@ -141,7 +140,6 @@ private:
 	mutable std::set<std::string> m_diagvars;
 	mutable bool m_gridexist;
 	mutable bool m_istimedef;
-	void destroy_objs();
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
 	      const std::vector<std::string> &dims) const;
         void def_var_multi_impl(const std::string &name, IO_Type nctype,
@@ -153,6 +151,10 @@ private:
 	void put_att_text_y_impl(const std::string &att_name, const std::string &value) const;
 	void put_att_text_z_impl(int zaxisID, const std::string &att_name,
                                 const std::string &value) const;
+	void def_main_dim(const std::string &name, size_t length) const;
+	double year_gregorian(double time) const;
+	long int day_gregorian(double nyearsf) const;
+	void put_dims_double(const std::string &variable_name, const double *op) const;
 };
 }
 }

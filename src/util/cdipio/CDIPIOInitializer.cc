@@ -18,22 +18,26 @@ extern "C"{
 namespace pism {
 namespace cdipio {
 
-Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob) {
+Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async) {
 #if (Pism_USE_CDIPIO==1)
-	// Initialize YAXT library
-	xt_initialize(glob);
-	// Initialize CDI-PIO library
-	float partInflate = 1.0;
-	m_local_comm = pioInit(glob, n_writers, IOmode, &m_pioNamespace, partInflate, cdiPioNoPostCommSetup);
+	m_async = async;
+	if (m_async) {
+		xt_initialize(glob);
+		float partInflate = 1.0;
+		m_local_comm = pioInit(glob, n_writers, IOmode, &m_pioNamespace, partInflate, cdiPioNoPostCommSetup);
+	} else {
+		m_local_comm = MPI_COMM_WORLD;
+		m_pioNamespace = -1;
+	}
 #endif
 }
 
 Initializer::~Initializer() {
 #if (Pism_USE_CDIPIO==1)
-	// Finalize CDI-PIO library
-	pioFinalize();
-	// Finalize YAXT library
-	xt_finalize();
+	if (m_async) {
+		pioFinalize();
+		xt_finalize();
+	}
 #endif
 }
 
@@ -50,7 +54,7 @@ int Initializer::get_pionamespace() {
 }
 
 void Initializer::activate_namespace() {
-	namespaceSetActive(m_pioNamespace);
+	if (m_async) namespaceSetActive(m_pioNamespace);
 }
 
 }

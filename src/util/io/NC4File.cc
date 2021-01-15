@@ -476,9 +476,6 @@ void NC4File::define_timestep_impl(int tsID) const {
   (void) tsID;
 }
 
-void NC4File::write_timestep_impl() const {
-}
-
 void NC4File::def_ref_date_impl(double time) const {
   (void) time;
 }

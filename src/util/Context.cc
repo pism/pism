@@ -85,11 +85,6 @@ Context::~Context() {
     m_impl->logger->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
   }
 #endif
-
-#if (Pism_USE_CDIPIO==1)
-//  pioFinalize();
-#endif
-
   delete m_impl;
 }
 
@@ -180,18 +175,6 @@ int Context::pio_iosys_id() const {
   }
 #endif
   return m_impl->pio_iosys_id;
-}
-
-void Context::cdipio_init() const {
-#if (Pism_USE_CDIPIO==1)
-  if (m_impl->local_comm == MPI_COMM_NULL) {
-    int n_writers = config()->get_number("output.pio.n_writers");
-    int IOmode = config()->get_number("output.pio.mode");
-    float partInflate = 1.0;
-    int pioNamespace;
-    m_impl->local_comm = pioInit(MPI_COMM_WORLD, n_writers, IOmode, &pioNamespace, partInflate, cdiPioNoPostCommSetup);
-  }
-#endif
 }
 
 int Context::get_n_writers() const {
