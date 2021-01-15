@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -375,7 +375,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
       for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
         // Reset element residual to zero in preparation.
-        memset(R_nodal, 0, sizeof(R_nodal));
+        for (int n = 0; n < Nk; ++n) {
+          R_nodal[n] = 0.0;
+        }
 
         // Compute z coordinates of the nodes of this element
         for (int n = 0; n < Nk; ++n) {
