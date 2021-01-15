@@ -153,7 +153,6 @@ public:
   //new functions because of CDI class
   void create_grid(int lengthx, int lengthy) const;
   void define_timestep(int tsID) const;
-  void write_timestep() const;
   void def_ref_date(double time) const;
   std::map<std::string, int> get_var_map();
   void def_vlist() const;
@@ -245,7 +244,6 @@ protected:
   //new functions because of CDI class
   virtual void create_grid_impl(int lengthx, int lengthy) const = 0;
   virtual void define_timestep_impl(int tsID) const = 0;
-  virtual void write_timestep_impl() const=0;
   virtual void def_ref_date_impl(double time) const = 0;
   virtual std::map<std::string, int> get_var_map_impl();
   virtual void def_vlist_impl() const;

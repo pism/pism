@@ -156,7 +156,6 @@ public:
   //new functions because of CDI class
   void new_grid(int lengthx, int lengthy) const;
   void new_timestep(int tsID) const;
-  void expose_windows() const;
   void reference_date(double time) const;
   std::map<std::string, int> get_variables_map() const;
   void define_vlist() const;
