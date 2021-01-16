@@ -801,7 +801,8 @@ Additional code needed to support geometric multigrid
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 To support the multigrid preconditioner we need to be able re-discretize the system on the
-mesh provided *by PETSc* our to residual and Jacobian evaluators. In general, this requires
+mesh provided *by PETSc* in our to residual and Jacobian evaluators. In general, this
+requires
 
 * re-computing grid-related constants (`\Delta x`, etc) using the grid (avoid using
   hard-wired constants, e.g. computed using the fine grid), and
