@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,12 +18,13 @@
  */
 
 #include <algorithm> // max_element
-
+#include <numeric> // accumula6te vector
 #include "PicoGeometry.hh"
 #include "pism/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace ocean {
@@ -77,6 +78,9 @@ const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
  * to date.
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type) {
+  const Profiling &profiling = m_grid->ctx()->profiling();
+  profiling.begin("ocean.update_geometry");
+  profiling.begin("ocean.update_geometry.1");
   bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
 
   int n_boxes = m_config->get_number("ocean.pico.number_of_boxes");
@@ -91,8 +95,10 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
 
     compute_lakes(cell_type, m_lake_mask);
   }
+  profiling.end("ocean.update_geometry.1");
 
   // these two could be optimized by trying to reduce the number of times we update ghosts
+  profiling.begin("ocean.update_geometry.2");
   {
     m_ice_rises.update_ghosts();
     m_ocean_mask.update_ghosts();
@@ -101,8 +107,10 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
 
     compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_cf);
   }
+  profiling.end("ocean.update_geometry.2");
 
   // these two could be done at the same time
+  profiling.begin("ocean.update_geometry.3");
   {
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
 
@@ -110,6 +118,8 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
   }
 
   compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, n_boxes, m_boxes);
+  profiling.end("ocean.update_geometry.3");
+  profiling.end("ocean.update_geometry");
 }
 
 
@@ -139,6 +149,7 @@ static void relabel(RelabelingType type,
   }
 
   std::vector<double> area(max_index + 1, 0.0);
+  std::vector<double> area1(max_index + 1, 0.0);
   {
 
     ParallelSection loop(grid->com);
@@ -161,9 +172,10 @@ static void relabel(RelabelingType type,
       loop.failed();
     }
     loop.check();
-
+    GlobalSum(grid->com, area.data(), area1.data(), area.size());
+    area = area1;
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = grid->cell_area() * GlobalSum(grid->com, area[k]);
+      area[k] = grid->cell_area() * area[k];
     }
   }
 
@@ -623,7 +635,11 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   int n_shelves = shelf_mask.range().max + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
+  std::vector<double> GL_distance_max1(n_shelves, 0.0);
   std::vector<double> CF_distance_max(n_shelves, 0.0);
+  std::vector<double> CF_distance_max1(n_shelves, 0.0);
+  double* ptrGL;
+  double* ptrCF;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -647,10 +663,14 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   }
 
   // compute global maximums
-  for (int k = 0; k < n_shelves; ++k) {
-    GL_distance_max[k] = GlobalMax(m_grid->com, GL_distance_max[k]);
-    CF_distance_max[k] = GlobalMax(m_grid->com, CF_distance_max[k]);
-  }
+  GlobalMax(m_grid->com, GL_distance_max.data(), GL_distance_max1.data(), n_shelves);
+  GlobalMax(m_grid->com, CF_distance_max.data(), CF_distance_max1.data(), n_shelves);
+  GL_distance_max = GL_distance_max1;
+  CF_distance_max = CF_distance_max1;
+//  for (int k = 0; k < n_shelves; ++k) {
+//    GL_distance_max[k] = GlobalMax(m_grid->com, GL_distance_max[k]);
+//    CF_distance_max[k] = GlobalMax(m_grid->com, CF_distance_max[k]);
+//  }
 
   double GL_distance_ref = *std::max_element(GL_distance_max.begin(), GL_distance_max.end());
 

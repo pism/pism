@@ -107,11 +107,15 @@ double vector_max(const std::vector<double> &input);
 // parallel
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
 
+void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op);
+
 void GlobalMin(MPI_Comm comm, double *local, double *result, int count);
 
 void GlobalMax(MPI_Comm comm, double *local, double *result, int count);
 
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count);
+
+void GlobalSum(MPI_Comm comm, int *local, int *result, int count);
 
 double GlobalMin(MPI_Comm comm, double local);
 

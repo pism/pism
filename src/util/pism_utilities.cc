@@ -132,6 +132,11 @@ void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_O
   PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
+void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op) {
+  int err = MPI_Allreduce(local, result, count, MPI_INT, op, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+}
+
 void GlobalMin(MPI_Comm comm, double *local, double *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_MIN);
 }
@@ -141,6 +146,10 @@ void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
 }
 
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
+}
+
+void GlobalSum(MPI_Comm comm, int *local, int *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_SUM);
 }
 
