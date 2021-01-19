@@ -492,6 +492,9 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
   // use different calculations of solar radiation in dependence of the "paleo" flag
   bool paleo = m_config->get_flag("surface.itm.paleo.enabled");
+  m_log->message(2,
+                   "* choosing paleo options with \n");
+
 
   ParallelSection loop(m_grid->com);
   try {
