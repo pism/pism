@@ -286,7 +286,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   }
   const bool force_albedo = m_config->get_flag("surface.itm.anomaly");  
   if (force_albedo) m_log->message(2, 
-                                  " Albedo forcing sets summer albedo values to bare ice value\n");
+                                  " Albedo forcing sets summer albedo values to lower value\n");
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
@@ -324,23 +324,39 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time, int n, bool print ) {
     one_day         = units::convert(m_sys, 1.0, "days", "seconds"),
     one_year        = units::convert(m_sys, 1.0, "years", "seconds"),
     year_start      = m_grid->ctx()->time()->calendar_year_start(time),
-    frequency       = m_config->get_number("surface.itm.anomaly_frequency"),
     anomaly_start   = year_start + (anomaly_start_day - 1.0) * one_day,
-    anomaly_end   = year_start + (anomaly_end_day - 1.0) * one_day;
+    anomaly_end     = year_start + (anomaly_end_day - 1.0) * one_day;
 
+  int frequency       = m_config->get_number("surface.itm.anomaly_frequency");
 
+  bool frequency_true; 
 
-  if (n * one_year + anomaly_start > time) {
-    return false;
+  double period_seconds = frequency * one_year; 
+  double tmp = time - floor(time / period_seconds) * period_seconds;
+  if(tmp < one_year){ 
+    frequency_true = true;
   }
-  else if( time >= n * one_year + anomaly_start and time <= n * one_year + anomaly_end){
+  else{ 
+    frequency_true = false;
+  }
+
+  if( time >=  anomaly_start and time <= anomaly_end and frequency_true){
+    // if (print){
+    //   std::cout << "freqtrue " << frequency_true << " time in days " << (time - year_start)/one_day << " \t true \n";
+    // }
     return true;
   }
-  else {
-    n += frequency; 
-    albedo_anomaly_true( time,  n, print);
-    // return false;
+  else{
+    // if (print){
+    //   std::cout << "freqtrue " << frequency_true << " time in days " << (time - year_start)/one_day << " \t false \n";
+    // }    
+    return false; 
   }
+  // else {
+  //   n += frequency; 
+  //   albedo_anomaly_true( time,  n, print);
+  //   // return false;
+  // }
 }
 
 
@@ -492,8 +508,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
   // use different calculations of solar radiation in dependence of the "paleo" flag
   bool paleo = m_config->get_flag("surface.itm.paleo.enabled");
-  m_log->message(2,
-                   "* choosing paleo options with \n");
+
 
 
   ParallelSection loop(m_grid->com);
@@ -503,9 +518,9 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
       // print output in only one (three) cells
       bool print = 0;
-      // if ( i == 176 and j == 100) {
-      //   print = 1;
-      // }
+      if ( i == 176 and j == 100) {
+        print = 1;
+      }
 
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -618,7 +633,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           if (force_albedo){
 
             if (albedo_anomaly_true(ts[k],0, print)){
-              albedo_loc = m_config->get_number("surface.itm.albedo_ice");
+              albedo_loc = m_config->get_number("surface.itm.anomaly_value");
             }
           }
 
@@ -662,7 +677,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
           if (force_albedo){
             if (albedo_anomaly_true(ts[k],0, print)){
-              albedo_loc = m_config->get_number("surface.itm.albedo_ice");
+              albedo_loc = m_config->get_number("surface.itm.anomaly_value");
             }
           }
 

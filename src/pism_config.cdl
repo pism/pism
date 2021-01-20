@@ -2392,6 +2392,11 @@ netcdf pism_config {
     pism_config:surface.itm.anomaly_frequency_type = "integer";
     pism_config:surface.itm.anomaly_frequency_units = "yr-1";
 
+    pism_config:surface.itm.anomaly_value = 0.47;
+    pism_config:surface.itm.anomaly_value_doc = "albedo forcing with this value";
+    pism_config:surface.itm.anomaly_value_type = "number";
+    pism_config:surface.itm.anomaly_value_units = "";
+
     pism_config:surface.itm.background_melting = "yes";
     pism_config:surface.itm.background_melting_doc = "if yes, that we use pdd positive temperatures instead of just air temperatures in the itm equation";
     pism_config:surface.itm.background_melting_type = "flag";
