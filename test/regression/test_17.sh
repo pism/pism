@@ -5,18 +5,16 @@ MPIEXEC=$2
 
 # Test name:
 echo "Test #17: verif test G regression: thermo SIA w. time-dependent SMB."
-# The list of files to delete when done.
-files="test_17-G-out.txt"
 
-rm -f $files
+output=`mktemp pism-test-G.XXXX` || exit 1
 
 # run test G
 OPTS="-test G -Mbz 1 -Mz 31 -y 1000 -o_size none -verbose 1"
-$PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > test_17-G-out.txt
-$PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> test_17-G-out.txt
+$PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > ${output}
+$PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> ${output}
 
 # compare results
-diff test_17-G-out.txt -  <<END-OF-OUTPUT
+diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
                0.780389   32.443559    7.148986    0.016300
@@ -41,8 +39,8 @@ END-OF-OUTPUT
 
 if [ $? != 0 ];
 then
-    exit 1
+  cat ${output}
+  exit 1
 fi
 
-rm -f $files; exit 0
-
+exit 0

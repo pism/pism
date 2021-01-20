@@ -5,21 +5,19 @@ MPIEXEC=$2
 
 # Test name:
 echo "Test #16: verif test L regression: isothermal SIA with non-flat bed."
-# The list of files to delete when done.
-files="test_16-L-out.txt"
 
-rm -f $files
+output=`mktemp pism-test-L.XXXX` || exit 1
 
 set -x
 set -e
 
 # run test L
 OPTS="-test L -Mbz 1 -Mz 31 -y 1000 -o_size none -verbose 1"
-$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 21 -My 21 $OPTS   > test_16-L-out.txt
-$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  >> test_16-L-out.txt
+$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 21 -My 21 $OPTS   > ${output}
+$MPIEXEC -n 2 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  >> ${output}
 
 # compare results
-diff test_16-L-out.txt -  <<END-OF-OUTPUT
+diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS evaluated at final time (relative to exact solution):
 geometry  :    prcntVOL        maxH         avH   relmaxETA
                0.283121  168.847973    8.958281    0.004678
@@ -32,8 +30,8 @@ END-OF-OUTPUT
 
 if [ $? != 0 ];
 then
-    exit 1
+  cat ${output}
+  exit 1
 fi
 
-rm -f $files; exit 0
-
+exit 0

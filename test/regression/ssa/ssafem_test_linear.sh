@@ -16,23 +16,20 @@ then
   EXT=".py"
 fi
 
-# List of files to remove when done:
-files="foo-fem-linear.nc foo-fem-linear.nc~ test-out-linear.txt"
-
-rm -f $files
+output=`mktemp pism-ssa-test-linear.XXXX` || exit 1
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fem -o foo-fem-linear.nc -ksp_type cg"
+OPTS="-verbose 1 -ssa_method fem -o_size none -ksp_type cg"
 
 # do stuff
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 61 -My 61 $OPTS > test-out-linear.txt
-$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 121 -My 121 $OPTS >> test-out-linear.txt
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 61 -My 61 $OPTS > ${output}
+$MPIEXEC_COMMAND $PISM_PATH/ssa_test_linear${EXT} -Mx 121 -My 121 $OPTS >> ${output}
 
 set +e
 
 # Check results:
-diff test-out-linear.txt -  <<END-OF-OUTPUT
+diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
                 0.4207      0.00319    0.4207    0.0444    0.1884    0.0093
@@ -45,7 +42,8 @@ END-OF-OUTPUT
 
 if [ $? != 0 ];
 then
-    exit 1
+  cat ${output}
+  exit 1
 fi
 
-rm -f $files; exit 0
+exit 0
