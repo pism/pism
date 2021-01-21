@@ -25,8 +25,10 @@ Changes since v1.2
   (consider grounded ice margins) may cause oscillations in the computed precipitation
   field (probably due to the Gibbs phenomenon). These oscillations may result in an even
   rougher topography, triggering a feedback loop polluting model results. Set
-  :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` (in meters)
+  `atmosphere.orographic_precipitation.smoothing_standard_deviation` (in meters)
   to smooth the ice surface elevation to reduce this effect.
+- Add `sea_level.constant.value`. This sets the default sea level elevation used with
+  `-sea_level constant`.
 
 Changes from v1.1 to v1.2
 =========================

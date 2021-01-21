@@ -2068,6 +2068,11 @@ netcdf pism_config {
     pism_config:run_info.title_option = "title";
     pism_config:run_info.title_type = "string";
 
+    pism_config:sea_level.constant.value = 0.0;
+    pism_config:sea_level.constant.value_doc = "Sea level elevation used by the ``constant`` sea level model";
+    pism_config:sea_level.constant.value_units = "meters";
+    pism_config:sea_level.constant.value_type = "number";
+
     pism_config:sea_level.models = "constant";
     pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
     pism_config:sea_level.models_option = "sea_level";
