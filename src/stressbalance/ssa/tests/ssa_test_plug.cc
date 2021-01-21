@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -186,6 +186,8 @@ int main(int argc, char *argv[]) {
     auto output_file = config->get_string("output.file_name");
     auto glen_n      = config->get_number("stress_balance.ssa.Glen_exponent");
 
+    bool write_output = config->get_string("output.size") != "none";
+
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
     if (method == "fem") {
@@ -200,7 +202,9 @@ int main(int argc, char *argv[]) {
     testcase.init();
     testcase.run();
     testcase.report("plug");
-    testcase.write(output_file);
+    if (write_output) {
+      testcase.write(output_file);
+    }
   }
   catch (...) {
     handle_fatal_errors(com);
