@@ -18,7 +18,6 @@
 
 #include "Constant.hh"
 
-#include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -45,15 +44,18 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   const double
-    melt_rate   = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
-    ice_density = m_config->get_number("constants.ice.density"),
-    mass_flux   = melt_rate * ice_density;
+    melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity"),
+    mass_flux     = melt_rate * ice_density;
 
   melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
+  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void Constant::init_impl(const Geometry &geometry) {

@@ -1,5 +1,4 @@
-// Copyright (C) 2008-2011, 2013, 2014, 2015, 2016, 2017, 2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
-// Gudfinna Adalgeirsdottir and Andy Aschwanden
+// Copyright (C) 2008-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -49,7 +48,7 @@ public:
 
   const IceModelVec2S& shelf_base_temperature() const;
   const IceModelVec2S& shelf_base_mass_flux() const;
-  const IceModelVec2S& melange_back_pressure_fraction() const;
+  const IceModelVec2S& integrated_water_column_pressure() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -64,15 +63,22 @@ protected:
 
   virtual const IceModelVec2S& shelf_base_temperature_impl() const;
   virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  virtual const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+  virtual const IceModelVec2S& integrated_water_column_pressure_impl() const;
 
 protected:
   std::shared_ptr<OceanModel> m_input_model;
-  IceModelVec2S::Ptr m_melange_back_pressure_fraction;
+  IceModelVec2S::Ptr m_water_column_pressure;
 
   static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
   static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
-  static IceModelVec2S::Ptr allocate_melange_back_pressure(IceGrid::ConstPtr g);
+  static IceModelVec2S::Ptr allocate_water_column_pressure(IceGrid::ConstPtr g);
+
+  static void compute_integrated_water_column_pressure(const Geometry &geometry,
+                                                       double ice_density,
+                                                       double water_density,
+                                                       double g,
+                                                       IceModelVec2S &result);
+
 };
 
 } // end of namespace ocean

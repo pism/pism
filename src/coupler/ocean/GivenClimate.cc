@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -86,6 +86,14 @@ void Given::init_impl(const Geometry &geometry) {
   if (m_shelfbtemp->n_records() == 1 && m_shelfbmassflux->n_records() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
@@ -99,6 +107,14 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_shelf_base_temperature->copy_from(*m_shelfbtemp);
   m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep Given::max_timestep_impl(double t) const {

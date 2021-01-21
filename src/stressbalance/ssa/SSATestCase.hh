@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -95,7 +95,7 @@ protected:
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S m_tauc, m_melange_back_pressure;
+  IceModelVec2S m_tauc;
   IceModelVec3 m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;

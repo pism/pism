@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -101,14 +101,15 @@ void IP_SSAHardavForwardProblem::init() {
 
     stressbalance::Inputs inputs;
 
-    inputs.geometry              = &geometry;
-    inputs.basal_melt_rate       = NULL;
-    inputs.melange_back_pressure = NULL;
-    inputs.basal_yield_stress    = m_grid->variables().get_2d_scalar("tauc");
-    inputs.enthalpy              = m_grid->variables().get_3d_scalar("enthalpy");
-    inputs.age                   = NULL;
-    inputs.bc_mask               = m_grid->variables().get_2d_mask("bc_mask");
-    inputs.bc_values             = m_grid->variables().get_2d_vector("vel_ssa_bc");
+    inputs.geometry           = &geometry;
+    inputs.basal_melt_rate    = NULL;
+    inputs.basal_yield_stress = m_grid->variables().get_2d_scalar("tauc");
+    inputs.enthalpy           = m_grid->variables().get_3d_scalar("enthalpy");
+    inputs.age                = NULL;
+    inputs.bc_mask            = m_grid->variables().get_2d_mask("bc_mask");
+    inputs.bc_values          = m_grid->variables().get_2d_vector("vel_ssa_bc");
+
+    inputs.integrated_water_column_pressure = NULL;
 
     cache_inputs(inputs);
   }

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //

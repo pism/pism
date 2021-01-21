@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -86,13 +86,6 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
   m_bc_mask.metadata().set_numbers("flag_values", {0.0, 1.0});
   m_bc_mask.metadata().set_string("flag_meanings",
                                   "no_data ssa.dirichlet_bc_location");
-
-  m_melange_back_pressure.create(m_grid, "melange_back_pressure_fraction",
-                                 WITH_GHOSTS, WIDE_STENCIL);
-  m_melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction",
-                                    "", "", "", 0);
-  m_melange_back_pressure.set(0.0);
 }
 
 SSATestCase::~SSATestCase()
@@ -116,12 +109,12 @@ void SSATestCase::run() {
   m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
   Inputs inputs;
-  inputs.melange_back_pressure = &m_melange_back_pressure;
-  inputs.geometry              = &m_geometry;
-  inputs.enthalpy              = &m_ice_enthalpy;
-  inputs.basal_yield_stress    = &m_tauc;
-  inputs.bc_mask               = &m_bc_mask;
-  inputs.bc_values             = &m_bc_values;
+  inputs.integrated_water_column_pressure = nullptr;
+  inputs.geometry                         = &m_geometry;
+  inputs.enthalpy                         = &m_ice_enthalpy;
+  inputs.basal_yield_stress               = &m_tauc;
+  inputs.bc_mask                          = &m_bc_mask;
+  inputs.bc_values                        = &m_bc_values;
 
   bool full_update = true;
   m_ssa->update(inputs, full_update);

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -331,12 +331,13 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
     result.basal_melt_rate = &m_basal_melt_rate;
   }
 
-  result.basal_yield_stress    = &m_basal_yield_stress;
-  result.melange_back_pressure = &m_ocean->melange_back_pressure_fraction();
-  result.geometry              = &m_geometry;
-  result.new_bed_elevation     = m_new_bed_elevation;
-  result.enthalpy              = &m_energy_model->enthalpy();
-  result.age                   = m_age_model ? &m_age_model->age() : nullptr;
+  result.basal_yield_stress = &m_basal_yield_stress;
+  result.geometry           = &m_geometry;
+  result.new_bed_elevation  = m_new_bed_elevation;
+  result.enthalpy           = &m_energy_model->enthalpy();
+  result.age                = m_age_model ? &m_age_model->age() : nullptr;
+
+  result.integrated_water_column_pressure = &m_ocean->integrated_water_column_pressure();
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     result.bc_mask   = &m_ssa_dirichlet_bc_mask;

@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Copyright (C) 2012-2019, 2021 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
 // Albrecht, and Matthias Mengel
 //
 // This file is part of PISM.
@@ -293,7 +293,13 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 

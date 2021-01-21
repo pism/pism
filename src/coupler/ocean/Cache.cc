@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,9 +46,9 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   }
 
   {
-    m_shelf_base_temperature         = allocate_shelf_base_temperature(g);
-    m_shelf_base_mass_flux           = allocate_shelf_base_mass_flux(g);
-    m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+    m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+    m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
+    m_water_column_pressure  = allocate_water_column_pressure(g);
   }
 }
 
@@ -84,7 +84,7 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
-    m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
+    m_water_column_pressure->copy_from(m_input_model->integrated_water_column_pressure());
 
     m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
 
@@ -123,8 +123,8 @@ const IceModelVec2S& Cache::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& Cache::melange_back_pressure_fraction_impl() const {
-  return *m_melange_back_pressure_fraction;
+const IceModelVec2S& Cache::integrated_water_column_pressure_impl() const {
+  return *m_water_column_pressure;
 }
 
 

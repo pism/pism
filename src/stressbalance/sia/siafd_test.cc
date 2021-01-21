@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -359,19 +359,13 @@ int main(int argc, char *argv[]) {
     // Initialize the SIA solver:
     stress_balance.init();
 
-    IceModelVec2S melange_back_pressure;
-    melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
-    melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "", "", 0);
-    melange_back_pressure.set(0.0);
-
     bool full_update = true;
 
     stressbalance::Inputs inputs;
-    inputs.geometry              = &geometry;
-    inputs.melange_back_pressure = &melange_back_pressure;
-    inputs.enthalpy              = &enthalpy;
-    inputs.age                   = &age;
+    inputs.geometry                         = &geometry;
+    inputs.integrated_water_column_pressure = nullptr;
+    inputs.enthalpy                         = &enthalpy;
+    inputs.age                              = &age;
 
     stress_balance.update(inputs, full_update);
 

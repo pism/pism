@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+  const IceModelVec2S& integrated_water_column_pressure_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

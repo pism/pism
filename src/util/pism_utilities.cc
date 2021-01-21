@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -448,5 +448,33 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
   }
   return (c1 << 32 | c0);
 }
+
+/*!
+ * Compute vertically-integrated column pressure of ice or water.
+ *
+ * The pressure `p = \rho g (h - z)`, where `h` is the upper surface elevation.
+ *
+ * This function evaluates `\int_{h - d}^{h} \rho g (h - z) dz`, where `d` is the depth.
+ */
+double integrated_column_pressure(double depth, double density, double g) {
+  return 0.5 * density * g * depth * depth;
+}
+
+/*!
+ * Compute vertically-integrated water column pressure.
+ */
+double integrated_water_column_pressure(bool floating, double ice_thickness,
+                                        double bed, double floatation_level, double rho_ice,
+                                        double rho_water, double g) {
+  double water_column_height = 0.0;
+  if (floating) {
+    water_column_height = ice_thickness * rho_ice / rho_water;
+  } else {
+    water_column_height = std::max(floatation_level - bed, 0.0);
+  }
+
+  return integrated_column_pressure(water_column_height, rho_water, g);
+}
+
 
 } // end of namespace pism
