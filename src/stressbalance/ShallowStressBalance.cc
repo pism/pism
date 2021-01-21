@@ -35,7 +35,7 @@ namespace stressbalance {
 //! Evaluate the margin pressure difference term in the calving-front BC.
 //
 // Units: (kg / m3) * (m / s2) * m2 = Pa m
-double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
+double margin_pressure_difference(bool shelf, double H, double bed,
                                   double sea_level, double rho_ice, double rho_ocean,
                                   double g) {
   if (shelf) {
@@ -43,7 +43,7 @@ double margin_pressure_difference(bool shelf, bool dry_mode, double H, double be
     return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
   } else {
     // grounded terminus
-    if (bed >= sea_level or dry_mode) {
+    if (bed >= sea_level) {
       return 0.5 * rho_ice * g * H * H;
     } else {
       return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));

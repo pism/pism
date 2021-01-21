@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2020 Constantine Khroulev
+// Copyright (C) 2010--2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,8 +103,6 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
     rho_ocean = m_config->get_number("constants.sea_water.density"),
     g         = m_config->get_number("constants.standard_gravity");
 
-  const bool dry_mode = m_config->get_flag("ocean.always_grounded");
-
   IceModelVec::AccessList list{&H, &bed, &mask, &sea_level, result.get()};
 
   ParallelSection loop(m_grid->com);
@@ -116,7 +114,7 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
       if (mask.grounded_ice(i, j) and grid_edge(*m_grid, i, j)) {
         delta_p = 0.0;
       } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        delta_p = stressbalance::margin_pressure_difference(mask.ocean(i, j), dry_mode,
+        delta_p = stressbalance::margin_pressure_difference(mask.ocean(i, j),
                                                             H(i, j), bed(i, j), sea_level(i, j),
                                                             rho_ice, rho_ocean, g);
       } else {

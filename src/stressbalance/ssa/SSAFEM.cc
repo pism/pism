@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -555,8 +555,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
   const Vector2 *outward_normal = fem::q1::outward_normals();
 
   const bool
-    use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_flag("ocean.always_grounded");
+    use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   const double
     ice_density      = m_config->get_number("constants.ice.density"),
@@ -655,8 +654,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             const bool floating = ocean(m_gc.mask(sea_level, bed, H));
 
             // ocean pressure difference at a quadrature point
-            const double dP = margin_pressure_difference(floating, is_dry_simulation,
-                                                         H, bed, sea_level,
+            const double dP = margin_pressure_difference(floating, H, bed, sea_level,
                                                          ice_density, ocean_density,
                                                          standard_gravity);
 

@@ -267,9 +267,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   const Vector2 ice_free_velocity(0.0, 0.0);
 
   const bool
-    use_cfbc          = m_config->get_flag("stress_balance.calving_front_stress_bc"),
-    is_dry_simulation = m_config->get_flag("ocean.always_grounded"),
-    flow_line_mode    = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode");
+    use_cfbc       = m_config->get_flag("stress_balance.calving_front_stress_bc"),
+    flow_line_mode = m_config->get_flag("stress_balance.ssa.fd.flow_line_mode");
 
   // FIXME: bedrock_boundary is a misleading name
   bool bedrock_boundary = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
@@ -350,8 +349,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
             S = 1;
         }
 
-        double delta_p = margin_pressure_difference(ocean(M.ij), is_dry_simulation,
-                                                    H_ij, bed(i, j), sea_level(i, j),
+        double delta_p = margin_pressure_difference(ocean(M.ij), H_ij,
+                                                    bed(i, j), sea_level(i, j),
                                                     rho_ice, rho_ocean, standard_gravity);
 
         if (grid_edge(*m_grid, i, j) and

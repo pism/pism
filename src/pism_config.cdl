@@ -1577,11 +1577,6 @@ netcdf pism_config {
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
     pism_config:inverse.use_zeta_fixed_mask_type = "flag";
 
-    pism_config:ocean.always_grounded = "no";
-    pism_config:ocean.always_grounded_doc = "Dry (ocean-less) simulation; ice is considered grounded regardless of ice thickness, bed elevation, and sea level.";
-    pism_config:ocean.always_grounded_option = "dry";
-    pism_config:ocean.always_grounded_type = "flag";
-
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
     pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";

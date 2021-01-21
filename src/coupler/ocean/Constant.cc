@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,12 +59,9 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  if (not m_config->get_flag("ocean.always_grounded")) {
-    m_log->message(2, "* Initializing the constant ocean model...\n");
-    m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
-                   m_config->get_number("ocean.constant.melt_rate", "m year-1"));
-
-  }
+  m_log->message(2, "* Initializing the constant ocean model...\n");
+  m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
+                 m_config->get_number("ocean.constant.melt_rate", "m year-1"));
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {

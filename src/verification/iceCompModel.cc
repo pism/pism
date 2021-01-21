@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,7 +121,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> context, int
     m_config->set_flag("energy.enabled", false);
   }
 
-  m_config->set_flag("ocean.always_grounded", true);
+  // set sea level to -1e4 to ensure that all ice is grounded
+  m_config->set_number("sea_level.constant.value", -1e4);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((m_testname == 'K') || (m_testname == 'O')) {
@@ -141,8 +142,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> context, int
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
-    // this certainly is not a "dry simulation"
-    m_config->set_flag("ocean.always_grounded", false);
+    // set sea level to 0.0
+    m_config->set_number("sea_level.constant.value", 0.0);
 
     m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }

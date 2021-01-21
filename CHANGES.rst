@@ -29,6 +29,8 @@ Changes since v1.2
   to smooth the ice surface elevation to reduce this effect.
 - Add `sea_level.constant.value`. This sets the default sea level elevation used with
   `-sea_level constant`.
+- Remove `ocean.always_grounded`. Set `sea_level.constant.value` to a large negative value
+  to ensure that all ice is grounded.
 
 Changes from v1.1 to v1.2
 =========================

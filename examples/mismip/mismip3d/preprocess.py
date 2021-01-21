@@ -18,8 +18,7 @@ nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
 
 var = nc.createVariable("pism_overrides", 'i')
 
-attrs = {"ocean.always_grounded": "no",
-         "geometry.update.use_basal_melt_rate": "no",
+attrs = {"geometry.update.use_basal_melt_rate": "no",
          "stress_balance.ssa.compute_surface_gradient_inward": "no",
          "flow_law.isothermal_Glen.ice_softness": 1.0e-25,
          "constants.ice.density": 900.,

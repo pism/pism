@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,8 +45,9 @@ IceEISModel::IceEISModel(IceGrid::Ptr g, std::shared_ptr<Context> context, char 
   // overridden by the command-line option "-energy enthalpy"
   m_config->set_flag("energy.temperature_based", true);
 
-  // see EISMINT II description; choose no ocean interaction,
-  m_config->set_flag("ocean.always_grounded", true);
+  // see EISMINT II description; set sea level elevation to -1e4 meters to remove ocean
+  // interaction
+  m_config->set_number("sea_level.constant.value", -1e4);
 
   // purely SIA, and E=1
   m_config->set_number("stress_balance.sia.enhancement_factor", 1.0);
