@@ -128,8 +128,14 @@ jobs:
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
       - run:
+          name: Reset ccache stats
+          command: ccache -z
+      - run:
           name: Build PISM using Clang
           command: make --no-print-directory -C build -j4 all
+      - run:
+          name: Print ccache stats
+          command: ccache -s
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -165,8 +171,14 @@ jobs:
             -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
             -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
       - run:
+          name: Reset ccache stats
+          command: ccache -z
+      - run:
           name: Build PISM using Clang
           command: make --no-print-directory -C build -j4 all
+      - run:
+          name: Print ccache stats
+          command: ccache -s
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
