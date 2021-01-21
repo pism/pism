@@ -200,7 +200,7 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.background_precip_pre_units = "mm/hr";
 
     pism_config:atmosphere.orographic_precipitation.conversion_time = 1000.0;
-    pism_config:atmosphere.orographic_precipitation.conversion_time_doc = "Cloud conversion time";
+    pism_config:atmosphere.orographic_precipitation.conversion_time_doc = "Cloud conversion time `\\tau_c`";
     pism_config:atmosphere.orographic_precipitation.conversion_time_option = "conversion_time";
     pism_config:atmosphere.orographic_precipitation.conversion_time_type = "number";
     pism_config:atmosphere.orographic_precipitation.conversion_time_units = "s";
@@ -212,36 +212,36 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.coriolis_latitude_units = "degrees_N";
 
     pism_config:atmosphere.orographic_precipitation.fallout_time = 1000.0;
-    pism_config:atmosphere.orographic_precipitation.fallout_time_doc = "Fallout time";
+    pism_config:atmosphere.orographic_precipitation.fallout_time_doc = "Fallout time `\\tau_f`";
     pism_config:atmosphere.orographic_precipitation.fallout_time_option = "fallout_time";
     pism_config:atmosphere.orographic_precipitation.fallout_time_type = "number";
     pism_config:atmosphere.orographic_precipitation.fallout_time_units = "s";
 
     pism_config:atmosphere.orographic_precipitation.grid_size_factor = 2;
-    pism_config:atmosphere.orographic_precipitation.grid_size_factor_doc = "The spectral grid size is ``(Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1)`` where ``Z`` is given by this parameter.";
+    pism_config:atmosphere.orographic_precipitation.grid_size_factor_doc = "The size of the extended grid is ``(Z*(grid.Mx - 1) + 1, Z*(grid.My - 1) + 1)`` where ``Z`` is given by this parameter.";
     pism_config:atmosphere.orographic_precipitation.grid_size_factor_type = "integer";
     pism_config:atmosphere.orographic_precipitation.grid_size_factor_units = "count";
 
     pism_config:atmosphere.orographic_precipitation.lapse_rate = -5.8;
-    pism_config:atmosphere.orographic_precipitation.lapse_rate_doc = "Lapse rate";
+    pism_config:atmosphere.orographic_precipitation.lapse_rate_doc = "Lapse rate `\\gamma`";
     pism_config:atmosphere.orographic_precipitation.lapse_rate_option = "lapse_rate";
     pism_config:atmosphere.orographic_precipitation.lapse_rate_type = "number";
     pism_config:atmosphere.orographic_precipitation.lapse_rate_units = "K / km";
 
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate = -6.5;
-    pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_doc = "Moist adiabatic lapse rate";
+    pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_doc = "Moist adiabatic lapse rate `\\Gamma_m`";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_option = "moist_adiabatic_lapse_rate";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_type = "number";
     pism_config:atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate_units = "K / km";
 
     pism_config:atmosphere.orographic_precipitation.moist_stability_frequency = 0.05;
-    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_doc = "Moist stability frequency";
+    pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_doc = "Moist stability frequency `N_m`";
     pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_option = "moist_stability_frequency";
     pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_type = "number";
     pism_config:atmosphere.orographic_precipitation.moist_stability_frequency_units = "1/s";
 
     pism_config:atmosphere.orographic_precipitation.reference_density = 7.4e-3;
-    pism_config:atmosphere.orographic_precipitation.reference_density_doc = "Reference density";
+    pism_config:atmosphere.orographic_precipitation.reference_density_doc = "Reference density `\\rho_{S_{\\text{ref}}}`";
     pism_config:atmosphere.orographic_precipitation.reference_density_option = "reference_density";
     pism_config:atmosphere.orographic_precipitation.reference_density_type = "number";
     pism_config:atmosphere.orographic_precipitation.reference_density_units = "kg m-3";
@@ -252,13 +252,18 @@ netcdf pism_config {
     pism_config:atmosphere.orographic_precipitation.scale_factor_type = "number";
     pism_config:atmosphere.orographic_precipitation.scale_factor_units = "1";
 
+    pism_config:atmosphere.orographic_precipitation.smoothing_standard_deviation = 0.0;
+    pism_config:atmosphere.orographic_precipitation.smoothing_standard_deviation_doc = "Standard deviation of the Gaussian filter used to smooth surface elevation or zero if disabled";
+    pism_config:atmosphere.orographic_precipitation.smoothing_standard_deviation_type = "number";
+    pism_config:atmosphere.orographic_precipitation.smoothing_standard_deviation_units = "m";
+
     pism_config:atmosphere.orographic_precipitation.truncate = "true";
     pism_config:atmosphere.orographic_precipitation.truncate_doc = "Truncate precipitation at 0, disallowing negative precipitation values.";
     pism_config:atmosphere.orographic_precipitation.truncate_option = "truncate";
     pism_config:atmosphere.orographic_precipitation.truncate_type = "flag";
 
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height = 2500.0;
-    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_doc = "Water vapor scale height";
+    pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_doc = "Water vapor scale height `H_w`";
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_option = "water_vapor_scale_height";
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_type = "number";
     pism_config:atmosphere.orographic_precipitation.water_vapor_scale_height_units = "m";

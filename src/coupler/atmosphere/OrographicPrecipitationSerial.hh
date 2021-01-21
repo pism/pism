@@ -97,11 +97,14 @@ private:
 
   std::vector<double> m_kx, m_ky;
 
-  // orographic precipitation
+  // resulting orographic precipitation
   petsc::Vec m_precipitation;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
+
+  // FFT(Gaussian) used to smooth surface elevation
+  fftw_complex *m_G_hat;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;

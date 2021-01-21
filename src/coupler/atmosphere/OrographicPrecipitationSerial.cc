@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2020 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2020, 2021 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,8 @@
 
 #include <complex> // std::complex<double>, std::sqrt()
 #include <gsl/gsl_math.h> // M_PI
+#include <cassert>        // assert()
+#include <cmath>          // std::exp()
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
@@ -94,6 +96,7 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     // FFTW arrays
     m_fftw_input  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
     m_fftw_output = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+    m_G_hat       = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx *    m_Ny);
 
     // FFTW plans
     m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
@@ -108,6 +111,65 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     //
     // (Constantine Khroulev, February 1, 2015)
   }
+
+  // initialize the Gaussian filter
+  {
+    FFTWArray G_hat(m_G_hat, m_Nx, m_Ny);
+    double sigma = config.get_number("atmosphere.orographic_precipitation.smoothing_standard_deviation");
+
+    if (sigma > 0.0) {
+      FFTWArray
+        fftw_output(m_fftw_output, m_Nx, m_Ny),
+        fftw_input(m_fftw_input, m_Nx, m_Ny);
+
+      int
+        Nx2 = Nx / 2,
+        Ny2 = Ny / 2;
+
+      double sum = 0.0;
+      for (int i = 0; i < m_Nx; i++) {
+        for (int j = 0; j < m_Ny; j++) {
+          int
+            p = i <= Nx2 ? i : m_Nx - i,
+            q = j <= Ny2 ? j : m_Ny - j;
+          double
+            x = p * dx,
+            y = q * dy;
+
+          double G = std::exp(-0.5 * (x * x + y * y) / (sigma * sigma));
+          sum += G;
+
+          fftw_input(i, j) = G;
+        }
+      }
+
+      // normalize:
+      assert(sum > 0.0);
+      for (int i = 0; i < m_Nx; i++) {
+        for (int j = 0; j < m_Ny; j++) {
+          fftw_input(i, j) /= sum;
+        }
+      }
+
+      // compute FFT of the Gaussian
+      fftw_execute(m_dft_forward);
+
+      // copy to m_G_hat
+      for (int i = 0; i < m_Nx; i++) {
+        for (int j = 0; j < m_Ny; j++) {
+          G_hat(i, j) = fftw_output(i, j);
+        }
+      }
+
+    } else {
+      // fill m_G_hat with ones to disable smoothing
+      for (int i = 0; i < m_Nx; i++) {
+        for (int j = 0; j < m_Ny; j++) {
+          G_hat(i, j) = 1.0;
+        }
+      }
+    }
+  }
 }
 
 OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
@@ -115,6 +177,7 @@ OrographicPrecipitationSerial::~OrographicPrecipitationSerial() {
   fftw_destroy_plan(m_dft_inverse);
   fftw_free(m_fftw_input);
   fftw_free(m_fftw_output);
+  fftw_free(m_G_hat);
 }
 
 /*!
@@ -132,7 +195,7 @@ Vec OrographicPrecipitationSerial::precipitation() const {
 void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   // solves:
   // Phat(k,l) = (Cw * i * sigma * Hhat(k,l)) /
-  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauc);
+  //             (1 - i * m * Hw) * (1 + i * sigma * tauc) * (1 + i * sigma * tauf);
   // see equation (49) in
   // R. B. Smith and I. Barstad, 2004:
   // A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.
@@ -154,14 +217,16 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   {
     FFTWArray
       fftw_output(m_fftw_output, m_Nx, m_Ny),
-      fftw_input(m_fftw_input, m_Nx, m_Ny);
+      fftw_input(m_fftw_input, m_Nx, m_Ny),
+      G_hat(m_G_hat, m_Nx, m_Ny);
 
     for (int i = 0; i < m_Nx; i++) {
       const double kx = m_kx[i];
       for (int j = 0; j < m_Ny; j++) {
         const double ky = m_ky[j];
 
-        const auto &h_hat = fftw_output(i, j);
+        // FFT(h) * FFT(Gaussian), i.e. FFT(smoothed ice surface elevation)
+        const auto &h_hat = fftw_output(i, j) * G_hat(i, j);
 
         double sigma = m_u * kx + m_v * ky;
 
@@ -210,7 +275,7 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
 
   fftw_execute(m_dft_inverse);
 
-  // get m_fftw_output and put it into m_p
+  // get m_fftw_output and put it into m_precipitation
   get_real_part(m_fftw_output,
                 1.0 / (m_Nx * m_Ny),
                 m_Mx, m_My,
