@@ -57,7 +57,7 @@ jobs:
             - ~/.ccache
       - run:
           name: Run regression tests
-          command: cd build && ctest --output-on-failure
+          command: cd build && ctest -j 4 --output-on-failure
 
   build-gcc-minimal:
     docker:
@@ -136,7 +136,7 @@ jobs:
             - ~/.ccache
       - run:
           name: Run regression tests
-          command: cd build && ctest --output-on-failure
+          command: cd build && ctest -j 4 --output-on-failure
 
   build-clang-minimal:
     docker:
