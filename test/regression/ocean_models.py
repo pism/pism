@@ -414,6 +414,7 @@ class Cache(TestCase):
     def test_ocean_cache(self):
         "Modifier Cache"
 
+        model = self.constant
         modifier = PISM.OceanCache(self.grid, self.delta_T)
 
         modifier.init(self.geometry)
@@ -426,7 +427,13 @@ class Cache(TestCase):
         for t in ts:
             modifier.update(self.geometry, t, dt)
 
-            original = sample(self.constant.shelf_base_temperature())
+            check_difference(model.shelf_base_mass_flux(),
+                             modifier.shelf_base_mass_flux(), 0.0)
+
+            check_difference(model.integrated_water_column_pressure(),
+                             modifier.integrated_water_column_pressure(), 0.0)
+
+            original = sample(model.shelf_base_temperature())
             cached = sample(modifier.shelf_base_temperature())
 
             diff.append(cached - original)
