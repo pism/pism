@@ -336,15 +336,10 @@ Please see :ref:`sec-model-melange-pressure` for details.
 
    We recommend setting :config:`ocean.melange_back_pressure_fraction` to 1.
 
-This modifier takes the following command-line options:
+This modifier uses the following configuration parameters:
 
-- :opt:`-ocean_frac_MBP_file`: specifies the name of the file containing forcing data.
-  This file has to contain the :var:`frac_MBP` variable using units of "1" (a
-  dimensionless parameter)
-- :opt:`-ocean_frac_MBP_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_frac_MBP_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.frac_MBP.
 
 .. _sec-ocean-cache:
 

@@ -467,6 +467,7 @@ double integrated_water_column_pressure(bool floating, double ice_thickness,
                                         double bed, double floatation_level, double rho_ice,
                                         double rho_water, double g) {
   double water_column_height = 0.0;
+  // FIXME: "floating" is not needed here
   if (floating) {
     water_column_height = ice_thickness * rho_ice / rho_water;
   } else {

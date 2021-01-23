@@ -17,9 +17,11 @@
       \newcommand{\T}[1]{ \var{T}{#1} }
       \newcommand{\m}[1]{ \var{m}{#1} }
       \newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-      \newcommand{\psw}{p_{\text{ocean}}}
+      \newcommand{\psw}{p_{\text{water}}}
       \newcommand{\pice}{p_{\text{ice}}}
-      \newcommand{\pmelange}{p_{\text{melange}}}
+      \newcommand{\pmelange}{\bar p_{\text{melange}}}
+      \newcommand{\rhoi}{\rho_{\text{ice}}}
+      \newcommand{\rhow}{\rho_{\text{water}}}
       \newcommand{\n}{\mathbf{n}}
       \newcommand{\nx}{\n_{x}}
       \newcommand{\ny}{\n_{y}}
@@ -33,6 +35,7 @@
       \newcommand{\div}{\nabla \cdot}
       \newcommand{\V}{\mathbf{V}}
       \newcommand{\Wtill}{W_{\mathrm{till}}}
+      \newcommand{\zs}{z_{\text{sea level}}}
 
 .. raw:: latex
 
@@ -51,9 +54,12 @@
    \providecommand{\ms}[1]{ \var{m^{*}}{#1} }
 
    % Melange
-   \providecommand{\psw}{p_{\text{ocean}}}
+   \providecommand{\psw}{p_{\text{water}}}
    \providecommand{\pice}{p_{\text{ice}}}
-   \providecommand{\pmelange}{p_{\text{melange}}}
+   \providecommand{\pmelange}{\bar p_{\text{melange}}}
+   \providecommand{\rhoi}{\rho_{\text{ice}}}
+   \providecommand{\rhow}{\rho_{\text{water}}}
+   \providecommand{\zs}{z_{\text{sea level}}}
    \providecommand{\n}{\mathbf{n}}
    \providecommand{\nx}{\n_{x}}
    \providecommand{\ny}{\n_{y}}
