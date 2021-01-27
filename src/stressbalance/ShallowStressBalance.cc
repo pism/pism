@@ -32,22 +32,6 @@
 namespace pism {
 namespace stressbalance {
 
-//! Evaluate the margin pressure difference term in the calving-front BC.
-//
-// Units: (kg / m3) * (m / s2) * m2 = Pa m
-double margin_pressure_difference(double ice_thickness,
-                                  double bed, double sea_level, double rho_ice,
-                                  double rho_ocean, double g) {
-  double
-    P_ice   = 0.5 * rho_ice * g * ice_thickness, // vertical average
-    P_water = average_water_column_pressure(ice_thickness, bed,
-                                            sea_level, rho_ice, rho_ocean, g);
-
-  return ice_thickness * (P_ice - P_water);
-}
-
-using pism::mask::ice_free;
-
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 

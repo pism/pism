@@ -34,13 +34,6 @@ class IceModelVec2CellType;
 
 namespace stressbalance {
 
-/*!
- * Vertically-averaged ocean pressure difference at the calving front, used in the implementation of
- * the stress boundary condition at the calving front in SSA stress balance solvers.
- */
-double margin_pressure_difference(double H, double bed, double sea_level,
-                                  double rho_ice, double rho_ocean, double g);
-
 class Inputs;
 
 //! Shallow stress balance (such as the SSA).
