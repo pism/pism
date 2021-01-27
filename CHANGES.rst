@@ -31,6 +31,7 @@ Changes since v1.2
   `-sea_level constant`.
 - Remove `ocean.always_grounded`. Set `sea_level.constant.value` to a large negative value
   to ensure that all ice is grounded.
+- Remove `ocean.melange_back_pressure_fraction`: it is no longer needed.
 
 Changes from v1.1 to v1.2
 =========================

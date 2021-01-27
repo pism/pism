@@ -1722,11 +1722,6 @@ netcdf pism_config {
     pism_config:ocean.given.reference_year_type = "integer";
     pism_config:ocean.given.reference_year_units = "years";
 
-    pism_config:ocean.melange_back_pressure_fraction = 0.0;
-    pism_config:ocean.melange_back_pressure_fraction_doc = "default melange back pressure fraction";
-    pism_config:ocean.melange_back_pressure_fraction_type = "number";
-    pism_config:ocean.melange_back_pressure_fraction_units = "1";
-
     pism_config:ocean.models = "constant";
     pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
     pism_config:ocean.models_option = "ocean";
