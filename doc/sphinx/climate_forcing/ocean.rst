@@ -320,21 +320,28 @@ Scalar melange back pressure fraction
 :|variables|: :var:`frac_MBP`
 :|implementation|: ``pism::ocean::Frac_MBP``
 
-This modifier implements forcing using melange back pressure fraction (scaling). The
-scalar time-dependent variable :var:`frac_MBP` should take on values from 0 to 1; it is
-understood as the fraction of the maximum melange back pressure possible at a given
-location. (We assume that melange back pressure cannot exceed the pressure of the ice
-column at a calving front.)
+This modifier implements forcing using melange back pressure fraction (scaling).
+
+Here we assume that the total vertically-averaged back pressure at an ice margin cannot
+exceed the vertically-averaged ice pressure at the same location:
+
+.. math::
+
+   \bar p_{\text{water}} + \bar p_{\text{melange}} &\le \bar p_{\text{ice}},\, \text{or}
+
+   \bar p_{\text{melange}} &\le \bar p_{\text{ice}} - \bar p_{\text{water}}.
+
+We introduce `\lambda \in [0, 1]` such that
+
+.. math::
+
+   \bar p_{\text{melange}} = \lambda (\bar p_{\text{ice}} - \bar p_{\text{water}}).
+
+
+The scalar time-dependent variable :var:`frac_MBP` should take on values between 0 and 1
+and has the meaning of `\lambda` above.
 
 Please see :ref:`sec-model-melange-pressure` for details.
-
-.. note::
-
-   This modifier *scales* the melange back pressure fraction provided by an ocean model.
-   The default value of :config:`ocean.melange_back_pressure_fraction` is zero and
-   *scaling it does nothing*.
-
-   We recommend setting :config:`ocean.melange_back_pressure_fraction` to 1.
 
 This modifier uses the following configuration parameters:
 
