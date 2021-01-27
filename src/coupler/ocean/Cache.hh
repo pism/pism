@@ -38,7 +38,7 @@ protected:
 
   const IceModelVec2S& shelf_base_temperature_impl() const;
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  const IceModelVec2S& integrated_water_column_pressure_impl() const;
+  const IceModelVec2S& average_water_column_pressure_impl() const;
 private:
   double m_next_update_time;
   unsigned int m_update_interval_years;

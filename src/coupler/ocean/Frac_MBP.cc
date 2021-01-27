@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -67,7 +67,7 @@ void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_forcing->update(t, dt);
 
-  m_water_column_pressure->copy_from(m_input_model->integrated_water_column_pressure());
+  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
   double
     lambda      = m_forcing->value(),
@@ -82,14 +82,14 @@ void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
     const int i = p.i(), j = p.j();
 
     double
-      P_i = integrated_column_pressure(geometry.ice_thickness(i, j), ice_density, g),
+      P_i = 0.5 * ice_density * g * geometry.ice_thickness(i, j), // vertical average
       P_m = lambda * (P_i - P_o(i, j));
 
     P_o(i, j) += P_m;
   }
 }
 
-const IceModelVec2S& Frac_MBP::integrated_water_column_pressure_impl() const {
+const IceModelVec2S& Frac_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

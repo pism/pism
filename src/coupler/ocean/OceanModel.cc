@@ -48,7 +48,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
 
 IceModelVec2S::Ptr OceanModel::allocate_water_column_pressure(IceGrid::ConstPtr g) {
   IceModelVec2S::Ptr result(new IceModelVec2S(g,
-                                              "integrated_water_column_pressure",
+                                              "average_water_column_pressure",
                                               WITHOUT_GHOSTS));
   result->set_attrs("diagnostic",
                     "vertically-integrated water column pressure",
@@ -90,7 +90,7 @@ void OceanModel::init_impl(const Geometry &geometry) {
       water_density = m_config->get_number("constants.sea_water.density"),
       g             = m_config->get_number("constants.standard_gravity");
 
-    compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+    compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                              *m_water_column_pressure);
   }
 }
@@ -108,8 +108,8 @@ const IceModelVec2S& OceanModel::shelf_base_temperature() const {
   return shelf_base_temperature_impl();
 }
 
-const IceModelVec2S& OceanModel::integrated_water_column_pressure() const {
-  return integrated_water_column_pressure_impl();
+const IceModelVec2S& OceanModel::average_water_column_pressure() const {
+  return average_water_column_pressure_impl();
 }
 
 // pass-through default implementations for "modifiers"
@@ -162,9 +162,9 @@ const IceModelVec2S& OceanModel::shelf_base_mass_flux_impl() const {
   }
 }
 
-const IceModelVec2S& OceanModel::integrated_water_column_pressure_impl() const {
+const IceModelVec2S& OceanModel::average_water_column_pressure_impl() const {
   if (m_input_model) {
-    return m_input_model->integrated_water_column_pressure();
+    return m_input_model->average_water_column_pressure();
   } else {
     return *m_water_column_pressure;
   }
@@ -248,7 +248,7 @@ TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
   }
 }
 
-void OceanModel::compute_integrated_water_column_pressure(const Geometry &geometry,
+void OceanModel::compute_average_water_column_pressure(const Geometry &geometry,
                                                           double ice_density,
                                                           double water_density,
                                                           double g,
@@ -261,8 +261,6 @@ void OceanModel::compute_integrated_water_column_pressure(const Geometry &geomet
     &H   = geometry.ice_thickness,
     &z_s = geometry.sea_level_elevation;
 
-  double alpha = 1.0 - ice_density / water_density;
-
   IceModelVec::AccessList l{&bed, &H, &z_s, &result};
 
   ParallelSection loop(grid->com);
@@ -270,15 +268,8 @@ void OceanModel::compute_integrated_water_column_pressure(const Geometry &geomet
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double
-        h_grounded = bed(i, j) + H(i, j),
-        h_floating = z_s(i, j) + alpha * H(i, j);
-
-      bool floating = h_floating > h_grounded;
-
-      result(i, j) = pism::integrated_water_column_pressure(floating,
-                                                            H(i, j), bed(i, j), z_s(i, j),
-                                                            ice_density, water_density, g);
+      result(i, j) = pism::average_water_column_pressure(H(i, j), bed(i, j), z_s(i, j),
+                                                         ice_density, water_density, g);
     }
   } catch (...) {
     loop.failed();

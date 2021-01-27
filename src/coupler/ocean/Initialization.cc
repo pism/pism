@@ -50,7 +50,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
   OceanModel::update_impl(geometry, t, dt);
 
-  m_water_column_pressure->copy_from(m_input_model->integrated_water_column_pressure());
+  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
   m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
 }
@@ -115,7 +115,7 @@ const IceModelVec2S& InitializationHelper::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& InitializationHelper::integrated_water_column_pressure_impl() const {
+const IceModelVec2S& InitializationHelper::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

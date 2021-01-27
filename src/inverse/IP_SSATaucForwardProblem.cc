@@ -114,7 +114,7 @@ void IP_SSATaucForwardProblem::init() {
     inputs.bc_mask            = m_grid->variables().get_2d_mask("bc_mask");
     inputs.bc_values          = m_grid->variables().get_2d_vector("vel_ssa_bc");
 
-    inputs.integrated_water_column_pressure = NULL;
+    inputs.water_column_pressure = NULL;
 
     cache_inputs(inputs);
   }

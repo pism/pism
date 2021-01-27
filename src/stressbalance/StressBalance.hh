@@ -47,7 +47,7 @@ public:
 
   const IceModelVec2S *basal_melt_rate;
   const IceModelVec2S *basal_yield_stress;
-  const IceModelVec2S *integrated_water_column_pressure;
+  const IceModelVec2S *water_column_pressure;
   const IceModelVec2S *fracture_density;
 
   const IceModelVec3  *enthalpy;

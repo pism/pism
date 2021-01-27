@@ -41,7 +41,7 @@ Inputs::Inputs() {
   new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
-  integrated_water_column_pressure = NULL;
+  water_column_pressure = NULL;
   fracture_density      = NULL;
   basal_yield_stress    = NULL;
 
@@ -95,8 +95,8 @@ void Inputs::dump(const char *filename) const {
     basal_melt_rate->write(output);
   }
 
-  if (integrated_water_column_pressure) {
-    integrated_water_column_pressure->write(output);
+  if (water_column_pressure) {
+    water_column_pressure->write(output);
   }
 
   if (fracture_density) {

@@ -651,10 +651,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
               bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
               sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
 
-            const bool floating = ocean(m_gc.mask(sea_level, bed, H));
-
             // ocean pressure difference at a quadrature point
-            const double dP = margin_pressure_difference(floating, H, bed, sea_level,
+            const double dP = margin_pressure_difference(H, bed, sea_level,
                                                          ice_density, ocean_density,
                                                          standard_gravity);
 

@@ -114,8 +114,7 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
       if (mask.grounded_ice(i, j) and grid_edge(*m_grid, i, j)) {
         delta_p = 0.0;
       } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        delta_p = stressbalance::margin_pressure_difference(mask.ocean(i, j),
-                                                            H(i, j), bed(i, j), sea_level(i, j),
+        delta_p = stressbalance::margin_pressure_difference(H(i, j), bed(i, j), sea_level(i, j),
                                                             rho_ice, rho_ocean, g);
       } else {
         delta_p = m_fill_value;

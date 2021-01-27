@@ -43,7 +43,7 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& integrated_water_column_pressure_impl() const;
+  const IceModelVec2S& average_water_column_pressure_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

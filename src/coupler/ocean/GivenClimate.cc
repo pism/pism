@@ -92,7 +92,7 @@ void Given::init_impl(const Geometry &geometry) {
     water_density = m_config->get_number("constants.sea_water.density"),
     g             = m_config->get_number("constants.standard_gravity");
 
-  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                            *m_water_column_pressure);
 }
 
@@ -113,7 +113,7 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
     water_density = m_config->get_number("constants.sea_water.density"),
     g             = m_config->get_number("constants.standard_gravity");
 
-  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                            *m_water_column_pressure);
 }
 

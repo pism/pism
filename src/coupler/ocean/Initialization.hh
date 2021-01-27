@@ -50,7 +50,7 @@ private:
 
   const IceModelVec2S& shelf_base_temperature_impl() const;
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  const IceModelVec2S& integrated_water_column_pressure_impl() const;
+  const IceModelVec2S& average_water_column_pressure_impl() const;
 
   // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;

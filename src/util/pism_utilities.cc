@@ -450,31 +450,21 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
 }
 
 /*!
- * Compute vertically-integrated column pressure of ice or water.
- *
- * The pressure `p = \rho g (h - z)`, where `h` is the upper surface elevation.
- *
- * This function evaluates `\int_{h - d}^{h} \rho g (h - z) dz`, where `d` is the depth.
+ * Compute water column pressure vertically-averaged over the height of an ice cliff at a
+ * margin.
  */
-double integrated_column_pressure(double depth, double density, double g) {
-  return 0.5 * density * g * depth * depth;
-}
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level, double rho_ice,
+                                     double rho_water, double g) {
 
-/*!
- * Compute vertically-integrated water column pressure.
- */
-double integrated_water_column_pressure(bool floating, double ice_thickness,
-                                        double bed, double floatation_level, double rho_ice,
-                                        double rho_water, double g) {
-  double water_column_height = 0.0;
-  // FIXME: "floating" is not needed here
-  if (floating) {
-    water_column_height = ice_thickness * rho_ice / rho_water;
-  } else {
-    water_column_height = std::max(floatation_level - bed, 0.0);
+  double
+    ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness),
+    water_column_height = std::max(floatation_level - ice_bottom, 0.0);
+
+  if (ice_thickness > 0.0) {
+    return 0.5 * rho_water * g * pow(water_column_height, 2.0) / ice_thickness;
   }
-
-  return integrated_column_pressure(water_column_height, rho_water, g);
+  return 0.0;
 }
 
 

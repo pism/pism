@@ -109,12 +109,12 @@ void SSATestCase::run() {
   m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
   Inputs inputs;
-  inputs.integrated_water_column_pressure = nullptr;
-  inputs.geometry                         = &m_geometry;
-  inputs.enthalpy                         = &m_ice_enthalpy;
-  inputs.basal_yield_stress               = &m_tauc;
-  inputs.bc_mask                          = &m_bc_mask;
-  inputs.bc_values                        = &m_bc_values;
+  inputs.water_column_pressure = nullptr;
+  inputs.geometry              = &m_geometry;
+  inputs.enthalpy              = &m_ice_enthalpy;
+  inputs.basal_yield_stress    = &m_tauc;
+  inputs.bc_mask               = &m_bc_mask;
+  inputs.bc_values             = &m_bc_values;
 
   bool full_update = true;
   m_ssa->update(inputs, full_update);

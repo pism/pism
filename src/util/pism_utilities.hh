@@ -32,16 +32,11 @@
 namespace pism {
 
 /*!
- * Compute vertically-integrated column pressure of ice or water.
- */
-double integrated_column_pressure(double depth, double density, double g);
-
-/*!
  * Compute vertically-integrated water column pressure.
  */
-double integrated_water_column_pressure(bool floating, double ice_thickness,
-                                        double bed, double floatation_level,
-                                        double rho_ice, double rho_water, double g);
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level,
+                                     double rho_ice, double rho_water, double g);
 
 // Utilities that do not expose PETSc's or PISM's API.
 

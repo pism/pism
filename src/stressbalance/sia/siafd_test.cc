@@ -362,10 +362,10 @@ int main(int argc, char *argv[]) {
     bool full_update = true;
 
     stressbalance::Inputs inputs;
-    inputs.geometry                         = &geometry;
-    inputs.integrated_water_column_pressure = nullptr;
-    inputs.enthalpy                         = &enthalpy;
-    inputs.age                              = &age;
+    inputs.geometry              = &geometry;
+    inputs.water_column_pressure = nullptr;
+    inputs.enthalpy              = &enthalpy;
+    inputs.age                   = &age;
 
     stress_balance.update(inputs, full_update);
 

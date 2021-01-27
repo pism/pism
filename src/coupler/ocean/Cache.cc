@@ -84,7 +84,7 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
-    m_water_column_pressure->copy_from(m_input_model->integrated_water_column_pressure());
+    m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
     m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
 
@@ -123,7 +123,7 @@ const IceModelVec2S& Cache::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& Cache::integrated_water_column_pressure_impl() const {
+const IceModelVec2S& Cache::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

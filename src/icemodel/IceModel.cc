@@ -337,7 +337,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   result.enthalpy           = &m_energy_model->enthalpy();
   result.age                = m_age_model ? &m_age_model->age() : nullptr;
 
-  result.integrated_water_column_pressure = &m_ocean->integrated_water_column_pressure();
+  result.water_column_pressure = &m_ocean->average_water_column_pressure();
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     result.bc_mask   = &m_ssa_dirichlet_bc_mask;

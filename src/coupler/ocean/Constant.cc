@@ -54,7 +54,7 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  compute_integrated_water_column_pressure(geometry, ice_density, water_density, g,
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                            *m_water_column_pressure);
 }
 

@@ -255,7 +255,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     &bed                   = inputs.geometry->bed_elevation,
     &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
-    *integrated_water_column_pressure = inputs.integrated_water_column_pressure;
+    *water_column_pressure = inputs.water_column_pressure;
 
   const double
     dx                     = m_grid->dx(),
@@ -291,8 +291,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     list.add({&thickness, &bed, &surface, &m_mask, &sea_level});
   }
 
-  if (use_cfbc and integrated_water_column_pressure) {
-    list.add(*integrated_water_column_pressure);
+  if (use_cfbc and water_column_pressure) {
+    list.add(*water_column_pressure);
   }
 
   m_b.set(0.0);
@@ -352,18 +352,17 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         }
 
         double
-          P_ice   = integrated_column_pressure(H_ij, rho_ice, standard_gravity),
+          P_ice   = 0.5 * rho_ice * standard_gravity * H_ij,
           P_water = 0.0;
 
-        if (integrated_water_column_pressure) {
-          P_water = (*integrated_water_column_pressure)(i, j);
+        if (water_column_pressure) {
+          P_water = (*water_column_pressure)(i, j);
         } else {
-          P_water = pism::integrated_water_column_pressure(mask::ocean(M.ij), H_ij,
-                                                           bed(i, j), sea_level(i, j),
-                                                           rho_ice, rho_ocean, standard_gravity);
+          P_water = pism::average_water_column_pressure(H_ij, bed(i, j), sea_level(i, j),
+                                                        rho_ice, rho_ocean, standard_gravity);
         }
 
-        double delta_p = P_ice - P_water;
+        double delta_p = H_ij * (P_ice - P_water);
 
         if (grid_edge(*m_grid, i, j) and
             not (flow_line_mode or mask::grounded(M.ij))) {

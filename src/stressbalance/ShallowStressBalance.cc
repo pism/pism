@@ -35,15 +35,15 @@ namespace stressbalance {
 //! Evaluate the margin pressure difference term in the calving-front BC.
 //
 // Units: (kg / m3) * (m / s2) * m2 = Pa m
-double margin_pressure_difference(bool floating, double ice_thickness,
+double margin_pressure_difference(double ice_thickness,
                                   double bed, double sea_level, double rho_ice,
                                   double rho_ocean, double g) {
   double
-    P_ice   = integrated_column_pressure(ice_thickness, rho_ice, g),
-    P_water = integrated_water_column_pressure(floating, ice_thickness,
-                                               bed, sea_level, rho_ice, rho_ocean, g);
+    P_ice   = 0.5 * rho_ice * g * ice_thickness, // vertical average
+    P_water = average_water_column_pressure(ice_thickness, bed,
+                                            sea_level, rho_ice, rho_ocean, g);
 
-  return P_ice - P_water;
+  return ice_thickness * (P_ice - P_water);
 }
 
 using pism::mask::ice_free;
