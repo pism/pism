@@ -51,8 +51,8 @@ IceModelVec2S::Ptr OceanModel::allocate_water_column_pressure(IceGrid::ConstPtr 
                                               "average_water_column_pressure",
                                               WITHOUT_GHOSTS));
   result->set_attrs("diagnostic",
-                    "vertically-integrated water column pressure",
-                    "Pa m", "Pa m", "", 0);
+                    "vertically-averaged water column pressure",
+                    "Pa", "Pa", "", 0);
 
   return result;
 }

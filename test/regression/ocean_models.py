@@ -310,6 +310,48 @@ class AnomalyBMB(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class DeltaMBP(TestCase):
+    def setUp(self):
+        self.filename = "ocean_delta_MBP_input.nc"
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.model = PISM.OceanConstant(self.grid)
+        self.dP = 100.0
+        self.H = 1000.0
+
+        self.geometry.ice_thickness.set(self.H)
+        self.geometry.bed_elevation.set(-2 * self.H)
+        self.geometry.ensure_consistency(0.0)
+
+        create_scalar_forcing(self.filename, "delta_MBP", "Pa", [self.dP], [0])
+
+    def test_ocean_delta_mpb(self):
+        "Modifier Delta_MBP"
+
+        modifier = PISM.OceanDeltaMBP(self.grid, self.model)
+
+        config.set_string("ocean.delta_MBP.file", self.filename)
+
+        modifier.init(self.geometry)
+        modifier.update(self.geometry, 0, 1)
+
+        model = self.model
+
+        check_difference(modifier.shelf_base_temperature(),
+                         model.shelf_base_temperature(),
+                         0.0)
+
+        check_difference(modifier.shelf_base_mass_flux(),
+                         model.shelf_base_mass_flux(),
+                         0.0)
+
+        check_difference(modifier.average_water_column_pressure(),
+                         model.average_water_column_pressure(),
+                         self.dP)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
 class FracMBP(TestCase):
     def setUp(self):
         self.filename = "ocean_frac_MBP_input.nc"

@@ -1,0 +1,67 @@
+/* Copyright (C) 2021 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#include "Delta_MBP.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
+
+namespace pism {
+namespace ocean {
+
+Delta_MBP::Delta_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+  : OceanModel(g, in) {
+
+  m_forcing.reset(new ScalarForcing(g->ctx(),
+                                    "ocean.delta_MBP",
+                                    "delta_MBP",
+                                    "Pa", "Pa",
+                                    "melange back pressure"));
+
+  m_water_column_pressure = allocate_water_column_pressure(g);
+}
+
+Delta_MBP::~Delta_MBP() {
+  // empty
+}
+
+void Delta_MBP::init_impl(const Geometry &geometry) {
+
+  m_input_model->init(geometry);
+
+  m_log->message(2, "* Initializing melange back pressure forcing using scalar offsets...\n");
+
+  m_forcing->init();
+}
+
+void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
+  m_input_model->update(geometry, t, dt);
+
+  m_forcing->update(t, dt);
+
+  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
+
+  m_water_column_pressure->shift(m_forcing->value());
+}
+
+const IceModelVec2S& Delta_MBP::average_water_column_pressure_impl() const {
+  return *m_water_column_pressure;
+}
+
+
+} // end of namespace ocean
+} // end of namespace pism

@@ -37,6 +37,7 @@ add_library (boundary OBJECT
   ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
+  ./ocean/Delta_MBP.cc
   ./ocean/Frac_MBP.cc
   ./ocean/Frac_SMB.cc
   ./ocean/Runoff_SMB.cc

@@ -311,10 +311,27 @@ It takes the following command-line options:
   which is similar, but applies anomalies at the atmosphere or surface level,
   respectively.
 
+.. _sec-ocean-delta-mbp:
+
+Scalar melange back pressure offsets
+++++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-ocean ...,delta_MBP`
+:|variables|: :var:`delta_MBP` [Pascal]
+:|implementation|: ``pism::ocean::Delta_MBP``
+
+The scalar time-dependent variable :var:`delta_MBP` (units: Pascal) has the meaning of
+`\bar p_{\text{melange}}` in :ref:`sec-model-melange-pressure` (equation :eq:`eq-cfbc-3`).
+
+This modifier uses the following configuration parameters:
+
+.. pism-parameters::
+   :prefix: ocean.delta_MBP.
+
 .. _sec-ocean-frac-mbp:
 
-Scalar melange back pressure fraction
-+++++++++++++++++++++++++++++++++++++
+Melange back pressure as a fraction of pressure difference
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: :opt:`-ocean ...,frac_MBP`
 :|variables|: :var:`frac_MBP`

@@ -1606,6 +1606,20 @@ netcdf pism_config {
     pism_config:ocean.constant.melt_rate_type = "number";
     pism_config:ocean.constant.melt_rate_units = "m / year";
 
+    pism_config:ocean.delta_MBP.file = "";
+    pism_config:ocean.delta_MBP.file_doc = "Name of the file containing melange back-pressure offsets";
+    pism_config:ocean.delta_MBP.file_type = "string";
+
+    pism_config:ocean.delta_MBP.period = 0;
+    pism_config:ocean.delta_MBP.period_doc = "Length of the period of the climate forcing data (set to zero to disable)";
+    pism_config:ocean.delta_MBP.period_type = "integer";
+    pism_config:ocean.delta_MBP.period_units = "years";
+
+    pism_config:ocean.delta_MBP.reference_year = 0;
+    pism_config:ocean.delta_MBP.reference_year_doc = "Reference year to use when :config:`ocean.delta_MBP.period` is active";
+    pism_config:ocean.delta_MBP.reference_year_type = "integer";
+    pism_config:ocean.delta_MBP.reference_year_units = "years";
+
     pism_config:ocean.delta_T.file = "";
     pism_config:ocean.delta_T.file_doc = "Name of the file containing temperature offsets.";
     pism_config:ocean.delta_T.file_option = "ocean_delta_T_file";
