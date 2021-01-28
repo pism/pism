@@ -3,14 +3,13 @@ version: 2
 jobs:
   build-gcc:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.1
+      - image: ckhrulev/pism-ubuntu:0.1.2
 
     environment:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
-      PYTHONPATH: /home/builder/project/build/site-packages
+      N: 4
 
     steps:
       - checkout
@@ -37,6 +36,8 @@ jobs:
           # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
           command: >-
             cmake -B build -S .
+            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
             -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
@@ -50,24 +51,27 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
       - run:
           name: Run regression tests
-          command: cd build && ctest --output-on-failure
+          command: >-
+            cd build &&
+            PYTHONPATH=$HOME/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N} --output-on-failure
 
   build-gcc-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.1
+      - image: ckhrulev/pism-ubuntu:0.1.2
 
     environment:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
+      N: 4
 
     steps:
       - checkout
@@ -86,7 +90,7 @@ jobs:
             -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -94,12 +98,11 @@ jobs:
 
   build-clang:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.1
+      - image: ckhrulev/pism-ubuntu:0.1.2
 
     environment:
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
-      PYTHONPATH: /home/builder/project/build/site-packages
+      N: 4
 
     steps:
       - checkout
@@ -119,6 +122,8 @@ jobs:
             -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
             -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
             -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
@@ -132,7 +137,7 @@ jobs:
           command: ccache -z
       - run:
           name: Build PISM using Clang
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N} all
       - run:
           name: Print ccache stats
           command: ccache -s
@@ -142,15 +147,18 @@ jobs:
             - ~/.ccache
       - run:
           name: Run regression tests
-          command: cd build && ctest --output-on-failure
+          command: >-
+            cd build &&
+            PYTHONPATH=$HOME/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N} --output-on-failure
 
   build-clang-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.1
+      - image: ckhrulev/pism-ubuntu:0.1.2
 
     environment:
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
+      N: 4
 
     steps:
       - checkout
@@ -175,7 +183,7 @@ jobs:
           command: ccache -z
       - run:
           name: Build PISM using Clang
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N} all
       - run:
           name: Print ccache stats
           command: ccache -s
@@ -186,7 +194,7 @@ jobs:
 
   build-manual:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.1
+      - image: ckhrulev/pism-ubuntu:0.1.2
 
     steps:
       - checkout
