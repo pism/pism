@@ -177,6 +177,14 @@ void Pico::init_impl(const Geometry &geometry) {
     m_theta_ocean->update(m_grid->ctx()->time()->current(), 0.0);
     m_salinity_ocean->update(m_grid->ctx()->time()->current(), 0.0);
   }
+
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void Pico::define_model_state_impl(const File &output) const {

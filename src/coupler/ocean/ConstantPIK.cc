@@ -45,6 +45,14 @@ void PIK::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
                  "* Initializing the constant (PIK) ocean model...\n");
+
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep PIK::max_timestep_impl(double t) const {

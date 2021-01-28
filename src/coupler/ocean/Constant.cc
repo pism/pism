@@ -64,6 +64,14 @@ void Constant::init_impl(const Geometry &geometry) {
   m_log->message(2, "* Initializing the constant ocean model...\n");
   m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
                  m_config->get_number("ocean.constant.melt_rate", "m year-1"));
+
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {
