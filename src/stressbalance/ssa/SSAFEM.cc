@@ -651,12 +651,16 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
               bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
               sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
 
-            const bool floating = ocean(m_gc.mask(sea_level, bed, H));
+            // vertically averaged pressures at a quadrature point
+            double
+              P_ice = 0.5 * ice_density * standard_gravity * H,
+              P_water = average_water_column_pressure(H, bed, sea_level,
+                                                      ice_density, ocean_density,
+                                                      standard_gravity);
 
-            // ocean pressure difference at a quadrature point
-            const double dP = margin_pressure_difference(floating, H, bed, sea_level,
-                                                         ice_density, ocean_density,
-                                                         standard_gravity);
+            // vertical integral of the pressure difference
+            double dP = H * (P_ice - P_water);
+            // FIXME: implement melange pressure forcing
 
             // This integral contributes to the residual at 2 nodes (the ones incident to the
             // current side). This is is written in a way that allows *adding* (... += ...) the

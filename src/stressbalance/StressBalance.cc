@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ Inputs::Inputs() {
   new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
-  melange_back_pressure = NULL;
+  water_column_pressure = NULL;
   fracture_density      = NULL;
   basal_yield_stress    = NULL;
 
@@ -95,8 +95,8 @@ void Inputs::dump(const char *filename) const {
     basal_melt_rate->write(output);
   }
 
-  if (melange_back_pressure) {
-    melange_back_pressure->write(output);
+  if (water_column_pressure) {
+    water_column_pressure->write(output);
   }
 
   if (fracture_density) {

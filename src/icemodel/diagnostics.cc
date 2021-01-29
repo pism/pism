@@ -73,9 +73,9 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
   m_vars = {SpatialVariableMetadata(m_sys, "ice_margin_pressure_difference")};
   m_vars[0].set_number("_FillValue", m_fill_value);
 
-  set_attrs("vertically-integrated pressure difference"
+  set_attrs("vertically-averaged pressure difference"
             " at ice margins (including calving fronts)", "",
-            "Pa m", "Pa m", 0);
+            "Pa", "Pa", 0);
 }
 
 IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
@@ -114,9 +114,12 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
       if (mask.grounded_ice(i, j) and grid_edge(*m_grid, i, j)) {
         delta_p = 0.0;
       } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        delta_p = stressbalance::margin_pressure_difference(mask.ocean(i, j),
-                                                            H(i, j), bed(i, j), sea_level(i, j),
-                                                            rho_ice, rho_ocean, g);
+        double
+          P_ice = 0.5 * rho_ice * g * H(i, j),
+          P_water = average_water_column_pressure(H(i, j), bed(i, j), sea_level(i, j),
+                                                  rho_ice, rho_ocean, g);
+
+        delta_p = P_ice - P_water;
       } else {
         delta_p = m_fill_value;
       }

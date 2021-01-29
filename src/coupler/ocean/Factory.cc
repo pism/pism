@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,7 @@
 #include "GivenClimate.hh"
 #include "Delta_T.hh"
 #include "Delta_SMB.hh"
+#include "Delta_MBP.hh"
 #include "Frac_MBP.hh"
 #include "Frac_SMB.hh"
 #include "Runoff_SMB.hh"
@@ -51,6 +52,7 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Frac_SMB>("frac_SMB");
   add_modifier<Delta_T>("delta_T");
   add_modifier<Runoff_SMB>("runoff_SMB");
+  add_modifier<Delta_MBP>("delta_MBP");
   add_modifier<Frac_MBP>("frac_MBP");
 }
 

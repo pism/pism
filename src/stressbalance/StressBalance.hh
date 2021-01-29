@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ public:
 
   const IceModelVec2S *basal_melt_rate;
   const IceModelVec2S *basal_yield_stress;
-  const IceModelVec2S *melange_back_pressure;
+  const IceModelVec2S *water_column_pressure;
   const IceModelVec2S *fracture_density;
 
   const IceModelVec3  *enthalpy;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #include "Frac_MBP.hh"
 #include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace ocean {
@@ -32,7 +34,7 @@ Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
                                     "1", "1",
                                     "melange back pressure fraction"));
 
-  m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+  m_water_column_pressure = allocate_water_column_pressure(g);
 }
 
 Frac_MBP::~Frac_MBP() {
@@ -45,27 +47,50 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
 
-  // Note: comparing it to zero using "==" *is* appropriate here.
-  if (m_config->get_number("ocean.melange_back_pressure_fraction") == 0.0) {
-    m_log->message(2,
-                   "WARNING: ocean.melange_back_pressure_fraction == 0.0.\n"
-                   "         -ocean ...,frac_MBP is inactive.");
-  }
-
   m_forcing->init();
 }
 
+
+/*!
+ * Modify water column pressure using a scalar factor `\lambda`
+ *
+ * We assume that the "melange back pressure" `P_m = \lambda (P_i - P_o)`, where `P_i` is
+ * the vertically-integrated cryostatic pressure of an ice column and, similarly, `P_o` is
+ * the vertically-integrated pressure of a water column and `\lambda \in [0, 1]`.
+ *
+ * Then the modified integrated water column pressure is
+ *
+ * `P_o^{*} = P_o + P_m`.
+ */
 void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
   m_forcing->update(t, dt);
 
-  m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
-  m_melange_back_pressure_fraction->scale(m_forcing->value());
+  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
+
+  double
+    lambda      = m_forcing->value(),
+    ice_density = m_config->get_number("constants.ice.density"),
+    g           = m_config->get_number("constants.standard_gravity");
+
+  IceModelVec2S &P_o = *m_water_column_pressure;
+
+  IceModelVec::AccessList list{&P_o, &geometry.ice_thickness};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double
+      P_i = 0.5 * ice_density * g * geometry.ice_thickness(i, j), // vertical average
+      P_m = lambda * (P_i - P_o(i, j));
+
+    P_o(i, j) += P_m;
+  }
 }
 
-const IceModelVec2S& Frac_MBP::melange_back_pressure_fraction_impl() const {
-  return *m_melange_back_pressure_fraction;
+const IceModelVec2S& Frac_MBP::average_water_column_pressure_impl() const {
+  return *m_water_column_pressure;
 }
 
 

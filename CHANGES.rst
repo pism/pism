@@ -31,6 +31,10 @@ Changes since v1.2
   `-sea_level constant`.
 - Remove `ocean.always_grounded`. Set `sea_level.constant.value` to a large negative value
   to ensure that all ice is grounded.
+- Remove `ocean.melange_back_pressure_fraction`: it is no longer needed.
+- Add a new ocean modifier: `-ocean ...,delta_MBP`. This component reads scalar
+  time-dependent melange pressure offsets (units: Pa) and uses them in the calving front
+  boundary condition for the SSA.
 
 Changes from v1.1 to v1.2
 =========================

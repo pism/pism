@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -33,13 +33,6 @@ class IceBasalResistancePlasticLaw;
 class IceModelVec2CellType;
 
 namespace stressbalance {
-
-/*!
- * Vertically-averaged ocean pressure difference at the calving front, used in the implementation of
- * the stress boundary condition at the calving front in SSA stress balance solvers.
- */
-double margin_pressure_difference(bool shelf, double H, double bed, double sea_level,
-                                  double rho_ice, double rho_ocean, double g);
 
 class Inputs;
 

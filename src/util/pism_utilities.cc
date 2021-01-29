@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -448,5 +448,24 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
   }
   return (c1 << 32 | c0);
 }
+
+/*!
+ * Compute water column pressure vertically-averaged over the height of an ice cliff at a
+ * margin.
+ */
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level, double rho_ice,
+                                     double rho_water, double g) {
+
+  double
+    ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness),
+    water_column_height = std::max(floatation_level - ice_bottom, 0.0);
+
+  if (ice_thickness > 0.0) {
+    return 0.5 * rho_water * g * pow(water_column_height, 2.0) / ice_thickness;
+  }
+  return 0.0;
+}
+
 
 } // end of namespace pism

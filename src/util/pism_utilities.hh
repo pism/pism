@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,6 +30,13 @@
 #include <mpi.h>
 
 namespace pism {
+
+/*!
+ * Compute vertically-integrated water column pressure.
+ */
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level,
+                                     double rho_ice, double rho_water, double g);
 
 // Utilities that do not expose PETSc's or PISM's API.
 

@@ -38,8 +38,6 @@
 namespace pism {
 namespace stressbalance {
 
-using namespace pism::mask;
-
 SSAFD::KSPFailure::KSPFailure(const char* reason)
   : RuntimeError(ErrorLocation(), std::string("SSAFD KSP (linear solver) failed: ") + reason){
   // empty
@@ -248,12 +246,16 @@ come from known velocity values.  The fields m_bc_values and m_bc_mask are used 
 this.
  */
 void SSAFD::assemble_rhs(const Inputs &inputs) {
+  using mask::ice_free;
+  using mask::ice_free_land;
+  using mask::ice_free_ocean;
+
   const IceModelVec2S
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
     &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
-    *melange_back_pressure = inputs.melange_back_pressure;
+    *water_column_pressure = inputs.water_column_pressure;
 
   const double
     dx                     = m_grid->dx(),
@@ -289,8 +291,8 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     list.add({&thickness, &bed, &surface, &m_mask, &sea_level});
   }
 
-  if (use_cfbc and melange_back_pressure) {
-    list.add(*melange_back_pressure);
+  if (use_cfbc and water_column_pressure) {
+    list.add(*water_column_pressure);
   }
 
   m_b.set(0.0);
@@ -349,9 +351,18 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
             S = 1;
         }
 
-        double delta_p = margin_pressure_difference(ocean(M.ij), H_ij,
-                                                    bed(i, j), sea_level(i, j),
-                                                    rho_ice, rho_ocean, standard_gravity);
+        double
+          P_ice   = 0.5 * rho_ice * standard_gravity * H_ij,
+          P_water = 0.0;
+
+        if (water_column_pressure) {
+          P_water = (*water_column_pressure)(i, j);
+        } else {
+          P_water = pism::average_water_column_pressure(H_ij, bed(i, j), sea_level(i, j),
+                                                        rho_ice, rho_ocean, standard_gravity);
+        }
+
+        double delta_p = H_ij * (P_ice - P_water);
 
         if (grid_edge(*m_grid, i, j) and
             not (flow_line_mode or mask::grounded(M.ij))) {
@@ -359,14 +370,6 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
           // condition ensures that at a domain edge the ice behaves as if it extends past
           // the edge without a change in geometry.
           delta_p = 0.0;
-        }
-
-        if (melange_back_pressure) {
-          double lambda = (*melange_back_pressure)(i, j);
-
-          // adjust the "pressure difference term" using the provided
-          // "melange back pressure fraction".
-          delta_p *= (1.0 - lambda);
         }
 
         {
@@ -495,6 +498,12 @@ FIXME:  document use of DAGetMatrix and MatStencil and MatSetValuesStencil
 */
 void SSAFD::assemble_matrix(const Inputs &inputs,
                             bool include_basal_shear, Mat A) {
+  using mask::grounded_ice;
+  using mask::ice_free;
+  using mask::ice_free_land;
+  using mask::ice_free_ocean;
+  using mask::icy;
+
   PetscErrorCode ierr = 0;
 
   // shortcut:
@@ -1710,6 +1719,10 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
   auto M = m_mask.int_box(i, j);
+
+  using mask::ice_free;
+  using mask::ice_free_ocean;
+  using mask::icy;
 
   if (ssa_dirichlet_bc) {
     return icy(M.ij) &&

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -134,6 +134,14 @@ void GivenTH::init_impl(const Geometry &geometry) {
   if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
@@ -176,6 +184,14 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   m_shelf_base_mass_flux->scale(m_config->get_number("constants.ice.density"));
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep GivenTH::max_timestep_impl(double t) const {

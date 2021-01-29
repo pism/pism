@@ -311,40 +311,59 @@ It takes the following command-line options:
   which is similar, but applies anomalies at the atmosphere or surface level,
   respectively.
 
+.. _sec-ocean-delta-mbp:
+
+Scalar melange back pressure offsets
+++++++++++++++++++++++++++++++++++++
+
+:|options|: :opt:`-ocean ...,delta_MBP`
+:|variables|: :var:`delta_MBP` [Pascal]
+:|implementation|: ``pism::ocean::Delta_MBP``
+
+The scalar time-dependent variable :var:`delta_MBP` (units: Pascal) has the meaning of
+`\bar p_{\text{melange}}` in :ref:`sec-model-melange-pressure` (equation :eq:`eq-cfbc-3`).
+
+This modifier uses the following configuration parameters:
+
+.. pism-parameters::
+   :prefix: ocean.delta_MBP.
+
 .. _sec-ocean-frac-mbp:
 
-Scalar melange back pressure fraction
-+++++++++++++++++++++++++++++++++++++
+Melange back pressure as a fraction of pressure difference
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: :opt:`-ocean ...,frac_MBP`
 :|variables|: :var:`frac_MBP`
 :|implementation|: ``pism::ocean::Frac_MBP``
 
-This modifier implements forcing using melange back pressure fraction (scaling). The
-scalar time-dependent variable :var:`frac_MBP` should take on values from 0 to 1; it is
-understood as the fraction of the maximum melange back pressure possible at a given
-location. (We assume that melange back pressure cannot exceed the pressure of the ice
-column at a calving front.)
+This modifier implements forcing using melange back pressure fraction (scaling).
+
+Here we assume that the total vertically-averaged back pressure at an ice margin cannot
+exceed the vertically-averaged ice pressure at the same location:
+
+.. math::
+
+   \bar p_{\text{water}} + \bar p_{\text{melange}} &\le \bar p_{\text{ice}},\, \text{or}
+
+   \bar p_{\text{melange}} &\le \bar p_{\text{ice}} - \bar p_{\text{water}}.
+
+We introduce `\lambda \in [0, 1]` such that
+
+.. math::
+
+   \bar p_{\text{melange}} = \lambda (\bar p_{\text{ice}} - \bar p_{\text{water}}).
+
+
+The scalar time-dependent variable :var:`frac_MBP` should take on values between 0 and 1
+and has the meaning of `\lambda` above.
 
 Please see :ref:`sec-model-melange-pressure` for details.
 
-.. note::
+This modifier uses the following configuration parameters:
 
-   This modifier *scales* the melange back pressure fraction provided by an ocean model.
-   The default value of :config:`ocean.melange_back_pressure_fraction` is zero and
-   *scaling it does nothing*.
-
-   We recommend setting :config:`ocean.melange_back_pressure_fraction` to 1.
-
-This modifier takes the following command-line options:
-
-- :opt:`-ocean_frac_MBP_file`: specifies the name of the file containing forcing data.
-  This file has to contain the :var:`frac_MBP` variable using units of "1" (a
-  dimensionless parameter)
-- :opt:`-ocean_frac_MBP_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_frac_MBP_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.frac_MBP.
 
 .. _sec-ocean-cache:
 

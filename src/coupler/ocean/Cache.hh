@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ protected:
 
   const IceModelVec2S& shelf_base_temperature_impl() const;
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  const IceModelVec2S& melange_back_pressure_fraction_impl() const;
+  const IceModelVec2S& average_water_column_pressure_impl() const;
 private:
   double m_next_update_time;
   unsigned int m_update_interval_years;

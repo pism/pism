@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -32,27 +32,6 @@
 namespace pism {
 namespace stressbalance {
 
-//! Evaluate the margin pressure difference term in the calving-front BC.
-//
-// Units: (kg / m3) * (m / s2) * m2 = Pa m
-double margin_pressure_difference(bool shelf, double H, double bed,
-                                  double sea_level, double rho_ice, double rho_ocean,
-                                  double g) {
-  if (shelf) {
-    // floating shelf
-    return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
-  } else {
-    // grounded terminus
-    if (bed >= sea_level) {
-      return 0.5 * rho_ice * g * H * H;
-    } else {
-      return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));
-    }
-  }
-}
-
-using pism::mask::ice_free;
-
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
   : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
 
@@ -66,7 +45,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
 
   m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
-                       "thickness-advective ice velocity (x-component)", 
+                       "thickness-advective ice velocity (x-component)",
                        "m s-1", "m s-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
