@@ -746,7 +746,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   }
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (var.get_time_independent()) {
+  if (var.get_time_independent() && !file.is_split()) {
     bool written = var.get_written();
     if (written) {
       return;
