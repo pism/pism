@@ -7,8 +7,6 @@ PISM.set_abort_on_sigint(True)
 context = PISM.Context()
 config = PISM.Context().config
 
-config.set_string("output.file_name", "tiny.nc")
-
 # Default constants that  may get overridden later.
 
 Ly = 25e3  # 25 km

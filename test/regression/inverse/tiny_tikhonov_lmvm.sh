@@ -11,16 +11,16 @@ set -x
 set -e
 
 # Create input files
-$PYTHONEXEC build_tiny.py -Mx 9 -My 9
+$PYTHONEXEC build_tiny.py -Mx 9 -My 9 -o tiny_lmvm.nc
 
-$PYTHONEXEC make_synth_ssa.py -i tiny.nc -o inv_data.nc \
+$PYTHONEXEC make_synth_ssa.py -i tiny_lmvm.nc -o inv_data.nc \
               -pseudo_plastic -pseudo_plastic_q 0.25 -regional \
               -ssa_dirichlet_bc -generate_ssa_observed -ssa_method fem \
               -design_prior_const 70000 -inv_ssa tauc
 
 # Run the inversion code
 $PYTHONEXEC pismi.py \
-              -i tiny.nc -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data inv_data.nc \
+              -i tiny_lmvm.nc -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data inv_data.nc \
               -o tiny_tikhonov_lmvm.nc -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \
               -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 -report_coverage
