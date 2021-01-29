@@ -206,6 +206,14 @@ int File::get_vlistID() const {
   return m_impl->nc->get_ncvlistID();
 }
 
+bool File::is_split() const {
+  return m_split;
+}
+
+void File::set_split(bool split) const {
+  m_split = split;
+}
+
 void File::set_dimatt() const {
   m_dimatt[std::string("x")] = std::string("not written");
   m_dimatt[std::string("y")] = std::string("not written");

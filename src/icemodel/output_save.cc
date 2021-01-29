@@ -163,6 +163,11 @@ void IceModel::write_snapshot() {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+    if (m_split_snapshots) {
+	file.set_split(true);
+    } else {
+	file.set_split(false);
+    }
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 

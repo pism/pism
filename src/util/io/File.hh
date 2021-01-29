@@ -165,11 +165,14 @@ public:
   std::vector<int> get_gridIDs() const;
   int get_streamID() const;
   int get_vlistID() const;
+  bool is_split() const;
+  void set_split(bool split) const;
 
 private:
   struct Impl;
   Impl *m_impl;
   mutable std::map<std::string, std::string> m_dimatt;
+  mutable bool m_split;
   void open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(), int FileID = -1);
 
   // disable copying and assignments

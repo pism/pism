@@ -156,6 +156,7 @@ void IceModel::save_results() {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(), OutMap, gridIDs, fileID);
+    file.set_split(false);
     profiling.end("io.open");
 
     profiling.begin("io.initdef");
