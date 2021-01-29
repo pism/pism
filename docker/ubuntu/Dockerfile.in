@@ -1,15 +1,47 @@
 FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required packages listed in the manual. This is done separately so that we can
+# re-use this fs layer.
+RUN apt-get update && apt-get install -y ${PISM_DEBIAN_PACKAGE_LIST}
+
+# Install tools:
+# - ccache and lld to speed up builds,
+# - PIP to install Sphinx
+# - Cython to build PETSc
+# - wget to download sources of I/O libraries
+# - NumPy is used by petsc4py and PISM's scripts
+# - SciPy is used by at least one regression test
+# - python-netcdf4 is use by many regression tests
+# - NCO is used by many regression tests
+# - PROJ is used by PISM's code computing lon,lat coordinates
+# - python3-dev is needed to build Python bindings
+# - python3-nose is used to run some regression tests
+# - SWIG is needed to build Python bindings
 RUN apt-get update && apt-get install -y \
+        m4 \
         ccache \
         clang \
+        cython3 \
+        libproj-dev \
+        lld \
+        nco \
+        python3-dev \
         python3-pip \
-        wget \
-        ${PISM_DEBIAN_PACKAGE_LIST}
+        python3-netcdf4 \
+        python3-nose \
+        python3-numpy \
+        python3-scipy \
+        swig \
+        wget
 
 # Ubuntu 20.04 provides a very old Sphinx version (v1.8.5) so we have to install a newer
 # one using PIP.
 RUN pip3 install -U sphinx sphinxcontrib-bibtex
+
+# Install MPICH
+RUN apt-get update && apt-get install -y \
+        libmpich-dev
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
@@ -26,19 +58,18 @@ COPY netcdf.sh /tmp/
 COPY pnetcdf.sh /tmp/
 COPY parallelio.sh /tmp/
 
-RUN cd /tmp &&\
+RUN cd /tmp && \
         ./hdf5.sh && \
         ./netcdf.sh && \
         ./pnetcdf.sh && \
         ./parallelio.sh && \
         rm -rf ~/local/build
 
-# Add a flag needed to use OpenMPI in a Docker container.
-# See https://github.com/open-mpi/ompi/issues/4948
-# Tested on Ubuntu 20.04 (LTS)
-#
-# Allow oversubscribing (i.e. running more MPI processes than the number of cores
-# available). Run "ompi_info --all" to get the list of MCA parameters.
-ENV OMPI_MCA_btl="^vader" \
-    OMPI_MCA_rmaps_base_oversubscribe=yes \
-    OMPI_MCA_btl_base_warn_component_unused=0
+# Build PETSc last to make it easier to update this Docker image.
+COPY petsc.sh /tmp/
+RUN cd /tmp && \
+        ./petsc.sh && \
+        rm -rf ~/local/build
+
+ENV PETSC_DIR="/home/builder/local/petsc" \
+    PYTHONPATH="/home/builder/local/petsc/lib"
