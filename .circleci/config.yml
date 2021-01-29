@@ -1,3 +1,6 @@
+# Note: set the environment varible ${N} to the number of processes to use for parallel
+# builds and testing (overrides the default (4) used on CircleCI servers).
+
 version: 2
 
 jobs:
@@ -9,7 +12,7 @@ jobs:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      N: 4
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -24,9 +27,8 @@ jobs:
           # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
           # tests.
           #
-          # CMAKE_CXX_FLAGS is set to a) disable warnings caused by OpenMPI internals and
-          # b) treat all warnings as errors except for the one about the "noreturn"
-          # attribute.
+          # CMAKE_CXX_FLAGS is set to treat all warnings as errors except for the one
+          # about the "noreturn" attribute.
           #
           # We need Python bindings and extra executables for many regression tests.
           #
@@ -39,8 +41,9 @@ jobs:
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
@@ -51,7 +54,7 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j ${N} all
+          command: make --no-print-directory -C build -j ${N:-4} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -60,8 +63,8 @@ jobs:
           name: Run regression tests
           command: >-
             cd build &&
-            PYTHONPATH=$HOME/project/build/site-packages:$PYTHONPATH
-            ctest -j ${N} --output-on-failure
+            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N:-4} --output-on-failure
 
   build-gcc-minimal:
     docker:
@@ -71,7 +74,7 @@ jobs:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      N: 4
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -86,11 +89,11 @@ jobs:
           command: >-
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j ${N} all
+          command: make --no-print-directory -C build -j ${N:-4} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -102,7 +105,9 @@ jobs:
 
     environment:
       CCACHE_COMPRESS: 1
-      N: 4
+      CC: ccache mpicc -cc=clang
+      CXX: ccache mpicxx -cxx=clang++
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -115,13 +120,11 @@ jobs:
       - run:
           name: Configure PISM
           command: >-
-            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
-            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
-            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
-            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DPism_USE_PROJ=Yes
@@ -137,7 +140,7 @@ jobs:
           command: ccache -z
       - run:
           name: Build PISM using Clang
-          command: make --no-print-directory -C build -j ${N} all
+          command: make --no-print-directory -C build -j ${N:-4} all
       - run:
           name: Print ccache stats
           command: ccache -s
@@ -149,8 +152,8 @@ jobs:
           name: Run regression tests
           command: >-
             cd build &&
-            PYTHONPATH=$HOME/project/build/site-packages:$PYTHONPATH
-            ctest -j ${N} --output-on-failure
+            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N:-4} --output-on-failure
 
   build-clang-minimal:
     docker:
@@ -158,7 +161,9 @@ jobs:
 
     environment:
       CCACHE_COMPRESS: 1
-      N: 4
+      CC: ccache mpicc -cc=clang
+      CXX: ccache mpicxx -cxx=clang++
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -171,19 +176,17 @@ jobs:
       - run:
           name: Configure PISM
           command: >-
-            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
-            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
-            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
-            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Reset ccache stats
           command: ccache -z
       - run:
           name: Build PISM using Clang
-          command: make --no-print-directory -C build -j ${N} all
+          command: make --no-print-directory -C build -j ${N:-4} all
       - run:
           name: Print ccache stats
           command: ccache -s
