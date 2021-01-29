@@ -37,7 +37,7 @@ static int pism_type_to_cdi_type(pism::IO_Type input) {
   case PISM_SHORT:
     return CDI_DATATYPE_INT16;
   case PISM_INT:
-    return CDI_DATATYPE_INT32;
+    return CDI_DATATYPE_FLT32;
   case PISM_FLOAT:
     return CDI_DATATYPE_FLT32;
   case PISM_DOUBLE:
