@@ -112,34 +112,37 @@ elevations that are closer to observed values.
 Given bed deformation history
 =============================
 
-The last option ``-bed_def given`` can be used if a bed deformation history is known
-from an external solid-Earth model (e.g. relative sea level), relative to a reference
-topography. This is in particular expedient when running offline coupled simulation.  
-As a time-evolving version of :eq:`eq-bedcorrection`, this sets bed topography `b` to:
+The last option ``-bed_def given`` can be used if a bed deformation history (i.e. bed
+elevation changes relative to a reference topography) is known from an external
+solid-Earth model\ [#RSL]_. This can be useful when running simulations using offline
+coupling to such a model.
+
+The bed topography `b` is set to
 
 .. math::
 
-   b(t,x,y) = b_{ref}(x,y) + \Delta b(t,x,y).
+   b(t,x,y) = b_{\text{ref}}(x,y) + \Delta b(t,x,y),
 
-This class hence uses two input files:
+which is a time-dependent version of :eq:`eq-bedcorrection`.
 
-1. Reference topography `b_{ref}(x,y)` (variable :var:`topg`, in meters).
+This class uses two input files:
+
+1. Reference topography `b_{\text{ref}}(x,y)` (variable :var:`topg`, in meters).
 2. Time-dependent history of bed elevation changes `\Delta b(t,x,y)` relative to the 
    reference topography (variable :var:`topg_delta`, in meters).
-    
-The first is specified using the option :opt:`-topg_reference_file` (configuration 
-parameter :config:`bed_deformation.given.reference_file`), the second one using 
-:opt:`-topg_delta_file` (:config:`bed_deformation.given.file`).
 
-This split makes it possible to combine high-resolution reference bed topography with
-low-spatial-frequency bed elevation changes that can be stored on a coarser grid covering
-the same domain.
+Use the following configuration parameters (prefix: ``bed_deformation.given.``) to set
+them.
 
-See also python regression test `test/regression/beddef_given.py`.
+.. pism-parameters::
+   :prefix: bed_deformation.given.
 
+.. note::
 
+   It is possible to combine high-resolution reference bed topography with
+   low-spatial-frequency bed elevation changes: both files have to use the same grid
+   projection and cover the modeling domain but they **do not** have to use the same grid.
 
+.. rubric:: Footnotes
 
-
-
-
+.. [#RSL] E.g. a relative sea level model.
