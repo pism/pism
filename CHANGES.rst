@@ -39,7 +39,8 @@ Changes since v1.2
   (e.g. from a solid-Earth model) relative to a (high-resolution) reference topography,
   indicated by configuration parameter `bed_deformation.given.file` and
   `bed_deformation.given.reference_file`, respectively.
-
+- Implemented regularized Coulomb sliding as in Zoet & Iverson, 2020, A slip law for
+  glaciers on deformable beds, equation 3.
 
 Changes from v1.1 to v1.2
 =========================

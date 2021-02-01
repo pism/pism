@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -113,7 +113,7 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
   @f[ \tau_b = - \frac{\tau_c}{|\mathbf{U}|^{1-q} U_{\mathtt{th}}^q} \mathbf{U} @f]
 
   where  @f$ \tau_b=(\tau_{(b)x},\tau_{(b)y}) @f$ ,  @f$ U=(u,v) @f$ ,
-   @f$ q= @f$  `pseudo_q`, and  @f$ U_{\mathtt{th}}= @f$ 
+   @f$ q= @f$  `pseudo_q`, and  @f$ U_{\mathtt{th}}= @f$
   `pseudo_u_threshold`. Typical values for the constants are
    @f$ q=0.25 @f$  and  @f$ U_{\mathtt{th}} = 100 @f$  m year-1.
 
@@ -194,8 +194,6 @@ void IceBasalResistancePseudoPlasticLaw::drag_with_derivative(double tauc, doubl
 
 }
 
-
-
 /* Regularized Coulomb */
 
 IceBasalResistanceRegularizedLaw::IceBasalResistanceRegularizedLaw(const Config &config)
@@ -210,23 +208,19 @@ IceBasalResistanceRegularizedLaw::~IceBasalResistanceRegularizedLaw() {
 }
 
 void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,
-                                                    int threshold,
-                                                    units::System::Ptr system) const {
-
-    log.message(threshold,
-                 "Using regularized Coulomb till with eps = %10.5e m year-1, q = %.4f,"
-                 " and u_threshold = %.2f m year-1.\n",
-                 units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
-                 m_pseudo_q,
-                 units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
-  
+                                                  int threshold,
+                                                  units::System::Ptr system) const {
+  log.message(threshold,
+              "Using regularized Coulomb till with eps = %10.5e m year-1, q = %.4f,"
+              " and u_threshold = %.2f m year-1.\n",
+              units::convert(system, m_plastic_regularize, "m second-1", "m year-1"),
+              m_pseudo_q,
+              units::convert(system, m_pseudo_u_threshold, "m second-1", "m year-1"));
 }
-
-
 
 double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy) const {
   const double magreg2sqr = sqrt(square(m_plastic_regularize) + square(vx) + square(vy));
-  
+
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
     return (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
@@ -243,14 +237,13 @@ double IceBasalResistanceRegularizedLaw::drag(double tauc, double vx, double vy)
  * &= \left( \frac{q-1}{|\mathbf{u}|^{2}} - \frac{q}{|\mathbf{u}| \cdot ( |\mathbf{u}| + u_{\text{threshold}}) }    \right) \cdot \beta(\mathbf{u})\\
  * @f}
  * Same parameters are used as in the pseudo-plastic case, namely @f$ q, u_{\text{threshold}}, A_q @f$.
- * It should be noted, that in the original equation (3) in Zoet et al., 2020 the exponent @f$ q=1/p @f$ is used. 
- */ 
+ * It should be noted, that in the original equation (3) in Zoet et al, 2020 the exponent @f$ q=1/p @f$ is used.
+ */
 void IceBasalResistanceRegularizedLaw::drag_with_derivative(double tauc, double vx, double vy,
-                                                              double *beta, double *dbeta) const
-{
+                                                            double *beta, double *dbeta) const {
   const double magreg2    = square(m_plastic_regularize) + square(vx) + square(vy),
                magreg2sqr = sqrt(magreg2);
-  
+
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
     double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
     *beta = (tauc / Aq) * pow(magreg2sqr, (m_pseudo_q - 1)) * pow((magreg2sqr + m_pseudo_u_threshold), -m_pseudo_q);
@@ -259,7 +252,7 @@ void IceBasalResistanceRegularizedLaw::drag_with_derivative(double tauc, double 
   }
 
   if (dbeta) {
-    *dbeta = ( ( (m_pseudo_q - 1) / magreg2 ) - ( m_pseudo_q / ( magreg2sqr * (magreg2sqr + m_pseudo_u_threshold) ) ) ) * (*beta);
+    *dbeta = (((m_pseudo_q - 1) / magreg2) - (m_pseudo_q / (magreg2sqr * (magreg2sqr + m_pseudo_u_threshold)))) * (*beta);
   }
 }
 
