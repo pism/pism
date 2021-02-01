@@ -55,6 +55,18 @@ protected:
   double m_pseudo_q, m_pseudo_u_threshold, m_sliding_scale_factor_reduces_tauc;
 };
 
+class IceBasalResistanceRegularizedLaw : public IceBasalResistancePlasticLaw{
+public:
+  IceBasalResistanceRegularizedLaw(const Config &config);
+  virtual ~IceBasalResistanceRegularizedLaw();
+  virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
+  virtual double drag(double tauc, double vx, double vy) const;
+  virtual void drag_with_derivative(double tauc, double vx, double vy,
+                                    double *drag, double *ddrag) const;
+protected:
+  double m_pseudo_q, m_pseudo_u_threshold, m_sliding_scale_factor_reduces_tauc;
+};
+
 } // end of namespace pism
 
 #endif /* __basal_resistance_hh */

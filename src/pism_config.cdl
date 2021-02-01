@@ -387,6 +387,11 @@ netcdf pism_config {
     pism_config:basal_resistance.pseudo_plastic.u_threshold_type = "number";
     pism_config:basal_resistance.pseudo_plastic.u_threshold_units = "meter / year";
 
+    pism_config:basal_resistance.regularized_coulomb.enabled = "no";
+    pism_config:basal_resistance.regularized_coulomb.enabled_doc = "Use the regularized Coulomb till friction model (basal sliding law) as in equation (3) in :cite:`ZoetIverson20`";
+    pism_config:basal_resistance.regularized_coulomb.enabled_option = "regularized_coulomb";
+    pism_config:basal_resistance.regularized_coulomb.enabled_type = "flag";
+
     pism_config:basal_yield_stress.add_transportable_water = "no";
     pism_config:basal_yield_stress.add_transportable_water_doc = "If \"yes\" then the water amount in the transport system is added to tillwat in determining tauc (in the Mohr-Coulomb relation).  Normally only the water in the till is used.";
     pism_config:basal_yield_stress.add_transportable_water_option = "tauc_add_transportable_water";

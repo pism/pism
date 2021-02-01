@@ -39,6 +39,8 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
 
   if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
+  } else if (m_config->get_flag("basal_resistance.regularized_coulomb.enabled") == true) {
+    m_basal_sliding_law = new IceBasalResistanceRegularizedLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
