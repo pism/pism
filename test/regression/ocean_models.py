@@ -316,8 +316,9 @@ class DeltaMBP(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = PISM.OceanConstant(self.grid)
-        self.dP = 100.0
-        self.H = 1000.0
+        self.dP = 100.0         # Pascal (over the thickness of melange)
+        self.H = 1000.0         # meters
+        self.dP_ice = config.get_number("ocean.delta_MBP.melange_thickness") * self.dP / self.H
 
         self.geometry.ice_thickness.set(self.H)
         self.geometry.bed_elevation.set(-2 * self.H)
@@ -337,17 +338,7 @@ class DeltaMBP(TestCase):
 
         model = self.model
 
-        check_difference(modifier.shelf_base_temperature(),
-                         model.shelf_base_temperature(),
-                         0.0)
-
-        check_difference(modifier.shelf_base_mass_flux(),
-                         model.shelf_base_mass_flux(),
-                         0.0)
-
-        check_difference(modifier.average_water_column_pressure(),
-                         model.average_water_column_pressure(),
-                         self.dP)
+        check_modifier(model, modifier, 0.0, 0.0, self.dP_ice)
 
     def tearDown(self):
         os.remove(self.filename)
@@ -570,4 +561,7 @@ class DeltaSL2D(TestCase):
 if __name__ == "__main__":
     PISM.Context().log.set_threshold(3)
 
-    constant_test()
+    t = DeltaMBP()
+    t.setUp()
+    t.test_ocean_delta_mpb()
+    t.tearDown()

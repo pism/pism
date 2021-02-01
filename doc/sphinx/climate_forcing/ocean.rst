@@ -320,8 +320,21 @@ Scalar melange back pressure offsets
 :|variables|: :var:`delta_MBP` [Pascal]
 :|implementation|: ``pism::ocean::Delta_MBP``
 
-The scalar time-dependent variable :var:`delta_MBP` (units: Pascal) has the meaning of
-`\bar p_{\text{melange}}` in :ref:`sec-model-melange-pressure` (equation :eq:`eq-cfbc-3`).
+The scalar time-dependent variable :var:`delta_MBP` (units: Pascal) has the meaning of the
+melange back pressure `\sigma_b` in :cite:`Krug2015`. It is assumed that `\sigma_b` is
+applied over the thickness of melange `h` specified using
+:config:`ocean.delta_MBP.melange_thickness`.
+
+To convert to the average pressure over the ice front thickness, we compute
+
+.. math::
+   :label: eq-melange-pressure
+
+   \bar p_{\text{melange}} = \frac{\sigma_b\cdot h}{H},
+
+where `H` is ice thickness.
+
+See :ref:`sec-model-melange-pressure` for details.
 
 This modifier uses the following configuration parameters:
 

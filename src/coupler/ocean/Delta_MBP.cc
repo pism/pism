@@ -19,6 +19,7 @@
 
 #include "Delta_MBP.hh"
 #include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace ocean {
@@ -53,9 +54,22 @@ void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_forcing->update(t, dt);
 
-  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
+  double
+    melange_thickness = m_config->get_number("ocean.delta_MBP.melange_thickness"),
+    dP_melange        = m_forcing->value();
 
-  m_water_column_pressure->shift(m_forcing->value());
+  const auto &P = m_input_model->average_water_column_pressure();
+  const auto &H = geometry.ice_thickness;
+  auto &P_new = *m_water_column_pressure;
+  IceModelVec::AccessList list{&P, &H, &P_new};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    double dP = H(i, j) > 0.0 ? (melange_thickness * dP_melange) / H(i, j) : 0.0;
+
+    P_new(i, j) = P(i, j) + dP;
+  }
 }
 
 const IceModelVec2S& Delta_MBP::average_water_column_pressure_impl() const {

@@ -1620,6 +1620,12 @@ netcdf pism_config {
     pism_config:ocean.delta_MBP.file_doc = "Name of the file containing melange back-pressure offsets";
     pism_config:ocean.delta_MBP.file_type = "string";
 
+    pism_config:ocean.delta_MBP.melange_thickness = 100.0;
+    pism_config:ocean.delta_MBP.melange_thickness_doc = "Melange thickness (assumed to be constant in space and time)";
+    pism_config:ocean.delta_MBP.melange_thickness_option = "melange_thickness";
+    pism_config:ocean.delta_MBP.melange_thickness_type = "number";
+    pism_config:ocean.delta_MBP.melange_thickness_units = "meters";
+
     pism_config:ocean.delta_MBP.period = 0;
     pism_config:ocean.delta_MBP.period_doc = "Length of the period of the climate forcing data (set to zero to disable)";
     pism_config:ocean.delta_MBP.period_type = "integer";
