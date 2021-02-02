@@ -39,9 +39,14 @@ BlatterTestXY::BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int c
   m_B = m_flow_law->hardness(1e5, 0);
 }
 
-bool BlatterTestXY::vertical_cliff_face(int face, const int *node_type) {
+bool BlatterTestXY::marine_boundary(int face,
+                                    const int *node_type,
+                                    const double *ice_bottom,
+                                    const double *sea_level) {
   (void) face;
   (void) node_type;
+  (void) ice_bottom;
+  (void) sea_level;
 
   return false;
 }

@@ -433,7 +433,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // lateral boundary
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4; ++f) {
-          if (vertical_cliff_face(f, node_type)) {
+          if (marine_boundary(f, node_type, bottom_elevation, sea_level)) {
             // use an N*N-point equally-spaced quadrature for partially-submerged faces
             fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?
                                          &m_face100 : &m_face4);

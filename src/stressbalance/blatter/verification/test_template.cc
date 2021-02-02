@@ -25,7 +25,10 @@ TestTemplate::TestTemplate(IceGrid::ConstPtr grid, int Mz, int n_levels, int coa
   // empty
 }
 
-bool TestTemplate::vertical_cliff_face(int face, const int *node_type) {
+bool TestTemplate::marine_boundary(int face,
+                                   const int *node_type,
+                                   const double *ice_bottom,
+                                   const double *sea_level) {
   (void) face;
   (void) node_type;
 

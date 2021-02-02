@@ -48,7 +48,10 @@ public:
   BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
 protected:
-  bool vertical_cliff_face(int face, const int *node_type);
+  bool marine_boundary(int face,
+                       const int *node_type,
+                       const double *ice_bottom,
+                       const double *sea_level);
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

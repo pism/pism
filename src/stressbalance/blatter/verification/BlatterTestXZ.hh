@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,10 @@ public:
   BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
 
 private:
-  bool vertical_cliff_face(int face, const int *node_type);
+  bool marine_boundary(int face,
+                       const int *node_type,
+                       const double *ice_bottom,
+                       const double *sea_level);
 
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 

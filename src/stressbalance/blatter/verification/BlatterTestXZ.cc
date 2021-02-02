@@ -57,9 +57,14 @@ BlatterTestXZ::BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int n_levels, int c
   m_g   = m_config->get_number("constants.standard_gravity");
 }
 
-bool BlatterTestXZ::vertical_cliff_face(int face, const int *node_type) {
+bool BlatterTestXZ::marine_boundary(int face,
+                                    const int *node_type,
+                                    const double *ice_bottom,
+                                    const double *sea_level) {
   (void) face;
   (void) node_type;
+  (void) ice_bottom;
+  (void) sea_level;
 
   return false;
 }

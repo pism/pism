@@ -217,24 +217,40 @@ bool Blatter::partially_submerged_face(int face, const double *z, const double *
 }
 
 /*!
- * Return true if the current face is a part of the lateral ice boundary (i.e. at a
- * vertical cliff), false otherwise.
+ * Return true if the current face is a part of the marine ice boundary (i.e. at a
+ * partially-submerged vertical cliff), false otherwise.
  *
- * A face is a part of the lateral boundary if all four nodes are boundary nodes. If a node
- * is *both* a boundary and a Dirichlet node (this may happen), then we treat it as a
- * boundary node here: element.add_contribution() will do the right thing in this case.
+ * A face is a part of the marine boundary if all four nodes are boundary nodes *and* at
+ * least one map-plane location has bottom elevation below sea level (floatation level).
+ *
+ * If a node is *both* a boundary and a Dirichlet node (this may happen), then we treat it
+ * as a boundary node here: element.add_contribution() will do the right thing in this
+ * case.
  */
-bool Blatter::vertical_cliff_face(int face, const int *node_type) {
+bool Blatter::marine_boundary(int face,
+                              const int *node_type,
+                              const double *ice_bottom,
+                              const double *sea_level) {
   auto nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face
   int N = 4;
+
+  // exclude faces that contain at least one node that is not a part of the boundary
   for (int n = 0; n < N; ++n) {
     if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
       return false;
     }
   }
-  return true;
+
+  // This face is a part of the lateral boundary. Now we need to check if ice_bottom is
+  // below sea_level at one of the nodes of this face.
+  for (int n = 0; n < N; ++n) {
+    if (ice_bottom[nodes[n]] < sea_level[nodes[n]]) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /*!
