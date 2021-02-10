@@ -98,6 +98,7 @@ public:
     double ITM_melt;
     double transmissivity; 
     double TOA_insol;
+    double q_insol;
   };
 
 

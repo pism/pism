@@ -58,6 +58,7 @@ public:
   const IceModelVec2S& albedo() const;
   const IceModelVec2S& transmissivity() const;
   const IceModelVec2S& TOAinsol() const;
+  const IceModelVec2S& qinsol() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -143,7 +144,8 @@ protected:
   //! TOA insol field
   IceModelVec2S m_TOAinsol;
 
-
+  //! q insol field
+  IceModelVec2S m_qinsol;
 
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period;

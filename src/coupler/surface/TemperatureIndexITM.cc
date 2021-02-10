@@ -52,7 +52,8 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
     m_cmelt(m_grid, "surface_offset_melt_flux", WITHOUT_GHOSTS),
     m_albedo(m_grid, "albedo", WITHOUT_GHOSTS),
     m_transmissivity(m_grid, "transmissivity", WITHOUT_GHOSTS),
-    m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS) {
+    m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS),
+    m_qinsol(m_grid, "qinsol", WITHOUT_GHOSTS) {
 // so 
   m_sd_period                  = 0;
 
@@ -186,9 +187,14 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
   m_transmissivity.set(0.0);
  
   m_TOAinsol.set_attrs("diagnostic",
-                              "TOAinsol", 
-                              "", "", "", 0);
+                              "insolation at the top of the atmosphere", 
+                              "W m-2", "m", "", 0);
   m_TOAinsol.set(0.0);
+
+  m_qinsol.set_attrs("diagnostic",
+                              "insolation at the top of the atmosphere, when the sun is above the elvation angle Phi", 
+                              "W m-2", "m", "", 0);
+  m_qinsol.set(0.0);
 
 }
 
@@ -341,22 +347,17 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time, int n, bool print ) {
   }
 
   if( time >=  anomaly_start and time <= anomaly_end and frequency_true){
-    // if (print){
-    //   std::cout << "freqtrue " << frequency_true << " time in days " << (time - year_start)/one_day << " \t true \n";
-    // }
+    if (print){
+      std::cout << "freq true " << frequency_true << " time in days " << (time - year_start)/one_day << " \t true \n";
+    }
     return true;
   }
   else{
-    // if (print){
-    //   std::cout << "freqtrue " << frequency_true << " time in days " << (time - year_start)/one_day << " \t false \n";
-    // }    
+    if (print){
+      std::cout << "freq true " << frequency_true << " time in days " << (time - year_start)/one_day << " \t false \n";
+    }    
     return false; 
   }
-  // else {
-  //   n += frequency; 
-  //   albedo_anomaly_true( time,  n, print);
-  //   // return false;
-  // }
 }
 
 
@@ -373,11 +374,11 @@ double TemperatureIndexITM::get_distance2(double time){
   double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
   distance2 = a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2. * t) + b2 * sin(2. * t);
   // Equation 2.2.9 from Liou (2002)
-  return distance2;
+  return distance2; //FIXME
 }
 
 
-double TemperatureIndexITM::get_delta(double time){
+double TemperatureIndexITM::get_delta(double time){ //FIXME
   double 
     a0 = 0.006918,
     a1 = -0.399912,
@@ -392,6 +393,12 @@ double TemperatureIndexITM::get_delta(double time){
   double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
   delta = a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2. * t) + b2 * sin(2. * t) + a3 * cos(3. * t) + b3 * sin(3. * t);
   // Equation 2.2.10 from Liou (2002)
+
+
+  // this is just to test something. delete later
+  // int time_in_days  = time / (24. * 60. * 60.);
+  // int day_of_year = time_in_days % 365 ;
+  // delta = M_PI / 180. * (-23.44) * cos(2 * M_PI / 365. * (double(day_of_year) + 10.));
   return delta;
 }
 
@@ -488,7 +495,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
   IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
       &m_firn_depth, &m_snow_depth,  m_accumulation.get(), m_melt.get(), m_runoff.get(),
-      &m_tempmelt,&m_insolmelt, &m_cmelt, &m_albedo, &m_transmissivity, &m_TOAinsol};
+      &m_tempmelt,&m_insolmelt, &m_cmelt, &m_albedo, &m_transmissivity, &m_TOAinsol, &m_qinsol};
 
   list.add(*latitude);
   list.add(*surface_altitude);
@@ -611,6 +618,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           Mc  = 0.0, // offset melt
           Tr  = 0.0, // transmissivity, this is just for testing
           Ti  = 0.0, // top of the atmosphere insolation
+          Qi  = 0.0, // insolation averaged over \Delta t _ Phi
           Al  = 0.0; 
 
 
@@ -665,6 +673,11 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
                                          delta, distance2,
                                          lat * M_PI / 180.,
                                          albedo_loc, print);
+
+          if (print){
+            std::cout << "albedo value " << albedo_loc << "\n";
+            std::cout << "melt value " << ETIM_melt.ITM_melt << " insolation melt " << ETIM_melt.I_melt<< "\n";
+          }
           
 
 
@@ -705,6 +718,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             SMB += changes.smb,
             Tr  += ETIM_melt.transmissivity;
             Ti  += ETIM_melt.TOA_insol;
+            Qi  += ETIM_melt.q_insol;
             Al  += albedo_loc;
           }
         } // end of the time-stepping loop
@@ -714,6 +728,12 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
         m_albedo(i,j)      = Al / N;
         m_transmissivity(i,j) = Tr / N; //ETIM_melt.transmissivity; 
         m_TOAinsol(i,j)    = Ti / N;
+        m_qinsol(i,j)    = Qi / N;
+
+
+        if (print){
+          std::cout << "albedo_loc " << albedo_loc << " accumulated albedo " << Al << " average albedo " << Al/N << " albedo on grid " << m_albedo(i,j) <<'\n';
+        }
 
         // set melt terms at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"        
@@ -807,6 +827,10 @@ const IceModelVec2S& TemperatureIndexITM::TOAinsol() const {
   return m_TOAinsol;
 }
 
+const IceModelVec2S& TemperatureIndexITM::qinsol() const {
+  return m_qinsol;
+}
+
 void TemperatureIndexITM::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   m_firn_depth.define(output, PISM_DOUBLE);
@@ -824,10 +848,10 @@ namespace diagnostics {
 enum AmountKind {AMOUNT, MASS};
 
 /*! @brief Report surface melt, averaged over the reporting interval */
-class SurfaceMelt : public DiagAverageRate<TemperatureIndexITM>
+class SurfaceMeltITM : public DiagAverageRate<TemperatureIndexITM>
 {
 public:
-  SurfaceMelt(const TemperatureIndexITM *m, AmountKind kind)
+  SurfaceMeltITM(const TemperatureIndexITM *m, AmountKind kind)
     : DiagAverageRate<TemperatureIndexITM>(m,
                                         kind == AMOUNT
                                         ? "surface_melt_flux"
@@ -886,10 +910,10 @@ private:
 };
 
 /*! @brief Report surface runoff, averaged over the reporting interval */
-class SurfaceRunoff : public DiagAverageRate<TemperatureIndexITM>
+class SurfaceRunoffITM : public DiagAverageRate<TemperatureIndexITM>
 {
 public:
-  SurfaceRunoff(const TemperatureIndexITM *m, AmountKind kind)
+  SurfaceRunoffITM(const TemperatureIndexITM *m, AmountKind kind)
     : DiagAverageRate<TemperatureIndexITM>(m,
                                         kind == AMOUNT
                                         ? "surface_runoff_flux"
@@ -1136,10 +1160,10 @@ private:
 };
 
 /*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
-class Accumulation : public DiagAverageRate<TemperatureIndexITM>
+class AccumulationITM : public DiagAverageRate<TemperatureIndexITM>
 {
 public:
-  Accumulation(const TemperatureIndexITM *m, AmountKind kind)
+  AccumulationITM(const TemperatureIndexITM *m, AmountKind kind)
     : DiagAverageRate<TemperatureIndexITM>(m,
                                         kind == AMOUNT
                                         ? "surface_accumulation_flux"
@@ -1222,10 +1246,10 @@ static double integrate(const IceModelVec2S &input) {
 
 
 //! \brief Reports the total accumulation rate.
-class TotalSurfaceAccumulation : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
+class TotalSurfaceAccumulationITM : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
 {
 public:
-  TotalSurfaceAccumulation(const TemperatureIndexITM *m)
+  TotalSurfaceAccumulationITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_accumulation_rate") {
 
     m_ts.variable().set_string("units", "kg s-1");
@@ -1240,10 +1264,10 @@ public:
 
 
 //! \brief Reports the total melt rate.
-class TotalSurfaceMelt : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
+class TotalSurfaceMeltITM : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
 {
 public:
-  TotalSurfaceMelt(const TemperatureIndexITM *m)
+  TotalSurfaceMeltITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_melt_rate") {
 
     m_ts.variable().set_string("units", "kg s-1");
@@ -1258,10 +1282,10 @@ public:
 
 
 //! \brief Reports the total top surface ice flux.
-class TotalSurfaceRunoff : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
+class TotalSurfaceRunoffITM : public TSDiag<TSFluxDiagnostic, TemperatureIndexITM>
 {
 public:
-  TotalSurfaceRunoff(const TemperatureIndexITM *m)
+  TotalSurfaceRunoffITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_runoff_rate") {
 
     m_ts.variable().set_string("units", "kg s-1");
@@ -1280,12 +1304,12 @@ DiagnosticList TemperatureIndexITM::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"surface_accumulation_flux", Diagnostic::Ptr(new Accumulation(this, AMOUNT))},
-    {"surface_accumulation_rate", Diagnostic::Ptr(new Accumulation(this, MASS))},
-    {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMelt(this, AMOUNT))},
-    {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMelt(this, MASS))},
-    {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoff(this, AMOUNT))},
-    {"surface_runoff_rate",       Diagnostic::Ptr(new SurfaceRunoff(this, MASS))},
+    {"surface_accumulation_flux", Diagnostic::Ptr(new AccumulationITM(this, AMOUNT))},
+    {"surface_accumulation_rate", Diagnostic::Ptr(new AccumulationITM(this, MASS))},
+    {"surface_melt_flux",         Diagnostic::Ptr(new SurfaceMeltITM(this, AMOUNT))},
+    {"surface_melt_rate",         Diagnostic::Ptr(new SurfaceMeltITM(this, MASS))},
+    {"surface_runoff_flux",       Diagnostic::Ptr(new SurfaceRunoffITM(this, AMOUNT))},
+    {"surface_runoff_rate",       Diagnostic::Ptr(new SurfaceRunoffITM(this, MASS))},
     {"surface_insolation_melt_flux",   Diagnostic::Ptr(new SurfaceInsolationMelt(this,AMOUNT))},
     {"surface_insolation_melt_rate",   Diagnostic::Ptr(new SurfaceInsolationMelt(this,MASS))},
     {"surface_temperature_melt_flux",   Diagnostic::Ptr(new SurfaceTemperatureMelt(this,AMOUNT))},
@@ -1297,7 +1321,8 @@ DiagnosticList TemperatureIndexITM::diagnostics_impl() const {
     {"firn_depth",                Diagnostic::wrap(m_firn_depth)},
     {"albedo",                    Diagnostic::wrap(m_albedo)},
     {"transmissivity",            Diagnostic::wrap(m_transmissivity)},
-    {"TOAinsol",                  Diagnostic::wrap(m_TOAinsol)}
+    {"TOAinsol",                  Diagnostic::wrap(m_TOAinsol)},
+    {"qinsol",                  Diagnostic::wrap(m_qinsol)}
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
@@ -1309,9 +1334,9 @@ TSDiagnosticList TemperatureIndexITM::ts_diagnostics_impl() const {
   using namespace diagnostics;
 
   TSDiagnosticList result = {
-    {"surface_accumulation_rate", TSDiagnostic::Ptr(new TotalSurfaceAccumulation(this))},
-    {"surface_melt_rate",         TSDiagnostic::Ptr(new TotalSurfaceMelt(this))},
-    {"surface_runoff_rate",       TSDiagnostic::Ptr(new TotalSurfaceRunoff(this))},
+    {"surface_accumulation_rate", TSDiagnostic::Ptr(new TotalSurfaceAccumulationITM(this))},
+    {"surface_melt_rate",         TSDiagnostic::Ptr(new TotalSurfaceMeltITM(this))},
+    {"surface_runoff_rate",       TSDiagnostic::Ptr(new TotalSurfaceRunoffITM(this))},
   };
 
   result = pism::combine(result, SurfaceModel::ts_diagnostics_impl());

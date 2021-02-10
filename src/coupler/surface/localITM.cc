@@ -320,11 +320,20 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
 
   const double phi = 17.5 * M_PI / 180.;
 
+  // calculate the hour angle at which the sun reaches phi (for melting period during the day)
   double input_h_phi = ( sin(phi) - sin(lat) * sin(delta)) / (cos(lat) * cos(delta));
   double input_h_phi_clipped = std::max(-1., std::min(input_h_phi, 1.));
   double h_phi = acos(input_h_phi_clipped);
+  
+  // calculate hour angle of sunrise and sunset, so that the diagnostic variable TOA insol can be written
+  double input_h0 = (  - sin(lat) * sin(delta)) / (cos(lat) * cos(delta));
+  double input_h0_clipped = std::max(-1., std::min(input_h0, 1.));
+  double h0 = acos(input_h0_clipped);
+
+
   double quotient_delta_t =  h_phi /M_PI ;
   double q_insol;
+  double TOA_insol; 
 
 
   ETIM_melt.transmissivity = tau_a;
@@ -333,12 +342,15 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
 
   if (h_phi == 0. ){
     q_insol = 0;
+    TOA_insol = 0; 
   }
   else{
     q_insol = solar_constant * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi))  / h_phi;
+    TOA_insol = solar_constant * distance2 * (h0 * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h0))  / M_PI;
   }
   
-  ETIM_melt.TOA_insol = q_insol; 
+  ETIM_melt.TOA_insol = TOA_insol;
+  ETIM_melt.q_insol = q_insol; 
 
   assert(dt_series > 0.0);
   double Teff = 0;
