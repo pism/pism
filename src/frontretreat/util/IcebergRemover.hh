@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -56,6 +56,11 @@ public:
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &ice_thickness);
 protected:
+  virtual void update_impl(const IceModelVec2Int &bc_mask,
+                           IceModelVec2CellType &pism_mask,
+                           IceModelVec2S &ice_thickness);
+
+
   IceModelVec2S m_iceberg_mask;
   std::shared_ptr<petsc::Vec> m_mask_p0;
 };

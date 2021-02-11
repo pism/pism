@@ -49,6 +49,12 @@ IcebergRemover::~IcebergRemover() {
 void IcebergRemover::update(const IceModelVec2Int &bc_mask,
                             IceModelVec2CellType &mask,
                             IceModelVec2S &ice_thickness) {
+  update_impl(bc_mask, mask, ice_thickness);
+}
+
+void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
+                                 IceModelVec2CellType &mask,
+                                 IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
