@@ -52,7 +52,6 @@ public:
   IcebergRemover(IceGrid::ConstPtr g);
   virtual ~IcebergRemover();
 
-  virtual void init();
   void update(const IceModelVec2Int &bc_mask,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &ice_thickness);

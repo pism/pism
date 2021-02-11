@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -518,10 +518,6 @@ void IceModel::allocate_iceberg_remover() {
 
     // this will throw an exception on failure
     m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
-
-    // Iceberg Remover does not have a state, so it is OK to
-    // initialize here.
-    m_iceberg_remover->init();
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
   }
