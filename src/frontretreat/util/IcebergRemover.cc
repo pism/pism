@@ -69,9 +69,9 @@ void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.grounded_ice(i,j) == true) {
+      if (mask.grounded_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (mask.floating_ice(i,j) == true) {
+      } else if (mask.floating_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }
