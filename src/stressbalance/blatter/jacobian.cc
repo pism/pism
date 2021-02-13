@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -342,8 +342,8 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
-                                           const Vector2 ***x,
-                                           Mat A, Mat J, CallbackData *data) {
+                                          const Vector2 ***x,
+                                          Mat A, Mat J, CallbackData *data) {
   try {
     data->solver->compute_jacobian(info, x, A, J);
   } catch (...) {
