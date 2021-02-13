@@ -1,10 +1,10 @@
 all: manufactured_solutions.cc manufactured_solutions.hh
 
 %.cc: %.py
-	python $^ > $@
+	python3 $^ > $@
 
 %.hh: %.py
-	python $^ --header > $@
+	python3 $^ --header > $@
 
 .PHONY: clean
 clean:
