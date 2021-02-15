@@ -18,6 +18,7 @@
 #include <mpi.h>
 #include <sstream>
 #include <string.h>
+#include <memory>
 #include <algorithm>
 #include <map>
  #include <iostream>
@@ -52,6 +53,8 @@ CDI::~CDI() {
 void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
 	if (mode == PISM_READONLY) {
         	m_file_id = streamOpenRead(fname.c_str());
+        	set_vlistID();
+        	map_varsID();
 	} else {
 	if (FileID == -1) {
         	m_file_id = streamOpenAppend(fname.c_str());
@@ -62,6 +65,22 @@ void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::
         	m_varsID = varsi;
 	}
 	m_firststep = false;
+}
+
+void CDI::set_vlistID() const {
+	m_vlistID = streamInqVlist(m_file_id);
+}
+
+void CDI::map_varsID() const {
+	int Nvars, varID;
+	char VarName[CDI_MAX_NAME];
+	std::string VarString;
+	Nvars = vlistNvars(vlistID);
+	for (varID=0; varID<Nvars; varID++) {
+		vlistInqVarName(vlistID, varID, VarName);
+		VarString = VarName;
+		m_varsID[VarString] = varID;
+	}
 }
 
 void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
@@ -105,7 +124,7 @@ void CDI::close_impl() {
 }
 
 void CDI::def_main_dim(const std::string &name, size_t length) const {
-	if        (name == "x") {
+		if        (name == "x") {
                 gridDefXsize(m_gridID, (int)length);
                 gridDefXname(m_gridID, name.c_str());
                 m_dims_name.push_back(name);
@@ -354,6 +373,7 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
       }
 }
 
+// att
 void CDI::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
@@ -446,16 +466,127 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 void CDI::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
                                IO_Type &result) const {
-// to be implemented - not working with cdi-1.8
+	// find variable ID
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	//int cditype = cdiInqAttType(m_vlistID, varID, att_name.c_str());
-        int cditype = -1;
+
+	// find attribute type
+	int natt, n, atype, alen, cditype;
+	char name[CDI_MAX_NAME];
+	std::string aname;
+	if (att_name=="history" && varID==CDI_GLOBAL) {
+		cditype = CDI_DATATYPE_TXT;
+	} else {
+		cdiInqNatts(m_vlistID, varID, &natt);
+		for (n=0; n<natt; n++) {
+			inq_att_impl(varID, n, name, &atype, &alen);
+			if (aname==att_name) {
+				cditype = atype;
+			}
+		}
+	}
 	result = cdi_type_to_pism_type(cditype);
+}
+
+void CDI::inq_attname_impl(const std::string &variable_name,
+                               unsigned int n,
+                               std::string &result) const {
+	char name[CDI_MAX_NAME];
+	int atype, alen;
+	// find variable ID
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+	// find attribute name
+	inq_att_impl(varID, n, name, &atype, &alen);
+	result = name;
+}
+
+void CDI::inq_att_impl(int varID, int attnum, std::string &attname, int &atttype, int &attlen) const {
+	char name[CDI_MAX_NAME];
+	cdiInqAtt(m_vlistID, varID, attnum, aname, &atttype, &attlen);
+	attname = aname;
+}
+
+void CDI::get_att_double_impl(const std::string &variable_name,
+                                  const std::string &att_name,
+                                  std::vector<double> &result) const {
+	// find variable ID
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+
+	// find attribute length
+	int natt, n, atype, alen, cdilen;
+	char name[CDI_MAX_NAME];
+	std::string aname;
+	cdiInqNatts(m_vlistID, varID, &natt);
+	for (n=0; n<natt; n++) {
+		inq_att_impl(varID, n, name, &atype, &alen);
+		if (aname==att_name) {
+			cdilen = alen;
+		}
+	}
+
+	if (cdilen == 0) {
+    	result.clear();
+    	return;
+  	}
+  	result.resize(cdilen);
+	
+	// read attribute
+	cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), cdilen, std::addressof(result[0]));
+}
+
+void CDI::get_att_text_impl(const std::string &variable_name, 
+						    const std::string &att_name, 
+						    std::string &result) const {
+	// find variable ID
+	int varID = -1;
+	if (variable_name == "PISM_GLOBAL") {
+		varID = CDI_GLOBAL;
+	} else {
+		varID = m_varsID[variable_name];
+	}
+
+	// find attribute length
+	int natt, n, atype, alen, cdilen;
+	char name[CDI_MAX_NAME];
+	std::string aname;
+	if (att_name=="history" && varID==CDI_GLOBAL) {
+		cdilen = streamInqHistorySize(m_file_id);
+	} else {
+		cdiInqNatts(m_vlistID, varID, &natt);
+		for (n=0; n<natt; n++) {
+			inq_att_impl(varID, n, name, &atype, &alen);
+			if (aname==att_name) {
+				cdilen = alen;
+			}
+		}
+	}
+
+	if (cdilen == 0) {
+    	result.clear();
+    	return;
+  	}
+  	result.resize(cdilen);
+
+  	// read attribute
+  	if (att_name=="history" && varID==CDI_GLOBAL) {
+  		streamInqHistoryString(m_file_id, std::addressof(result[0]));
+  	} else {
+  		cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), cdilen, std::addressof(result[0]));
+  	}
 }
 
 void CDI::create_grid_impl(int lengthx, int lengthy) const {
@@ -544,21 +675,7 @@ void CDI::get_varm_double_impl(const std::string &variable_name,
         (void) ip;
 }
 
-void CDI::get_att_double_impl(const std::string &variable_name,
-                                  const std::string &att_name,
-                                  std::vector<double> &result) const {
-}
 
-void CDI::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
-}
-
-void CDI::inq_attname_impl(const std::string &variable_name,
-                               unsigned int n,
-                               std::string &result) const {
-        (void) variable_name;
-        (void) n;
-        (void) result;
-}
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
         (void) fillmode;
