@@ -75,9 +75,9 @@ void CDI::map_varsID() const {
 	int Nvars, varID;
 	char VarName[CDI_MAX_NAME];
 	std::string VarString;
-	Nvars = vlistNvars(vlistID);
+	Nvars = vlistNvars(m_vlistID);
 	for (varID=0; varID<Nvars; varID++) {
-		vlistInqVarName(vlistID, varID, VarName);
+		vlistInqVarName(m_vlistID, varID, VarName);
 		VarString = VarName;
 		m_varsID[VarString] = varID;
 	}
@@ -509,10 +509,8 @@ void CDI::inq_attname_impl(const std::string &variable_name,
 	result = name;
 }
 
-void CDI::inq_att_impl(int varID, int attnum, std::string &attname, int &atttype, int &attlen) const {
-	char name[CDI_MAX_NAME];
-	cdiInqAtt(m_vlistID, varID, attnum, aname, &atttype, &attlen);
-	attname = aname;
+void CDI::inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const {
+	cdiInqAtt(m_vlistID, varID, attnum, attname, atttype, attlen);
 }
 
 void CDI::get_att_double_impl(const std::string &variable_name,
@@ -533,6 +531,7 @@ void CDI::get_att_double_impl(const std::string &variable_name,
 	cdiInqNatts(m_vlistID, varID, &natt);
 	for (n=0; n<natt; n++) {
 		inq_att_impl(varID, n, name, &atype, &alen);
+		aname = name;
 		if (aname==att_name) {
 			cdilen = alen;
 		}
