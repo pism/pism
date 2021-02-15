@@ -2,7 +2,7 @@ import sympy
 from sympy import sin, cos, pi, S
 
 from blatter import x, y, z, B, M, source_term, eta
-from manufactured_solutions import define, declare
+from blatter_codegen import define, declare
 
 sympy.var("rho_i, rho_w, g, L")
 

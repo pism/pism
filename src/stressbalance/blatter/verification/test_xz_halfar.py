@@ -2,7 +2,7 @@ import sympy
 from sympy import S
 
 from blatter import x, y, z, B, source_term, eta, M
-from manufactured_solutions import define, declare
+from blatter_codegen import define, declare
 
 sympy.var("R_0 H_0 t_0 t s rho_i g C_0 C_1 C_2", positive=True)
 h = sympy.Function("h", positive=True)(x)

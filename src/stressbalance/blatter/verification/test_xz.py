@@ -4,7 +4,7 @@ import sympy as sp
 from sympy.core import S
 
 from blatter import x, y, z, s
-from manufactured_solutions import define, declare
+from blatter_codegen import define, declare
 
 return_template = """
   return {{

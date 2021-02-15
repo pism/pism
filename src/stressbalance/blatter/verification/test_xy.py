@@ -1,7 +1,7 @@
 from sympy import exp, sin, cos, pi
 
 from blatter import x, y, z, source_term, eta
-from manufactured_solutions import define, declare
+from blatter_codegen import define, declare
 
 def exact():
     """X-Y verification test
