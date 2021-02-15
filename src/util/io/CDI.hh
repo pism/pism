@@ -157,7 +157,7 @@ private:
 	void put_dims_double(const std::string &variable_name, const double *op) const;
 	void set_vlistID() const;
 	void map_varsID() const;
-	void inq_att_impl(int varID, int attnum, std::string &attname, int &atttype, int &attlen) const;
+	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
 };
 }
 }
