@@ -134,7 +134,7 @@ private:
 	mutable int m_tID;
 	mutable int m_vlistID;
 	mutable std::map<std::string,int> m_varsID;
-        mutable std::vector<std::string> m_dims_name;
+    mutable std::vector<std::string> m_dims_name;
 	mutable bool m_firststep;
 	mutable bool m_beforediag;
 	mutable std::set<std::string> m_diagvars;
@@ -142,10 +142,10 @@ private:
 	mutable bool m_istimedef;
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
 	      const std::vector<std::string> &dims) const;
-        void def_var_multi_impl(const std::string &name, IO_Type nctype,
+    void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
-        int inq_current_timestep() const;
-        void put_att_text_dims_impl(const std::string &variable_name, const std::string &att_name,
+    int inq_current_timestep() const;
+    void put_att_text_dims_impl(const std::string &variable_name, const std::string &att_name,
                    const std::string &value) const;
 	void put_att_text_x_impl(const std::string &att_name, const std::string &value) const;
 	void put_att_text_y_impl(const std::string &att_name, const std::string &value) const;
@@ -155,6 +155,9 @@ private:
 	double year_gregorian(double time) const;
 	long int day_gregorian(double nyearsf) const;
 	void put_dims_double(const std::string &variable_name, const double *op) const;
+	void set_vlistID() const;
+	void map_varsID() const;
+	void inq_att_impl(int varID, int attnum, std::string &attname, int &atttype, int &attlen) const;
 };
 }
 }
