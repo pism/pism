@@ -188,12 +188,12 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
  
   m_TOAinsol.set_attrs("diagnostic",
                               "insolation at the top of the atmosphere", 
-                              "W m-2", "m", "", 0);
+                              "W m-2", "W m-2", "", 0);
   m_TOAinsol.set(0.0);
 
   m_qinsol.set_attrs("diagnostic",
                               "insolation at the top of the atmosphere, when the sun is above the elvation angle Phi", 
-                              "W m-2", "m", "", 0);
+                              "W m-2", "W m-2", "", 0);
   m_qinsol.set(0.0);
 
 }
@@ -660,19 +660,21 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           if (paleo){
             delta = get_delta_paleo(ts[k]);
             distance2 = get_distance2_paleo(ts[k]);
-          }
-          
+          }  
+              
             
-                
-
-        
-
-
-
           ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev,
                                          delta, distance2,
                                          lat * M_PI / 180.,
                                          albedo_loc, print);
+          
+          //  no melt over ice-free ocean
+          if (mask.ice_free_ocean(i, j)) {
+            ETIM_melt.T_melt = 0.; 
+            ETIM_melt.I_melt = 0. ;
+            ETIM_melt.c_melt = 0.; 
+            ETIM_melt. ITM_melt = 0.; 
+          }
 
           if (print){
             std::cout << "albedo value " << albedo_loc << "\n";
@@ -1252,9 +1254,12 @@ public:
   TotalSurfaceAccumulationITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_accumulation_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
+    // m_ts.variable().set_string("units", "kg s-1");
+    // m_ts.variable().set_string("glaciological_units", "kg year-1");
+    // m_ts.variable().set_string("long_name", "surface accumulation rate (PDD model)");
+
+    set_units("kg s-1", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface accumulation rate (dEBM model)");
   }
 
   double compute() {
@@ -1270,9 +1275,12 @@ public:
   TotalSurfaceMeltITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_melt_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
+    // m_ts.variable().set_string("units", "kg s-1");
+    // m_ts.variable().set_string("glaciological_units", "kg year-1");
+    // m_ts.variable().set_string("long_name", "surface melt rate (PDD model)");
+
+    set_units("kg s-1", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface melt rate (dEBM model)");
   }
 
   double compute() {
@@ -1288,9 +1296,10 @@ public:
   TotalSurfaceRunoffITM(const TemperatureIndexITM *m)
     : TSDiag<TSFluxDiagnostic, TemperatureIndexITM>(m, "surface_runoff_rate") {
 
-    m_ts.variable().set_string("units", "kg s-1");
-    m_ts.variable().set_string("glaciological_units", "kg year-1");
-    m_ts.variable().set_string("long_name", "surface runoff rate (PDD model)");
+    // m_ts.variable().set_string("units", "kg s-1");
+    // m_ts.variable().set_string("glaciological_units", "kg year-1");
+    set_units("kg s-1", "kg year-1");
+    m_ts.variable().set_string("long_name", "surface runoff rate (dEBM model)");
   }
 
   double compute() {
