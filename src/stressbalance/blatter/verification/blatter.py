@@ -34,11 +34,11 @@ s = sp.Function("s")(x, y)
 
 def edot(x1, x2):
     """Elements of the strain rate tensor"""
-    # express w_zz using incompressibility:
+    # express w_z using incompressibility:
     if x1 == z and x2 == z:
         return -(u.diff(x) + v.diff(y))
 
-    # In the BP system partial derivatives w_x and w_y are omitted.
+    # In the BP approximation partial derivatives w_x and w_y are omitted.
     #
     # See Greve2009, section 5.3
     V = {x : u, y : v, z : S(0)}
@@ -54,6 +54,8 @@ def second_invariant(U, V):
                    [edot(z,x), edot(z,y), edot(z,z)]])
 
     # second invariant (Greve2009, equation 2.42)
+    #
+    # Note: D.trace() is zero.
     II = S(1) / 2 * ((D**2).trace() - D.trace()**2)
 
     return II.subs({u: U, v: V}).doit()
@@ -69,7 +71,7 @@ def eta(u, v, n):
     return S(1) / 2 * B * gamma**((1 - n) / (2 * n))
 
 def M(U, V):
-    "'Effective' strain rate tensor corresponding to the Blatter-Pattyn system"
+    "'Effective' strain rate tensor corresponding to the Blatter-Pattyn approximation"
 
     # See equation 8 in Lipscomb2019, compare to equation 5.70 in Greve2009
     M = sp.Matrix([[2 * edot(x, x) + edot(y, y), edot(x, y), edot(x, z)],

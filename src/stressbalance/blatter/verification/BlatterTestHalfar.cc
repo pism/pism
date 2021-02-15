@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,9 +51,10 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
   m_g   = m_config->get_number("constants.standard_gravity");
 }
 
-bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
+bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info,
+                                       const fem::Element3::GlobalIndex& I) {
   // use Dirichlet BC at x == 0 and the "cliff" near the right boundary
-  return I.i == 0 or I.i >= info.mx - 2;
+  return I.i == 0 or I.i >= info.mx - 1;
 }
 
 Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {

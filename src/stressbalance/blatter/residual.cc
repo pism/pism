@@ -141,12 +141,13 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
   for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q);
 
+    auto F = m_rho_ice_g * Vector2(s_x[q], s_y[q]);
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       const auto &psi = element.chi(q, t);
 
-      residual[t].u += W * psi.val * m_rho_ice_g * s_x[q];
-      residual[t].v += W * psi.val * m_rho_ice_g * s_y[q];
+      residual[t] += W * psi.val * F;
     }
   }
 }
