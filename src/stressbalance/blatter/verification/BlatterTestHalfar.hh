@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,6 +50,10 @@ private:
                         const double *surface_nodal,
                         const double *z_nodal,
                         const double *sl_nodal,
+                        Vector2 *residual);
+
+  void residual_surface(const fem::Q1Element3 &element,
+                        const fem::Q1Element3Face &face,
                         Vector2 *residual);
 
   double m_B;

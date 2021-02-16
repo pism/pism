@@ -104,7 +104,9 @@ def print_source_surface(args):
     "Print the code computing the extra term at the top surface"
 
     f_top = surface_bc(u, v, h)
-    f_top = f_top.subs(subs).factor()
+
+    # take advantage of the fact that u_z = 0 at z = h
+    f_top = f_top.subs(subs).subs(u_z, 0)
 
     u0, _ = u_exact()
 
@@ -120,7 +122,6 @@ def print_source_surface(args):
     print_var(H(x).diff(x), h_x)
     print_var(H(x).diff(x, 2), h_xx)
     print_var(U_x, u_x)
-    print_var(U_z, u_z)
     print(return_template.format(sp.ccode(f_top), 0.0))
     print("}")
 

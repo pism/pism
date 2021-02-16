@@ -158,5 +158,40 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
   }
 }
 
+
+/*!
+ * Top surface contribution to the residual.
+ */
+void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
+                                         const fem::Q1Element3Face &face,
+                                         Vector2 *residual) {
+
+  // compute x and z coordinates of quadrature points
+  double
+    *x = m_work[0];
+  {
+    double *x_nodal = m_work[1];
+
+    for (int n = 0; n < fem::q13d::n_chi; ++n) {
+      x_nodal[n] = element.x(n);
+    }
+
+    face.evaluate(x_nodal, x);
+  }
+
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    auto F = blatter_xz_halfar_source_surface(x[q], m_H0, m_R0, m_rho, m_g, m_B);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      auto psi = face.chi(q, t);
+
+      residual[t] += - W * psi * F;
+    }
+  }
+}
+
 } // end of namespace stressbalance
 } // end of namespace pism
