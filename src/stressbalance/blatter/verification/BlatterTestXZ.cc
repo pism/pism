@@ -195,12 +195,14 @@ void BlatterTestXZ::residual_surface(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
+    auto F = blatter_xz_source_surface(x[q], z[q], m_A, m_rho, m_g,
+                                       m_s0, m_alpha, m_H0, m_beta);
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * blatter_xz_source_surface(x[q], z[q], m_A, m_rho, m_g,
-                                                           m_s0, m_alpha, m_H0, m_beta);
+      residual[t] += - W * psi * F;
     }
   }
 }
