@@ -54,7 +54,7 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
 bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info,
                                        const fem::Element3::GlobalIndex& I) {
   // use Dirichlet BC at x == 0 and the "cliff" near the right boundary
-  return I.i == 0 or I.i >= info.mx - 1;
+  return I.i == 0 or I.i == info.mx - 1;
 }
 
 Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {
@@ -101,11 +101,13 @@ void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
   for (int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q);
 
+    auto F = blatter_xz_halfar_source(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       const auto &psi = element.chi(q, t);
 
-      residual[t] += W * psi.val * blatter_xz_halfar_source(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
+      residual[t] += W * psi.val * F;
     }
   }
 }
