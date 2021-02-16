@@ -28,13 +28,13 @@ def exact():
 def surface_bc():
     u0, v0 = exact()
 
-    return (eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 0, ny: 0, nz : 1})
+    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 0, ny: 0, nz : 1})
 
 def lateral_bc():
 
     u0, v0 = exact()
 
-    return (eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 1, ny: 0, nz : 0, x : L})
+    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs({nx: 1, ny: 0, nz : 0, x : L})
 
 def print_code(header=False):
     args = ["x", "z", "B", "L", "rho_i", "rho_w", "g"]

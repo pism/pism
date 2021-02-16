@@ -104,7 +104,7 @@ Vector2 blatter_xz_cfbc_source(double x, double z, double L, double rho_i, doubl
 Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
-    (1.0/8.0)*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
+    (1.0/4.0)*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
     0
   };
 }
@@ -112,7 +112,7 @@ Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, 
 Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
-    -1.0/8.0*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
+    -1.0/4.0*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
     0
   };
 }
