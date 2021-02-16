@@ -117,95 +117,67 @@ Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, dou
   };
 }
 
-Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, double rho_i, double g, double B)
-{
-  double x0 = 1 - pow(x, 4.0/3.0)/pow(R_0, 4.0/3.0);
-  double x1 = pow(x0, 12.0/7.0);
+Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+  double C_0 = H_0;
+  double C_1 = 1.0/R_0;
+  double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
+  double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+
   return {
-    (32.0/343.0)*pow(H_0, 3)*pow(g, 3)*pow(rho_i, 3)*x*(pow(H_0, 4)*x1 - pow(H_0*pow(x0, 3.0/7.0) - z, 4))/(pow(B, 3)*pow(R_0, 4)*x1),
+    -C_2*pow(h_x, 3)*(pow(h0, 4) - pow(h0 - z, 4)),
     0
   };
 }
 
-Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B)
-{
-  double x0 = pow(x, 2);
-  double x1 = pow(R_0, -8);
-  double x2 = pow(R_0, -4.0/3.0);
-  double x3 = pow(x, 4.0/3.0);
-  double x4 = -x2*x3 + 1;
-  double x5 = pow(x4, -24.0/7.0);
-  double x6 = pow(H_0, 6);
-  double x7 = H_0*pow(x4, 3.0/7.0) - z;
-  double x8 = pow(g, 6)*pow(rho_i, 6)/pow(B, 6);
-  double x9 = x6*pow(x7, 6)*x8;
-  double x10 = x1*x5*x9;
-  double x11 = pow(H_0, 4);
-  double x12 = pow(x4, 12.0/7.0);
-  double x13 = pow(H_0, 3);
-  double x14 = pow(g, 3);
-  double x15 = pow(rho_i, 3);
-  double x16 = x14*x15/pow(B, 3);
-  double x17 = x13*x16;
-  double x18 = x17*(x11*x12 - pow(x7, 4));
-  double x19 = 1/(pow(R_0, 4)*x12);
-  double x20 = x18*x19;
-  double x21 = pow(R_0, -16.0/3.0);
-  double x22 = x21*x3;
-  double x23 = pow(x4, -19.0/7.0);
-  double x24 = x18*x23;
-  double x25 = x22*x24;
-  double x26 = x11*x2*pow(x4, 5.0/7.0);
-  double x27 = cbrt(x);
-  double x28 = (16.0/7.0)*x27;
-  double x29 = pow(x7, 3);
-  double x30 = H_0*x29;
-  double x31 = x2*x30/pow(x4, 4.0/7.0);
-  double x32 = -x26*x28 + x28*x31;
-  double x33 = x17*x19;
-  double x34 = x32*x33;
-  double x35 = x*x34;
-  double x36 = (32.0/343.0)*x20 + (512.0/2401.0)*x25 + (32.0/343.0)*x35;
-  double x37 = (4096.0/117649.0)*x0*x10 + pow(x36, 2);
-  double x38 = pow(x37, -1.0/3.0);
-  double x39 = pow(x7, 2);
-  double x40 = x13*x14*x15*x19/pow(B, 2);
-  double x41 = pow(x37, -4.0/3.0);
-  double x42 = pow(x7, 5)*x8;
-  double x43 = x17*x22*x23;
-  double x44 = (1.0/3.0)*x36;
-  double x45 = (64.0/343.0)*x;
-  double x46 = pow(x, 2.0/3.0);
-  double x47 = x46/pow(R_0, 8.0/3.0);
-  double x48 = (16.0/21.0)/x46;
-  double x49 = (1024.0/1029.0)*x21*x24*x27 + (2048.0/2401.0)*x32*x43 + x33*x45*(-192.0/49.0*pow(H_0, 2)*x39*x47/pow(x4, 8.0/7.0) + (320.0/147.0)*x11*x47/pow(x4, 2.0/7.0) - x26*x48 + (256.0/147.0)*x30*x47/pow(x4, 11.0/7.0) + x31*x48) + (128.0/343.0)*x34 + (77824.0/50421.0)*pow(x, 5.0/3.0)*x18/(pow(R_0, 20.0/3.0)*pow(x4, 26.0/7.0));
-  double x50 = pow(x, 7.0/3.0)/pow(R_0, 28.0/3.0);
+Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+  double C_0 = H_0;
+  double C_1 = 1.0/R_0;
+  double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
+  double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
+  double u_z = -4*C_2*pow(h_x, 3)*pow(h0 - z, 3);
+  double u_xx = 0;
+  double u_xz = -12*C_2*pow(h_x, 4)*pow(h0 - z, 2) - 12*C_2*pow(h_x, 2)*h_xx*pow(h0 - z, 3);
+  double u_zz = 12*C_2*pow(h_x, 3)*pow(h0 - z, 2);
+
   return {
-    B*x38*x49 + B*x41*((64.0/343.0)*x20 + (1024.0/2401.0)*x25 + (64.0/343.0)*x35)*((32768.0/823543.0)*pow(H_0, 7)*x42*x50/pow(x4, 4) - 8192.0/352947.0*x*x10 - x44*x49 - 131072.0/2470629.0*x50*x9/pow(x4, 31.0/7.0)) - 192.0/343.0*x*x38*x39*x40 + x29*x40*x41*x45*((8192.0/117649.0)*x0*x1*x42*x5*x6 - x44*(-3072.0/2401.0*x11*x16*x22*x39/pow(x4, 16.0/7.0) + (256.0/343.0)*x29*x33 + (4096.0/2401.0)*x29*x43)),
-    0
+    2*B*u_x*(-2.0/3.0*u_x*u_xx - 1.0/6.0*u_xz*u_z)/pow(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2), 4.0/3.0) + 2*B*u_xx/cbrt(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2)) + (1.0/2.0)*B*u_z*(-2.0/3.0*u_x*u_xz - 1.0/6.0*u_z*u_zz)/pow(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2), 4.0/3.0) + (1.0/2.0)*B*u_zz/cbrt(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2)),
+    0.0
   };
 }
 
-Vector2 blatter_xz_halfar_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B)
-{
-  double x0 = pow(B, -3);
-  double x1 = pow(H_0, 3);
-  double x2 = pow(g, 3);
-  double x3 = pow(rho_i, 3);
-  double x4 = pow(H_0, 4);
-  double x5 = pow(R_0, -4.0/3.0);
-  double x6 = pow(x, 4.0/3.0);
-  double x7 = -x5*x6 + 1;
-  double x8 = pow(x7, 12.0/7.0);
-  double x9 = H_0*pow(x7, 3.0/7.0) - z;
-  double x10 = x0*x1*x2*x3*(x4*x8 - pow(x9, 4));
-  double x11 = 1/(pow(R_0, 4)*x8);
-  double x12 = x10*x11;
-  double x13 = x10*x6/(pow(R_0, 16.0/3.0)*pow(x7, 19.0/7.0));
-  double x14 = (16.0/7.0)*cbrt(x)*x5;
-  double x15 = x*x0*x1*x11*x2*x3*(H_0*x14*pow(x9, 3)/pow(x7, 4.0/7.0) - x14*x4*pow(x7, 5.0/7.0));
+Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+  double C_0 = H_0;
+  double C_1 = 1.0/R_0;
+  double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
+  double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
+  double u_z = -4*C_2*pow(h_x, 3)*pow(h0 - z, 3);
+
   return {
-    B*((64.0/343.0)*x12 + (1024.0/2401.0)*x13 + (64.0/343.0)*x15)/cbrt(pow((32.0/343.0)*x12 + (512.0/2401.0)*x13 + (32.0/343.0)*x15, 2) + (4096.0/117649.0)*pow(H_0, 6)*pow(g, 6)*pow(rho_i, 6)*pow(x, 2)*pow(x9, 6)/(pow(B, 6)*pow(R_0, 8)*pow(x7, 24.0/7.0))),
+    2*pow(2, 2.0/3.0)*B*u_x/cbrt(4*pow(u_x, 2) + pow(u_z, 2)),
+    0.0
+  };
+}
+
+Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, double rho_i, double g, double B) {
+  double C_0 = H_0;
+  double C_1 = 1.0/R_0;
+  double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
+  double z = h0;
+  double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
+  double u_z = -4*C_2*pow(h_x, 3)*pow(h0 - z, 3);
+
+  return {
+    -1.0/2.0*pow(2, 2.0/3.0)*B*(4*h_x*u_x - u_z)/(sqrt(pow(h_x, 2) + 1)*cbrt(4*pow(u_x, 2) + pow(u_z, 2))),
     0.0
   };
 }

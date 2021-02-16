@@ -27,6 +27,8 @@ Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, doub
 
 Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B);
 
-Vector2 blatter_xz_halfar_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B);
+Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B);
+
+Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, double rho_i, double g, double B);
 
 } // end of namespace pism

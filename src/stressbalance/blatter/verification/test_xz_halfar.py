@@ -1,20 +1,40 @@
-import sympy
+import sympy as sp
 from sympy import S
 
 from blatter import x, y, z, B, source_term, eta, M
 from blatter_codegen import define, declare
 
-sympy.var("R_0 H_0 rho_i g C_0 C_1 C_2", positive=True)
-h = sympy.Function("h", positive=True)(x)
+return_template = """
+  return {{
+    {},
+    {}
+  }};"""
 
-nx, ny, nz = sympy.var("n_(x:z)")
+sp.var("R_0 H_0 rho_i g C_0 C_1 C_2", positive=True)
+h = sp.Function("h", positive=True)(x)
 
-N = sympy.Matrix([nx, ny, nz])
+u = sp.Function("u")(x, z)
+v = S(0)
+u_y = S(0)
+sp.var("u_x u_xx u_z u_xz u_zz h0 h_x h_xx")
+subs = {h.diff(x, 2): h_xx,
+        h.diff(x): h_x,
+        h: h0,
+        u.diff(x, 2): u_xx,
+        u.diff(x): u_x,
+        u.diff(x).diff(z): u_xz,
+        u.diff(y): u_y,
+        u.diff(z): u_z,
+        u.diff(z, 2): u_zz}
+
+nx, ny, nz = sp.var("n_(x:z)")
+
+N = sp.Matrix([nx, ny, nz])
 
 # Glen exponents n
 n = 3
 
-def parameters(H_0, R_0, rho_i, g, B):
+def parameters():
     # s = 1 corresponds to t = t_0
     s = 1
 
@@ -36,6 +56,18 @@ def u_exact():
 
     return u0, v0
 
+def surface_bc(u0, v0, surface):
+    ds = surface.diff(x)
+    # normalized x component of the downward-pointing normal vector
+    n_s_norm = (ds**2 + 1**2)**S("1/2")
+    nx_s = - ds / n_s_norm
+    ny_s = 0
+    nz_s = 1 / n_s_norm
+
+    N_surface = {nx: nx_s, ny: ny_s, nz : nz_s}
+
+    return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(N_surface)
+
 def lateral_bc(u0, v0):
     N_right = {nx: 1, ny: 0, nz : 0}
     return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(N_right), 0.0
@@ -43,22 +75,115 @@ def lateral_bc(u0, v0):
 def print_code(header=False):
     constants = ["H_0", "R_0", "rho_i", "g", "B"]
     coords = ["x", "z"]
+
     if header:
         declare(name="blatter_xz_halfar_exact", args=coords + constants)
         declare(name="blatter_xz_halfar_source", args=coords + constants)
-        declare(name="blatter_xz_halfar_lateral", args=coords + constants)
+        declare(name="blatter_xz_halfar_source_lateral", args=coords + constants)
+        declare(name="blatter_xz_halfar_source_surface", args=["x"] + constants)
         return
 
-    definitions = parameters(H_0, R_0, rho_i, g, B)
+    definitions = parameters()
 
+    print_exact(coords + constants)
+    print_source(coords + constants)
+    print_source_lateral(coords + constants)
+    print_source_surface(["x"] + constants)
+
+def print_var(var, name):
+    print("  double " + sp.ccode(var, assign_to=name))
+
+def print_header(suffix, args):
+    arguments = ", ".join(["double " + x for x in args])
+
+    print("")
+    print("Vector2 blatter_xz_halfar_{suffix}({args}) {{".format(suffix=suffix,
+                                                                 args=arguments))
+
+def print_source_surface(args):
+    "Print the code computing the extra term at the top surface"
+
+    f_top = surface_bc(u, v, h)
+    f_top = f_top.subs(subs).factor()
+
+    u0, _ = u_exact()
+
+    U_x = u0.diff(x).subs(subs)
+    U_z = u0.diff(z).subs(subs)
+
+    print_header("source_surface", args)
+
+    for key, value in parameters().items():
+        print_var(value, key)
+    print_var(H(x), h0)
+    print_var(h0, z)
+    print_var(H(x).diff(x), h_x)
+    print_var(H(x).diff(x, 2), h_xx)
+    print_var(U_x, u_x)
+    print_var(U_z, u_z)
+    print(return_template.format(sp.ccode(f_top), 0.0))
+    print("}")
+
+def print_source_lateral(args):
+    "Print the code computing the extra term at the right boundary"
+
+    f_lat, _ = lateral_bc(u, v)
+    f_lat = f_lat.subs(subs).factor()
+
+    u0, _ = u_exact()
+
+    U_x = u0.diff(x).subs(subs)
+    U_z = u0.diff(z).subs(subs)
+
+    print_header("source_lateral", args)
+
+    for key, value in parameters().items():
+        print_var(value, key)
+    print_var(H(x), h0)
+    print_var(H(x).diff(x), h_x)
+    print_var(H(x).diff(x, 2), h_xx)
+    print_var(U_x, u_x)
+    print_var(U_z, u_z)
+
+    print(return_template.format(sp.ccode(f_lat), 0.0))
+    print("}")
+
+def print_exact(args):
     u0, v0 = u_exact()
-    u0 = u0.subs(h, H(x)).subs(definitions).doit()
-    define(u0, v0, name="blatter_xz_halfar_exact", args=coords + constants)
 
-    f_u, f_v = source_term(eta(u0, v0, n), u0, v0)
-    f_u = f_u.subs(definitions).doit()
-    define(f_u, f_v, name="blatter_xz_halfar_source", args=coords + constants)
+    u0 = u0.subs(subs)
 
-    f_u, f_v = lateral_bc(u0, v0)
-    f_u = f_u.subs(definitions).doit()
-    define(f_u, f_v, name="blatter_xz_halfar_lateral", args=coords + constants)
+    print_header("exact", args)
+
+    for key, value in parameters().items():
+        print_var(value, key)
+    print_var(H(x), h0)
+    print_var(H(x).diff(x), h_x)
+
+    print(return_template.format(sp.ccode(u0), v0))
+    print("}")
+
+def print_source(args):
+    f, _ = source_term(eta(u, v, 3), u, v)
+    f = f.subs(subs)
+
+    u0, _ = u_exact()
+
+    U_x = u0.diff(x).subs(subs)
+    U_z = u0.diff(z).subs(subs)
+
+    print_header("source", args)
+
+    for key, value in parameters().items():
+        print_var(value, key)
+    print_var(H(x), h0)
+    print_var(H(x).diff(x), h_x)
+    print_var(H(x).diff(x, 2), h_xx)
+    print_var(U_x, u_x)
+    print_var(U_z, u_z)
+    print_var(U_x.diff(x), u_xx)
+    print_var(U_x.diff(z), u_xz)
+    print_var(U_z.diff(z), u_zz)
+
+    print(return_template.format(sp.ccode(f), 0.0))
+    print("}")
