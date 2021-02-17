@@ -56,12 +56,14 @@ int main(int argc, char *argv[]) {
   MPI_Comm local_comm;
   int nwriters, IOmode;
   bool async;
+  {
   petsc::Initializer petsc(argc, argv, help);
   {
       Context::Ptr ctx = context_from_options(com, "pismr");
       nwriters = ctx->get_n_writers();
       IOmode = ctx->get_IOmode();
       async = ctx->get_async();
+  }
   }
   {
   cdipio::Initializer cdipio(nwriters, IOmode, com, async);

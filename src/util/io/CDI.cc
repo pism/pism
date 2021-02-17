@@ -142,6 +142,7 @@ void CDI::def_main_dim(const std::string &name, size_t length) const {
                 m_dims_name.push_back(name);
         } else if (name == "time" && m_tID==-1) {
                 m_tID = taxisCreate(TAXIS_ABSOLUTE);
+		taxisDefCalendar(m_tID, CALENDAR_365DAYS);
                 vlistDefTaxis(m_vlistID, m_tID);
                 m_dims_name.push_back(name);
         }
