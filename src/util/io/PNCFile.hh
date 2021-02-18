@@ -51,7 +51,7 @@ protected:
   void redef_impl() const;
 
   // dim
-  void def_dim_impl(const std::string &name, size_t length) const;
+  void def_dim_impl(const std::string &name, size_t length, int dim) const;
 
   void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 

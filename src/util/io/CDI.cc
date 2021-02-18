@@ -45,6 +45,7 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_beforediag = true;
 	m_gridexist = false;
 	m_istimedef = false;
+	wrapup_def_dim();
 }
 
 CDI::~CDI() {
@@ -142,17 +143,54 @@ void CDI::def_main_dim(const std::string &name, size_t length) const {
                 m_dims_name.push_back(name);
         } else if (name == "time" && m_tID==-1) {
                 m_tID = taxisCreate(TAXIS_ABSOLUTE);
-		taxisDefCalendar(m_tID, CALENDAR_365DAYS);
+				taxisDefCalendar(m_tID, CALENDAR_365DAYS);
                 vlistDefTaxis(m_vlistID, m_tID);
                 m_dims_name.push_back(name);
         }
 }
 
-void CDI::def_dim_impl(const std::string &name, size_t length) const {
+void CDI::def_x_dim(const std::string &name, size_t length) const {
+    gridDefXsize(m_gridID, (int)length);
+    gridDefXname(m_gridID, name.c_str());
+    m_dims_name.push_back(name);
+}
+
+void CDI::def_y_dim(const std::string &name, size_t length) const {
+    gridDefYsize(m_gridID, (int)length);
+    gridDefYname(m_gridID, name.c_str());
+    m_dims_name.push_back(name);
+}
+
+void CDI::def_z_dim(const std::string &name, size_t length) const {
+    m_zID = zaxisCreate(ZAXIS_GENERIC, (int)length);
+    zaxisDefName(m_zID,name.c_str());
+    m_dims_name.push_back(name);
+}
+
+void CDI::def_t_dim(const std::string &name, size_t length) const {
+	m_tID = taxisCreate(TAXIS_ABSOLUTE);
+	taxisDefCalendar(m_tID, CALENDAR_365DAYS);
+    vlistDefTaxis(m_vlistID, m_tID);
+    m_dims_name.push_back(name);
+}
+
+void CDI::wrapup_def_dim() const {
+	pDefDim pFn = def_t_dim;
+	pvcDefDim.push_back(pDefDim);
+	pDefDim pFn = def_x_dim;
+	pvcDefDim.push_back(pDefDim);
+	pDefDim pFn = def_y_dim;
+	pvcDefDim.push_back(pDefDim);
+	pDefDim pFn = def_z_dim;
+	pvcDefDim.push_back(pDefDim);
+}
+
+void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 	if (m_vlistID == -1) m_vlistID = vlistCreate();
 
 	if (!m_gridexist) {
-		def_main_dim(name, length);
+		if (dim!=-1) pvcDefDim[dim](name, length);
+//		def_main_dim(name, length);
 		if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 	} else {
 		if (!m_istimedef) {
@@ -243,8 +281,9 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const st
     if (m_gridsID == -1) {
         m_gridsID = gridCreate(GRID_LONLAT, 1);
         gridDefXsize(m_gridsID, 1);
-        gridDefYsize(m_gridsID, 0);
-	gridDefXname(m_gridsID, "xd");
+        gridDefXname(m_gridsID, "x_dummy");
+        gridDefYsize(m_gridsID, 1);
+		gridDefYname(m_gridsID, "y_dummy");
     }
     if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 
@@ -300,9 +339,24 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
-	// write dimensions values and scalar variables
+	// write dimensions values if not done yet
 	if (!m_gridexist) put_dims_double(variable_name, op);
-	// need to be generalised to write scalars
+	// if variable_name is a dimension, return
+	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
+        return;
+    // write scalar
+    int ndims = static_cast<int>(start.size());
+    int idxlen=1, j;
+    Xt_int *idx;
+    for (int j = 0; j < ndims; ++j)
+    	idxlen *= count[j];
+    idx = (Xt_int*) malloc(idxlen * sizeof(Xt_int));
+    for (j=0; j<idxlen; j++)
+    	idx[j] = j;
+    Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
+    int varid = m_varsID[variable_name];
+    size_t nmiss = 0;
+    streamWriteVarPart(m_file_id, varid, op, nmiss, decomp);
 }
 
 void CDI::inq_nvars_impl(int &result) const {
@@ -450,11 +504,11 @@ void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &value) const {
 	if (!m_firststep) return;
 	if (value.empty() || att_name.empty()) return;
-        if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
-        {
-                put_att_text_dims_impl(variable_name, att_name, value);
-                return;
-        }
+    if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
+    {
+        put_att_text_dims_impl(variable_name, att_name, value);
+        return;
+    }
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;

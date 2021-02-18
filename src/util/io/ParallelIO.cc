@@ -128,7 +128,7 @@ void ParallelIO::redef_impl() const {
 }
 
 // dim
-void ParallelIO::def_dim_impl(const std::string &name, size_t length) const {
+void ParallelIO::def_dim_impl(const std::string &name, size_t length, int dim) const {
   int dim_id = 0;
   int stat = PIOc_def_dim(m_file_id, name.c_str(), length, &dim_id);
   check(PISM_ERROR_LOCATION, stat);

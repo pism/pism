@@ -44,7 +44,7 @@ protected:
   virtual void redef_impl() const;
 
   // dim
-  virtual void def_dim_impl(const std::string &name, size_t length) const;
+  virtual void def_dim_impl(const std::string &name, size_t length, int dim) const;
 
   virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 

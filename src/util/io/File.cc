@@ -585,9 +585,9 @@ AxisType File::dimension_type(const std::string &name,
   return UNKNOWN_AXIS;          // LCOV_EXCL_LINE
 }
 
-void File::define_dimension(const std::string &name, size_t length) const {
+void File::define_dimension(const std::string &name, size_t length, int dim) const {
   try {
-    m_impl->nc->def_dim(name, length);
+    m_impl->nc->def_dim(name, length, dim);
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), filename().c_str());
     throw;
