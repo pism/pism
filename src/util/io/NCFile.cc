@@ -98,9 +98,9 @@ void NCFile::redef() const {
   }
 }
 
-void NCFile::def_dim(const std::string &name, size_t length) const {
+void NCFile::def_dim(const std::string &name, size_t length, int dim) const {
   redef();
-  this->def_dim_impl(name, length);
+  this->def_dim_impl(name, length, dim);
 }
 
 void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {

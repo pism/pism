@@ -88,7 +88,7 @@ public:
 
   // dimensions
 
-  void define_dimension(const std::string &name, size_t length) const;
+  void define_dimension(const std::string &name, size_t length, int dim = -1) const;
 
   unsigned int dimension_length(const std::string &name) const;
 

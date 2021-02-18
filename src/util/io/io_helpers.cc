@@ -200,10 +200,10 @@ static void compute_start_and_count(const File& file,
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
 void define_dimension(const File &file, unsigned long int length,
-                      const VariableMetadata &metadata) {
+                      const VariableMetadata &metadata, int dim) {
   std::string name = metadata.get_name();
   try {
-    file.define_dimension(name, length);
+    file.define_dimension(name, length, dim);
 
     std::vector<std::string> dims(1, name);
     file.define_variable(name, PISM_DOUBLE, dims);
@@ -247,7 +247,7 @@ void define_time(const File &file, const std::string &name, const std::string &c
     time.set_string("units", units);
     time.set_string("axis", "T");
 
-    define_dimension(file, PISM_UNLIMITED, time);
+    define_dimension(file, PISM_UNLIMITED, time, 0);
   } catch (RuntimeError &e) {
     e.add_context("defining the time dimension in \"" + file.filename() + "\"");
     throw;
@@ -288,10 +288,10 @@ static void define_dimensions(const SpatialVariableMetadata& var,
   std::string y_name = var.get_y().get_name();
   if ( (not file.find_dimension(x_name)) && (not file.find_dimension(y_name)) ) {
     file.new_grid(grid.Mx(), grid.My());
-    define_dimension(file, grid.Mx(), var.get_x());
+    define_dimension(file, grid.Mx(), var.get_x(), 1);
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});
-    define_dimension(file, grid.My(), var.get_y());
+    define_dimension(file, grid.My(), var.get_y(), 2);
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
                          {grid.y(1) - grid.y(0)});
   }
@@ -303,7 +303,7 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       const std::vector<double>& levels = var.get_levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(file, nlevels, var.get_z());
+      define_dimension(file, nlevels, var.get_z(), 3);
       
       bool spatial_dim = not var.get_z().get_string("axis").empty();
 

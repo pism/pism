@@ -44,7 +44,7 @@ protected:
 	void redef_impl() const;
 
 	// dim
-	void def_dim_impl(const std::string &name, size_t length) const;
+	void def_dim_impl(const std::string &name, size_t length, int dim) const;
 
 	void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 
@@ -158,6 +158,14 @@ private:
 	void set_vlistID() const;
 	void map_varsID() const;
 	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
+
+	void def_x_dim(const std::string &name, size_t length) const;
+	void def_y_dim(const std::string &name, size_t length) const;
+	void def_z_dim(const std::string &name, size_t length) const;
+	void def_t_dim(const std::string &name, size_t length) const;
+	void wrapup_def_dim() const;
+	typedef void(*pDefDim)(std::string&, size_t);
+	std::vector<pDefDim> pvcDefDim;
 };
 }
 }

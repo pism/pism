@@ -163,7 +163,7 @@ void NC3File::redef_impl() const {
 
 
 //! \brief Define a dimension.
-void NC3File::def_dim_impl(const std::string &name, size_t length) const {
+void NC3File::def_dim_impl(const std::string &name, size_t length, int dim) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {

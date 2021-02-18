@@ -80,7 +80,7 @@ public:
   void redef() const;
 
   // dim
-  void def_dim(const std::string &name, size_t length) const;
+  void def_dim(const std::string &name, size_t length, int dim) const;
 
   void inq_dimid(const std::string &dimension_name, bool &exists) const;
 
@@ -176,7 +176,7 @@ protected:
   virtual void redef_impl() const = 0;
 
   // dim
-  virtual void def_dim_impl(const std::string &name, size_t length) const = 0;
+  virtual void def_dim_impl(const std::string &name, size_t length, int dim) const = 0;
 
   virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
 
