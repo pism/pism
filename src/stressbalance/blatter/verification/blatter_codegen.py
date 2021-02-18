@@ -3,27 +3,36 @@ import sympy as sp
 
 func_template = "Vector2 {name}({arguments})"
 
-def declare(name, args):
-    arguments = ", ".join(["double " + x for x in args])
+return_template = """  return {{
+    {},
+    {}
+  }};"""
+
+def join(args):
+    return ", ".join(["double " + x for x in args])
+
+def print_var(var, name):
+    print("  double " + sp.ccode(var, assign_to=name, standard="c99"))
+
+def print_header(name, args):
     print("")
-    print((func_template + ";").format(arguments=arguments, name=name))
+    print((func_template + " {{").format(name=name, arguments=join(args)))
+
+def declare(name, args):
+    print("")
+    print((func_template + ";").format(name=name, arguments=join(args)))
 
 def define(f_u, f_v, name, args):
-    arguments = ", ".join(["double " + x for x in args])
-
     print("")
-    print(func_template.format(arguments=arguments, name=name))
-
+    print(func_template.format(name=name, arguments=join(args)))
     print("{")
 
     tmps, (u, v) = sp.cse([f_u, f_v])
 
     for variable, value in tmps:
-        print("  double " + sp.ccode(value, assign_to=variable))
+        print_var(value, variable)
 
-    print("  return {")
-    print("    {},".format(sp.ccode(u, standard="c99")))
-    print("    {}".format(sp.ccode(v, standard="c99")))
-    print("  };")
+    print(return_template.format(sp.ccode(u, standard="c99"),
+                                 sp.ccode(v, standard="c99")))
 
     print("}")
