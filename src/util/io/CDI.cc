@@ -175,21 +175,21 @@ void CDI::def_t_dim(const std::string &name, size_t length) const {
 }
 
 void CDI::wrapup_def_dim() const {
-	pDefDim pFn = def_t_dim;
-	pvcDefDim.push_back(pDefDim);
-	pDefDim pFn = def_x_dim;
-	pvcDefDim.push_back(pDefDim);
-	pDefDim pFn = def_y_dim;
-	pvcDefDim.push_back(pDefDim);
-	pDefDim pFn = def_z_dim;
-	pvcDefDim.push_back(pDefDim);
+        pDefDim pFn = &CDI::def_t_dim;
+	pvcDefDim.push_back(pFn);
+	pFn = &CDI::def_x_dim;
+	pvcDefDim.push_back(pFn);
+	pFn = &CDI::def_y_dim;
+	pvcDefDim.push_back(pFn);
+	pFn = &CDI::def_z_dim;
+	pvcDefDim.push_back(pFn);
 }
 
 void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 	if (m_vlistID == -1) m_vlistID = vlistCreate();
 
 	if (!m_gridexist) {
-		if (dim!=-1) pvcDefDim[dim](name, length);
+		if (dim != -1) (this->*(pvcDefDim[dim]))(name, length);
 //		def_main_dim(name, length);
 		if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 	} else {

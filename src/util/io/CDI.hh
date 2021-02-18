@@ -164,8 +164,8 @@ private:
 	void def_z_dim(const std::string &name, size_t length) const;
 	void def_t_dim(const std::string &name, size_t length) const;
 	void wrapup_def_dim() const;
-	typedef void(*pDefDim)(std::string&, size_t);
-	std::vector<pDefDim> pvcDefDim;
+	typedef void(CDI::*pDefDim)(const std::string&, size_t) const;
+	mutable std::vector<pDefDim> pvcDefDim;
 };
 }
 }
