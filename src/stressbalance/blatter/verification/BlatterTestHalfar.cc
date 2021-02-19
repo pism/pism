@@ -143,21 +143,20 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 
+    double F = 0.0;
+    if (x[q] > 0.0) {
+      // this lateral BC is not defined at the left (x = 0) boundary
+      F = blatter_xz_halfar_source_lateral(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B).u;
+    }
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
-
-      double F = 0.0;
-      if (x[q] > 0.0) {
-        // this lateral BC is not defined at the left (x = 0) boundary
-        F = blatter_xz_halfar_source_lateral(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B).u;
-      }
 
       residual[t] += W * psi * F * N;
     }
   }
 }
-
 
 /*!
  * Top surface contribution to the residual.
@@ -166,7 +165,7 @@ void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
                                          const fem::Q1Element3Face &face,
                                          Vector2 *residual) {
 
-  // compute x and z coordinates of quadrature points
+  // compute x coordinates of quadrature points
   double
     *x = m_work[0];
   {
