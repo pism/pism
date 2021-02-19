@@ -338,10 +338,11 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
 	// write dimensions values if not done yet
+	int dim = m_dimsAxis[variable_name];
 	if (!m_gridexist) (this->*(pvcPutDim[dim]))(variable_name, op);
 	// if variable_name is a dimension, return
 	if (m_dimsAxis.count(variable_name))
-		return
+		return;
     // write scalar
     int ndims = static_cast<int>(start.size());
     int idxlen=1, j;

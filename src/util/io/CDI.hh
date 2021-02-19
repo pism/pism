@@ -174,12 +174,12 @@ private:
 	void wrapup_inq_dimlen() const;
 	typedef unsigned int(CDI::*pInqDimlen)(const std::string&) const;
 	mutable std::vector<pInqDimlen> pvcInqDimlen;
-	void CDI::put_dim_x(const std::string &variable_name, const double *op) const;
-	void CDI::put_dim_y(const std::string &variable_name, const double *op) const;
-	void CDI::put_dim_z(const std::string &variable_name, const double *op) const;
-	void CDI::wrapup_put_dim() const;
+	void put_dim_x(const std::string &variable_name, const double *op) const;
+	void put_dim_y(const std::string &variable_name, const double *op) const;
+	void put_dim_z(const std::string &variable_name, const double *op) const;
+	void wrapup_put_dim() const;
 	typedef void(CDI::*pPutDim)(const std::string&, const double *) const;
-	mutable std::vector<pInqDimlen> pvcPutDim;
+	mutable std::vector<pPutDim> pvcPutDim;
 };
 }
 }
