@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -71,8 +71,11 @@ private:
   // ratio of surface elevation to ice thickness
   double m_alpha;
 
-  // just a constant used to simplify formulas (see the code for the definition)
-  double m_C;
+  // ice density
+  double m_rho_ice;
+
+  // gravitational acceleration
+  double m_g;
 };
 
 } // end of namespace stressbalance

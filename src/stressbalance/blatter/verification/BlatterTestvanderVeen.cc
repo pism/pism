@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,7 +51,9 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   // s = alpha * H, where s is surface elevation and H ice thickness
   m_alpha = 1.0;
 
-  m_C = pow(m_alpha * m_rho_ice_g / (4.0 * m_B), 3.0);
+  m_rho_ice = m_config->get_number("constants.ice.density");
+
+  m_g = m_config->get_number("constants.standard_gravity");
 }
 
 bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
@@ -70,12 +72,12 @@ Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
 
 Vector2 BlatterTestvanderVeen::u_exact(double x) const {
   double Q0 = m_H0 * m_V0;
-  return { Q0 / H_exact(x), 0.0 };
+  return blatter_xz_vanderveen_exact(x, m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 }
 
 double BlatterTestvanderVeen::H_exact(double x) const {
   double Q0 = m_H0 * m_V0;
-  return pow(4 * m_C * x / Q0 + pow(m_H0, -4), -1.0 / 4.0);
+  return blatter_xz_vanderveen_thickness(x, m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 }
 
 double BlatterTestvanderVeen::b_exact(double x) const {
@@ -83,12 +85,8 @@ double BlatterTestvanderVeen::b_exact(double x) const {
 }
 
 double BlatterTestvanderVeen::beta_exact(double x) const {
-  double
-    H  = H_exact(x),
-    Q0 = m_H0 * m_V0;
-
-  return 2 * m_B * pow(m_C, 4.0 / 3.0) * (m_alpha - 1) * pow(H, 7) /
-    (Q0 * sqrt(pow(m_C, 2) * pow(m_alpha - 1, 2) * pow(H, 10) + pow(Q0, 2)));
+  double Q0 = m_H0 * m_V0;
+  return blatter_xz_vanderveen_beta(x, m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 }
 
 void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
@@ -100,6 +98,8 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
   (void) surface_nodal;
   (void) sl_nodal;
   (void) z_nodal;
+
+  double Q0 = m_H0 * m_V0;
 
   // compute x coordinates of quadrature points
   double *x = m_work[0];
@@ -116,16 +116,16 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
-    auto N3 = face.normal(q);
-    Vector2 N = {N3.x, N3.y};
 
-    double F = m_rho_ice_g * m_alpha * H_exact(x[q]);
+    // the normal direction (1, 0, 0) is hard-wired here
+    auto F = blatter_xz_vanderveen_source_lateral(x[q], m_alpha, m_H0, Q0,
+                                                  m_rho_ice, m_g, m_B);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F * N;
+      residual[t] += - W * psi * F;
     }
   }
 }
