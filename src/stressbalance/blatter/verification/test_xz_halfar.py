@@ -2,13 +2,7 @@ import sympy as sp
 from sympy import S
 
 from blatter import x, y, z, B, source_term, eta, M
-from blatter_codegen import define, declare
-
-return_template = """
-  return {{
-    {},
-    {}
-  }};"""
+from blatter_codegen import define, declare, print_header, print_var, print_footer
 
 sp.var("R_0 H_0 rho_i g C_0 C_1 C_2", positive=True)
 h = sp.Function("h", positive=True)(x)
@@ -34,7 +28,7 @@ N = sp.Matrix([nx, ny, nz])
 # Glen exponents n
 n = 3
 
-def parameters():
+def constants():
     # s = 1 corresponds to t = t_0
     s = 1
 
@@ -83,22 +77,10 @@ def print_code(header=False):
         declare(name="blatter_xz_halfar_source_surface", args=["x"] + constants)
         return
 
-    definitions = parameters()
-
     print_exact(coords + constants)
     print_source(coords + constants)
     print_source_lateral(coords + constants)
     print_source_surface(["x"] + constants)
-
-def print_var(var, name):
-    print("  double " + sp.ccode(var, assign_to=name))
-
-def print_header(suffix, args):
-    arguments = ", ".join(["double " + x for x in args])
-
-    print("")
-    print("Vector2 blatter_xz_halfar_{suffix}({args}) {{".format(suffix=suffix,
-                                                                 args=arguments))
 
 def print_source_surface(args):
     "Print the code computing the extra term at the top surface"
@@ -113,17 +95,17 @@ def print_source_surface(args):
     U_x = u0.diff(x).subs(subs)
     U_z = u0.diff(z).subs(subs)
 
-    print_header("source_surface", args)
+    print_header("blatter_xz_halfar_source_surface", args)
 
-    for key, value in parameters().items():
+    for key, value in constants().items():
         print_var(value, key)
     print_var(H(x), h0)
     print_var(h0, z)
     print_var(H(x).diff(x), h_x)
     print_var(H(x).diff(x, 2), h_xx)
     print_var(U_x, u_x)
-    print(return_template.format(sp.ccode(f_top), 0.0))
-    print("}")
+
+    print_footer(f_top, 0.0)
 
 def print_source_lateral(args):
     "Print the code computing the extra term at the right boundary"
@@ -136,9 +118,9 @@ def print_source_lateral(args):
     U_x = u0.diff(x).subs(subs)
     U_z = u0.diff(z).subs(subs)
 
-    print_header("source_lateral", args)
+    print_header("blatter_xz_halfar_source_lateral", args)
 
-    for key, value in parameters().items():
+    for key, value in constants().items():
         print_var(value, key)
     print_var(H(x), h0)
     print_var(H(x).diff(x), h_x)
@@ -146,23 +128,21 @@ def print_source_lateral(args):
     print_var(U_x, u_x)
     print_var(U_z, u_z)
 
-    print(return_template.format(sp.ccode(f_lat), 0.0))
-    print("}")
+    print_footer(f_lat, 0.0)
 
 def print_exact(args):
     u0, v0 = u_exact()
 
     u0 = u0.subs(subs)
 
-    print_header("exact", args)
+    print_header("blatter_xz_halfar_exact", args)
 
-    for key, value in parameters().items():
+    for key, value in constants().items():
         print_var(value, key)
     print_var(H(x), h0)
     print_var(H(x).diff(x), h_x)
 
-    print(return_template.format(sp.ccode(u0), v0))
-    print("}")
+    print_footer(u0, v0)
 
 def print_source(args):
     f, _ = source_term(eta(u, v, 3), u, v)
@@ -173,9 +153,9 @@ def print_source(args):
     U_x = u0.diff(x).subs(subs)
     U_z = u0.diff(z).subs(subs)
 
-    print_header("source", args)
+    print_header("blatter_xz_halfar_source", args)
 
-    for key, value in parameters().items():
+    for key, value in constants().items():
         print_var(value, key)
     print_var(H(x), h0)
     print_var(H(x).diff(x), h_x)
@@ -186,5 +166,4 @@ def print_source(args):
     print_var(U_x.diff(z), u_xz)
     print_var(U_z.diff(z), u_zz)
 
-    print(return_template.format(sp.ccode(f), 0.0))
-    print("}")
+    print_footer(f, 0.0)

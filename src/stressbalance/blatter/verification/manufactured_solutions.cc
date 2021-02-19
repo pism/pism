@@ -123,7 +123,6 @@ Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, doub
   double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
   double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
   double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
-
   return {
     -C_2*pow(h_x, 3)*(pow(h0, 4) - pow(h0 - z, 4)),
     0
@@ -142,7 +141,6 @@ Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, dou
   double u_xx = 0;
   double u_xz = -12*C_2*pow(h_x, 4)*pow(h0 - z, 2) - 12*C_2*pow(h_x, 2)*h_xx*pow(h0 - z, 3);
   double u_zz = 12*C_2*pow(h_x, 3)*pow(h0 - z, 2);
-
   return {
     2*B*u_x*(-2.0/3.0*u_x*u_xx - 1.0/6.0*u_xz*u_z)/pow(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2), 4.0/3.0) + 2*B*u_xx/cbrt(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2)) + (1.0/2.0)*B*u_z*(-2.0/3.0*u_x*u_xz - 1.0/6.0*u_z*u_zz)/pow(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2), 4.0/3.0) + (1.0/2.0)*B*u_zz/cbrt(pow(u_x, 2) + (1.0/4.0)*pow(u_z, 2)),
     0.0
@@ -158,7 +156,6 @@ Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double 
   double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
   double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
   double u_z = -4*C_2*pow(h_x, 3)*pow(h0 - z, 3);
-
   return {
     2*pow(2, 2.0/3.0)*B*u_x/cbrt(4*pow(u_x, 2) + pow(u_z, 2)),
     0.0
@@ -174,7 +171,6 @@ Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, doubl
   double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
   double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
   double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
-
   return {
     -2*B*h_x*u_x/(sqrt(pow(h_x, 2) + 1)*cbrt(pow(u_x, 2))),
     0.0
