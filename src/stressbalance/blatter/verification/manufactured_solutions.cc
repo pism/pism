@@ -181,4 +181,42 @@ Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, doubl
   };
 }
 
+double blatter_xz_vanderveen_thickness(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+  double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  return pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
+}
+
+Vector2 blatter_xz_vanderveen_exact(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+  double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
+  return {
+    Q_0/thickness,
+    0
+  };
+}
+
+Vector2 blatter_xz_vanderveen_source_lateral(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+  double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
+  return {
+    2*B*cbrt(C)*thickness,
+    0.0
+  };
+}
+
+Vector2 blatter_xz_vanderveen_source_surface(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+  double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
+  return {
+    2*B*pow(C, 4.0/3.0)*alpha*pow(thickness, 6)/sqrt(pow(C, 2)*pow(alpha, 2)*pow(thickness, 10) + pow(Q_0, 2)),
+    0.0
+  };
+}
+
+double blatter_xz_vanderveen_beta(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+  double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
+  double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
+  return 2*B*pow(C, 4.0/3.0)*pow(thickness, 7)*(alpha - 1)/(Q_0*sqrt(pow(C, 2)*pow(thickness, 10)*pow(alpha - 1, 2) + pow(Q_0, 2)));
+}
+
 } // end of namespace pism
