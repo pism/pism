@@ -148,13 +148,13 @@ void CDI::def_t_dim(const std::string &name, size_t length) const {
 }
 
 void CDI::wrapup_def_dim() const {
-    pDefDim pFn = &CDI::def_t_dim;
-	pvcDefDim.push_back(pFn);
-	pFn = &CDI::def_x_dim;
+    pDefDim pFn = &CDI::def_x_dim;
 	pvcDefDim.push_back(pFn);
 	pFn = &CDI::def_y_dim;
 	pvcDefDim.push_back(pFn);
 	pFn = &CDI::def_z_dim;
+	pvcDefDim.push_back(pFn);
+	pFn = &CDI::def_t_dim;
 	pvcDefDim.push_back(pFn);
 }
 
@@ -221,13 +221,13 @@ unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const {
 }
 
 void CDI::wrapup_inq_dimlen() const {
-    pInqDimlen pFn = &CDI::inq_dimlen_t;
-	pvcInqDimlen.push_back(pFn);
-	pFn = &CDI::inq_dimlen_x;
+    pInqDimlen pFn = &CDI::inq_dimlen_x;
 	pvcInqDimlen.push_back(pFn);
 	pFn = &CDI::inq_dimlen_y;
 	pvcInqDimlen.push_back(pFn);
 	pFn = &CDI::inq_dimlen_z;
+	pvcInqDimlen.push_back(pFn);
+	pFn = &CDI::inq_dimlen_t;
 	pvcInqDimlen.push_back(pFn);
 }
 
@@ -236,14 +236,17 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
 	result = (this->*(pvcInqDimlen[dim]))(dimension_name);
 }
 
+// inquire current timestep
 int CDI::inq_current_timestep() const {
 	return streamInqCurTimestepID(m_file_id) + 1;
 }
 
+// inquire time dimension name
 void CDI::inq_unlimdim_impl(std::string &result) const {
-	result = "time"; // limitation of CDI: cannot set time variable name
+	result = "time"; // limitation of CDI: cannot set time dimension name
 }
 
+// define variable
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
     // No need to define the dimensions as variables
     if (std::find(m_dims_name.begin(), m_dims_name.end(), name) != m_dims_name.end())
@@ -307,27 +310,38 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
     m_varsID[name] = varID;
 }
 
-void CDI::put_dims_double(const std::string &variable_name, const double *op) const {
-	if        (variable_name == "x") {
-                gridDefXvals(m_gridID, op);
-        } else if (variable_name == "y") {
-                gridDefYvals(m_gridID, op);
-        } else if (variable_name == "z") {
-                zaxisDefLevels(m_zID["z"], op);
-        } else if (variable_name == "zb") {
-                zaxisDefLevels(m_zbID, op);
-        }
+// write spatial dimensions
+void CDI::put_dim_x(const std::string &variable_name, const double *op) const {
+	gridDefXvals(m_gridID, op);
 }
 
+void CDI::put_dim_y(const std::string &variable_name, const double *op) const {
+	gridDefYvals(m_gridID, op);
+}
+
+void CDI::put_dim_z(const std::string &variable_name, const double *op) const {
+	zaxisDefLevels(m_zID[variable_name], op);
+}
+
+void CDI::wrapup_put_dim() const {
+	pPutDim pFn = &CDI::put_dim_x;
+	pvcPutDim.push_back(pFn);
+	pFn = &CDI::put_dim_y;
+	pvcPutDim.push_back(pFn);
+	pFn = &CDI::put_dim_z;
+	pvcPutDim.push_back(pFn);
+}
+
+// write spatial dimensions and scalars
 void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
 	// write dimensions values if not done yet
-	if (!m_gridexist) put_dims_double(variable_name, op);
+	if (!m_gridexist) (this->*(pvcPutDim[dim]))(variable_name, op);
 	// if variable_name is a dimension, return
-	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
-        return;
+	if (m_dimsAxis.count(variable_name))
+		return
     // write scalar
     int ndims = static_cast<int>(start.size());
     int idxlen=1, j;
@@ -343,10 +357,12 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
     streamWriteVarPart(m_file_id, varid, op, nmiss, decomp);
 }
 
+// inquire number of variables
 void CDI::inq_nvars_impl(int &result) const {
 	result = m_varsID.size();
 }
 
+// inquire variable dimensions
 void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
 	int varID = m_varsID[variable_name];
 	int type = 0;
@@ -389,6 +405,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 	}
 }
 
+// inquire variable number of attributes
 void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const {
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
@@ -399,10 +416,12 @@ void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const
 	cdiInqNatts(m_vlistID, varID, &result);
 }
 
+// inquire variable ID
 void CDI::inq_varid_impl(const std::string &variable_name, bool &exists) const {
 	exists = m_varsID.count(variable_name) > 0;
 }
 
+// inquire variable name
 void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
       for (auto &i : m_varsID) {
           if (i.second == j) {
@@ -412,7 +431,7 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
       }
 }
 
-// att
+// delete variable attribute
 void CDI::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
@@ -423,6 +442,7 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 	cdiDelAtt(m_vlistID, varID, att_name.c_str());
 }
 
+// write variable attribute
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
 	if (!m_firststep) return;
 	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
