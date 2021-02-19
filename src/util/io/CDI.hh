@@ -167,6 +167,7 @@ private:
 	void wrapup_def_dim() const;
 	typedef void(CDI::*pDefDim)(const std::string&, size_t) const;
 	mutable std::vector<pDefDim> pvcDefDim;
+
 	unsigned int inq_dimlen_t(const std::string &dimension_name) const;
 	unsigned int inq_dimlen_x(const std::string &dimension_name) const;
 	unsigned int inq_dimlen_y(const std::string &dimension_name) const;
@@ -174,12 +175,24 @@ private:
 	void wrapup_inq_dimlen() const;
 	typedef unsigned int(CDI::*pInqDimlen)(const std::string&) const;
 	mutable std::vector<pInqDimlen> pvcInqDimlen;
+
 	void put_dim_x(const std::string &variable_name, const double *op) const;
 	void put_dim_y(const std::string &variable_name, const double *op) const;
 	void put_dim_z(const std::string &variable_name, const double *op) const;
 	void wrapup_put_dim() const;
 	typedef void(CDI::*pPutDim)(const std::string&, const double *) const;
 	mutable std::vector<pPutDim> pvcPutDim;
+	
+	void put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const;
+	void put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const;
+	void put_att_text_units_y_impl(const std::string &variable_name, const std::string &value) const;
+	void put_att_text_longname_y_impl(const std::string &variable_name, const std::string &value) const;
+	void put_att_text_units_z_impl(const std::string &variable_name, const std::string &value) const;
+	void put_att_text_longname_z_impl(const std::string &variable_name, const std::string &value) const;
+	void wrapup_put_att_text() const;
+	typedef void(CDI::*pPutAttT)(const std::string&, const std::string&) const;
+	mutable std::vector<std::vector<pPutAttT>> pvcPutAttT(3, std::vector<pPutAttT>(2));
+	mutable std::map<std::string,int> m_DimAtt;
 };
 }
 }
