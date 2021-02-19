@@ -51,25 +51,16 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 CDI::~CDI() {
 }
 
-void CDI::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
-	if (mode == PISM_READONLY) {
-        	m_file_id = streamOpenRead(fname.c_str());
-        	set_vlistID();
-        	map_varsID();
-	} else {
-	if (FileID == -1) {
-        	m_file_id = streamOpenAppend(fname.c_str());
-	} else {
-		m_file_id = FileID;
-	}
-        	m_vlistID = streamInqVlist(m_file_id);
-        	m_varsID = varsi;
-	}
+void CDI::open_impl(const std::string &fname, IO_Mode mode, 
+	                const std::map<std::string, int> &varsi, 
+	                int FileID,
+	                const std::map<std::string, int> &dimsa) {
+	// the file is already created and opened - restore file info into the class
+	m_file_id = FileID;
+   	m_vlistID = streamInqVlist(m_file_id);
+   	m_varsID = varsi;
+   	m_dimsAxis = dimsa;
 	m_firststep = false;
-}
-
-void CDI::set_vlistID() const {
-	m_vlistID = streamInqVlist(m_file_id);
 }
 
 void CDI::map_varsID() const {
@@ -111,7 +102,7 @@ std::vector<int> CDI::get_ncgridIDs_impl() const {
 
 void CDI::create_impl(const std::string &filename, int FileID) {
         if (FileID == -1) {
-		m_file_id = streamOpenWrite(filename.c_str(), CDI_FILETYPE_NC2);
+			m_file_id = streamOpenWrite(filename.c_str(), CDI_FILETYPE_NC2);
         	m_firststep = true;
         } else {
         	m_file_id = FileID;
@@ -122,60 +113,40 @@ void CDI::create_impl(const std::string &filename, int FileID) {
 void CDI::close_impl() {
 	m_file_id = -1;
 	m_varsID.clear();
+	m_dimsAxis.clear();
+	m_zID.clear();
 }
 
-void CDI::def_main_dim(const std::string &name, size_t length) const {
-		if        (name == "x") {
-                gridDefXsize(m_gridID, (int)length);
-                gridDefXname(m_gridID, name.c_str());
-                m_dims_name.push_back(name);
-        } else if (name == "y") {
-                gridDefYsize(m_gridID, (int)length);
-                gridDefYname(m_gridID, name.c_str());
-                m_dims_name.push_back(name);
-        } else if (name == "z" && m_zID==-1) {
-                m_zID = zaxisCreate(ZAXIS_GENERIC, (int)length);
-                zaxisDefName(m_zID,name.c_str());
-                m_dims_name.push_back(name);
-        } else if (name == "zb" && m_zbID==-1) {
-                m_zbID = zaxisCreate(ZAXIS_GENERIC, (int)length);
-                zaxisDefName(m_zbID,name.c_str());
-                m_dims_name.push_back(name);
-        } else if (name == "time" && m_tID==-1) {
-                m_tID = taxisCreate(TAXIS_ABSOLUTE);
-				taxisDefCalendar(m_tID, CALENDAR_365DAYS);
-                vlistDefTaxis(m_vlistID, m_tID);
-                m_dims_name.push_back(name);
-        }
-}
-
+// wrapup def_dim_impl function
 void CDI::def_x_dim(const std::string &name, size_t length) const {
     gridDefXsize(m_gridID, (int)length);
     gridDefXname(m_gridID, name.c_str());
-    m_dims_name.push_back(name);
 }
 
 void CDI::def_y_dim(const std::string &name, size_t length) const {
     gridDefYsize(m_gridID, (int)length);
     gridDefYname(m_gridID, name.c_str());
-    m_dims_name.push_back(name);
 }
 
 void CDI::def_z_dim(const std::string &name, size_t length) const {
-    m_zID = zaxisCreate(ZAXIS_GENERIC, (int)length);
-    zaxisDefName(m_zID,name.c_str());
-    m_dims_name.push_back(name);
+	// define z axis only if it's new
+	if (!m_zID.count(name)) {
+	    m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
+    	zaxisDefName(m_zID,name.c_str());
+    }
 }
 
 void CDI::def_t_dim(const std::string &name, size_t length) const {
-	m_tID = taxisCreate(TAXIS_ABSOLUTE);
-	taxisDefCalendar(m_tID, CALENDAR_365DAYS);
-    vlistDefTaxis(m_vlistID, m_tID);
-    m_dims_name.push_back(name);
+	// define time axis if it was not done before
+	if (m_tID == -1) {
+		m_tID = taxisCreate(TAXIS_ABSOLUTE);
+		taxisDefCalendar(m_tID, CALENDAR_365DAYS);
+    	vlistDefTaxis(m_vlistID, m_tID);
+	}
 }
 
 void CDI::wrapup_def_dim() const {
-        pDefDim pFn = &CDI::def_t_dim;
+    pDefDim pFn = &CDI::def_t_dim;
 	pvcDefDim.push_back(pFn);
 	pFn = &CDI::def_x_dim;
 	pvcDefDim.push_back(pFn);
@@ -189,22 +160,21 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 	if (m_vlistID == -1) m_vlistID = vlistCreate();
 
 	if (!m_gridexist) {
-		if (dim != -1) (this->*(pvcDefDim[dim]))(name, length);
-//		def_main_dim(name, length);
+		if (dim != -1) {
+			(this->*(pvcDefDim[dim]))(name, length);
+			m_dimsAxis[name] = dim;
+		}
 		if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 	} else {
 		if (!m_istimedef) {
-			m_dims_name.push_back("x");
-			m_dims_name.push_back("y");
-			m_dims_name.push_back("z");
-			m_dims_name.push_back("zb");
-			m_dims_name.push_back("time");
 			if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
 			m_istimedef = true;
 		}
 	}
 }
 
+// define reference date
+// TODO support other calendars
 double CDI::year_gregorian(double time) const {
 	return -time / 365 / 24 / 60 / 60;
 }
@@ -226,30 +196,42 @@ void CDI::def_ref_date_impl(double time) const {
 	taxisDefVtime(m_tID, daytime);
 }
 
+// inquire if a dimension exists
 void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const {
-	if        (dimension_name == "x" || dimension_name == "y") {
-		exists = m_gridID != -1 ? true : false;
-	} else if (dimension_name == "z") {
-		exists = m_zID != -1 ? true : false;
-	} else if (dimension_name == "zb") {
-		exists = m_zbID != -1 ? true : false;
-	} else if (dimension_name == "time") {
-		exists = m_tID != -1 ? true : false;
-	}
+	exists = m_dimsAxis.count(dimension_name) ? true : false;
+}
+
+// wrapup inq_dimlen_impl function
+unsigned int CDI::inq_dimlen_x(const std::string &dimension_name) const {
+	return gridInqXsize(m_gridID);
+}
+
+unsigned int CDI::inq_dimlen_y(const std::string &dimension_name) const {
+	return gridInqYsize(m_gridID);
+}
+
+unsigned int CDI::inq_dimlen_z(const std::string &dimension_name) const {
+	return zaxisInqSize(m_zID[dimension_name]);
+}
+
+unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const {
+	return inq_current_timestep() + 1;
+}
+
+void CDI::wrapup_inq_dimlen() const {
+    pInqDimlen pFn = &CDI::inq_dimlen_t;
+	pvcInqDimlen.push_back(pFn);
+	pFn = &CDI::inq_dimlen_x;
+	pvcInqDimlen.push_back(pFn);
+	pFn = &CDI::inq_dimlen_y;
+	pvcInqDimlen.push_back(pFn);
+	pFn = &CDI::inq_dimlen_z;
+	pvcInqDimlen.push_back(pFn);
 }
 
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
-	if        (dimension_name == "x") {
-		result = gridInqXsize(m_gridID);
-	} else if (dimension_name == "y") {
-		result = gridInqYsize(m_gridID);
-	} else if (dimension_name == "z") {
-		result = zaxisInqSize(m_zID);
-	} else if (dimension_name == "zb") {
-		result = zaxisInqSize(m_zbID);
-	} else if (dimension_name == "time") {
-		result = inq_current_timestep() + 1;
-	}
+	int dim = m_dimsAxis[dimension_name];
+	result = (this->*(pvcInqDimlen[dim]))(dimension_name);
 }
 
 int CDI::inq_current_timestep() const {

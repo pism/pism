@@ -155,10 +155,12 @@ private:
 	double year_gregorian(double time) const;
 	long int day_gregorian(double nyearsf) const;
 	void put_dims_double(const std::string &variable_name, const double *op) const;
-	void set_vlistID() const;
 	void map_varsID() const;
 	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
+	mutable std::map<std::string,int> m_dimsAxis;
+	mutable std::map<std::string,int> m_zID;
 
+	// functions wrappers
 	void def_x_dim(const std::string &name, size_t length) const;
 	void def_y_dim(const std::string &name, size_t length) const;
 	void def_z_dim(const std::string &name, size_t length) const;
@@ -166,6 +168,14 @@ private:
 	void wrapup_def_dim() const;
 	typedef void(CDI::*pDefDim)(const std::string&, size_t) const;
 	mutable std::vector<pDefDim> pvcDefDim;
+	unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const;
+	unsigned int CDI::inq_dimlen_x(const std::string &dimension_name) const;
+	unsigned int CDI::inq_dimlen_y(const std::string &dimension_name) const;
+	unsigned int CDI::inq_dimlen_z(const std::string &dimension_name) const;
+	void CDI::wrapup_inq_dimlen() const;
+	typedef unsigned int(CDI::*pInqDimlen)(const std::string&) const;
+	mutable std::vector<pInqDimlen> pvcInqDimlen;
+	
 };
 }
 }
