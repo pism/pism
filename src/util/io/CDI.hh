@@ -191,7 +191,7 @@ private:
 	void put_att_text_longname_z_impl(const std::string &variable_name, const std::string &value) const;
 	void wrapup_put_att_text() const;
 	typedef void(CDI::*pPutAttT)(const std::string&, const std::string&) const;
-	mutable std::vector<std::vector<pPutAttT>> pvcPutAttT(3, std::vector<pPutAttT>(2));
+	mutable std::vector<std::vector<pPutAttT>> pvcPutAttT;
 	mutable std::map<std::string,int> m_DimAtt;
 };
 }

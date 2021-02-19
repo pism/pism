@@ -487,12 +487,19 @@ void CDI::put_att_text_longname_z_impl(const std::string &variable_name, const s
 void CDI::wrapup_put_att_text() const {
 	m_DimAtt["units"] = 0;
 	m_DimAtt["long_name"] = 1;
-	pvcPutAttT[0][0] = &CDI::put_att_text_units_x_impl;
-	pvcPutAttT[0][1] = &CDI::put_att_text_longname_x_impl;
-	pvcPutAttT[1][0] = &CDI::put_att_text_units_y_impl;
-	pvcPutAttT[1][1] = &CDI::put_att_text_longname_y_impl;
-	pvcPutAttT[2][0] = &CDI::put_att_text_units_z_impl;
-	pvcPutAttT[2][1] = &CDI::put_att_text_longname_z_impl;
+	std::vector<pPutAttT> pvc;
+	pvc.push_back(&CDI::put_att_text_units_x_impl);
+	pvc.push_back(&CDI::put_att_text_longname_x_impl);
+	pvcPutAttT.push_back(pvc);
+        pvc.clear();
+	pvc.push_back(&CDI::put_att_text_units_y_impl);
+	pvc.push_back(&CDI::put_att_text_longname_y_impl);
+	pvcPutAttT.push_back(pvc);
+        pvc.clear();
+	pvc.push_back(&CDI::put_att_text_units_z_impl);
+	pvc.push_back(&CDI::put_att_text_longname_z_impl);
+	pvcPutAttT.push_back(pvc);
+        pvc.clear();
 }
 
 void CDI::put_att_text_impl(const std::string &variable_name,
