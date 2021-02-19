@@ -50,6 +50,11 @@ public:
 private:
   bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
+  bool marine_boundary(int face,
+                       const int *node_type,
+                       const double *ice_bottom,
+                       const double *sea_level);
+
   Vector2 u_bc(double x, double y, double z) const;
 
   void residual_lateral(const fem::Q1Element3 &element,

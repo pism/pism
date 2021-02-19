@@ -18,6 +18,7 @@
 */
 
 #include "BlatterTestvanderVeen.hh"
+#include "pism/util/node_types.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
 
@@ -60,7 +61,30 @@ bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
                                            const fem::Element3::GlobalIndex& I) {
   (void) info;
   // use Dirichlet BC at x == 0
-  return I.i == 0 or I.i == info.mx - 1;
+  return I.i == 0;
+}
+
+bool BlatterTestvanderVeen::marine_boundary(int face,
+                                            const int *node_type,
+                                            const double *ice_bottom,
+                                            const double *sea_level) {
+  // Ignore sea level and ice bottom elevation:
+  (void) ice_bottom;
+  (void) sea_level;
+
+  auto nodes = fem::q13d::incident_nodes[face];
+
+  // number of nodes per face
+  int N = 4;
+
+  // exclude faces that contain at least one node that is not a part of the boundary
+  for (int n = 0; n < N; ++n) {
+    if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
