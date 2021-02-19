@@ -443,77 +443,73 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 	cdiDelAtt(m_vlistID, varID, att_name.c_str());
 }
 
-// write variable attribute
+// write variable attribute (double)
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
 	if (!m_firststep) return;
-	if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
-    	{
-        	return;
-    	}
+	// if variable_name is a dimension, return
+	if (m_dimsAxis.count(variable_name))
+		return;
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
 	} else {
 		varID = m_varsID[variable_name];
 	}
-	int type = vlistInqVarDatatype(m_vlistID,varID);
-	if (type != CDI_DATATYPE_FLT32 && type != CDI_DATATYPE_FLT64) {
-		type = CDI_DATATYPE_FLT32;
-	}
+	int type = pism_type_to_cdi_type(nctype);
 	cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), type, data.size(), &data[0]);
 }
 
-void CDI::put_att_text_x_impl(const std::string &att_name,
-                                const std::string &value) const {
-	if (att_name == "units") {
-		gridDefXunits(m_gridID, value.c_str());
-	} else if (att_name == "long_name") {
-		gridDefXlongname(m_gridID, value.c_str());
-	}
+// write dimension attribute (text)
+void CDI::put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const {
+	gridDefXunits(m_gridID, value.c_str());
 }
 
-void CDI::put_att_text_y_impl(const std::string &att_name,
-                                const std::string &value) const {
-	if (att_name == "units") {
-                gridDefYunits(m_gridID, value.c_str());
-        } else if (att_name == "long_name") {
-                gridDefYlongname(m_gridID, value.c_str());
-        } 
+void CDI::put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const {
+	gridDefXlongname(m_gridID, value.c_str());
 }
 
-void CDI::put_att_text_z_impl(int zaxisID, const std::string &att_name,
-                                const std::string &value) const {
-	if (att_name == "units") {
-		zaxisDefUnits(zaxisID, value.c_str());
-	} else if (att_name == "long_name") {
-		zaxisDefLongname(zaxisID, value.c_str());
-	}
+void CDI::put_att_text_units_y_impl(const std::string &variable_name, const std::string &value) const {
+	gridDefYunits(m_gridID, value.c_str());
 }
 
-void CDI::put_att_text_dims_impl(const std::string &variable_name,
-                                const std::string &att_name,
-                                const std::string &value) const {
-	if (variable_name == "x") {
-		put_att_text_x_impl(att_name, value);
-	} else if (variable_name == "y") {
-		put_att_text_y_impl(att_name, value);
-	} else if (variable_name == "z") {
-		put_att_text_z_impl(m_zID["z"], att_name, value);
-	} else if (variable_name == "zb") {
-		put_att_text_z_impl(m_zbID, att_name, value);
-	}
+void CDI::put_att_text_longname_y_impl(const std::string &variable_name, const std::string &value) const {
+	gridDefYlongname(m_gridID, value.c_str());
+}
+
+void CDI::put_att_text_units_z_impl(const std::string &variable_name, const std::string &value) const {
+	zaxisDefUnits(m_zID[variable_name], value.c_str());
+}
+
+void CDI::put_att_text_longname_z_impl(const std::string &variable_name, const std::string &value) const {
+	zaxisDefLongname(m_zID[variable_name], value.c_str());
+}
+
+void CDI::wrapup_put_att_text() const {
+	m_DimAtt["units"] = 0;
+	m_DimAtt["long_name"] = 1;
+	pvcPutAttT[0][0] = &CDI::put_att_text_units_x_impl;
+	pvcPutAttT[0][1] = &CDI::put_att_text_longname_x_impl;
+	pvcPutAttT[1][0] = &CDI::put_att_text_units_y_impl;
+	pvcPutAttT[1][1] = &CDI::put_att_text_longname_y_impl;
+	pvcPutAttT[2][0] = &CDI::put_att_text_units_z_impl;
+	pvcPutAttT[2][1] = &CDI::put_att_text_longname_z_impl;
 }
 
 void CDI::put_att_text_impl(const std::string &variable_name,
                                 const std::string &att_name,
                                 const std::string &value) const {
 	if (!m_firststep) return;
+	// basic checks
 	if (value.empty() || att_name.empty()) return;
-    if (std::find(m_dims_name.begin(), m_dims_name.end(), variable_name) != m_dims_name.end())
-    {
-        put_att_text_dims_impl(variable_name, att_name, value);
+	// write dimension attribute
+    if (m_dimsAxis.count(variable_name)) {
+    	int dim = m_dimsAxis[variable_name];
+    	int att = m_DimAtt[att_name];
+    	(this->*(pvcPutAttT[dim][att]))(variable_name, value);
         return;
     }
+
+    // write variable attribute
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;
@@ -523,6 +519,7 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 	cdiDefAttTxt(m_vlistID, varID, att_name.c_str(), value.size(), value.c_str());
 }
 
+// inquire attribute type
 void CDI::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
                                IO_Type &result) const {
@@ -552,6 +549,7 @@ void CDI::inq_atttype_impl(const std::string &variable_name,
 	result = cdi_type_to_pism_type(cditype);
 }
 
+// inquire attribute name
 void CDI::inq_attname_impl(const std::string &variable_name,
                                unsigned int n,
                                std::string &result) const {
@@ -573,6 +571,7 @@ void CDI::inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *
 	cdiInqAtt(m_vlistID, varID, attnum, attname, atttype, attlen);
 }
 
+// get variable attribute (double)
 void CDI::get_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
                                   std::vector<double> &result) const {
@@ -607,6 +606,7 @@ void CDI::get_att_double_impl(const std::string &variable_name,
 	cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), cdilen, std::addressof(result[0]));
 }
 
+// get variable attribute (text)
 void CDI::get_att_text_impl(const std::string &variable_name, 
 						    const std::string &att_name, 
 						    std::string &result) const {
@@ -648,15 +648,18 @@ void CDI::get_att_text_impl(const std::string &variable_name,
   	}
 }
 
+// create main grid
 void CDI::create_grid_impl(int lengthx, int lengthy) const {
 	if (m_gridID ==-1) m_gridID = gridCreate(GRID_LONLAT, lengthx*lengthy);
 }
 
+// define timestep
 void CDI::define_timestep_impl(int tsID) const {
 	streamDefTimestep(m_file_id, tsID);
 	if (tsID==0) m_firststep = false;
 }
 
+// write variables
 void CDI::write_darray_impl(const std::string &variable_name,
                                    const IceGrid &grid,
                                    unsigned int z_count,
