@@ -53,13 +53,14 @@ CDI::~CDI() {
 
 void CDI::open_impl(const std::string &fname, IO_Mode mode, 
 	                const std::map<std::string, int> &varsi, 
-	                int FileID,
-	                const std::map<std::string, int> &dimsa) {
+	                int FileID//,
+	                //const std::map<std::string, int> &dimsa
+	                ) {
 	// the file is already created and opened - restore file info into the class
 	m_file_id = FileID;
    	m_vlistID = streamInqVlist(m_file_id);
    	m_varsID = varsi;
-   	m_dimsAxis = dimsa;
+   	//m_dimsAxis = dimsa;
 	m_firststep = false;
 }
 
@@ -80,14 +81,14 @@ void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
 		m_gridID = -1;
 		m_gridsID = -1;
 		m_tID = -1;
-		m_zID = -1;
+                // m_zID scalar deleted
 		m_zbID = -1;
 		m_zsID = -1;		
 	} else {
 		m_gridID = gridIDs[0];
 		m_gridsID = gridIDs[1];
 		m_tID = gridIDs[2];
-		m_zID = gridIDs[3];
+                // m_zID scalar deleted
 		m_zbID = gridIDs[4];
 		m_zsID = gridIDs[5];
 		m_gridexist = true;
@@ -95,7 +96,8 @@ void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
 }
 
 std::vector<int> CDI::get_ncgridIDs_impl() const {
-	std::vector<int> gridIDs{m_gridID, m_gridsID, m_tID, m_zID, m_zbID, m_zsID};
+        // m_zID scalar deleted
+	std::vector<int> gridIDs{m_gridID, m_gridsID, m_tID, m_zbID, m_zsID};
 	return gridIDs;
 }
 
@@ -132,7 +134,7 @@ void CDI::def_z_dim(const std::string &name, size_t length) const {
 	// define z axis only if it's new
 	if (!m_zID.count(name)) {
 	    m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
-    	zaxisDefName(m_zID,name.c_str());
+    	zaxisDefName(m_zID[name],name.c_str());
     }
 }
 
@@ -289,7 +291,7 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
 
     for (auto d : dims) {
         if        (d == "z") {
-            zaxisID = m_zID;
+            zaxisID = m_zID["z"];
         } else if (d == "zb") {
             zaxisID = m_zbID;
         } else if (d == "time" ) {
@@ -311,7 +313,7 @@ void CDI::put_dims_double(const std::string &variable_name, const double *op) co
         } else if (variable_name == "y") {
                 gridDefYvals(m_gridID, op);
         } else if (variable_name == "z") {
-                zaxisDefLevels(m_zID, op);
+                zaxisDefLevels(m_zID["z"], op);
         } else if (variable_name == "zb") {
                 zaxisDefLevels(m_zbID, op);
         }
@@ -351,7 +353,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 	int current_grid = vlistInqVarGrid(m_vlistID, varID);
 	if (current_grid == m_gridID) {
 		int current_z = vlistInqVarZaxis(m_vlistID, varID);
-		if (current_z == m_zID) {
+		if (current_z == m_zID["z"]) {
 			type = type + 2;
 		} else if (current_z == m_zbID) {
 			type = type + 4;
@@ -475,7 +477,7 @@ void CDI::put_att_text_dims_impl(const std::string &variable_name,
 	} else if (variable_name == "y") {
 		put_att_text_y_impl(att_name, value);
 	} else if (variable_name == "z") {
-		put_att_text_z_impl(m_zID, att_name, value);
+		put_att_text_z_impl(m_zID["z"], att_name, value);
 	} else if (variable_name == "zb") {
 		put_att_text_z_impl(m_zbID, att_name, value);
 	}

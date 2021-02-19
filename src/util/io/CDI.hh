@@ -128,7 +128,6 @@ protected:
 private:
 	mutable int m_gridID;
 	mutable int m_gridsID;
-	mutable int m_zID;
 	mutable int m_zbID;
 	mutable int m_zsID;
 	mutable int m_tID;
@@ -168,11 +167,11 @@ private:
 	void wrapup_def_dim() const;
 	typedef void(CDI::*pDefDim)(const std::string&, size_t) const;
 	mutable std::vector<pDefDim> pvcDefDim;
-	unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const;
-	unsigned int CDI::inq_dimlen_x(const std::string &dimension_name) const;
-	unsigned int CDI::inq_dimlen_y(const std::string &dimension_name) const;
-	unsigned int CDI::inq_dimlen_z(const std::string &dimension_name) const;
-	void CDI::wrapup_inq_dimlen() const;
+	unsigned int inq_dimlen_t(const std::string &dimension_name) const;
+	unsigned int inq_dimlen_x(const std::string &dimension_name) const;
+	unsigned int inq_dimlen_y(const std::string &dimension_name) const;
+	unsigned int inq_dimlen_z(const std::string &dimension_name) const;
+	void wrapup_inq_dimlen() const;
 	typedef unsigned int(CDI::*pInqDimlen)(const std::string&) const;
 	mutable std::vector<pInqDimlen> pvcInqDimlen;
 	
