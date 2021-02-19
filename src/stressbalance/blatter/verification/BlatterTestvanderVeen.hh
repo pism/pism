@@ -59,6 +59,10 @@ private:
                         const double *sl_nodal,
                         Vector2 *residual);
 
+  void residual_surface(const fem::Q1Element3 &element,
+                        const fem::Q1Element3Face &face,
+                        Vector2 *residual);
+
   // constant ice hardness
   double m_B;
 
