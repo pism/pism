@@ -33,6 +33,10 @@ config.set_number("stress_balance.blatter.Glen_exponent", 3.0)
 config.set_number("constants.ice.density", 910.0)
 config.set_number("constants.standard_gravity", 9.81)
 
+config_clean = PISM.DefaultConfig(ctx.com, "pism_config", "-config", ctx.unit_system)
+config_clean.init_with_default(ctx.log)
+config_clean.import_from(config)
+
 def expt(ns, errors):
     "Compute the convergence rate using a polynomial fit."
     return -np.polyfit(np.log(ns), np.log(errors), 1)[0]
@@ -69,7 +73,7 @@ class TestXY(TestCase):
 
     def tearDown(self):
         "Clear PETSc options"
-        config.set_number("flow_law.isothermal_Glen.ice_softness", self.A_old)
+        config.import_from(config_clean)
 
         self.opt.delValue("-bp_pc_type")
         self.opt.delValue("-bp_snes_monitor")
@@ -269,9 +273,6 @@ class TestXZ(TestCase):
         config.set_number("basal_resistance.pseudo_plastic.u_threshold",
                           PISM.util.convert(1.0, "m / s", "m / year"))
 
-        # save old ice softness
-        self.A_old = config.get_number("flow_law.isothermal_Glen.ice_softness")
-
         # set ice softness
         config.set_number("flow_law.isothermal_Glen.ice_softness",
                           PISM.util.convert(1e-16, "Pa-3 year-1", "Pa-3 s-1"))
@@ -286,10 +287,7 @@ class TestXZ(TestCase):
     def tearDown(self):
         "Clear PETSc options and configuration parameters"
 
-        config.set_number("flow_law.isothermal_Glen.ice_softness", self.A_old)
-        config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
-        # restore the default value
-        config.set_number("flow_law.Schoof_regularizing_velocity", 1.0)
+        config.import_from(config_clean)
 
         for k, v in self.opts.items():
             self.opt.delValue(k)
@@ -445,7 +443,8 @@ class TestXZ(TestCase):
 
         output_file("test-xz.html")
         f = figure(title = "Blatter-Pattyn stress balance: verification test XZ",
-                   x_axis_type="log", y_axis_type="log", x_axis_label="dx", y_axis_label="max error")
+                   x_axis_type="log", y_axis_type="log",
+                   x_axis_label="dx", y_axis_label="max error")
         f.scatter(dxs, norms)
         f.line(dxs, norms, legend_label="max error", line_width=2)
         f.line(dxs, fit, line_dash="dashed", line_color="red", line_width=2,
@@ -487,8 +486,7 @@ class TestCFBC(TestCase):
     def tearDown(self):
         "Clear PETSc options and configuration parameters"
 
-        # restore the default Glen exponent
-        config.set_number("stress_balance.blatter.Glen_exponent", 3.0)
+        config.import_from(config_clean)
 
         for k, v in self.opts.items():
             self.opt.delValue(k)
@@ -644,9 +642,131 @@ class TestCFBC(TestCase):
 
         show(f)
 
+class TestXZvanderVeen(TestCase):
+    def setUp(self):
+        self.opt = PISM.PETSc.Options()
+
+        self.opts = {"-bp_snes_monitor": "",
+                     "-bp_ksp_type": "cg",
+                     "-bp_pc_type": "gamg"}
+
+        for k, v in self.opts.items():
+            self.opt.setValue(k, v)
+
+    def tearDown(self):
+        for k in self.opts.keys():
+            self.opt.delValue(k)
+
+    def create_grid(self, Mx=201):
+        Lx = 1e5
+
+        # compute dx and set Ly so that dy == dx
+        dx = (2 * Lx) / (Mx - 1)
+        dy = dx
+
+        P = PISM.GridParameters(config)
+        P.horizontal_size_from_options()
+        P.Mx = Mx
+        P.My = 3
+        P.periodicity = PISM.Y_PERIODIC
+        P.Lx = Lx
+        P.x0 = 1.1 * Lx
+        P.Ly = dy
+        P.y0 = 0
+        P.registration = PISM.CELL_CORNER
+        P.z = PISM.DoubleVector([0, 1000])
+        P.ownership_ranges_from_options(ctx.com.size)
+
+        grid = PISM.IceGrid(ctx.ctx, P)
+
+        return grid
+
+    def compute(self, grid):
+        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc.set(0.0)
+
+        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy.set(0.0)
+
+        Mz = 2
+        coarsening_factor = 1
+        model = PISM.BlatterTestvanderVeen(grid, Mz, 1, coarsening_factor)
+
+        geometry = PISM.Geometry(grid)
+
+        # low enough to make it grounded
+        sea_level = -100.0
+
+        with PISM.vec.Access([geometry.ice_thickness, geometry.bed_elevation, tauc]):
+            for (i, j) in grid.points():
+                X = grid.x(i)
+                geometry.ice_thickness[i, j] = model.H_exact(X)
+                geometry.bed_elevation[i, j] = model.b_exact(X)
+                tauc[i, j] = model.beta_exact(X)
+
+        geometry.sea_level_elevation.set(sea_level)
+        geometry.ensure_consistency(0.0)
+
+        model.init()
+
+        inputs = PISM.StressBalanceInputs()
+        inputs.geometry = geometry
+        inputs.basal_yield_stress = tauc
+        inputs.enthalpy = enthalpy
+
+        model.update(inputs, True)
+
+        return model
+
+    def error_norm(self, Mx):
+        grid = self.create_grid(Mx)
+
+        model = self.compute(grid)
+
+        u_model = model.velocity_u_sigma().numpy()[1, :, :].mean(axis=1)
+        u_exact = [model.u_exact(t).u for t in grid.x()]
+
+        return np.max(np.fabs(u_model - u_exact))
+
+    def test_vanderveen(self):
+        "Check that the van der Veen flow line case converges"
+        C = 10
+        m = 2
+        N = 7
+
+        Mxs    = [C * 2**k + 1 for k in range(m, N)]
+        errors = [self.error_norm(Mx) for Mx in Mxs]
+
+        assert expt(Mxs, errors) >= 2.0
+
+    def plot(self):
+        C = 10
+        m = 2
+        N = 7
+        Mxs = [C * 2**k + 1 for k in range(m, N)]
+
+        try:
+            self.setUp()
+            errors = [self.error_norm(Mx) for Mx in Mxs]
+        finally:
+            self.tearDown()
+
+        p = np.polyfit(np.log(Mxs), np.log(errors), 1)
+        fit = np.exp(np.polyval(p, np.log(Mxs)))
+
+        from bokeh.plotting import figure, show, output_file
+        output_file("test-xz-van-der-Veen.html")
+        f = figure(title="BP stress balance: verification test XZ (van der Veen profile)",
+                   x_axis_type="log", y_axis_type="log",
+                   x_axis_label="Mx", y_axis_label="max error")
+        f.scatter(Mxs, errors)
+        f.line(Mxs, fit, legend_label=f"O(dx^{-p[0]:1.2f})")
+        show(f)
+
 if __name__ == "__main__":
 
     for test in [TestXY(),
                  TestXZ(),
-                 TestCFBC()]:
+                 TestXZvanderVeen()
+    ]:
         test.plot()
