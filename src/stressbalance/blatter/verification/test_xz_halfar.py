@@ -10,8 +10,9 @@ h = sp.Function("h", positive=True)(x)
 u = sp.Function("u")(x, z)
 v = S(0)
 u_y = S(0)
-sp.var("u_x u_xx u_z u_xz u_zz h0 h_x h_xx")
+sp.var("u_x u_xx u_z u_xz u_zz h0 h_x h_xx h_xxx")
 subs = {h.diff(x, 2): h_xx,
+        h.diff(x, 3): h_xxx,
         h.diff(x): h_x,
         h: h0,
         u.diff(x, 2): u_xx,
@@ -93,7 +94,6 @@ def print_source_surface(args):
     u0, _ = u_exact()
 
     U_x = u0.diff(x).subs(subs)
-    U_z = u0.diff(z).subs(subs)
 
     print_header("blatter_xz_halfar_source_surface", args)
 
@@ -150,8 +150,8 @@ def print_source(args):
 
     u0, _ = u_exact()
 
-    U_x = u0.diff(x).subs(subs)
-    U_z = u0.diff(z).subs(subs)
+    U_x = u0.diff(x)
+    U_z = u0.diff(z)
 
     print_header("blatter_xz_halfar_source", args)
 
@@ -160,10 +160,11 @@ def print_source(args):
     print_var(H(x), h0)
     print_var(H(x).diff(x), h_x)
     print_var(H(x).diff(x, 2), h_xx)
-    print_var(U_x, u_x)
-    print_var(U_z, u_z)
-    print_var(U_x.diff(x), u_xx)
-    print_var(U_x.diff(z), u_xz)
-    print_var(U_z.diff(z), u_zz)
+    print_var(H(x).diff(x, 3), h_xxx)
+    print_var(U_x.subs(subs), u_x)
+    print_var(U_z.subs(subs), u_z)
+    print_var(U_x.diff(x).subs(subs), u_xx)
+    print_var(U_x.diff(z).subs(subs), u_xz)
+    print_var(U_z.diff(z).subs(subs), u_zz)
 
     print_footer(f, 0.0)

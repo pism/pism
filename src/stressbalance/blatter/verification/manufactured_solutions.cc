@@ -136,9 +136,10 @@ Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, dou
   double h0 = C_0*pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 3.0/7.0);
   double h_x = -4.0/7.0*C_0*pow(C_1, 4.0/3.0)*cbrt(x)/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
   double h_xx = (4.0/147.0)*C_0*pow(C_1, 4.0/3.0)*(16*pow(C_1, 4.0/3.0)*pow(x, 2.0/3.0)/(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1) - 7/pow(x, 2.0/3.0))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
+  double h_xxx = -8.0/3087.0*C_0*(-168*pow(C_1, 8.0/3.0)/(cbrt(x)*(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1)) - 49*pow(C_1, 4.0/3.0)/pow(x, 5.0/3.0) + 352*pow(C_1, 4)*x/pow(pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) - 1, 2))/pow(-pow(C_1, 4.0/3.0)*pow(x, 4.0/3.0) + 1, 4.0/7.0);
   double u_x = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xx*(pow(h0, 4) - pow(h0 - z, 4));
   double u_z = -4*C_2*pow(h_x, 3)*pow(h0 - z, 3);
-  double u_xx = 0;
+  double u_xx = -C_2*pow(h_x, 3)*(4*pow(h0, 3)*h_xx + 12*pow(h0, 2)*pow(h_x, 2) - 12*pow(h_x, 2)*pow(h0 - z, 2) - 4*h_xx*pow(h0 - z, 3)) - 6*C_2*pow(h_x, 2)*h_xx*(4*pow(h0, 3)*h_x - 4*h_x*pow(h0 - z, 3)) - 3*C_2*pow(h_x, 2)*h_xxx*(pow(h0, 4) - pow(h0 - z, 4)) - 6*C_2*h_x*pow(h_xx, 2)*(pow(h0, 4) - pow(h0 - z, 4));
   double u_xz = -12*C_2*pow(h_x, 4)*pow(h0 - z, 2) - 12*C_2*pow(h_x, 2)*h_xx*pow(h0 - z, 3);
   double u_zz = 12*C_2*pow(h_x, 3)*pow(h0 - z, 2);
   return {
