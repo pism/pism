@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,8 @@ namespace pism {
 namespace stressbalance {
 
 /*!
- * Implements an X-Z flow line setup testing the implementation of lateral (ice margin) boundary conditions.
+ * Implements an X-Z flow line setup testing the implementation of lateral (ice margin)
+ * boundary conditions.
  */
 class BlatterTestCFBC : public Blatter {
 public:

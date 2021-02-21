@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -115,13 +115,13 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
-    auto F = -1.0 * blatter_xz_cfbc_surface(x[q], m_L, m_rho_i, m_rho_w, m_g);
+    auto F = blatter_xz_cfbc_surface(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += W * psi * F;
+      residual[t] += - W * psi * F;
     }
   }
 }
@@ -152,13 +152,13 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
   for (int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q);
 
-    auto F = -1.0 * blatter_xz_cfbc_base(x[q], m_L, m_rho_i, m_rho_w, m_g);
+    auto F = blatter_xz_cfbc_base(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += W * psi * F;
+      residual[t] += - W * psi * F;
     }
   }
 }

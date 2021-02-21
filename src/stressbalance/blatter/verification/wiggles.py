@@ -3,7 +3,7 @@
 makes it easier to see that it can be thought of as a "convection-diffusion" equation with
 the diffusivity and "velocity" depending on viscosity.
 
-This will help me implement the streamline-upwind Petrov-Galerkin method that should
+This may help me implement the streamline-upwind Petrov-Galerkin method that should
 eliminate spurious oscillations. (I hope so, anyway.)
 """
 
@@ -44,7 +44,7 @@ def eq_convection(n):
 
 def eq_standard(n):
     "The BP system in the 'standard' form"
-    return - div(eta * M(u, v).row(n)) + body_force(n)
+    return - div(2 * eta * M(u, v).row(n)) + body_force(n)
 
 def are_equivalent(n):
     "Return true if the two forms of the BP system are equivalent."

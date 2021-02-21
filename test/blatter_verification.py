@@ -767,6 +767,7 @@ if __name__ == "__main__":
 
     for test in [TestXY(),
                  TestXZ(),
+                 TestCFBC(),
                  TestXZvanderVeen()
     ]:
         test.plot()

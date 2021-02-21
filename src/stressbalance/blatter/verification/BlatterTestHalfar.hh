@@ -26,7 +26,7 @@ namespace pism {
 namespace stressbalance {
 
 /*!
- * Implements the analytical source term and Dirichlet BC for the X-Z Halfar dome setup.
+ * Implements the analytical source term and BC for the X-Z Halfar dome setup.
  */
 class BlatterTestHalfar : public Blatter {
 public:

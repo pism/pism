@@ -3,12 +3,12 @@ from sympy.core import S
 
 # References:
 #
+# Greve2009: R. Greve and H. Blatter, Dynamics of Ice Sheets and Glaciers. Springer Berlin
+# Heidelberg, 2009.
+#
 # Lipscomb2019: W. H. Lipscomb et al., “Description and evaluation of the Community Ice
 # Sheet Model (CISM) v2.1,” Geoscientific Model Development, vol. 12, no. 1, Art. no. 1,
 # Jan. 2019, doi: 10.5194/gmd-12-387-2019.
-#
-# Greve2009: R. Greve and H. Blatter, Dynamics of Ice Sheets and Glaciers. Springer Berlin
-# Heidelberg, 2009.
 #
 
 # coordinate variables
