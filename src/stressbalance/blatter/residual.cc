@@ -209,6 +209,8 @@ void Blatter::residual_surface(const fem::Q1Element3 &element,
  * Computes the residual contribution of lateral boundary conditions.
  *
  * This takes care of "calving front" stress boundary conditions.
+ *
+ * FIXME: make p_ocean an input from a parameterization of the melange back pressure.
  */
 void Blatter::residual_lateral(const fem::Q1Element3 &element,
                                const fem::Q1Element3Face &face,

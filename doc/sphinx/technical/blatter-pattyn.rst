@@ -1248,6 +1248,8 @@ Known issues and future work
 - Eliminate "wiggles" near areas with steep surface slopes.
 - Implement drag at lateral boundaries in fjords and alpine valleys.
 - Implement parameter continuation.
+- Couple to melange back pressure parameterizations by replacing `p_{\text{water}}` in
+  :ref:`sec-bp-bc-marine`.
 
 .. rubric:: Footnotes
 
