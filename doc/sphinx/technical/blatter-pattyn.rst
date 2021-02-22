@@ -75,9 +75,9 @@ This implementation is based on the PETSc example ``snes/tutorials/ex48.c`` (see
 Define
 
 .. math::
-   \E_1 &= (4 u_x + 2 v_y, \quad u_y + v_x, \quad u_z),
+   \E_1 &= \left( 2 u_x + v_y, \quad \frac12 (u_y + v_x), \quad \frac12 u_z \right),
 
-   \E_2 &= (u_y + v_x, \quad 2 u_x + 4 v_y, \quad v_z),
+   \E_2 &= \left( \frac12 (u_y + v_x), \quad u_x + 2 v_y, \quad \frac12 v_z \right),
 
    \E &= (\E_1, \E_2).
 
@@ -86,19 +86,62 @@ Using this notation, the Blatter-Pattyn (BP) stress balance equations are
 .. math::
    :label: eq-bp
 
-   - \nabla \cdot (\eta\, \E_1) + \rho\, g\, s_x &= 0,
+   - \nabla \cdot (2\, \eta\, \E_1) + \rho\, g\, s_x &= 0,
 
-   - \nabla \cdot (\eta\, \E_2) + \rho\, g\, s_y &= 0.
+   - \nabla \cdot (2\, \eta\, \E_2) + \rho\, g\, s_y &= 0.
 
-Here "`\nabla\cdot`" is the three-dimensional divergence operator and ice viscosity `\eta`
-is defined by
+Here "`\nabla\cdot`" is the three-dimensional divergence operator and the regularized ice
+viscosity `\eta` is defined by
 
 .. math::
    :label: eq-bp-viscosity
 
-   \eta &= \frac{B}{2} \p{\gamma + \frac{\varepsilon_{0}}{2}}^{\exponent},
+   \eta &= \frac{B}{2} \p{\gamma_{\text{BP}} + \frac{\varepsilon_{0}}{2}}^{\exponent},
 
-   \gamma &= u_x^{2} + v_y^{2} + u_x v_y + \frac14 (u_y + v_x)^{2} + \frac14 u_z^{2} + \frac14 v_z^{2}.
+   \gamma_{\text{BP}} &= u_x^{2} + v_y^{2} + u_x v_y + \frac14 (u_y + v_x)^{2} + \frac14 u_z^{2} + \frac14 v_z^{2},
+
+where `\gamma_{\text{BP}}` is the Blatter-Pattyn approximation of the second invariant of
+the strain rate tensor:
+
+.. math::
+   :label: eq-bp-strain-rate-tensor
+
+   \dot\epsilon_{ij} &= \frac12\left( \diff{u_i}{x_j} + \diff{u_j}{x_i} \right)
+
+   \gamma &= \frac12 \left( \mathop{trace}(\dot\epsilon^2) - \mathop{trace}(\dot \epsilon)^2 \right).
+
+It is also assumed that
+
+- ice is incompressible and `\mathop{trace}(\dot \epsilon) = 0`, and
+- `\diff{w}{x} \ll \diff{u}{x}` and `\diff{w}{z} \ll \diff{u}{y}`.
+
+The BP approximation of the second invariant `\gamma_{\text{BP}}` is obtained by omitting
+`w_x` and `w_y` and expressing `w_z` using incompressibility.
+
+.. note::
+
+   There are at least three equivalent expressions for ice viscosity in the literature:
+   the form in :eq:`eq-bp-viscosity` appears in :cite:`BrownSmithAhmadia2013` while
+   :cite:`Tezaur2015` and :cite:`Lipscomb2019` define the effective strain rate
+   `\dot\epsilon_e`:
+
+   .. math::
+      \newcommand{\edot}{\dot\epsilon}
+      \edot_e^2 = \edot_{xx}^2 + \edot_{yy}^2 + \edot_{xx}\edot_{yy} + \edot_{xy}^2 +
+      \edot_{xz}^2 + \edot_{yz}^2.
+
+   Meanwhile :cite:`Dukowiczetal2010` have
+
+   .. math::
+
+      \dot\epsilon_{\text{BP}}^2 &= \left( \diff{u}{x} \right)^2 +
+      \left( \diff{v}{y} \right)^2 +
+      \left( \diff{u}{x} + \diff{v}{y} \right)^2
+
+      &+
+      \frac12 \left( \diff{u}{y} + \diff{v}{x} \right)^2 +
+      \frac12 \left( \diff{u}{z} \right)^2 +
+      \frac12 \left( \diff{v}{z} \right)^{2}.
 
 .. _sec-bp-weak-form:
 
@@ -133,34 +176,34 @@ function `\psi` and integrate over the domain `\Omega`. For the first equation, 
 .. math::
    :label: eq-bp-weak-form-x
 
-   \Id \psi \left( - \nabla\cdot (\eta\, \E_1) + \rho\, g\, s_x \right) &= 0,
+   \Id \psi \left( - \nabla\cdot (2\, \eta\, \E_1) + \rho\, g\, s_x \right) &= 0,
 
-   -\Id \psi \nabla\cdot\left( \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &= 0,
+   -\Id \psi \nabla\cdot\left( 2\, \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &= 0,
 
-   -\Id \left( \nabla \cdot \left( \psi \eta\, \E_1 \right) - \nabla \psi \cdot \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &= 0,
+   -\Id \left( \nabla \cdot \left( \psi\, 2\, \eta\, \E_1 \right) - \nabla \psi \cdot 2\, \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &= 0,
 
-   -\Id \nabla \cdot \left(\psi \eta\, \E_1\right) + \Id \nabla \psi \cdot \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &= 0,
+   -\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &= 0,
 
-   {-\Ib \left(\psi \eta\, \E_1\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &= 0.
+   {-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &= 0.
 
 Similarly, multiplying the second equation by `\psi` and integrating by parts yields
 
 .. math::
    :label: eq-bp-weak-form-y
 
-   {-\Ib \left(\psi \eta\, \E_2\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.
+   {-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.
 
 We combine these and say that the weak form of :eq:`eq-bp` is
 
 .. math::
    :label: eq-bp-weak-form
 
-   {-\Ib \left(\psi \eta\, \E\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,
+   {-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,
 
 where `\nabla s = ( s_x, s_y )`.
 
 The first term corresponds to :ref:`Neumann and Robin boundary conditions <sec-bp-bc>`; it
-vanishes for "natural" BC `\left( \eta\, \E \right) \cdot \N = 0`. In the basal and
+vanishes for "natural" BC `\left(2\, \eta\, \E \right) \cdot \N = 0`. In the basal and
 lateral cases this stress is nonzero. The third one corresponds to the gravitational
 driving stress and is replaced by a compensatory term in :ref:`verification tests
 <sec-bp-testing-verification>` that use manufactured solutions.
@@ -179,12 +222,17 @@ The domain boundary consists of three disjoint parts:
 
    The integral over this part of the boundary is *zero* because we assume that natural
    ("no stress") boundary conditions apply. (We ignore atmospheric pressure.)
+
+   Vertical "cliffs" at grounded margins are interpreted as approximations of the very
+   steep, but not vertical, upper surface. Following this interpretation we use natural
+   boundary conditions at grounded lateral margins.
+
 3. The *vertical* interface between ice and air (above sea level) or water (below sea
-   level) at ice margins.
+   level) at marine ice margins.
 
    At this interface PISM uses Neumann BC corresponding to the difference between the
-   cryostatic pressure of the ice on one side and the hydrostatic pressure of water (if
-   present) on the other side of the interface.
+   cryostatic pressure of the ice on one side and the hydrostatic pressure of water on the
+   other side of the interface.
 
 In addition to this we support Dirichlet boundary conditions for :ref:`verification
 <sec-bp-testing-verification>` and to :ref:`de-couple unknowns at ice-free locations
@@ -199,7 +247,7 @@ In addition to this we support Dirichlet boundary conditions for :ref:`verificat
    allows us to avoid Jacobian scaling tricks they needed to achieve good multigrid
    performance.
 
-For each node in the Dirichlet boundary we assemble a "trivial" equations
+For each node that belongs to the Dirichlet boundary we assemble "trivial" equations
 
 .. math::
 
@@ -224,14 +272,14 @@ The boundary condition corresponding to basal sliding is
 .. math::
    :label: eq-bp-sliding
 
-   \eta\, \E \cdot \N = - \beta \, \U.
+   2\, \eta\, \E \cdot \N = - \beta \, \U.
 
 In the weak form :eq:`eq-bp-weak-form` this corresponds to replacing the first term:
 
 .. math::
    :label: eq-bp-sliding-weak-form
 
-   -\Ibase (\psi \eta\, \E) \cdot \N\, ds = \Ibase \beta\, \U\, ds.
+   -\Ibase (\psi\, 2\, \eta\, \E) \cdot \N\, ds = \Ibase \beta\, \U\, ds.
 
 Here `\beta` has the same meaning as in :eq:`eq-sliding-linear`.
 
@@ -239,11 +287,11 @@ Where ice is grounded `\beta` is determined as described in :ref:`sec-basestreng
 assumed to be zero (corresponding to no drag) elsewhere.
 
 The grounding line (if present) divides bottom faces of some elements into grounded parts
-that experience drag and floating parts that do not. This implementation uses a
-low-order quadrature with *many* equally-spaced points (a Newton-Cotes quadrature) to
-integrate over the part of the basal boundary containing the grounding line. Here `\beta`
-is computed at each quadrature point, depending on whether the ice is grounded or floating
-there. This is similar to the SEP3 parameterization described in :cite:`Seroussi2014`.
+that experience drag and floating parts that do not. This implementation uses a low-order
+quadrature with *many* equally-spaced points (a Newton-Cotes quadrature) to integrate over
+the part of the basal boundary containing the grounding line. Here `\beta` is computed at
+each quadrature point, depending on whether the ice is grounded or floating at its
+location. This is similar to the SEP3 parameterization described in :cite:`Seroussi2014`.
 
 .. note::
 
@@ -252,25 +300,25 @@ there. This is similar to the SEP3 parameterization described in :cite:`Seroussi
      :cite:`Seroussi2014`). An approximation of the grounded fraction for an element
      column can be computed using existing code in PISM.
 
-   * In general a bottom face of an element is *not* planar and *not* parallel to the
+   * In general the bottom face of an element is *not* planar and *not* parallel to the
      plane `z = 0`. This means that integrals over the basal boundary should be evaluated
      using parameterizations of element faces (i.e. as surface integrals) and *not* using
      2D FEM machinery.
 
-.. _sec-bp-bc-lateral:
+.. _sec-bp-bc-marine:
 
-Lateral boundary
-################
+Marine margins
+##############
 
-We assume that the lateral boundary of the domain is *vertical*, i.e. the outward-pointing
+We assume that marine ice margins consist of *vertical* cliffs, i.e. the outward-pointing
 normal vector has the form `\N = (\cdot,\cdot,0)`.
 
-The Neumann boundary condition at ice margins is
+The Neumann boundary condition at marine margins is
 
 .. math::
    :label: eq-bp-lateral-bc
 
-   \eta\, \E \cdot \N &= p_{\text{ice}} - p_{\text{water}},\;\text{where}
+   2\, \eta\, \E \cdot \N &= p_{\text{ice}} - p_{\text{water}},\;\text{where}
 
    p_{\text{ice}} &= \rho\, g\, (s - z),
 
@@ -303,10 +351,7 @@ approximation of this boundary condition (note that the right hand side of
 
 Implementations in CISM and MALI *do not* use this boundary condition at grounded margins
 because doing so appears to produce over-estimates of the ice speed near grounded ice
-margins. This effect may be explained by the poor quality of approximation of the shape of
-the margin on a fixed horizontal grid. However, the ice thickness threshold used to
-determine if a map-plane location is ice-free or icy tends to be rather small, so the
-error due to omitting this BC should be relatively small.
+margins. Our experiments show the same behavior.
 
 .. _sec-bp-solver:
 
@@ -337,8 +382,8 @@ Then the problem is
 
   .. math::
 
-     {-\Ib \left(\psi_i \eta\, \E\right) \cdot \N\, ds} +
-     {\Id \nabla \psi_i \cdot \eta\, \E} +
+     {-\Ib \left(\psi_i 2\, \eta\, \E\right) \cdot \N\, ds} +
+     {\Id \nabla \psi_i \cdot 2\, \eta\, \E} +
      {\Id \psi_i\, \rho\, g\, \nabla s} = 0
 
 holds for all `i = 1,\dots,N`, where `N` is the number of nodes in the mesh, subject to
@@ -360,9 +405,9 @@ where
 
    F(U) &= F^1(U) + F^2(U) + F^3(U),
 
-   F^1 &= -\Ib (\psi \eta\, \E) \cdot \N\, ds,
+   F^1 &= -\Ib (\psi\, 2\, \eta\, \E) \cdot \N\, ds,
 
-   F^2 &= \Id \nabla \psi \cdot \eta\, \E,
+   F^2 &= \Id \nabla \psi \cdot 2\, \eta\, \E,
 
    F^3 &= \Id \psi\, \f.
 
@@ -387,7 +432,7 @@ The residual itself can be broken up into the following parts:
 #. The *source term* corresponding to the driving stress (`F^3`)
 #. The *top boundary* part (zero in actual simulations because we use the natural BC at the top
    boundary; can be non-zero in verification tests, part of `F^1`)
-#. The *lateral boundary* part implementing stress (Neumann) BC at the calving front (part of `F^1`).
+#. The *marine boundary* part implementing stress (Neumann) BC at the calving front (part of `F^1`).
 #. Residual at *Dirichlet nodes*.
 
 This decomposition makes it possible to use source terms dictated by the choice of a
@@ -407,11 +452,11 @@ Main residual contribution
 .. math::
    :label: eq-bp-residual-ii
 
-   F^2_{i,u} &= \Id \nabla \psi_i \cdot \eta\,  \E_1
+   F^2_{i,u} &= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_1
 
    &= \Id \eta\, \left(\dpsi{x}\, \p{4u_x + 2v_y} + \dpsi{y}\,\p{u_y + v_x} + \dpsi{z}\, u_z \right),
 
-   F^2_{i,v} &= \Id \nabla \psi_i \cdot \eta\,  \E_2
+   F^2_{i,v} &= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_2
 
    &= \Id \eta\, \left(\dpsi{y}\, \p{2u_x + 4v_y} + \dpsi{x}\,\p{u_y + v_x} + \dpsi{z}\, v_z \right).
 
@@ -441,10 +486,10 @@ Basal contribution
 
    F^1_{i, v} &= \Ibase \psi_i\, \beta\, v.
 
-.. _sec-bp-residual-lateral:
+.. _sec-bp-residual-marine:
 
-Lateral boundary contribution
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Marine boundary contribution
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 .. math::
    :label: eq-bp-residual-i-margin
@@ -502,7 +547,7 @@ This Jacobian contribution has four parts:
 
 with `F^2_{\cdot, \cdot}` defined by :eq:`eq-bp-residual-ii`.
 
-Let `G_{i, k} = \nabla\psi_i \cdot \E_{k}`, then
+Let `G_{i, k} = \nabla\psi_i \cdot 2\, \E_{k}`, then
 
 .. math::
 
@@ -671,11 +716,27 @@ to the `2 \times 2` identity matrix.
 Iceberg elimination
 ###################
 
+As described in :cite:`Tuminaro2016`, isolated patches of ice with low basal resistance
+*and* patches connected only via a single node (a "hinge") are problematic because the
+system :eq:`eq-bp` determines ice velocity up to rigid rotations and translations.
+
+This is not a new issue: both FD and FEM solvers of the SSA stress balance require some
+form of iceberg elimination. We use a connected component labeling algorithm to identify
+patches of *floating* ice. In the FEM context this requires inspecting *elements*: two
+elements are considered connected if they share a boundary.
+
 .. note::
 
-   Not implemented yet.
+   We could improve this mechanism by implementing a version of the method described in
+   :cite:`Tuminaro2016`: instead of removing *floating ice* not connected to grounded
+   ice (PISM's approach) they
 
-   Tuminaro et al :cite:`Tuminaro2016` talk about this.
+   1. Identify all the connected patches of ice.
+   2. Remove patches of ice which have no mesh *nodes* with
+
+      .. math::
+
+         \beta > \beta_{\text{threshold}}.
 
 .. _sec-bp-pc:
 
@@ -883,7 +944,7 @@ boundaries we compute the "type" of each node in the mesh. Given a threshold `\H
 * an element contains ice if ice thickness at all its nodes equals to or exceeds `\Hmin`,
 * a node is *interior* (within the ice) if all the elements it belongs to contain ice,
 * a node is *exterior* (outside the ice volume) if no element it belongs to contains ice,
-* a node that is neither interior nor exterior of a *boundary* node.
+* a node that is neither interior nor exterior is a *boundary* node.
 
    Only elements containing ice are included in the residual and Jacobian evaluation.
 
@@ -891,7 +952,7 @@ We prescribe zero `(0, 0)` velocity at exterior nodes by marking them as Dirichl
 locations.
 
 In addition to this, we need to identify vertical faces of elements at :ref:`lateral
-boundaries <sec-bp-bc-lateral>`.
+boundaries <sec-bp-bc-marine>`.
 
    An element face is a part of the lateral boundary if all four of its nodes are
    *boundary* nodes.
@@ -1016,12 +1077,12 @@ Verification test XY
    boundaries (`x = 0`, `x = 1`, `y = 0`, `y = 1`). Natural BC at the top and bottom
    boundaries.
 
-:Comments: This test uses a constant ice hardness, `n = 3`, and has no variation in the `z`
-   direction. It is similar but not identical to the `x-y` MMS verification test in
-   :cite:`Tezaur2015`, section 4.1 (we use Dirichlet boundary conditions along the whole
-   lateral boundary instead of Robin conditions derived from the chosen exact solution).
+:Comments: This test uses a constant ice hardness, `n = 3`, and has no variation in the
+   `z` direction. It is similar to the `x-y` MMS verification test in :cite:`Tezaur2015`,
+   section 4.1 (we use Dirichlet boundary conditions along the whole lateral boundary
+   instead of Robin conditions derived from the chosen exact solution).
 
-   The compensatory term is computed using SymPy; please see the code in
+   The compensatory term is computed using SymPy_; please see the code in
    ``src/stressbalance/blatter/verification``.
 
 .. _sec-bp-verificaion-xz:
@@ -1057,9 +1118,9 @@ Verification test XZ
    - has no variation (and is periodic) in the `y` direction,
    - uses a constant basal resistance coefficient `\beta`.
 
-   It is similar but not identical to the `x-z` MMS verification test :cite:`Tezaur2015`,
-   section 4.2 (again, we use Dirichlet BC at lateral boundaries instead of Robin
-   conditions stated in the paper).
+   It is similar to the `x-z` MMS verification test :cite:`Tezaur2015`, section 4.2
+   (again, we use Dirichlet BC at lateral boundaries instead of Robin conditions stated in
+   the paper).
 
    See :cite:`Tezaur2015` and the code in ``src/stressbalance/blatter/verification`` for
    details.
@@ -1069,7 +1130,7 @@ Verification test XZ
 Verification test XZ-CFBC
 #########################
 
-This setup tests the "calving front boundary condition" (CFBC).
+This setup tests the "calving front boundary condition" (see :ref:`sec-bp-bc-marine`).
 
 :Exact solution:
    .. math::
@@ -1080,12 +1141,89 @@ This setup tests the "calving front boundary condition" (CFBC).
 :Domain: `x \in [0, L]`, `z \in [-H, 0]`
 :Boundary conditions:
    - Dirichlet BC at `x = 0`.
-   - Uses the BC described in :ref:`sec-bp-bc-lateral` at `x = L`.
+   - Uses the BC described in :ref:`sec-bp-bc-marine` at `x = L`.
 :Comments: This test uses the Glen exponent of `1` (constant viscosity) and has no
    variation in the `y` direction.
 
    The sea level is set to `0`, overriding the floatation criterion to ensure that *all*
    the ice is submerged.
+
+.. _sec-bp-verification-xz-vanderveen:
+
+Verification test XZ-VV (van der Veen profile)
+##############################################
+
+This setup tests the implementation of the basal sliding boundary condition (see
+:ref:`sec-bp-bc-basal`) using the van der Veen shelf profile :cite:`vanderVeen`:
+
+.. math::
+   :label: eq-bp-van-der-Veen
+
+   H(x) &= \left[ \frac{4 C x}{Q_0} + H_0^{-4} \right]^{-\frac14},
+
+   u(x) &= \frac{Q_0}{H(x)},
+
+   v(x) &= 0,
+
+   C &= \left( \frac{\alpha g \rho_i}{2 B} \right)^3,
+
+where `Q_0` is the flux at the left boundary and `H_0` is the corresponding ice thickness.
+
+The surface elevation `s` and bed elevation `b` are defined by
+
+.. math::
+
+   s(x) &= \alpha H(x),
+
+   b(x) &= (\alpha - 1) H(x)
+
+for some positive constant `\alpha`. (A free-floating shelf corresponds to `\alpha = 1 -
+\rho_i / \rho_w`).
+
+.. note::
+
+   Functions `(u, v)` in :eq:`eq-bp-van-der-Veen` solve :eq:`eq-bp` *exactly* in the
+   interior of the domain
+
+   .. math::
+
+      0 \le x_{\text{min}} &\le x \le x_{\text{max}},
+
+      b(x) &\le z \le s(x)
+
+   if the Glen exponent `n = 3`. No compensatory source term is needed.
+
+We use a Dirichlet BC at the left boundary:
+
+.. math::
+
+   u(x_{\text{min}}) &= \frac{Q_0}{H_0},
+
+   v(x_{\text{min}}) &= 0
+
+and a stress BC at the right boundary:
+
+.. math::
+   :label: eq-bp-van-der-Veen-right-BC
+
+   2\, \eta\, \E \cdot \N_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)
+
+The stress BC at the top surface is
+
+.. math::
+   :label: eq-bp-van-der-Veen-top-BC
+
+   2\, \eta\, \E \cdot \N_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
+   {\sqrt{C^{2} \alpha^{2} H^{10}(x) + Q_{0}^{2}}},\, 0\right)
+
+The boundary condition at the bottom surface has the form
+
+.. math::
+
+   2\, \eta\, \E \cdot \N_{\text{bottom}} &= - \beta \, \U,
+
+   \beta &= \frac{2 B C^{\frac{4}{3}} \left(\alpha - 1\right) H^{7}(x)}
+   {Q_{0} \sqrt{C^{2} \left(\alpha - 1\right)^{2} H^{10}(x) + Q_{0}^{2}}}
 
 .. _sec-bp-ismip-hom:
 
@@ -1109,8 +1247,7 @@ Known issues and future work
 
 - Eliminate "wiggles" near areas with steep surface slopes.
 - Implement drag at lateral boundaries in fjords and alpine valleys.
-- Implement parameter continuation
-- Implement iceberg elimination
+- Implement parameter continuation.
 
 .. rubric:: Footnotes
 
