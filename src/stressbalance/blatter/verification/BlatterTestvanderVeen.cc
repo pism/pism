@@ -49,10 +49,11 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(IceGrid::ConstPtr grid,
   // ice velocity (m / s)
   m_V0 = convert(m_sys, 300.0, "m / year", "m / s");
 
-  // s = alpha * H, where s is surface elevation and H ice thickness
-  m_alpha = 1.0;
-
   m_rho_ice = m_config->get_number("constants.ice.density");
+
+  // s = alpha * H, where s is surface elevation and H ice thickness
+  double rho_w = m_config->get_number("constants.sea_water.density");
+  m_alpha = 1.0 - m_rho_ice / rho_w;
 
   m_g = m_config->get_number("constants.standard_gravity");
 }

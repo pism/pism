@@ -653,9 +653,16 @@ class TestXZvanderVeen(TestCase):
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
 
+        # Set sliding law parameters to make "tauc" equivalent to "beta"
+        config.set_flag("basal_resistance.pseudo_plastic.enabled", True)
+        config.set_number("basal_resistance.pseudo_plastic.q", 1.0)
+        config.set_number("basal_resistance.pseudo_plastic.u_threshold",
+                          PISM.util.convert(1.0, "m / s", "m / year"))
+
     def tearDown(self):
         for k in self.opts.keys():
             self.opt.delValue(k)
+        config.import_from(config_clean)
 
     def create_grid(self, Mx=201):
         Lx = 1e5
