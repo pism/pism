@@ -147,8 +147,7 @@ private:
 	mutable bool m_firststep;
 	mutable bool m_beforediag;
 	mutable bool m_gridexist;
-	mutable bool m_istimedef;
-
+	
 	// initialize class for opened file
 	void map_varsID() const;
 	void map_zaxisID() const;

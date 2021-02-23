@@ -333,7 +333,7 @@ void IceModel::write_extras() {
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
                                   m_ctx->pio_iosys_id(),
-				  //ExtraMap,
+				                          //ExtraMap,
                                   //gridIDs,
                                   fileID,
                                   DimExtraMap));
@@ -377,7 +377,7 @@ void IceModel::write_extras() {
     m_extra_file->sync();
     if (m_extra_file->backend() == PISM_CDI) {
       streamIDs[filename] = m_extra_file->get_streamID();
-      ExtraMap = m_extra_file->get_variables_map();
+      //ExtraMap = m_extra_file->get_variables_map();
     }
   }
   if (current_extra < m_extra_times.size()-1) m_sthwritten = true;
