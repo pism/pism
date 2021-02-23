@@ -86,7 +86,7 @@ void CDI::map_varsID() const {
 
 void CDI::map_zaxisID() const {
 	int zaxisID;
-	char[CDI_MAX_NAME] zname;
+	char zname[CDI_MAX_NAME];
 	std::string name;
 	// find number of zaxis
 	int nz = vlistNzaxis(m_vlistID);
@@ -288,7 +288,7 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 // define variable
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
     // No need to define the dimensions as variables
-    if (m_dimsAxis.count(variable_name))
+    if (m_dimsAxis.count(name))
     	return;    
     // Define variables
     if (m_vlistID == -1) {
@@ -408,7 +408,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
 	int varID = m_varsID[variable_name];
 	int current_grid = vlistInqVarGrid(m_vlistID, varID);
 	char xname[CDI_MAX_NAME];
-	int it;
+	std::vector<std::string>::iterator it;
 	if (current_grid == m_gridID) {
 		// insert x dim
 		it = result.begin();
