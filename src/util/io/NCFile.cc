@@ -53,8 +53,16 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 }
 
 
-void NCFile::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
-  this->open_impl(filename, mode, varsi, FileID);
+void NCFile::open(const std::string &filename,
+                  IO_Mode mode,
+                  //const std::map<std::string, int> &varsi,
+                  int FileID,
+                  const std::map<std::string, int> &dimsa) {
+  this->open_impl(filename,
+                  mode,
+                  //varsi,
+                  FileID,
+                  dimsa);
   m_filename = filename;
   m_define_mode = false;
 }
@@ -308,7 +316,16 @@ std::map<std::string, int> NCFile::get_var_map() {
   return this->get_var_map_impl();
 }
 
+std::map<std::string, int> NCFile::get_dim_map() {
+  return this->get_dim_map_impl();
+}
+
 std::map<std::string, int> NCFile::get_var_map_impl() {
+  std::map<std::string, int> emptymap;
+  return emptymap;
+}
+
+std::map<std::string, int> NCFile::get_dim_map_impl() {
   std::map<std::string, int> emptymap;
   return emptymap;
 }

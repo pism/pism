@@ -41,27 +41,35 @@ namespace io {
 
 CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_vlistID = -1;
-	m_varsID.clear();
 	m_beforediag = true;
 	m_gridexist = false;
 	m_istimedef = false;
 	wrapup_def_dim();
+	wrapup_inq_dimlen();
+	wrapup_put_dim();
+	wrapup_put_att_text();
 }
 
 CDI::~CDI() {
+	m_varsID.clear();
 }
 
-void CDI::open_impl(const std::string &fname, IO_Mode mode, 
-	                const std::map<std::string, int> &varsi, 
-	                int FileID//,
-	                //const std::map<std::string, int> &dimsa
-	                ) {
+void CDI::open_impl(const std::string &fname,
+					IO_Mode mode, 
+	                //const std::map<std::string, int> &varsi, 
+	                int FileID,
+	                const std::map<std::string, int> &dimsa) {
 	// the file is already created and opened - restore file info into the class
 	m_file_id = FileID;
    	m_vlistID = streamInqVlist(m_file_id);
-   	m_varsID = varsi;
-   	//m_dimsAxis = dimsa;
+   	m_tID = vlistInqTaxis(m_vlistID);
+   	map_varsID();
+   	map_zaxisID();
+   	m_gridID = vlistGrid(m_vlistID, 0);
+   	//m_varsID = varsi;
+   	m_dimsAxis = dimsa;
 	m_firststep = false;
+	m_gridexist = true;
 }
 
 void CDI::map_varsID() const {
@@ -76,40 +84,49 @@ void CDI::map_varsID() const {
 	}
 }
 
-void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
-	if (gridIDs.empty()) {
-		m_gridID = -1;
-		m_gridsID = -1;
-		m_tID = -1;
-                // m_zID scalar deleted
-		m_zbID = -1;
-		m_zsID = -1;		
-	} else {
-		m_gridID = gridIDs[0];
-		m_gridsID = gridIDs[1];
-		m_tID = gridIDs[2];
-                // m_zID scalar deleted
-		m_zbID = gridIDs[4];
-		m_zsID = gridIDs[5];
-		m_gridexist = true;
+void CDI::map_zaxisID() const {
+	int zaxisID;
+	char[CDI_MAX_NAME] zname;
+	std::string name;
+	// find number of zaxis
+	int nz = vlistNzaxis(m_vlistID);
+	// find zaxisID and zaxisName
+	for (int n=0; n<nz; n++) {
+		zaxisID = vlistZaxis(m_vlistID, n);
+		zaxisInqName(zaxisID, zname);
+		name = zname;
+		m_zID[name] = zaxisID;
 	}
+	m_zsID = m_zID["zs"];
+}
+
+void CDI::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
+//	if (gridIDs.empty()) {
+//				
+//	} else {
+//		
+//		m_gridexist = true;
+//	}
 }
 
 std::vector<int> CDI::get_ncgridIDs_impl() const {
-        // m_zID scalar deleted
-	std::vector<int> gridIDs{m_gridID, m_gridsID, m_tID, m_zbID, m_zsID};
-	return gridIDs;
+//	std::vector<int> gridIDs{};
+//	return gridIDs;
 }
 
 
 void CDI::create_impl(const std::string &filename, int FileID) {
-        if (FileID == -1) {
+//        if (FileID == -1) {
 			m_file_id = streamOpenWrite(filename.c_str(), CDI_FILETYPE_NC2);
+			m_tID = -1;
+			m_zsID = -1;
+			m_gridID = -1;
         	m_firststep = true;
-        } else {
-        	m_file_id = FileID;
-        	m_firststep = false;
-        }
+        	m_gridexist = false;
+//        } else {
+//        	m_file_id = FileID;
+//        	m_firststep = false;
+//        }
 }
 
 void CDI::close_impl() {
@@ -147,6 +164,14 @@ void CDI::def_t_dim(const std::string &name, size_t length) const {
 	}
 }
 
+void CDI::def_g_dim(const std::string &name, size_t length) const {
+	int gridgID = gridCreate(GRID_LONLAT, length);
+	gridDefXsize(gridgID, length);
+	gridDefXname(gridgID, name.c_str());
+	gridDefYsize(gridgID, 1);
+	gridDefYname(gridgID, "y_dummy");
+}
+
 void CDI::wrapup_def_dim() const {
     pDefDim pFn = &CDI::def_x_dim;
 	pvcDefDim.push_back(pFn);
@@ -159,14 +184,27 @@ void CDI::wrapup_def_dim() const {
 }
 
 void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
-	if (m_vlistID == -1) m_vlistID = vlistCreate();
+	if (m_vlistID == -1) {
+		m_vlistID = vlistCreate();
+		m_gridsID = gridCreate(GRID_LONLAT, 1);
+        gridDefXsize(m_gridsID, 1);
+        gridDefXname(m_gridsID, "x_dummy");
+        gridDefYsize(m_gridsID, 1);
+		gridDefYname(m_gridsID, "y_dummy");
+	}
 
 	if (!m_gridexist) {
 		if (dim != -1) {
 			(this->*(pvcDefDim[dim]))(name, length);
 			m_dimsAxis[name] = dim;
+		} else {
+			m_dimsAxis[name] = -1;
 		}
-		if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+		if (m_zsID == -1) {
+			m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+			m_zID["zs"] = m_zsID;
+			zaxisDefName(m_zsID,"zs");
+		}
 	} else {
 		if (!m_istimedef) {
 			if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
@@ -233,7 +271,8 @@ void CDI::wrapup_inq_dimlen() const {
 
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
 	int dim = m_dimsAxis[dimension_name];
-	result = (this->*(pvcInqDimlen[dim]))(dimension_name);
+	if (dim != -1)
+		result = (this->*(pvcInqDimlen[dim]))(dimension_name);
 }
 
 // inquire current timestep
@@ -249,13 +288,17 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 // define variable
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
     // No need to define the dimensions as variables
-    if (std::find(m_dims_name.begin(), m_dims_name.end(), name) != m_dims_name.end())
-    {
-        return;
-    }
-    
+    if (m_dimsAxis.count(variable_name))
+    	return;    
     // Define variables
-    if (m_vlistID == -1) m_vlistID = vlistCreate();
+    if (m_vlistID == -1) {
+    	m_vlistID = vlistCreate();
+    	m_gridsID = gridCreate(GRID_LONLAT, 1);
+        gridDefXsize(m_gridsID, 1);
+        gridDefXname(m_gridsID, "x_dummy");
+        gridDefYsize(m_gridsID, 1);
+		gridDefYname(m_gridsID, "y_dummy");
+    }
 
     if (dims.empty() || dims.size()<2) { // scalar variable
 		def_var_scalar_impl(name, nctype, dims);
@@ -265,22 +308,20 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
 }
 
 void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const std::vector<std::string> &dims) const {
-    if (m_gridsID == -1) {
-        m_gridsID = gridCreate(GRID_LONLAT, 1);
-        gridDefXsize(m_gridsID, 1);
-        gridDefXname(m_gridsID, "x_dummy");
-        gridDefYsize(m_gridsID, 1);
-		gridDefYname(m_gridsID, "y_dummy");
-    }
-    if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+    //if (m_gridsID == -1) {
+    //    m_gridsID = gridCreate(GRID_LONLAT, 1);
+    //    gridDefXsize(m_gridsID, 1);
+    //    gridDefXname(m_gridsID, "x_dummy");
+    //    gridDefYsize(m_gridsID, 1);
+	//	gridDefYname(m_gridsID, "y_dummy");
+    //}
+    //if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
 
-    int tsteptype;
-    if (dims.empty()) {
-        tsteptype = TIME_CONSTANT;
-    } else {
-	tsteptype = TIME_VARIABLE;
+    int tsteptype = TIME_CONSTANT;
+    for (auto d : dims) {
+    	if (m_dimsAxis[name] == 3) tsteptype = TIME_VARIABLE;
     }
-
+    
     int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
     vlistDefVarName(m_vlistID, varID, name.c_str());
     int type = pism_type_to_cdi_type(nctype);
@@ -293,14 +334,12 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
     int tsteptype = TIME_CONSTANT;
 
     for (auto d : dims) {
-        if        (d == "z") {
-            zaxisID = m_zID["z"];
-        } else if (d == "zb") {
-            zaxisID = m_zbID;
-        } else if (d == "time" ) {
-            tsteptype = TIME_VARIABLE;
+    	if (m_dimsAxis[name] == 3) tsteptype = TIME_VARIABLE;
+    	if (m_dimsAxis[name] == 2) {
+    		if (m_zID.count(name)) zaxisID = m_zID[name];
     	}
     }
+
     if (zaxisID == -1) zaxisID = m_zsID;
 
     int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
@@ -365,44 +404,43 @@ void CDI::inq_nvars_impl(int &result) const {
 
 // inquire variable dimensions
 void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
+	std::string name;
 	int varID = m_varsID[variable_name];
-	int type = 0;
 	int current_grid = vlistInqVarGrid(m_vlistID, varID);
+	char xname[CDI_MAX_NAME];
+	int it;
 	if (current_grid == m_gridID) {
+		// insert x dim
+		it = result.begin();
+		gridInqXname(m_gridID, xname);
+		name = xname;
+		result.insert(it,name);
+		// insert y dim
+		it = result.begin();
+		gridInqYname(m_gridID, xname);
+		name = xname;
+		result.insert(it,name);
+		// insert z dim
+		name.clear();
 		int current_z = vlistInqVarZaxis(m_vlistID, varID);
-		if (current_z == m_zID["z"]) {
-			type = type + 2;
-		} else if (current_z == m_zbID) {
-			type = type + 4;
-		}
-                int current_t = vlistInqVarTsteptype(m_vlistID, varID);
-		if (current_t == TIME_VARIABLE) {
-			type++;
+		for (auto &i : m_zID) {
+    	  	if (i.second == current_z) {
+        		name = i.first;
+         		break; // to stop searching
+      		}
+   		}
+   		if (!name.empty()) {
+   			it = result.begin();
+   			result.insert(it,name);
+   		}
+   		// insert time dim
+		if (vlistInqVarTsteptype(m_vlistID, varID) == TIME_VARIABLE) {
+			it = result.begin();
+			result.insert(it,"time");
 		}
 	} else {
 		result.clear();
 		return;
-	}
-        // todo: inquire the name - don't write it directly
-	switch (type) {
-		case 0:
-			result.resize(2); result[0] = "y"; result[1] = "x";
-			break;
-		case 1:
-			result.resize(3); result[0] = "time"; result[1] = "y"; result[2] = "x";
-			break;
-		case 2:
-			result.resize(3); result[0] = "z"; result[1] = "y"; result[2] = "x";
-			break;
-		case 3:
-			result.resize(4); result[0] = "time"; result[1] = "z"; result[2] = "y"; result[3] = "x";
-			break;
-		case 4:
-			result.resize(3); result[0] = "zb"; result[1] = "y"; result[2] = "x";
-			break;
-		case 5:
-			result.resize(4); result[0] = "time"; result[1] = "zb"; result[2] = "y"; result[3] = "x";
-			break;
 	}
 }
 
@@ -491,15 +529,15 @@ void CDI::wrapup_put_att_text() const {
 	pvc.push_back(&CDI::put_att_text_units_x_impl);
 	pvc.push_back(&CDI::put_att_text_longname_x_impl);
 	pvcPutAttT.push_back(pvc);
-        pvc.clear();
+    pvc.clear();
 	pvc.push_back(&CDI::put_att_text_units_y_impl);
 	pvc.push_back(&CDI::put_att_text_longname_y_impl);
 	pvcPutAttT.push_back(pvc);
-        pvc.clear();
+    pvc.clear();
 	pvc.push_back(&CDI::put_att_text_units_z_impl);
 	pvc.push_back(&CDI::put_att_text_longname_z_impl);
 	pvcPutAttT.push_back(pvc);
-        pvc.clear();
+    pvc.clear();
 }
 
 void CDI::put_att_text_impl(const std::string &variable_name,
@@ -511,8 +549,11 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 	// write dimension attribute
     if (m_dimsAxis.count(variable_name)) {
     	int dim = m_dimsAxis[variable_name];
-    	int att = m_DimAtt[att_name];
-    	(this->*(pvcPutAttT[dim][att]))(variable_name, value);
+    	int att;
+    	if (m_DimAtt.count(att_name)) {
+	    	att = m_DimAtt[att_name];
+    		(this->*(pvcPutAttT[dim][att]))(variable_name, value);
+    	}
         return;
     }
 
@@ -690,6 +731,10 @@ void CDI::write_darray_impl(const std::string &variable_name,
 
 std::map<std::string, int> CDI::get_var_map_impl() {
 	return m_varsID;
+}
+
+std::map<std::string, int> CDI::get_dim_map_impl() {
+	return m_dimsAxis;
 }
 
 void CDI::def_vlist_impl() const {

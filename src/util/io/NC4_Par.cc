@@ -38,7 +38,11 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-void NC4_Par::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
+void NC4_Par::open_impl(const std::string &fname,
+                        IO_Mode mode,
+                        //const std::map<std::string, int> &varsi,
+                        int FileID,
+                        const std::map<std::string, int> &dimsa) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 

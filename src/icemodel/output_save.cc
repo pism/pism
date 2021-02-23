@@ -162,7 +162,11 @@ void IceModel::write_snapshot() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(),
+              //SnapMap,
+              //gridIDs,
+              fileID,
+              DimSnapMap);
     if (m_split_snapshots) {
 	file.set_split(true);
     } else {

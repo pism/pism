@@ -52,9 +52,15 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-       int iosysid = -1, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
-       const std::vector<int>& gridIDs = std::vector<int>(), int FileID = -1);
+  File(MPI_Comm com,
+       const std::string &filename,
+       IO_Backend backend,
+       IO_Mode mode,
+       int iosysid = -1,
+       //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+       //const std::vector<int>& gridIDs = std::vector<int>(),
+       int FileID = -1,
+       const std::map<std::string, int> &dimsa = std::map<std::string, int>());
   ~File();
 
   IO_Backend backend() const;
@@ -173,7 +179,11 @@ private:
   Impl *m_impl;
   mutable std::map<std::string, std::string> m_dimatt;
   mutable bool m_split;
-  void open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(), int FileID = -1);
+  void open(const std::string &filename,
+            IO_Mode mode,
+            //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+            int FileID = -1,
+            const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
   // disable copying and assignments
   File(const File &other);

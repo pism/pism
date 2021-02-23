@@ -84,7 +84,11 @@ ParallelIO::~ParallelIO() {
   // empty
 }
 
-void ParallelIO::open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
+void ParallelIO::open_impl(const std::string &filename,
+                           IO_Mode mode,
+                           //const std::map<std::string, int> &varsi,
+                           int FileID
+                           const std::map<std::string, int> &dimsa) {
   int open_mode = mode == PISM_READONLY ? PIO_NOWRITE : PIO_WRITE;
 
   int stat = PIOc_open(m_iosysid, filename.c_str(), open_mode, &m_file_id);

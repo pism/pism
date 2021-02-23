@@ -29,8 +29,11 @@ public:
 	CDI(MPI_Comm com);
 	virtual ~CDI();
 protected:
-	void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
-                       int FileID = -1);
+	void open_impl(const std::string &filename,
+				   IO_Mode mode, 
+				   //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+                   int FileID = -1,
+                   const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
 	void create_impl(const std::string &filename, int FileID = -1);
 
@@ -117,7 +120,8 @@ protected:
 	void define_timestep_impl(int tsID) const;
 	void def_ref_date_impl(double time) const;
 	std::map<std::string, int> get_var_map_impl();
-        void def_vlist_impl() const;
+	std::map<std::string, int> get_dim_map_impl();
+    void def_vlist_impl() const;
 	void set_diagvars_impl(const std::set<std::string> &variables) const;
 	void set_bdiag_impl(bool value) const;
 	void set_ncgridIDs_impl(const std::vector<int>& gridIDs) const;
@@ -126,48 +130,56 @@ protected:
 	int get_ncvlistID_impl() const;
 
 private:
+	// main
 	mutable int m_gridID;
-	mutable int m_gridsID;
-	mutable int m_zbID;
-	mutable int m_zsID;
 	mutable int m_tID;
 	mutable int m_vlistID;
 	mutable std::map<std::string,int> m_varsID;
-    mutable std::vector<std::string> m_dims_name;
+	mutable std::map<std::string,int> m_dimsAxis;
+	mutable std::map<std::string,int> m_zID;
+	mutable std::set<std::string> m_diagvars;
+	
+	// auxiliary
+	mutable int m_gridsID;
+	mutable int m_zsID;
+	
+	//switch
 	mutable bool m_firststep;
 	mutable bool m_beforediag;
-	mutable std::set<std::string> m_diagvars;
 	mutable bool m_gridexist;
 	mutable bool m_istimedef;
+
+	// initialize class for opened file
+	void map_varsID() const;
+	void map_zaxisID() const;
+
+	// define variable helpers
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
 	      const std::vector<std::string> &dims) const;
     void def_var_multi_impl(const std::string &name, IO_Type nctype,
               const std::vector<std::string> &dims) const;
-    int inq_current_timestep() const;
-    void put_att_text_dims_impl(const std::string &variable_name, const std::string &att_name,
-                   const std::string &value) const;
-	void put_att_text_x_impl(const std::string &att_name, const std::string &value) const;
-	void put_att_text_y_impl(const std::string &att_name, const std::string &value) const;
-	void put_att_text_z_impl(int zaxisID, const std::string &att_name,
-                                const std::string &value) const;
-	void def_main_dim(const std::string &name, size_t length) const;
-	double year_gregorian(double time) const;
-	long int day_gregorian(double nyearsf) const;
-	void put_dims_double(const std::string &variable_name, const double *op) const;
-	void map_varsID() const;
-	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
-	mutable std::map<std::string,int> m_dimsAxis;
-	mutable std::map<std::string,int> m_zID;
 
-	// functions wrappers
+    // inquire current timestep helper
+    int inq_current_timestep() const;
+    
+    // calendar conversion
+    double year_gregorian(double time) const;
+	long int day_gregorian(double nyearsf) const;
+	
+	// inquire attribute helper
+	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
+
+	// define dimension wrappers
 	void def_x_dim(const std::string &name, size_t length) const;
 	void def_y_dim(const std::string &name, size_t length) const;
 	void def_z_dim(const std::string &name, size_t length) const;
 	void def_t_dim(const std::string &name, size_t length) const;
+	void def_g_dim(const std::string &name, size_t length) const;
 	void wrapup_def_dim() const;
 	typedef void(CDI::*pDefDim)(const std::string&, size_t) const;
 	mutable std::vector<pDefDim> pvcDefDim;
 
+	// inquire dimension length wrappers
 	unsigned int inq_dimlen_t(const std::string &dimension_name) const;
 	unsigned int inq_dimlen_x(const std::string &dimension_name) const;
 	unsigned int inq_dimlen_y(const std::string &dimension_name) const;
@@ -176,6 +188,7 @@ private:
 	typedef unsigned int(CDI::*pInqDimlen)(const std::string&) const;
 	mutable std::vector<pInqDimlen> pvcInqDimlen;
 
+	// put dimension wrappers
 	void put_dim_x(const std::string &variable_name, const double *op) const;
 	void put_dim_y(const std::string &variable_name, const double *op) const;
 	void put_dim_z(const std::string &variable_name, const double *op) const;
@@ -183,6 +196,7 @@ private:
 	typedef void(CDI::*pPutDim)(const std::string&, const double *) const;
 	mutable std::vector<pPutDim> pvcPutDim;
 	
+	// put attribute text wrappers
 	void put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const;
 	void put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const;
 	void put_att_text_units_y_impl(const std::string &variable_name, const std::string &value) const;
