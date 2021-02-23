@@ -74,7 +74,11 @@ void NC_Serial::set_compression_level_impl(int level) const {
 }
 
 // open/create/close
-void NC_Serial::open_impl(const std::string &fname, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
+void NC_Serial::open_impl(const std::string &fname,
+                        IO_Mode mode,
+                        //const std::map<std::string, int> &varsi,
+                        int FileID,
+                        const std::map<std::string, int> &dimsa) {
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;

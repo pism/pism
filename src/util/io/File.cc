@@ -184,8 +184,15 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
                                 backend_name.c_str());
 }
 
-File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-           int iosysid, const std::map<std::string, int> &varsi, const std::vector<int>& gridIDs, int FileID)
+File::File(MPI_Comm com,
+           const std::string &filename,
+           IO_Backend backend,
+           IO_Mode mode,
+           int iosysid,
+           //const std::map<std::string, int> &varsi,
+           //const std::vector<int>& gridIDs,
+           int FileID,
+           const std::map<std::string, int> &dimsa)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -201,8 +208,12 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
 
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
-  this->set_gridIDs(gridIDs);
-  this->open(filename, mode, varsi, FileID);
+  //this->set_gridIDs(gridIDs);
+  this->open(filename,
+             mode,
+             //varsi,
+             FileID,
+             dimsa);
 }
 
 File::~File() {
@@ -269,13 +280,17 @@ void File::set_compression_level(int level) const {
   m_impl->nc->set_compression_level(level);
 }
 
-void File::open(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi, int FileID) {
+void File::open(const std::string &filename,
+                IO_Mode mode,
+                //const std::map<std::string, int> &varsi,
+                int FileID,
+                const std::map<std::string, int> &dimsa) {
   try {
 
     // opening for reading
     if (mode == PISM_READONLY) {
 
-      m_impl->nc->open(filename, mode, varsi);
+      m_impl->nc->open(filename, mode);
 
     } else if (mode == PISM_READWRITE_CLOBBER or mode == PISM_READWRITE_MOVE) {
 
@@ -291,7 +306,11 @@ void File::open(const std::string &filename, IO_Mode mode, const std::map<std::s
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
 
-      m_impl->nc->open(filename, mode, varsi, FileID);
+      m_impl->nc->open(filename,
+                       mode,
+                       //varsi,
+                       FileID,
+                       dimsa);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
@@ -878,6 +897,10 @@ void File::reference_date(double time) const {
 
 std::map<std::string, int> File::get_variables_map() const {
   return m_impl->nc->get_var_map();
+}
+
+std::map<std::string, int> File::get_dimensions_map() const {
+  return m_impl->nc->get_dim_map();
 }
 
 void File::define_vlist() const {

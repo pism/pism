@@ -31,8 +31,11 @@ public:
   static IO_Backend best_iotype(bool netcdf3);
 protected:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode, const std::map<std::string, int> &varsi = std::map<std::string, int>(),
-                 int FileID = -1);
+  void open_impl(const std::string &filename,
+                 IO_Mode mode,
+                 //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+                 int FileID = -1,
+                 const std::map<std::string, int> &dimsa = std::map<std::string, int>());
   void create_impl(const std::string &filename, int FileID = -1);
   void sync_impl() const;
   void close_impl();

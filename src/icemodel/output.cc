@@ -152,7 +152,11 @@ void IceModel::save_results() {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), OutMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(),
+              //OutMap,
+              gridIDs,
+              fileID,
+              DimOutMap);
     file.set_split(false);
     profiling.end("io.open");
 
@@ -326,7 +330,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), SnapMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(),
+              //SnapMap,
+              //gridIDs,
+              fileID,
+              DimSnapMap);
     streamIDs[filename] = file.get_streamID();
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -335,11 +343,12 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
     vlistIDs[filename] = file.get_vlistID();
-    if (gridIDs.size()==0) {
-        gridIDs.resize(6);
-        gridIDs = file.get_gridIDs();
-    }
+    //if (gridIDs.size()==0) {
+    //    gridIDs.resize(6);
+    //    gridIDs = file.get_gridIDs();
+    //}
     SnapMap = file.get_variables_map();
+    DimSnapMap = file.get_dimensions_map();
     }
     m_snapshots_file_is_ready = false;
     }
