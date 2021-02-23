@@ -3,6 +3,8 @@
 Two stress balance models: SIA and SSA
 --------------------------------------
 
+FIXME: BP
+
 At each time-step of a typical PISM run, the geometry, temperature, and basal strength of
 the ice sheet are included into stress (momentum) balance equations to determine the
 velocity of the flowing ice. The "full" stress balance equations for flowing ice form a

@@ -66,6 +66,19 @@ sliding law, floating ice is also subject to the SSA.
      - Use the constant-in-time prescribed sliding velocity in combination with the
        non-sliding SIA.
 
+   * - :opt:`-stress_balance blatter`
+     - Use the Blatter-Pattyn stress balance approximation.
+
+.. _sec-blatter:
+
+Controlling the Blatter-Pattyn stress balance model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FIXME: BP
+
+.. pism-parameters::
+   :prefix: stress_balance.blatter.
+
 .. _sec-ssa:
 
 Controlling the SSA stress balance model

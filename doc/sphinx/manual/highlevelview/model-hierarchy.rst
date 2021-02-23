@@ -71,6 +71,8 @@ generated second, and finally a use of incompressibility computes the vertical c
 of the velocity. The nonsliding SIA-only model has a trivialized membrane stress solution.
 The SSA-only model has a trivialized computation of vertical shear.
 
+FIXME: BP
+
 .. figure:: figures/stressbalance.png
    :name: fig-stressbalance
    :width: 75%
