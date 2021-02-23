@@ -154,7 +154,7 @@ void IceModel::save_results() {
               mode,
               m_ctx->pio_iosys_id(),
               //OutMap,
-              gridIDs,
+              //gridIDs,
               fileID,
               DimOutMap);
     file.set_split(false);
@@ -393,7 +393,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), ExtraMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(),
+              //ExtraMap,
+              //gridIDs,
+              fileID,
+              DimExtraMap);
     streamIDs[filename] = file.get_streamID();
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -440,7 +444,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               filename,
               string_to_backend(m_config->get_string("output.format")),
               mode,
-              m_ctx->pio_iosys_id(), OutMap, gridIDs, fileID);
+              m_ctx->pio_iosys_id(),
+              //OutMap,
+              //gridIDs,
+              fileID,
+              DimOutMap);
   streamIDs[filename] = file.get_streamID();
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
