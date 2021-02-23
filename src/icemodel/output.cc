@@ -340,7 +340,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     //    gridIDs.resize(6);
     //    gridIDs = file.get_gridIDs();
     //}
-    SnapMap = file.get_variables_map();
+    //SnapMap = file.get_variables_map();
     DimSnapMap = file.get_dimensions_map();
     }
     m_snapshots_file_is_ready = false;
@@ -410,8 +410,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
     if (file.backend() == PISM_CDI) {
       vlistIDs[filename] = file.get_vlistID();
-      if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
-      ExtraMap = file.get_variables_map();
+      //if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
+      //ExtraMap = file.get_variables_map();
+      DimExtraMap = file.get_dimensions_map();
     }
     }
     m_extra_file_is_ready = false;
@@ -452,8 +453,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
                    0, PISM_FLOAT, false);
   if (file.backend() == PISM_CDI) {
       vlistIDs[filename] = file.get_vlistID();
-      if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
-      OutMap = file.get_variables_map();
+      //if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
+      //OutMap = file.get_variables_map();
+      DimOutMap = file.get_dimensions_map();
   }
   }
   }

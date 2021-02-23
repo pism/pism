@@ -183,7 +183,7 @@ void IceModel::write_snapshot() {
     
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
-      SnapMap = file.get_variables_map();
+      //SnapMap = file.get_variables_map();
     }
   }
   if (m_current_snapshot < m_snapshot_times.size()) m_sthwritten = true;

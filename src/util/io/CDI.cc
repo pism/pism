@@ -43,7 +43,6 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 	m_vlistID = -1;
 	m_beforediag = true;
 	m_gridexist = false;
-	m_istimedef = false;
 	wrapup_def_dim();
 	wrapup_inq_dimlen();
 	wrapup_put_dim();
@@ -52,6 +51,9 @@ CDI::CDI(MPI_Comm c) : NCFile(c) {
 
 CDI::~CDI() {
 	m_varsID.clear();
+	m_dimsAxis.clear();
+	m_zID.clear();
+	m_diagvars.clear();
 }
 
 void CDI::open_impl(const std::string &fname,
@@ -121,6 +123,7 @@ void CDI::create_impl(const std::string &filename, int FileID) {
 			m_tID = -1;
 			m_zsID = -1;
 			m_gridID = -1;
+			m_vlistID = -1;
         	m_firststep = true;
         	m_gridexist = false;
 //        } else {
@@ -193,7 +196,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 		gridDefYname(m_gridsID, "y_dummy");
 	}
 
-	if (!m_gridexist) {
+//	if (!m_gridexist) {
 		if (dim != -1) {
 			(this->*(pvcDefDim[dim]))(name, length);
 			m_dimsAxis[name] = dim;
@@ -205,12 +208,10 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 			m_zID["zs"] = m_zsID;
 			zaxisDefName(m_zsID,"zs");
 		}
-	} else {
-		if (!m_istimedef) {
-			if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
-			m_istimedef = true;
-		}
-	}
+//	} else {
+//		if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
+//		}
+//	}
 }
 
 // define reference date
