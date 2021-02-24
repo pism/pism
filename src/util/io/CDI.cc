@@ -139,6 +139,25 @@ void CDI::close_impl() {
 	m_zID.clear();
 }
 
+void CDI::def_vlist() const {
+    if (m_vlistID == -1) {
+        m_vlistID = vlistCreate();
+        m_gridsID = gridCreate(GRID_LONLAT, 1);
+        gridDefXsize(m_gridsID, 1);
+        gridDefXname(m_gridsID, "x_dummy");
+        gridDefYsize(m_gridsID, 1);
+        gridDefYname(m_gridsID, "y_dummy");
+    }
+}
+
+void CDI::def_zs() const {
+    if (m_zsID == -1) {
+        m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
+        m_zID["zs"] = m_zsID;
+        zaxisDefName(m_zsID,"zs");
+    }
+}
+
 // wrapup def_dim_impl function
 void CDI::def_x_dim(const std::string &name, size_t length) const {
     gridDefXsize(m_gridID, (int)length);
@@ -168,11 +187,11 @@ void CDI::def_t_dim(const std::string &name, size_t length) const {
 }
 
 void CDI::def_g_dim(const std::string &name, size_t length) const {
-	int gridgID = gridCreate(GRID_LONLAT, length);
-	gridDefXsize(gridgID, length);
-	gridDefXname(gridgID, name.c_str());
-	gridDefYsize(gridgID, 1);
-	gridDefYname(gridgID, "y_dummy");
+	m_gridgID = gridCreate(GRID_LONLAT, length);
+	gridDefXsize(m_gridgID, length);
+	gridDefXname(m_gridgID, name.c_str());
+	gridDefYsize(m_gridgID, 1);
+	gridDefYname(m_gridgID, "yd");
 }
 
 void CDI::wrapup_def_dim() const {
@@ -184,30 +203,23 @@ void CDI::wrapup_def_dim() const {
 	pvcDefDim.push_back(pFn);
 	pFn = &CDI::def_t_dim;
 	pvcDefDim.push_back(pFn);
+	pFn = &CDI::def_g_dim;
+	pvcDefDim.push_back(pFn);
 }
 
 void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
-	if (m_vlistID == -1) {
-		m_vlistID = vlistCreate();
-		m_gridsID = gridCreate(GRID_LONLAT, 1);
-        gridDefXsize(m_gridsID, 1);
-        gridDefXname(m_gridsID, "x_dummy");
-        gridDefYsize(m_gridsID, 1);
-		gridDefYname(m_gridsID, "y_dummy");
-	}
-
+	def_vlist();
+	def_zs();
 //	if (!m_gridexist) {
-		if (dim != -1) {
-			(this->*(pvcDefDim[dim]))(name, length);
-			m_dimsAxis[name] = dim;
-		} else {
-			m_dimsAxis[name] = -1;
+		//if (dim != -1) {
+		//	(this->*(pvcDefDim[dim]))(name, length);
+		//	m_dimsAxis[name] = dim;
+		//} else {
+		if (dim == -1) {
+			dim = 4;
 		}
-		if (m_zsID == -1) {
-			m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
-			m_zID["zs"] = m_zsID;
-			zaxisDefName(m_zsID,"zs");
-		}
+		(this->*(pvcDefDim[dim]))(name, length);
+		m_dimsAxis[name] = dim;
 //	} else {
 //		if (m_firststep) vlistDefTaxis(m_vlistID, m_tID);
 //		}
@@ -260,7 +272,7 @@ unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const {
 }
 
 void CDI::wrapup_inq_dimlen() const {
-    pInqDimlen pFn = &CDI::inq_dimlen_x;
+        pInqDimlen pFn = &CDI::inq_dimlen_x;
 	pvcInqDimlen.push_back(pFn);
 	pFn = &CDI::inq_dimlen_y;
 	pvcInqDimlen.push_back(pFn);
@@ -292,35 +304,28 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
     if (m_dimsAxis.count(name))
     	return;    
     // Define variables
-    if (m_vlistID == -1) {
-    	m_vlistID = vlistCreate();
-    	m_gridsID = gridCreate(GRID_LONLAT, 1);
-        gridDefXsize(m_gridsID, 1);
-        gridDefXname(m_gridsID, "x_dummy");
-        gridDefYsize(m_gridsID, 1);
-		gridDefYname(m_gridsID, "y_dummy");
-    }
+    def_vlist();
+    int dimlim = 2;
+    int tdim = 0;
+    if (std::find(dims.begin(), dims.end(), "time")!=dims.end())
+    		tdim=1;
 
-    if (dims.empty() || dims.size()<2) { // scalar variable
+    if (dims.empty() || dims.size()-tdim==0) {              // scalar variable
 		def_var_scalar_impl(name, nctype, dims);
-    } else {                             // multi-dimensional variable
+    } else if (dims.size()-tdim<dimlim) { // multi-scalar variable
+		def_var_mscalar_impl(name, nctype, dims);
+    } else {                         // multi-dimensional variable
 		def_var_multi_impl(name, nctype, dims);
     }
 }
 
 void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const std::vector<std::string> &dims) const {
-    //if (m_gridsID == -1) {
-    //    m_gridsID = gridCreate(GRID_LONLAT, 1);
-    //    gridDefXsize(m_gridsID, 1);
-    //    gridDefXname(m_gridsID, "x_dummy");
-    //    gridDefYsize(m_gridsID, 1);
-	//	gridDefYname(m_gridsID, "y_dummy");
-    //}
-    //if (m_zsID == -1) m_zsID = zaxisCreate(ZAXIS_SURFACE, 1);
-
+    def_zs();
+    std::map<std::string,int>::iterator it;
     int tsteptype = TIME_CONSTANT;
     for (auto d : dims) {
-    	if (m_dimsAxis[name] == 3) tsteptype = TIME_VARIABLE;
+	it = m_dimsAxis.find(d);
+	if (it != m_dimsAxis.end() && it->second==3) tsteptype = TIME_VARIABLE;
     }
     
     int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
@@ -330,14 +335,32 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype,  const st
     m_varsID[name] = varID;
 }
 
+void CDI::def_var_mscalar_impl(const std::string &name, IO_Type nctype,  const std::vector<std::string> &dims) const {
+    def_zs();
+    std::map<std::string,int>::iterator it;
+    int tsteptype = TIME_CONSTANT;
+    for (auto d : dims) {
+        it = m_dimsAxis.find(d);
+        if (it != m_dimsAxis.end() && it->second==3) tsteptype = TIME_VARIABLE;
+    }
+    
+    int varID = vlistDefVar(m_vlistID, m_gridgID, m_zsID, tsteptype);
+    vlistDefVarName(m_vlistID, varID, name.c_str());
+    int type = pism_type_to_cdi_type(nctype);
+    vlistDefVarDatatype(m_vlistID, varID, type);
+    m_varsID[name] = varID;
+}
+
+
+
 void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
     int zaxisID = -1;
     int tsteptype = TIME_CONSTANT;
 
     for (auto d : dims) {
-    	if (m_dimsAxis[name] == 3) tsteptype = TIME_VARIABLE;
-    	if (m_dimsAxis[name] == 2) {
-    		if (m_zID.count(name)) zaxisID = m_zID[name];
+    	if (m_dimsAxis[d] == 3) tsteptype = TIME_VARIABLE;
+    	if (m_dimsAxis[d] == 2) {
+    		if (m_zID.count(d)) zaxisID = m_zID[d];
     	}
     }
 
@@ -377,12 +400,13 @@ void CDI::put_vara_double_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
                                   const std::vector<unsigned int> &count,
                                   const double *op) const {
-	// write dimensions values if not done yet
-	int dim = m_dimsAxis[variable_name];
-	if (!m_gridexist) (this->*(pvcPutDim[dim]))(variable_name, op);
-	// if variable_name is a dimension, return
-	if (m_dimsAxis.count(variable_name))
-		return;
+    // write dimensions values if not done yet
+    if (m_dimsAxis.count(variable_name)) {
+        int dim = m_dimsAxis[variable_name];
+        if (!m_gridexist) (this->*(pvcPutDim[dim]))(variable_name, op);
+	return;
+    }
+
     // write scalar
     int ndims = static_cast<int>(start.size());
     int idxlen=1, j;
@@ -548,17 +572,14 @@ void CDI::put_att_text_impl(const std::string &variable_name,
 	// basic checks
 	if (value.empty() || att_name.empty()) return;
 	// write dimension attribute
-    if (m_dimsAxis.count(variable_name)) {
-    	int dim = m_dimsAxis[variable_name];
-    	int att;
-    	if (m_DimAtt.count(att_name)) {
-	    	att = m_DimAtt[att_name];
-    		(this->*(pvcPutAttT[dim][att]))(variable_name, value);
-    	}
-        return;
-    }
+    	if (m_dimsAxis.count(variable_name)) {
+		if (m_DimAtt.count(att_name) && m_dimsAxis[variable_name]<3) {
+    			(this->*(pvcPutAttT[m_dimsAxis[variable_name]][m_DimAtt[att_name]]))(variable_name, value);
+		}
+        	return;
+        }
 
-    // write variable attribute
+        // write variable attribute
 	int varID = -1;
 	if (variable_name == "PISM_GLOBAL") {
 		varID = CDI_GLOBAL;

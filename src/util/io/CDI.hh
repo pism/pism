@@ -142,6 +142,7 @@ private:
 	// auxiliary
 	mutable int m_gridsID;
 	mutable int m_zsID;
+	mutable int m_gridgID;
 	
 	//switch
 	mutable bool m_firststep;
@@ -154,15 +155,19 @@ private:
 
 	// define variable helpers
 	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
-	      const std::vector<std::string> &dims) const;
-    void def_var_multi_impl(const std::string &name, IO_Type nctype,
-              const std::vector<std::string> &dims) const;
+        const std::vector<std::string> &dims) const;
+        void def_var_multi_impl(const std::string &name, IO_Type nctype,
+        const std::vector<std::string> &dims) const;
+	void def_var_mscalar_impl(const std::string &name, IO_Type nctype,
+	const std::vector<std::string> &dims) const;
+        void def_vlist() const;
+        void def_zs() const;
 
-    // inquire current timestep helper
-    int inq_current_timestep() const;
+        // inquire current timestep helper
+        int inq_current_timestep() const;
     
-    // calendar conversion
-    double year_gregorian(double time) const;
+        // calendar conversion
+        double year_gregorian(double time) const;
 	long int day_gregorian(double nyearsf) const;
 	
 	// inquire attribute helper
