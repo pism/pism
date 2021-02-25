@@ -65,12 +65,8 @@ public:
   // open/create/close
   void open(const std::string &filename,
             IO_Mode mode,
-            //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
             int FileID = -1,
             const std::map<std::string, int> &dimsa = std::map<std::string, int>());
-
-  void set_ncgridIDs(const std::vector<int>& gridIDs = std::vector<int>()) const;
-  virtual std::vector<int> get_ncgridIDs() const;
 
   void create(const std::string &filename, int FileID = -1);
 
@@ -172,7 +168,6 @@ protected:
   // open/create/close
   virtual void open_impl(const std::string &filename,
                          IO_Mode mode,
-                         //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
                          int FileID = -1,
                          const std::map<std::string, int> &dimsa = std::map<std::string, int>()) = 0;
   virtual void create_impl(const std::string &filename, int FileID = -1) = 0;
@@ -259,8 +254,6 @@ protected:
   virtual void def_vlist_impl() const;
   virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
   virtual void set_bdiag_impl(bool value) const;
-  virtual void set_ncgridIDs_impl(const std::vector<int>& gridIDs = std::vector<int>()) const;
-  virtual std::vector<int> get_ncgridIDs_impl() const;
   virtual int get_ncstreamID_impl() const;
   virtual int get_ncvlistID_impl() const;
 

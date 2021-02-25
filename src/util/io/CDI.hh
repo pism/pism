@@ -124,8 +124,6 @@ protected:
     void def_vlist_impl() const;
 	void set_diagvars_impl(const std::set<std::string> &variables) const;
 	void set_bdiag_impl(bool value) const;
-	void set_ncgridIDs_impl(const std::vector<int>& gridIDs) const;
-	std::vector<int> get_ncgridIDs_impl() const;
 	int get_ncstreamID_impl() const;
 	int get_ncvlistID_impl() const;
 
@@ -145,21 +143,13 @@ private:
 	mutable int m_gridgID;
 	
 	//switch
-	mutable bool m_firststep;
 	mutable bool m_beforediag;
-	mutable bool m_gridexist;
 	
 	// initialize class for opened file
 	void map_varsID() const;
 	void map_zaxisID() const;
 
-	// define variable helpers
-	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
-        const std::vector<std::string> &dims) const;
-        void def_var_multi_impl(const std::string &name, IO_Type nctype,
-        const std::vector<std::string> &dims) const;
-	void def_var_mscalar_impl(const std::string &name, IO_Type nctype,
-	const std::vector<std::string> &dims) const;
+	// file definition helpers
         void def_vlist() const;
         void def_zs() const;
 
@@ -211,6 +201,17 @@ private:
 	typedef void(CDI::*pPutAttT)(const std::string&, const std::string&) const;
 	mutable std::vector<std::vector<pPutAttT>> pvcPutAttT;
 	mutable std::map<std::string,int> m_DimAtt;
+
+	// define variable wrappers
+	void def_var_scalar_impl(const std::string &name, IO_Type nctype,
+        const std::vector<std::string> &dims) const;
+	void def_var_mscalar_impl(const std::string &name, IO_Type nctype,
+        const std::vector<std::string> &dims) const;
+	void def_var_multi_impl(const std::string &name, IO_Type nctype,
+        const std::vector<std::string> &dims) const;
+	void wrapup_def_var() const;
+	typedef void(CDI::*pDefVar)(const std::string&, IO_Type, const std::vector<std::string>&) const;
+	mutable std::vector<pDefVar> pvcDefVar;
 };
 }
 }

@@ -71,7 +71,6 @@ NC3File::~NC3File() {
 // open/create/close
 void NC3File::open_impl(const std::string &fname,
                         IO_Mode mode,
-                        //const std::map<std::string, int> &varsi,
                         int FileID,
                         const std::map<std::string, int> &dimsa) {
   int stat = NC_NOERR;

@@ -33,8 +33,7 @@ public:
 protected:
   // open/create/close
   void open_impl(const std::string &filename,
-  	             IO_Mode mode,
-  	             //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
+  	         IO_Mode mode,
                  int FileID = -1,
                  const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
