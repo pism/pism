@@ -64,24 +64,14 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 
 void NCFile::open(const std::string &filename,
                   IO_Mode mode,
-                  //const std::map<std::string, int> &varsi,
                   int FileID,
                   const std::map<std::string, int> &dimsa) {
   this->open_impl(filename,
                   mode,
-                  //varsi,
                   FileID,
                   dimsa);
   m_filename = filename;
   m_define_mode = false;
-}
-
-void NCFile::set_ncgridIDs(const std::vector<int>& gridIDs) const {
-  this->set_ncgridIDs_impl(gridIDs);
-}
-
-std::vector<int> NCFile::get_ncgridIDs() const {
-  return this->get_ncgridIDs_impl();
 }
 
 void NCFile::create(const std::string &filename, int FileID) {
@@ -360,13 +350,6 @@ void NCFile::set_bdiag(bool value) const {
 
 void NCFile::set_bdiag_impl(bool value) const {
   (void) value;
-}
-
-void NCFile::set_ncgridIDs_impl(const std::vector<int>& gridIDs) const {
-  (void) gridIDs;
-}
-
-std::vector<int> NCFile::get_ncgridIDs_impl() const {
 }
 
 int NCFile::get_ncstreamID() const {

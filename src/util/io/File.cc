@@ -189,8 +189,6 @@ File::File(MPI_Comm com,
            IO_Backend backend,
            IO_Mode mode,
            int iosysid,
-           //const std::map<std::string, int> &varsi,
-           //const std::vector<int>& gridIDs,
            int FileID,
            const std::map<std::string, int> &dimsa)
   : m_impl(new Impl) {
@@ -208,10 +206,8 @@ File::File(MPI_Comm com,
 
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
-  //this->set_gridIDs(gridIDs);
   this->open(filename,
              mode,
-             //varsi,
              FileID,
              dimsa);
 }
@@ -227,14 +223,6 @@ File::~File() {
     }
   }
   delete m_impl;
-}
-
-void File::set_gridIDs(const std::vector<int>& gridIDs) const {
- m_impl->nc->set_ncgridIDs(gridIDs);
-}
-
-std::vector<int> File::get_gridIDs() const {
- return m_impl->nc->get_ncgridIDs();
 }
 
 int File::get_streamID() const {
@@ -282,7 +270,6 @@ void File::set_compression_level(int level) const {
 
 void File::open(const std::string &filename,
                 IO_Mode mode,
-                //const std::map<std::string, int> &varsi,
                 int FileID,
                 const std::map<std::string, int> &dimsa) {
   try {
@@ -308,7 +295,6 @@ void File::open(const std::string &filename,
 
       m_impl->nc->open(filename,
                        mode,
-                       //varsi,
                        FileID,
                        dimsa);
 

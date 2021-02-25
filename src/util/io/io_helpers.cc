@@ -739,11 +739,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                                   name.c_str(),
                                   file.filename().c_str());
   }
-  if (file.backend() == PISM_CDI) {
-    log.message(2, "CDI: dimensions already written\n");
-  } else {
-    write_dimensions(var, grid, file);
-  }
+  write_dimensions(var, grid, file);
+
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
   if (var.get_time_independent() && !file.is_split()) {

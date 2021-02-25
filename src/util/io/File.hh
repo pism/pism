@@ -57,8 +57,6 @@ public:
        IO_Backend backend,
        IO_Mode mode,
        int iosysid = -1,
-       //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
-       //const std::vector<int>& gridIDs = std::vector<int>(),
        int FileID = -1,
        const std::map<std::string, int> &dimsa = std::map<std::string, int>());
   ~File();
@@ -170,8 +168,6 @@ public:
   void define_vlist() const;
   void send_diagnostics(const std::set<std::string> &variables) const;
   void set_beforediag(bool value) const;
-  void set_gridIDs(const std::vector<int>& gridIDs = std::vector<int>()) const;
-  std::vector<int> get_gridIDs() const;
   int get_streamID() const;
   int get_vlistID() const;
   bool is_split() const;
@@ -184,7 +180,6 @@ private:
   mutable bool m_split;
   void open(const std::string &filename,
             IO_Mode mode,
-            //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
             int FileID = -1,
             const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
