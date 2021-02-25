@@ -56,6 +56,19 @@ private:
                         const fem::Q1Element3Face &face,
                         Vector2 *residual);
 
+  void residual_basal(const fem::Q1Element3 &element,
+                      const fem::Q1Element3Face &face,
+                      const double *tauc_nodal,
+                      const double *f_nodal,
+                      const Vector2 *u_nodal,
+                      Vector2 *residual);
+
+  void jacobian_basal(const fem::Q1Element3Face &face,
+                      const double *tauc_nodal,
+                      const double *f_nodal,
+                      const Vector2 *u_nodal,
+                      double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
+
   double m_B;
 
   double m_H0;

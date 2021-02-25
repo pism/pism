@@ -31,6 +31,8 @@ Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double 
 
 Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, double rho_i, double g, double B);
 
+Vector2 blatter_xz_halfar_source_base(double x, double H_0, double R_0, double rho_i, double g, double B);
+
 double blatter_xz_vanderveen_thickness(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B);
 
 Vector2 blatter_xz_vanderveen_exact(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B);

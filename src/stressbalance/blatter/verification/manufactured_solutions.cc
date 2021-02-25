@@ -178,6 +178,14 @@ Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, doubl
   };
 }
 
+Vector2 blatter_xz_halfar_source_base(double x, double H_0, double R_0, double rho_i, double g, double B) {
+  (void) B;
+  return {
+    -4.0/7.0*pow(H_0, 2)*g*rho_i*cbrt(x)/(pow(R_0, 8.0/7.0)*pow(pow(R_0, 4.0/3.0) - pow(x, 4.0/3.0), 1.0/7.0)),
+    0.0
+  };
+}
+
 double blatter_xz_vanderveen_thickness(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
   double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
   return pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);

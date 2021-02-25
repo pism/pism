@@ -26,7 +26,8 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor)
+BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_levels,
+                                     int coarsening_factor)
   : Blatter(grid, Mz, n_levels, coarsening_factor) {
 
   // use the isothermal Glen flow law
@@ -41,6 +42,7 @@ BlatterTestHalfar::BlatterTestHalfar(IceGrid::ConstPtr grid, int Mz, int n_level
   // store constant ice hardness (enthalpy and pressure values are irrelevant)
   m_B = m_flow_law->hardness(1e5, 0);
 
+  // dome radius
   m_R0 = 750e3;
 
   // ice thickness (m)
@@ -64,6 +66,9 @@ Vector2 BlatterTestHalfar::u_bc(double x, double y, double z) const {
 }
 
 double BlatterTestHalfar::H_exact(double x) const {
+  if (fabs(x) >= m_R0) {
+    return 0.0;
+  }
   return m_H0 * pow(1.0 - pow(fabs(x) / m_R0, 4.0 / 3.0), 3.0 / 7.0);
 }
 
@@ -190,6 +195,58 @@ void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
       residual[t] += - W * psi * F;
     }
   }
+}
+
+/*!
+ * Basal contribution to the residual.
+ */
+void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
+                                       const fem::Q1Element3Face &face,
+                                       const double *tauc_nodal,
+                                       const double *f_nodal,
+                                       const Vector2 *u_nodal,
+                                       Vector2 *residual) {
+  (void) tauc_nodal;
+  (void) f_nodal;
+  (void) u_nodal;
+
+  // compute x coordinates of quadrature points
+  double *x = m_work[0];
+  {
+    double *x_nodal = m_work[1];
+
+    for (int n = 0; n < fem::q13d::n_chi; ++n) {
+      x_nodal[n] = element.x(n);
+    }
+
+    face.evaluate(x_nodal, x);
+  }
+
+  for (int q = 0; q < face.n_pts(); ++q) {
+    auto W = face.weight(q);
+
+    auto F = blatter_xz_halfar_source_base(x[q], m_H0, m_R0, m_rho, m_g, m_B);
+
+    // loop over all test functions
+    for (int t = 0; t < element.n_chi(); ++t) {
+      auto psi = face.chi(q, t);
+
+      residual[t] += - W * psi * F;
+    }
+  }
+}
+
+void BlatterTestHalfar::jacobian_basal(const fem::Q1Element3Face &face,
+                                       const double *tauc_nodal,
+                                       const double *f_nodal,
+                                       const Vector2 *u_nodal,
+                                       double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]) {
+  (void) face;
+  (void) tauc_nodal;
+  (void) f_nodal;
+  (void) u_nodal;
+  (void) K;
+  // empty: residual contribution from the basal boundary does not depend on ice velocity
 }
 
 } // end of namespace stressbalance

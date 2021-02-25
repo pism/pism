@@ -770,11 +770,207 @@ class TestXZvanderVeen(TestCase):
         f.line(Mxs, fit, legend_label=f"O(dx^{-p[0]:1.2f})")
         show(f)
 
+class TestXZHalfar(TestCase):
+    def setUp(self):
+        self.R0 = 750e3
+        self.H0 = 3600.0
+
+        self.opt = PISM.PETSc.Options()
+
+        self.opts = {"-bp_snes_monitor": "",
+                     "-bp_ksp_type": "cg",
+                     "-bp_pc_type": "mg",
+                     "-bp_pc_mg_levels": "1"}
+
+        for k, v in self.opts.items():
+            self.opt.setValue(k, v)
+
+    def tearDown(self):
+        for k in self.opts.keys():
+            self.opt.delValue(k)
+        config.import_from(config_clean)
+
+    def grid_whole(self, Mx):
+        padding = 1e3
+        Lx = self.R0 / 2 - padding
+        x0 = self.R0 / 2
+
+        return self.grid(Mx, Lx, x0)
+
+    def grid_center(self, Mx):
+        Lx = self.R0 / 4
+        x0 = self.R0 / 2
+
+        return self.grid(Mx, Lx, x0)
+
+    def grid(self, Mx, Lx, x0):
+
+        dx = (2 * Lx) / (Mx - 1)
+
+        P = PISM.GridParameters(config)
+
+        P.Lx = Lx
+        P.Mx = Mx
+        P.x0 = Lx
+
+        P.Ly = dx
+        P.My = 3
+        P.y0 = 0.0
+
+        # this vertical grid is used to store ice enthalpy, not ice velocity, so 2 levels
+        # is enough
+        P.z = PISM.DoubleVector([0.0, self.H0])
+        P.registration = PISM.CELL_CORNER
+        P.periodicity = PISM.Y_PERIODIC
+        P.ownership_ranges_from_options(ctx.size)
+
+        return PISM.IceGrid(ctx.ctx, P)
+
+    def compute(self, grid, Mz, coarsening_factor):
+        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc.set(0.0)
+
+        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy.set(0.0)
+
+        model = PISM.BlatterTestHalfar(grid, Mz, 1, coarsening_factor)
+
+        geometry = PISM.Geometry(grid)
+
+        with PISM.vec.Access(geometry.ice_thickness):
+            for (i, j) in grid.points():
+                geometry.ice_thickness[i, j] = model.H_exact(grid.x(i))
+
+        geometry.bed_elevation.set(0.0)
+        geometry.sea_level_elevation.set(0)
+        geometry.ensure_consistency(0.0)
+
+        model.init()
+
+        inputs = PISM.StressBalanceInputs()
+        inputs.geometry = geometry
+        inputs.basal_yield_stress = tauc
+        inputs.enthalpy = enthalpy
+
+        model.update(inputs, True)
+
+        return model
+
+    def exact_solution(self, model):
+        "Returns an array with the exact solution"
+
+        Z = model.velocity_u_sigma().levels()
+        grid = model.grid()
+
+        exact = PISM.IceModelVec3(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
+        exact.set_attrs("exact",
+                        "x-component of the exact solution",
+                        "m / s", "m / year", "", 0)
+
+        u = np.zeros_like(Z)
+        with PISM.vec.Access(exact):
+            for (i, j) in grid.points():
+                x = grid.x(i)
+                H = model.H_exact(x)
+                for k, z_sigma in enumerate(Z):
+                    z = H * z_sigma
+                    u[k] = model.u_exact(x, z)
+                exact.set_column(i, j, u)
+
+        return exact
+
+    def error_norm(self, grid, Mz, mg_levels, coarsening_factor):
+        self.opt.setValue("-bp_pc_mg_levels", str(mg_levels))
+        model = self.compute(grid, Mz, coarsening_factor)
+
+        u_exact = self.exact_solution(model)
+
+        # compute the error
+        Z = model.velocity_u_sigma().levels()
+        u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, Z)
+        u_error.copy_from(u_exact)
+        u_error.add(-1.0, model.velocity_u_sigma())
+
+        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
+
+    def test_halfar(self):
+        "Check that the Halfar test case converges with z refinement"
+
+        F = 2
+        Mx = 51
+        mg_levels = [5, 6]
+        Mzs = [F**(m-1) + 1 for m in mg_levels]
+
+        grid = self.grid_center(Mx)
+        errors = [self.error_norm(grid, int(Mz), N, F) for Mz, N in zip(Mzs, mg_levels)]
+
+        assert expt(Mzs, errors) >= 2.0
+
+    def plot(self):
+        self.plot_Mx()
+        self.plot_Mz()
+
+    def plot_Mx(self):
+        # coarsening factor
+        Mxs = [101, 201, 401]
+        mg_levels = 3
+        F = 8
+        Mz = int(F**(mg_levels - 1)) + 1
+
+        try:
+            self.setUp()
+            errors = [self.error_norm(self.grid_whole(Mx), Mz, mg_levels, F)
+                      for Mx in Mxs]
+        finally:
+            self.tearDown()
+
+        p = np.polyfit(np.log(Mxs), np.log(errors), 1)
+        fit = np.exp(np.polyval(p, np.log(Mxs)))
+
+        from bokeh.plotting import figure, show, output_file
+        from bokeh.layouts import gridplot
+
+        output_file("test-xz-Halfar-Mx.html")
+        f = figure(title="BP stress balance: verification test XZ (Halfar dome)",
+                   x_axis_type="log", y_axis_type="log",
+                   x_axis_label="Mx", y_axis_label="max error")
+        f.scatter(Mxs, errors)
+        f.line(Mxs, fit, legend_label=f"O(Mx^{p[0]:1.2f})")
+
+        show(f)
+
+    def plot_Mz(self):
+        # coarsening factor
+        F = 2
+        Mx = 51
+        mg_levels = [5, 6, 7]
+        Mzs = [int(F**(m-1)) + 1 for m in mg_levels]
+
+        try:
+            self.setUp()
+            grid = self.grid_center(Mx)
+            errors = [self.error_norm(grid, Mz, N, F)
+                      for Mz, N in zip(Mzs, mg_levels)]
+        finally:
+            self.tearDown()
+
+        p = np.polyfit(np.log(Mzs), np.log(errors), 1)
+        fit = np.exp(np.polyval(p, np.log(Mzs)))
+
+        from bokeh.plotting import figure, show, output_file
+        output_file("test-xz-Halfar-Mz.html")
+        f = figure(title="BP stress balance: verification test XZ (Halfar dome)",
+                   x_axis_type="log", y_axis_type="log",
+                   x_axis_label="Mz", y_axis_label="max error")
+        f.scatter(Mzs, errors)
+        f.line(Mzs, fit, legend_label=f"O(Mz^{p[0]:1.2f})")
+        show(f)
+
 if __name__ == "__main__":
 
     for test in [TestXY(),
                  TestXZ(),
                  TestCFBC(),
-                 TestXZvanderVeen()
-    ]:
+                 TestXZvanderVeen(),
+                 TestXZHalfar()]:
         test.plot()

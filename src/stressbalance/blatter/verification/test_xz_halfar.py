@@ -63,6 +63,15 @@ def surface_bc(u0, v0, surface):
 
     return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(N_surface)
 
+def basal_bc(u0, v0):
+    N_bed = {nx: 0, ny: 0, nz : -1}
+
+    I = (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(N_bed)
+
+    x_p = sp.symbols("x_p", positive=True)
+
+    return I.subs(z, 0).subs(constants()).subs(x, x_p).subs(x_p, x).simplify()
+
 def lateral_bc(u0, v0):
     N_right = {nx: 1, ny: 0, nz : 0}
     return (2 * eta(u0, v0, n) * M(u0, v0).row(0) * N)[0].subs(N_right), 0.0
@@ -76,12 +85,14 @@ def print_code(header=False):
         declare(name="blatter_xz_halfar_source", args=coords + constants)
         declare(name="blatter_xz_halfar_source_lateral", args=coords + constants)
         declare(name="blatter_xz_halfar_source_surface", args=["x"] + constants)
+        declare(name="blatter_xz_halfar_source_base", args=["x"] + constants)
         return
 
     print_exact(coords + constants)
     print_source(coords + constants)
     print_source_lateral(coords + constants)
     print_source_surface(["x"] + constants)
+    print_source_base(["x"] + constants)
 
 def print_source_surface(args):
     "Print the code computing the extra term at the top surface"
@@ -106,6 +117,17 @@ def print_source_surface(args):
     print_var(U_x, u_x)
 
     print_footer(f_top, 0.0)
+
+def print_source_base(args):
+    "Print the code computing the extra term at the bottom surface"
+
+    u0, v0 = u_exact()
+
+    f_b = basal_bc(u0.subs(h, H(x)), v0)
+
+    print_header("blatter_xz_halfar_source_base", args)
+    print("  (void) B;")
+    print_footer(f_b, 0.0)
 
 def print_source_lateral(args):
     "Print the code computing the extra term at the right boundary"
