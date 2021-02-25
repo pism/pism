@@ -7,26 +7,40 @@
 Spatial grid
 ------------
 
-The PISM grid covering the computational box is equally spaced in horizontal (`x`
-and `y`) directions. Vertical spacing in the ice is quadratic by default but
-optionally equal spacing can be chosen; choose with options :opt:`-z_spacing`
-[``quadratic``, ``equal``\] at bootstrapping. The grid read from a "``-i``" input file is
-used as is. The bedrock thermal layer model always uses equal vertical spacing.
+The PISM grid covering the computational box is equally spaced in horizontal (`x` and `y`)
+directions. Vertical spacing in the ice is quadratic by default but optionally equal
+spacing can be chosen; set using :config:`grid.ice_vertical_spacing` at bootstrapping. The
+bedrock thermal layer model always uses equal vertical spacing.
 
-The grid is described by four numbers, namely the number of grid points ``Mx`` in the
-`x` direction, the number ``My`` in the `y` direction, the number ``Mz`` in
-the `z` direction within the ice, and the number ``Mbz`` in the `z` direction
-within the bedrock thermal layer. These are specified by options :opt:`-Mx`, :opt:`-My`,
-:opt:`-Mz`, and :opt:`-Mbz`, respectively. The defaults are 61, 61, 31, and 1,
-respectively. Note that ``Mx``, ``My``, ``Mz``, and ``Mbz`` all indicate the number of
-grid *points* so the number of grid *spaces* are one less, thus 60, 60, 30, and 0 in the
-default case.
+The grid is described by four numbers, namely the number of grid points :config:`grid.Mx`
+in the `x` direction, the number :config:`grid.My` in the `y` direction, the number
+:config:`grid.Mz` in the `z` direction within the ice, and the number :config:`grid.Mbz`
+in the `z` direction within the bedrock thermal layer. These are specified by options
+:opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, and :opt:`-Mbz`, respectively. Note that ``Mx``,
+``My``, ``Mz``, and ``Mbz`` all indicate the number of grid *points* so the number of grid
+*spaces* are one less.
 
-The lowest grid point in a column of ice, at `z=0`, coincides with the highest grid point
-in the bedrock, so ``Mbz`` must always be at least one. Choosing ``Mbz`` `>1` is required
-to use the bedrock thermal model. When a thermal bedrock layer is used, the distance
-``Lbz`` is controlled by the :opt:`-Lbz` option. Note that ``Mbz`` is unrelated to the bed
-deformation model (glacial isostasy model); see section :ref:`sec-beddef`.
+The lowest grid point in a grounded column of ice, at `z=0`, coincides with the highest
+grid point in the bedrock, so :config:`grid.Mbz` must always be at least one.
+
+.. figure:: figures/grid-vertical-pism.png
+   :name: fig-grid-vertical-pism
+
+   PISM's vertical grid with uniform `z` spacing. See :ref:`sec-vertchange` for details.
+
+Some PISM components (currently: the Blatter stress balance solver) use a
+geometry-following vertical grid with uniform vertical spacing withing each column.
+See :numref:`fig-grid-vertical-sigma`.
+
+.. figure:: figures/grid-vertical-sigma.png
+   :name: fig-grid-vertical-sigma
+
+   The "sigma" vertical grid used by PISM's Blatter solver
+
+Choosing ``Mbz`` `>1` is required to use the bedrock thermal model. When a thermal bedrock
+layer is used, the distance ``Lbz`` is controlled by the :opt:`-Lbz` option. Note that
+:config:`grid.Mbz` is unrelated to the bed deformation model (glacial isostasy model); see
+section :ref:`sec-beddef`.
 
 In the quadratically-spaced case the vertical spacing near the ice/bedrock interface is
 about four times finer than it would be with equal spacing for the same value of ``Mz``,
