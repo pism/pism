@@ -58,9 +58,10 @@ however, as also described in the Table.
        - model for subglacial water
        - model for basal resistance
 
-   * - *Blatter-Pattyn*
-     - "higher-order", bridging stresses :cite:`Blatter`, :cite:`Pattyn03`,
-       :cite:`SchoofCoulombBlatter`
+   * - First Order Approximation
+     - pressure within the ice is hydrostatic; `x` and `y` derivatives of the
+       vertical velocity component are small compared to `z` derivatives of horizontal
+       components :cite:`Blatter`, :cite:`Pattyn03`, :cite:`SchoofCoulombBlatter`
      - *same as above* 
 
 It may also be helpful to view the implemented stress balances as PISM software components
@@ -70,8 +71,6 @@ solution is generated first, then a distribution of vertical shear in the column
 generated second, and finally a use of incompressibility computes the vertical component
 of the velocity. The nonsliding SIA-only model has a trivialized membrane stress solution.
 The SSA-only model has a trivialized computation of vertical shear.
-
-FIXME: BP
 
 .. figure:: figures/stressbalance.png
    :name: fig-stressbalance
