@@ -121,10 +121,12 @@ multigrid preconditioners.)
 Here ``-bp_pc_type mg`` selects the geometric multigrid (MG) preconditioner using
 semi-coarsening in the vertical direction. This method requires building a hierarchy of
 grids, the finest of which is selected using :config:`grid.Mx`, :config:`grid.My`,
-:config:`stress_balance.blatter.Mz`.\ [#semi-coarsening]_ To build this hierarchy, start
-with the fine grid and build the next one by dividing the number of vertical *spaces* by a
-coarsening factor `C`. The number of vertical grid levels `N_k` in the grid number `k` in
-the hierarchy is
+:config:`stress_balance.blatter.Mz`.\ [#semi-coarsening]_
+
+To create this hierarchy, PISM starts with the finest grid and builds the next one by
+dividing the number of vertical *spaces* by a coarsening factor `C` (see
+:config:`stress_balance.blatter.coarsening_factor`). The number of vertical grid levels
+`N_k` in the grid number `k` in the hierarchy is
 
 .. math::
 
@@ -174,22 +176,23 @@ for some integer `A`.
    * - `8`
      - 2, 9, **65**, 513, 4097, `\dots`
 
-By default `C = 2`, but larger numbers (up to around `8`) have been observed to work. As
-highlighted in :numref:`tab-blatter-mg-levels`, sometimes the same number of vertical grid
-levels can be achieved using more than one combination of the coarsening factor and the
-number of MG levels.
+By default `C = 2`, but *aggressive coarsening* (i.e. larger values of `C`, up to around
+`8`) has been observed to work. As highlighted in :numref:`tab-blatter-mg-levels`,
+sometimes the same number of vertical grid levels can be achieved using more than one
+combination of the coarsening factor and the number of MG levels.
 
 For example, we can set up a solver using `65` vertical levels and `3` MG levels with the
 coarsening factor of `8`, or `4` MG levels and the factor of `4`, or `7` MG levels and the
-coarsening factor of `2`. In general, the computational cost increases with the number of
-MG levels, so the first hierarchy (`2, 9, 65`, `C=8`) *may* be the best choice. *However,*
-if the value of `C` is "too high" the MG preconditioner may become less effective,
-requiring more Krylov iterations and increasing the computational cost. Again, one may
-have to experiment to find settings that work best in a particular setup.
+coarsening factor of `2`. In general, the computational cost of an MG preconditioner
+application increases with the number of MG levels, so the first hierarchy (`2, 9, 65`,
+`C=8`) *may* be the best choice. *However,* coarsening that is too aggressive may make a
+less effective preconditioner, requiring more Krylov iterations and increasing the
+computational cost. Again, one may have to experiment to find settings that work best in a
+particular setup.
 
 Picking the number of vertical levels from :numref:`tab-blatter-mg-levels` can be a
 hassle. As an alternative, PISM can *increase* the number of vertical levels to the
-smallest number that is greater than or equal to :config:`stress_balance.blatter.Mz` that
+smallest number that is greater than or equal to :config:`stress_balance.blatter.Mz` and
 has the form :eq:`eq-bp-vertical-grid-size`.
 
 Set
@@ -225,9 +228,9 @@ are worth trying as well.
 Surface gradient computation
 ############################
 
-Synthetic geometry experiments with grounded margins show "checkerboard" artifacts near
-steep margins. A similar issue and an attempt to address it are described in
-:cite:`Lipscomb2019`.
+Some synthetic geometry experiments with grounded margins show "checkerboard" artifacts in
+computed ice velocity near steep margins. A similar issue and an attempt to address it are
+described in :cite:`Lipscomb2019`.
 
 This implementation takes a different approach: instead of using an "upwinded" finite
 difference approximation of the surface gradient we allow using the `\eta` transformation
