@@ -2071,39 +2071,42 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.Glen_exponent_units = "pure number";
     pism_config:stress_balance.blatter.Glen_exponent_type = "number";
     pism_config:stress_balance.blatter.Glen_exponent = 3.0;
-    pism_config:stress_balance.blatter.Glen_exponent_doc = "; Glen exponent in ice flow law for the Blatter stress balance solver";
+    pism_config:stress_balance.blatter.Glen_exponent_doc = "Glen exponent in ice flow law for the Blatter stress balance solver";
 
+    pism_config:stress_balance.blatter.Mz_option = "blatter_Mz";
     pism_config:stress_balance.blatter.Mz_units = "count";
     pism_config:stress_balance.blatter.Mz_type = "integer";
     pism_config:stress_balance.blatter.Mz = 5;
-    pism_config:stress_balance.blatter.Mz_doc = "; Number of vertical grid levels in the ice (in the Blatter solver).";
+    pism_config:stress_balance.blatter.Mz_doc = "Number of vertical grid levels in the ice";
 
+    pism_config:stress_balance.blatter.coarsening_factor_option = "blatter_coarsening_factor";
     pism_config:stress_balance.blatter.coarsening_factor_units = "count";
     pism_config:stress_balance.blatter.coarsening_factor_type = "integer";
     pism_config:stress_balance.blatter.coarsening_factor = 2;
-    pism_config:stress_balance.blatter.coarsening_factor_doc = "Coarsening factor in the z direction (in the Blatter solver)";
+    pism_config:stress_balance.blatter.coarsening_factor_doc = "Coarsening factor in the `z` direction";
 
     pism_config:stress_balance.blatter.enhancement_factor_option = "blatter_e";
     pism_config:stress_balance.blatter.enhancement_factor_units = "1";
     pism_config:stress_balance.blatter.enhancement_factor_type = "number";
     pism_config:stress_balance.blatter.enhancement_factor = 1.0;
-    pism_config:stress_balance.blatter.enhancement_factor_doc = "; Flow enhancement factor for the Blatter stress balance flow law";
+    pism_config:stress_balance.blatter.enhancement_factor_doc = "Flow enhancement factor for the Blatter stress balance flow law";
 
     pism_config:stress_balance.blatter.enhancement_factor_interglacial_option = "blatter_e_interglacial";
     pism_config:stress_balance.blatter.enhancement_factor_interglacial_units = "1";
     pism_config:stress_balance.blatter.enhancement_factor_interglacial_type = "number";
     pism_config:stress_balance.blatter.enhancement_factor_interglacial = 1.0;
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver; used for ice accumulated during interglacial periods.";
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver (*not implemented*)";
 
     pism_config:stress_balance.blatter.flow_law_type = "keyword";
     pism_config:stress_balance.blatter.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.blatter.flow_law = "gpbld";
-    pism_config:stress_balance.blatter.flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model.";
+    pism_config:stress_balance.blatter.flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model";
 
+    pism_config:stress_balance.blatter.n_levels_option = "blatter_n_levels";
     pism_config:stress_balance.blatter.n_levels_units = "count";
     pism_config:stress_balance.blatter.n_levels_type = "integer";
-    pism_config:stress_balance.blatter.n_levels = 1;
-    pism_config:stress_balance.blatter.n_levels_doc = "Number of multigrid levels to pad the grid for";
+    pism_config:stress_balance.blatter.n_levels = 0;
+    pism_config:stress_balance.blatter.n_levels_doc = "Choose the number of vertical levels `M_z` so that `M_z \\ge` :config:`stress_balance.blatter.Mz` and allows for this many multigrid levels with the coarsening factor :config:`stress_balance.blatter.coarsening_factor`";
 
     pism_config:stress_balance.blatter.use_eta_transform_type = "flag";
     pism_config:stress_balance.blatter.use_eta_transform = "no";
