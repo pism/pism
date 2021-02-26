@@ -70,7 +70,8 @@ Stokes equations due to Blatter (:cite:`Blatter`, :cite:`Pattyn03`),
        non-sliding SIA.
 
    * - :opt:`-stress_balance blatter`
-     - Use the Blatter-Pattyn stress balance approximation.
+     - Use the first-order approximation of Stokes equations due to Blatter
+       (:cite:`Blatter` :cite:`Pattyn03`).
 
 .. _sec-blatter:
 
@@ -83,7 +84,7 @@ The number of vertical "levels" in this grid is controlled by
 :config:`stress_balance.blatter.Mz`.
 
 The non-linear system resulting from the discretization of PDEs corresponding to Blatter's
-stress balance model is much harder to solve than the one corresponding to the SSA system
+stress balance model\ [#bp-fem]_ is much harder to solve than the one corresponding to the SSA system
 (:cite:`BrownSmithAhmadia2013`, :cite:`Tuminaro2016`) and (at this point) experimentation
 with preconditioner choices seems inevitable. We use PETSc's command-line options to
 control these choices.
@@ -233,13 +234,15 @@ difference approximation of the surface gradient we allow using the `\eta` trans
 described in :ref:`sec-gradient`. Set :config:`stress_balance.blatter.use_eta_transform`
 to enable it.
 
+
+List of parameters
+##################
+
 Below is the complete list of configuration parameters controlling this solver (prefix:
 ``stress_balance.blatter.``):
 
 .. pism-parameters::
    :prefix: stress_balance.blatter.
-
-Please see :ref:`sec-blatter-details` for more.
 
 .. _sec-ssa:
 
@@ -438,3 +441,4 @@ values come from :cite:`Tomkin2007`.
 .. [#semi-coarsening] Horizontal coordinates of grid points are the same in all grids in a
                       hierarchy, i.e. each grid is "extruded" from PISM's 2D grid with
                       uniform spacing in `x` and `y` directions.
+.. [#bp-fem] See :ref:`sec-blatter-details`.
