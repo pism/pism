@@ -16,10 +16,10 @@
    \newcommand{\Hmin}{H_{\text{min}}}
    \newcommand{\dbeta}{\diff{\beta}{\alpha}}
 
-.. _sec-blatter-pattyn:
+.. _sec-blatter-details:
 
-Blatter-Pattyn stress balance solver
-====================================
+Blatter stress balance solver: technical details
+================================================
 
 .. contents::
 
