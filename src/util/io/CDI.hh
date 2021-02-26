@@ -121,7 +121,7 @@ protected:
 	void def_ref_date_impl(double time) const;
 	std::map<std::string, int> get_var_map_impl();
 	std::map<std::string, int> get_dim_map_impl();
-    void def_vlist_impl() const;
+	void def_vlist_impl() const;
 	void set_diagvars_impl(const std::set<std::string> &variables) const;
 	void set_bdiag_impl(bool value) const;
 	int get_ncstreamID_impl() const;
@@ -157,8 +157,9 @@ private:
         int inq_current_timestep() const;
     
         // calendar conversion
-        double year_gregorian(double time) const;
-	long int day_gregorian(double nyearsf) const;
+        double year_365(double time) const;
+	long int day_365(double nyearsf) const;
+	void monthday_365(int year, int doy, int *month, int *day) const;
 	
 	// inquire attribute helper
 	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;
