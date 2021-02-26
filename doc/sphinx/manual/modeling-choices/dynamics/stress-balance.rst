@@ -138,6 +138,7 @@ For this to work the number of vertical grid levels on the finest grid in the hi
 has to have the form
 
 .. math::
+   :label: eq-bp-vertical-grid-size
 
    \mathtt{stress\_balance.blatter.Mz} = A\cdot C^{M - 1} + 1
 
@@ -149,7 +150,7 @@ for some integer `A`.
    :widths: 1,3
 
    * - Coarsening factor `C`
-     - Sizes of vertical grids in a hierarchy
+     - Possible sizes of vertical grids in a hierarchy
 
    * - `2`
      - 2, 3, 5, 9, 17, 33, **65**, 129, 257, 513, 1025, `\dots`
@@ -185,6 +186,24 @@ if the value of `C` is "too high" the MG preconditioner may become less effectiv
 requiring more Krylov iterations and increasing the computational cost. Again, one may
 have to experiment to find settings that work best in a particular setup.
 
+Picking the number of vertical levels from :numref:`tab-blatter-mg-levels` can be a
+hassle. As an alternative, PISM can *increase* the number of vertical levels to the
+smallest number that is greater than or equal to :config:`stress_balance.blatter.Mz` that
+has the form :eq:`eq-bp-vertical-grid-size`.
+
+Set
+
+.. code-block:: bash
+
+   -bp_pc_type mg \
+   -bp_pc_mg_levels M \
+   -blatter_n_levels M \
+   -blatter_coarsening_factor C \
+   -blatter_Mz N
+
+to enable this mechanism. In this case PISM will use a fine grid with *at least* `N`
+vertical levels and build a grid hierarchy with `M` levels and the coarsening factor `C`.
+
 The coarsest grid in a hierarchy should be as small as possible. Two levels is the minimum
 achievable in the context of the finite element method used to discretize the system (this
 corresponds to a mesh that is just one element thick).
@@ -205,8 +224,14 @@ are worth trying as well.
 Surface gradient computation
 ############################
 
-FIXME BP: mention that CISM appears to have a similar issue, reference the section about SIA
-gradient methods.
+Synthetic geometry experiments with grounded margins show "checkerboard" artifacts near
+steep margins. A similar issue and an attempt to address it are described in
+:cite:`Lipscomb2019`.
+
+This implementation takes a different approach: instead of using an "upwinded" finite
+difference approximation of the surface gradient we allow using the `\eta` transformation
+described in :ref:`sec-gradient`. Set :config:`stress_balance.blatter.use_eta_transform`
+to enable it.
 
 Below is the complete list of configuration parameters controlling this solver (prefix:
 ``stress_balance.blatter.``):
