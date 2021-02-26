@@ -179,7 +179,7 @@ number of MG levels.
 
 For example, we can set up a solver using `65` vertical levels and `3` MG levels with the
 coarsening factor of `8`, or `4` MG levels and the factor of `4`, or `7` MG levels and the
-coarsening number of `2`. In general, the computational cost increases with the number of
+coarsening factor of `2`. In general, the computational cost increases with the number of
 MG levels, so the first hierarchy (`2, 9, 65`, `C=8`) *may* be the best choice. *However,*
 if the value of `C` is "too high" the MG preconditioner may become less effective,
 requiring more Krylov iterations and increasing the computational cost. Again, one may
