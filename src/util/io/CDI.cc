@@ -28,6 +28,9 @@
 #include "pism/util/io/pism_cdi_type_conversion.hh"
 #include "pism/util/IceGrid.hh"
 
+#include "pism/external/calcalcs/utCalendar2_cal.h"
+#include "pism/external/calcalcs/calcalcs.h"
+
 #include "pism/util/error_handling.hh"
 
 extern "C"{
@@ -167,7 +170,7 @@ void CDI::def_g_dim(const std::string &name, size_t length) const {
 	gridDefXsize(m_gridgID, length);
 	gridDefXname(m_gridgID, name.c_str());
 	gridDefYsize(m_gridgID, 1);
-	gridDefYname(m_gridgID, "yd");
+	gridDefYname(m_gridgID, "y_dummy");
 }
 
 void CDI::wrapup_def_dim() const {
@@ -188,12 +191,18 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 
 // define reference date
 // TODO support other calendars
-double CDI::year_gregorian(double time) const {
+double CDI::year_365(double time) const {
 	return -time / 365 / 24 / 60 / 60;
 }
 
-long int CDI::day_gregorian(double nyearsf) const {
-	long int seconds = (nyearsf - (long int)nyearsf) * 86400;
+void CDI::monthday_365(int year, int doy, int *month, int *day) const {
+	char name[] = "365_day";
+	calcalcs_cal *calendar = ccs_init_calendar(name);
+	int cal = ccs_doy2date( calendar, year, doy, month, day );	
+}
+
+long int CDI::day_365(double nyearsf) const {
+	long int seconds = nyearsf * 86400;
         long int minutes, hours;
         hours = seconds / 3600;
         minutes = (seconds - (3600*hours)) / 60;
@@ -202,10 +211,15 @@ long int CDI::day_gregorian(double nyearsf) const {
 }
 
 void CDI::def_ref_date_impl(double time) const {
-	// Taking into account only gregorian calendar right now
-	double nyearsf = year_gregorian(time);
-	taxisDefVdate(m_tID, -(long int)nyearsf);
-	long int daytime = day_gregorian(nyearsf);
+	// Taking into account only 365_day calendar right now
+	int month=0, day=0;
+	double nyearsf = year_365(time);
+	int doy = int (( nyearsf - (long int)nyearsf ) * 365);
+	double dayf = ((nyearsf - (long int)nyearsf ) * 365) -  doy;
+        if ( doy != 0 ) monthday_365(int(nyearsf), doy, &month, &day);
+	int ref_date = (int)nyearsf*10000+month*100+day;
+	taxisDefVdate(m_tID, -ref_date);
+	long int daytime = day_365(dayf);
 	taxisDefVtime(m_tID, daytime);
 }
 
