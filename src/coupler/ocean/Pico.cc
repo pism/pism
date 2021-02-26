@@ -39,7 +39,6 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/coupler/util/options.hh"
 
 #include "Pico.hh"
@@ -314,12 +313,11 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
                                          const IceModelVec2Int &continental_shelf_mask,
                                          const IceModelVec2S &salinity_ocean, const IceModelVec2S &theta_ocean,
                                          std::vector<double> &temperature, std::vector<double> &salinity) {
-  const Profiling &profiling = m_grid->ctx()->profiling();
-  profiling.begin("compute_ocean_input_per_basin");
   std::vector<int> count(m_n_basins, 0);
-  std::vector<int> count1(m_n_basins, 0);
-  std::vector<double> salinity1(m_n_basins);
-  std::vector<double> temperature1(m_n_basins);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> countr(m_n_basins, 0);
+  std::vector<double> salinityr(m_n_basins);
+  std::vector<double> temperaturer(m_n_basins);
 
   temperature.resize(m_n_basins);
   salinity.resize(m_n_basins);
@@ -349,18 +347,19 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
   // ocean_contshelf_mask values intersect with the basin, count is zero. In such case,
   // use dummy temperature and salinity. This could happen, for example, if the ice shelf
   // front advances beyond the continental shelf break.
-  GlobalSum(m_grid->com, count.data(), count1.data(), m_n_basins);
-  GlobalSum(m_grid->com, salinity.data(), salinity1.data(), m_n_basins);
-  GlobalSum(m_grid->com, temperature.data(), temperature1.data(), m_n_basins);
-  count = count1;
-  salinity = salinity1;
-  temperature = temperature1;
+  GlobalSum(m_grid->com, count.data(), countr.data(), m_n_basins);
+  GlobalSum(m_grid->com, salinity.data(), salinityr.data(), m_n_basins);
+  GlobalSum(m_grid->com, temperature.data(), temperaturer.data(), m_n_basins);
+  // copy values
+  count = countr;
+  salinity = salinityr;
+  temperature = temperaturer;
+  // free auxiliary vectors
+  countr.clear();
+  salinityr.clear();
+  temperaturer.clear();
 
   for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
-
-//    count[basin_id]       = GlobalSum(m_grid->com, count[basin_id]);
-//    salinity[basin_id]    = GlobalSum(m_grid->com, salinity[basin_id]);
-//    temperature[basin_id] = GlobalSum(m_grid->com, temperature[basin_id]);
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     if (basin_id > 0 && count[basin_id] == 0) {
@@ -382,7 +381,6 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
       m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
     }
   }
-  profiling.end("compute_ocean_input_per_basin");
 }
 
 //! Set ocean ocean input from box 0 as boundary condition for box 1.
@@ -398,42 +396,33 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
                                   const std::vector<double> basin_salinity, IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0) {
   
-  const Profiling &profiling = m_grid->ctx()->profiling();
-  profiling.begin("set_ocean_input_fields");
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-//  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves, std::vector<int>(m_n_basins, 0));
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
-  std::vector<int> n_shelf_cells_per_basin1(m_n_shelves*m_n_basins,0);
-  std::vector<int> n_shelf_cells1(m_n_shelves, 0);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
   {
-    int* ptr_shelf_cells;
-    int* ptr_shelf_cells_per_basin;
-    
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
-//      n_shelf_cells_per_basin[s][b]++;
       n_shelf_cells_per_basin[s*m_n_basins+b]++;
       n_shelf_cells[s]++;
     }
     
-    GlobalSum(m_grid->com, n_shelf_cells.data(), n_shelf_cells1.data(), m_n_shelves);
-    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basin1.data(), m_n_shelves*m_n_basins);
-    n_shelf_cells = n_shelf_cells1;
-    n_shelf_cells_per_basin = n_shelf_cells_per_basin1;
-
-//    for (int s = 0; s < m_n_shelves; s++) {
-//      n_shelf_cells[s] = GlobalSum(m_grid->com, n_shelf_cells[s]);
-//      for (int b = 0; b < m_n_basins; b++) {
-//        n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
-//      }
-//    }
+    GlobalSum(m_grid->com, n_shelf_cells.data(), n_shelf_cellsr.data(), m_n_shelves);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    // copy data
+    n_shelf_cells = n_shelf_cellsr;
+    n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
+    // free auxiliary vectors
+    n_shelf_cellsr.clear();
+    n_shelf_cells_per_basinr.clear();
   }
 
   // now set potential temperature and salinity box 0:
@@ -453,8 +442,6 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
 
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
-//        Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
-//        Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
           Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
           Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
       }
@@ -476,7 +463,6 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
                       "setting it to pressure melting temperature\n",
                    low_temperature_counter);
   }
-  profiling.end("set_ocean_input_fields");
 }
 
 /*!
@@ -543,8 +529,7 @@ void Pico::process_box1(const PicoPhysics &physics,
                         IceModelVec2S &Toc,
                         IceModelVec2S &Soc,
                         IceModelVec2S &overturning) {
-  const Profiling &profiling = m_grid->ctx()->profiling();
-  profiling.begin("process_box1");
+
   std::vector<double> box1_area(m_n_shelves);
 
   compute_box_area(1, shelf_mask, box_mask, box1_area);
@@ -597,7 +582,6 @@ void Pico::process_box1(const PicoPhysics &physics,
                       "has been negative in %d cases!\n",
                    n_Toc_failures);
   }
-  profiling.end("process_box1");
 }
 
 void Pico::process_other_boxes(const PicoPhysics &physics,
@@ -610,8 +594,6 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
                                IceModelVec2S &Toc,
                                IceModelVec2S &Soc) {
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
-  profiling.begin("process_other_boxes");
   std::vector<double> overturning(m_n_shelves, 0.0);
   std::vector<double> salinity(m_n_shelves, 0.0);
   std::vector<double> temperature(m_n_shelves, 0.0);
@@ -686,7 +668,6 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
     }
 
   } // loop over boxes
-  profiling.end("process_other_boxes");
 }
 
 /*!
@@ -770,9 +751,6 @@ void Pico::compute_box_average(int box_id,
 
   std::vector<int> n_cells_per_box(m_n_shelves, 0);
   std::vector<double> result1(m_n_shelves);
-  double* ptrres;
-  int* ptrlocal;
-  int* ptrresult;
   // fill results with zeros
   result.resize(m_n_shelves);
   for (int s = 0; s < m_n_shelves; ++s) {
@@ -790,30 +768,19 @@ void Pico::compute_box_average(int box_id,
       result[shelf_id] += field(i, j);
     }
   }
-  const Profiling &profiling = m_grid->ctx()->profiling();
   // compute the global sum and average
-  profiling.begin("deg_test");
   std::vector<int> n_cells(m_n_shelves);
-  ptrlocal = n_cells_per_box.data();
-  ptrresult = n_cells.data();
-  GlobalSum(m_grid->com, ptrlocal, ptrresult, m_n_shelves);
+  GlobalSum(m_grid->com, n_cells_per_box.data(), n_cells.data(), m_n_shelves);
   GlobalSum(m_grid->com, result.data(), result1.data(), m_n_shelves);
+  // copy data
   result = result1;
+  // free auxiliary vectors
+  result1.clear();
   for (int s = 0; s < m_n_shelves; ++s) {
-//    auto n_cells = GlobalSum(m_grid->com, n_cells_per_box[s]);
-
-//    result[s] = GlobalSum(m_grid->com, result[s]);
-
     if (n_cells[s] > 0) {
       result[s] /= (double)n_cells[s];
     }
-//    if (n_cells > 0) {
-//      result[s] /= (double)n_cells;
-//    }
   }
-  
-  
-  profiling.end("deg_test");
 }
 
 /*!
@@ -851,12 +818,10 @@ void Pico::compute_box_area(int box_id,
   ptrres++; // point to second value (index 1)
   ptrres1++;
   GlobalSum(m_grid->com, ptrres, ptrres1, m_n_shelves-1); // GlobalSum from index 1 to index m_n_shelves-1
+  // copy data
   for (int i = 1; i < m_n_shelves; i++) {
     result[i] = result1[i];
   }
-//  for (int s = 1; s < m_n_shelves; ++s) {
-//    result[s] = GlobalSum(m_grid->com, result[s]);
-//  }
 }
 
 } // end of namespace ocean
