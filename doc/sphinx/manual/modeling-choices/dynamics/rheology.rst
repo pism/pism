@@ -74,19 +74,15 @@ all have at least two parameters (e.g. `A_0` and `n` in ``isothermal_glen``). On
 create a new, and reasonably arbitrarily, scalar function `F` by modifying source code;
 see source files in ``src/base/rheology/``.
 
-Choosing the flow laws for SIA and SSA stress balances
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Choosing the flow laws
+^^^^^^^^^^^^^^^^^^^^^^
 
-Command-line options :opt:`-sia_flow_law` and :opt:`-ssa_flow_law` choose which flow law
-is used by the SIA and SSA stress balances, respectively. Allowed arguments are listed in
-:numref:`tab-flowlaw` below. Viscosity form :eq:`eq-viscosityform` is not known for the
-Goldsby-Kohlstedt law :cite:`GoldsbyKohlstedt`, so option "``-ssa_flow_law gk``" is an
-error.
+Configuration parameters :config:`stress_balance.sia.flow_law`,
+:config:`stress_balance.ssa.flow_law`, and :config:`stress_balance.blatter.flow_law`
+choose which flow law is used by the SIA, SSA, and the Blatter stress balances models,
+respectively. Allowed arguments are listed in :numref:`tab-flowlaw` below.
 
-.. list-table:: Single-power flow laws. Choose the ice rheology using ``-sia_flow_law``
-                and ``-ssa_flow_law`` and one of the names in this table. Flow law choices
-                other than ``gpbld`` do not use the liquid water fraction `\omega`
-                but only the temperature `T`.
+.. list-table:: Flow laws
    :name: tab-flowlaw
    :header-rows: 1
    :widths: 1,3
@@ -100,23 +96,31 @@ error.
        (below) to positive liquid water fraction. If `A_{c}(T)` is from Paterson-Budd then
        this law returns
 
-          `A(T,\omega) = A_{c}(T) (1 + C \omega),`
+       .. math::
+
+          A(T,\omega) = A_{c}(T) (1 + C \omega),
 
        where `\omega` is the liquid water fraction, `C` is a configuration parameter
-       :config:`flow_law.gpbld.water_frac_coeff` [default `C=181.25`\], and `\omega` is
-       capped at level :config:`flow_law.gpbld.water_frac_observed_limit`.
+       :config:`flow_law.gpbld.water_frac_coeff`, and `\omega` is capped at level
+       :config:`flow_law.gpbld.water_frac_observed_limit`.
 
    * - ``pb``
      - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
        "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where
 
-          `A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},`
-          `Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}`
+       .. math::
+
+          A &= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
+
+          Q &= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
        if `T^* < 263` K and
-       
-          `A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},`
-          `Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}`
+
+       .. math::
+
+          A &= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
+
+          Q &= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
        if `T^* > 263` K.
 
@@ -135,7 +139,9 @@ error.
    * - ``hooke``
      - Hooke law with
 
-          `A(T) = A \exp(-Q/(RT^*) + 3C (T_r - T^*)^\kappa).`
+       .. math::
+
+          A(T) = A \exp\left(-\frac{Q}{RT^*} + 3C (T_r - T^*)^\kappa\right).
 
        Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
 
@@ -145,11 +151,12 @@ error.
        `B_0=A_0^{-1/n}` is the ice hardness.
 
    * - ``gk``
-     - This law has a combination of exponents from `n=1.8` to `n=4`
-       :cite:`GoldsbyKohlstedt`. It can only be used by the SIA stress balance. Because it has
-       more than one power, option ``-sia_n`` has no effect, though ``-sia_e`` works as
-       expected. This law does not use the liquid water fraction, but only the
-       temperature.
+     - The Goldsby-Kohlstedt flow law. This law has a combination of exponents from
+       `n=1.8` to `n=4` :cite:`GoldsbyKohlstedt`. Its viscosity form
+       :eq:`eq-viscosityform` is not known, so it can only be used by the SIA stress
+       balance. Because it has more than one power, option ``-sia_n`` has no effect,
+       though ``-sia_e`` works as expected. This law does not use the liquid water
+       fraction, but only the temperature.
 
 Choose enhancement factor and exponent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
