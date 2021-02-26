@@ -24,6 +24,7 @@
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
@@ -516,8 +517,15 @@ void IceModel::allocate_iceberg_remover() {
 
   if (m_config->get_flag("geometry.remove_icebergs")) {
 
-    // this will throw an exception on failure
-    m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+    auto model = m_config->get_string("stress_balance.model");
+    auto ssa_method = m_config->get_string("stress_balance.ssa.method");
+
+    if ((member(model, {"ssa", "ssa+sia"}) and ssa_method == "fem") or
+        model == "blatter") {
+      m_iceberg_remover.reset(new calving::IcebergRemoverFEM(m_grid));
+    } else {
+      m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+    }
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
   }
