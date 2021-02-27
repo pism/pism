@@ -41,6 +41,10 @@ Changes since v1.2
   `bed_deformation.given.reference_file`, respectively.
 - Implemented regularized Coulomb sliding as in Zoet & Iverson, 2020, A slip law for
   glaciers on deformable beds, equation 3.
+- Implement a FEM solver for the first order approximation of the Stokes equations due to
+  Blatter (1995). This solver supports multigrid preconditioners (see Brown et al 2013)
+  and includes 5 verification test based on manufactured solutions.
+- Implement simplified-geometry experiments (A-D) from the ISMIP-HOM intercomparison.
 
 Changes from v1.1 to v1.2
 =========================
