@@ -33,7 +33,6 @@
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec3Custom.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/earth/BedDef.hh"
@@ -323,7 +322,7 @@ CTS::CTS(const IceModel *m)
 
 IceModelVec::Ptr CTS::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "cts", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "cts", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   energy::compute_cts(model->energy_balance_model()->enthalpy(),
@@ -353,7 +352,7 @@ Temperature::Temperature(const IceModel *m)
 
 IceModelVec::Ptr Temperature::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S &thickness = model->geometry().ice_thickness;
@@ -412,7 +411,7 @@ IceModelVec::Ptr TemperaturePA::compute_impl() const {
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const IceModelVec2S &thickness = model->geometry().ice_thickness;
@@ -558,7 +557,7 @@ IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
     (*result)(i,j) = std::max(ice_thickness(i,j) - 1.0, 0.0);
   }
 
-  ice_enthalpy.getSurfaceValues(*result, *result);  // z=0 slice
+  ice_enthalpy.extract_surface(*result, *result);  // z=0 slice
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -596,7 +595,7 @@ IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpybase", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 slice
+  model->energy_balance_model()->enthalpy().extract_surface(0.0, *result);  // z=0 slice
 
   result->mask_by(model->geometry().ice_thickness, m_fill_value);
 
@@ -651,7 +650,7 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  model->energy_balance_model()->enthalpy().getHorSlice(*result, 0.0);  // z=0 (basal) slice
+  model->energy_balance_model()->enthalpy().extract_surface(0.0, *result);  // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -763,7 +762,7 @@ LiquidFraction::LiquidFraction(const IceModel *m)
 
 IceModelVec::Ptr LiquidFraction::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "liqfrac", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "liqfrac", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   bool cold_mode = m_config->get_flag("energy.temperature_based");
@@ -1950,8 +1949,8 @@ IceModelVec::Ptr LatLonBounds::compute_impl() const {
   std::map<std::string,std::string> attrs;
   std::vector<double> indices(4);
 
-  IceModelVec3Custom::Ptr result(new IceModelVec3Custom(m_grid, m_var_name + "_bnds", "nv4",
-                                                        indices, attrs));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, m_var_name + "_bnds", "nv4",
+                                            indices, attrs));
   result->metadata(0) = m_vars[0];
 
   bool latitude = true;
@@ -2337,7 +2336,7 @@ IceHardness::IceHardness(const IceModel *m)
 
 IceModelVec::Ptr IceHardness::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "hardness", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "hardness", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
@@ -2404,10 +2403,11 @@ static inline double square(double x) {
 
 IceModelVec::Ptr IceViscosity::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "effective_viscosity", WITHOUT_GHOSTS));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "effective_viscosity", WITHOUT_GHOSTS,
+                                            m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec3 W(m_grid, "wvel", WITH_GHOSTS);
+  IceModelVec3 W(m_grid, "wvel", WITH_GHOSTS, m_grid->z());
 
   using mask::ice_free;
 

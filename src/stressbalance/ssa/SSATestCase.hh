@@ -91,6 +91,9 @@ protected:
   IceGrid::Ptr m_grid;
   const units::System::Ptr m_sys;
 
+  //! "wide" stencil width
+  int m_stencil_width;
+
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;
 

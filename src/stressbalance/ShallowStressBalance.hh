@@ -21,6 +21,7 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 namespace pism {
@@ -70,7 +71,7 @@ public:
   const IceBasalResistancePlasticLaw* sliding_law() const;
 protected:
   virtual void init_impl();
-  
+
   virtual DiagnosticList diagnostics_impl() const;
 
   IceBasalResistancePlasticLaw *m_basal_sliding_law;
@@ -91,7 +92,7 @@ class ZeroSliding : public ShallowStressBalance {
 public:
   ZeroSliding(IceGrid::ConstPtr g);
   virtual ~ZeroSliding();
-  
+
   virtual void update(const Inputs &inputs, bool full_update);
 
 protected:

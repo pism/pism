@@ -1,13 +1,13 @@
 .. _sec-stress-balance-models:
 
-Two stress balance models: SIA and SSA
---------------------------------------
+Stress balance models: SIA, SSA, and the First Order Approximation
+------------------------------------------------------------------
 
 At each time-step of a typical PISM run, the geometry, temperature, and basal strength of
 the ice sheet are included into stress (momentum) balance equations to determine the
 velocity of the flowing ice. The "full" stress balance equations for flowing ice form a
 non-Newtonian Stokes model :cite:`Fowler`. PISM does not attempt to solve the Stokes equations
-themselves, however. Instead it can numerically solve, in parallel, two different shallow
+themselves, however. Instead it can numerically solve, in parallel, three different shallow
 approximations which are well-suited to ice sheet and ice shelf systems:
 
 - the non-sliding shallow ice approximation (SIA) :cite:`Hutter`, also called the "lubrication
@@ -16,18 +16,20 @@ approximations which are well-suited to ice sheet and ice shelf systems:
 - the shallow shelf approximation (SSA) :cite:`WeisGreveHutter`, which describes a
   membrane-type flow of floating ice :cite:`Morland`, or of grounded ice which is sliding over
   a weak base :cite:`MacAyeal`, :cite:`SchoofStream`.
+- a first order approximation to the Stokes equations due to Blatter (:cite:`Blatter`,
+  :cite:`Pattyn03`). In the remainder, we refer to is as the "Blatter's model."
 
-The SIA equations are easier to solve numerically than the SSA, and easier to parallelize,
-because they are local in each column of ice. Specifically, they describe the vertical
-shear stress as a local function of the driving stress :cite:`Paterson`. They can confidently
-be applied to those grounded parts of ice sheets for which the basal ice is frozen to the
-bedrock, or which is minimally sliding, and where the bed topography is relatively
-slowly-varying in the map-plane :cite:`Fowler`. These characteristics apply to the majority (by
-area) of the Greenland and Antarctic ice sheets.
+The SIA equations are easier to solve numerically than the SSA and Blatter's model, and
+easier to parallelize, because they are local in each column of ice. Specifically, they
+describe the vertical shear stress as a local function of the driving stress
+:cite:`Paterson`. They can confidently be applied to those grounded parts of ice sheets
+for which the basal ice is frozen to the bedrock, or which is minimally sliding, and where
+the bed topography is relatively slowly-varying in the map-plane :cite:`Fowler`. These
+characteristics apply to the majority (by area) of the Greenland and Antarctic ice sheets.
 
 We solve the SIA with a non-sliding base because the traditional :cite:`Greve`,
-:cite:`HuybrechtsdeWolde`, :cite:`PayneBaldwin` addition of ad hoc "sliding laws" into the SIA
-stress balance, and especially schemes which "switch on" at the pressure-melting
+:cite:`HuybrechtsdeWolde`, :cite:`PayneBaldwin` additions of ad hoc "sliding laws" into
+the SIA stress balance, and especially schemes which "switch on" at the pressure-melting
 temperature :cite:`EISMINT00`, have bad continuum :cite:`Fowler01` and numerical (see
 :cite:`BBssasliding`, appendix B) modeling consequences.
 
@@ -37,12 +39,12 @@ small depth-to-width ratio and negligible basal resistance :cite:`Morland`,
 higher than in the non-sliding, grounded parts of ice sheets.
 
 Terrestrial ice sheets also have fast-flowing grounded parts, however, called "ice
-streams" or "outlet glaciers" :cite:`TrufferEchelmeyer`. Such features appear at the margin of,
-and sometimes well into the interior of, the Greenland :cite:`Joughinetal2001` and Antarctic
-:cite:`BamberVaughanJoughin` ice sheets. Describing these faster-flowing grounded parts of ice
-sheets requires something more than the non-sliding SIA. This is because adjacent columns
-of ice which have different amounts of basal resistance exert strong "longitudinal" or
-"membrane" stresses :cite:`SchoofStream` on each other.
+streams" or "outlet glaciers" :cite:`TrufferEchelmeyer`. Such features appear at the
+margin of, and sometimes well into the interior of, the Greenland :cite:`Joughinetal2001`
+and Antarctic :cite:`BamberVaughanJoughin` ice sheets. Describing these faster-flowing
+grounded parts of ice sheets requires something more than the non-sliding SIA. This is
+because adjacent columns of ice which have different amounts of basal resistance exert
+strong "longitudinal" or "membrane" stresses :cite:`SchoofStream` on each other.
 
 In PISM the SSA may be used as a "sliding law" for grounded ice which is already modeled
 everywhere by the non-sliding SIA :cite:`BBssasliding`, :cite:`Winkelmannetal2011`. For
@@ -56,9 +58,9 @@ there are large floating ice shelves (e.g. as in Antarctica :cite:`Golledgeetal2
 
 The "SIA+SSA hybrid" model is recommended for most whole ice sheet modeling purposes
 because it seems to be a good compromise given currently-available data and computational
-power. A related hybrid model described by Pollard and deConto :cite:`PollardDeConto` adds the
-shear to the SSA solution in a slightly-different manner, but it confirms the success of
-the hybrid concept.
+power. A related hybrid model described by Pollard and deConto :cite:`PollardDeConto` adds
+the shear to the SSA solution in a slightly-different manner, but it confirms the success
+of the hybrid concept.
 
 By default, however, PISM does not turn on (activate) the SSA solver. This is because a
 decision to solve the SSA must go with a conscious user choice about basal strength. The
@@ -87,9 +89,9 @@ have analyzed the connections between these shallowest models and higher-order m
 while :cite:`GreveBlatter2009` discusses ice dynamics and stress balances comprehensively.
 Note that SIA, SSA, and higher-order models all approximate the pressure as hydrostatic.
 
-Instead of a SIA+SSA hybrid model as in PISM, one might use the Stokes equations, or a
-"higher-order" model (i.e. less-shallow approximations :cite:`Blatter`, :cite:`Pattyn03`),
-but this immediately leads to a resolution-versus-stress-inclusion tradeoff. The amount of
+Instead of a SIA+SSA hybrid model implemented in PISM one might use the Stokes equations,
+or a "higher-order" model (e.g. Blatter's model :cite:`Blatter`, :cite:`Pattyn03`), but
+this immediately leads to a resolution-versus-stress-inclusion tradeoff. The amount of
 computation per map-plane grid location is much higher in higher-order models, although
 careful numerical analysis can generate large performance improvements for such equations
 :cite:`BrownSmithAhmadia2013`.

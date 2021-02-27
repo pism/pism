@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -124,7 +124,7 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
       (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_frontal_melt)) {
     // at least one of front retreat mechanisms is active
 
-    IceModelVec2S &retreat_rate = m_work2d[0];
+    IceModelVec2S &retreat_rate = *m_work2d[0];
     retreat_rate.set(0.0);
 
     if (m_eigen_calving) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
@@ -220,9 +221,9 @@ void IceModel::model_state_setup() {
     case INIT_OTHER:
       {
         IceModelVec2S
-          &W_till = m_work2d[0],
-          &W      = m_work2d[1],
-          &P      = m_work2d[2];
+          &W_till = *m_work2d[0],
+          &W      = *m_work2d[1],
+          &P      = *m_work2d[2];
 
         W_till.set(m_config->get_number("bootstrapping.defaults.tillwat"));
         W.set(m_config->get_number("bootstrapping.defaults.bwat"));
@@ -517,12 +518,15 @@ void IceModel::allocate_iceberg_remover() {
 
   if (m_config->get_flag("geometry.remove_icebergs")) {
 
-    // this will throw an exception on failure
-    m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+    auto model = m_config->get_string("stress_balance.model");
+    auto ssa_method = m_config->get_string("stress_balance.ssa.method");
 
-    // Iceberg Remover does not have a state, so it is OK to
-    // initialize here.
-    m_iceberg_remover->init();
+    if ((member(model, {"ssa", "ssa+sia"}) and ssa_method == "fem") or
+        model == "blatter") {
+      m_iceberg_remover.reset(new calving::IcebergRemoverFEM(m_grid));
+    } else {
+      m_iceberg_remover.reset(new calving::IcebergRemover(m_grid));
+    }
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
   }
@@ -625,7 +629,7 @@ void IceModel::allocate_basal_yield_stress() {
   std::string model = m_config->get_string("stress_balance.model");
 
   // only these two use the yield stress (so far):
-  if (model == "ssa" || model == "ssa+sia") {
+  if (member(model, {"ssa", "ssa+sia", "blatter"})) {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
     if (yield_stress_model == "constant") {

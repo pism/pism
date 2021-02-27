@@ -85,7 +85,7 @@ protected:
   IceGrid::Ptr m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
-  IceModelVec2S m_viscous_displacement;
+  std::shared_ptr<IceModelVec2S> m_viscous_displacement;
   //! rank 0 storage using the extended grid
   std::shared_ptr<petsc::Vec> m_viscous_displacement0;
 

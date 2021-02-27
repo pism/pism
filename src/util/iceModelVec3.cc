@@ -41,30 +41,64 @@ namespace pism {
 // methods for base class IceModelVec and derived class IceModelVec2S
 // are in "iceModelVec.cc"
 
-IceModelVec3D::IceModelVec3D()
+IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid, const std::string &name,
+                           IceModelVecKind ghostedp, const std::vector<double> &levels,
+                           unsigned int stencil_width)
   : IceModelVec() {
+
+  {
+    PetscErrorCode ierr;
+    m_impl->grid = grid;
+
+    m_impl->zlevels = levels;
+    m_impl->da_stencil_width = stencil_width;
+
+    m_impl->da = m_impl->grid->get_dm(m_impl->zlevels.size(), m_impl->da_stencil_width);
+
+    m_impl->ghosted = (ghostedp == WITH_GHOSTS);
+
+    if (m_impl->ghosted) {
+      ierr = DMCreateLocalVector(*m_impl->da, m_impl->v.rawptr());
+      PISM_CHK(ierr, "DMCreateLocalVector");
+    } else {
+      ierr = DMCreateGlobalVector(*m_impl->da, m_impl->v.rawptr());
+      PISM_CHK(ierr, "DMCreateGlobalVector");
+    }
+
+    m_impl->name = name;
+
+    m_impl->metadata = {SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
+                                                name, m_impl->zlevels)};
+
+  }
+
   m_impl->bsearch_accel = gsl_interp_accel_alloc();
   if (m_impl->bsearch_accel == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Failed to allocate a GSL interpolation accelerator");
   }
+
 }
 
-IceModelVec3D::~IceModelVec3D() {
-  gsl_interp_accel_free(m_impl->bsearch_accel);
-}
+IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid,
+                           const std::string &name,
+                           const std::string &z_name,
+                           const std::vector<double> &z_levels,
+                           const std::map<std::string, std::string> &z_attrs)
+  : IceModelVec3(grid, name, WITHOUT_GHOSTS, z_levels) {
 
-IceModelVec3::IceModelVec3() {
-  // empty
-}
+  m_impl->dof = 1;
 
-IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid, const std::string &short_name,
-                           IceModelVecKind ghostedp,
-                           unsigned int stencil_width) {
-  create(grid, short_name, ghostedp, stencil_width);
+  m_impl->metadata[0] = SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
+                                                m_impl->name, m_impl->zlevels);
+  m_impl->metadata[0].get_z().set_name(z_name);
+
+  for (auto z_attr : z_attrs) {
+    m_impl->metadata[0].get_z().set_string(z_attr.first, z_attr.second);
+  }
 }
 
 IceModelVec3::~IceModelVec3() {
-  // empty
+  gsl_interp_accel_free(m_impl->bsearch_accel);
 }
 
 IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
@@ -75,35 +109,7 @@ IceModelVec3::Ptr IceModelVec3::To3DScalar(IceModelVec::Ptr input) {
   return result;
 }
 
-//! Allocate a DA and a Vec from information in IceGrid.
-void IceModelVec3D::allocate(IceGrid::ConstPtr grid, const std::string &name,
-                             IceModelVecKind ghostedp, const std::vector<double> &levels,
-                             unsigned int stencil_width) {
-  PetscErrorCode ierr;
-  m_impl->grid = grid;
-
-  m_impl->zlevels = levels;
-  m_impl->da_stencil_width = stencil_width;
-
-  m_impl->da = m_impl->grid->get_dm(m_impl->zlevels.size(), m_impl->da_stencil_width);
-
-  m_impl->ghosted = (ghostedp == WITH_GHOSTS);
-
-  if (m_impl->ghosted) {
-    ierr = DMCreateLocalVector(*m_impl->da, m_impl->v.rawptr());
-    PISM_CHK(ierr, "DMCreateLocalVector");
-  } else {
-    ierr = DMCreateGlobalVector(*m_impl->da, m_impl->v.rawptr());
-    PISM_CHK(ierr, "DMCreateGlobalVector");
-  }
-
-  m_impl->name = name;
-
-  m_impl->metadata = {SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
-                                              name, m_impl->zlevels)};
-}
-
-bool IceModelVec3D::isLegalLevel(double z) const {
+bool IceModelVec3::legal_level(double z) const {
   double z_min = m_impl->zlevels.front(),
     z_max = m_impl->zlevels.back();
   if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
@@ -113,7 +119,7 @@ bool IceModelVec3D::isLegalLevel(double z) const {
 }
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-void IceModelVec3D::set_column(int i, int j, double c) {
+void IceModelVec3::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
 #if (Pism_DEBUG==1)
   assert(m_array != NULL);
@@ -133,7 +139,7 @@ void IceModelVec3D::set_column(int i, int j, double c) {
   }
 }
 
-void IceModelVec3D::set_column(int i, int j, const std::vector<double> &data) {
+void IceModelVec3::set_column(int i, int j, const std::vector<double> &data) {
   double *column = get_column(i, j);
   for (unsigned int k = 0; k < data.size(); ++k) {
     column[k] = data[k];
@@ -141,7 +147,7 @@ void IceModelVec3D::set_column(int i, int j, const std::vector<double> &data) {
 
 }
 
-const std::vector<double> IceModelVec3D::get_column_vector(int i, int j) const {
+const std::vector<double> IceModelVec3::get_column_vector(int i, int j) const {
   unsigned int n = m_impl->zlevels.size();
   std::vector<double> result(n);
   const double *data = get_column(i, j);
@@ -153,13 +159,14 @@ const std::vector<double> IceModelVec3D::get_column_vector(int i, int j) const {
 
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
-double IceModelVec3D::getValZ(int i, int j, double z) const {
+double IceModelVec3::interpolate(int i, int j, double z) const {
 #if (Pism_DEBUG==1)
   assert(m_array != NULL);
   check_array_indices(i, j, 0);
 
-  if (not isLegalLevel(z)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IceModelVec3 getValZ(): level %f is not legal; name = %s",
+  if (not legal_level(z)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "IceModelVec3 interpolate(): level %f is not legal; name = %s",
                                   z, m_impl->name.c_str());
   }
 #endif
@@ -181,18 +188,14 @@ double IceModelVec3D::getValZ(int i, int j, double z) const {
 }
 
 //! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
-/*!
- * FIXME: this method is misnamed: the slice is horizontal in the PISM
- * coordinate system, not in reality.
- */
-void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
-  IceModelVec::AccessList list{this, &gslice};
+void IceModelVec3::extract_surface(double z, IceModelVec2S &output) const {
+  IceModelVec::AccessList list{this, &output};
 
   ParallelSection loop(m_impl->grid->com);
   try {
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      gslice(i, j) = getValZ(i, j, z);
+      output(i, j) = interpolate(i, j, z);
     }
   } catch (...) {
     loop.failed();
@@ -202,15 +205,14 @@ void  IceModelVec3::getHorSlice(IceModelVec2S &gslice, double z) const {
 
 
 //! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
-void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
-                                    const IceModelVec2S &H) const {
-  IceModelVec::AccessList list{this, &surface_values, &H};
+void IceModelVec3::extract_surface(const IceModelVec2S &H, IceModelVec2S &output) const {
+  IceModelVec::AccessList list{this, &output, &H};
 
   ParallelSection loop(m_impl->grid->com);
   try {
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      surface_values(i, j) = getValZ(i, j, H(i, j));
+      output(i, j) = interpolate(i, j, H(i, j));
     }
   } catch (...) {
     loop.failed();
@@ -218,35 +220,27 @@ void IceModelVec3::getSurfaceValues(IceModelVec2S &surface_values,
   loop.check();
 }
 
-double* IceModelVec3D::get_column(int i, int j) {
+double* IceModelVec3::get_column(int i, int j) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
-const double* IceModelVec3D::get_column(int i, int j) const {
+const double* IceModelVec3::get_column(int i, int j) const {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
-void  IceModelVec3D::set_column(int i, int j, const double *valsIN) {
+void  IceModelVec3::set_column(int i, int j, const double *valsIN) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   double ***arr = (double***) m_array;
   PetscErrorCode ierr = PetscMemcpy(arr[j][i], valsIN, m_impl->zlevels.size()*sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
-}
-
-void  IceModelVec3::create(IceGrid::ConstPtr grid, const std::string &name,
-                           IceModelVecKind ghostedp,
-                           unsigned int stencil_width) {
-
-  IceModelVec3D::allocate(grid, name, ghostedp,
-                          grid->z(), stencil_width);
 }
 
 /** Sum a 3-D vector in the Z direction to create a 2-D vector.
@@ -271,7 +265,7 @@ case.
 Computes output = A*output + B*sum_columns(input) + C
 
 @see https://github.com/pism/pism/issues/229 */
-void IceModelVec3::sumColumns(IceModelVec2S &output, double A, double B) const {
+void IceModelVec3::sum_columns(double A, double B, IceModelVec2S &output) const {
   const unsigned int Mz = m_impl->grid->Mz();
 
   AccessList access{this, &output};

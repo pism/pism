@@ -24,11 +24,14 @@ plastic till failure and SSA stress balance.
 
 This SSA description of ice streams is the preferred "sliding law" for the SIA
 :cite:`BBssasliding`, :cite:`Winkelmannetal2011`. The SSA should be combined with the SIA,
-in this way, in preference to classical SIA sliding laws which make the sliding velocity of ice a
-local function of the basal value of the driving stress. The resulting combination of SIA
-and SSA is a "hybrid" approximation of the Stokes model :cite:`Winkelmannetal2011`. Option
-``-stress_balance ssa+sia`` turns on this "hybrid" model. In this use of the SSA as a
-sliding law, floating ice is also subject to the SSA.
+in this way, in preference to classical SIA sliding laws which make the sliding velocity
+of ice a local function of the basal value of the driving stress. The resulting
+combination of SIA and SSA is a "hybrid" approximation of the Stokes model
+:cite:`Winkelmannetal2011`. Option ``-stress_balance ssa+sia`` turns on this "hybrid"
+model. In this use of the SSA as a sliding law, floating ice is also subject to the SSA.
+
+In addition to this, PISM includes an implementation of the first order approximation of
+Stokes equations due to Blatter (:cite:`Blatter`, :cite:`Pattyn03`),
 
 :numref:`tab-stress-balance-choice` describes the basic choice of stress balance.
 
@@ -65,6 +68,184 @@ sliding law, floating ice is also subject to the SSA.
    * - :opt:`-stress_balance prescribed_sliding+sia`
      - Use the constant-in-time prescribed sliding velocity in combination with the
        non-sliding SIA.
+
+   * - :opt:`-stress_balance blatter`
+     - Use the first-order approximation of Stokes equations due to Blatter
+       (:cite:`Blatter` :cite:`Pattyn03`).
+
+.. _sec-blatter:
+
+Controlling Blatter's stress balance model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Unlike the rest of PISM, the Blatter solver uses a geometry-following vertical grid (see
+:numref:`fig-grid-vertical-sigma`) to approximate horizontal components of ice velocity.
+The number of vertical "levels" in this grid is controlled by
+:config:`stress_balance.blatter.Mz`.
+
+The non-linear system resulting from the discretization of PDEs corresponding to Blatter's
+stress balance model\ [#bp-fem]_ is much harder to solve than the one corresponding to the SSA system
+(:cite:`BrownSmithAhmadia2013`, :cite:`Tuminaro2016`) and (at this point) experimentation
+with preconditioner choices seems inevitable. We use PETSc's command-line options to
+control these choices.
+
+.. note::
+
+   The Blatter solver uses the ``-bp_`` command-line option prefix.
+
+   Run PISM like this
+
+   .. code-block:: bash
+
+      pismr -stress_balance blatter [other options] -help | grep "-bp_"
+
+   to see the complete list of PETSc option controlling this solver.
+
+The multigrid preconditioner using semi-coarsening in the vertical direction followed by
+further (horizontal) coarsening using algebraic multigrid methods appears to be effective
+:cite:`Tuminaro2016`. The option combination
+
+.. code-block:: bash
+
+   -bp_pc_type mg -bp_pc_mg_levels M -bp_mg_coarse_pc_type gamg
+
+roughly corresponds to this approach. (Unlike :cite:`Tuminaro2016`, who used a purely
+algebraic approach, these options select a combination of geometric and algebraic
+multigrid preconditioners.)
+
+.. note::
+
+   *External PETSc packages* such as Hypre or ML may be useful here, but we have not
+   compared their performance to GAMG built into PETSc.
+
+Here ``-bp_pc_type mg`` selects the geometric multigrid (MG) preconditioner using
+semi-coarsening in the vertical direction. This method requires building a hierarchy of
+grids, the finest of which is selected using :config:`grid.Mx`, :config:`grid.My`,
+:config:`stress_balance.blatter.Mz`.\ [#semi-coarsening]_
+
+To create this hierarchy, PISM starts with the finest grid and builds the next one by
+dividing the number of vertical *spaces* by a coarsening factor `C` (see
+:config:`stress_balance.blatter.coarsening_factor`). The number of vertical grid levels
+`N_k` in the grid number `k` in the hierarchy is
+
+.. math::
+
+   N_{1} &= \mathtt{stress\_balance.blatter.Mz},
+
+   N_{k} &= (N_{k-1} - 1)\, /\, C + 1.
+
+Then the newly-created grid is coarsened and this process is continued, stopping when the
+desired number `M` of grids (MG levels, set using ``-bp_pc_mg_levels M``) is reached.
+
+For this to work the number of vertical grid levels on the finest grid in the hierarchy
+has to have the form
+
+.. math::
+   :label: eq-bp-vertical-grid-size
+
+   \mathtt{stress\_balance.blatter.Mz} = A\cdot C^{M - 1} + 1
+
+for some integer `A`.
+
+.. list-table:: Some vertical grid hierarchies
+   :name: tab-blatter-mg-levels
+   :header-rows: 1
+   :widths: 1,3
+
+   * - Coarsening factor `C`
+     - Possible sizes of vertical grids in a hierarchy
+
+   * - `2`
+     - 2, 3, 5, 9, 17, 33, **65**, 129, 257, 513, 1025, `\dots`
+
+   * - `3`
+     - 2, 4, 10, 28, 82, 244, 730, `\dots`
+
+   * - `4`
+     - 2, 5, 17, **65**, 257, 1025, `\dots`
+
+   * - `5`
+     - 2, 6, 26, 126, 626, 3126, `\dots`
+
+   * - `6`
+     - 2, 7, 37, 217, 1297, `\dots`
+
+   * - `7`
+     - 2, 8, 50, 344, 2402, `\dots`
+
+   * - `8`
+     - 2, 9, **65**, 513, 4097, `\dots`
+
+By default `C = 2`, but *aggressive coarsening* (i.e. larger values of `C`, up to around
+`8`) has been observed to work. As highlighted in :numref:`tab-blatter-mg-levels`,
+sometimes the same number of vertical grid levels can be achieved using more than one
+combination of the coarsening factor and the number of MG levels.
+
+For example, we can set up a solver using `65` vertical levels and `3` MG levels with the
+coarsening factor of `8`, or `4` MG levels and the factor of `4`, or `7` MG levels and the
+coarsening factor of `2`. In general, the computational cost of an MG preconditioner
+application increases with the number of MG levels, so the first hierarchy (`2, 9, 65`,
+`C=8`) *may* be the best choice. *However,* coarsening that is too aggressive may make a
+less effective preconditioner, requiring more Krylov iterations and increasing the
+computational cost. Again, one may have to experiment to find settings that work best in a
+particular setup.
+
+Picking the number of vertical levels from :numref:`tab-blatter-mg-levels` can be a
+hassle. As an alternative, PISM can *increase* the number of vertical levels to the
+smallest number that is greater than or equal to :config:`stress_balance.blatter.Mz` and
+has the form :eq:`eq-bp-vertical-grid-size`.
+
+Set
+
+.. code-block:: bash
+
+   -bp_pc_type mg \
+   -bp_pc_mg_levels M \
+   -blatter_n_levels M \
+   -blatter_coarsening_factor C \
+   -blatter_Mz N
+
+to enable this mechanism. In this case PISM will use a fine grid with *at least* `N`
+vertical levels and build a grid hierarchy with `M` levels and the coarsening factor `C`.
+
+The coarsest grid in a hierarchy should be as small as possible. Two levels is the minimum
+achievable in the context of the finite element method used to discretize the system (this
+corresponds to a mesh that is just one element thick).
+
+Note, though, that the multigrid preconditioner, even if it is effective in terms of
+reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
+there is a trade off between the number of iterations and the cost of a single iteration.
+Other options such as
+
+.. code-block:: bash
+
+   -bp_pc_type bjacobi -bp_sub_pc_type ilu
+
+are worth trying as well.
+
+.. _sec-blatter-gradient:
+
+Surface gradient computation
+############################
+
+Some synthetic geometry experiments with grounded margins show "checkerboard" artifacts in
+computed ice velocity near steep margins. A similar issue and an attempt to address it are
+described in :cite:`Lipscomb2019`.
+
+This implementation takes a different approach: instead of using an "upwinded" finite
+difference approximation of the surface gradient we allow using the `\eta` transformation
+described in :ref:`sec-gradient`. Set :config:`stress_balance.blatter.use_eta_transform`
+to enable it.
+
+
+List of parameters
+##################
+
+Below is the complete list of configuration parameters controlling this solver (prefix:
+``stress_balance.blatter.``):
+
+.. pism-parameters::
+   :prefix: stress_balance.blatter.
 
 .. _sec-ssa:
 
@@ -257,3 +438,10 @@ as a sliding law with the deformational flow modeled using the SIA model.
 Use configuration parameters :config:`stress_balance.weertman_sliding.k` and
 :config:`stress_balance.weertman_sliding.A` tot set `k` and `A_s`, respectively. Default
 values come from :cite:`Tomkin2007`.
+
+.. rubric:: Footnotes
+
+.. [#semi-coarsening] Horizontal coordinates of grid points are the same in all grids in a
+                      hierarchy, i.e. each grid is "extruded" from PISM's 2D grid with
+                      uniform spacing in `x` and `y` directions.
+.. [#bp-fem] See :ref:`sec-blatter-details`.

@@ -81,6 +81,7 @@ add_library (pism
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
   $<TARGET_OBJECTS:stressbalance>
+  $<TARGET_OBJECTS:blatter>
   $<TARGET_OBJECTS:util>
   $<TARGET_OBJECTS:earth>
   $<TARGET_OBJECTS:verif>

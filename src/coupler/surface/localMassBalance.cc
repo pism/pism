@@ -366,8 +366,10 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
-  : m_grid(g), m_config(g->ctx()->config()) {
+FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
+  : m_grid(grid), m_config(grid->ctx()->config()),
+    m_temp_mj(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS)
+{
 
   m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");
   m_beta_snow_w = m_config->get_number("surface.pdd.fausto.beta_snow_w");
@@ -380,10 +382,8 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr g)
   m_fresh_water_density        = m_config->get_number("constants.fresh_water.density");
   m_ice_density                = m_config->get_number("constants.ice.density");
   m_pdd_fausto_latitude_beta_w = m_config->get_number("surface.pdd.fausto.latitude_beta_w");
-  m_refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
+  m_refreeze_fraction          = m_config->get_number("surface.pdd.refreeze");
 
-
-  m_temp_mj.create(m_grid, "temp_mj_faustogreve", WITHOUT_GHOSTS);
   m_temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
                       "K", "K", "", 0);

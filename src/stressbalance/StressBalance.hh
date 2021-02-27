@@ -19,6 +19,8 @@
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
 
+#include <memory>               // std::shared_ptr
+
 #include "pism/util/Component.hh"     // derives from Component
 #include "pism/util/iceModelVec.hh"
 #include "pism/stressbalance/timestepping.hh"
@@ -68,7 +70,7 @@ public:
 /*!
   Generally all the nontrivial fields are updated by a call to update().  The rest
   of the methods generally provide access to precomputed results.  The following
-  diagram shows where these results are generally used in the rest of PISM.  (It 
+  diagram shows where these results are generally used in the rest of PISM.  (It
   does not show the call graph, as would doxygen.)
 
   \image html stressbalance-out.png "\b Methods of StressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the StressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
@@ -78,7 +80,9 @@ public:
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
+  StressBalance(IceGrid::ConstPtr g,
+                std::shared_ptr<ShallowStressBalance> sb,
+                std::shared_ptr<SSB_Modifier> ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
@@ -138,8 +142,8 @@ protected:
 
   IceModelVec3 m_w, m_strain_heating;
 
-  ShallowStressBalance *m_shallow_stress_balance;
-  SSB_Modifier *m_modifier;
+  std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
+  std::shared_ptr<SSB_Modifier> m_modifier;
 };
 
 std::shared_ptr<StressBalance> create(const std::string &model_name,
@@ -160,4 +164,3 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 } // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_H_ */
-

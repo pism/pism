@@ -44,9 +44,9 @@ void IceModel::bedrock_thermal_model_step() {
 
   const Profiling &profiling = m_ctx->profiling();
 
-  IceModelVec2S &basal_enthalpy = m_work2d[2];
+  IceModelVec2S &basal_enthalpy = *m_work2d[2];
 
-  m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
+  m_energy_model->enthalpy().extract_surface(0.0, basal_enthalpy);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,

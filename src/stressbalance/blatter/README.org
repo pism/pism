@@ -1,0 +1,46 @@
+#+LaTeX_HEADER: \usepackage[margin=1in]{geometry}
+#+OPTIONS: toc:nil
+
+* Things I need to do
+1. [X] Split allocation and setup from re-setting input fields.
+2. [X] Add a 3D DMDA (with dof==1) and the associated Vec to store ice hardness.
+3. [X] Write the restriction hook.
+4. [X] Write the interpolation code (to and from the PISM grid).
+5. [X] Replace "bed" with "ice lower surface elevation"
+6. [ ] Document the whole thing.
+7. [X] Make the code match PISM's notation for grid and physical dimensions (Mx, Lx, etc)
+8. [X] Think about stress boundary conditions (shelves and grounded margins).
+9. [X] Make sure that the the units are set correctly (i.e. scaling).
+10. [X] Allow prescribing Dirichlet boundary conditions other than no-slip at the base.
+11. [X] Disable no-slip conditions at the base.
+12. [X] Think about grid sequencing to compute the initial guess.
+13. [X] Use GeometryCalculator to determine if "floating" or "grounded"
+14. [X] Think about fields that we will need to save to restart the model.
+15. [X] Implement the computation of the surface gradient using gridded data.
+16. [X] Determine if the Jacobian really is symmetric in our (more general) case.
+17. [X] Write the code checking if grid dimensions are compatible with
+    the chosen number of coarsenings. (This is to avoid ugly PETSC
+    ERROR tracebacks.)
+18. [X] Consider switching element types at the margin. Yes, there are lots of cases.
+19. [X] Switch to using PISM's basal drag computation.
+20. [X] Switch to computing the effective viscosity using =IceFlowLaw=.
+21. [X] Make =BlatterStressBalance= a derived class of
+    =ShallowStressBalance= to re-use diagnostics, the vertical
+    velocity computation, and the basal frictional heating computation
+    code.
+
+
+* Inputs
+- ice thickness
+- ice bottom surface topography
+- basal yield stress
+- sea level elevation
+- ice enthalpy on the `PISM` grid (used to compute the ice hardness on the "sigma" grid)
+
+
+* Outputs
+- $u$ and $v$ components of the horizontal velocity on the `PISM` grid
+- $u$ and $v$ on the sigma grid for restarting
+- vertically averaged horizontal velocity (for mass continuity time-stepping)
+- strain heating $\Sigma$.
+

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 PISM Authors
+// Copyright (C) 2008-2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,31 +33,33 @@ namespace icebin {
 
 
 IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
-  : SurfaceModel(g) {
+  : SurfaceModel(g),
+    icebin_wflux(m_grid, "icebin_wflux", WITHOUT_GHOSTS),
+    icebin_deltah(m_grid, "icebin_deltah", WITHOUT_GHOSTS),
+    icebin_massxfer(m_grid, "icebin_massxfer", WITHOUT_GHOSTS),
+    icebin_enthxfer(m_grid, "icebin_enthxfer", WITHOUT_GHOSTS),
+    surface_temp(m_grid, "surface_temp", WITHOUT_GHOSTS)
+{
 
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
-  icebin_wflux.create(m_grid, "icebin_wflux", WITHOUT_GHOSTS);
   icebin_wflux.set_attrs("climate_state",
                          "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
                          "kg m-2 s-1", "kg m-2 year-1", "land_ice_surface_specific_mass_balance", 0);
 
-  icebin_deltah.create(m_grid, "icebin_deltah", WITHOUT_GHOSTS);
   icebin_deltah.set_attrs(
-      "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
+      "climate_state",
+      "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "W m-2", "W m-2", "", 0);
 
-  icebin_massxfer.create(m_grid, "icebin_massxfer", WITHOUT_GHOSTS);
   icebin_massxfer.set_attrs(
-      "climate_state", "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
+      "climate_state",
+      "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
       "kg m-2 s-1", "kg m-2 s-1", "", 0);
 
-
-  icebin_enthxfer.create(m_grid, "icebin_enthxfer", WITHOUT_GHOSTS);
   icebin_enthxfer.set_attrs("climate_state", "constant-in-time heat flux through top surface",
                             "W m-2", "W m-2", "", 0);
 
   // This variable is computed from the inputs above.
-  surface_temp.create(m_grid, "surface_temp", WITHOUT_GHOSTS);
   surface_temp.set_attrs("climate_state", "Temperature to use for Dirichlet B.C. at surface",
                          "K", "K", "", 0);
 

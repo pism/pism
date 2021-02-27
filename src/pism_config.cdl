@@ -2103,6 +2103,50 @@ netcdf pism_config {
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
 
+    pism_config:stress_balance.blatter.Glen_exponent_units = "pure number";
+    pism_config:stress_balance.blatter.Glen_exponent_type = "number";
+    pism_config:stress_balance.blatter.Glen_exponent = 3.0;
+    pism_config:stress_balance.blatter.Glen_exponent_doc = "Glen exponent in ice flow law for the Blatter stress balance solver";
+
+    pism_config:stress_balance.blatter.Mz_option = "blatter_Mz";
+    pism_config:stress_balance.blatter.Mz_units = "count";
+    pism_config:stress_balance.blatter.Mz_type = "integer";
+    pism_config:stress_balance.blatter.Mz = 5;
+    pism_config:stress_balance.blatter.Mz_doc = "Number of vertical grid levels in the ice";
+
+    pism_config:stress_balance.blatter.coarsening_factor_option = "blatter_coarsening_factor";
+    pism_config:stress_balance.blatter.coarsening_factor_units = "count";
+    pism_config:stress_balance.blatter.coarsening_factor_type = "integer";
+    pism_config:stress_balance.blatter.coarsening_factor = 2;
+    pism_config:stress_balance.blatter.coarsening_factor_doc = "Coarsening factor in the `z` direction";
+
+    pism_config:stress_balance.blatter.enhancement_factor_option = "blatter_e";
+    pism_config:stress_balance.blatter.enhancement_factor_units = "1";
+    pism_config:stress_balance.blatter.enhancement_factor_type = "number";
+    pism_config:stress_balance.blatter.enhancement_factor = 1.0;
+    pism_config:stress_balance.blatter.enhancement_factor_doc = "Flow enhancement factor for the Blatter stress balance flow law";
+
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial_option = "blatter_e_interglacial";
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial_units = "1";
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial_type = "number";
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial = 1.0;
+    pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver (*not implemented*)";
+
+    pism_config:stress_balance.blatter.flow_law_type = "keyword";
+    pism_config:stress_balance.blatter.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
+    pism_config:stress_balance.blatter.flow_law = "gpbld";
+    pism_config:stress_balance.blatter.flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model";
+
+    pism_config:stress_balance.blatter.n_levels_option = "blatter_n_levels";
+    pism_config:stress_balance.blatter.n_levels_units = "count";
+    pism_config:stress_balance.blatter.n_levels_type = "integer";
+    pism_config:stress_balance.blatter.n_levels = 0;
+    pism_config:stress_balance.blatter.n_levels_doc = "Choose the number of vertical levels `M_z` so that `M_z \\ge` :config:`stress_balance.blatter.Mz` and allows for this many multigrid levels with the coarsening factor :config:`stress_balance.blatter.coarsening_factor`";
+
+    pism_config:stress_balance.blatter.use_eta_transform_type = "flag";
+    pism_config:stress_balance.blatter.use_eta_transform = "no";
+    pism_config:stress_balance.blatter.use_eta_transform_doc = "Use the `\\eta` transform to improve the accuracy of the surface gradient approximation near grounded margins (see :cite:`BLKCB` for details).";
+
     pism_config:stress_balance.calving_front_stress_bc = "no";
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
@@ -2114,7 +2158,7 @@ netcdf pism_config {
     pism_config:stress_balance.ice_free_thickness_standard_units = "meters";
 
     pism_config:stress_balance.model = "sia";
-    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia";
+    pism_config:stress_balance.model_choices = "none,prescribed_sliding,weertman_sliding,sia,ssa,prescribed_sliding+sia,weertman_sliding+sia,ssa+sia,blatter";
     pism_config:stress_balance.model_doc = "Stress balance model";
     pism_config:stress_balance.model_option = "stress_balance";
     pism_config:stress_balance.model_type = "keyword";

@@ -67,7 +67,7 @@ void IceModel::front_retreat_step() {
     }
 
     if (m_frontal_melt) {
-      IceModelVec2S &flux_magnitude = m_work2d[0];
+      IceModelVec2S &flux_magnitude = *m_work2d[0];
 
       flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
 
@@ -81,8 +81,8 @@ void IceModel::front_retreat_step() {
   }
 
   IceModelVec2S
-    &old_H    = m_work2d[0],
-    &old_Href = m_work2d[1];
+    &old_H    = *m_work2d[0],
+    &old_Href = *m_work2d[1];
 
   // frontal melt
   if (m_frontal_melt) {
@@ -116,7 +116,7 @@ void IceModel::front_retreat_step() {
     if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
       assert(m_front_retreat);
 
-      IceModelVec2S &retreat_rate = m_work2d[2];
+      IceModelVec2S &retreat_rate = *m_work2d[2];
       retreat_rate.set(0.0);
 
       if (m_eigen_calving) {

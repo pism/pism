@@ -58,9 +58,10 @@ however, as also described in the Table.
        - model for subglacial water
        - model for basal resistance
 
-   * - *Blatter-Pattyn*
-     - "higher-order", bridging stresses :cite:`Blatter`, :cite:`Pattyn03`,
-       :cite:`SchoofCoulombBlatter`
+   * - First Order Approximation
+     - pressure within the ice is hydrostatic; `x` and `y` derivatives of the
+       vertical velocity component are small compared to `z` derivatives of horizontal
+       components :cite:`Blatter`, :cite:`Pattyn03`, :cite:`SchoofCoulombBlatter`
      - *same as above* 
 
 It may also be helpful to view the implemented stress balances as PISM software components

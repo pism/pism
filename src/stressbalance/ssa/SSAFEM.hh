@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _SSAFEM_H_
 
 #include "SSA.hh"
-#include "pism/util/FETools.hh"
+#include "pism/util/fem/FEM.hh"
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/Mask.hh"
@@ -50,7 +50,7 @@ protected:
   //! Storage for SSA coefficients at element nodes.
   //!
   //! All fields must be "double" or structures containing "double"
-  //! for IceModelVec2Fat to work correctly.
+  //! for IceModelVec2Struct to work correctly.
   struct Coefficients {
     //! ice thickness
     double thickness;
@@ -66,27 +66,27 @@ protected:
     Vector2 driving_stress;
   };
 
-  const IceModelVec2Int *m_bc_mask;
-  const IceModelVec2V *m_bc_values;
+  IceModelVec2Int m_bc_mask;
+  IceModelVec2V m_bc_values;
 
   GeometryCalculator m_gc;
   double m_alpha;
   double m_rho_g;
 
-  IceModelVec2Fat<Coefficients> m_coefficients;
+  IceModelVec2Struct<Coefficients> m_coefficients;
 
-  void quad_point_values(const fem::Quadrature &Q,
+  void quad_point_values(const fem::Element &Q,
                          const Coefficients *x,
                          int *mask,
                          double *thickness,
                          double *tauc,
                          double *hardness) const;
 
-  void explicit_driving_stress(const fem::Quadrature &Q,
+  void explicit_driving_stress(const fem::Element &E,
                                const Coefficients *x,
                                Vector2 *driving_stress) const;
 
-  void driving_stress(const fem::Quadrature &Q,
+  void driving_stress(const fem::Element &E,
                       const Coefficients *x,
                       Vector2 *driving_stress) const;
 
@@ -137,8 +137,8 @@ protected:
   double m_epsilon_ssa;
 
   fem::ElementIterator m_element_index;
-  fem::ElementMap m_element;
-  fem::Q1Quadrature4 m_quadrature;
+  fem::Q1Element2 m_q1_element;
+  // fem::P1Element m_p1_element;
 
   // Support for direct specification of driving stress to the FEM SSA solver. This helps
   // with certain test cases where the grid is periodic but the driving stress cannot be the
@@ -153,10 +153,10 @@ private:
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
-static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                        Vector2 const *const *const velocity,
-                                        Vector2 **residual,
-                                        CallbackData *fe);
+  static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                          Vector2 const *const *const velocity,
+                                          Vector2 **residual,
+                                          CallbackData *fe);
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           Vector2 const *const *const xg,
                                           Mat A, Mat J, CallbackData *fe);

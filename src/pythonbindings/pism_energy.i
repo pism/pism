@@ -6,6 +6,7 @@
 using pism::MaskValue;
 #include "energy/tempSystem.hh"
 #include "energy/BedrockColumn.hh"
+#include "energy/utilities.hh"
 %}
 
 %rename(EnergyModelInputs) pism::energy::Inputs;
@@ -39,3 +40,5 @@ using pism::MaskValue;
 
 %ignore pism::energy::BedrockColumn::solve(double, double, double, const double *, double *);
 %include "energy/BedrockColumn.hh"
+
+%include "energy/utilities.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@ using std::dynamic_pointer_cast;
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 #include "IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "error_handling.hh"
 
 namespace pism {

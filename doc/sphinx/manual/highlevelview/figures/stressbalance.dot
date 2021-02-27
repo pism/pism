@@ -10,8 +10,7 @@ subgraph cluster_pism {
     labeljust=r
 
     subgraph cluster_higher_order {
-        label="higher order\n(planned)"
-        style=dotted;
+        label="First Order\nApproximation\n(class Blatter)"
         node [style=invis width=0.2 label=""];
         a -> b [style=invis];
     }
@@ -43,19 +42,19 @@ subgraph cluster_pism {
       {sia noop2} -> inc [label="" style=invis weight=10];
     }
 
-    ssa -> sia [style=solid weight=0 color="green" 
-                label="hybrid" fontcolor="green"];
-    sia -> inc [style=solid weight=0 color="green"];
+    ssa -> sia [style=solid weight=0 color="darkgreen"
+                label="hybrid" fontcolor="darkgreen"];
+    sia -> inc [style=solid weight=0 color="darkgreen"];
 
-    noop1 -> sia [style=dashed weight=0 color="blue"
+    noop1 -> sia [style=solid weight=0 color="blue"
                   label="nonsliding SIA" fontcolor="blue"];
-    sia -> inc [style=dashed weight=0 color="blue"];
+    sia -> inc [style=solid weight=0 color="blue"];
 
-    ssa -> noop2 [style=dotted weight=0 color="red"
+    ssa -> noop2 [style=solid weight=0 color="red"
                   label="SSA only" fontcolor="red"];
-    noop2 -> inc [style=dotted weight=0 color="red"];
+    noop2 -> inc [style=solid weight=0 color="red"];
 
-    b -> inc [style=dotted weight=0];
+    b -> inc [style=solid weight=0];
 }
 subgraph cluster_stokes {
     label="Stokes\n(not planned)"

@@ -130,13 +130,13 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
       const double uex = (xx/r) * F.U[0];
       const double vex = (yy/r) * F.U[0];
-      // note that because getValZ does linear interpolation and H is not exactly at
+      // note that because interpolate does linear interpolation and H is not exactly at
       // a grid point, this causes nonzero errors
-      const double Uerr = sqrt(pow(u3.getValZ(i,j,H) - uex, 2) +
-                               pow(v3.getValZ(i,j,H) - vex, 2));
+      const double Uerr = sqrt(pow(u3.interpolate(i,j,H) - uex, 2) +
+                               pow(v3.interpolate(i,j,H) - vex, 2));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
-      const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
+      const double Werr = fabs(w3.interpolate(i,j,H) - F.w[0]);
       maxWerr = std::max(maxWerr,Werr);
       avWerr += Werr;
     }
@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
     const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
     IceModelVec3
-      enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
-      age(grid, "age", WITHOUT_GHOSTS);
+      enthalpy(grid, "enthalpy", WITH_GHOSTS, grid->z(), WIDE_STENCIL),
+      age(grid, "age", WITHOUT_GHOSTS, grid->z());
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);
@@ -340,8 +340,8 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // StressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid);
-    ZeroSliding *no_sliding = new ZeroSliding(grid);
+    std::shared_ptr<SIAFD> sia(new SIAFD(grid));
+    std::shared_ptr<ZeroSliding> no_sliding(new ZeroSliding(grid));
 
     // stress_balance will de-allocate no_sliding and sia.
     StressBalance stress_balance(grid, no_sliding, sia);

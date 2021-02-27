@@ -60,18 +60,24 @@
 
 namespace pism {
 
-IceModel::IceModel(IceGrid::Ptr g, std::shared_ptr<Context> context)
-  : m_grid(g),
+IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
+  : m_grid(grid),
     m_config(context->config()),
     m_ctx(context),
     m_sys(context->unit_system()),
     m_log(context->log()),
     m_time(context->time()),
+    m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
-    m_thickness_change(g),
+    m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
+    m_basal_melt_rate(m_grid, "bmelt", WITHOUT_GHOSTS),
+    m_bedtoptemp(m_grid, "bedtoptemp", WITHOUT_GHOSTS),
+    m_ssa_dirichlet_bc_mask(m_grid, "bc_mask", WITH_GHOSTS, m_wide_stencil),
+    m_ssa_dirichlet_bc_values(m_grid, "_ssa_bc", WITH_GHOSTS, m_wide_stencil), // u_ssa_bc and v_ssa_bc
+    m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
     m_timestamp("timestamp", m_sys) {
@@ -113,14 +119,12 @@ IceModel::IceModel(IceGrid::Ptr g, std::shared_ptr<Context> context)
 
   // allocate temporary storage
   {
-    const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
-    // various internal quantities
     // 2d work vectors
     for (int j = 0; j < m_n_work2d; j++) {
-      char namestr[30];
-      snprintf(namestr, sizeof(namestr), "work_vector_%d", j);
-      m_work2d[j].create(m_grid, namestr, WITH_GHOSTS, WIDE_STENCIL);
+      std::shared_ptr<IceModelVec2S> ptr(new IceModelVec2S(m_grid,
+                                                           pism::printf("work_vector_%d", j),
+                                                           WITH_GHOSTS, m_wide_stencil));
+      m_work2d.push_back(ptr);
     }
   }
 
@@ -179,8 +183,6 @@ IceModel::~IceModel() {
 */
 void IceModel::allocate_storage() {
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
   // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
   // as a function argument.
   m_grid->variables().add(m_geometry.ice_surface_elevation);
@@ -200,7 +202,6 @@ void IceModel::allocate_storage() {
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
-    m_basal_yield_stress.create(m_grid, "tauc", WITH_GHOSTS, WIDE_STENCIL);
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
     m_basal_yield_stress.set_attrs("diagnostic",
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
@@ -209,14 +210,12 @@ void IceModel::allocate_storage() {
   }
 
   {
-    m_bedtoptemp.create(m_grid, "bedtoptemp", WITHOUT_GHOSTS);
     m_bedtoptemp.set_attrs("diagnostic",
                            "temperature at the top surface of the bedrock thermal layer",
                            "Kelvin", "Kelvin", "", 0);
   }
 
   // basal melt rate
-  m_basal_melt_rate.create(m_grid, "bmelt", WITHOUT_GHOSTS);
   m_basal_melt_rate.set_attrs("internal",
                               "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
                               "m s-1", "m year-1", "land_ice_basal_melt_rate", 0);
@@ -228,7 +227,6 @@ void IceModel::allocate_storage() {
   // The mask m_ssa_dirichlet_bc_mask is also used to prescribe locations of ice thickness Dirichlet
   // B.C. (FIXME)
   {
-    m_ssa_dirichlet_bc_mask.create(m_grid, "bc_mask", WITH_GHOSTS, WIDE_STENCIL);
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
                                       "", "", "", 0);
     m_ssa_dirichlet_bc_mask.metadata().set_numbers("flag_values", {0, 1});
@@ -248,7 +246,6 @@ void IceModel::allocate_storage() {
                                        "m year-1", "m second-1");
     double valid_range = units::convert(m_sys, 1e6, "m year-1", "m second-1");
     // vel_bc
-    m_ssa_dirichlet_bc_values.create(m_grid, "_ssa_bc", WITH_GHOSTS, WIDE_STENCIL); // u_ssa_bc and v_ssa_bc
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
                                         "X-component of the SSA velocity boundary conditions",
                                         "m s-1", "m year-1", "", 0);
@@ -583,8 +580,8 @@ void IceModel::step(bool do_mass_continuity,
     // add removed icebergs to discharge due to calving
     {
       IceModelVec2S
-        &old_H    = m_work2d[0],
-        &old_Href = m_work2d[1];
+        &old_H    = *m_work2d[0],
+        &old_Href = *m_work2d[1];
 
       {
         old_H.copy_from(m_geometry.ice_thickness);
@@ -691,7 +688,7 @@ void IceModel::step(bool do_mass_continuity,
 void IceModel::hydrology_step() {
   hydrology::Inputs inputs;
 
-  IceModelVec2S &sliding_speed = m_work2d[0];
+  IceModelVec2S &sliding_speed = *m_work2d[0];
   sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
 
   inputs.no_model_mask      = nullptr;
@@ -706,7 +703,7 @@ void IceModel::hydrology_step() {
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
-    IceModelVec2S &surface_input_rate = m_work2d[1];
+    IceModelVec2S &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
     surface_input_rate.scale(1.0 / m_dt);
     inputs.surface_input_rate = &surface_input_rate;

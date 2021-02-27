@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/FETools.hh"
+#include "pism/util/fem/FEM.hh"
 
 namespace pism {
 
@@ -43,9 +43,9 @@ public:
   IPFunctional(IceGrid::ConstPtr grid)
     : m_grid(grid),
       m_element_index(*m_grid),
-      m_element(*m_grid),
-      m_quadrature(grid->dx(), grid->dy(), 1.0)
+      m_element(*m_grid, fem::Q1Quadrature4())
   {
+    // empty
   }
 
   virtual ~IPFunctional() {};
@@ -70,8 +70,7 @@ protected:
   IceGrid::ConstPtr m_grid;
 
   fem::ElementIterator m_element_index;
-  fem::ElementMap      m_element;
-  fem::Q1Quadrature4   m_quadrature;
+  fem::Q1Element2       m_element;
 
 private:
   // Hide copy/assignment operations
@@ -117,8 +116,8 @@ public:
     y.scale(0.5);
   }
 
-  //! Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
-  /*! If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
+  // Assembles the matrix \f$Q_{ij}\f$ corresponding to the bilinear form.
+  /* If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
     \f$Q_{ij}= Q(x_i, x_j)\f$. */
   // virtual void assemble_form(Mat Q) = 0;
 

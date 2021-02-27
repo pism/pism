@@ -27,20 +27,20 @@
 namespace pism {
 namespace bed {
 
-BedDef::BedDef(IceGrid::ConstPtr g)
-  : Component(g) {
+BedDef::BedDef(IceGrid::ConstPtr grid)
+  : Component(grid),
+    m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
+    m_topg(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
+    m_topg_last(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
+    m_uplift(m_grid, "dbdt", WITHOUT_GHOSTS)
+{
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
-  m_topg.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg.set_attrs("model_state", "bedrock surface elevation",
                    "m", "m", "bedrock_altitude", 0);
 
-  m_topg_last.create(m_grid, "topg", WITH_GHOSTS, WIDE_STENCIL);
   m_topg_last.set_attrs("model_state", "bedrock surface elevation",
                         "m", "m", "bedrock_altitude", 0);
 
-  m_uplift.create(m_grid, "dbdt", WITHOUT_GHOSTS);
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
                      "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
 }
@@ -168,8 +168,7 @@ void BedDef::apply_topg_offset(const std::string &filename) {
   m_log->message(2, "  Adding a bed topography correction read in from %s...\n",
                  filename.c_str());
 
-  IceModelVec2S topg_delta;
-  topg_delta.create(m_grid, "topg_delta", WITHOUT_GHOSTS);
+  IceModelVec2S topg_delta(m_grid, "topg_delta", WITHOUT_GHOSTS);
   topg_delta.set_attrs("internal", "bed topography correction",
                        "meters", "meters", "", 0);
 

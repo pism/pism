@@ -137,11 +137,11 @@ void Inputs::dump(const char *filename) const {
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,
-                             ShallowStressBalance *sb,
-                             SSB_Modifier *ssb_mod)
+                             std::shared_ptr<ShallowStressBalance> sb,
+                             std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS),
-    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS),
+    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()),
+    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
 
@@ -156,8 +156,6 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
 }
 
 StressBalance::~StressBalance() {
-  delete m_shallow_stress_balance;
-  delete m_modifier;
 }
 
 //! \brief Initialize the StressBalance object.
@@ -196,9 +194,7 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
                                              inputs.geometry->cell_type,
-                                             m_modifier->velocity_u(),
-                                             m_modifier->velocity_v(),
-                                             m_w);
+                                             u, v, m_w);
     }
 
     m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
@@ -647,11 +643,11 @@ std::string StressBalance::stdout_report() const {
 }
 
 const ShallowStressBalance* StressBalance::shallow() const {
-  return m_shallow_stress_balance;
+  return m_shallow_stress_balance.get();
 }
 
 const SSB_Modifier* StressBalance::modifier() const {
-  return m_modifier;
+  return m_modifier.get();
 }
 
 

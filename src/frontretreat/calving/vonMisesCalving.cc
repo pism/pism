@@ -22,6 +22,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
@@ -34,7 +35,9 @@ namespace calving {
 vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
-    m_flow_law(flow_law) {
+    m_calving_threshold(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS),
+    m_flow_law(flow_law)
+{
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
     EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -46,8 +49,6 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to von Mises calving",
                            "m s-1", "m year-1", "", 0);
-
-  m_calving_threshold.create(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS);
 
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'von Mises' calving method",

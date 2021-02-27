@@ -1,0 +1,55 @@
+/* -*- mode: maxima -*- */
+load("fem_p1.mac");
+
+/* Computing quadrature weights for integrating over sides of P1
+triangular elements embedded in Q1 elements that are aligned with
+coordinate axes. */
+
+/* map from [-1, 1] to [0, 1] (used to create a parameterization with
+t \in [-1, 1]) */
+L(t) := 1/2 * (t + 1);
+
+/* parameterization of sides of the reference element, t \in [-1, 1]. */
+r_star[i](t) := (1 - L(t)) * P[i] + L(t) * P[mod(i, 3) + 1];
+
+/* parameterization of the i-th side of a physical element */
+r[i](t) := [funmake(x, r_star[i](t)), funmake(y, r_star[i](t))];
+
+/* We need to find dr/dt to turn a line integral over a side of a
+physical element into a definite integral over t. One way to do this
+is use the map from the reference element to a physical element (r[i])
+above and differentiate that. */
+
+/* derivative of r[i] with respect to t */
+dr[i] := diff(r[i](t), t);
+
+/* simplified version, using coordinates of the nodes of a physical
+element i, side j */
+dr_s[i, j] := subst(eqs[i], ev(dr[j], nouns));
+
+/* Another way to compute dr/dt is by differentiating
+parameterizations of sides of the reference element (r_star) and using
+the chain rule. This allows us to avoid writing down the
+paralemerization (which varies from one physical element to the next)
+and use the Jacobian of the map from the reference element to a
+physical element, which we have to compute for the purpose of
+integrating over element interiors, anyway. */
+
+/* derivative of the parameterization of sides of the refence element */
+dr_star[i] := diff(r_star[i](t), t);
+
+/* dr/dt for triangle i, side j, computed using the chain rule.
+Compare to dr_s. */
+dr_chain[i, j] := J[i] . dr_star[j];
+
+/* 2-point quadrature on [-1,1] (in the "t" space) */
+quad_pts : [-1 / sqrt(3), 1 / sqrt(3)];
+
+/* xi, eta coordinates of quadrature points, computed using the
+parameterization of sides of the reference element. We can use these
+coordinates and 2D P1 shape functions to compute shape function values
+at quadrature points on sides. (This uses the fact that P1 shape
+functions restricted to sides are linear, i.e. are just 1D "hat" shape
+functions.) */
+
+quad_pts_star[i,j] := r_star[i](quad_pts[j]);

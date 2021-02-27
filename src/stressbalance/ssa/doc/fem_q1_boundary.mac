@@ -1,0 +1,44 @@
+/* -*- mode: maxima -*- */
+load("fem_q1.mac");
+
+/* Computing quadrature weights for integrating over sides of Q1
+elements that are aligned with coordinate axes. */
+
+/* map from [-1, 1] to [0, 1] (used to create a parameterization with
+t \in [-1, 1]) */
+L(t) := 1/2 * (t + 1);
+
+P[i] := [xis[i], etas[i]];
+
+/* parameterization of sides of the reference element, t \in [-1, 1]. */
+r_star[i](t) := (1 - L(t)) * P[i] + L(t) * P[mod(i, 4) + 1];
+
+/* parameterization of the i-th side of a physical element */
+r[i](t) := [funmake(x, r_star[i](t)), funmake(y, r_star[i](t))];
+
+/* We need to find dr/dt to turn a line integral over a side of a
+physical element into a definite integral over t. One way to do this
+is use the map from the reference element to a physical element (r[i])
+above and differentiate that. */
+
+/* derivative of r[i] with respect to t */
+dr[i] := diff(r[i](t), t);
+
+/* simplified version, using coordinates of the nodes of a physical
+element side j */
+dr_s[j] := subst(eqs, ev(dr[j], nouns));
+
+/* Another way to compute dr/dt is by differentiating
+parameterizations of sides of the reference element (r_star) and using
+the chain rule. This allows us to avoid writing down the
+paralemerization (which varies from one physical element to the next)
+and use the Jacobian of the map from the reference element to a
+physical element, which we have to compute for the purpose of
+integrating over element interiors, anyway. */
+
+/* derivative of the parameterization of sides of the refence element */
+dr_star[i] := diff(r_star[i](t), t);
+
+/* dr/dt for side j, computed using the chain rule.
+Compare to dr_s. */
+dr_chain[j] := J_aligned . dr_star[j];

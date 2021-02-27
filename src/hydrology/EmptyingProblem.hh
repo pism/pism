@@ -21,6 +21,7 @@
 #define EMPTYINGPROBLEM_H
 
 #include "pism/util/Component.hh"
+#include "pism/util/IceModelVec2V.hh"
 
 namespace pism {
 

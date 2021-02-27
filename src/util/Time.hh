@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,11 +195,20 @@ protected:
   const Config::ConstPtr m_config;
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
-  double m_year_length;      //!< number of seconds in a year, for "mod" and "year fraction"
-  double m_time_in_seconds, //!< current time, in seconds since the reference time
-    m_run_start,                  //!< run start time, in seconds since the reference time
-    m_run_end;                    //!< run end tim, in seconds since the reference time
-  std::string m_calendar_string;       //!< CF calendar string
+  //! number of seconds in a year, for "mod" and "year fraction"
+  double m_year_length;
+
+  //! current time, in seconds since the reference time
+  double m_time_in_seconds;
+
+  //! run start time, in seconds since the reference time
+  double m_run_start;
+
+  //! run end tim, in seconds since the reference time
+  double m_run_end;
+
+  //! CF calendar string
+  std::string m_calendar_string;
 };
 
 std::string reference_date_from_file(const File &nc,

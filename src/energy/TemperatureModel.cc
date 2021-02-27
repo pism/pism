@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,9 +30,9 @@ namespace energy {
 
 TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
                                    stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance) {
+  : EnergyModel(grid, stress_balance),
+    m_ice_temperature(m_grid, "temp", WITH_GHOSTS, m_grid->z()) {
 
-  m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
   m_ice_temperature.set_attrs("model_state",
                               "ice temperature",
                               "K", "K", "land_ice_temperature", 0);

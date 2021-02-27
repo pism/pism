@@ -1116,9 +1116,9 @@ DiagnosticList GeometryEvolution::diagnostics_impl() const {
 }
 
 RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
-  : GeometryEvolution(grid) {
+  : GeometryEvolution(grid),
+    m_no_model_mask(m_grid, "no_model_mask", WITH_GHOSTS) {
 
-  m_no_model_mask.create(m_grid, "no_model_mask", WITH_GHOSTS);
   m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "", "", 0);
 }
 

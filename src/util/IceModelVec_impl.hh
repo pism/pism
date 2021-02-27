@@ -42,7 +42,9 @@ struct IceModelVec::Impl {
 
     ghosted = true;
 
-    name = "unintialized variable";
+    report_range = true;
+
+    name = "uninitialized variable";
 
     zlevels = {0.0};
 
@@ -59,7 +61,7 @@ struct IceModelVec::Impl {
   //! variable.
   std::string name;
 
-  //! Metadata (NetCDF variable attributes, one per variable)
+  //! Metadata (NetCDF variable attributes)
   std::vector<SpatialVariableMetadata> metadata;
 
   //! The computational grid
@@ -71,7 +73,7 @@ struct IceModelVec::Impl {
   //! stencil width supported by the DA
   unsigned int da_stencil_width;
 
-  //! has_ghosts == true means "has ghosts"
+  //! true if this IceModelVec is ghosted
   bool ghosted;
 
   //! distributed mesh manager (DM)

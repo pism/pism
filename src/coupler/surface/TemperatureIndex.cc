@@ -516,7 +516,9 @@ public:
                                         ? "surface_melt_flux"
                                         : "surface_melt_rate",
                                         TOTAL_CHANGE),
-    m_kind(kind) {
+      m_melt_mass(m_grid, "melt_mass", WITHOUT_GHOSTS),
+      m_kind(kind)
+  {
 
     std::string
       name              = "surface_melt_flux",
@@ -531,8 +533,6 @@ public:
       accumulator_units = "kg",
       internal_units    = "kg second-1";
       external_units    = "Gt year-1" ;
-
-      m_melt_mass.create(m_grid, "melt_mass", WITHOUT_GHOSTS);
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
@@ -577,7 +577,8 @@ public:
                                         ? "surface_runoff_flux"
                                         : "surface_runoff_rate",
                                         TOTAL_CHANGE),
-    m_kind(kind) {
+      m_kind(kind),
+      m_runoff_mass(m_grid, "runoff_mass", WITHOUT_GHOSTS) {
 
     std::string
       name              = "surface_runoff_flux",
@@ -592,8 +593,6 @@ public:
       accumulator_units = "kg",
       internal_units    = "kg second-1";
       external_units    = "Gt year-1" ;
-
-      m_runoff_mass.create(m_grid, "runoff_mass", WITHOUT_GHOSTS);
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
@@ -638,7 +637,8 @@ public:
                                         ? "surface_accumulation_flux"
                                         : "surface_accumulation_rate",
                                         TOTAL_CHANGE),
-    m_kind(kind) {
+      m_kind(kind),
+      m_accumulation_mass(m_grid, "accumulation_mass", WITHOUT_GHOSTS) {
 
     // possible standard name: surface_accumulation_flux
     std::string
@@ -652,8 +652,6 @@ public:
       accumulator_units = "kg",
       internal_units    = "kg second-1";
       external_units    = "Gt year-1" ;
-
-      m_accumulation_mass.create(m_grid, "accumulation_mass", WITHOUT_GHOSTS);
     }
 
 

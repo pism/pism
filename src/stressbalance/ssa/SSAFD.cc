@@ -60,16 +60,16 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(IceGrid::ConstPtr g)
-  : SSA(g),
-    m_hardness(m_grid, "hardness", WITHOUT_GHOSTS),
-    m_nuH(m_grid, "nuH", WITH_GHOSTS),
-    m_nuH_old(m_grid, "nuH_old", WITH_GHOSTS),
-    m_work(m_grid, "m_work", WITH_GHOSTS,
+SSAFD::SSAFD(IceGrid::ConstPtr grid)
+  : SSA(grid),
+    m_hardness(grid, "hardness", WITHOUT_GHOSTS),
+    m_nuH(grid, "nuH", WITH_GHOSTS),
+    m_nuH_old(grid, "nuH_old", WITH_GHOSTS),
+    m_work(grid, "work_vector", WITH_GHOSTS,
            2, /* stencil width */
            6  /* dof */),
-    m_b(m_grid, "right_hand_side", WITHOUT_GHOSTS),
-    m_velocity_old(m_grid, "velocity_old", WITH_GHOSTS)
+    m_b(grid, "right_hand_side", WITHOUT_GHOSTS),
+    m_velocity_old(grid, "velocity_old", WITH_GHOSTS)
 {
 
   m_velocity_old.set_attrs("internal",
@@ -77,6 +77,7 @@ SSAFD::SSAFD(IceGrid::ConstPtr g)
                            "m s-1", "m s-1", "", 0);
 
   auto units = pism::printf("Pa s%f", 1.0 / m_flow_law->exponent());
+
   m_hardness.set_attrs("diagnostic",
                        "vertically-averaged ice hardness",
                        units, units,

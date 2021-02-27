@@ -28,7 +28,10 @@ namespace pism {
 namespace surface {
 
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(grid, input) {
+  : SurfaceModel(grid, input),
+    m_mass_flux(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS),
+    m_temperature(m_grid, "effective_ice_surface_temp", WITHOUT_GHOSTS)
+{
 
   if (not input) {
     throw RuntimeError(PISM_ERROR_LOCATION, "pism::surface::InitializationHelper got a NULL input model");
@@ -36,13 +39,11 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
 
   // allocate storage
   {
-    m_mass_flux.create(m_grid, "effective_climatic_mass_balance", WITHOUT_GHOSTS);
     m_mass_flux.set_attrs("model_state",
                           "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
                           "kg m-2 s-1", "kg m-2 year-1", "", 0);
     m_mass_flux.set_time_independent(false);
 
-    m_temperature.create(m_grid, "effective_ice_surface_temp", WITHOUT_GHOSTS);
     m_temperature.set_attrs("model_state",
                             "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)",
                             "Kelvin", "Kelvin", "", 0);

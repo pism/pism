@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {
@@ -32,9 +33,8 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
   : Component(g),
     m_EC(g->ctx()->enthalpy_converter()),
     m_diffusive_flux(m_grid, "diffusive_flux", WITH_GHOSTS, 1),
-    m_u(m_grid, "uvel", WITH_GHOSTS),
-    m_v(m_grid, "vvel", WITH_GHOSTS),
-    m_strain_heating(m_grid, "strainheat", WITHOUT_GHOSTS) {
+    m_u(m_grid, "uvel", WITH_GHOSTS, m_grid->z()),
+    m_v(m_grid, "vvel", WITH_GHOSTS, m_grid->z()) {
   m_D_max = 0.0;
 
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
@@ -42,12 +42,6 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
 
   m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
                 "m s-1", "m year-1", "land_ice_y_velocity", 0);
-
-   // never diff'ed in hor dirs
-  m_strain_heating.set_attrs("internal",
-                             "rate of strain heating in ice (dissipation heating)",
-                             "W m-3", "mW m-3", "", 0);
-
 
   m_diffusive_flux.set_attrs("internal",
                              "diffusive (SIA) flux components on the staggered grid",
@@ -77,10 +71,6 @@ const IceModelVec3& SSB_Modifier::velocity_u() const {
 
 const IceModelVec3& SSB_Modifier::velocity_v() const {
   return m_v;
-}
-
-const IceModelVec3& SSB_Modifier::volumetric_strain_heating() const {
-  return m_strain_heating;
 }
 
 std::string SSB_Modifier::stdout_report() const {

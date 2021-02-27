@@ -129,18 +129,15 @@ int main(int argc, char *argv[]) {
     options::Real dt_years("-dt", "Time-step, in years", 1.0);
 
     // allocate tools and IceModelVecs
-    IceModelVec2S bedtoptemp, heat_flux_at_ice_base;
-    {
-      heat_flux_at_ice_base.create(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
-      heat_flux_at_ice_base.set_attrs("",
-                                      "upward geothermal flux at bedrock thermal layer base",
-                                      "W m-2", "mW m-2", "", 0);
+    IceModelVec2S bedtoptemp(grid, "bedtoptemp", WITHOUT_GHOSTS);
+    bedtoptemp.set_attrs("",
+                         "temperature at top of bedrock thermal layer",
+                         "K", "K", "", 0);
 
-      bedtoptemp.create(grid, "bedtoptemp", WITHOUT_GHOSTS);
-      bedtoptemp.set_attrs("",
-                           "temperature at top of bedrock thermal layer",
-                           "K", "K", "", 0);
-    }
+    IceModelVec2S heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
+    heat_flux_at_ice_base.set_attrs("",
+                                    "upward geothermal flux at bedrock thermal layer base",
+                                    "W m-2", "mW m-2", "", 0);
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);

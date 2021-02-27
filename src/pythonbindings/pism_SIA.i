@@ -3,7 +3,6 @@
 #include "stressbalance/sia/BedSmoother.hh"
 %}
 
-%shared_ptr(pism::stressbalance::SSB_Modifier)
 %shared_ptr(pism::stressbalance::ConstantInColumn)
 %include "stressbalance/SSB_Modifier.hh"
 %shared_ptr(pism::stressbalance::SIAFD)

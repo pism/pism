@@ -48,10 +48,10 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
     m_h_x(m_grid, "h_x", WITH_GHOSTS),
     m_h_y(m_grid, "h_y", WITH_GHOSTS),
     m_D(m_grid, "diffusivity", WITH_GHOSTS),
-    m_delta_0(m_grid, "delta_0", WITH_GHOSTS),
-    m_delta_1(m_grid, "delta_1", WITH_GHOSTS),
-    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS),
-    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS)
+    m_delta_0(m_grid, "delta_0", WITH_GHOSTS, m_grid->z()),
+    m_delta_1(m_grid, "delta_1", WITH_GHOSTS, m_grid->z()),
+    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS, m_grid->z()),
+    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS, m_grid->z())
 {
   // bed smoother
   m_bed_smoother = new BedSmoother(m_grid, m_stencil_width);

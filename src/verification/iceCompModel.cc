@@ -56,8 +56,13 @@ namespace pism {
 
 using units::convert;
 
-IceCompModel::IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> context, int mytest)
-  : IceModel(g, context), m_testname(mytest), m_bedrock_is_ice_forK(false) {
+IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
+  : IceModel(grid, context),
+    m_testname(test),
+    m_HexactL(m_grid, "HexactL", WITHOUT_GHOSTS),
+    m_strain_heating3_comp(m_grid, "strain_heating_comp", WITHOUT_GHOSTS, m_grid->z()),
+    m_bedrock_is_ice_forK(false)
+{
 
   m_log->message(2, "starting Test %c ...\n", m_testname);
 
@@ -155,9 +160,7 @@ void IceCompModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-  m_HexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
 
-  m_strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
   m_strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
                                    "W m-3", "W m-3", "", 0);
 }

@@ -5,6 +5,8 @@ Technical notes
    :caption: Contents
    :titlesonly:
 
+   release_checklist.rst
+
    cf-standard-names.rst
 
    vertchange.rst
@@ -17,6 +19,6 @@ Technical notes
 
    steady-hydrology.rst
 
-   release_checklist.rst
-
    ocean-th.rst
+
+   blatter-pattyn.rst

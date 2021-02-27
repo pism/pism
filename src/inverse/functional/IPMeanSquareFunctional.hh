@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -34,9 +34,15 @@ namespace inverse {
 */
 class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
+  /*!
+   * @param[in] grid the computational grid
+   * @param[in] weights Vector of weights (NULL implies all weights are 1)
+   */
   IPMeanSquareFunctional2S(IceGrid::ConstPtr grid, 
-                           IceModelVec2S *weights=NULL) :  ///< Vector of weights (NULL implies all weights are 1)
-    IPInnerProductFunctional<IceModelVec2S>(grid), m_weights(weights), m_normalization(1.) {};
+                           IceModelVec2S *weights=NULL)
+    : IPInnerProductFunctional<IceModelVec2S>(grid),
+      m_weights(weights),
+      m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
   virtual void normalize(double scale);

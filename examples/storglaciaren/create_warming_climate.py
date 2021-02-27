@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (C) 2017 Andy Aschwanden
+# Copyright (C) 2017, 2020 Andy Aschwanden
 
 import numpy as np
 import time
@@ -75,7 +75,7 @@ dT_var = def_var(nc, var, "K")
 T_0 = 0.
 
 temp = np.zeros_like(time_interval_since_refdate) + T_max
-temp[0:int(t_max/step)] = np.linspace(T_0, T_max, t_max / step)
+temp[0:int(t_max/step)] = np.linspace(T_0, T_max, int(t_max / step))
 temp[:] += -np.cos(time_interval_since_refdate * 2 * np.pi) * amplitude
 dT_var[:] = temp
 
