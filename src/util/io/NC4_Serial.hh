@@ -37,7 +37,7 @@ protected:
                  int FileID = -1,
                  const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
-  void create_impl(const std::string &filename, int FileID = -1);
+  void create_impl(const std::string &filename, int FileID = -1, int filetype);
 };
 
 

@@ -65,8 +65,8 @@ void NCFile::open(const std::string &filename,
   m_define_mode = false;
 }
 
-void NCFile::create(const std::string &filename, int FileID) {
-  this->create_impl(filename, FileID);
+void NCFile::create(const std::string &filename, int FileID, int filetype) {
+  this->create_impl(filename, FileID, filetype);
   m_filename = filename;
   m_define_mode = true;
 }

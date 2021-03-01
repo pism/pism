@@ -89,7 +89,7 @@ void NC3File::open_impl(const std::string &fname,
 }
 
 //! \brief Create a NetCDF file.
-void NC3File::create_impl(const std::string &fname, int FileID) {
+void NC3File::create_impl(const std::string &fname, int FileID, int filetype) {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {

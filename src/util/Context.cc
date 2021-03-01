@@ -185,6 +185,14 @@ int Context::get_n_writers() const {
   return n_writers;
 }
 
+int Context::get_filetype() const {
+  int filetype = 0;
+#if (Pism_USE_CDIPIO==1)
+  filetype = config()->get_number("output.pio.filetype");
+#endif
+  return filetype;
+}
+
 bool Context::get_async() const {
   bool async = false;
 #if (Pism_USE_CDIPIO==1)

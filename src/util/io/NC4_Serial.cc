@@ -38,7 +38,7 @@ int NC4_Serial::open_impl(const std::string &fname,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-int NC4_Serial::create_impl(const std::string &fname, int FileID) {
+int NC4_Serial::create_impl(const std::string &fname, int FileID, int filetype) {
   int stat = nc_create(fname.c_str(), NC_NETCDF4, &m_file_id);
   check(PISM_ERROR_LOCATION, stat);
 }

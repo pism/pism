@@ -68,7 +68,7 @@ public:
             int FileID = -1,
             const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
-  void create(const std::string &filename, int FileID = -1);
+  void create(const std::string &filename, int FileID = -1, int filetype = 0);
 
   void sync() const;
 
@@ -171,7 +171,7 @@ protected:
                          IO_Mode mode,
                          int FileID = -1,
                          const std::map<std::string, int> &dimsa = std::map<std::string, int>()) = 0;
-  virtual void create_impl(const std::string &filename, int FileID = -1) = 0;
+  virtual void create_impl(const std::string &filename, int FileID = -1, int filetype=0) = 0;
   virtual void sync_impl() const = 0;
   virtual void close_impl() = 0;
 
