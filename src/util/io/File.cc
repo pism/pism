@@ -190,7 +190,8 @@ File::File(MPI_Comm com,
            IO_Mode mode,
            int iosysid,
            int FileID,
-           const std::map<std::string, int> &dimsa)
+           const std::map<std::string, int> &dimsa,
+           int filetype)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -209,7 +210,8 @@ File::File(MPI_Comm com,
   this->open(filename,
              mode,
              FileID,
-             dimsa);
+             dimsa,
+             filetype);
 }
 
 File::~File() {
@@ -271,7 +273,8 @@ void File::set_compression_level(int level) const {
 void File::open(const std::string &filename,
                 IO_Mode mode,
                 int FileID,
-                const std::map<std::string, int> &dimsa) {
+                const std::map<std::string, int> &dimsa,
+                int filetype) {
   try {
 
     // opening for reading
@@ -287,7 +290,7 @@ void File::open(const std::string &filename,
         io::remove_if_exists(m_impl->com, filename);
       }
 
-      m_impl->nc->create(filename, FileID);
+      m_impl->nc->create(filename, FileID,filetype);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);

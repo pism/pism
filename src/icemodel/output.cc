@@ -299,6 +299,7 @@ void IceModel::open_files() {
 if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   if (not m_opened) {
   m_opened = true;
+  int filetype = m_ctx->get_filetype();
   // Open snap file/s
   if (m_save_snapshots) {
     char filename[PETSC_MAX_PATH_LEN];
@@ -313,13 +314,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     if (not m_split_snapshots) {
         strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
     } else {
-//        double tt = m_snapshot_times[sn];
-//        tt = tt / 365 / 24 / 60 / 60;
-//        std::stringstream stream;
-//        stream << std::fixed << std::setprecision(3) << tt;
-//        std::string tts = stream.str();
-//        snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-//             m_snapshots_filename.c_str(), tts.c_str());
 	snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
                  m_snapshots_filename.c_str(), m_time->date(m_snapshot_times[sn]).c_str());
     }
@@ -333,7 +327,8 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               mode,
               m_ctx->pio_iosys_id(),
               fileID,
-              DimSnapMap);
+              DimSnapMap,
+              filetype);
     streamIDs[filename] = file.get_streamID();
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -373,12 +368,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
       } else {
         tt = m_extra_times[sn];
       }
-//      tt = tt / 365 / 24 / 60 / 60;
-//      std::stringstream stream;
-//      stream << std::fixed << std::setprecision(3) << tt;
-//      std::string tts = stream.str();
-//      snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-//               m_extra_filename.c_str(), tts.c_str());
       snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
                m_extra_filename.c_str(), m_time->date(tt).c_str());
     }
@@ -391,7 +380,8 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               mode,
               m_ctx->pio_iosys_id(),
               fileID,
-              DimExtraMap);
+              DimExtraMap,
+              filetype);
     streamIDs[filename] = file.get_streamID();
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -439,7 +429,8 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               mode,
               m_ctx->pio_iosys_id(),
               fileID,
-              DimOutMap);
+              DimOutMap,
+              filetype);
   streamIDs[filename] = file.get_streamID();
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

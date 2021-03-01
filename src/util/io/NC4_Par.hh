@@ -37,7 +37,7 @@ protected:
                          int FileID = -1,
                          const std::map<std::string, int> &dimsa = std::map<std::string, int>());
 
-  virtual void create_impl(const std::string &filename, int FileID = -1);
+  virtual void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
 
   virtual void set_access_mode(int varid, bool mapped) const;
 

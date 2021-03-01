@@ -99,8 +99,8 @@ void CDI::map_zaxisID() const {
 	m_zsID = m_zID["zs"];
 }
 
-void CDI::create_impl(const std::string &filename, int FileID) {
-	m_file_id = streamOpenWrite(filename.c_str(), CDI_FILETYPE_NC2);
+void CDI::create_impl(const std::string &filename, int FileID, int filetype) {
+	m_file_id = streamOpenWrite(filename.c_str(), filetype);
 	m_tID = -1;
 	m_zsID = -1;
 	m_gridID = -1;

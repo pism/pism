@@ -58,7 +58,8 @@ public:
        IO_Mode mode,
        int iosysid = -1,
        int FileID = -1,
-       const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+       const std::map<std::string, int> &dimsa = std::map<std::string, int>(),
+       int filetype = 0);
   ~File();
 
   IO_Backend backend() const;
@@ -182,7 +183,8 @@ private:
   void open(const std::string &filename,
             IO_Mode mode,
             int FileID = -1,
-            const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+            const std::map<std::string, int> &dimsa = std::map<std::string, int>(), 
+	    int filetype = 0);
 
   // disable copying and assignments
   File(const File &other);
