@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -215,11 +215,9 @@ Real::Real(const std::string& option,
            const std::string& description,
            double default_value) {
 
-  std::stringstream buffer;
-  // NB! This may round default_value.
-  buffer << default_value;
+  std::string buffer = pism::printf("%f", default_value);
 
-  String input(option, description, buffer.str(), DONT_ALLOW_EMPTY);
+  String input(option, description, buffer, DONT_ALLOW_EMPTY);
 
   if (input.is_set()) {
     char *endptr = NULL;
