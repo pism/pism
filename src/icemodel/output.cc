@@ -153,8 +153,6 @@ void IceModel::save_results() {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(),
-              //OutMap,
-              //gridIDs,
               fileID,
               DimOutMap);
     file.set_split(false);
@@ -166,6 +164,7 @@ void IceModel::save_results() {
     profiling.end("io.initdef");
 
     profiling.begin("io.def+write");
+    file.file_calendar(m_time->year_length(), m_time->days_year(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
     m_sthwritten = true;
@@ -314,13 +313,15 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     if (not m_split_snapshots) {
         strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
     } else {
-        double tt = m_snapshot_times[sn];
-        tt = tt / 365 / 24 / 60 / 60;
-        std::stringstream stream;
-        stream << std::fixed << std::setprecision(3) << tt;
-        std::string tts = stream.str();
-        snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             m_snapshots_filename.c_str(), tts.c_str());
+//        double tt = m_snapshot_times[sn];
+//        tt = tt / 365 / 24 / 60 / 60;
+//        std::stringstream stream;
+//        stream << std::fixed << std::setprecision(3) << tt;
+//        std::string tts = stream.str();
+//        snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+//             m_snapshots_filename.c_str(), tts.c_str());
+	snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+                 m_snapshots_filename.c_str(), m_time->date(m_snapshot_times[sn]).c_str());
     }
 
     int fileID = -1;
@@ -331,8 +332,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(),
-              //SnapMap,
-              //gridIDs,
               fileID,
               DimSnapMap);
     streamIDs[filename] = file.get_streamID();
@@ -340,14 +339,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     m_snapshots_file_is_ready = true;
     write_run_stats(file);
-
+    file.file_calendar(-1.0, -1.0, m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
     vlistIDs[filename] = file.get_vlistID();
-    //if (gridIDs.size()==0) {
-    //    gridIDs.resize(6);
-    //    gridIDs = file.get_gridIDs();
-    //}
-    //SnapMap = file.get_variables_map();
     DimSnapMap = file.get_dimensions_map();
     }
     m_snapshots_file_is_ready = false;
@@ -379,12 +373,14 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
       } else {
         tt = m_extra_times[sn];
       }
-      tt = tt / 365 / 24 / 60 / 60;
-      std::stringstream stream;
-      stream << std::fixed << std::setprecision(3) << tt;
-      std::string tts = stream.str();
+//      tt = tt / 365 / 24 / 60 / 60;
+//      std::stringstream stream;
+//      stream << std::fixed << std::setprecision(3) << tt;
+//      std::string tts = stream.str();
+//      snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+//               m_extra_filename.c_str(), tts.c_str());
       snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-               m_extra_filename.c_str(), tts.c_str());
+               m_extra_filename.c_str(), m_time->date(tt).c_str());
     }
     int fileID = -1;
     IO_Mode mode = PISM_READWRITE_MOVE;
@@ -394,8 +390,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(),
-              //ExtraMap,
-              //gridIDs,
               fileID,
               DimExtraMap);
     streamIDs[filename] = file.get_streamID();
@@ -407,7 +401,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     m_extra_file_is_ready = true;
     write_run_stats(file);
-
+    file.file_calendar(-1.0, -1.0, m_time->calendar());
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
@@ -417,8 +411,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
     if (file.backend() == PISM_CDI) {
       vlistIDs[filename] = file.get_vlistID();
-      //if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
-      //ExtraMap = file.get_variables_map();
       DimExtraMap = file.get_dimensions_map();
     }
     }
@@ -446,8 +438,6 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(),
-              //OutMap,
-              //gridIDs,
               fileID,
               DimOutMap);
   streamIDs[filename] = file.get_streamID();
@@ -455,13 +445,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
   write_run_stats(file);
-
+  file.file_calendar(-1.0, -1.0, m_time->calendar());
   save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    0, PISM_FLOAT, false);
   if (file.backend() == PISM_CDI) {
       vlistIDs[filename] = file.get_vlistID();
-      //if (gridIDs.size()==0) gridIDs = file.get_gridIDs();
-      //OutMap = file.get_variables_map();
       DimOutMap = file.get_dimensions_map();
   }
   }

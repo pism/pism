@@ -126,6 +126,7 @@ protected:
 	void set_bdiag_impl(bool value) const;
 	int get_ncstreamID_impl() const;
 	int get_ncvlistID_impl() const;
+	void set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const;
 
 private:
 	// main
@@ -144,6 +145,12 @@ private:
 	
 	//switch
 	mutable bool m_beforediag;
+
+	// calendar
+	mutable double m_year_length;
+	mutable std::string m_calendar_string;
+	mutable int m_cdi_calendar;
+	mutable double m_days_year;
 	
 	// initialize class for opened file
 	void map_varsID() const;
@@ -157,9 +164,9 @@ private:
         int inq_current_timestep() const;
     
         // calendar conversion
-        double year_365(double time) const;
-	long int day_365(double nyearsf) const;
-	void monthday_365(int year, int doy, int *month, int *day) const;
+        double year_calendar(double time) const;
+	long int day_calendar(double nyearsf) const;
+	void monthday_calendar(int year, int doy, int *month, int *day) const;
 	
 	// inquire attribute helper
 	void inq_att_impl(int varID, int attnum, char* attname, int *atttype, int *attlen) const;

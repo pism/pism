@@ -94,6 +94,10 @@ public:
   //! \brief Returns the calendar string.
   std::string calendar() const;
 
+  double year_length() const;
+
+  double days_year() const;
+
   //! \brief Returns the length of the current run, in years.
   std::string run_length() const;
 
