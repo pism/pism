@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,8 +45,6 @@ private:
 };
 
 double grid_z(double b, double H, int Mz, int k);
-
-int grid_padding(int N, int coarsening_factor, int n_levels);
 
 DMDALocalInfo grid_transpose(const DMDALocalInfo &input);
 

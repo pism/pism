@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,10 +43,9 @@ std::shared_ptr<StressBalance> create(const std::string &model,
 
   if (model == "blatter") {
     int Mz = config->get_number("stress_balance.blatter.Mz");
-    int n_levels = config->get_number("stress_balance.blatter.n_levels");
-    int coarsening_factor = config->get_number("stress_balance.blatter.coarsening_factor");
+    int C = config->get_number("stress_balance.blatter.coarsening_factor");
 
-    std::shared_ptr<Blatter> blatter(new Blatter(grid, Mz, n_levels, coarsening_factor));
+    std::shared_ptr<Blatter> blatter(new Blatter(grid, Mz, C));
     std::shared_ptr<BlatterMod> mod(new BlatterMod(blatter));
 
     return std::shared_ptr<StressBalance>(new StressBalance(grid, blatter, mod));

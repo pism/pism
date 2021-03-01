@@ -136,11 +136,9 @@ class TestXY(TestCase):
 
         # no variation in the Z direction, so it's OK to use 2 vertical levels
         blatter_Mz = 2
-        # no coarsening in the Z direction
-        n_levels = 0
         coarsening_factor = 1
 
-        model = PISM.BlatterTestXY(grid, blatter_Mz, n_levels, coarsening_factor)
+        model = PISM.BlatterTestXY(grid, blatter_Mz, coarsening_factor)
 
         model.init()
 
@@ -372,11 +370,9 @@ class TestXZ(TestCase):
         grid = enthalpy.grid()
 
         blatter_Mz = N
-        # do not pad the vertical grid
-        n_levels = 0
         coarsening_factor = 4
 
-        model = PISM.BlatterTestXZ(grid, blatter_Mz, n_levels, coarsening_factor)
+        model = PISM.BlatterTestXZ(grid, blatter_Mz, coarsening_factor)
 
         model.init()
 
@@ -565,11 +561,9 @@ class TestCFBC(TestCase):
         grid = enthalpy.grid()
 
         blatter_Mz = N
-        # no geometric multigrid here
-        n_levels = 0
         coarsening_factor = 1
 
-        model = PISM.BlatterTestCFBC(grid, blatter_Mz, n_levels, coarsening_factor)
+        model = PISM.BlatterTestCFBC(grid, blatter_Mz, coarsening_factor)
 
         model.init()
 
@@ -697,7 +691,7 @@ class TestXZvanderVeen(TestCase):
 
         Mz = 2
         coarsening_factor = 1
-        model = PISM.BlatterTestvanderVeen(grid, Mz, 1, coarsening_factor)
+        model = PISM.BlatterTestvanderVeen(grid, Mz, coarsening_factor)
 
         geometry = PISM.Geometry(grid)
 
@@ -833,7 +827,7 @@ class TestXZHalfar(TestCase):
         enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         enthalpy.set(0.0)
 
-        model = PISM.BlatterTestHalfar(grid, Mz, 1, coarsening_factor)
+        model = PISM.BlatterTestHalfar(grid, Mz, coarsening_factor)
 
         geometry = PISM.Geometry(grid)
 

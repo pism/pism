@@ -28,9 +28,8 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestCFBC::BlatterTestCFBC(IceGrid::ConstPtr grid, int Mz, int n_levels,
-                                 int coarsening_factor)
-  : Blatter(grid, Mz, n_levels, coarsening_factor) {
+BlatterTestCFBC::BlatterTestCFBC(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
+  : Blatter(grid, Mz, coarsening_factor) {
 
   assert(m_flow_law->exponent() == 1.0);
 

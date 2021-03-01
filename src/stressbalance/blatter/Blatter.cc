@@ -35,6 +35,7 @@
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -261,7 +262,7 @@ bool Blatter::marine_boundary(int face,
  * @param[in] n_levels maximum number of grid levels to use
  * @param[in] coarsening_factor grid coarsening factor
  */
-Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor)
+Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
@@ -272,17 +273,16 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_fa
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, grid->periodicity(), Mz, n_levels, coarsening_factor);
+  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
   }
 
   {
-    int mz = Mz + grid_padding(Mz, coarsening_factor, n_levels);
-    std::vector<double> sigma(mz);
-    double dz = 1.0 / (mz - 1);
-    for (int i = 0; i < mz; ++i) {
+    std::vector<double> sigma(Mz);
+    double dz = 1.0 / (Mz - 1.0);
+    for (int i = 0; i < Mz; ++i) {
       sigma[i] = i * dz;
     }
     sigma.back() = 1.0;
@@ -393,7 +393,42 @@ PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
   return 0;
 }
 
-PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz, int n_levels, int coarsening_factor) {
+PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
+                              int coarsening_factor) {
+  // FIXME: add the ability to add a prefix to the option prefix. We need this to be able
+  // to run more than one instance of PISM in parallel.
+  std::string prefix = "bp_";
+
+  // Check compatibility of Mz, mg_levels, and the coarsening_factor and stop if they are
+  // not compatible.
+  {
+    auto option = pism::printf("-%spc_mg_levels", prefix.c_str());
+    int mg_levels = options::Integer(option, "", 0);
+
+    int c = coarsening_factor;
+    int M = mg_levels;
+    int mz = Mz;
+    while (M > 1) {
+      // Note: integer division
+      if (((mz - 1) / c) * c != mz - 1) {
+        int N = std::pow(c, (int)mg_levels - 1);
+        auto message = pism::printf("Blatter stress balance solver: settings\n"
+                                    "stress_balance.blatter.Mz = %d,\n"
+                                    "stress_balance.blatter.coarsening_factor = %d,\n"
+                                    "and '%s %d' are not compatible.\n"
+                                    "To use N = %d multigrid levels with the coarsening factor C = %d\n"
+                                    "stress_balance.blatter.Mz has to be equal to A * C^(N - 1) + 1\n"
+                                    "for some positive integer A, e.g. %d, %d, %d, ...",
+                                    Mz, c, option.c_str(), mg_levels, mg_levels, c,
+                                    N + 1, 2*N + 1, 3*N + 1);
+        throw RuntimeError(PISM_ERROR_LOCATION, message);
+      }
+      mz = (mz - 1) / c + 1;
+      M -= 1;
+    }
+  }
+
+
   PetscErrorCode ierr;
   // DM
   //
@@ -406,7 +441,7 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz, int n
     assert(info.dims == 2);
 
     // pad the vertical grid to allow for n_levels multigrid levels
-    info.Mz  = Mz + grid_padding(Mz, coarsening_factor, n_levels);
+    info.Mz  = Mz;
     info.mz  = 1;
     info.dof = 2;
     info.stencil_width = 1;
@@ -450,7 +485,7 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz, int n
   {
     ierr = SNESCreate(m_grid->com, m_snes.rawptr()); CHKERRQ(ierr);
 
-    ierr = SNESSetOptionsPrefix(m_snes, "bp_"); CHKERRQ(ierr);
+    ierr = SNESSetOptionsPrefix(m_snes, prefix.c_str()); CHKERRQ(ierr);
 
     ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
 

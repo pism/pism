@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ enum ISMIPHOMTest {HOM_A, HOM_B, HOM_C, HOM_D};
  */
 class BlatterISMIPHOM : public Blatter {
 public:
-  BlatterISMIPHOM(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor,
+  BlatterISMIPHOM(IceGrid::ConstPtr grid, int Mz, int coarsening_factor,
                   ISMIPHOMTest test);
 
 protected:

@@ -26,8 +26,8 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestXY::BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor)
-  : Blatter(grid, Mz, n_levels, coarsening_factor) {
+BlatterTestXY::BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
+  : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
   m_flow_law.reset(new rheology::IsothermalGlen("stress_balance.blatter.", *m_config, m_EC));

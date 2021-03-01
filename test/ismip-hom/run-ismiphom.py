@@ -162,14 +162,9 @@ def run_test(test_name, L, output_file):
 
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
 
-    # Turn off grid padding needed to support a certain number of coarsening levels. This
-    # means that the solver may fail if the number of vertical levels is not compatible
-    # with the number of coarsening levels and the coarsening factor.
-    n_levels = 0
-
     coarsening_factor = int(config.get_number("stress_balance.blatter.coarsening_factor"))
 
-    model = PISM.BlatterISMIPHOM(grid, Mz, n_levels, coarsening_factor, tests[test_name])
+    model = PISM.BlatterISMIPHOM(grid, Mz, coarsening_factor, tests[test_name])
 
     stress_balance = PISM.StressBalance(grid, model, PISM.BlatterMod(model))
 

@@ -31,7 +31,7 @@ namespace stressbalance {
  */
 class BlatterTestCFBC : public Blatter {
 public:
-  BlatterTestCFBC(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  BlatterTestCFBC(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
 
 private:
   void init_2d_parameters(const Inputs &inputs);

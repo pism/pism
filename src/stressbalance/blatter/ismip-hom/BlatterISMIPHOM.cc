@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,10 +55,9 @@ static double C_bed(double x, double y, double L) {
 
 BlatterISMIPHOM::BlatterISMIPHOM(IceGrid::ConstPtr grid,
                                  int Mz,
-                                 int n_levels,
                                  int coarsening_factor,
                                  ISMIPHOMTest test)
-  : Blatter(grid, Mz, n_levels, coarsening_factor),
+  : Blatter(grid, Mz, coarsening_factor),
     m_test(test),
     m_L(2.0 * grid->Lx()) {
 

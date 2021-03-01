@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,7 +45,7 @@ namespace stressbalance {
  */
 class BlatterTestXY : public Blatter {
 public:
-  BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  BlatterTestXY(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
 
 protected:
   bool marine_boundary(int face,

@@ -34,7 +34,7 @@ namespace stressbalance {
  */
 class BlatterTestvanderVeen : public Blatter {
 public:
-  BlatterTestvanderVeen(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  BlatterTestvanderVeen(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
 
   // Exact ice velocity
   Vector2 u_exact(double x) const;

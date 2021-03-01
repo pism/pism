@@ -36,7 +36,7 @@ namespace stressbalance {
 
 class Blatter : public ShallowStressBalance {
 public:
-  Blatter(IceGrid::ConstPtr grid, int Mz, int n_levels, int coarsening_factor);
+  Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
   virtual ~Blatter();
 
   void update(const Inputs &inputs, bool);
@@ -189,7 +189,7 @@ protected:
   void init_ice_hardness(const Inputs &inputs);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int n_levels, int coarsening_factor);
+  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor);
 
   PetscErrorCode setup_2d_storage(DM dm, int dof);
 
