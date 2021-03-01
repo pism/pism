@@ -2137,12 +2137,6 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.flow_law = "gpbld";
     pism_config:stress_balance.blatter.flow_law_doc = "The flow law used by the Blatter-Pattyn stress balance model";
 
-    pism_config:stress_balance.blatter.n_levels_option = "blatter_n_levels";
-    pism_config:stress_balance.blatter.n_levels_units = "count";
-    pism_config:stress_balance.blatter.n_levels_type = "integer";
-    pism_config:stress_balance.blatter.n_levels = 0;
-    pism_config:stress_balance.blatter.n_levels_doc = "Choose the number of vertical levels `M_z` so that `M_z \\ge` :config:`stress_balance.blatter.Mz` and allows for this many multigrid levels with the coarsening factor :config:`stress_balance.blatter.coarsening_factor`";
-
     pism_config:stress_balance.blatter.use_eta_transform_type = "flag";
     pism_config:stress_balance.blatter.use_eta_transform = "no";
     pism_config:stress_balance.blatter.use_eta_transform_doc = "Use the `\\eta` transform to improve the accuracy of the surface gradient approximation near grounded margins (see :cite:`BLKCB` for details).";

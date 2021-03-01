@@ -779,10 +779,10 @@ In addition to this, we follow :cite:`BrownSmithAhmadia2013` in ordering unknown
 columns are contiguous (and `u` and `v` are interleaved), allowing ILU factorization to
 compute a good approximation of ice velocities in areas where SIA applicable.
 
-.. _sec-bp-pc-grid-padding:
+.. _sec-bp-pc-grid-coarsening:
 
-Padding the vertical grid to support coarsening
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Vertical grid sizes compatible with coarsening
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 Ideally, the coarsest mesh in the hierarchy should have 2 nodes in the `z` direction, i.e.
 be *one element thick*. If `N` is the coarsening factor, the total number of vertical
@@ -791,21 +791,19 @@ levels (`M_z`) has to have the form
 .. math::
    :label: eq-bp-mz
 
-   M_z = N^k + 1
+   M_z = A\cdot N^k + 1
 
-so that the mesh hierarchy containing `k` levels will include levels with
+for some positive integer `A` (ideally `A=1`), so that the mesh hierarchy containing `k`
+levels will include levels with
 
 .. math::
 
-   1 + 1,\, N + 1,\, N^2 + 1,\, \dots,\, N^k + 1
+   A + 1,\, A\cdot N + 1,\, A\cdot N^2 + 1,\, \dots,\, A\cdot N^k + 1
 
 nodes in the `z` direction.
 
 This means that for a given :config:`stress_balance.blatter.coarsening_factor` and number
 of multigrid levels ``-bp_pc_mg_levels k`` the value of `M_z` cannot be chosen at random.
-If the parameter :config:`stress_balance.blatter.n_levels` is set, PISM will choose the
-smallest number `M_z` exceeding :config:`stress_balance.blatter.Mz` what has the form
-:eq:`eq-bp-mz`.
 
 .. _sec-bp-pc-options:
 
@@ -840,7 +838,7 @@ To use a geometric multigrid preconditioner with `N` levels, set
 An "aggressive" (i.e. greater than 2) coarsening factor may work well. Use
 :config:`stress_balance.blatter.coarsening_factor` to set it.
 
-See :ref:`sec-bp-pc-grid-padding` for the discussion of the relationship between the
+See :ref:`sec-bp-pc-grid-coarsening` for the discussion of the relationship between the
 number of vertical levels, number of multigrid levels, and the coarsening factor.
 
 Set

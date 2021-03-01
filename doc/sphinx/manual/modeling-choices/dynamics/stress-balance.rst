@@ -84,10 +84,10 @@ The number of vertical "levels" in this grid is controlled by
 :config:`stress_balance.blatter.Mz`.
 
 The non-linear system resulting from the discretization of PDEs corresponding to Blatter's
-stress balance model\ [#bp-fem]_ is much harder to solve than the one corresponding to the SSA system
-(:cite:`BrownSmithAhmadia2013`, :cite:`Tuminaro2016`) and (at this point) experimentation
-with preconditioner choices seems inevitable. We use PETSc's command-line options to
-control these choices.
+stress balance model\ [#bp-fem]_ is much harder to solve than the one corresponding to the
+SSA system (:cite:`BrownSmithAhmadia2013`, :cite:`Tuminaro2016`) and (at this point)
+experimentation with preconditioner choices seems inevitable. We use PETSc's command-line
+options to control these choices.
 
 .. note::
 
@@ -101,13 +101,13 @@ control these choices.
 
    to see the complete list of PETSc option controlling this solver.
 
-The multigrid preconditioner using semi-coarsening in the vertical direction followed by
-further (horizontal) coarsening using algebraic multigrid methods appears to be effective
-:cite:`Tuminaro2016`. The option combination
+The multigrid (MG) preconditioner using semi-coarsening in the vertical direction followed
+by further (horizontal) coarsening using algebraic multigrid methods appears to be
+effective :cite:`Tuminaro2016`. The option combination
 
 .. code-block:: bash
 
-   -bp_pc_type mg -bp_pc_mg_levels M -bp_mg_coarse_pc_type gamg
+   -bp_pc_type mg -bp_pc_mg_levels N -bp_mg_coarse_pc_type gamg
 
 roughly corresponds to this approach. (Unlike :cite:`Tuminaro2016`, who used a purely
 algebraic approach, these options select a combination of geometric and algebraic
@@ -118,34 +118,44 @@ multigrid preconditioners.)
    *External PETSc packages* such as Hypre or ML may be useful here, but we have not
    compared their performance to GAMG built into PETSc.
 
-Here ``-bp_pc_type mg`` selects the geometric multigrid (MG) preconditioner using
-semi-coarsening in the vertical direction. This method requires building a hierarchy of
-grids, the finest of which is selected using :config:`grid.Mx`, :config:`grid.My`,
-:config:`stress_balance.blatter.Mz`.\ [#semi-coarsening]_
+To use a multigrid preconditioner the user has to specify
 
-To create this hierarchy, PISM starts with the finest grid and builds the next one by
-dividing the number of vertical *spaces* by a coarsening factor `C` (see
-:config:`stress_balance.blatter.coarsening_factor`). The number of vertical grid levels
-`N_k` in the grid number `k` in the hierarchy is
+- the number of MG levels `N` using ``-bp_pc_mg_levels N``,
+- the coarsening factor `C` by setting :config:`stress_balance.blatter.coarsening_factor`, and
+- the vertical grid size `M_z` (:config:`stress_balance.blatter.Mz`).
 
-.. math::
-
-   N_{1} &= \mathtt{stress\_balance.blatter.Mz},
-
-   N_{k} &= (N_{k-1} - 1)\, /\, C + 1.
-
-Then the newly-created grid is coarsened and this process is continued, stopping when the
-desired number `M` of grids (MG levels, set using ``-bp_pc_mg_levels M``) is reached.
-
-For this to work the number of vertical grid levels on the finest grid in the hierarchy
-has to have the form
+The values of these parameters have to be compatible. Specifically, `M_z` has to have the
+form
 
 .. math::
    :label: eq-bp-vertical-grid-size
 
-   \mathtt{stress\_balance.blatter.Mz} = A\cdot C^{M - 1} + 1
+   M_z = A\cdot C^{N - 1} + 1
 
-for some integer `A`.
+for some positive integer `A`.
+
+.. note::
+
+   PISM stops with an error message if :eq:`eq-bp-vertical-grid-size` is not satisfied.
+
+To set up a multigrid preconditioner PISM needs to build a hierarchy of vertical grids\
+[#semi-coarsening]_ with `M_z` points on the finest grid.. Starting with this grid, PISM
+creates the next one by dividing the number of vertical *spaces* by the coarsening factor
+`C`. Then the newly-created grid is coarsened and this process is continued, stopping when
+the desired number `N` of grids (MG levels) reached.
+
+Overall, the number of points `M_{z}^k` in the vertical grid number `k` in the hierarchy
+is
+
+.. math::
+
+   M_{z}^1 &= M_z,
+
+   M_{z}^k &= (M_{k-1} - 1)\, /\, C + 1.
+
+This process explains the compatibility condition :eq:`eq-bp-vertical-grid-size`: the
+number of **spaces** in all vertical grids in the hierarchy *except for the coarsest one*
+has to be divisible by `C`.
 
 .. list-table:: Some vertical grid hierarchies
    :name: tab-blatter-mg-levels
@@ -190,27 +200,10 @@ less effective preconditioner, requiring more Krylov iterations and increasing t
 computational cost. Again, one may have to experiment to find settings that work best in a
 particular setup.
 
-Picking the number of vertical levels from :numref:`tab-blatter-mg-levels` can be a
-hassle. As an alternative, PISM can *increase* the number of vertical levels to the
-smallest number that is greater than or equal to :config:`stress_balance.blatter.Mz` and
-has the form :eq:`eq-bp-vertical-grid-size`.
-
-Set
-
-.. code-block:: bash
-
-   -bp_pc_type mg \
-   -bp_pc_mg_levels M \
-   -blatter_n_levels M \
-   -blatter_coarsening_factor C \
-   -blatter_Mz N
-
-to enable this mechanism. In this case PISM will use a fine grid with *at least* `N`
-vertical levels and build a grid hierarchy with `M` levels and the coarsening factor `C`.
-
-The coarsest grid in a hierarchy should be as small as possible. Two levels is the minimum
-achievable in the context of the finite element method used to discretize the system (this
-corresponds to a mesh that is just one element thick).
+The coarsest grid in a hierarchy should be as small as possible (corresponding to `A = 1`
+in :eq:`eq-bp-vertical-grid-size`); two levels is the minimum achievable in the context of
+the finite element method used to discretize the system (this corresponds to a mesh that
+is just one element thick).
 
 Note, though, that the multigrid preconditioner, even if it is effective in terms of
 reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
