@@ -216,6 +216,11 @@ Other options such as
 
 are worth trying as well.
 
+.. FIXME: I should document the way PISM computes the maximum allowed time step when the
+   Blatter solver is "on" and compare to SIA's diffusivity-driven stability condition
+   below in :ref:`sec-sia`. Possibly mention that :config:`time_stepping.adaptive_ratio`
+   affects runs with this solver...
+
 .. _sec-blatter-gradient:
 
 Surface gradient computation
