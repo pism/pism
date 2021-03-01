@@ -163,8 +163,6 @@ void IceModel::write_snapshot() {
               string_to_backend(m_config->get_string("output.format")),
               mode,
               m_ctx->pio_iosys_id(),
-              //SnapMap,
-              //gridIDs,
               fileID,
               DimSnapMap);
     if (m_split_snapshots) {
@@ -179,6 +177,7 @@ void IceModel::write_snapshot() {
     }
 
     write_run_stats(file);
+    file.file_calendar(m_time->year_length(), m_time->days_year(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
     
     if (file.backend() == PISM_CDI) {

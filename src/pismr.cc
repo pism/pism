@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   {
   petsc::Initializer petsc(argc, argv, help);
   {
-      Context::Ptr ctx = context_from_options(com, "pismr");
+      Context::Ptr ctx = initial_context_from_options(com, "pismr");
       nwriters = ctx->get_n_writers();
       IOmode = ctx->get_IOmode();
       async = ctx->get_async();

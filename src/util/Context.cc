@@ -225,5 +225,14 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
   return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
+Context::Ptr initial_context_from_options(MPI_Comm com, const std::string &prefix) {
+
+  units::System::Ptr sys(new units::System);
+  Logger::Ptr logger = logger_from_options(com);
+  Config::Ptr config = config_from_options(com, *logger, sys);
+  print_config(*logger, 3, *config);
+  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
+  return Context::Ptr(new Context(com, sys, config, EC, NULL, logger, prefix));
+}
 
 } // end of namespace pism

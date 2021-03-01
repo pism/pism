@@ -161,6 +161,7 @@ public:
   void set_bdiag(bool value) const;
   int get_ncstreamID() const;
   int get_ncvlistID() const;
+  void set_calendar(double year_length, double days_year, const std::string &calendar_string) const;
 
 protected:
   // implementations:
@@ -256,6 +257,7 @@ protected:
   virtual void set_bdiag_impl(bool value) const;
   virtual int get_ncstreamID_impl() const;
   virtual int get_ncvlistID_impl() const;
+  virtual void set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const;
 
 protected:                      // data members
 

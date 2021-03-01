@@ -203,6 +203,14 @@ std::string Time::calendar() const {
   return m_calendar_string;
 }
 
+double Time::year_length() const {
+  return m_year_length;
+}
+
+double Time::days_year() const {
+  return convert(m_unit_system, 1.0, "year", "days");
+}
+
 void Time::step(double delta_t) {
   m_time_in_seconds += delta_t;
 

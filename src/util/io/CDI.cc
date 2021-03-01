@@ -16,11 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <mpi.h>
+#include <cstdlib>
 #include <sstream>
 #include <string.h>
 #include <memory>
 #include <algorithm>
 #include <map>
+#include <cmath>
  #include <iostream>
 
 #include "CDI.hh"
@@ -160,7 +162,7 @@ void CDI::def_t_dim(const std::string &name, size_t length) const {
 	// define time axis if it was not done before
 	if (m_tID == -1) {
 		m_tID = taxisCreate(TAXIS_ABSOLUTE);
-		taxisDefCalendar(m_tID, CALENDAR_365DAYS);
+		taxisDefCalendar(m_tID, m_cdi_calendar);
     	vlistDefTaxis(m_vlistID, m_tID);
 	}
 }
@@ -190,18 +192,34 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 }
 
 // define reference date
-// TODO support other calendars
-double CDI::year_365(double time) const {
-	return -time / 365 / 24 / 60 / 60;
+void CDI::set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const {
+	m_year_length = year_length;
+	m_days_year = days_year;
+	if (calendar_string == "gregorian" || calendar_string == "standard") {
+		m_cdi_calendar = CALENDAR_STANDARD;
+	} else if (calendar_string == "proleptic_gregorian") {
+		m_cdi_calendar = CALENDAR_PROLEPTIC;
+	} else if (calendar_string == "365_day" || calendar_string == "noleap") {
+		m_cdi_calendar = CALENDAR_365DAYS;
+	} else if (calendar_string == "360_day") {
+		m_cdi_calendar = CALENDAR_360DAYS;
+	} else {
+
+	}
+	m_calendar_string = calendar_string;
 }
 
-void CDI::monthday_365(int year, int doy, int *month, int *day) const {
-	char name[] = "365_day";
-	calcalcs_cal *calendar = ccs_init_calendar(name);
+
+double CDI::year_calendar(double time) const {
+	return abs(time / m_year_length);
+}
+
+void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
+	calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
 	int cal = ccs_doy2date( calendar, year, doy, month, day );	
 }
 
-long int CDI::day_365(double nyearsf) const {
+long int CDI::day_calendar(double nyearsf) const {
 	long int seconds = nyearsf * 86400;
         long int minutes, hours;
         hours = seconds / 3600;
@@ -211,15 +229,15 @@ long int CDI::day_365(double nyearsf) const {
 }
 
 void CDI::def_ref_date_impl(double time) const {
-	// Taking into account only 365_day calendar right now
 	int month=0, day=0;
-	double nyearsf = year_365(time);
-	int doy = int (( nyearsf - (long int)nyearsf ) * 365);
-	double dayf = ((nyearsf - (long int)nyearsf ) * 365) -  doy;
-        if ( doy != 0 ) monthday_365(int(nyearsf), doy, &month, &day);
+	double nyearsf = year_calendar(time);
+	int doy = int (( nyearsf - (long int)nyearsf ) * m_days_year);
+	double dayf = ((nyearsf - (long int)nyearsf ) * m_days_year) -  doy;
+        if ( doy != 0 ) monthday_calendar(int(nyearsf), doy, &month, &day);
 	int ref_date = (int)nyearsf*10000+month*100+day;
-	taxisDefVdate(m_tID, -ref_date);
-	long int daytime = day_365(dayf);
+	int sgn = time >= 0 ? 1 : -1;
+	taxisDefVdate(m_tID, sgn*ref_date);
+	long int daytime = day_calendar(dayf);
 	taxisDefVtime(m_tID, daytime);
 }
 
