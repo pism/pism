@@ -407,6 +407,9 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         m_b(i, j).u = taud.u + (E - W) * delta_p / dx;
         m_b(i, j).v = taud.v + (N - S) * delta_p / dy;
 
+        m_log->message(2,
+        "!!!!! mbx=%f, mbx=%f,tdx=%f,tdy=%f at %d,%d\n",m_b(i, j).u,m_b(i, j).v,taud.u,taud.v,i,j);
+
         continue;
       } // end of "if (is_marginal(i, j))"
 
