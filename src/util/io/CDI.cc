@@ -194,14 +194,17 @@ void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
 // define reference date
 void CDI::set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const {
 	m_year_length = year_length;
-	m_days_year = days_year;
 	if (calendar_string == "gregorian" || calendar_string == "standard") {
+		m_days_year = days_year;
 		m_cdi_calendar = CALENDAR_STANDARD;
 	} else if (calendar_string == "proleptic_gregorian") {
+		m_days_year = days_year;
 		m_cdi_calendar = CALENDAR_PROLEPTIC;
 	} else if (calendar_string == "365_day" || calendar_string == "noleap") {
+		m_days_year = 365;
 		m_cdi_calendar = CALENDAR_365DAYS;
 	} else if (calendar_string == "360_day") {
+		m_days_year = 360;
 		m_cdi_calendar = CALENDAR_360DAYS;
 	} else {
 

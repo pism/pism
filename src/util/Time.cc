@@ -28,6 +28,7 @@
 #include "error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Logger.hh"
+#include "pism/external/calcalcs/calcalcs.h"
 
 namespace pism {
 
@@ -80,14 +81,14 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
 
 //! Initialize model time using command-line options and (possibly) files.
 void initialize_time(MPI_Comm com, const std::string &dimension_name,
-                     const Logger &log, Time &time) {
+                     const Logger &log, Time &time, bool CDIrestart) {
 
   // Check if we are initializing from a PISM output file:
   options::String input_file("-i", "Specifies a PISM input file");
 
   if (input_file.is_set()) {
     File file(com, input_file, PISM_NETCDF3, PISM_READONLY);     // OK to use netcdf3
-    time.init_from_input_file(file, dimension_name, log);
+    time.init_from_input_file(file, dimension_name, log, CDIrestart);
   }
 
   time.init(log);
@@ -275,13 +276,14 @@ bool Time::process_ye(double &result) {
  */
 void Time::init_from_input_file(const File &file,
                                 const std::string &time_name,
-                                const Logger &log) {
+                                const Logger &log, bool CDIrestart) {
   unsigned int time_length = file.dimension_length(time_name);
 
   bool ys = options::Bool("-ys", "starting time");
   if (not ys and time_length > 0) {
     // Set the default starting time to be equal to the last time saved in the input file
     double T = vector_max(file.read_dimension(time_name));
+    if (CDIrestart) dateCDI2seconds(&T);
     this->set_start(T);
     this->set(T);
     log.message(2,
@@ -290,6 +292,24 @@ void Time::init_from_input_file(const File &file,
   }
 }
 
+void Time::dateCDI2seconds(double *T) {
+  double seconds_per_day = 86400.0;
+  int sign = *T >=0 ? 1 : -1;
+  int year = int(abs(*T / 10000));
+  int month = int(abs((abs(*T) - year*10000) / 100));
+  int day = int(abs((abs(*T) - year*10000) - month * 100));
+  calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
+  double doy = year * (m_year_length);
+  if (month!=0 && day!=0) {
+    int doyi;
+    int cal = ccs_date2doy( calendar, year, month, day, &doyi );
+    doy += seconds_per_day * doyi;
+  }
+  int Ti = year*10000 + month*100 + day;
+  double fday = sign*(*T) - Ti;
+  double days = fday*seconds_per_day;
+  *T = sign * (days+doy);
+}
 
 void Time::init(const Logger &log) {
 

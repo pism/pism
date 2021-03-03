@@ -39,7 +39,9 @@ public:
 
   virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
-                                    const Logger &log);
+                                    const Logger &log, bool CDIrestart);
+
+  virtual void dateCDI2seconds(double *T); 
 
   virtual double mod(double time, unsigned int) const;
 
