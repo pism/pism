@@ -248,6 +248,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+  bool fix_gradient_cf = m_config->get_flag("stress_balance.calving_front_driving_stress");
 
   double
     dx = m_grid->dx(),
@@ -261,9 +262,6 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
   using mask::floating_ice;
   using mask::ice_free_ocean;
-
-  double delta = (1.0-m_config->get_number("constants.ice.density")/m_config->get_number("constants.sea_water.density"));
-
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -302,7 +300,6 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
     auto M = cell_type.int_star(i, j);
     auto h = surface_elevation.star(i, j);
-    auto H = ice_thickness.star(i ,j);
     StarStencil<int> N(0);
 
     if (no_model_mask) {
@@ -318,22 +315,15 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
 
       if (east + west > 0) {
-        // calving front
-        if (floating_ice(M.ij) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
-            h_x = 1.0 / (2.0 * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
-        } else {
-        //default one-sided
-            h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
-        }
+          h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
       } else {
-        // calving front
-        if (floating_ice(M.ij)) {
-            h_x = 1.0 / (2.0 * dx) * delta * ( west*(H.ij - H.w) + east*( H.e - H.ij) );
-        } else {
-        //default one-sided
-            h_x = 0.0;
-        }
+          h_x = 0.0;
       }
+
+      // calving front
+      if (fix_gradient_cf and floating_ice(M.ij) and (ice_free_ocean(M.e) or ice_free_ocean(M.w))) {
+          h_x = 1.0 / (2.0 * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+      } 
     }
 
     // y-derivative
@@ -344,21 +334,14 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
         north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
 
       if (north + south > 0) {
-        // calving front
-        if (floating_ice(M.ij) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {
-            h_y = 1.0 / (2.0 * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
-        } else {
-        //default one-sided
-            h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
-        }
+          h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
       } else {
-        // calving front
-        if (floating_ice(M.ij)) {
-            h_y = 1.0 / (2.0 * dy) * delta * ( south*(H.ij - H.s) + north*( H.n - H.ij) );
-        } else {
-        //default one-sided
-            h_y = 0.0;
-        }
+          h_y = 0.0;
+      }
+
+      // calving front
+      if (fix_gradient_cf and floating_ice(M.ij) and (ice_free_ocean(M.s) or ice_free_ocean(M.n))) {
+          h_y = 1.0 / (2.0 * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
       }
     }
 

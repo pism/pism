@@ -1,0 +1,15 @@
+netcdf confover {
+variables:
+	int pism_overrides ;
+		pism_overrides:stress_balance.ssa.Glen_exponent = 3. ;
+		pism_overrides:geometry.update.use_basal_melt_rate = "no" ;
+		pism_overrides:ocean.sub_shelf_heat_flux_into_ice = 0. ;
+		pism_overrides:stress_balance.ssa.compute_surface_gradient_inward = "no" ;
+		pism_overrides:flow_law.isothermal_Glen.ice_softness = 4.6416e-24 ;
+		pism_overrides:bootstrapping.defaults.geothermal_flux = 0. ;
+		pism_overrides:stress_balance.ssa.fd.flow_line_mode = "true" ;
+		pism_overrides:grid.registration = "corner" ;
+data:
+
+ pism_overrides = _ ;
+}
