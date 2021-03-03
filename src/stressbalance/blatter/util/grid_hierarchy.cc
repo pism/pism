@@ -142,7 +142,7 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
 /*!
  * Set up storage for 3D data inputs (DMDAs and Vecs)
  */
-PetscErrorCode setup_level(DM dm) {
+PetscErrorCode setup_level(DM dm, int mg_levels) {
   PetscErrorCode ierr;
 
   MPI_Comm comm;
@@ -193,7 +193,7 @@ PetscErrorCode setup_level(DM dm) {
       Mz = info.Mz;
     ierr = PetscPrintf(comm,
                        "BP multigrid level %D: %3d x %3d x %3d (%8d) elements\n",
-                       level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
+                       (mg_levels - 1) - level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
   }
   return 0;
 }
