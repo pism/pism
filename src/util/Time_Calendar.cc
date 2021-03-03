@@ -141,7 +141,7 @@ bool Time_Calendar::process_ye(double &result) {
 
 void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
-                                         const Logger &log) {
+                                         const Logger &log, bool CDIrestart) {
   try {
     // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
     // calendar.
@@ -179,6 +179,10 @@ void Time_Calendar::init_from_input_file(const File &nc,
     e.add_context("initializing model time from \"%s\"", nc.filename().c_str());
     throw;
   }
+}
+
+void Time_Calendar::dateCDI2seconds(double *T) {
+
 }
 
 void Time_Calendar::init(const Logger &log) {

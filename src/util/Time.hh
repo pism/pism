@@ -108,7 +108,9 @@ public:
 
   virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
-                                    const Logger &log);
+                                    const Logger &log, bool CDIrestart);
+
+  virtual void dateCDI2seconds(double *T);
 
   void init_calendar(const std::string &calendar);
 
@@ -214,7 +216,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
 
 //! Initialize time from command-line options or from and input file (set using the `-i` option).
 void initialize_time(MPI_Comm com, const std::string &dimension_name,
-                     const Logger &log, Time &time);
+                     const Logger &log, Time &time, bool CDIrestart);
 
 } // end of namespace pism
 
