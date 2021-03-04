@@ -41,7 +41,6 @@ public:
                                     const std::string &time_name,
                                     const Logger &log, bool CDIrestart);
 
-  virtual void dateCDI2seconds(double *T); 
 
   virtual double mod(double time, unsigned int) const;
 

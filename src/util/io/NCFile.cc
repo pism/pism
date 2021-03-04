@@ -357,13 +357,12 @@ int NCFile::get_ncstreamID_impl() const {
 int NCFile::get_ncvlistID_impl() const {
 }
 
-void NCFile::set_calendar(double year_length, double days_year, const std::string &calendar_string) const {
-  this->set_calendar_impl(year_length, days_year, calendar_string);
+void NCFile::set_calendar(double year_length, const std::string &calendar_string) const {
+  this->set_calendar_impl(year_length, calendar_string);
 }
 
-void NCFile::set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const {
+void NCFile::set_calendar_impl(double year_length, const std::string &calendar_string) const {
   (void) year_length;
-  (void) days_year;
   (void) calendar_string;
 }
 

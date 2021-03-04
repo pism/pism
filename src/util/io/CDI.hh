@@ -126,7 +126,7 @@ protected:
 	void set_bdiag_impl(bool value) const;
 	int get_ncstreamID_impl() const;
 	int get_ncvlistID_impl() const;
-	void set_calendar_impl(double year_length, double days_year, const std::string &calendar_string) const;
+	void set_calendar_impl(double year_length, const std::string &calendar_string) const;
 
 private:
 	// main

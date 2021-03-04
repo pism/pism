@@ -884,8 +884,8 @@ void File::set_beforediag(bool value) const {
   m_impl->nc->set_bdiag(value);
 }
 
-void File::file_calendar(double year_length, double days_year, const std::string &calendar_string) const {
- m_impl->nc->set_calendar(year_length, days_year, calendar_string);
+void File::file_calendar(double year_length, const std::string &calendar_string) const {
+ m_impl->nc->set_calendar(year_length, calendar_string);
 }
 
 } // end of namespace pism

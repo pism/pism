@@ -167,7 +167,7 @@ void IceModel::save_results() {
     profiling.end("io.initdef");
 
     profiling.begin("io.def+write");
-    file.file_calendar(m_time->year_length(), m_time->days_year(), m_time->calendar());
+    file.file_calendar(m_time->year_length(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
     m_sthwritten = true;
@@ -327,7 +327,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     m_snapshots_file_is_ready = true;
     write_run_stats(file);
-    file.file_calendar(-1.0, -1.0, m_time->calendar());
+    file.file_calendar(-1.0, m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
     vlistIDs[filename] = file.get_vlistID();
     DimSnapMap = file.get_dimensions_map();
@@ -384,7 +384,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     m_extra_file_is_ready = true;
     write_run_stats(file);
-    file.file_calendar(-1.0, -1.0, m_time->calendar());
+    file.file_calendar(-1.0, m_time->calendar());
     save_variables(file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
@@ -429,7 +429,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
   write_run_stats(file);
-  file.file_calendar(-1.0, -1.0, m_time->calendar());
+  file.file_calendar(-1.0, m_time->calendar());
   save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    0, PISM_FLOAT, false);
   if (file.backend() == PISM_CDI) {
