@@ -165,10 +165,11 @@ void Time_Calendar::init_from_input_file(const File &nc,
 
       io::read_timeseries(nc, time_axis, *this, log, time);
     }
-
+    double T = time.front();
+    if (CDIrestart) dateCDI2seconds(&T);
     // Set time.
-    this->set_start(time.front());
-    this->set(time.front());
+    this->set_start(T);
+    this->set(T);
     log.message(2,
                 "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
                 this->date().c_str(),
@@ -178,10 +179,6 @@ void Time_Calendar::init_from_input_file(const File &nc,
     e.add_context("initializing model time from \"%s\"", nc.filename().c_str());
     throw;
   }
-}
-
-void Time_Calendar::dateCDI2seconds(double *T) {
-
 }
 
 void Time_Calendar::init(const Logger &log) {

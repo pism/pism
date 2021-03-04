@@ -178,7 +178,7 @@ void IceModel::write_snapshot() {
     }
 
     write_run_stats(file);
-    file.file_calendar(m_time->year_length(), m_time->days_year(), m_time->calendar());
+    file.file_calendar(m_time->year_length(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
 
     if (file.backend() == PISM_CDI) {
