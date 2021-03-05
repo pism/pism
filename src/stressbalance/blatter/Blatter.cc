@@ -685,15 +685,23 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  // report the number of iterations
+  // report the number of iterations and the "reason"
   SNESConvergedReason reason;
   {
     PetscInt            its, lits;
     SNESGetIterationNumber(m_snes, &its);
     SNESGetConvergedReason(m_snes, &reason);
     SNESGetLinearSolveIterations(m_snes, &lits);
-    m_log->message(2, "%s: SNES: %d, KSP: %d\n",
+    m_log->message(2, "Blatter solver %s: SNES: %d, KSP: %d\n",
                    SNESConvergedReasons[reason], (int)its, (int)lits);
+    if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
+      KSP ksp;
+      KSPConvergedReason ksp_reason;
+      ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
+      ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
+      m_log->message(2, "  Linear solver reports: %s\n",
+                     KSPConvergedReasons[ksp_reason]);
+    }
   }
 
   // FIXME: try to recover
