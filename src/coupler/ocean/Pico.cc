@@ -411,9 +411,14 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
+  std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
   // additional vectors to allreduce efficiently with IntelMPI
   std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
   std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves*m_n_basins,0);
+
+  //std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
+
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
@@ -424,13 +429,35 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
       int b = basin_mask.as_int(i, j);
       n_shelf_cells_per_basin[s*m_n_basins+b]++;
       n_shelf_cells[s]++;
+
+      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion 
+      if (mask.as_int(i, j) == MASK_FLOATING) {
+        auto M = mask.int_star(i, j);
+        if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
+          if (cfs_in_basins_per_shelf[s*m_n_basins+b] != b) {
+            cfs_in_basins_per_shelf[s*m_n_basins+b] = b;
+          }
+        }
+      }
     }
     
     GlobalSum(m_grid->com, n_shelf_cells.data(), n_shelf_cellsr.data(), m_n_shelves);
     GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
     // copy data
     n_shelf_cells = n_shelf_cellsr;
     n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
+    cfs_in_basins_per_shelf = cfs_in_basins_per_shelfr;
+
+    for (int s = 0; s < m_n_shelves; s++) {
+      for (int b = 0; b < m_n_basins; b++) {
+        // remove ice shelf parts from the count that do not have a calving front in that basin
+        if (n_shelf_cells_per_basin[s*m_n_basins+b] > 0 and cfs_in_basins_per_shelf[s*m_n_basins+b] == 0) {
+          n_shelf_cells[s] -= n_shelf_cells_per_basin[s*m_n_basins+b];
+          n_shelf_cells_per_basin[s*m_n_basins+b] = 0;
+        }
+      }
+    }
   }
 
   // now set potential temperature and salinity box 0:
