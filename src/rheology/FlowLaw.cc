@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,9 +58,12 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_Q_cold = config.get_number("flow_law.Paterson_Budd.Q_cold");
   m_Q_warm = config.get_number("flow_law.Paterson_Budd.Q_warm");
   m_crit_temp = config.get_number("flow_law.Paterson_Budd.T_critical");
-  m_schoofLen = config.get_number("flow_law.Schoof_regularizing_length", "m"); // convert to meters
-  m_schoofVel = config.get_number("flow_law.Schoof_regularizing_velocity", "m second-1"); // convert to m second-1
-  m_schoofReg = PetscSqr(m_schoofVel/m_schoofLen);
+
+  double
+    schoofLen = config.get_number("flow_law.Schoof_regularizing_length", "m"),
+    schoofVel = config.get_number("flow_law.Schoof_regularizing_velocity", "m second-1");
+
+  m_schoofReg = PetscSqr(schoofVel / schoofLen);
 }
 
 FlowLaw::~FlowLaw() {
