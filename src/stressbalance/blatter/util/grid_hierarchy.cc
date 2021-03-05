@@ -192,7 +192,7 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
       My = info.My,
       Mz = info.Mz;
     ierr = PetscPrintf(comm,
-                       "BP multigrid level %D: %3d x %3d x %3d (%8d) elements\n",
+                       "Blatter grid level %D: %3d x %3d x %3d (%8d) nodes\n",
                        (mg_levels - 1) - level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
   }
   return 0;
