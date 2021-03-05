@@ -269,6 +269,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
       compute_ocean_input_per_basin(physics, m_basin_mask, m_geometry->continental_shelf_mask(), *m_salinity_ocean,
                                     *m_theta_ocean, basin_temperature, basin_salinity); // per basin
 
+      //std::vector<std::vector<int> > m_basin_cfs(m_n_shelves, std::vector<int>(m_n_basins, 0));
+      //compute_ocean_gateways(cell_type, m_basin_mask, m_geometry->ice_shelf_mask(), m_basin_cfs);
+
       set_ocean_input_fields(physics, ice_thickness, cell_type, m_basin_mask, m_geometry->ice_shelf_mask(),
                              basin_temperature, basin_salinity, m_Toc_box0, m_Soc_box0); // per shelf
     }
@@ -941,6 +944,10 @@ void Pico::split_ice_shelves(const IceModelVec2CellType &cell_type,
   //}
 
   std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
+
+  //std::vector<int> m_n_basin_neighbors(2*m_n_basins,0);
+  //std::vector<int> m_n_basin_neighborsr(2*m_n_basins,0);
+
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
