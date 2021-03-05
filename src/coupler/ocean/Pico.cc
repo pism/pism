@@ -254,6 +254,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
       compute_ocean_input_per_basin(physics, m_basin_mask, m_geometry->continental_shelf_mask(), *m_salinity_ocean,
                                     *m_theta_ocean, basin_temperature, basin_salinity); // per basin
 
+      //std::vector<std::vector<int> > m_basin_cfs(m_n_shelves, std::vector<int>(m_n_basins, 0));
+      //compute_ocean_gateways(cell_type, m_basin_mask, m_geometry->ice_shelf_mask(), m_basin_cfs);
+
       set_ocean_input_fields(physics, ice_thickness, cell_type, m_basin_mask, m_geometry->ice_shelf_mask(),
                              basin_temperature, basin_salinity, m_Toc_box0, m_Soc_box0); // per shelf
     }
@@ -405,6 +408,9 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
   std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves, std::vector<int>(m_n_basins, 0));
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
 
+  std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
+
+
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
   {
@@ -414,12 +420,33 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
       int b = basin_mask.as_int(i, j);
       n_shelf_cells_per_basin[s][b]++;
       n_shelf_cells[s]++;
+
+      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion 
+      if (mask.as_int(i, j) == MASK_FLOATING) {
+        auto M = mask.int_star(i, j);
+        if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
+          if (cfs_in_basins_per_shelf[s][b] != b) {
+            cfs_in_basins_per_shelf[s][b] = b;
+          }
+        }
+      }
     }
 
     for (int s = 0; s < m_n_shelves; s++) {
       n_shelf_cells[s] = GlobalSum(m_grid->com, n_shelf_cells[s]);
       for (int b = 0; b < m_n_basins; b++) {
         n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
+
+        cfs_in_basins_per_shelf[s][b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s][b]);
+        //if (cfs_in_basins_per_shelf[s][b]>0) {
+        //  m_log->message(2, "PICO, ocean gateways results with s=%d, r=%d \n",s,cfs_in_basins_per_shelf[s][b]);
+        //}
+
+        // remove ice shelf parts from the count that do not have a calving front in that basin
+        if (n_shelf_cells_per_basin[s][b] > 0 and cfs_in_basins_per_shelf[s][b] == 0) {
+          n_shelf_cells[s] -= n_shelf_cells_per_basin[s][b];
+          n_shelf_cells_per_basin[s][b] = 0;
+        }
       }
     }
   }
@@ -441,6 +468,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
 
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
+
         Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
         Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
       }
