@@ -150,23 +150,40 @@ def create_modeldata_test():
 
 
 def grid_from_file_test():
-    "Intiialize a grid from a file"
+    "Intiialize a grid from a file (test 1)"
     grid = create_dummy_grid()
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
     enthalpy.set(80e3)
 
-    output_file = "test_grid_from_file.nc"
+    file_name = filename("grid_from_file")
     try:
-        pio = PISM.util.prepare_output(output_file)
+        pio = PISM.util.prepare_output(file_name)
 
         enthalpy.write(pio)
 
-        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+        pio = PISM.File(grid.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
         grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
     finally:
-        os.remove(output_file)
+        os.remove(file_name)
+
+def grid_from_file_test_2():
+    "Intiialize a grid from a file (test 2)"
+    grid = create_dummy_grid()
+
+    enthalpy = PISM.model.createEnthalpyVec(grid)
+    enthalpy.set(80e3)
+
+    file_name = filename("grid_from_file")
+    try:
+        pio = PISM.util.prepare_output(file_name)
+
+        enthalpy.write(pio)
+
+        grid2 = PISM.IceGrid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+    finally:
+        os.remove(file_name)
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -310,7 +327,7 @@ def modelvecs_test():
     vecs.markForWriting("thk")
 
     # test write()
-    output_file = "test_ModelVecs.nc"
+    output_file = filename("test_ModelVecs")
     try:
         pio = PISM.util.prepare_output(output_file)
         pio.close()
@@ -371,7 +388,7 @@ def util_test():
     "Test the PISM.util module"
     grid = create_dummy_grid()
 
-    output_file = "test_pism_util.nc"
+    output_file = filename("test_pism_util")
     try:
         pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         pio.close()
@@ -396,7 +413,7 @@ def logging_test():
 
     import PISM.logging as L
 
-    log_filename = "log.nc"
+    log_filename = filename("log")
     try:
         PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c = L.CaptureLogger(log_filename)
@@ -423,7 +440,7 @@ def logging_test():
     finally:
         os.remove(log_filename)
 
-    log_filename = "other_log.nc"
+    log_filename = filename("other_log")
     try:
         PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c.write(log_filename, "other_log")  # non-default arguments
@@ -721,7 +738,7 @@ def ssa_trivial_test():
         def exactSolution(self, i, j, x, y):
             return [0, 0]
 
-    output_file = "ssa_trivial.nc"
+    output_file = filename("ssa_trivial")
     try:
         Mx = 11
         My = 11
@@ -790,21 +807,22 @@ def regridding_test():
             F_x = (x[i] - x_min) / (x_max - x_min)
             F_y = (y[j] - y_min) / (y_max - y_min)
             thk1[i, j] = (F_x + F_y) / 2.0
-    thk1.dump("thk1.nc")
 
-    thk2.regrid("thk1.nc", critical=True)
+    file_name = filename("thickness")
+    try:
+        thk1.dump(file_name)
 
-    with PISM.vec.Access(nocomm=[thk1, thk2]):
-        for (i, j) in grid.points():
-            v1 = thk1[i, j]
-            v2 = thk2[i, j]
-            if np.abs(v1 - v2) > 1e-12:
-                raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
+        thk2.regrid(file_name, critical=True)
 
-    import os
-    os.remove("thk1.nc")
+        with PISM.vec.Access(nocomm=[thk1, thk2]):
+            for (i, j) in grid.points():
+                v1 = thk1[i, j]
+                v2 = thk2[i, j]
+                if np.abs(v1 - v2) > 1e-12:
+                    raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
 
-
+    finally:
+        os.remove(file_name)
 
 def interpolation_weights_test():
     "Test 2D interpolation weights."
@@ -878,49 +896,49 @@ def vertical_extrapolation_during_regridding_test():
         v.set_column(1, 1, z)
 
     # save to a file
-    v.dump("test.nc")
-
-    # create a taller grid (to 2000m):
-    params.Lz = 2000
-    params.Mz = 41
-    z_tall = np.linspace(0, params.Lz, params.Mz)
-    params.z[:] = z_tall
-
-    tall_grid = PISM.IceGrid(ctx.ctx, params)
-
-    # create an IceModelVec that uses this grid
-    v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
-
-    # Try regridding without extrapolation. This should fail.
+    file_name = filename("regridding")
     try:
+        v.dump(file_name)
+
+        # create a taller grid (to 2000m):
+        params.Lz = 2000
+        params.Mz = 41
+        z_tall = np.linspace(0, params.Lz, params.Mz)
+        params.z[:] = z_tall
+
+        tall_grid = PISM.IceGrid(ctx.ctx, params)
+
+        # create an IceModelVec that uses this grid
+        v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
+
+        # Try regridding without extrapolation. This should fail.
+        try:
+            ctx.ctx.log().disable()
+            v_tall.regrid(file_name, PISM.CRITICAL)
+            ctx.ctx.log().enable()
+            raise AssertionError("Should not be able to regrid without extrapolation")
+        except RuntimeError as e:
+            pass
+
+        # allow extrapolation during regridding
+        ctx.config.set_flag("grid.allow_extrapolation", True)
+
+        # regrid from test.nc
         ctx.ctx.log().disable()
-        v_tall.regrid("test.nc", PISM.CRITICAL)
+        v_tall.regrid(file_name, PISM.CRITICAL)
         ctx.ctx.log().enable()
-        raise AssertionError("Should not be able to regrid without extrapolation")
-    except RuntimeError as e:
-        pass
 
-    # allow extrapolation during regridding
-    ctx.config.set_flag("grid.allow_extrapolation", True)
+        # get a column
+        with PISM.vec.Access(nocomm=[v_tall]):
+            column = np.array(v_tall.get_column_vector(1, 1))
 
-    # regrid from test.nc
-    ctx.ctx.log().disable()
-    v_tall.regrid("test.nc", PISM.CRITICAL)
-    ctx.ctx.log().enable()
+        # compute the desired result
+        desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
 
-    # get a column
-    with PISM.vec.Access(nocomm=[v_tall]):
-        column = np.array(v_tall.get_column_vector(1, 1))
-
-    # compute the desired result
-    desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
-
-    # compare
-    np.testing.assert_almost_equal(column, desired)
-
-    # clean up
-    import os
-    os.remove("test.nc")
+        # compare
+        np.testing.assert_almost_equal(column, desired)
+    finally:
+        os.remove(file_name)
 
 class PrincipalStrainRates(TestCase):
     def u_exact(self, x, y):
@@ -1143,7 +1161,7 @@ def test_nearest_neighbor():
 
 class AgeModel(TestCase):
     def setUp(self):
-        self.output_file = "age.nc"
+        self.output_file = filename("age")
         self.grid = self.create_dummy_grid()
 
     def create_dummy_grid(self):
@@ -1203,7 +1221,7 @@ class ForcingOptions(TestCase):
         self.config.init_with_default(ctx.log)
         self.config.import_from(ctx.config)
 
-        self.filename = "forcing-options-input.nc"
+        self.filename = filename("forcing-options-input")
         PISM.util.prepare_output(self.filename)
 
     def test_without_file(self):
