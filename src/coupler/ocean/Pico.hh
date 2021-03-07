@@ -73,6 +73,12 @@ private:
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity);
 
+
+  void get_basin_neighbors(const IceModelVec2CellType &cell_type,
+                           const IceModelVec2Int &basin_mask,
+                           std::vector< std::vector <int> > result);
+
+
   void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
