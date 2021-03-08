@@ -462,6 +462,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
                         NULL, info.lx, info.ly,    // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
+    ierr = DMSetOptionsPrefix(m_da, prefix.c_str()); CHKERRQ(ierr);
+
     // semi-coarsening: coarsen in the vertical direction only
     ierr = DMDASetRefinementFactor(m_da, coarsening_factor, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
 
@@ -481,6 +483,10 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
   // Vec
   {
     ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
+
+    ierr = VecSetOptionsPrefix(m_x, prefix.c_str()); CHKERRQ(ierr);
+
+    ierr = VecSetFromOptions(m_x); CHKERRQ(ierr);
   }
 
   // SNES
