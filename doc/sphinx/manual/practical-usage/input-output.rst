@@ -146,6 +146,7 @@ building PISM.
    ``pio_netcdf4p``, parallel I/O using ParallelIO (HDF5-based NetCDF-4 file)
    ``pio_netcdf4c``, serial I/O using ParallelIO (*compressed* HDF5-based NetCDF-4 file)
    ``pio_netcdf``,   serial I/O using ParallelIO (using data aggregation in ParallelIO)
+   ``cdi``, asynchronous output using CDI-PIO
 
 The ParallelIO library can aggregate data in a subset of processes used by PISM. To choose
 a subset, set
@@ -192,3 +193,58 @@ performance.
 
       Now all files in ``output_directory`` and all its sub-directories can use all
       available targets.
+
+CDI-PIO
+~~~~~~~
+
+The CDI-PIO library uses a part of the allocated resources to aggregate the data and write
+the output files. To write the output files asynchronously set:
+
+- :config:`output.pio.async` flag to use asynchronous writing
+- :config:`output.pio.a_writers` number of "writers"
+
+CDI-PIO supports different NetCDF file formats. The default is NC2 and it should work fine
+for the majority of cases but when the file dimension becomes too large, it is possible to
+set other file formats:
+
+- :config:`output.pio.filetype` NetCDF file format
+
+.. note::
+
+   NC2 gives the best performance so it should be used whenever possible, for further details
+   see NetCDF documentation on Large-Files_
+
+CDI-PIO supports also different writing modes and they can be set with the parameter:
+
+- :config:`output.pio.mode`
+
+The default parameter is the one which was giving best performance in our experiments.
+
+CDI library is specifically implemented for Climate Data, thus it has less flexibility than 
+NetCDF or PNetCDF libraries. The limitations and differences with standard output data in PISM 
+are listed as follows:
+
+ - ``x`` and ``y`` dimensions are ``float``.
+ - Dimensions attributes are limited and can not be added freely, thus they may not be identical 
+   to the original output files.
+ - Integer variables writing is not supported, thus the integer variables are written as ``float``.
+ - The ``time`` dimension is written in the format ``YYMMDD.%f``, where ``%f`` represents a 
+   fraction of the day. In addition, the ``julian`` calendar is not supported.
+
+Since the output files written with CDI-PIO are slightly different, a parameter can be 
+define to specify if the restart file was written with CDI-PIO
+
+- :config:`output.pio.CDIrestart` flag which specifies if the restart file was written with CDI-PIO
+
+This helps to convert the time written by CDI-PIO in seconds.
+Finally, due to the second limitation mentioned previously, a couple of attributes of the restart 
+file should be modified before starting a new run. This can be done with
+
+.. code-block:: bash
+
+   ncatted -a units,time,o,c,"seconds since 1-1-1" -a standard_name,x,o,c,"x" -a standard_name,y,o,c,"y" ${restart_file}
+
+The advantage of CDI-PIO is not limited to the simulation runtime but also to the post-processing
+phase. Since the library does not allow to write a variable with an arbitrary order of dimensions, the 
+variables are written in the most convenient order ``time,z,y,x`` and there is no need for transposition 
+in the post-processing phase.

@@ -141,6 +141,7 @@ enabled when building PISM. This section lists important build-time options.
    ``Pism_USE_PIO``, use the ParallelIO_ library to write output files
    ``Pism_USE_PARALLEL_NETCDF4``, use NetCDF_ for parallel file I/O
    ``Pism_USE_PNETCDF``, use PnetCDF_ for parallel file I/O
+   ``Pism_USE_CDI``, use CDI-PIO for asynchronous file writing
    ``Pism_DEBUG``, enables extra sanity checks in the code (this makes PISM a lot slower but simplifies development)
 
 To enable PISM's use of PROJ_, for example, run
@@ -175,6 +176,15 @@ To build PISM using parallel I/O libraries installed as described in
          -DPism_USE_PNETCDF \
          -DPism_USE_PARALLEL_NETCDF4 \
          -DPism_USE_PIO \
+         ..
+
+To build PISM using CDI-PIO libraries installed as described in
+:ref:`sec-install-parallel-io-libs`, do this:
+
+.. code-block:: bash
+
+   cmake -DCMAKE_FIND_ROOT_PATH="~/local/yaxt;~/local/CDI" \
+         -DPism_USE_CDI \
          ..
 
 .. rubric:: Footnotes
