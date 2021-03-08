@@ -107,16 +107,16 @@ effective :cite:`Tuminaro2016`. The option combination
 
 .. code-block:: bash
 
-   -bp_pc_type mg -bp_pc_mg_levels N -bp_mg_coarse_pc_type gamg
+   -bp_pc_type mg \
+   -bp_pc_mg_levels N \
+   -bp_mg_levels_ksp_type gmres \
+   -bp_mg_coarse_pc_type gamg
 
-roughly corresponds to this approach. (Unlike :cite:`Tuminaro2016`, who used a purely
+roughly corresponds to this approach (see :ref:`sec-blatter-preconditioners` for more).
+
+Unlike :cite:`Tuminaro2016`, who used a purely
 algebraic approach, these options select a combination of geometric and algebraic
-multigrid preconditioners.)
-
-.. note::
-
-   *External PETSc packages* such as Hypre or ML may be useful here, but we have not
-   compared their performance to GAMG built into PETSc.
+multigrid preconditioners.
 
 To use a multigrid preconditioner the user has to specify
 
@@ -205,17 +205,6 @@ in :eq:`eq-bp-vertical-grid-size`); two levels is the minimum achievable in the 
 the finite element method used to discretize the system (this corresponds to a mesh that
 is just one element thick).
 
-Note, though, that the multigrid preconditioner, even if it is effective in terms of
-reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
-there is a trade off between the number of iterations and the cost of a single iteration.
-Other options such as
-
-.. code-block:: bash
-
-   -bp_pc_type bjacobi -bp_sub_pc_type ilu
-
-are worth trying as well.
-
 .. FIXME: I should document the way PISM computes the maximum allowed time step when the
    Blatter solver is "on" and compare to SIA's diffusivity-driven stability condition
    below in :ref:`sec-sia`. Possibly mention that :config:`time_stepping.adaptive_ratio`
@@ -235,6 +224,67 @@ difference approximation of the surface gradient we allow using the `\eta` trans
 described in :ref:`sec-gradient`. Set :config:`stress_balance.blatter.use_eta_transform`
 to enable it.
 
+.. _sec-blatter-preconditioners:
+
+Practical preconditioners choices
+=================================
+
+The option combination
+
+.. code-block:: bash
+
+   -bp_pc_type mg \
+   -bp_pc_mg_levels N \
+   -bp_mg_levels_ksp_type gmres \
+   -bp_mg_coarse_pc_type gamg
+
+sets up the *kind* is a multigrid preconditioner known to be effective, but it is not the
+only one, and most likely not the best one.
+
+Our experiments suggest that
+
+.. code-block:: bash
+
+   -bp_pc_type mg \
+   -bp_pc_mg_levels N \
+   -bp_snes_ksp_ew  \
+   -bp_snes_ksp_ew_version 3 \
+   -bp_mg_levels_ksp_type gmres \
+   -bp_mg_levels_pc_type bjacobi \
+   -bp_mg_levels_sub_pc_type ilu \
+   -bp_mg_coarse_ksp_type gmres \
+   -bp_mg_coarse_pc_type hypre \
+   -bp_mg_coarse_pc_hypre_type boomeramg
+
+may to work better\ [#bp-pc-settings]_, but requires PETSc built with hypre_.
+
+Here ``-bp_snes_ksp_ew -bp_snes_ksp_ew_version 3`` enables Luis Chacón’s variant of the
+Eisenstat-Walker :cite:`Eisenstat1996` method of adjusting linear solver tolerances to
+avoid oversolving and ``-bp_mg_coarse_pc_type hypre -bp_mg_coarse_pc_hypre_type
+boomeramg`` selects the BoomerAMG algebraic MG preconditioner from hypre_ for the coarse
+MG level.
+
+Some simulations may benefit from using a direct solver on the coarse MG level. For
+example, the following would use MUMPS_ on the coarse grid:
+
+.. code-block:: bash
+
+   -bp_pc_type mg \
+   -bp_pc_mg_levels N \
+   -bp_snes_ksp_ew  \
+   -bp_snes_ksp_ew_version 3 \
+   -bp_mg_levels_ksp_type gmres \
+   -bp_mg_levels_pc_type bjacobi \
+   -bp_mg_levels_sub_pc_type ilu \
+   -bp_mg_coarse_ksp_type preonly \
+   -bp_mg_coarse_pc_type lu
+
+*if* PETSc is built with MUMPS_.
+
+Note, though, that the multigrid preconditioner, even if it is effective in terms of
+reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
+there is a trade off between the number of iterations and the cost of a single iteration.
+Other preconditioner options may be worth considering as well.
 
 List of parameters
 ##################
@@ -443,3 +493,5 @@ values come from :cite:`Tomkin2007`.
                       hierarchy, i.e. each grid is "extruded" from PISM's 2D grid with
                       uniform spacing in `x` and `y` directions.
 .. [#bp-fem] See :ref:`sec-blatter-details`.
+
+.. [#bp-pc-settings] These settings are inspired by :cite:`BrownSmithAhmadia2013`.
