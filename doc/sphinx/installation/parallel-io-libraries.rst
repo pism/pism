@@ -88,3 +88,53 @@ Installing NCAR ParallelIO
 Here we use CMake's variable ``CMAKE_FIND_ROOT_PATH`` to tell CMake to use libraries in
 ``~/local/netcdf`` and ``~/local/pnetcdf``, to install in ``~/local/parallelio``, and to
 disable ParallelIO features not used by PISM.
+
+Installing CDI-PIO and dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Installing YAXT
+~~~~~~~~~~~~~~~
+
+.. literalinclude:: code/yaxt.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+Installing NetCDF with PNetCDF support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: code/netcdfCDI.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+CDI-PIO is not supporting yet the latest version of NetCDF so it is recommend to install 
+the indicated version.
+
+Installing NetCDF Fortran
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: code/netcdff.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+CDI-PIO is not supporting yet the latest version of NetCDF Fortran so it is recommend to install 
+the indicated version.
+
+Installing PPM
+~~~~~~~~~~~~~~
+
+.. literalinclude:: code/PPM.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+Installing CDI-PIO
+~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: code/CDI.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
