@@ -21,11 +21,18 @@ PETSC_ARCH="linux-opt"
 
 ./configure \
   --prefix=${prefix} \
-  --with-fc=0 \
+  --with-cc=mpicc \
+  --with-cxx=mpicxx \
+  --with-fc=mpifort \
   --with-shared-libraries \
   --with-debugging=0 \
+  COPTFLAGS='-O3 -march=native -mtune=native' \
+  CXXOPTFLAGS='-O3 -march=native -mtune=native' \
+  FOPTFLAGS='-O3 -march=native -mtune=native' \
   --download-f2cblaslapack=1 \
-  --download-petsc4py
+  --download-petsc4py \
+  --download-mumps --download-scalapack --download-parmetis --download-metis --download-ptscotch \
+  --download-hypre
 
 make all
 make install
