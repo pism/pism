@@ -563,32 +563,37 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
 /*!
  * Set 3D parameters on the finest grid.
  */
-void Blatter::init_ice_hardness(const Inputs &inputs) {
+void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   auto enthalpy = inputs.enthalpy;
-
-  DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = grid_transpose(info);
-
+  // PISM's vertical grid:
   const auto &zlevels = enthalpy->levels();
   auto Mz = zlevels.size();
 
-  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
-  DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
+  // solver's vertical grid:
+  int Mz_sigma = 0;
+  {
+    DMDALocalInfo info;
+    int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+    info = grid_transpose(info);
+    Mz_sigma = info.mz;
+  }
 
-  IceModelVec::AccessList list{enthalpy};
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
+  DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
+
+  IceModelVec::AccessList list{enthalpy, &ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double H  = P2[j][i].thickness;
+    double H = ice_thickness(i, j);
 
     const double *E = enthalpy->get_column(i, j);
 
-    for (int k = 0; k < info.mz; ++k) {
+    for (int k = 0; k < Mz_sigma; ++k) {
       double
-        z        = grid_z(0.0, H, info.mz, k),
+        z        = grid_z(0.0, H, Mz_sigma, k),
         depth    = H - z,
         pressure = m_EC->pressure(depth),
         E_local  = 0.0;
@@ -603,9 +608,9 @@ void Blatter::init_ice_hardness(const Inputs &inputs) {
         E_local = E[Mz - 1];
       }
 
-      P3[j][i][k] = m_flow_law->hardness(E_local, pressure);
-    }
+      hardness[j][i][k] = m_flow_law->hardness(E_local, pressure); // STORAGE_ORDER
 
+    } // end of the loop over sigma levels
   } // end of the loop over grid points
 }
 
@@ -689,7 +694,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) full_update;
 
   init_2d_parameters(inputs);
-  init_ice_hardness(inputs);
+  init_ice_hardness(inputs, m_da);
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 

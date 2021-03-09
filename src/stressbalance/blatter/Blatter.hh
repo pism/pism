@@ -186,7 +186,7 @@ protected:
 
   virtual void init_2d_parameters(const Inputs &inputs);
 
-  void init_ice_hardness(const Inputs &inputs);
+  void init_ice_hardness(const Inputs &inputs, const petsc::DM &da);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor);
