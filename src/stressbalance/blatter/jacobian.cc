@@ -343,12 +343,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
-                                          Mat A, Mat J, CallbackData *data) {
+                                          Mat A, Mat J,
+                                          Blatter *solver) {
   try {
-    data->solver->compute_jacobian(info, x, A, J);
+    solver->compute_jacobian(info, x, A, J);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    MPI_Comm com = solver->grid()->com;
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }

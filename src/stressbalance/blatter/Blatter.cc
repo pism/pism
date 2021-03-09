@@ -393,6 +393,9 @@ PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
   return 0;
 }
 
+/*!
+ * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
+ */
 PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
                               int coarsening_factor) {
   // FIXME: add the ability to add a prefix to the option prefix. We need this to be able
@@ -404,6 +407,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
 
   // Check compatibility of Mz, mg_levels, and the coarsening_factor and stop if they are
   // not compatible.
+  //
+  // We assume that the user also set "-bp_pc_type mg".
   {
     int c = coarsening_factor;
     int M = mg_levels;
@@ -497,16 +502,13 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
 
     ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
 
-    m_callback_data.da = m_da;
-    m_callback_data.solver = this;
-
     ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
                                     (DMDASNESFunction)function_callback,
-                                    &m_callback_data); CHKERRQ(ierr);
+                                    this); CHKERRQ(ierr);
 
     ierr = DMDASNESSetJacobianLocal(m_da,
                                     (DMDASNESJacobian)jacobian_callback,
-                                    &m_callback_data); CHKERRQ(ierr);
+                                    this); CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
   }
@@ -627,16 +629,16 @@ void Blatter::nodal_parameter_values(const fem::Q1Element3 &element,
 
     auto p = P[I.j][I.i];
 
-    node_type[n]         = p.node_type;
-    bottom_elevation[n]  = p.bed;
-    ice_thickness[n]     = p.thickness;
+    node_type[n]        = p.node_type;
+    bottom_elevation[n] = p.bed;
+    ice_thickness[n]    = p.thickness;
 
     if (surface_elevation) {
       surface_elevation[n] = p.bed + p.thickness;
     }
 
     if (sea_level) {
-      sea_level[n]         = p.sea_level;
+      sea_level[n] = p.sea_level;
     }
   }
 }

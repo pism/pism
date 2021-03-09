@@ -68,22 +68,16 @@ public:
   };
 
 protected:
-  // u and v components of ice velocity on the sigma grid
+  // u and v components of ice velocity on the fine sigma grid
   IceModelVec3::Ptr m_u_sigma, m_v_sigma;
 
-  // 3D dof=2 DM used by SNES
+  // 3D dof=2 DM used by m_snes
   petsc::DM m_da;
   // storage for the solution
   petsc::Vec m_x;
-
+  // solver
   petsc::SNES m_snes;
 
-  struct CallbackData {
-    DM da;
-    Blatter *solver;
-  };
-
-  CallbackData m_callback_data;
   double m_rho_ice_g;
   double m_rho_ocean_g;
 
@@ -183,10 +177,12 @@ protected:
 
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
-                                          Mat A, Mat J, CallbackData *data);
+                                          Mat A, Mat J,
+                                          Blatter *data);
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2 ***x, Vector2 ***f,
-                                          CallbackData *data);
+  static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                          const Vector2 ***x, Vector2 ***f,
+                                          Blatter *data);
 
   virtual void init_2d_parameters(const Inputs &inputs);
 

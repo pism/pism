@@ -454,13 +454,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::function_callback(DMDALocalInfo *info,
-                                           const Vector2 ***x, Vector2 ***f,
-                                           CallbackData *data) {
+                                          const Vector2 ***x, Vector2 ***f,
+                                          Blatter *solver) {
   try {
-    data->solver->compute_residual(info, x, f);
+    solver->compute_residual(info, x, f);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    MPI_Comm com = solver->grid()->com;
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
