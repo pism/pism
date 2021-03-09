@@ -83,6 +83,8 @@
 .. _Open MPI: https://www.open-mpi.org
 .. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PETSc: https://www.mcs.anl.gov/petsc/
+.. _hypre: https://hypre.readthedocs.io/
+.. _MUMPS: http://mumps.enseeiht.fr/
 .. _PROJ: https://proj.org/
 .. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org

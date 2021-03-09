@@ -48,7 +48,7 @@ double grid_z(double b, double H, int Mz, int k);
 
 DMDALocalInfo grid_transpose(const DMDALocalInfo &input);
 
-PetscErrorCode setup_level(DM dm);
+PetscErrorCode setup_level(DM dm, int mg_levels);
 
 PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name);
 

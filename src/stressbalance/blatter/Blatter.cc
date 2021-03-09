@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -340,10 +340,10 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
   return 0;
 }
 
-PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
+static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   PetscErrorCode ierr;
 
-  ierr = setup_level(dm_coarse); CHKERRQ(ierr);
+  ierr = setup_level(dm_coarse, ((Blatter::Ctx*)ctx)->mg_levels); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
@@ -399,12 +399,12 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
   // to run more than one instance of PISM in parallel.
   std::string prefix = "bp_";
 
+  auto option = pism::printf("-%spc_mg_levels", prefix.c_str());
+  int mg_levels = options::Integer(option, "", 0);
+
   // Check compatibility of Mz, mg_levels, and the coarsening_factor and stop if they are
   // not compatible.
   {
-    auto option = pism::printf("-%spc_mg_levels", prefix.c_str());
-    int mg_levels = options::Integer(option, "", 0);
-
     int c = coarsening_factor;
     int M = mg_levels;
     int mz = Mz;
@@ -428,6 +428,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
     }
   }
 
+  // save the number of MG levels (for stdout reporting)
+  m_context.mg_levels = mg_levels;
 
   PetscErrorCode ierr;
   // DM
@@ -460,6 +462,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
                         NULL, info.lx, info.ly,    // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
+    ierr = DMSetOptionsPrefix(m_da, prefix.c_str()); CHKERRQ(ierr);
+
     // semi-coarsening: coarsen in the vertical direction only
     ierr = DMDASetRefinementFactor(m_da, coarsening_factor, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
 
@@ -469,16 +473,20 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
 
     // set up 2D and 3D parameter storage
     ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
-    ierr = setup_level(m_da); CHKERRQ(ierr);
+    ierr = setup_level(m_da, mg_levels); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, NULL);
+    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_context);
     CHKERRQ(ierr);
   }
 
   // Vec
   {
     ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
+
+    ierr = VecSetOptionsPrefix(m_x, prefix.c_str()); CHKERRQ(ierr);
+
+    ierr = VecSetFromOptions(m_x); CHKERRQ(ierr);
   }
 
   // SNES
@@ -683,15 +691,23 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-  // report the number of iterations
+  // report the number of iterations and the "reason"
   SNESConvergedReason reason;
   {
     PetscInt            its, lits;
     SNESGetIterationNumber(m_snes, &its);
     SNESGetConvergedReason(m_snes, &reason);
     SNESGetLinearSolveIterations(m_snes, &lits);
-    m_log->message(2, "%s: SNES: %d, KSP: %d\n",
+    m_log->message(2, "Blatter solver %s: SNES: %d, KSP: %d\n",
                    SNESConvergedReasons[reason], (int)its, (int)lits);
+    if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
+      KSP ksp;
+      KSPConvergedReason ksp_reason;
+      ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
+      ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
+      m_log->message(2, "  Linear solver reports: %s\n",
+                     KSPConvergedReasons[ksp_reason]);
+    }
   }
 
   // FIXME: try to recover
