@@ -73,10 +73,16 @@ private:
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity);
 
+  void split_ice_shelves(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Int &basin_mask,
+                         //const std::vector< std::vector <int> > m_n_basin_neighbors,
+                         const IceModelVec2Int &shelf_mask);
+
 
   void get_basin_neighbors(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2Int &basin_mask,
-                           std::vector< std::vector <int> > result);
+                           const IceModelVec2Int &basin_mask);
+                           //const IceModelVec2Int &basin_mask,
+                           //std::vector< std::vector <int> > result);
 
 
   void set_ocean_input_fields(const PicoPhysics &physics,
@@ -138,6 +144,9 @@ private:
 
 
   int m_n_basins, m_n_boxes, m_n_shelves;
+
+  //std::vector< std::vector <int> > m_n_basin_neighbors;
+
 };
 
 } // end of namespace ocean
