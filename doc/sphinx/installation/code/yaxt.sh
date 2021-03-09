@@ -21,8 +21,7 @@ tar xzf yaxt-${version}.tar.gz
 
 pushd yaxt-${version}
 
-CFLAGS="-std=gnu99 -O3"
-./configure --prefix=${prefix} --enable-shared --enable-static
+./configure --prefix=${prefix} --enable-shared --enable-static CFLAGS="-std=gnu99 -O3"
 make
 make install
 
