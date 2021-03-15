@@ -18,9 +18,9 @@
  */
 
 #include "grid_hierarchy.hh"
-#include "DataAccess.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/node_types.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

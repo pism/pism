@@ -339,13 +339,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // 2D vector quantities
   Vector2 velocity[Nk], R_nodal[Nk];
 
-  // FIXME: this communicates ghosts every time the residual is computed, which is excessive.
-  //
-  // note: we use m_da below because all multigrid levels use the same 2D grid
-  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
+
+  IceModelVec::AccessList list(m_parameters);
+  auto P = m_parameters.array();
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
   residual_dirichlet(info, P, X, R);

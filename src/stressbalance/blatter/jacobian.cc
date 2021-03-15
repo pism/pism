@@ -230,13 +230,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // 2D vector quantities
   Vector2 velocity[Nk];
 
-  // FIXME: this communicates ghosts every time the Jacobian is computed, which is excessive.
-  //
-  // note: we use m_da below because all multigrid levels use the same 2D grid
-  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
+
+  IceModelVec::AccessList list(m_parameters);
+  auto P = m_parameters.array();
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {

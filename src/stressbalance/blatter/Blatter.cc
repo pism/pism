@@ -52,28 +52,21 @@ namespace stressbalance {
  *
  * A node that is neither interior nor exterior is a *boundary* node.
  */
-static void blatter_node_type(DM da, double min_thickness) {
-  typedef Blatter::Parameters Parameters;
+void Blatter::compute_node_type(double min_thickness) {
 
-  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
-  // no lasting effect.
-  DataAccess<Parameters**> P(da, 2, GHOSTED);
+  IceModelVec2S node_type(m_grid, "node_type", WITH_GHOSTS);
+  node_type.set(0.0);
 
   DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
   info = grid_transpose(info);
-
-  // loop over all the owned nodes and reset node type
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      P[j][i].node_type = 0;
-    }
-  }
 
   // Note that dx, dy, and quadrature don't matter here.
   fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
   Parameters p[fem::q1::n_chi];
+
+  IceModelVec::AccessList l{&node_type, &m_parameters};
 
   // Loop over all the elements with at least one owned node and compute the number of icy
   // elements each node belongs to.
@@ -81,7 +74,7 @@ static void blatter_node_type(DM da, double min_thickness) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
       E.reset(i, j);
 
-      E.nodal_values((Parameters**)P, p);
+      E.nodal_values(m_parameters.array(), p);
 
       // An element is "interior" (contains ice) if all of its nodes have thickness above
       // the threshold
@@ -96,27 +89,27 @@ static void blatter_node_type(DM da, double min_thickness) {
       for (int k = 0; k < fem::q1::n_chi; ++k) {
         int ii, jj;
         E.local_to_global(k, ii, jj);
-        P[jj][ii].node_type += interior;
+        node_type(ii, jj) += interior;
       }
     }
   }
 
-  DataAccess<Parameters**> result(da, 2, NOT_GHOSTED);
+  node_type.update_ghosts();
 
   // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
   // to into node type.
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
 
-      switch ((int)P[j][i].node_type) {
+      switch ((int)node_type(i, j)) {
       case 4:
-        result[j][i].node_type = NODE_INTERIOR;
+        m_parameters(i, j).node_type = NODE_INTERIOR;
         break;
       case 0:
-        result[j][i].node_type = NODE_EXTERIOR;
+        m_parameters(i, j).node_type = NODE_EXTERIOR;
         break;
       default:
-        result[j][i].node_type = NODE_BOUNDARY;
+        m_parameters(i, j).node_type = NODE_BOUNDARY;
       }
     }
   }
@@ -264,6 +257,7 @@ bool Blatter::marine_boundary(int face,
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
+    m_parameters(grid, "bp_input_parameters", WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
 {
@@ -354,46 +348,6 @@ static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ct
 }
 
 /*!
- * Create a 2D DM and an associated 2D global Vec for storing input parameters.
- */
-PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
-  PetscErrorCode ierr;
-
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
-
-  // Create a 2D DMDA and a global Vec, then stash them in dm.
-  DM  da;
-  Vec parameters;
-
-  // NB: we call transpose() here because the input dm is a transposed 3D DM
-  auto info = DMInfo(dm).transpose();
-
-  ierr = DMDACreate2d(comm,
-                      info.bx, info.by,
-                      info.stencil_type,
-                      info.Mx, info.My,
-                      info.mx, info.my,
-                      dof,
-                      info.stencil_width,
-                      info.lx, info.ly,
-                      &da); CHKERRQ(ierr);
-
-  ierr = DMSetUp(da); CHKERRQ(ierr);
-
-  ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
-
-  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da); CHKERRQ(ierr);
-  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
-
-  ierr = DMDestroy(&da); CHKERRQ(ierr);
-
-  ierr = VecDestroy(&parameters); CHKERRQ(ierr);
-
-  return 0;
-}
-
-/*!
  * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
  */
 PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
@@ -477,7 +431,6 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
     // set up 2D and 3D parameter storage
-    ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
     ierr = setup_level(m_da, mg_levels); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
@@ -533,9 +486,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     &sea_level = inputs.geometry->sea_level_elevation;
 
   {
-    DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
-
-    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level};
+    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level, &m_parameters};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -546,18 +497,18 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
         s_grounded = b(i, j) + H(i, j),
         s_floating = sea_level(i, j) + (1.0 - alpha) * H(i, j);
 
-      P[j][i].tauc       = tauc(i, j);
-      P[j][i].thickness  = H(i, j);
-      P[j][i].sea_level  = sea_level(i, j);
-      P[j][i].bed        = std::max(b_grounded, b_floating);
-      P[j][i].node_type  = NODE_EXTERIOR;
-      P[j][i].floatation = s_floating - s_grounded;
+      m_parameters(i, j).tauc       = tauc(i, j);
+      m_parameters(i, j).thickness  = H(i, j);
+      m_parameters(i, j).sea_level  = sea_level(i, j);
+      m_parameters(i, j).bed        = std::max(b_grounded, b_floating);
+      m_parameters(i, j).node_type  = NODE_EXTERIOR;
+      m_parameters(i, j).floatation = s_floating - s_grounded;
     }
   }
 
-  double min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard");
+  compute_node_type(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
-  blatter_node_type(m_da, min_thickness);
+  m_parameters.update_ghosts();
 }
 
 /*!
@@ -808,13 +759,12 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&result};
-  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  IceModelVec::AccessList list{&result, &m_parameters};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double H = P2[j][i].thickness;
+    double H = m_parameters(i, j).thickness;
 
     Vector2 V(0.0, 0.0);
 

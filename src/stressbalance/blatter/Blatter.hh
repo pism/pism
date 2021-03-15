@@ -78,6 +78,8 @@ protected:
   // solver
   petsc::SNES m_snes;
 
+  IceModelVec2Struct<Parameters> m_parameters;
+
   double m_rho_ice_g;
   double m_rho_ocean_g;
 
@@ -105,6 +107,8 @@ protected:
   bool grounding_line(const double *F);
 
   bool partially_submerged_face(int face, const double *z, const double *sea_level);
+
+  void compute_node_type(double min_thickness);
 
   virtual void nodal_parameter_values(const fem::Q1Element3 &element,
                                       Parameters **P,
@@ -190,8 +194,6 @@ protected:
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor);
-
-  PetscErrorCode setup_2d_storage(DM dm, int dof);
 
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
