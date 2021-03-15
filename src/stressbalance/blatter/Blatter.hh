@@ -63,10 +63,6 @@ public:
     // FIXME: Add Dirichlet BC at a map plane location.
   };
 
-  struct Ctx {
-    int mg_levels;
-  };
-
 protected:
   // u and v components of ice velocity on the fine sigma grid
   IceModelVec3::Ptr m_u_sigma, m_v_sigma;
@@ -193,7 +189,11 @@ protected:
   void init_ice_hardness(const Inputs &inputs, const petsc::DM &da);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor);
+  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor,
+                       const std::string &prefix,
+                       petsc::DM &da,
+                       petsc::Vec &solution,
+                       petsc::SNES &snes);
 
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
@@ -202,8 +202,6 @@ protected:
   void compute_averaged_velocity(IceModelVec2V &result);
 
   void get_basal_velocity(IceModelVec2V &result);
-
-  Ctx m_context;
 };
 
 } // end of namespace stressbalance

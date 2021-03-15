@@ -267,7 +267,8 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor);
+  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor, "bp_",
+                   m_da, m_x, m_snes);
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
@@ -337,7 +338,15 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
 static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   PetscErrorCode ierr;
 
-  ierr = setup_level(dm_coarse, ((Blatter::Ctx*)ctx)->mg_levels); CHKERRQ(ierr);
+  int mg_levels = 1;
+  {
+    const char *prefix;
+    ierr = DMGetOptionsPrefix(dm_fine, &prefix); CHKERRQ(ierr);
+    auto option = pism::printf("-%spc_mg_levels", prefix);
+    mg_levels = options::Integer(option, "", 1);
+  }
+
+  ierr = setup_level(dm_coarse, mg_levels); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
@@ -351,13 +360,18 @@ static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ct
  * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
  */
 PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
-                              int coarsening_factor) {
+                              int coarsening_factor,
+                              const std::string &prefix,
+                              petsc::DM &da,
+                              petsc::Vec &solution,
+                              petsc::SNES &snes) {
+  MPI_Comm comm;
+  PetscErrorCode ierr = PetscObjectGetComm((PetscObject)pism_da, &comm); CHKERRQ(ierr);
+
   // FIXME: add the ability to add a prefix to the option prefix. We need this to be able
   // to run more than one instance of PISM in parallel.
-  std::string prefix = "bp_";
-
   auto option = pism::printf("-%spc_mg_levels", prefix.c_str());
-  int mg_levels = options::Integer(option, "", 0);
+  int mg_levels = options::Integer(option, "", 1);
 
   // Check compatibility of Mz, mg_levels, and the coarsening_factor and stop if they are
   // not compatible.
@@ -387,16 +401,10 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
     }
   }
 
-  // save the number of MG levels (for stdout reporting)
-  m_context.mg_levels = mg_levels;
-
-  PetscErrorCode ierr;
   // DM
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
-    MPI_Comm comm;
-    ierr = PetscObjectGetComm((PetscObject)pism_da, &comm); CHKERRQ(ierr);
 
     DMInfo info(pism_da);
     assert(info.dims == 2);
@@ -419,51 +427,51 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
                         info.dof,                  // dof
                         info.stencil_width,        // stencil width
                         NULL, info.lx, info.ly,    // STORAGE_ORDER
-                        m_da.rawptr()); CHKERRQ(ierr);
+                        da.rawptr()); CHKERRQ(ierr);
 
-    ierr = DMSetOptionsPrefix(m_da, prefix.c_str()); CHKERRQ(ierr);
+    ierr = DMSetOptionsPrefix(da, prefix.c_str()); CHKERRQ(ierr);
 
     // semi-coarsening: coarsen in the vertical direction only
-    ierr = DMDASetRefinementFactor(m_da, coarsening_factor, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
+    ierr = DMDASetRefinementFactor(da, coarsening_factor, 1, 1); CHKERRQ(ierr); // STORAGE_ORDER
 
-    ierr = DMSetFromOptions(m_da); CHKERRQ(ierr);
+    ierr = DMSetFromOptions(da); CHKERRQ(ierr);
 
-    ierr = DMSetUp(m_da); CHKERRQ(ierr);
+    ierr = DMSetUp(da); CHKERRQ(ierr);
 
-    // set up 2D and 3D parameter storage
-    ierr = setup_level(m_da, mg_levels); CHKERRQ(ierr);
+    // set up 3D parameter storage
+    ierr = setup_level(da, mg_levels); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_context);
+    ierr = DMCoarsenHookAdd(da, blatter_coarsening_hook, blatter_restriction_hook, NULL);
     CHKERRQ(ierr);
   }
 
   // Vec
   {
-    ierr = DMCreateGlobalVector(m_da, m_x.rawptr()); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(da, solution.rawptr()); CHKERRQ(ierr);
 
-    ierr = VecSetOptionsPrefix(m_x, prefix.c_str()); CHKERRQ(ierr);
+    ierr = VecSetOptionsPrefix(solution, prefix.c_str()); CHKERRQ(ierr);
 
-    ierr = VecSetFromOptions(m_x); CHKERRQ(ierr);
+    ierr = VecSetFromOptions(solution); CHKERRQ(ierr);
   }
 
   // SNES
   {
-    ierr = SNESCreate(m_grid->com, m_snes.rawptr()); CHKERRQ(ierr);
+    ierr = SNESCreate(comm, snes.rawptr()); CHKERRQ(ierr);
 
-    ierr = SNESSetOptionsPrefix(m_snes, prefix.c_str()); CHKERRQ(ierr);
+    ierr = SNESSetOptionsPrefix(snes, prefix.c_str()); CHKERRQ(ierr);
 
-    ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
+    ierr = SNESSetDM(snes, da); CHKERRQ(ierr);
 
-    ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
+    ierr = DMDASNESSetFunctionLocal(da, INSERT_VALUES,
                                     (DMDASNESFunction)function_callback,
                                     this); CHKERRQ(ierr);
 
-    ierr = DMDASNESSetJacobianLocal(m_da,
+    ierr = DMDASNESSetJacobianLocal(da,
                                     (DMDASNESJacobian)jacobian_callback,
                                     this); CHKERRQ(ierr);
 
-    ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
+    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
   }
 
   return 0;
