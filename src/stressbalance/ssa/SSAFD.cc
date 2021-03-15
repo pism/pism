@@ -1031,7 +1031,6 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
   unsigned int max_iterations = static_cast<int>(m_config->get_number("stress_balance.ssa.fd.max_iterations"));
   double ssa_relative_tolerance = m_config->get_number("stress_balance.ssa.fd.relative_convergence");
-  char tempstr[100] = "";
   bool verbose = m_log->get_threshold() >= 2,
     very_verbose = m_log->get_threshold() > 2;
 
@@ -1053,8 +1052,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
   for (unsigned int k = 0; k < max_iterations; ++k) {
 
     if (very_verbose) {
-      snprintf(tempstr, 100, "  %2d:", k);
-      m_stdout_ssa += tempstr;
+      m_stdout_ssa += pism::printf("  %2d:", k);
     }
 
     // in preparation of measuring change of effective viscosity:
@@ -1099,8 +1097,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
     ksp_iterations_total += ksp_iterations;
 
     if (very_verbose) {
-      snprintf(tempstr, 100, "S:%d,%d: ", (int)ksp_iterations, reason);
-      m_stdout_ssa += tempstr;
+      m_stdout_ssa += pism::printf("S:%d,%d: ", (int)ksp_iterations, reason);
     }
 
     // limit ice speed
@@ -1149,10 +1146,8 @@ void SSAFD::picard_manager(const Inputs &inputs,
     update_nuH_viewers();
 
     if (very_verbose) {
-      snprintf(tempstr, 100, "|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
-               nuH_norm, nuH_norm_change/nuH_norm);
-
-      m_stdout_ssa += tempstr;
+      m_stdout_ssa += pism::printf("|nu|_2, |Delta nu|_2/|nu|_2 = %10.3e %10.3e\n",
+                                   nuH_norm, nuH_norm_change/nuH_norm);
 
       // assume that high verbosity shows interest in immediate
       // feedback about SSA iterations
@@ -1179,14 +1174,15 @@ void SSAFD::picard_manager(const Inputs &inputs,
  done:
 
   if (very_verbose) {
-    snprintf(tempstr, 100, "... =%5d outer iterations, ~%3.1f KSP iterations each\n",
-             (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
-
+    auto tempstr = pism::printf("... =%5d outer iterations, ~%3.1f KSP iterations each\n",
+                                (int)outer_iterations,
+                                ((double) ksp_iterations_total) / outer_iterations);
     m_stdout_ssa += tempstr;
   } else if (verbose) {
     // at default verbosity, just record last nuH_norm_change and iterations
-    snprintf(tempstr, 100, "%5d outer iterations, ~%3.1f KSP iterations each\n",
-             (int)outer_iterations, ((double) ksp_iterations_total) / outer_iterations);
+    auto tempstr = pism::printf("%5d outer iterations, ~%3.1f KSP iterations each\n",
+                                (int)outer_iterations,
+                                ((double) ksp_iterations_total) / outer_iterations);
 
     m_stdout_ssa += tempstr;
   }

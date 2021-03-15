@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -285,8 +285,6 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
 
   // globalize m_stats and update m_stdout_flags
   {
-    char buffer[50] = "";
-
     m_stats.sum(m_grid->com);
 
     if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
@@ -294,15 +292,15 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
       const double reporting_threshold = 5.0; // only report if above 5%
 
       if (reduced_accuracy_percentage > reporting_threshold and m_log->get_threshold() > 2) {
-        snprintf(buffer, 50, "  [BPsacr=%.4f%%] ", reduced_accuracy_percentage);
-        m_stdout_flags = buffer + m_stdout_flags;
+        m_stdout_flags = (pism::printf("  [BPsacr=%.4f%%] ", reduced_accuracy_percentage) +
+                          m_stdout_flags);
       }
     }
 
     if (m_stats.bulge_counter > 0) {
       // count of when advection bulges are limited; frequently it is identically zero
-      snprintf(buffer, 50, " BULGE=%d ", m_stats.bulge_counter);
-      m_stdout_flags = buffer + m_stdout_flags;
+      m_stdout_flags = (pism::printf(" BULGE=%d ", m_stats.bulge_counter) +
+                        m_stdout_flags);
     }
   }
 }

@@ -102,10 +102,8 @@ void IceModel::print_summary(bool tempAndAge) {
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
     if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
         m_log->get_threshold() > 2) {
-      char tempstr[90] = "";
-      snprintf(tempstr,90,
-              "  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
-              n_CFL_violations,CFLviolpercent);
+      auto tempstr = pism::printf("  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
+                                  n_CFL_violations, CFLviolpercent);
       m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
@@ -175,20 +173,25 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
 
   const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
                scalearea = pow(10.0, static_cast<double>(log10scalearea));
-  char  volscalestr[10] = "     ", areascalestr[10] = "   "; // blank when 10^0 = 1 scaling
+  std::string
+    volscalestr  = "     ",
+    areascalestr = "   "; // blank when 10^0 = 1 scaling
   if (log10scalevol != 0) {
-    snprintf(volscalestr, sizeof(volscalestr), "10^%1d_", log10scalevol);
+    volscalestr = pism::printf("10^%1d_", log10scalevol);
   }
   if (log10scalearea != 0) {
-    snprintf(areascalestr, sizeof(areascalestr), "10^%1d_", log10scalearea);
+    areascalestr = pism::printf("10^%1d_", log10scalearea);
   }
 
-  if (printPrototype == true) {
+  if (printPrototype) {
     m_log->message(2,
                "P         time:       ivol      iarea  max_diffusivity  max_sliding_vel\n");
     m_log->message(2,
-               "U         %s   %skm^3  %skm^2         m^2 s^-1           m/%s\n",
-               time_units.c_str(),volscalestr,areascalestr,time_units.c_str());
+                   "U         %s   %skm^3  %skm^2         m^2 s^-1           m/%s\n",
+                   time_units.c_str(),
+                   volscalestr.c_str(),
+                   areascalestr.c_str(),
+                   time_units.c_str());
     return;
   }
 
@@ -205,15 +208,15 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
     mass_cont_sub_dtsum += delta_t;
   }
 
-  if ((tempAndAge == true) || (!do_energy) || (m_log->get_threshold() > 2)) {
-    char tempstr[90]    = "";
+  if (tempAndAge or (not do_energy) or (m_log->get_threshold() > 2)) {
+    std::string tempstr;
 
     const double major_dt = m_time->convert_time_interval(mass_cont_sub_dtsum, time_units);
     if (mass_cont_sub_counter <= 1) {
-      snprintf(tempstr,90, " (dt=%.5f)", major_dt);
+      tempstr = pism::printf(" (dt=%.5f)", major_dt);
     } else {
-      snprintf(tempstr,90, " (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
-               major_dt, mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
+      tempstr = pism::printf(" (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
+                             major_dt, mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
     }
     stdout_flags_count0 += tempstr;
 
@@ -223,12 +226,10 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
     }
 
     if (use_calendar) {
-      snprintf(tempstr,90, "%12s", m_time->date().c_str());
+      tempstr = pism::printf("%12s", m_time->date().c_str());
     } else {
-      snprintf(tempstr,90, "%.3f", m_time->convert_time_interval(m_time->current(), time_units));
+      tempstr = pism::printf("%.3f", m_time->convert_time_interval(m_time->current(), time_units));
     }
-
-
 
     const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
@@ -236,10 +237,10 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                          "m second-1", velocity_units);
 
     m_log->message(2,
-               "S %s:   %8.5f  %9.5f     %12.5f     %12.5f\n",
-               tempstr,
-               volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
-               max_diffusivity, maxvel);
+                   "S %s:   %8.5f  %9.5f     %12.5f     %12.5f\n",
+                   tempstr.c_str(),
+                   volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
+                   max_diffusivity, maxvel);
 
     mass_cont_sub_counter = 0;
     mass_cont_sub_dtsum = 0.0;
