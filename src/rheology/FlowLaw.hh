@@ -82,6 +82,9 @@ public:
   void effective_viscosity(double hardness, double gamma,
                            double *nu, double *dnu) const;
 
+  void effective_viscosity(double hardness, double gamma, double eps,
+                           double *nu, double *dnu) const;
+
   std::string name() const;
   double exponent() const;
 

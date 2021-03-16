@@ -166,15 +166,20 @@ double FlowLaw::hardness_impl(double E, double p) const {
  */
 void FlowLaw::effective_viscosity(double B, double gamma,
                                   double *nu, double *dnu) const {
+  effective_viscosity(B, gamma, m_schoofReg, nu, dnu);
+}
+
+void FlowLaw::effective_viscosity(double B, double gamma, double eps,
+                                  double *nu, double *dnu) const {
   const double
-    my_nu = 0.5 * B * pow(m_schoofReg + gamma, m_viscosity_power);
+    my_nu = 0.5 * B * pow(eps + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;
   }
 
   if (PetscLikely(dnu != NULL)) {
-    *dnu = m_viscosity_power * my_nu / (m_schoofReg + gamma);
+    *dnu = m_viscosity_power * my_nu / (eps + gamma);
   }
 }
 
