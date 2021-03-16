@@ -74,13 +74,6 @@ protected:
   // solver
   petsc::SNES m_snes;
 
-  // 3D dof=2 DM used by m_snes_coarse
-  petsc::DM m_da_coarse;
-  // storage for the solution
-  petsc::Vec m_x_coarse;
-  // solver
-  petsc::SNES m_snes_coarse;
-
   IceModelVec2Struct<Parameters> m_parameters;
 
   double m_rho_ice_g;
@@ -205,8 +198,6 @@ protected:
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
   void copy_solution();
-
-  void interpolate_solution();
 
   void compute_averaged_velocity(IceModelVec2V &result);
 

@@ -274,13 +274,6 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
                        "Failed to allocate a Blatter solver instance");
   }
 
-  ierr = setup(*pism_da, grid->periodicity(), 2, 1, "bp_coarse_",
-                   m_da_coarse, m_x_coarse, m_snes_coarse);
-  if (ierr != 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Failed to allocate a Blatter solver instance");
-  }
-
   {
     std::vector<double> sigma(Mz);
     double dz = 1.0 / (Mz - 1.0);
@@ -655,59 +648,12 @@ void Blatter::write_model_state_impl(const File &output) const {
   m_v_sigma->write(output);
 }
 
-void Blatter::interpolate_solution() {
-  // solver's vertical grid:
-  int Mz = 0;
-  {
-    DMDALocalInfo info;
-    int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
-    info = grid_transpose(info);
-    Mz = info.mz;
-  }
-
-  Vector2 ***x = nullptr;
-  int ierr = DMDAVecGetArray(m_da, m_x, &x);
-  PISM_CHK(ierr, "DMDAVecGetArray");
-
-  Vector2 ***x_coarse = nullptr;
-  ierr = DMDAVecGetArray(m_da_coarse, m_x_coarse, &x_coarse);
-  PISM_CHK(ierr, "DMDAVecGetArray");
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    Vector2 u0 = x_coarse[j][i][0];
-    Vector2 u1 = x_coarse[j][i][1];
-
-    for (int k = 0; k < Mz; ++k) {
-      double C = (double)k / (Mz - 1);
-      x[j][i][k] = (1.0 - C) * u0 + C * u1;      // STORAGE_ORDER
-    }
-  }
-
-  ierr = DMDAVecRestoreArray(m_da_coarse, m_x_coarse, &x_coarse);
-  PISM_CHK(ierr, "DMDAVecRestoreArray");
-
-  ierr = DMDAVecRestoreArray(m_da, m_x, &x);
-  PISM_CHK(ierr, "DMDAVecRestoreArray");
-}
-
 void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
   (void) full_update;
 
   init_2d_parameters(inputs);
   init_ice_hardness(inputs, m_da);
-
-  bool coarse = false;
-  if (coarse) {
-    init_ice_hardness(inputs, m_da_coarse);
-
-    int ierr = SNESSolve(m_snes_coarse, NULL, m_x_coarse);
-    PISM_CHK(ierr, "SNESSolve");
-
-    interpolate_solution();
-  }
 
   int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
