@@ -727,8 +727,7 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j).u = x[j][i][0].u;      // STORAGE_ORDER
-    result(i, j).v = x[j][i][0].v;      // STORAGE_ORDER
+    result(i, j) = x[j][i][0];      // STORAGE_ORDER
   }
 
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
