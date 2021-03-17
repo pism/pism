@@ -650,73 +650,176 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
   (void) full_update;
 
+  PetscErrorCode ierr;
+
   init_2d_parameters(inputs);
   init_ice_hardness(inputs, m_da);
 
   // maximum number of continuation steps
-  int Nc = 10;
+  int Nc = 20;
 
   double
     schoofLen = m_config->get_number("flow_law.Schoof_regularizing_length", "m"),
     schoofVel = m_config->get_number("flow_law.Schoof_regularizing_velocity", "m second-1"),
+    // desired regularization parameter
     eps       = pow(schoofVel / schoofLen, 2.0),
+    // gamma is a number such that 10^gamma <= eps. It is used to convert lambda in [0, 1] to eps_n
     gamma     = std::floor(std::log10(eps)),
-    alpha_min = 0.75,
-    alpha_max = 1.0,
-    dalpha    = (alpha_max - alpha_min) / Nc;
+    // starting value of lambda (input)
+    lambda_min = 0.75,
+    // final value of lambda (fixed)
+    lambda_max = 1.0,
+    // minimum step length (input)
+    delta_min = 0.01,
+    // maximum step length (input)
+    delta_max = 0.2,
+    // initial increment of lambda (input)
+    delta0    = 0.05,
+    // "aggressiveness" of the step increase, a non-negative number (input)
+    A         = 1.0;
 
-  double alpha = alpha_min;
-  PetscInt its_total = 0;
-  PetscInt lits_total = 0;
+  // set lambda and delta to solve the desired (not overregularized) problem first
+  double
+    lambda = lambda_max,
+    delta  = delta0;
+
+  // total number of SNES and KSP iterations
+  int snes_total_it = 0;
+  int ksp_total_it  = 0;
+
+  PetscInt snes_max_it = 0;
+  ierr = SNESGetTolerances(m_snes, NULL, NULL, NULL, &snes_max_it, NULL);
+  PISM_CHK(ierr, "SNESGetTolerances");
+
+  // store the "old" initial guess
+  ierr = VecCopy(m_x, m_x_old); PISM_CHK(ierr, "VecCopy");
+
   for (int N = 0; N < Nc + 1; ++N) {
     // Set the regularization parameter:
-    m_viscosity_eps = std::max(std::pow(10.0, alpha * gamma), eps);
+    m_viscosity_eps = std::max(std::pow(10.0, lambda * gamma), eps);
 
-    m_log->message(2, "Blatter solver: step %d with alpha = %f, eps = %e\n",
-                   N, alpha, m_viscosity_eps);
+    if (N > 0) {
+      m_log->message(2, "Blatter solver: step %d with lambda = %f, eps = %e\n",
+                     N, lambda, m_viscosity_eps);
+    } else {
+      m_log->message(2, "Blatter solver: start with eps = %e\n", m_viscosity_eps);
+    }
+
     // Solve the system:
-    int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+    ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
     SNESConvergedReason reason;
-    SNESGetConvergedReason(m_snes, &reason);
+    ierr = SNESGetConvergedReason(m_snes, &reason);
+    PISM_CHK(ierr, "SNESGetConvergedReason");
+    PetscInt snes_it, ksp_it;
+    {
+      ierr = SNESGetIterationNumber(m_snes, &snes_it);
+      PISM_CHK(ierr, "SNESGetIterationNumber");
+
+      ierr = SNESGetLinearSolveIterations(m_snes, &ksp_it);
+      PISM_CHK(ierr, "SNESGetLinearSolveIterations");
+    }
+
+    // report number of iterations for this continuation step
+    if (N > 0) {
+      m_log->message(2, "Blatter solver: %s step %d with lambda = %f,"
+                     " eps = %e: SNES: %d, KSP: %d\n",
+                     SNESConvergedReasons[reason], N, lambda, m_viscosity_eps,
+                     (int)snes_it, (int)ksp_it);
+    }
+
+    snes_total_it += snes_it;
+    ksp_total_it  += ksp_it;
+
     if (reason > 0) {
       // converged
-      // report number of iterations for this stage
-      PetscInt its, lits;
-      SNESGetIterationNumber(m_snes, &its);
-      SNESGetLinearSolveIterations(m_snes, &lits);
-      m_log->message(2, "Blatter solver: %s step %d with alpha = %f, eps = %e: SNES: %d, KSP: %d\n",
-                     SNESConvergedReasons[reason], N, alpha, m_viscosity_eps, (int)its, (int)lits);
-      its_total += its;
-      lits_total += lits;
 
       if (m_viscosity_eps <= eps) {
         // ... while solving the desired (not overregularized) problem
         m_log->message(2, "Blatter solver: done. SNES: %d, KSP: %d\n",
-                       (int)its_total, lits_total);
-        break;
+                       snes_total_it, ksp_total_it);
+        goto bp_done;
       }
-      // increase alpha
-      alpha = std::min(alpha + dalpha, alpha_max);
+
+      // store solution as the "old" initial guess we may need to revert to
+      ierr = VecCopy(m_x, m_x_old); PISM_CHK(ierr, "VecCopy");
+
+      if (N > 1) {
+        // adjust delta using the formula from LOCA (equation 2.8 in Salinger2002
+        // corrected using the code in Trilinos).
+        double F = (snes_max_it - snes_it) / (double)snes_max_it;
+        delta *= 1.0 + A * F * F;
+      }
+
+      delta = std::min(delta, delta_max);
+
+      // ensure that delta does not take us past lambda_max
+      if (lambda + delta > lambda_max) {
+        delta = lambda_max - lambda;
+      }
+
+      m_log->message(2, "  Using delta = %f\n", delta);
+
+      lambda += delta;
+    } else if (reason == SNES_DIVERGED_LINE_SEARCH or
+               reason == SNES_DIVERGED_MAX_IT) {
+
+      ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
+
+      if (N == 0) {
+        lambda = lambda_min;
+        delta  = delta0;
+
+        m_log->message(2, "  Starting parameter continuation with lambda = %f\n",
+                       lambda);
+      } else {
+        // revert lambda to the previous value
+        lambda -= delta;
+
+        if (lambda < lambda_min) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Blatter solver: Parameter continuation failed");
+        }
+
+        if (std::fabs(delta - delta_min) < 1e-6) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Blatter solver: cannot reduce the continuation step");
+        }
+
+        // reduce the step size
+        delta *= 0.5;
+
+        delta = pism::clip(delta, delta_min, delta_max);
+
+        lambda += delta;
+        // Note that this delta will not take us past lambda_max because the original
+        // delta satisfies lambda + delta <= lambda_max.
+
+        m_log->message(2, "  Back-tracking to lambda = %f using delta = %f\n",
+                       lambda, delta);
+      }
     } else {
-      // solver failed
-      m_log->message(2, "Blatter solver: %s with alpha = %f, eps = %e\n",
-                     SNESConvergedReasons[reason], alpha, m_viscosity_eps);
+      // Other kinds of failures
       if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
         KSP ksp;
         KSPConvergedReason ksp_reason;
         ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
-        ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
+
+        ierr = KSPGetConvergedReason(ksp, &ksp_reason);
+        PISM_CHK(ierr, "KSPGetConvergedReason");
+
         m_log->message(2, "  Linear solver: %s\n",
                        KSPConvergedReasons[ksp_reason]);
       }
 
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Solver failed. (reason: %s)",
-                                    SNESConvergedReasons[reason]);
+      throw RuntimeError(PISM_ERROR_LOCATION, "Blatter solver failed");
     }
   }
 
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "Blatter solver failed after %d parameter continuation steps", Nc);
+
+ bp_done:
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
   compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
