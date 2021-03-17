@@ -18,7 +18,7 @@
  */
 
 #include <cassert>              // assert
-#include <cmath>                // std::pow, std::fabs
+#include <cmath>                // std::pow, std::fabs, std::log10
 #include <algorithm>            // std::max
 #include <cstring>              // memset
 
@@ -655,32 +655,68 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   init_2d_parameters(inputs);
   init_ice_hardness(inputs, m_da);
 
-  int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+  // maximum number of continuation steps
+  int Nc = 10;
 
-  // report the number of iterations and the "reason"
-  SNESConvergedReason reason;
-  {
-    PetscInt            its, lits;
-    SNESGetIterationNumber(m_snes, &its);
+  double
+    schoofLen = m_config->get_number("flow_law.Schoof_regularizing_length", "m"),
+    schoofVel = m_config->get_number("flow_law.Schoof_regularizing_velocity", "m second-1"),
+    eps       = pow(schoofVel / schoofLen, 2.0),
+    gamma     = std::floor(std::log10(eps)),
+    alpha_min = 0.75,
+    alpha_max = 1.0,
+    dalpha    = (alpha_max - alpha_min) / Nc;
+
+  double alpha = alpha_min;
+  PetscInt its_total = 0;
+  PetscInt lits_total = 0;
+  for (int N = 0; N < Nc + 1; ++N) {
+    // Set the regularization parameter:
+    m_viscosity_eps = std::max(std::pow(10.0, alpha * gamma), eps);
+
+    m_log->message(2, "Blatter solver: step %d with alpha = %f, eps = %e\n",
+                   N, alpha, m_viscosity_eps);
+    // Solve the system:
+    int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+
+    SNESConvergedReason reason;
     SNESGetConvergedReason(m_snes, &reason);
-    SNESGetLinearSolveIterations(m_snes, &lits);
-    m_log->message(2, "Blatter solver %s: SNES: %d, KSP: %d\n",
-                   SNESConvergedReasons[reason], (int)its, (int)lits);
-    if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
-      KSP ksp;
-      KSPConvergedReason ksp_reason;
-      ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
-      ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
-      m_log->message(2, "  Linear solver reports: %s\n",
-                     KSPConvergedReasons[ksp_reason]);
-    }
-  }
+    if (reason > 0) {
+      // converged
+      // report number of iterations for this stage
+      PetscInt its, lits;
+      SNESGetIterationNumber(m_snes, &its);
+      SNESGetLinearSolveIterations(m_snes, &lits);
+      m_log->message(2, "Blatter solver: %s step %d with alpha = %f, eps = %e: SNES: %d, KSP: %d\n",
+                     SNESConvergedReasons[reason], N, alpha, m_viscosity_eps, (int)its, (int)lits);
+      its_total += its;
+      lits_total += lits;
 
-  // FIXME: try to recover
-  if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Solver failed. (reason: %s)",
-                                  SNESConvergedReasons[reason]);
+      if (m_viscosity_eps <= eps) {
+        // ... while solving the desired (not overregularized) problem
+        m_log->message(2, "Blatter solver: done. SNES: %d, KSP: %d\n",
+                       (int)its_total, lits_total);
+        break;
+      }
+      // increase alpha
+      alpha = std::min(alpha + dalpha, alpha_max);
+    } else {
+      // solver failed
+      m_log->message(2, "Blatter solver: %s with alpha = %f, eps = %e\n",
+                     SNESConvergedReasons[reason], alpha, m_viscosity_eps);
+      if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
+        KSP ksp;
+        KSPConvergedReason ksp_reason;
+        ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
+        ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
+        m_log->message(2, "  Linear solver: %s\n",
+                       KSPConvergedReasons[ksp_reason]);
+      }
+
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Solver failed. (reason: %s)",
+                                    SNESConvergedReasons[reason]);
+    }
   }
 
   // put basal velocity in m_velocity to use it in the next call

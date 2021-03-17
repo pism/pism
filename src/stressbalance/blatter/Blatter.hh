@@ -81,6 +81,7 @@ protected:
 
   double m_glen_exponent;
   bool m_eta_transform;
+  double m_viscosity_eps;
 
   static const int m_Nq = 100;
   static const int m_n_work = 9;

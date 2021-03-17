@@ -68,7 +68,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
                     0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
 
     double eta;
-    m_flow_law->effective_viscosity(B[q], gamma, &eta, nullptr);
+    m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, nullptr);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
