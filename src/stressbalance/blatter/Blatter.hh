@@ -71,6 +71,8 @@ protected:
   petsc::DM m_da;
   // storage for the solution
   petsc::Vec m_x;
+  // storage for the old solution during parameter continuation
+  petsc::Vec m_x_old;
   // solver
   petsc::SNES m_snes;
 
@@ -191,10 +193,7 @@ protected:
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor,
-                       const std::string &prefix,
-                       petsc::DM &da,
-                       petsc::Vec &solution,
-                       petsc::SNES &snes);
+                       const std::string &prefix);
 
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
