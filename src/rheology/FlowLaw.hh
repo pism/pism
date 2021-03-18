@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -125,10 +125,6 @@ protected:
 
   double softness_paterson_budd(double T_pa) const;
 
-  //! regularizing length
-  double m_schoofLen;
-  //! regularizing velocity
-  double m_schoofVel;
   //! regularization parameter for @f$ \gamma @f$
   double m_schoofReg;
 

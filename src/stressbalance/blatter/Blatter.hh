@@ -63,6 +63,10 @@ public:
     // FIXME: Add Dirichlet BC at a map plane location.
   };
 
+  struct Ctx {
+    int mg_levels;
+  };
+
 protected:
   // u and v components of ice velocity on the sigma grid
   IceModelVec3::Ptr m_u_sigma, m_v_sigma;
@@ -200,6 +204,8 @@ protected:
   void compute_averaged_velocity(IceModelVec2V &result);
 
   void get_basal_velocity(IceModelVec2V &result);
+
+  Ctx m_context;
 };
 
 } // end of namespace stressbalance
