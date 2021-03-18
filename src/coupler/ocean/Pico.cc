@@ -58,7 +58,6 @@ Pico::Pico(IceGrid::ConstPtr g)
     m_T_star(m_grid, "pico_T_star", WITHOUT_GHOSTS),
     m_overturning(m_grid, "pico_overturning", WITHOUT_GHOSTS),
     m_basal_melt_rate(m_grid, "pico_basal_melt_rate", WITH_GHOSTS),
-    m_basin_mask(m_grid, "basins", WITH_GHOSTS),
     m_geometry(new PicoGeometry(g)) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
@@ -96,9 +95,6 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
                               "g/kg", "g/kg", "", 0);
-
-  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
-                         "", "", "", 0);
 
   // computed salinity in ocean boxes
   m_Soc.set_attrs("model_state", "ocean salinity field",
@@ -157,12 +153,14 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
-  m_basin_mask.regrid(opt.filename, CRITICAL);
+  // This inits basin_mask
+  m_geometry->init_impl();
+  //m_basin_mask.regrid(opt.filename, CRITICAL);
 
   // FIXME: m_n_basins is a misnomer
-  m_n_basins = m_basin_mask.max() + 1;
+  m_n_basins = m_geometry->basin_mask().max() + 1;
 
-  m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
+  m_log->message(4, "PICO basin min=%f,max=%f\n", m_geometry->basin_mask().min(), m_geometry->basin_mask().max());
 
   // find neighbor basins
   //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
@@ -196,7 +194,7 @@ void Pico::init_impl(const Geometry &geometry) {
 
 void Pico::define_model_state_impl(const File &output) const {
 
-  m_basin_mask.define(output);
+  m_geometry->basin_mask().define(output);
   m_Soc_box0.define(output);
   m_Toc_box0.define(output);
   m_overturning.define(output);
@@ -206,7 +204,7 @@ void Pico::define_model_state_impl(const File &output) const {
 
 void Pico::write_model_state_impl(const File &output) const {
 
-  m_basin_mask.write(output);
+  m_geometry->basin_mask().write(output);
   m_Soc_box0.write(output);
   m_Toc_box0.write(output);
   m_overturning.write(output);
@@ -255,7 +253,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   // Split ice shelves when spread over non-neighboring basins
   //split_ice_shelves(cell_type,m_basin_mask,m_n_basin_neighbors,m_geometry->ice_shelf_mask());
-  split_ice_shelves(cell_type,m_basin_mask,m_geometry->ice_shelf_mask());
+  //split_ice_shelves(cell_type,m_basin_mask,m_geometry->ice_shelf_mask());
+  //split_ice_shelves(cell_type,m_geometry->basin_mask(),m_geometry->ice_shelf_mask());
 
   //m_n_shelves = m_geometry->ice_shelf_mask().max() + 1;
 
@@ -264,13 +263,15 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
     // prepare ocean input temperature and salinity
     {
+
       std::vector<double> basin_temperature(m_n_basins);
       std::vector<double> basin_salinity(m_n_basins);
 
-      compute_ocean_input_per_basin(physics, m_basin_mask, m_geometry->continental_shelf_mask(), *m_salinity_ocean,
+
+      compute_ocean_input_per_basin(physics, m_geometry->basin_mask(), m_geometry->continental_shelf_mask(), *m_salinity_ocean,
                                     *m_theta_ocean, basin_temperature, basin_salinity); // per basin
 
-      set_ocean_input_fields(physics, ice_thickness, cell_type, m_basin_mask, m_geometry->ice_shelf_mask(),
+      set_ocean_input_fields(physics, ice_thickness, cell_type, m_geometry->basin_mask(), m_geometry->ice_shelf_mask(),
                              basin_temperature, basin_salinity, m_Toc_box0, m_Soc_box0); // per shelf
     }
 
@@ -758,7 +759,7 @@ void Pico::extend_basal_melt_rates(const IceModelVec2CellType &cell_type, IceMod
 DiagnosticList Pico::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "basins",                 Diagnostic::wrap(m_basin_mask) },
+    { "basins",                 Diagnostic::wrap(m_geometry->basin_mask()) },
     { "pico_overturning",       Diagnostic::wrap(m_overturning) },
     { "pico_salinity_box0",     Diagnostic::wrap(m_Soc_box0) },
     { "pico_temperature_box0",  Diagnostic::wrap(m_Toc_box0) },
@@ -906,7 +907,7 @@ void Pico::get_basin_neighbors(const IceModelVec2CellType &cell_type,
   }
 
 }
-*/
+
 void Pico::split_ice_shelves(const IceModelVec2CellType &cell_type,
                              const IceModelVec2Int &basin_mask,
                              //const std::vector< std::vector <int> > m_n_basin_neighbors,
@@ -1039,7 +1040,7 @@ void Pico::split_ice_shelves(const IceModelVec2CellType &cell_type,
       }
   }
 }
-
+*/
 
 
 } // end of namespace ocean

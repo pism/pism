@@ -40,12 +40,14 @@ public:
   PicoGeometry(IceGrid::ConstPtr grid);
   virtual ~PicoGeometry();
 
+  void init_impl();
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
   const IceModelVec2Int &continental_shelf_mask() const;
   const IceModelVec2Int &box_mask() const;
   const IceModelVec2Int &ice_shelf_mask() const;
   const IceModelVec2Int &ice_rise_mask() const;
+  const IceModelVec2Int &basin_mask() const;
 
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
@@ -57,6 +59,17 @@ private:
                                       double bed_elevation_threshold, IceModelVec2Int &result);
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask, const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
+
+  void split_ice_shelves(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Int &basin_mask,
+                         //const std::vector< std::vector <int> > m_n_basin_neighbors,
+                         const IceModelVec2Int &shelf_mask);
+
+  void get_basin_neighbors(const IceModelVec2CellType &cell_type,
+                           const IceModelVec2Int &basin_mask);
+                           //const IceModelVec2Int &basin_mask,
+                           //std::vector< std::vector <int> > result);
+ 
   void compute_distances_cf(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
                             IceModelVec2Int &dist_cf);
   void compute_distances_gl(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
@@ -72,6 +85,9 @@ private:
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
+  IceModelVec2Int m_basin_mask;
+
+  int m_n_basins, m_n_shelves;
 
   // storage for intermediate fields
   IceModelVec2Int m_distance_gl;
