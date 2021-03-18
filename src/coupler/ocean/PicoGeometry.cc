@@ -25,6 +25,9 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
+#include "pism/coupler/util/options.hh"
+
+
 namespace pism {
 namespace ocean {
 
@@ -38,7 +41,14 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ocean_mask(grid, "pico_ocean_mask", WITH_GHOSTS),
       m_lake_mask(grid, "pico_lake_mask", WITHOUT_GHOSTS),
       m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
-      m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
+      m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS),
+      m_basin_mask(m_grid, "basins", WITH_GHOSTS) {
+
+
+  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
+  {
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+  }
 
   m_boxes.metadata().set_number("_FillValue", 0.0);
 
@@ -46,6 +56,10 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
                                      {OCEAN, RISE, CONTINENTAL, FLOATING});
   m_ice_rises.metadata().set_string("flag_meanings",
                                      "ocean ice_rise continental_ice_sheet, floating_ice");
+
+  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
+                         "", "", "", 0);
+  m_n_basins = 0;
 
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
@@ -70,6 +84,26 @@ const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
   return m_ice_rises;
 }
 
+const IceModelVec2Int &PicoGeometry::basin_mask() const {
+  return m_basin_mask;
+}
+
+
+void PicoGeometry::init_impl() {
+
+  m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean geometry ...\n");
+
+  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
+
+  m_basin_mask.regrid(opt.filename, CRITICAL);
+
+  m_n_basins = m_basin_mask.max() + 1;
+
+}
+
+
+
+
 /*!
  * Compute masks needed by the PICO physics code.
  *
@@ -90,6 +124,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
     compute_ocean_mask(cell_type, m_ocean_mask);
 
     compute_lakes(cell_type, m_lake_mask);
+
   }
 
   // these two could be optimized by trying to reduce the number of times we update ghosts
@@ -105,6 +140,8 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
   // these two could be done at the same time
   {
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
+
+    split_ice_shelves(cell_type,m_basin_mask,m_ice_shelves);
 
     compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth, m_continental_shelf);
   }
@@ -467,6 +504,154 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
 
   result.copy_from(m_tmp);
 }
+
+
+void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
+                             const IceModelVec2Int &basin_mask,
+                             //const std::vector< std::vector <int> > m_n_basin_neighbors,
+                             const IceModelVec2Int &shelf_mask) { //FIXME: must be const and hence cannot be modified
+
+
+  IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask };
+
+  // FIXME: This part should be computed in Pico::get_basin_neighbors, but the result vector m_n_basin_neighbors cannot be passed
+  //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
+  //get_basin_neighbors(cell_type, basin_mask, m_n_basin_neighbors);
+  //get_basin_neighbors(cell_type, basin_mask);
+
+  // test if vector exists
+  //for (int b = 1; b < m_n_basins; ++b) {
+  //  m_log->message(2, "PICO, use basin neighbors with b=%d, b1=%d and b2=%d \n",b,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
+  //}
+
+  m_n_shelves = shelf_mask.max() + 1;
+  std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    int b = basin_mask.as_int(i, j);
+    if (m_n_basin_neighbors[b][0] == 0 or m_n_basin_neighbors[b][1] == 0) {
+
+      auto B = basin_mask.int_star(i, j);
+      auto M = cell_type.int_star(i, j);
+      int bn = 0; //neighbor basin id
+
+      // finding the basin boundary on the ice free ocean
+      if (cell_type.as_int(i, j) == MASK_ICE_FREE_OCEAN and
+         ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
+          (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
+          (M.e == MASK_ICE_FREE_OCEAN and B.e != b) or
+          (M.w == MASK_ICE_FREE_OCEAN and B.w != b))) {
+
+          if (M.n == MASK_ICE_FREE_OCEAN and B.n != b)
+            bn = B.n;
+          else if (M.s == MASK_ICE_FREE_OCEAN and B.s != b)
+            bn = B.s;
+          else if (M.e == MASK_ICE_FREE_OCEAN and B.e != b)
+            bn = B.e;
+          else if (M.w == MASK_ICE_FREE_OCEAN and B.w != b)
+            bn = B.w;
+
+          if (m_n_basin_neighbors[b][0] == 0)
+            m_n_basin_neighbors[b][0] = bn;
+          else if (m_n_basin_neighbors[b][1] == 0 and m_n_basin_neighbors[b][0] != bn)
+            m_n_basin_neighbors[b][1] = bn;
+          //else if (m_n_basin_neighbors[b][1] != bn and m_n_basin_neighbors[b][0] != bn)
+          //  m_log->message(2, "PICO, found other basin neighbors with b=%d, b1=%d and b2=%d \n",bn,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
+      }
+    }
+  }
+  // compute global sums
+  for (int b = 1; b < m_n_basins; ++b) {
+    m_n_basin_neighbors[b][0] = GlobalSum(m_grid->com, m_n_basin_neighbors[b][0]);
+    m_n_basin_neighbors[b][1] = GlobalSum(m_grid->com, m_n_basin_neighbors[b][1]);
+    //m_log->message(2, "PICO, get basin neighbors with b=%d, b1=%d and b2=%d \n",b,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
+  }
+
+
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  // This part is analoguous to Pico::set_ocean_input_fields, but vector cfs_in_basins_per_shelf cannot be passed here
+  std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
+  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves, std::vector<int>(m_n_basins, 0));
+  std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
+
+  {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      int s = shelf_mask.as_int(i, j);
+      int b = basin_mask.as_int(i, j);
+      n_shelf_cells_per_basin[s][b]++;
+
+      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
+      if (cell_type.as_int(i, j) == MASK_FLOATING) {
+        auto M = cell_type.int_star(i, j);
+        if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
+          if (cfs_in_basins_per_shelf[s][b] != b) {
+            cfs_in_basins_per_shelf[s][b] = b;
+          }
+        }
+      }
+    }
+
+    for (int s = 0; s < m_n_shelves; s++) {
+      int n_shelf_cells_per_basin_max = 0;
+      for (int b = 0; b < m_n_basins; b++) {
+        cfs_in_basins_per_shelf[s][b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s][b]);
+        n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
+        if (n_shelf_cells_per_basin[s][b] > n_shelf_cells_per_basin_max) {
+          most_shelf_cells_in_basin[s] = b;
+          n_shelf_cells_per_basin_max = n_shelf_cells_per_basin[s][b];
+        }
+      }
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+  // now find all ice shelves spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number
+
+  std::vector<std::vector<int> > n_shelf_cells_to_split(m_n_shelves, std::vector<int>(m_n_basins, 0));
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.as_int(i, j) == MASK_FLOATING) {
+
+      int b = basin_mask.as_int(i, j);
+      int s = shelf_mask.as_int(i, j);
+      int b0 = most_shelf_cells_in_basin[s];
+
+      if (b != b0 and b != m_n_basin_neighbors[b0][0] and b != m_n_basin_neighbors[b0][1] and cfs_in_basins_per_shelf[s][b] > 0) {
+        n_shelf_cells_to_split[s][b]++;
+        //m_log->message(2, "PICO, test split s=%d with b0=%d and b=%d at %d,%d \n",s,b0,b,i,j);
+      }
+    }
+  }
+
+  for (int s = 0; s < m_n_shelves; s++) {
+      int b0 = most_shelf_cells_in_basin[s];
+      for (int b = 0; b < m_n_basins; b++) {
+        n_shelf_cells_to_split[s][b] = GlobalSum(m_grid->com, n_shelf_cells_to_split[s][b]);
+        if (n_shelf_cells_to_split[s][b] > 0) {
+          m_log->message(2, "\nPICO, split ice shelf s=%d with b0=%d and b=%d and n=%d\n\n",s,b0,b,n_shelf_cells_to_split[s][b]);
+        }
+      }
+  }
+}
+
+
+
+
+
+
+
+
+
 
 void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,

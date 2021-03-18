@@ -59,8 +59,6 @@ private:
   IceModelVec2S m_overturning;
   IceModelVec2S m_basal_melt_rate;
 
-  IceModelVec2Int m_basin_mask;
-
   std::unique_ptr<PicoGeometry> m_geometry;
 
   IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
@@ -72,18 +70,6 @@ private:
                                      const IceModelVec2S &theta_ocean,
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity);
-
-  void split_ice_shelves(const IceModelVec2CellType &cell_type,
-                         const IceModelVec2Int &basin_mask,
-                         //const std::vector< std::vector <int> > m_n_basin_neighbors,
-                         const IceModelVec2Int &shelf_mask);
-
-
-  void get_basin_neighbors(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2Int &basin_mask);
-                           //const IceModelVec2Int &basin_mask,
-                           //std::vector< std::vector <int> > result);
-
 
   void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
