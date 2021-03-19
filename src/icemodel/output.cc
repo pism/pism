@@ -42,17 +42,14 @@
 #include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
 
-
-//extern "C"{
-//#include "cdi.h"
-//}
+#if (Pism_USE_CDIPIO==1)
 #include <mpi.h>
 extern "C"{
 #include "cdipio.h"
 #include "cdi.h"
 #include "yaxt.h"
 }
-
+#endif
 
 namespace pism {
 
@@ -161,18 +158,14 @@ void IceModel::save_results() {
     file.set_split(false);
     profiling.end("io.open");
 
-    profiling.begin("io.initdef");
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);
-    profiling.end("io.initdef");
 
-    profiling.begin("io.def+write");
     file.file_calendar(m_time->year_length(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
     m_sthwritten = true;
     expose_windows();
-    profiling.end("io.def+write");
 
     if (file.backend() == PISM_CDI) {
       streamIDs[filename] = file.get_streamID();
@@ -291,152 +284,152 @@ void IceModel::open_files() {
 #if (Pism_USE_CDIPIO==1)
 if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   if (not m_opened) {
-  m_opened = true;
-  int filetype = m_ctx->get_filetype();
-  // Open snap file/s
-  if (m_save_snapshots) {
-    char filename[PETSC_MAX_PATH_LEN];
-    int nsnap;
-    if (not m_split_snapshots) {
+    m_opened = true;
+    int filetype = m_ctx->get_filetype();
+    // Open snap file/s
+    if (m_save_snapshots) {
+      char filename[PETSC_MAX_PATH_LEN];
+      int nsnap;
+      if (not m_split_snapshots) {
         nsnap = 1;
-    } else {
+      } else {
         nsnap = m_snapshot_times.size();
-    }
-
-    for (int sn = 0; sn<nsnap; sn++) {
-    if (not m_split_snapshots) {
-        strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
-    } else {
-	snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-                 m_snapshots_filename.c_str(), m_time->date(m_snapshot_times[sn]).c_str());
-    }
-
-    int fileID = -1;
-    IO_Mode mode = PISM_READWRITE_MOVE;
-    {
-    File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
-              mode,
-              m_ctx->pio_iosys_id(),
-              fileID,
-              DimSnapMap,
-              filetype);
-    streamIDs[filename] = file.get_streamID();
-
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    m_snapshots_file_is_ready = true;
-    write_run_stats(file);
-    file.file_calendar(-1.0, m_time->calendar());
-    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
-    vlistIDs[filename] = file.get_vlistID();
-    DimSnapMap = file.get_dimensions_map();
-    }
-    m_snapshots_file_is_ready = false;
-    }
-    m_snapshots_file_is_ready = true;
-  }
-
-  // Open Extra file/s
-  if (m_save_extra) {
-    char filename[PETSC_MAX_PATH_LEN];
-    int nsnap;
-    if (not m_split_extra) {
-      nsnap = 1;
-    } else {
-      if (not m_config->get_flag("output.ISMIP6")) {
-        nsnap = m_extra_times.size() - 1; // First one is never saved
-      } else {
-        nsnap = m_extra_times.size();
       }
-    }
 
-    for (int sn = 0; sn<nsnap; sn++) {
-    if (not m_split_extra) {
-      strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
-    } else {
-      double tt;
-      if (not m_config->get_flag("output.ISMIP6")) {
-        tt = m_extra_times[sn+1];
-      } else {
-        tt = m_extra_times[sn];
+      for (int sn = 0; sn < nsnap; sn++) {
+        if (not m_split_snapshots) {
+          strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+        } else {
+	  snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+                   m_snapshots_filename.c_str(), m_time->date(m_snapshot_times[sn]).c_str());
+        }
+
+        int fileID = -1;
+        IO_Mode mode = PISM_READWRITE_MOVE;
+        {
+          File file(m_grid->com,
+                    filename,
+                    string_to_backend(m_config->get_string("output.format")),
+                    mode,
+                    m_ctx->pio_iosys_id(),
+                    fileID,
+                    DimSnapMap,
+                    filetype);
+          streamIDs[filename] = file.get_streamID();
+
+          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          m_snapshots_file_is_ready = true;
+          write_run_stats(file);
+          file.file_calendar(-1.0, m_time->calendar());
+          save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
+          vlistIDs[filename] = file.get_vlistID();
+          DimSnapMap = file.get_dimensions_map();
+        }
+        m_snapshots_file_is_ready = false;
       }
-      snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-               m_extra_filename.c_str(), m_time->date(tt).c_str());
+      m_snapshots_file_is_ready = true;
     }
-    int fileID = -1;
-    IO_Mode mode = PISM_READWRITE_MOVE;
-    {
-    File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
-              mode,
-              m_ctx->pio_iosys_id(),
-              fileID,
-              DimExtraMap,
-              filetype);
-    streamIDs[filename] = file.get_streamID();
 
-    std::string time_name = m_config->get_string("time.dimension_name");
-    io::define_time(file, *m_ctx);
-    file.write_attribute(time_name, "bounds", "time_bounds");
-    io::define_time_bounds(m_extra_bounds, file);
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    m_extra_file_is_ready = true;
-    write_run_stats(file);
-    file.file_calendar(-1.0, m_time->calendar());
-    save_variables(file,
-                   m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
-                   m_extra_vars,
-                   0,
-                   PISM_FLOAT,
-                   false);
+    // Open Extra file/s
+    if (m_save_extra) {
+      char filename[PETSC_MAX_PATH_LEN];
+      int nsnap;
+      if (not m_split_extra) {
+        nsnap = 1;
+      } else {
+        if (not m_config->get_flag("output.ISMIP6")) {
+          nsnap = m_extra_times.size() - 1; // First one is never saved
+        } else {
+          nsnap = m_extra_times.size();
+        }
+      }
 
-    if (file.backend() == PISM_CDI) {
-      vlistIDs[filename] = file.get_vlistID();
-      DimExtraMap = file.get_dimensions_map();
+      for (int sn = 0; sn<nsnap; sn++) {
+        if (not m_split_extra) {
+          strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+        } else {
+          double tt;
+          if (not m_config->get_flag("output.ISMIP6")) {
+            tt = m_extra_times[sn+1];
+          } else {
+            tt = m_extra_times[sn];
+          }
+          snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
+                   m_extra_filename.c_str(), m_time->date(tt).c_str());
+        }
+        int fileID = -1;
+        IO_Mode mode = PISM_READWRITE_MOVE;
+        {
+          File file(m_grid->com,
+                    filename,
+                    string_to_backend(m_config->get_string("output.format")),
+                    mode,
+                    m_ctx->pio_iosys_id(),
+                    fileID,
+                    DimExtraMap,
+                    filetype);
+          streamIDs[filename] = file.get_streamID();
+
+          std::string time_name = m_config->get_string("time.dimension_name");
+          io::define_time(file, *m_ctx);
+          file.write_attribute(time_name, "bounds", "time_bounds");
+          io::define_time_bounds(m_extra_bounds, file);
+          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          m_extra_file_is_ready = true;
+          write_run_stats(file);
+          file.file_calendar(-1.0, m_time->calendar());
+          save_variables(file,
+                         m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                         m_extra_vars,
+                         0,
+                         PISM_FLOAT,
+                         false);
+
+          if (file.backend() == PISM_CDI) {
+            vlistIDs[filename] = file.get_vlistID();
+            DimExtraMap = file.get_dimensions_map();
+          }
+        }
+        m_extra_file_is_ready = false;
+      }
+      m_extra_file_is_ready = true;
     }
-    }
-    m_extra_file_is_ready = false;
-    }
-    m_extra_file_is_ready = true;
-  }
   
-  // Open Output file
-  if (m_config->get_string("output.size") != "none")
-  {
-  std::string filename = m_config->get_string("output.file_name");
-  if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
-    filename = "unnamed.nc";
-  }
-  if (not ends_with(filename, ".nc")) {
-    m_log->message(2,
-                   "PISM WARNING: output file name does not have the '.nc' suffix!\n");
-  }
-  int fileID = -1;
-  IO_Mode mode = PISM_READWRITE_MOVE;
-  File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
-              mode,
-              m_ctx->pio_iosys_id(),
-              fileID,
-              DimOutMap,
-              filetype);
-  streamIDs[filename] = file.get_streamID();
+    // Open Output file
+    if (m_config->get_string("output.size") != "none")
+    {
+      std::string filename = m_config->get_string("output.file_name");
+      if (filename.empty()) {
+        m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+        filename = "unnamed.nc";
+      }
+      if (not ends_with(filename, ".nc")) {
+        m_log->message(2,
+                       "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+      }
+      int fileID = -1;
+      IO_Mode mode = PISM_READWRITE_MOVE;
+      File file(m_grid->com,
+                filename,
+                string_to_backend(m_config->get_string("output.format")),
+                mode,
+                m_ctx->pio_iosys_id(),
+                fileID,
+                DimOutMap,
+                filetype);
+      streamIDs[filename] = file.get_streamID();
 
-  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-  write_run_stats(file);
-  file.file_calendar(-1.0, m_time->calendar());
-  save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
-                   0, PISM_FLOAT, false);
-  if (file.backend() == PISM_CDI) {
-      vlistIDs[filename] = file.get_vlistID();
-      DimOutMap = file.get_dimensions_map();
-  }
-  }
+      write_run_stats(file);
+      file.file_calendar(-1.0, m_time->calendar());
+      save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+                     0, PISM_FLOAT, false);
+      if (file.backend() == PISM_CDI) {
+        vlistIDs[filename] = file.get_vlistID();
+        DimOutMap = file.get_dimensions_map();
+      }
+    }
   }
 }
 #endif
@@ -510,7 +503,7 @@ void IceModel::define_model_state(const File &file) {
 
 void IceModel::write_model_state(const File &file) {
   for (auto v : m_model_state) {
-      v->write(file);
+    v->write(file);
   }
 
   for (auto m : m_submodels) {

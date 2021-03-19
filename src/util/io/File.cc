@@ -46,7 +46,9 @@ using std::shared_ptr;
 #include "ParallelIO.hh"
 #endif
 
+#if (Pism_USE_CDIPIO==1)
 #include "CDI.hh"
+#endif
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -147,11 +149,11 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 #else
   (void) iosysid;               // silence a compiler warning
 #endif
-//#if (Pism_USE_CDI==1)
+#if (Pism_USE_CDIPIO==1)
   if (backend == PISM_CDI) {
     return io::NCFile::Ptr(new io::CDI(com));
   }
-//#endif
+#endif
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "unknown or unsupported I/O backend: %d", backend);
 }

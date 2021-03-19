@@ -58,12 +58,14 @@
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 
+#if (Pism_USE_CDIPIO==1)
 #include <mpi.h>
 extern "C"{
 #include "cdipio.h"
 #include "cdi.h"
 #include "yaxt.h"
 }
+#endif
 
 namespace pism {
 
