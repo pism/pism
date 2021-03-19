@@ -209,10 +209,6 @@ int Context::get_IOmode() const {
   return IOmode;
 }
 
-MPI_Comm Context::get_compute_comm() const {
-  return m_impl->local_comm;
-}
-
 std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);

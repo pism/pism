@@ -47,7 +47,9 @@ using std::shared_ptr;
 #include "ParallelIO.hh"
 #endif
 
+#if (Pism_USE_CDIPIO==1)
 #include "CDI.hh"
+#endif
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -169,7 +171,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 #else
     break;
 #endif
-#if (Pism_USE_CDI==1)
+#if (Pism_USE_CDIPIO==1)
   case PISM_CDI:
     return io::NCFile::Ptr(new io::CDI(com));
 #endif

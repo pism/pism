@@ -8,7 +8,6 @@
 #if (Pism_USE_CDIPIO==1)
 extern "C"{
 #include "cdipio.h"
-//#include "yaxt.h"
 #include "cdi.h"
 }
 #endif

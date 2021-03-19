@@ -59,7 +59,6 @@ public:
   bool get_async() const;
   int get_filetype() const;
   int get_IOmode() const;
-  MPI_Comm get_compute_comm() const;
   int size() const;
   int rank() const;
   UnitsSystemPtr unit_system() const;

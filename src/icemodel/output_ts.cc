@@ -121,7 +121,6 @@ void IceModel::flush_timeseries() {
   {
   File file(m_grid->com, m_ts_diagnostics.begin()->second->get_output_filename(), PISM_NETCDF3, PISM_READWRITE);
   for (auto d : m_ts_diagnostics) {
-//    d.second->flush();
     d.second->flush(file);
   }
   }

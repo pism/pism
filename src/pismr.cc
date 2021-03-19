@@ -54,21 +54,26 @@ int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
   MPI_Comm local_comm;
+#if (Pism_USE_CDIPIO==1)
   int nwriters, IOmode;
   bool async;
   {
-  petsc::Initializer petsc(argc, argv, help);
-  {
+    petsc::Initializer petsc(argc, argv, help);
+    {
       Context::Ptr ctx = initial_context_from_options(com, "pismr");
       nwriters = ctx->get_n_writers();
       IOmode = ctx->get_IOmode();
       async = ctx->get_async();
+    }
   }
-  }
+#else
+  petsc::Initializer petsc(argc, argv, help);
+#endif
   {
+#if (Pism_USE_CDIPIO==1)
   cdipio::Initializer cdipio(nwriters, IOmode, com, async);
   local_comm = cdipio.get_comp_comm();
-
+#endif
   try {
 #if (Pism_USE_CDIPIO==1)
     if (local_comm != MPI_COMM_NULL) {
