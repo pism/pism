@@ -247,9 +247,9 @@ protected:
   virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
 
   //new functions because of CDI class
-  virtual void create_grid_impl(int lengthx, int lengthy) const = 0;
-  virtual void define_timestep_impl(int tsID) const = 0;
-  virtual void def_ref_date_impl(double time) const = 0;
+  virtual void create_grid_impl(int lengthx, int lengthy) const;
+  virtual void define_timestep_impl(int tsID) const;
+  virtual void def_ref_date_impl(double time) const;
   virtual std::map<std::string, int> get_var_map_impl();
   virtual std::map<std::string, int> get_dim_map_impl();
   virtual void def_vlist_impl() const;

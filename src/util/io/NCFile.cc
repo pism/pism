@@ -366,5 +366,18 @@ void NCFile::set_calendar_impl(double year_length, const std::string &calendar_s
   (void) calendar_string;
 }
 
+void NCFile::create_grid_impl(int lengthx, int lengthy) const {
+  (void) lengthx;
+  (void) lengthy;
+}
+
+void NCFile::define_timestep_impl(int tsID) const {
+  (void) tsID;
+}
+
+void NCFile::def_ref_date_impl(double time) const {
+  (void) time;
+}
+
 } // end of namespace io
 } // end of namespace pism

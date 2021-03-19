@@ -458,18 +458,5 @@ void PNCFile::init_hints() {
   }
 }
 
-void PNCFile::create_grid_impl(int lengthx, int lengthy) const {
-  (void) lengthx;
-  (void) lengthy;
-}
-
-void PNCFile::define_timestep_impl(int tsID) const {
-  (void) tsID;
-}
-
-void PNCFile::def_ref_date_impl(double time) const {
-  (void) time;
-}
-
 } // end of namespace io
 } // end of namespace pism

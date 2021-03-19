@@ -464,18 +464,5 @@ void NC4File::get_put_var_double(const std::string &variable_name,
   }
 }
 
-void NC4File::create_grid_impl(int lengthx, int lengthy) const {
-  (void) lengthx;
-  (void) lengthy;
-}
-
-void NC4File::define_timestep_impl(int tsID) const {
-  (void) tsID;
-}
-
-void NC4File::def_ref_date_impl(double time) const {
-  (void) time;
-}
-
 } // end of namespace io
 } // end of namespace pism
