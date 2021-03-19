@@ -666,7 +666,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     // gamma is a number such that 10^gamma <= eps. It is used to convert lambda in [0, 1] to eps_n
     gamma     = std::floor(std::log10(eps)),
     // starting value of lambda (input)
-    lambda_min = 0.75,
+    lambda_min = 0.0,
     // final value of lambda (fixed)
     lambda_max = 1.0,
     // minimum step length (input)
@@ -676,7 +676,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     // initial increment of lambda (input)
     delta0    = 0.05,
     // "aggressiveness" of the step increase, a non-negative number (input)
-    A         = 1.0;
+    A         = 0.25;
 
   // set lambda and delta to solve the desired (not overregularized) problem first
   double
