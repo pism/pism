@@ -29,6 +29,7 @@ extern "C"{
 namespace pism {
 
 static int pism_type_to_cdi_type(pism::IO_Type input) {
+#if (Pism_USE_CDIPIO==1)
   switch (input) {
   case PISM_BYTE:
     return CDI_DATATYPE_INT8;
@@ -45,13 +46,14 @@ static int pism_type_to_cdi_type(pism::IO_Type input) {
   default:
     return 0; //to be clarified
   }
+#endif
 }
 
 static pism::IO_Type cdi_type_to_pism_type(int input) {
+#if (Pism_USE_CDIPIO==1)
   switch (input) {
   case CDI_DATATYPE_INT8:
     return PISM_BYTE;
-  //case : //to be clarified
   case CDI_DATATYPE_TXT: // treat NC_CHAR and NC_STRING as equivalent
     return PISM_CHAR;
   case CDI_DATATYPE_INT16:
@@ -65,6 +67,7 @@ static pism::IO_Type cdi_type_to_pism_type(int input) {
   default:
     return PISM_NAT; //to be clarified
   }
+#endif
 }
 
 

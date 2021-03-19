@@ -123,9 +123,10 @@ struct IceGrid::Impl {
 
   //! ParallelIO I/O decompositions.
   std::map<int, int> io_decompositions;
-
+#if (Pism_USE_CDIPIO==1)
   // Yaxt decompositions
   std::map<int, Xt_idxlist> yaxt_decompositions;
+#endif
 };
 
 IceGrid::Impl::Impl(Context::ConstPtr context)
@@ -1492,8 +1493,8 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   return result;
 }
 
-Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
 #if (Pism_USE_CDIPIO==1)
+Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
   if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
     // domain decomposition for transposed data
     std::vector<int> gdimlen{dof, (int)My(), (int)Mx()};
@@ -1517,11 +1518,8 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
   } else {
     return m_impl->yaxt_decompositions[dof];
   }
-#else
-  (void) dof;
-#endif
-
 }
+#endif
 
 int IceGrid::local_length(int dof) const {
 #if (Pism_USE_CDIPIO==1)
