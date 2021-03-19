@@ -131,8 +131,6 @@ private:
 
   int m_n_basins, m_n_boxes, m_n_shelves;
 
-  //std::vector< std::vector <int> > m_n_basin_neighbors;
-
 };
 
 } // end of namespace ocean
