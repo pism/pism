@@ -133,7 +133,6 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_n_boxes  = m_config->get_number("ocean.pico.number_of_boxes");
 
-  //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
 }
 
 
@@ -152,18 +151,15 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
+  const IceModelVec2CellType &cell_type = geometry.cell_type;
+
   // This inits basin_mask
-  m_geometry->init_impl();
-  //m_basin_mask.regrid(opt.filename, CRITICAL);
+  m_geometry->init_impl(cell_type);
 
   // FIXME: m_n_basins is a misnomer
   m_n_basins = m_geometry->basin_mask().max() + 1;
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_geometry->basin_mask().min(), m_geometry->basin_mask().max());
-
-  // find neighbor basins
-  //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
-  //get_basin_neighbors(geometry.cell_type, m_basin_mask, m_n_basin_neighbors);
 
 
   PicoPhysics physics(*m_config);
@@ -246,16 +242,6 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   // FIXME: m_n_shelves is not really the number of shelves.
   m_n_shelves = m_geometry->ice_shelf_mask().max() + 1;
-
-  //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
-  //get_basin_neighbors(geometry.cell_type, m_basin_mask, m_n_basin_neighbors);
-
-  // Split ice shelves when spread over non-neighboring basins
-  //split_ice_shelves(cell_type,m_basin_mask,m_n_basin_neighbors,m_geometry->ice_shelf_mask());
-  //split_ice_shelves(cell_type,m_basin_mask,m_geometry->ice_shelf_mask());
-  //split_ice_shelves(cell_type,m_geometry->basin_mask(),m_geometry->ice_shelf_mask());
-
-  //m_n_shelves = m_geometry->ice_shelf_mask().max() + 1;
 
   // Physical part of PICO
   {
@@ -870,193 +856,6 @@ void Pico::compute_box_area(int box_id,
     result[i] = result1[i];
   }
 }
-
-/*
-void Pico::get_basin_neighbors(const IceModelVec2CellType &cell_type,
-                               const IceModelVec2Int &basin_mask) {
-                               //const IceModelVec2Int &basin_mask,
-                               //std::vector< std::vector <int> > result) {
-
-  std::vector<std::vector<int> > result(m_n_basins, std::vector<int>(2, 0));
-
-  IceModelVec::AccessList list{ &cell_type, &basin_mask };
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    int b = basin_mask.as_int(i, j);
-    if (result[b][0] == 0 or result[b][1] == 0) {
-
-      auto B = basin_mask.int_star(i, j);
-      auto M = cell_type.int_star(i, j);
-      int bn = 0; //neighbor basin id
-
-      // finding the basin boundary on the ice free ocean
-      if (cell_type.as_int(i, j) == MASK_ICE_FREE_OCEAN and
-         ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
-          (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
-          (M.e == MASK_ICE_FREE_OCEAN and B.e != b) or
-          (M.w == MASK_ICE_FREE_OCEAN and B.w != b))) {
-
-          if (M.n == MASK_ICE_FREE_OCEAN and B.n != b)
-            bn = B.n;
-          else if (M.s == MASK_ICE_FREE_OCEAN and B.s != b)
-            bn = B.s;
-          else if (M.e == MASK_ICE_FREE_OCEAN and B.e != b)
-            bn = B.e;
-          else if (M.w == MASK_ICE_FREE_OCEAN and B.w != b)
-            bn = B.w;
-
-          if (result[b][0] == 0)
-            result[b][0] = bn;
-          else if (result[b][1] == 0 and result[b][0] != bn)
-            result[b][1] = bn;
-      }
-    }
-  }
-  // compute global sums
-  for (int b = 1; b < m_n_basins; ++b) {
-    result[b][0] = GlobalSum(m_grid->com, result[b][0]);
-    result[b][1] = GlobalSum(m_grid->com, result[b][1]);
-    m_log->message(2, "PICO, get basin neighbors with b=%d, b1=%d and b2=%d \n",b,result[b][0],result[b][1]);
-  }
-
-}
-
-void Pico::split_ice_shelves(const IceModelVec2CellType &cell_type,
-                             const IceModelVec2Int &basin_mask,
-                             //const std::vector< std::vector <int> > m_n_basin_neighbors,
-                             const IceModelVec2Int &shelf_mask) { //FIXME: must be const and hence cannot be modified
-
-
-  IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask };
-
-  // FIXME: This part should be computed in Pico::get_basin_neighbors, but the result vector m_n_basin_neighbors cannot be passed
-  //std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
-  //get_basin_neighbors(cell_type, basin_mask, m_n_basin_neighbors);
-  //get_basin_neighbors(cell_type, basin_mask);
-
-  // test if vector exists
-  //for (int b = 1; b < m_n_basins; ++b) {
-  //  m_log->message(2, "PICO, use basin neighbors with b=%d, b1=%d and b2=%d \n",b,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
-  //}
-
-  std::vector<std::vector<int> > m_n_basin_neighbors(m_n_basins, std::vector<int>(2, 0));
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    int b = basin_mask.as_int(i, j);
-    if (m_n_basin_neighbors[b][0] == 0 or m_n_basin_neighbors[b][1] == 0) {
-
-      auto B = basin_mask.int_star(i, j);
-      auto M = cell_type.int_star(i, j);
-      int bn = 0; //neighbor basin id
-
-      // finding the basin boundary on the ice free ocean
-      if (cell_type.as_int(i, j) == MASK_ICE_FREE_OCEAN and
-         ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
-          (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
-          (M.e == MASK_ICE_FREE_OCEAN and B.e != b) or
-          (M.w == MASK_ICE_FREE_OCEAN and B.w != b))) {
-
-          if (M.n == MASK_ICE_FREE_OCEAN and B.n != b)
-            bn = B.n;
-          else if (M.s == MASK_ICE_FREE_OCEAN and B.s != b)
-            bn = B.s;
-          else if (M.e == MASK_ICE_FREE_OCEAN and B.e != b)
-            bn = B.e;
-          else if (M.w == MASK_ICE_FREE_OCEAN and B.w != b)
-            bn = B.w;
-
-          if (m_n_basin_neighbors[b][0] == 0)
-            m_n_basin_neighbors[b][0] = bn;
-          else if (m_n_basin_neighbors[b][1] == 0 and m_n_basin_neighbors[b][0] != bn)
-            m_n_basin_neighbors[b][1] = bn;
-          //else if (m_n_basin_neighbors[b][1] != bn and m_n_basin_neighbors[b][0] != bn)
-          //  m_log->message(2, "PICO, found other basin neighbors with b=%d, b1=%d and b2=%d \n",bn,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
-      }
-    }
-  }
-  // compute global sums
-  for (int b = 1; b < m_n_basins; ++b) {
-    m_n_basin_neighbors[b][0] = GlobalSum(m_grid->com, m_n_basin_neighbors[b][0]);
-    m_n_basin_neighbors[b][1] = GlobalSum(m_grid->com, m_n_basin_neighbors[b][1]);
-    //m_log->message(2, "PICO, get basin neighbors with b=%d, b1=%d and b2=%d \n",b,m_n_basin_neighbors[b][0],m_n_basin_neighbors[b][1]);
-  }
-  ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-  // This part is analoguous to Pico::set_ocean_input_fields, but vector cfs_in_basins_per_shelf cannot be passed here
-  std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
-  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves, std::vector<int>(m_n_basins, 0));
-  std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
-
-  {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      int s = shelf_mask.as_int(i, j);
-      int b = basin_mask.as_int(i, j);
-      n_shelf_cells_per_basin[s][b]++;
-
-      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
-      if (cell_type.as_int(i, j) == MASK_FLOATING) {
-        auto M = cell_type.int_star(i, j);
-        if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
-          if (cfs_in_basins_per_shelf[s][b] != b) {
-            cfs_in_basins_per_shelf[s][b] = b;
-          }
-        }
-      }
-    }
-
-    for (int s = 0; s < m_n_shelves; s++) {
-      int n_shelf_cells_per_basin_max = 0;
-      for (int b = 0; b < m_n_basins; b++) {
-        cfs_in_basins_per_shelf[s][b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s][b]);
-        n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
-        if (n_shelf_cells_per_basin[s][b] > n_shelf_cells_per_basin_max) {
-          most_shelf_cells_in_basin[s] = b;
-          n_shelf_cells_per_basin_max = n_shelf_cells_per_basin[s][b];
-        }
-      }
-    }
-  }
-  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-  // now find all ice shelves spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number
-
-  std::vector<std::vector<int> > n_shelf_cells_to_split(m_n_shelves, std::vector<int>(m_n_basins, 0));
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (cell_type.as_int(i, j) == MASK_FLOATING) {
-
-      int b = basin_mask.as_int(i, j);
-      int s = shelf_mask.as_int(i, j);
-      int b0 = most_shelf_cells_in_basin[s];
-
-      if (b != b0 and b != m_n_basin_neighbors[b0][0] and b != m_n_basin_neighbors[b0][1] and cfs_in_basins_per_shelf[s][b] > 0) {
-        n_shelf_cells_to_split[s][b]++;
-        //m_log->message(2, "PICO, test split s=%d with b0=%d and b=%d at %d,%d \n",s,b0,b,i,j);
-      }
-    }
-  }
-
-  for (int s = 0; s < m_n_shelves; s++) {
-      int b0 = most_shelf_cells_in_basin[s];
-      for (int b = 0; b < m_n_basins; b++) {
-        n_shelf_cells_to_split[s][b] = GlobalSum(m_grid->com, n_shelf_cells_to_split[s][b]);
-        if (n_shelf_cells_to_split[s][b] > 0) {
-          m_log->message(2, "\nPICO, split ice shelf s=%d with b0=%d and b=%d and n=%d\n\n",s,b0,b,n_shelf_cells_to_split[s][b]);
-        }
-      }
-  }
-}
-*/
-
 
 } // end of namespace ocean
 } // end of namespace pism
