@@ -61,14 +61,22 @@ private:
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask, const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
 
-  void split_ice_shelves(const IceModelVec2CellType &cell_type,
-                         const IceModelVec2Int &basin_mask,
-                         const std::vector<int> m_n_basin_neighbors,
-                         IceModelVec2Int &shelf_mask);
-
   void get_basin_neighbors(const IceModelVec2CellType &cell_type,
                            const IceModelVec2Int &basin_mask,
                            std::vector<int> &result);
+
+  void identify_calving_front_connection(const IceModelVec2CellType &cell_type,
+                                         const IceModelVec2Int &basin_mask,
+                                         const IceModelVec2Int &shelf_mask,
+                                         std::vector<int> &most_shelf_cells_in_basin,
+                                         std::vector<int> &cfs_in_basins_per_shelf);
+
+  void split_ice_shelves(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Int &basin_mask,
+                         const std::vector<int> m_n_basin_neighbors,
+                         const std::vector<int> &most_shelf_cells_in_basin,
+                         const std::vector<int> &cfs_in_basins_per_shelf,
+                         IceModelVec2Int &shelf_mask);
  
   void compute_distances_cf(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
                             IceModelVec2Int &dist_cf);
@@ -87,9 +95,6 @@ private:
   IceModelVec2Int m_ice_shelves;
   IceModelVec2Int m_basin_mask;
 
-  int m_n_basins, m_n_shelves;
-  std::vector<int> m_n_basin_neighbors;
-
   // storage for intermediate fields
   IceModelVec2Int m_distance_gl;
   IceModelVec2Int m_distance_cf;
@@ -100,6 +105,13 @@ private:
   // temporary storage
   IceModelVec2Int m_tmp;
   std::shared_ptr<petsc::Vec> m_tmp_p0;
+
+  int m_n_basins, m_n_shelves;
+  std::vector<int> m_n_basin_neighbors;
+  //std::vector<int> &most_shelf_cells_in_basin;
+  //std::vector<int> &cfs_in_basins_per_shelf;
+
+
 };
 
 } // end of namespace ocean
