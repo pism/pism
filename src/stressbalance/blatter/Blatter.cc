@@ -764,15 +764,19 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     } else if (reason == SNES_DIVERGED_LINE_SEARCH or
                reason == SNES_DIVERGED_MAX_IT) {
 
-      ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
-
       if (N == 0) {
         lambda = lambda_min;
         delta  = delta0;
 
+        ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+        ierr = VecSet(m_x_old, 0.0); PISM_CHK(ierr, "VecSet");
+
         m_log->message(2, "  Starting parameter continuation with lambda = %f\n",
                        lambda);
       } else {
+
+        ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
+
         // revert lambda to the previous value
         lambda -= delta;
 
