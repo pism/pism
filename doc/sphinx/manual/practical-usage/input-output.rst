@@ -227,7 +227,7 @@ are listed as follows:
  - ``x`` and ``y`` dimensions are ``float``.
  - Dimensions attributes are limited and can not be added freely, thus they may not be identical 
    to the original output files.
- - Integer variables writing is not supported, thus the integer variables are written as ``float``.
+ - Integer variables writing is not supported, thus the ``integer`` variables are written as ``float``.
  - The ``time`` dimension is written in the format ``YYMMDD.%f``, where ``%f`` represents a 
    fraction of the day. In addition, the ``julian`` calendar is not supported.
 
