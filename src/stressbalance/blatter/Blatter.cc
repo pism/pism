@@ -655,7 +655,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   init_2d_parameters(inputs);
   init_ice_hardness(inputs, m_da);
 
-  // maximum number of continuation steps
+  // maximum number of continuation steps (input)
   int Nc = 20;
 
   double
@@ -667,15 +667,16 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     gamma     = std::floor(std::log10(eps)),
     // starting value of lambda (input)
     lambda_min = 0.0,
-    // final value of lambda (fixed)
+    // Final value of lambda (fixed)
     lambda_max = 1.0,
-    // minimum step length (input)
+    // Minimum step length (input)
     delta_min = 0.01,
-    // maximum step length (input)
+    // Maximum step length (input)
     delta_max = 0.2,
-    // initial increment of lambda (input)
+    // Initial increment of lambda (input)
     delta0    = 0.05,
-    // "aggressiveness" of the step increase, a non-negative number (input)
+    // "Aggressiveness" of the step increase, a non-negative number (input). The effect of
+    // this parameter is linked to the choice of -bp_snes_max_it obtained below.
     A         = 0.25;
 
   // set lambda and delta to solve the desired (not overregularized) problem first
@@ -722,9 +723,10 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
     // report number of iterations for this continuation step
     if (N > 0) {
-      m_log->message(2, "Blatter solver: %s step %d with lambda = %f,"
-                     " eps = %e: SNES: %d, KSP: %d\n",
-                     SNESConvergedReasons[reason], N, lambda, m_viscosity_eps,
+      m_log->message(2, "Blatter solver continuation step #%d: %s\n"
+                     "     lambda = %f, eps = %e\n"
+                     "     SNES: %d, KSP: %d\n",
+                     N, SNESConvergedReasons[reason], lambda, m_viscosity_eps,
                      (int)snes_it, (int)ksp_it);
     }
 
@@ -736,16 +738,18 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
       if (m_viscosity_eps <= eps) {
         // ... while solving the desired (not overregularized) problem
-        m_log->message(2, "Blatter solver: done. SNES: %d, KSP: %d\n",
+        m_log->message(2,
+                       "Blatter solver: done.\n"
+                       "  SNES: %d, KSP: %d\n",
                        snes_total_it, ksp_total_it);
         goto bp_done;
       }
 
-      // store solution as the "old" initial guess we may need to revert to
+      // Store the solution as the "old" initial guess we may need to revert to
       ierr = VecCopy(m_x, m_x_old); PISM_CHK(ierr, "VecCopy");
 
       if (N > 1) {
-        // adjust delta using the formula from LOCA (equation 2.8 in Salinger2002
+        // Adjust delta using the formula from LOCA (equation 2.8 in Salinger2002
         // corrected using the code in Trilinos).
         double F = (snes_max_it - snes_it) / (double)snes_max_it;
         delta *= 1.0 + A * F * F;
@@ -753,12 +757,13 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
       delta = std::min(delta, delta_max);
 
-      // ensure that delta does not take us past lambda_max
+      // Ensure that delta does not take us past lambda_max
       if (lambda + delta > lambda_max) {
         delta = lambda_max - lambda;
       }
 
-      m_log->message(2, "  Using delta = %f\n", delta);
+      m_log->message(2, "  Advancing lambda from %f to %f (delta = %f)\n",
+                     lambda, lambda + delta, delta);
 
       lambda += delta;
     } else if (reason == SNES_DIVERGED_LINE_SEARCH or
@@ -768,26 +773,30 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
         lambda = lambda_min;
         delta  = delta0;
 
+        // Use the zero initial guess to start
         ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
         ierr = VecSet(m_x_old, 0.0); PISM_CHK(ierr, "VecSet");
 
-        m_log->message(2, "  Starting parameter continuation with lambda = %f\n",
-                       lambda);
+        m_log->message(2,
+                       "Blatter solver: %s\n"
+                       "  Starting parameter continuation with lambda = %f\n",
+                       SNESConvergedReasons[reason], lambda);
       } else {
 
+        // restore the previous initial guess
         ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
 
         // revert lambda to the previous value
         lambda -= delta;
 
         if (lambda < lambda_min) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "Blatter solver: Parameter continuation failed");
+          throw RuntimeError(PISM_ERROR_LOCATION,
+                             "Blatter solver: Parameter continuation failed at step 1");
         }
 
         if (std::fabs(delta - delta_min) < 1e-6) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "Blatter solver: cannot reduce the continuation step");
+          throw RuntimeError(PISM_ERROR_LOCATION,
+                             "Blatter solver: cannot reduce the continuation step");
         }
 
         // reduce the step size
