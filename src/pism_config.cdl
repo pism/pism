@@ -650,6 +650,20 @@ netcdf pism_config {
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
+    pism_config:calving.rate_scaling.file = "";
+    pism_config:calving.rate_scaling.file_doc = "File containing the scaling factor applied to calving rates from ``eigen_calving``, ``vonmises_calving``, and ``hayhurst_calving`` (variable name: ``frac_calving_rate``)";
+    pism_config:calving.rate_scaling.file_type = "string";
+
+    pism_config:calving.rate_scaling.period = 0;
+    pism_config:calving.rate_scaling.period_doc = "Length of the period of the calving rate scaling. Set to zero to disable.";
+    pism_config:calving.rate_scaling.period_type = "integer";
+    pism_config:calving.rate_scaling.period_units = "years";
+
+    pism_config:calving.rate_scaling.reference_year = 0;
+    pism_config:calving.rate_scaling.reference_year_doc = "Reference year to use when :config:`calving.rate_scaling.period` is active.";
+    pism_config:calving.rate_scaling.reference_year_type = "integer";
+    pism_config:calving.rate_scaling.reference_year_units = "years";
+
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
@@ -1102,7 +1116,7 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.reference_year_units = "years";
 
     pism_config:geometry.front_retreat.prescribed.file = "";
-    pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask `land_ice_area_fraction_retreat`";
+    pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask ``land_ice_area_fraction_retreat``";
     pism_config:geometry.front_retreat.prescribed.file_option = "front_retreat_file";
     pism_config:geometry.front_retreat.prescribed.file_type = "string";
 
@@ -1112,7 +1126,7 @@ netcdf pism_config {
     pism_config:geometry.front_retreat.prescribed.period_units = "years";
 
     pism_config:geometry.front_retreat.prescribed.reference_year = 0;
-    pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when `geometry.front_retreat.prescribed.period` is active.";
+    pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when :config:`geometry.front_retreat.prescribed.period` is active.";
     pism_config:geometry.front_retreat.prescribed.reference_year_type = "integer";
     pism_config:geometry.front_retreat.prescribed.reference_year_units = "years";
 
