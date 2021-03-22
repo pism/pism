@@ -286,6 +286,13 @@ reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tez
 there is a trade off between the number of iterations and the cost of a single iteration.
 Other preconditioner options may be worth considering as well.
 
+.. _sec-bp-parameter-continuation:
+
+Parameter continuation
+######################
+
+FIXME.
+
 List of parameters
 ##################
 
