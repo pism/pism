@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -91,6 +91,9 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
   const options::RealList y_range("-y_range",
                                   "range of Y coordinates in the selected subset", {});
 
+  const options::Integer refinement_factor("-refinement_factor",
+                                           "Grid refinement factor (applies to the horizontal grid)", 1);
+
   if (options.type == INIT_BOOTSTRAP and x_range.is_set() and y_range.is_set()) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
@@ -143,6 +146,11 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "no geometry information found in '%s'",
                                     options.filename.c_str());
+    }
+
+    if (refinement_factor > 1) {
+      input_grid.Mx = (input_grid.Mx - 1) * refinement_factor + 1;
+      input_grid.My = (input_grid.My - 1) * refinement_factor + 1;
     }
 
     // process options controlling vertical grid parameters, overriding values read from a file
