@@ -646,6 +646,41 @@ void Blatter::write_model_state_impl(const File &output) const {
   m_v_sigma->write(output);
 }
 
+struct SolutionInfo {
+  PetscInt snes_it, ksp_it;
+  SNESConvergedReason snes_reason;
+  KSPConvergedReason ksp_reason;
+};
+
+/*!
+ * Runs the solver and extracts iteration counts.
+ */
+static SolutionInfo solve(::SNES snes, ::Vec x) {
+  PetscErrorCode ierr;
+  SolutionInfo result;
+
+  // Solve the system:
+  ierr = SNESSolve(snes, NULL, x); PISM_CHK(ierr, "SNESSolve");
+
+  ierr = SNESGetConvergedReason(snes, &result.snes_reason);
+  PISM_CHK(ierr, "SNESGetConvergedReason");
+
+  ierr = SNESGetIterationNumber(snes, &result.snes_it);
+  PISM_CHK(ierr, "SNESGetIterationNumber");
+
+  ierr = SNESGetLinearSolveIterations(snes, &result.ksp_it);
+  PISM_CHK(ierr, "SNESGetLinearSolveIterations");
+
+  KSP ksp;
+  ierr = SNESGetKSP(snes, &ksp);
+  PISM_CHK(ierr, "SNESGetKSP");
+
+  ierr = KSPGetConvergedReason(ksp, &result.ksp_reason);
+  PISM_CHK(ierr, "KSPGetConvergedReason");
+
+  return result;
+}
+
 void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
   (void) full_update;
@@ -707,33 +742,22 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     }
 
     // Solve the system:
-    ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
 
-    SNESConvergedReason reason;
-    ierr = SNESGetConvergedReason(m_snes, &reason);
-    PISM_CHK(ierr, "SNESGetConvergedReason");
-    PetscInt snes_it, ksp_it;
-    {
-      ierr = SNESGetIterationNumber(m_snes, &snes_it);
-      PISM_CHK(ierr, "SNESGetIterationNumber");
-
-      ierr = SNESGetLinearSolveIterations(m_snes, &ksp_it);
-      PISM_CHK(ierr, "SNESGetLinearSolveIterations");
-    }
+    auto info = solve(m_snes, m_x);
 
     // report number of iterations for this continuation step
     if (N > 0) {
       m_log->message(2, "Blatter solver continuation step #%d: %s\n"
                      "     lambda = %f, eps = %e\n"
                      "     SNES: %d, KSP: %d\n",
-                     N, SNESConvergedReasons[reason], lambda, m_viscosity_eps,
-                     (int)snes_it, (int)ksp_it);
+                     N, SNESConvergedReasons[info.snes_reason], lambda, m_viscosity_eps,
+                     (int)info.snes_it, (int)info.ksp_it);
     }
 
-    snes_total_it += snes_it;
-    ksp_total_it  += ksp_it;
+    snes_total_it += info.snes_it;
+    ksp_total_it  += info.ksp_it;
 
-    if (reason > 0) {
+    if (info.snes_reason > 0) {
       // converged
 
       if (m_viscosity_eps <= eps) {
@@ -751,7 +775,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
       if (N > 1) {
         // Adjust delta using the formula from LOCA (equation 2.8 in Salinger2002
         // corrected using the code in Trilinos).
-        double F = (snes_max_it - snes_it) / (double)snes_max_it;
+        double F = (snes_max_it - info.snes_it) / (double)snes_max_it;
         delta *= 1.0 + A * F * F;
       }
 
@@ -766,10 +790,11 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
                      lambda, lambda + delta, delta);
 
       lambda += delta;
-    } else if (reason == SNES_DIVERGED_LINE_SEARCH or
-               reason == SNES_DIVERGED_MAX_IT) {
+    } else if (info.snes_reason == SNES_DIVERGED_LINE_SEARCH or
+               info.snes_reason == SNES_DIVERGED_MAX_IT) {
 
       if (N == 0) {
+        // failed on the first try: start parameter continuation
         lambda = lambda_min;
         delta  = delta0;
 
@@ -780,8 +805,9 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
         m_log->message(2,
                        "Blatter solver: %s\n"
                        "  Starting parameter continuation with lambda = %f\n",
-                       SNESConvergedReasons[reason], lambda);
+                       SNESConvergedReasons[info.snes_reason], lambda);
       } else {
+        // failed during a continuation step
 
         // restore the previous initial guess
         ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
@@ -813,16 +839,9 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
       }
     } else {
       // Other kinds of failures
-      if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
-        KSP ksp;
-        KSPConvergedReason ksp_reason;
-        ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
-
-        ierr = KSPGetConvergedReason(ksp, &ksp_reason);
-        PISM_CHK(ierr, "KSPGetConvergedReason");
-
+      if (info.snes_reason == SNES_DIVERGED_LINEAR_SOLVE) {
         m_log->message(2, "  Linear solver: %s\n",
-                       KSPConvergedReasons[ksp_reason]);
+                       KSPConvergedReasons[info.ksp_reason]);
       }
 
       throw RuntimeError(PISM_ERROR_LOCATION, "Blatter solver failed");
@@ -835,6 +854,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
  bp_done:
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
+
   compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
                                    inputs.geometry->cell_type,
                                    m_basal_frictional_heating);
