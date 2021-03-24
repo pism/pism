@@ -21,28 +21,8 @@
 #define PISM_GRID_HIERARCHY_H
 
 #include <petscdmda.h>
-#include <petscmat.h>
-#include <petscvec.h>
 
 namespace pism {
-
-/*!
- * A structure wrapping outputs of DMDAGetInfo() and DMDAGetOwnershipRanges().
- */
-class DMInfo {
-public:
-  DMInfo(DM dm);
-  DMInfo transpose() const;
-
-  PetscInt Mx, My, Mz;
-  PetscInt mx, my, mz;
-  PetscInt dims, dof, stencil_width;
-  DMDAStencilType stencil_type;
-  const PetscInt *lx, *ly, *lz;
-  DMBoundaryType bx, by, bz;
-private:
-  PetscErrorCode setup(DM dm);
-};
 
 double grid_z(double b, double H, int Mz, int k);
 

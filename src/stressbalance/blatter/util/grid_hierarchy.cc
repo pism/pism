@@ -24,56 +24,6 @@
 
 namespace pism {
 
-DMInfo::DMInfo(DM dm) {
-  if (setup(dm) != 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "failed to get DM information");
-  }
-}
-
-PetscErrorCode DMInfo::setup(DM dm) {
-  PetscErrorCode ierr;
-  ierr = DMDAGetInfo(dm,
-                     &dims,         // dimensions
-                     &Mx, &My, &Mz, // grid size
-                     &mx, &my, &mz, // number of processors in each direction
-                     &dof,          // number of degrees of freedom
-                     &stencil_width,
-                     &bx, &by, &bz, // types of ghost nodes at the boundary
-                     &stencil_type); CHKERRQ(ierr);
-
-  ierr = DMDAGetOwnershipRanges(dm, &lx, &ly, &lz);
-  CHKERRQ(ierr);
-
-  return 0;
-}
-
-/*!
- * Transpose DMInfo.
- *
- * NB: This uses the STORAGE_ORDER.
- */
-DMInfo DMInfo::transpose() const {
-  DMInfo result = *this;
-
-  result.mx = this->my;
-  result.my = this->mz;
-  result.mz = this->mx;
-
-  result.Mx = this->My;
-  result.My = this->Mz;
-  result.Mz = this->Mx;
-
-  result.lx = this->ly;
-  result.ly = this->lz;
-  result.lz = this->lx;
-
-  result.bx = this->by;
-  result.by = this->bz;
-  result.bz = this->bx;
-
-  return result;
-}
-
 /*!
  * z coordinates of the nodes
  *
@@ -145,28 +95,13 @@ DMDALocalInfo grid_transpose(const DMDALocalInfo &input) {
 PetscErrorCode setup_level(DM dm, int mg_levels) {
   PetscErrorCode ierr;
 
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
-
-  // Get grid information
-  DMInfo info (dm);
-
   // Create a 3D DMDA and a global Vec, then stash them in dm.
   {
-
     DM  da;
     Vec parameters;
     int dof = 1;
 
-    ierr = DMDACreate3d(comm,
-                        info.bx, info.by, info.bz,
-                        info.stencil_type,
-                        info.Mx, info.My, info.Mz,
-                        info.mx, info.my, info.mz,
-                        dof,
-                        info.stencil_width,
-                        info.lx, info.ly, info.lz,
-                        &da); CHKERRQ(ierr);
+    ierr = DMDACreateCompatibleDMDA(dm, dof, &da); CHKERRQ(ierr);
 
     ierr = DMSetUp(da); CHKERRQ(ierr);
 
@@ -186,11 +121,17 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
 
   // report
   {
-    info = info.transpose();
+    MPI_Comm comm;
+    ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
+
+    DMDALocalInfo info;
+    ierr = DMDAGetLocalInfo(dm, &info); CHKERRQ(ierr);
+    info = grid_transpose(info);
+
     int
-      Mx = info.Mx,
-      My = info.My,
-      Mz = info.Mz;
+      Mx = info.mx,
+      My = info.my,
+      Mz = info.mz;
     ierr = PetscPrintf(comm,
                        "Blatter grid level %D: %3d x %3d x %3d (%8d) nodes\n",
                        (mg_levels - 1) - level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);

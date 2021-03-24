@@ -401,28 +401,45 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
+    PetscInt Mx, My;
+    PetscInt mx, my;
+    PetscInt dims;
 
-    DMInfo info(pism_da);
-    assert(info.dims == 2);
+    ierr = DMDAGetInfo(pism_da,
+                       &dims,            // dimensions
+                       &Mx, &My, NULL,   // grid size
+                       &mx, &my, NULL,   // numbers of processors in each direction
+                       NULL,             // number of degrees of freedom
+                       NULL,             // stencil width
+                       NULL, NULL, NULL, // types of ghost nodes at the boundary
+                       NULL);            // stencil type
+    CHKERRQ(ierr);
 
-    // pad the vertical grid to allow for n_levels multigrid levels
-    info.Mz  = Mz;
-    info.mz  = 1;
-    info.dof = 2;
-    info.stencil_width = 1;
+    assert(dims == 2);
 
-    info.bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.bz = DM_BOUNDARY_NONE;
+    const PetscInt
+      *lx = NULL,
+      *ly = NULL;
+    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
+
+    PetscInt
+      mz            = 1,
+      dof           = 2,
+      stencil_width = 1;
+
+    DMBoundaryType
+      bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(comm,
-                        info.bz, info.bx, info.by, // STORAGE_ORDER
+                        bz, bx, by,    // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        info.Mz, info.Mx, info.My, // STORAGE_ORDER
-                        info.mz, info.mx, info.my, // STORAGE_ORDER
-                        info.dof,                  // dof
-                        info.stencil_width,        // stencil width
-                        NULL, info.lx, info.ly,    // STORAGE_ORDER
+                        Mz, Mx, My,    // STORAGE_ORDER
+                        mz, mx, my,    // STORAGE_ORDER
+                        dof,
+                        stencil_width,
+                        NULL, lx, ly,  // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     ierr = DMSetOptionsPrefix(m_da, prefix.c_str()); CHKERRQ(ierr);
