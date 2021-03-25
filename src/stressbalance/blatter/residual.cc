@@ -341,6 +341,8 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
+  //
+  // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   IceModelVec::AccessList list(m_parameters);
