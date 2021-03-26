@@ -202,6 +202,8 @@ protected:
   void compute_averaged_velocity(IceModelVec2V &result);
 
   void get_basal_velocity(IceModelVec2V &result);
+
+  void report_mesh_info();
 };
 
 } // end of namespace stressbalance

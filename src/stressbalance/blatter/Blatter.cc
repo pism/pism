@@ -698,6 +698,65 @@ static SolutionInfo solve(::SNES snes, ::Vec x) {
   return result;
 }
 
+void Blatter::report_mesh_info() {
+
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = grid_transpose(info);
+
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
+
+  IceModelVec::AccessList l{&m_parameters};
+
+  double R_min = 1e16, R_max = 0.0, R_avg = 0.0;
+  double dxy = std::max(m_grid->dx(), m_grid->dy());
+  double n_cells = 0.0;
+
+  Parameters P[fem::q1::n_chi];
+  for (int j = info.ys; j < info.ys + info.ym - 1; j++) {
+    for (int i = info.xs; i < info.xs + info.xm - 1; i++) {
+
+      E.reset(i, j);
+
+      E.nodal_values(m_parameters.array(), P);
+
+      int node_type[4];
+      for (int k = 0; k < 4; ++k) {
+        node_type[k] = P[k].node_type;
+      }
+
+      if (exterior_element(node_type)) {
+        continue;
+      }
+
+      n_cells += 1.0;
+
+      double dz_max = 0.0;
+      for (int k = 0; k < 4; ++k) {
+        dz_max = std::max(P[k].thickness / (info.mz - 1), dz_max);
+      }
+      double R = dz_max / dxy;
+
+      R_min = std::min(R, R_min);
+      R_max = std::max(R, R_max);
+      R_avg += R;
+    }
+  }
+
+  n_cells = GlobalSum(m_grid->com, n_cells);
+  R_avg = GlobalSum(m_grid->com, R_avg);
+  R_avg /= n_cells;
+
+  R_min = GlobalMin(m_grid->com, R_min);
+  R_max = GlobalMax(m_grid->com, R_max);
+
+  m_log->message(2,
+                 "Blatter solver: %d * (%d - 1) = %d active elements\n"
+                 "  Aspect ratios: min = %f, max = %f, avg = %f, max/min = %f\n",
+                 (int)n_cells, (int)info.mz, (int)(n_cells * (info.mz - 1)),
+                 R_min, R_max, R_avg, R_max / R_min);
+}
+
 void Blatter::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
   (void) full_update;
@@ -706,6 +765,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 
   init_2d_parameters(inputs);
   init_ice_hardness(inputs, m_da);
+
+  report_mesh_info();
 
   // maximum number of continuation steps (input)
   int Nc = 20;
@@ -780,8 +841,9 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
       if (m_viscosity_eps <= eps) {
         // ... while solving the desired (not overregularized) problem
         m_log->message(2,
-                       "Blatter solver: done.\n"
+                       "Blatter solver: %s. Done.\n"
                        "  SNES: %d, KSP: %d\n",
+                       SNESConvergedReasons[info.snes_reason],
                        snes_total_it, ksp_total_it);
         goto bp_done;
       }
