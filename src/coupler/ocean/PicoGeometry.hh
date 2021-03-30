@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020 PISM Authors
+/* Copyright (C) 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -73,7 +73,7 @@ private:
 
   void split_ice_shelves(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Int &basin_mask,
-                         const std::vector<int> m_n_basin_neighbors,
+                         const std::vector<int> n_basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,
                          const std::vector<int> &cfs_in_basins_per_shelf,
                          IceModelVec2Int &shelf_mask);
@@ -107,11 +107,6 @@ private:
   std::shared_ptr<petsc::Vec> m_tmp_p0;
 
   int m_n_basins, m_n_shelves;
-  std::vector<int> m_n_basin_neighbors;
-  //std::vector<int> &most_shelf_cells_in_basin;
-  //std::vector<int> &cfs_in_basins_per_shelf;
-
-
 };
 
 } // end of namespace ocean
