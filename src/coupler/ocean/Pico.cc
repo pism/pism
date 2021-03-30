@@ -155,7 +155,7 @@ void Pico::init_impl(const Geometry &geometry) {
   const IceModelVec2CellType &cell_type = geometry.cell_type;
 
   // This inits basin_mask
-  m_geometry->init_impl(cell_type);
+  m_geometry->init(cell_type);
 
   // FIXME: m_n_basins is a misnomer
   m_n_basins = m_geometry->basin_mask().max() + 1;
