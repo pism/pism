@@ -40,8 +40,7 @@ public:
   PicoGeometry(IceGrid::ConstPtr grid);
   virtual ~PicoGeometry();
 
-  //void init_impl(const Geometry &geometry);
-  void init_impl(const IceModelVec2CellType &cell_type);
+  void init(const IceModelVec2CellType &cell_type);
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
   const IceModelVec2Int &continental_shelf_mask() const;
@@ -107,6 +106,7 @@ private:
   std::shared_ptr<petsc::Vec> m_tmp_p0;
 
   int m_n_basins, m_n_shelves;
+  std::vector<int> m_n_basin_neighbors;
 };
 
 } // end of namespace ocean

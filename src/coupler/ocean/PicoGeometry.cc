@@ -86,20 +86,17 @@ const IceModelVec2Int &PicoGeometry::basin_mask() const {
   return m_basin_mask;
 }
 
-
-void PicoGeometry::init_impl(const IceModelVec2CellType &cell_type) {
-  (void) cell_type;
-  //m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean geometry ...\n");
+void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
   m_n_basins = m_basin_mask.max() + 1;
+
+  m_n_basin_neighbors.resize(2*m_n_basins);
+  get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
 }
-
-
-
 
 /*!
  * Compute masks needed by the PICO physics code.
@@ -139,18 +136,14 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
     m_n_shelves = m_ice_shelves.max() + 1;
 
-    //FIXME: This should be done only once at init
-    std::vector<int> n_basin_neighbors(2*m_n_basins);
-    get_basin_neighbors(cell_type, m_basin_mask, n_basin_neighbors);
-
+    get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
 
     std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
     std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    //split_ice_shelves(cell_type, m_basin_mask, n_basin_neighbors, m_ice_shelves);
-    split_ice_shelves(cell_type, m_basin_mask, n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
-
+    //split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, m_ice_shelves);
+    split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
 
     compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth, m_continental_shelf);
   }
@@ -278,10 +271,6 @@ void PicoGeometry::label_tmp() {
   m_tmp.get_from_proc0(*m_tmp_p0);
 }
 
-static bool edge_p(int i, int j, int Mx, int My) {
-  return (i == 0) or (i == Mx - 1) or (j == 0) or (j == My - 1);
-}
-
 /*!
  * Compute the mask identifying "subglacial lakes", i.e. floating ice areas that are not
  * connected to the open ocean.
@@ -307,7 +296,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModel
     if (cell_type.ocean(i, j)) {
       m_tmp(i, j) = 1.0;
 
-      if (edge_p(i, j, Mx, My)) {
+      if (grid_edge(*m_grid, i, j)) {
         m_tmp(i, j) = 2.0;
       }
     } else {
@@ -519,7 +508,9 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
   result.copy_from(m_tmp);
 }
 
-
+/*!
+ * FIXME
+ */
 void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
                                        const IceModelVec2Int &basin_mask,
                                        std::vector<int> &result) {
@@ -568,6 +559,9 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
   }
 }
 
+/*!
+ * FIXME
+ */
 void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType &cell_type,
                                                      const IceModelVec2Int &basin_mask,
                                                      const IceModelVec2Int &shelf_mask,
@@ -612,7 +606,9 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
 }
 
 
-
+/*!
+ * FIXME
+ */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
                                      const std::vector<int> n_basin_neighbors,
@@ -678,9 +674,9 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
 }
 
-
-
-
+/*!
+ * Compute distance to the grounding line.
+ */
 void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
                                         bool exclude_ice_rises,
@@ -733,6 +729,9 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
   eikonal_equation(result);
 }
 
+/*!
+ * Compute distance to the calving front.
+ */
 void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
                                         const IceModelVec2Int &ice_rises,
                                         bool exclude_ice_rises,
@@ -789,6 +788,8 @@ void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
  * Note that this implementation updates ghosts *every* iteration. We could speed this
  * up by checking if a point at a boundary of the processor sub-domain was updated and
  * update ghosts in those cases only.
+ *
+ * FIXME: replace this with a better algorithm.
  */
 void eikonal_equation(IceModelVec2Int &mask) {
 
@@ -827,6 +828,10 @@ void eikonal_equation(IceModelVec2Int &mask) {
   }
 }
 
+/*!
+ * Compute the mask identifying ice shelf "boxes" using distances to the grounding line
+ * and the calving front.
+ */
 void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelVec2Int &D_cf,
                                     const IceModelVec2Int &shelf_mask, int max_number_of_boxes,
                                     IceModelVec2Int &result) {
