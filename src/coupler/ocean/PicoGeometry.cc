@@ -59,8 +59,6 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
                          "", "", "", 0);
   m_n_basins = 0;
 
-  //std::vector<int> m_n_basin_neighbors(1);
-
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
 
@@ -90,7 +88,7 @@ const IceModelVec2Int &PicoGeometry::basin_mask() const {
 
 
 void PicoGeometry::init_impl(const IceModelVec2CellType &cell_type) {
-
+  (void) cell_type;
   //m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean geometry ...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
@@ -98,11 +96,6 @@ void PicoGeometry::init_impl(const IceModelVec2CellType &cell_type) {
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
   m_n_basins = m_basin_mask.max() + 1;
-
-  // FIXME: This part should be computed only once at init and then used in update()
-  //std::vector<int> m_n_basin_neighbors(2*m_n_basins); 
-  //get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
-
 }
 
 
@@ -147,16 +140,16 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
     m_n_shelves = m_ice_shelves.max() + 1;
 
     //FIXME: This should be done only once at init
-    std::vector<int> m_n_basin_neighbors(2*m_n_basins);
-    get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
+    std::vector<int> n_basin_neighbors(2*m_n_basins);
+    get_basin_neighbors(cell_type, m_basin_mask, n_basin_neighbors);
 
 
     std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
     std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    //split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, m_ice_shelves);
-    split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
+    //split_ice_shelves(cell_type, m_basin_mask, n_basin_neighbors, m_ice_shelves);
+    split_ice_shelves(cell_type, m_basin_mask, n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
 
 
     compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth, m_continental_shelf);
@@ -622,7 +615,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
 
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
-                                     const std::vector<int> m_n_basin_neighbors,
+                                     const std::vector<int> n_basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
                                      const std::vector<int> &cfs_in_basins_per_shelf,
                                      IceModelVec2Int &shelf_mask) {
@@ -633,7 +626,7 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   // test if vector exists
   //for (int b = 1; b < m_n_basins; ++b) {
-  //  m_log->message(2, "PICO, use basin neighbors with b=%d, b1=%d and b2=%d \n",b,m_n_basin_neighbors[2*b],m_n_basin_neighbors[2*b+1]);
+  //  m_log->message(2, "PICO, use basin neighbors with b=%d, b1=%d and b2=%d \n",b,n_basin_neighbors[2*b],n_basin_neighbors[2*b+1]);
   //}
 
   //m_n_shelves = shelf_mask.max() + 1;
@@ -647,7 +640,7 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
       int b = basin_mask.as_int(i, j);
       int s = shelf_mask.as_int(i, j);
       int b0 = most_shelf_cells_in_basin[s];
-      if (b != b0 and b != m_n_basin_neighbors[2*b0] and b != m_n_basin_neighbors[2*b0+1] and cfs_in_basins_per_shelf[s*m_n_basins+b] > 0) {
+      if (b != b0 and b != n_basin_neighbors[2*b0] and b != n_basin_neighbors[2*b0+1] and cfs_in_basins_per_shelf[s*m_n_basins+b] > 0) {
         n_shelf_cells_to_split[s*m_n_basins+b]++;
         //m_log->message(2, "PICO, test split s=%d with b0=%d and b=%d at %d,%d \n",s,b0,b,i,j);
       }
