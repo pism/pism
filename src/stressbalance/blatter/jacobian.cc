@@ -200,6 +200,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   PetscErrorCode ierr = MatZeroEntries(J);
   PISM_CHK(ierr, "MatZeroEntries");
 
+  ierr = PetscObjectSetName((PetscObject)J, "bp_jacobian");
+  PISM_CHK(ierr, "PetscObjectSetName");
+
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
