@@ -90,7 +90,7 @@ void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {

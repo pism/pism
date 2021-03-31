@@ -51,7 +51,7 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     double
       ux = u_x[q].u,
@@ -133,7 +133,7 @@ void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
   face.evaluate(f_nodal, floatation);
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;
     double beta = 0.0, dbeta = 0.0;

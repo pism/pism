@@ -54,7 +54,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     double
       ux = u_x[q].u,
@@ -139,7 +139,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     auto F = m_rho_ice_g * Vector2(s_x[q], s_y[q]);
 
@@ -175,7 +175,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
   face.evaluate(f_nodal, floatation);
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;
     double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
@@ -230,7 +230,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 

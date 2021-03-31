@@ -308,6 +308,11 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   m_eta_transform = m_config->get_flag("stress_balance.blatter.use_eta_transform");
 
   m_glen_exponent = m_flow_law->exponent();
+
+  double softness = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+    hardness = std::pow(softness, -1.0 / m_glen_exponent);
+
+  m_scaling = m_rho_ice_g * hardness;
 }
 
 /*!

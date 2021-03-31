@@ -78,6 +78,7 @@ protected:
 
   IceModelVec2Struct<Parameters> m_parameters;
 
+  double m_scaling;
   double m_rho_ice_g;
   double m_rho_ocean_g;
 

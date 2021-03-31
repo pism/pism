@@ -109,7 +109,7 @@ void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
@@ -155,7 +155,7 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
     }
 
     for (int q = 0; q < face.n_pts(); ++q) {
-      auto W = face.weight(q);
+      auto W = face.weight(q) / m_scaling;
 
       // loop over all test functions
       for (int t = 0; t < element.n_chi(); ++t) {
@@ -194,7 +194,7 @@ void BlatterTestXZ::residual_surface(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_source_surface(x[q], z[q], m_A, m_rho, m_g,
                                        m_s0, m_alpha, m_H0, m_beta);

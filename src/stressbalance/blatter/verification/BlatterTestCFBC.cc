@@ -82,7 +82,7 @@ void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_source(x[q], z[q], m_L, m_rho_i, m_rho_w, m_g);
 
@@ -111,7 +111,7 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_surface(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
@@ -148,7 +148,7 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_base(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
