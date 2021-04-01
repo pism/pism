@@ -131,18 +131,15 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
     compute_distances_cf(m_ocean_mask, m_ice_rises, exclude_ice_rises, m_distance_cf);
   }
 
-  // these two could be done at the same time
+  // computing ice_shelf_mask and box_mask could be done at the same time
   {
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
     m_n_shelves = m_ice_shelves.max() + 1;
-
-    get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
 
     std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
     std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    //split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, m_ice_shelves);
     split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
 
     compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth, m_continental_shelf);
@@ -509,7 +506,8 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
 }
 
 /*!
- * FIXME
+ * Find the two neighboring basins by checking for the basin boundaries on the ice free ocean.
+ * Could there be more than two neighbors? Should we better identify the intersection at the coastline?
  */
 void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
                                        const IceModelVec2Int &basin_mask,
@@ -528,7 +526,6 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
       auto M = cell_type.int_star(i, j);
       int bn = 0; //neighbor basin id
 
-      // finding the basin boundary on the ice free ocean
       if (cell_type.as_int(i, j) == MASK_ICE_FREE_OCEAN and
          ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
           (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
@@ -551,16 +548,17 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
       }
     }
   }
-  // compute global sums
+  //GlobalSum(m_grid->com, result.data(), 2*m_n_basins);
   for (int b = 1; b < 2*m_n_basins; ++b) {
     result[b] = GlobalSum(m_grid->com, result[b]);
     if (b%2==0)
-      m_log->message(2, "PICO, get basin neighbors with b=%d, b1=%d and b2=%d \n",b,result[b],result[b+1]);
+      m_log->message(2, "PICO, get basin neighbors of b=%d: b1=%d and b2=%d \n",b/2,result[b],result[b+1]);
   }
 }
 
 /*!
- * FIXME
+ *  Find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion.
+ *  Find the basin bmax, in which the ice shelf s has the most cells
  */
 void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType &cell_type,
                                                      const IceModelVec2Int &basin_mask,
@@ -579,7 +577,6 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
       int b = basin_mask.as_int(i, j);
       n_shelf_cells_per_basin[s*m_n_basins+b]++;
 
-      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
       if (cell_type.as_int(i, j) == MASK_FLOATING) {
         auto M = cell_type.int_star(i, j);
         if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
@@ -591,6 +588,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
     }
 
     //GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), m_n_shelves*m_n_basins);
+    //GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), m_n_shelves*m_n_basins);
     for (int s = 0; s < m_n_shelves; s++) {
       int n_shelf_cells_per_basin_max = 0;
       for (int b = 0; b < m_n_basins; b++) {
@@ -607,7 +605,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
 
 
 /*!
- * FIXME
+ * Find all ice shelves s that spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number.
  */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
@@ -620,14 +618,6 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp};
 
-  // test if vector exists
-  //for (int b = 1; b < m_n_basins; ++b) {
-  //  m_log->message(2, "PICO, use basin neighbors with b=%d, b1=%d and b2=%d \n",b,n_basin_neighbors[2*b],n_basin_neighbors[2*b+1]);
-  //}
-
-  //m_n_shelves = shelf_mask.max() + 1;
-
-  // now find all ice shelves spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number
 
   std::vector<int> n_shelf_cells_to_split(m_n_shelves*m_n_basins,0);
   for (Points p(*m_grid); p; p.next()) {
@@ -638,11 +628,11 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
       int b0 = most_shelf_cells_in_basin[s];
       if (b != b0 and b != n_basin_neighbors[2*b0] and b != n_basin_neighbors[2*b0+1] and cfs_in_basins_per_shelf[s*m_n_basins+b] > 0) {
         n_shelf_cells_to_split[s*m_n_basins+b]++;
-        //m_log->message(2, "PICO, test split s=%d with b0=%d and b=%d at %d,%d \n",s,b0,b,i,j);
       }
     }
   }
 
+  //GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), m_n_shelves*m_n_basins);
   std::vector<int> add_shelf_instance(m_n_shelves*m_n_basins,0);
   int m_shelf_numbers_to_add = 0;
   for (int s = 0; s < m_n_shelves; s++) {
@@ -652,7 +642,8 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
       if (n_shelf_cells_to_split[s*m_n_basins+b] > 0) {
         m_shelf_numbers_to_add += 1;
         add_shelf_instance[s*m_n_basins+b] = m_n_shelves + m_shelf_numbers_to_add;
-        m_log->message(2, "\nPICO, split ice shelf s=%d with b0=%d and b=%d and n=%d and si=%d\n",s,b0,b,n_shelf_cells_to_split[s*m_n_basins+b],add_shelf_instance[s*m_n_basins+b]);
+        m_log->message(3, "\nPICO, split ice shelf s=%d with bmax=%d and b=%d and n=%d and si=%d\n",
+                       s,b0,b,n_shelf_cells_to_split[s*m_n_basins+b],add_shelf_instance[s*m_n_basins+b]);
       }
     }
   }
@@ -663,9 +654,7 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
       int b = basin_mask.as_int(i, j);
       int s = shelf_mask.as_int(i, j);
       if (add_shelf_instance[s*m_n_basins+b] > 0) {
-        //shelf_mask.as_int(i, j) = add_shelf_instance[s*m_n_basins+b];
         m_tmp(i, j) = add_shelf_instance[s*m_n_basins+b];
-        //m_log->message(2, "PICO, split ice shelf s=%d and b=%d and si=%d at %d,%d\n",s,b,add_shelf_instance[s*m_n_basins+b],i,j);
       }
     }
   }
