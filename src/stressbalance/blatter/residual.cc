@@ -184,8 +184,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t].u += W * psi * beta * u[q].u;
-      residual[t].v += W * psi * beta * u[q].v;
+      residual[t] += W * psi * beta * u[q];
     }
   }
 }
