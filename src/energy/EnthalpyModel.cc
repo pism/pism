@@ -152,6 +152,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &m_work};
 
   double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
+  double tillwatmax  = m_config->get_number("hydrology.tillwat_max"),
+         one_year = units::convert(m_sys, 1.0, "year", "seconds"),
+         critical_melt = -tillwatmax / one_year;
 
   unsigned int liquifiedCount = 0;
 
