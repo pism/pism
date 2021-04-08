@@ -315,6 +315,12 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             // we need to freeze co restore energy conservation.
 
             Hfrozen = E_difference * (0.5*dz) / EC->L(T_m);
+            if (Hfrozen*one_year/dt > tillwatmax) { //tillwatmax/year
+              m_log->message(2,"!!!!!!!!!! %d,%d: Assert Hfrozen=%f m/yr to not exceed tillwatmax! \n",i,j,Hfrozen*one_year/dt);
+
+              Hfrozen= tillwatmax*dt/one_year;
+
+            }
           }
         }
 
