@@ -674,7 +674,7 @@ void Blatter::write_model_state_impl(const File &output) const {
 }
 
 struct SolutionInfo {
-  PetscInt snes_it, ksp_it;
+  PetscInt snes_it, ksp_it, mg_coarse_ksp_it;
   SNESConvergedReason snes_reason;
   KSPConvergedReason ksp_reason;
 };
@@ -704,6 +704,25 @@ static SolutionInfo solve(::SNES snes, ::Vec x) {
 
   ierr = KSPGetConvergedReason(ksp, &result.ksp_reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
+
+  PC pc;
+  ierr = KSPGetPC(ksp, &pc);
+  PISM_CHK(ierr, "KSPGetPC");
+
+  PCType pc_type;
+  ierr = PCGetType(pc, &pc_type);
+  PISM_CHK(ierr, "PCGetType");
+
+  if (std::string(pc_type) == PCMG) {
+    KSP coarse_ksp;
+    ierr = PCMGGetCoarseSolve(pc, &coarse_ksp);
+    PISM_CHK(ierr, "PCMGGetCoarseSolve");
+
+    ierr = KSPGetIterationNumber(coarse_ksp, &result.mg_coarse_ksp_it);
+    PISM_CHK(ierr, "KSPGetIterationNumber");
+  } else {
+    result.mg_coarse_ksp_it = 0;
+  }
 
   return result;
 }
@@ -844,6 +863,11 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
                      "     SNES: %d, KSP: %d\n",
                      N, SNESConvergedReasons[info.snes_reason], lambda, m_viscosity_eps,
                      (int)info.snes_it, (int)info.ksp_it);
+      if (info.mg_coarse_ksp_it > 0) {
+        m_log->message(2,
+                       "     Level 0 KSP (last iteration): %d\n",
+                       (int)info.mg_coarse_ksp_it);
+      }
     }
 
     snes_total_it += info.snes_it;
@@ -859,6 +883,11 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
                        "  SNES: %d, KSP: %d\n",
                        SNESConvergedReasons[info.snes_reason],
                        snes_total_it, ksp_total_it);
+        if (info.mg_coarse_ksp_it > 0) {
+          m_log->message(2,
+                         "  Level 0 KSP (last iteration): %d\n",
+                         (int)info.mg_coarse_ksp_it);
+        }
         goto bp_done;
       }
 
