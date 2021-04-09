@@ -755,16 +755,20 @@ void Blatter::report_mesh_info() {
 
   n_cells = GlobalSum(m_grid->com, n_cells);
   R_avg = GlobalSum(m_grid->com, R_avg);
-  R_avg /= n_cells;
+  R_avg /= std::max(n_cells, 1.0);
 
   R_min = GlobalMin(m_grid->com, R_min);
   R_max = GlobalMax(m_grid->com, R_max);
 
   m_log->message(2,
-                 "Blatter solver: %d * (%d - 1) = %d active elements\n"
-                 "  Aspect ratios: min = %f, max = %f, avg = %f, max/min = %f\n",
-                 (int)n_cells, (int)info.mz, (int)(n_cells * (info.mz - 1)),
-                 R_min, R_max, R_avg, R_max / R_min);
+                 "Blatter solver: %d * (%d - 1) = %d active elements\n",
+                 (int)n_cells, (int)info.mz, (int)(n_cells * (info.mz - 1)));
+
+  if (n_cells > 0) {
+    m_log->message(2,
+                   "  Aspect ratios: min = %f, max = %f, avg = %f, max/min = %f\n",
+                   R_min, R_max, R_avg, R_max / R_min);
+  }
 }
 
 void Blatter::update(const Inputs &inputs, bool full_update) {
