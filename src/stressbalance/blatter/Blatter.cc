@@ -534,8 +534,13 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     }
   }
 
-  compute_node_type(m_config->get_number("stress_balance.ice_free_thickness_standard"));
+  // update ghosts here: the call to compute_node_type() uses ghosts of ice thickness
+  m_parameters.update_ghosts();
 
+  double H_min = m_config->get_number("stress_balance.ice_free_thickness_standard");
+  compute_node_type(H_min);
+
+  // update ghosts of node types stored in m_parameters
   m_parameters.update_ghosts();
 }
 
