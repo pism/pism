@@ -53,6 +53,10 @@ Changes since v1.2
   finer.
 - Fix a bug in the code managing time step restrictions (this affected the last time step
   of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
+- Adjust PICO ocean input average across covered basins, in which the ice shelf has
+  in fact a connection to the ocean. Large ice shelves, that cover across two basins,
+  that do not share an ocean boundary, are split into two separate ice shelf instances
+  with individual ocean inputs.
 
 Changes from v1.1 to v1.2
 =========================
