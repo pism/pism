@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -58,32 +58,42 @@ struct File::Impl {
 };
 
 IO_Backend string_to_backend(const std::string &backend) {
-  if (backend == "netcdf3") {
-    return PISM_NETCDF3;
+  std::map<std::string, IO_Backend> backends =
+    {
+     {"netcdf3", PISM_NETCDF3},
+     {"netcdf4_parallel", PISM_NETCDF4_PARALLEL},
+     {"netcdf4_serial", PISM_NETCDF4_SERIAL},
+     {"pio_netcdf", PISM_PIO_NETCDF},
+     {"pio_netcdf4c", PISM_PIO_NETCDF4C},
+     {"pio_netcdf4p", PISM_PIO_NETCDF4P},
+     {"pio_pnetcdf", PISM_PIO_PNETCDF},
+     {"pnetcdf", PISM_PNETCDF},
+  };
+
+  if (backends.find(backend) != backends.end()) {
+    return backends[backend];
   }
-  if (backend == "netcdf4_serial") {
-    return PISM_NETCDF4_SERIAL;
-  }
-  if (backend == "netcdf4_parallel") {
-    return PISM_NETCDF4_PARALLEL;
-  }
-  if (backend == "pnetcdf") {
-    return PISM_PNETCDF;
-  }
-  if (backend == "pio_pnetcdf") {
-    return PISM_PIO_PNETCDF;
-  }
-  if (backend == "pio_netcdf") {
-    return PISM_PIO_NETCDF;
-  }
-  if (backend == "pio_netcdf4c") {
-    return PISM_PIO_NETCDF4C;
-  }
-  if (backend == "pio_netcdf4p") {
-    return PISM_PIO_NETCDF4P;
-  }
+
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "unknown or unsupported I/O backend: %s", backend.c_str());
+                                "unknown or unsupported I/O backend: %s",
+                                backend.c_str());
+}
+
+static std::string backend_to_string(IO_Backend backend) {
+  std::map<IO_Backend, std::string> backends =
+    {
+     {PISM_GUESS, "unknown"},
+     {PISM_NETCDF3, "netcdf3"},
+     {PISM_NETCDF4_PARALLEL, "netcdf4_parallel"},
+     {PISM_NETCDF4_SERIAL, "netcdf4_serial"},
+     {PISM_PIO_NETCDF, "pio_netcdf"},
+     {PISM_PIO_NETCDF4C, "pio_netcdf4c"},
+     {PISM_PIO_NETCDF4P, "pio_netcdf4p"},
+     {PISM_PIO_PNETCDF, "pio_pnetcdf"},
+     {PISM_PNETCDF, "pnetcdf"}
+  };
+
+  return backends[backend];
 }
 
 // Chooses the best available I/O backend for reading from 'filename'.
@@ -160,8 +170,12 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
     break;
   } // end of switch (backend)
 
+
+  auto backend_name = backend_to_string(backend);
+
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "unknown or unsupported I/O backend: %d", backend);
+                                "unknown or unsupported I/O backend: %s",
+                                backend_name.c_str());
 }
 
 File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
