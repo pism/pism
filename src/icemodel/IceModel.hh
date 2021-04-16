@@ -104,6 +104,7 @@ class IceModelVec2T;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;
+class ScalarForcing;
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -268,6 +269,10 @@ protected:
   std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
+
+  // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
+  // calving, or Hayhurst calving
+  std::unique_ptr<ScalarForcing> m_calving_rate_factor;
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 

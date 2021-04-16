@@ -45,6 +45,9 @@ Changes since v1.2
   Blatter (1995). This solver supports multigrid preconditioners (see Brown et al 2013)
   and includes 5 verification test based on manufactured solutions.
 - Implement simplified-geometry experiments (A-D) from the ISMIP-HOM intercomparison.
+- Implement scaling of calving rates using a time-dependent factor. Set
+  `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
+  (units: "1").
 
 Changes from v1.1 to v1.2
 =========================
