@@ -681,11 +681,6 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.Glen_exponent_type = "number";
     pism_config:calving.vonmises_calving.Glen_exponent_units = "pure number";
 
-    pism_config:calving.vonmises_calving.enhancement_factor = 1.0;
-    pism_config:calving.vonmises_calving.enhancement_factor_doc = "Flow enhancement factor used by the flow law in the von Mises stress computation";
-    pism_config:calving.vonmises_calving.enhancement_factor_type = "number";
-    pism_config:calving.vonmises_calving.enhancement_factor_units = "1";
-
     pism_config:calving.vonmises_calving.flow_law = "gpbld";
     pism_config:calving.vonmises_calving.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:calving.vonmises_calving.flow_law_doc = "The custom flow law for the von Mises stress computation";
@@ -698,7 +693,7 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.sigma_max_units = "Pa";
 
     pism_config:calving.vonmises_calving.threshold_file = "";
-    pism_config:calving.vonmises_calving.threshold_file_doc = "Name of the file containing the spatially-variable vonmises_calving calving threshold.";
+    pism_config:calving.vonmises_calving.threshold_file_doc = "Name of the file containing the spatially-variable :var:`vonmises_calving_threshold`.";
     pism_config:calving.vonmises_calving.threshold_file_option = "vonmises_calving_threshold_file";
     pism_config:calving.vonmises_calving.threshold_file_type = "string";
 
