@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -78,6 +78,8 @@ SSA::SSA(IceGrid::ConstPtr g)
     m_taud(m_grid, "taud", WITHOUT_GHOSTS),
     m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
 {
+
+  m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
 
   strength_extension = new SSAStrengthExtension(*m_config);
 

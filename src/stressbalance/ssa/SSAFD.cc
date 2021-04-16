@@ -1440,9 +1440,9 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
 
   IceModelVec::AccessList list{&result, &uv, &m_hardness, &geometry.ice_thickness};
 
-  double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
-    n_glen = m_flow_law->exponent(),
-    nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
+  double
+    n_glen                 = m_flow_law->exponent(),
+    nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
@@ -1480,7 +1480,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
 
       result(i,j,o) = nu * H;
 
-      // include the SSA enhancement factor; in most cases ssa_enhancement_factor is 1
+      // include the SSA enhancement factor; in most cases m_e_factor is 1
       result(i,j,o) *= nu_enhancement_scaling;
 
       // We ensure that nuH is bounded below by a positive constant.
@@ -1519,9 +1519,10 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
   const IceModelVec2S &thickness = geometry.ice_thickness;
 
   const IceModelVec2V &uv = m_velocity; // shortcut
-  double ssa_enhancement_factor = m_flow_law->enhancement_factor(),
-    n_glen = m_flow_law->exponent(),
-    nu_enhancement_scaling = 1.0 / pow(ssa_enhancement_factor, 1.0/n_glen);
+
+  double
+    n_glen                 = m_flow_law->exponent(),
+    nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
 
   const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
 

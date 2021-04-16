@@ -69,6 +69,8 @@ public:
   EnthalpyConverter::Ptr enthalpy_converter() const;
 
   const IceBasalResistancePlasticLaw* sliding_law() const;
+
+  double flow_enhancement_factor() const;
 protected:
   virtual void init_impl();
 
@@ -80,6 +82,9 @@ protected:
 
   IceModelVec2V m_velocity;
   IceModelVec2S m_basal_frictional_heating;
+
+  //! flow enhancement factor
+  double m_e_factor;
 };
 
 //! Returns zero velocity field, zero friction heating, and zero for D^2.

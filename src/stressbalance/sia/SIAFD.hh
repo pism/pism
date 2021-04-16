@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,6 +128,9 @@ protected:
   double m_holocene_start;
   double m_eemian_start;
   double m_eemian_end;
+
+  double m_e_factor;
+  double m_e_factor_interglacial;
 };
 
 } // end of namespace stressbalance
