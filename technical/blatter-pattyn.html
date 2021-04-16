@@ -734,7 +734,7 @@ geometry)</p></li>
 <span id="sec-bp-pism-time-stepping"></span><h4><a class="toc-backref" href="#id71">Time stepping</a><a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h4>
 <p>PISM’s explicit in time mass continuity code is <em>conditionally stable</em>. When used with the
 SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
-criterion <span id="id33">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span> and the maximum diffusivity of the SIA flow
+criterion <span id="id33">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span> and the maximum diffusivity of the SIA flow
 <span id="id34">[<a class="reference internal" href="../zzz_references_html.html#id32"><span>9</span></a>]</span>. This time step restriction does not disappear when the same mass
 continuity code is used with a different stress balance model like BP that does not
 explicitly compute “advective” and “diffusive” parts of the flow. We need a work-around.</p>
@@ -897,10 +897,10 @@ interior of the domain</p>
 <div class="section" id="ismip-hom-experiments-a-d">
 <span id="sec-bp-ismip-hom"></span><h3><a class="toc-backref" href="#id78">ISMIP-HOM Experiments A-D</a><a class="headerlink" href="#ismip-hom-experiments-a-d" title="Permalink to this headline">¶</a></h3>
 <p>All four simplified geometry experiments are implemented and produce ice velocities
-similar to some of the results in <span id="id39">[<a class="reference internal" href="../zzz_references_html.html#id207"><span>104</span></a>]</span>. However, some published ISMIP-HOM
+similar to some of the results in <span id="id39">[<a class="reference internal" href="../zzz_references_html.html#id207"><span>105</span></a>]</span>. However, some published ISMIP-HOM
 results from BP models significantly differ from others, making more in-depth comparisons
 meaningless.</p>
-<p>It is worth noting, however, that (unlike some models in <span id="id40">[<a class="reference internal" href="../zzz_references_html.html#id207"><span>104</span></a>]</span>) this
+<p>It is worth noting, however, that (unlike some models in <span id="id40">[<a class="reference internal" href="../zzz_references_html.html#id207"><span>105</span></a>]</span>) this
 implementation does not appear to have any convergence issues.</p>
 <p>See scripts in <code class="docutils literal notranslate"><span class="pre">test/ismip-hom</span></code> for more.</p>
 </div>
@@ -1011,9 +1011,9 @@ one to use “geometric” coarsening.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

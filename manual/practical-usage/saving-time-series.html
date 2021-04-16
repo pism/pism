@@ -40,7 +40,7 @@ combination of the options <code class="docutils literal notranslate"><span clas
 </pre></div>
 </div>
 <p>will run for 10000 years, saving total ice volume and grounded ice area to
-<code class="docutils literal notranslate"><span class="pre">time-series.nc</span></code> <em>yearly</em>. See tables <a class="reference internal" href="#tab-time-series-opts"><span class="std std-numref">Table 29</span></a> for the list of
+<code class="docutils literal notranslate"><span class="pre">time-series.nc</span></code> <em>yearly</em>. See tables <a class="reference internal" href="#tab-time-series-opts"><span class="std std-numref">Table 28</span></a> for the list of
 options and <a class="reference internal" href="../diagnostics/index.html#sec-ts-vars"><span class="std std-ref">Scalar time-series</span></a> for the full list of supported time-series.</p>
 <p>Note that, similarly to the snapshot-saving code (section <a class="reference internal" href="saving-snapshots.html#sec-snapshots"><span class="std std-ref">Saving re-startable snapshots of the model state</span></a>), this
 mechanism does not affect adaptive time-stepping. Here, however, PISM will save exactly
@@ -58,7 +58,7 @@ stored, or when an <code class="docutils literal notranslate"><span class="pre">
 (or <code class="docutils literal notranslate"><span class="pre">USR2</span></code>) signal to a PISM process flushes these buffers, making it possible to
 monitor the run. (See section <a class="reference internal" href="signals.html#sec-signal"><span class="std std-ref">Signals, to control a running PISM model</span></a> for more about PISM’s signal handling.)</p>
 <table class="colwidths-given docutils align-default" id="tab-time-series-opts">
-<caption><span class="caption-number">Table 29 </span><span class="caption-text">Command-line options controlling saving scalar time-series</span><a class="headerlink" href="#tab-time-series-opts" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 28 </span><span class="caption-text">Command-line options controlling saving scalar time-series</span><a class="headerlink" href="#tab-time-series-opts" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 25%" />
 <col style="width: 75%" />
@@ -109,7 +109,7 @@ or temperate (“<code class="docutils literal notranslate"><span class="pre">te
 <li><p>The sea level rise potential <code class="variable docutils literal notranslate"><span class="pre">sea_level_rise_potential</span></code> is the increase in sea
 level (in meters) that would result from melting all the grounded ice not displacing sea
 water and distributing the corresponding <em>fresh water</em> volume uniformly over the entire
-global ocean (<span class="math notranslate nohighlight">\(362.5 \cdot 10^6\, km^2\)</span>, see <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id88"><span>93</span></a>]</span>). This follows the
+global ocean (<span class="math notranslate nohighlight">\(362.5 \cdot 10^6\, km^2\)</span>, see <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id88"><span>94</span></a>]</span>). This follows the
 definition used in the SeaRISE project <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id54"><span>2</span></a>]</span>.</p></li>
 <li><p>Fields <code class="docutils literal notranslate"><span class="pre">max_diffusivity</span></code> and <code class="docutils literal notranslate"><span class="pre">max_hor_vel</span></code> relate to PISM time-stepping. These
 quantities appear in per-time-step form in the standard output from PISM (i.e. at
@@ -213,9 +213,9 @@ SSA stress balance (i.e. sliding) velocity.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

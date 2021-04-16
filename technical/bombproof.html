@@ -277,7 +277,7 @@ and rearrange:</p>
 <p>Equation <a class="reference internal" href="#equation-bombtwo">(50)</a> has coefficients which are scaled to have no units.  It is
 ready to be put in the system managed by <code class="docutils literal notranslate"><span class="pre">enthSystemCtx</span></code>.</p>
 <p>One way of stating the stability of first-order upwinding is to say it satisfies
-a  “maximum principle” <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>.  An example of a maximum principle
+a  “maximum principle” <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>.  An example of a maximum principle
 for this kind of finite difference scheme is that if <span class="math notranslate nohighlight">\(U_{k-1}^n,U_k^n,U_{k+1}^n\)</span>
 are adjacent gridded values of some abstract quantity at time step <span class="math notranslate nohighlight">\(t_n\)</span>, and
 if the next value satisfies the scheme</p>
@@ -297,7 +297,7 @@ smoother. The proof below shows the corresponding “wiggle-free” property for
  = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n\end{split}\]</div>
 <p>is <em>less stable</em> than implicit first-order upwinding. It is less stable in the same sense
 that Crank-Nicolson is a less stable scheme than backwards Euler for the simplest heat
-equation <span class="math notranslate nohighlight">\(u_t = u_{xx}\)</span> <span id="id15">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>. In fact, although oscillatory modes cannot
+equation <span class="math notranslate nohighlight">\(u_t = u_{xx}\)</span> <span id="id15">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>. In fact, although oscillatory modes cannot
 grow exponentially under equation <a class="reference internal" href="#equation-centered">(52)</a>, those modes <em>can</em> appear when none are
 present already, even in the homogeneous case <span class="math notranslate nohighlight">\(\Phi_k^n=0\)</span>.</p>
 </div>
@@ -334,7 +334,7 @@ coefficient problem yields a growth factor less than one for all modes on the gr
 <div class="section" id="remarks">
 <h3>Remarks<a class="headerlink" href="#remarks" title="Permalink to this headline">¶</a></h3>
 <p>The phrases <em>maximum principle</em> and <em>von Neumann analysis</em> will be precisely illustrated
-in the following proof. Both approaches are in <span id="id16">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>. There is additional
+in the following proof. Both approaches are in <span id="id16">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>. There is additional
 information on the von Neumann analysis of implicit finite difference methods for
 advection in <span id="id17">[<a class="reference internal" href="../zzz_references_html.html#id415"><span>152</span></a>]</span>.</p>
 <p>These statements also apply in case <span class="math notranslate nohighlight">\(k_i=0\)</span>, in which case <a class="reference internal" href="#equation-lambdachoice">(53)</a> implies
@@ -376,7 +376,7 @@ coefficient of <span class="math notranslate nohighlight">\(E_{k+1}^{n+1}\)</spa
 <div class="math notranslate nohighlight">
 \[E_k^{n+1} = a_k E_k^n + b_k E_{k-1}^{n+1} + c_k E_{k+1}^{n+1}\]</div>
 <p>where <span class="math notranslate nohighlight">\(a_k,b_k,c_k\)</span> are positive and <span class="math notranslate nohighlight">\(a_k+b_k+c_k=1\)</span>. Thus a maximum principle applies
-<span id="id19">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>. <strong>END OF PROOF OF 1.</strong></p>
+<span id="id19">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>. <strong>END OF PROOF OF 1.</strong></p>
 </div>
 <div class="section" id="proof-of-2">
 <h3>Proof of 2<a class="headerlink" href="#proof-of-2" title="Permalink to this headline">¶</a></h3>
@@ -425,7 +425,7 @@ stable in the same sense.</p>
 <div class="section" id="convergence-a-consequence-of-the-maximum-principle">
 <h3>Convergence: a consequence of the maximum principle<a class="headerlink" href="#convergence-a-consequence-of-the-maximum-principle" title="Permalink to this headline">¶</a></h3>
 <p>If we define the pointwise numerical error <span class="math notranslate nohighlight">\(e_k^n = E_k^n - E(t_n,x_i,y_j,z_k)\)</span>,
-where <span class="math notranslate nohighlight">\(E(\dots)\)</span> is the unknown exact solution (exact enthalpy field) <span id="id20">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>,
+where <span class="math notranslate nohighlight">\(E(\dots)\)</span> is the unknown exact solution (exact enthalpy field) <span id="id20">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>,
 then <a class="reference internal" href="#equation-formax">(54)</a> implies an equality of the form</p>
 <div class="math notranslate nohighlight">
 \[A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \Delta t\, \tau_k^n\]</div>
@@ -441,8 +441,8 @@ each side of the resulting inequality gives</p>
 <div class="math notranslate nohighlight">
 \[{\bar e}^{n+1} \le {\bar e}^n + \Delta t\,\bar\tau^n,\]</div>
 <p>It follows that <span class="math notranslate nohighlight">\(\bar e^n \le C \Delta t\)</span>, for some finite <span class="math notranslate nohighlight">\(C\)</span>, if <span class="math notranslate nohighlight">\(\bar e^0 = 0\)</span>
-<span id="id21">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>.  Thus a maximum principle for BOMBPROOF implies convergence
-in the standard way <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>.  This convergence proof has the same
+<span id="id21">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>.  Thus a maximum principle for BOMBPROOF implies convergence
+in the standard way <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>.  This convergence proof has the same
 assumptions as case 1 in the theorem, and thus it only <em>suggests</em> convergence
 in any broad range of glaciologically-interesting cases.</p>
 </div>
@@ -454,7 +454,7 @@ numerical scheme for a linear advection/conduction equation</p>
 <div class="math notranslate nohighlight">
 \[u_t + A u_x = B u_{xx}\]</div>
 <p>is stable in the general sense of numerical schemes for partial differential equations
-(e.g. as defined in subsection 5.5 of <span id="id23">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>115</span></a>]</span>) then the same scheme is stable
+(e.g. as defined in subsection 5.5 of <span id="id23">[<a class="reference internal" href="../zzz_references_html.html#id299"><span>116</span></a>]</span>) then the same scheme is stable
 in the same general sense when applied to the equation with (linear) lower order terms:</p>
 <div class="math notranslate nohighlight">
 \[u_t + A u_x = B u_{xx} + C u + D.\]</div>
@@ -575,9 +575,9 @@ the future <code class="docutils literal notranslate"><span class="pre">OceanMod
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

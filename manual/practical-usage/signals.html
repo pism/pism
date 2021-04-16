@@ -36,12 +36,12 @@
 <p>Ice sheet model runs sometimes take a long time, so the state of a run may need checking.
 Sometimes the run needs to be stopped, but with the possibility of restarting. PISM
 implements these behaviors using “signals” from the POSIX standard, included in Linux and
-most flavors of Unix. <a class="reference internal" href="#tab-signals"><span class="std std-numref">Table 35</span></a> summarizes how PISM responds to signals.
+most flavors of Unix. <a class="reference internal" href="#tab-signals"><span class="std std-numref">Table 34</span></a> summarizes how PISM responds to signals.
 A convenient form of <code class="docutils literal notranslate"><span class="pre">kill</span></code>, for Linux users, is <code class="docutils literal notranslate"><span class="pre">pkill</span></code> which will find processes by
 executable name. Thus “<code class="docutils literal notranslate"><span class="pre">pkill</span> <span class="pre">-USR1</span> <span class="pre">pismr</span></code>” might be used to send all PISM processes the
 same signal, avoiding an explicit list of <em>PID</em>s.</p>
 <table class="colwidths-given docutils align-default" id="tab-signals">
-<caption><span class="caption-number">Table 35 </span><span class="caption-text">Signalling running PISM processes.  “<em>PID</em>s” stands for list of all identifiers of the PISM processes.</span><a class="headerlink" href="#tab-signals" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 34 </span><span class="caption-text">Signalling running PISM processes.  “<em>PID</em>s” stands for list of all identifiers of the PISM processes.</span><a class="headerlink" href="#tab-signals" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 25%" />
 <col style="width: 25%" />
@@ -193,9 +193,9 @@ stopped. Then a graceful way is</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

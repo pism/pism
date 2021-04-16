@@ -35,15 +35,15 @@
 <span id="sec-ross"></span><h1>An SSA flow model for the Ross Ice Shelf in Antarctica<a class="headerlink" href="#an-ssa-flow-model-for-the-ross-ice-shelf-in-antarctica" title="Permalink to this headline">¶</a></h1>
 <p>As part of the EISMINT series of intercomparisons, MacAyeal and others <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id279"><span>61</span></a>]</span>
 successfully validated early-1990s ice shelf numerical models using velocity data for the
-Ross ice shelf. The data were from the RIGGS survey <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id354"><span>118</span></a>]</span>, acquired in the period
+Ross ice shelf. The data were from the RIGGS survey <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id354"><span>119</span></a>]</span>, acquired in the period
 1973–1978 and measured at a few hundred locations in a grid across the shelf. Substantial
 modelling developments followed EISMINT-Ross, including inverse modeling to recover
-depth-averaged viscosity <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id376"><span>119</span></a>]</span> and parameter-sensitivity studies
-<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id196"><span>120</span></a>]</span>. Previous PISM versions set up the EISMINT-Ross flow model and
+depth-averaged viscosity <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id376"><span>120</span></a>]</span> and parameter-sensitivity studies
+<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id196"><span>121</span></a>]</span>. Previous PISM versions set up the EISMINT-Ross flow model and
 performed the diagnostic computation, with RIGGS data for validation.</p>
 <p>However, availability of rich new data sets for ice sheet modeling, including the ALBMAP
-v1 <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id253"><span>121</span></a>]</span> ice sheet geometry, bedrock, and climate data set, and the
-radar-derived (InSAR) MEaSUREs Antarctica Velocity Map <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id365"><span>122</span></a>]</span>, allows us to
+v1 <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id253"><span>122</span></a>]</span> ice sheet geometry, bedrock, and climate data set, and the
+radar-derived (InSAR) MEaSUREs Antarctica Velocity Map <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id365"><span>123</span></a>]</span>, allows us to
 use more complete, recent, and higher-resolution data for the same basic job. Furthermore
 one can extend the diagnostic Ross ice shelf calculation both to other ice shelves around
 Antarctica and to time-evolving (“prognostic”) cases using the eigencalving
@@ -161,7 +161,7 @@ on the left.</span><a class="headerlink" href="#fig-rosspython" title="Permalink
 <h2>Extending this example to other ice shelves<a class="headerlink" href="#extending-this-example-to-other-ice-shelves" title="Permalink to this headline">¶</a></h2>
 <p>The SSA diagnostic solution described in this section can be easily applied to other ice
 shelves in Antarctica, such as the Filchner-Ronne Ice Shelf modeled using PISM in
-<span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id18"><span>123</span></a>]</span>, for example.</p>
+<span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id18"><span>124</span></a>]</span>, for example.</p>
 <p>Simply choose a different rectangular domain, within the area covered by the
 whole-Antarctic data-sets used here, at the preprocessing stage. In particular you should
 modify the lines “<code class="docutils literal notranslate"><span class="pre">ncks</span> <span class="pre">-O</span> <span class="pre">-d</span> <span class="pre">x1,439,649</span> <span class="pre">-d</span> <span class="pre">y1,250,460</span> <span class="pre">...</span></code>” (for ALBMAP data) and
@@ -300,9 +300,9 @@ marine ice may all generate significant variation in shelf density.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -50,7 +50,7 @@ under the physically-dubious SIA sliding rubric (<span id="id3">[<a class="refer
 others don’t. Four experiments start with zero ice (A,F,G,H), while the other experiments
 (B,C,D) start from the final state of experiment A.</p>
 <p>In addition to the seven experiments published in <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id104"><span>11</span></a>]</span>, there were an additional
-five experiments described in the EISMINT II intercomparison description <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id103"><span>109</span></a>]</span>,
+five experiments described in the EISMINT II intercomparison description <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id103"><span>110</span></a>]</span>,
 labeled E, I, J, K, and L. These experiments share most features listed above, but with
 the following differences. Experiment E is the same as experiment A except that the peak
 of the accumulation, and also the low point of the surface temperature, are shifted by 100
@@ -58,10 +58,10 @@ km in both <span class="math notranslate nohighlight">\(x\)</span> and <span cla
 experiment A. Experiments I and J are similar to experiment A but with non-flat “trough”
 bed topography. Experiments K and L are similar to experiment C but with non-flat “mound”
 bed topography.</p>
-<p>See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 40</span></a> for how to run all EISMINT II experiments in PISM.
-Experiments E – L are only documented in <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id103"><span>109</span></a>]</span>.</p>
+<p>See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 39</span></a> for how to run all EISMINT II experiments in PISM.
+Experiments E – L are only documented in <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id103"><span>110</span></a>]</span>.</p>
 <table class="colwidths-given docutils align-default" id="tab-eisii">
-<caption><span class="caption-number">Table 40 </span><span class="caption-text">Running the EISMINT II experiments in PISM. Use <code class="docutils literal notranslate"><span class="pre">-skip</span> <span class="pre">-skip_max</span> <span class="pre">5</span></code>, on
+<caption><span class="caption-number">Table 39 </span><span class="caption-text">Running the EISMINT II experiments in PISM. Use <code class="docutils literal notranslate"><span class="pre">-skip</span> <span class="pre">-skip_max</span> <span class="pre">5</span></code>, on
              the <span class="math notranslate nohighlight">\(61\times 61\)</span> default grid, for significant speedup.</span><a class="headerlink" href="#tab-eisii" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 71%" />
@@ -118,9 +118,9 @@ gives a grid spacing of <span class="math notranslate nohighlight">\(\sim 20 m\)
 levels are generally better. Alternatively these experiments can be done with an
 equally-spaced grid; in this case we suggest using enough vertical levels to give 20 m
 spacing, for example. When there is sliding, even more vertical resolution is recommended
-(see <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 40</span></a>). Also, the vertical extent must be sufficient so that when
+(see <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 39</span></a>). Also, the vertical extent must be sufficient so that when
 the ice thickness grows large, especially before thermo-softening brings it back down, the
-vertical grid is tall enough to include all the ice. <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 40</span></a> therefore
+vertical grid is tall enough to include all the ice. <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 39</span></a> therefore
 includes suggested settings of <code class="docutils literal notranslate"><span class="pre">-Lz</span></code>; experiment F is different because ice thickness
 increases with colder temperatures.</p>
 <p>These SIA-only simulations parallelize well. Very roughly, for the standard <span class="math notranslate nohighlight">\(61\times 61\)</span>
@@ -130,10 +130,10 @@ mechanism which avoids updating the temperature at each time step is effective, 
 like <code class="docutils literal notranslate"><span class="pre">-skip</span> <span class="pre">-skip_max</span> <span class="pre">5</span></code> are recommended.</p>
 <p>The EISMINT II experiments can be run with various modifications of the default settings.
 For instance, a twice-finer grid in the horizontal is “<code class="docutils literal notranslate"><span class="pre">-Mx</span> <span class="pre">121</span> <span class="pre">-My</span> <span class="pre">121</span></code>”.
-<a class="reference internal" href="#tab-eisiioptions"><span class="std std-numref">Table 41</span></a> lists some optional settings which are particular to the
+<a class="reference internal" href="#tab-eisiioptions"><span class="std std-numref">Table 40</span></a> lists some optional settings which are particular to the
 EISMINT II experiments.</p>
 <table class="colwidths-given docutils align-default" id="tab-eisiioptions">
-<caption><span class="caption-number">Table 41 </span><span class="caption-text">Changing the default settings for EISMINT II</span><a class="headerlink" href="#tab-eisiioptions" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 40 </span><span class="caption-text">Changing the default settings for EISMINT II</span><a class="headerlink" href="#tab-eisiioptions" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 17%" />
 <col style="width: 33%" />
@@ -152,7 +152,7 @@ EISMINT II experiments.</p>
 <td><p>A</p></td>
 <td></td>
 <td><p>Choose single character name of EISMINT II <span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id104"><span>11</span></a>]</span> simplified geometry
-experiment. See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 40</span></a>.</p></td>
+experiment. See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 39</span></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-Mmax</span></code></p></td>
 <td><p>0.5 [ABDEFGHIK],</p>
@@ -277,9 +277,9 @@ II default.</p></td>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2299-ga6e926b56
+      Git revision v1.0-2303-gbe5fe6c05
       committed by Constantine Khrulev
-      on 2021-04-16 10:32:26 -0800 |
+      on 2021-04-16 11:54:46 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -58,7 +58,7 @@ Table.
 
    When in doubt, PISM users should set option :opt:`-pik` to turn on all of mechanisms in
    :numref:`tab-pism-pik`. The user should also choose a calving model from
-   :numref:`tab-calving`. However, the :opt:`-pik` mechanisms will not be effective if the
+   :ref:`sec-calving`. However, the :opt:`-pik` mechanisms will not be effective if the
    non-default FEM stress balance :opt:`-ssa_method fem` is chosen.
 
 .. _sec-cfbc:
