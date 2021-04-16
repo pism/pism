@@ -84,8 +84,6 @@ public:
 
   std::string name() const;
   double exponent() const;
-  double enhancement_factor() const;
-  double enhancement_factor_interglacial() const;
 
   EnthalpyConverter::Ptr EC() const;
 
@@ -148,10 +146,6 @@ protected:
   double m_standard_gravity;
   //! ideal gas constant
   double m_ideal_gas_constant;
-  //! flow enhancement factor
-  double m_e;
-  //! flow enhancement factor for interglacial periods
-  double m_e_interglacial;
   //! power law exponent
   double m_n;
 };

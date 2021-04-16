@@ -38,7 +38,8 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
     m_flow_law(NULL),
     m_EC(g->ctx()->enthalpy_converter()),
     m_velocity(m_grid, "bar", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
-    m_basal_frictional_heating(m_grid, "bfrict", WITHOUT_GHOSTS)
+    m_basal_frictional_heating(m_grid, "bfrict", WITHOUT_GHOSTS),
+    m_e_factor(1.0)
 {
 
   if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
@@ -79,6 +80,10 @@ std::string ShallowStressBalance::stdout_report() const {
 
 std::shared_ptr<const rheology::FlowLaw> ShallowStressBalance::flow_law() const {
   return m_flow_law;
+}
+
+double ShallowStressBalance::flow_enhancement_factor() const {
+  return m_e_factor;
 }
 
 EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() const {
