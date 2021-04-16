@@ -672,11 +672,6 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.enhancement_factor_type = "number";
     pism_config:calving.vonmises_calving.enhancement_factor_units = "1";
 
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial = 1.0;
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_doc = "Flow enhancement factor used by the flow law in the von Mises stress computation (for ice accumulated during interglacial periods).";
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_type = "number";
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_units = "1";
-
     pism_config:calving.vonmises_calving.flow_law = "gpbld";
     pism_config:calving.vonmises_calving.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:calving.vonmises_calving.flow_law_doc = "The custom flow law for the von Mises stress computation";
@@ -2126,12 +2121,6 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.enhancement_factor = 1.0;
     pism_config:stress_balance.blatter.enhancement_factor_doc = "Flow enhancement factor for the Blatter stress balance flow law";
 
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_option = "blatter_e_interglacial";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_units = "1";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_type = "number";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial = 1.0;
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver (*not implemented*)";
-
     pism_config:stress_balance.blatter.flow_law_type = "keyword";
     pism_config:stress_balance.blatter.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.blatter.flow_law = "gpbld";
@@ -2242,12 +2231,6 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.enhancement_factor_option = "ssa_e";
     pism_config:stress_balance.ssa.enhancement_factor_type = "number";
     pism_config:stress_balance.ssa.enhancement_factor_units = "1";
-
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial = 1.0;
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_option = "ssa_e_interglacial";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_type = "number";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_units = "1";
 
     pism_config:stress_balance.ssa.epsilon = 1.0e13;
     pism_config:stress_balance.ssa.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (`\\nu H`).  This default value for `\\nu H` comes e.g. from a hardness for the Ross ice shelf (`\\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.";
