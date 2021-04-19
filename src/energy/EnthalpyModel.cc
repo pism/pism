@@ -153,6 +153,10 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
+  double tillwatmax  = m_config->get_number("hydrology.tillwat_max"),
+         one_year = units::convert(m_sys, 1.0, "year", "seconds"),
+         H_critical = tillwatmax * dt / one_year;
+
   unsigned int liquifiedCount = 0;
 
   ParallelSection loop(m_grid->com);
@@ -315,6 +319,11 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             // we need to freeze co restore energy conservation.
 
             Hfrozen = E_difference * (0.5*dz) / EC->L(T_m);
+
+            if (Hfrozen > H_critical) {
+              m_log->message(3,"EnthalpyModel: Assert Hfrozen=%f m/yr to not exceed tillwatmax in %d,%d! \n",Hfrozen*one_year/dt,i,j);
+              Hfrozen = H_critical;
+            }
           }
         }
 
