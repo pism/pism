@@ -203,6 +203,12 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   ierr = MatSetOption(A, MAT_SUBSET_OFF_PROC_ENTRIES, PETSC_TRUE);
   PISM_CHK(ierr, "MatSetOption");
 
+  ierr = MatSetOption(J, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
+  ierr = MatSetOption(J, MAT_SYMMETRIC, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
   ierr = PetscObjectSetName((PetscObject)J, "bp_jacobian");
   PISM_CHK(ierr, "PetscObjectSetName");
 
@@ -340,12 +346,6 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
     ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
   }
-
-  ierr = MatSetOption(J, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-  PISM_CHK(ierr, "MatSetOption");
-
-  ierr = MatSetOption(J, MAT_SYMMETRIC, PETSC_TRUE);
-  PISM_CHK(ierr, "MatSetOption");
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
