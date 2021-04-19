@@ -200,6 +200,9 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   PetscErrorCode ierr = MatZeroEntries(J);
   PISM_CHK(ierr, "MatZeroEntries");
 
+  ierr = MatSetOption(A, MAT_SUBSET_OFF_PROC_ENTRIES, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
   ierr = PetscObjectSetName((PetscObject)J, "bp_jacobian");
   PISM_CHK(ierr, "PetscObjectSetName");
 
