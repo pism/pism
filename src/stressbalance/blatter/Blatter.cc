@@ -802,7 +802,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   report_mesh_info();
 
   // maximum number of continuation steps (input)
-  int Nc = 20;
+  int Nc = 50;
 
   double
     schoofLen = m_config->get_number("flow_law.Schoof_regularizing_length", "m"),
