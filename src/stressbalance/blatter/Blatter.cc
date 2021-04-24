@@ -785,7 +785,10 @@ void Blatter::report_mesh_info() {
 
   if (n_cells > 0) {
     m_log->message(2,
-                   "  Aspect ratios: min = %f, max = %f, avg = %f, max/min = %f\n",
+                   "  Vertical resolution (m): min = %3.3f, max = %3.3f, avg = %3.3f\n",
+                   R_min * dxy, R_max * dxy, R_avg * dxy);
+    m_log->message(2,
+                   "  Aspect ratios:           min = %f, max = %f, avg = %f, max/min = %f\n",
                    R_min, R_max, R_avg, R_max / R_min);
   }
 }
@@ -865,7 +868,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
                      (int)info.snes_it, (int)info.ksp_it);
       if (info.mg_coarse_ksp_it > 0) {
         m_log->message(2,
-                       "     Level 0 KSP (last iteration): %d\n",
+                       "     Coarse MG level KSP (last iteration): %d\n",
                        (int)info.mg_coarse_ksp_it);
       }
     }
