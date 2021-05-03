@@ -788,7 +788,7 @@ void Blatter::report_mesh_info() {
                    "  Vertical resolution (m): min = %3.3f, max = %3.3f, avg = %3.3f\n",
                    R_min * dxy, R_max * dxy, R_avg * dxy);
     m_log->message(2,
-                   "  Aspect ratios:           min = %f, max = %f, avg = %f, max/min = %f\n",
+                   "  Aspect ratios:           min = %3.3f, max = %3.3f, avg = %3.3f, max/min = %3.3f\n",
                    R_min, R_max, R_avg, R_max / R_min);
   }
 }
@@ -851,8 +851,6 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     if (N > 0) {
       m_log->message(2, "Blatter solver: step %d with lambda = %f, eps = %e\n",
                      N, lambda, m_viscosity_eps);
-    } else {
-      m_log->message(2, "Blatter solver: start with eps = %e\n", m_viscosity_eps);
     }
 
     // Solve the system:
