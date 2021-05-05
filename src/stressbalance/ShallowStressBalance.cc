@@ -287,12 +287,10 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j)) {
-      double beta = basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
-      (*result)(i,j).u = - beta * velocity(i,j).u;
-      (*result)(i,j).v = - beta * velocity(i,j).v;
+      double beta = basal_sliding_law->drag((*tauc)(i, j), velocity(i, j).u, velocity(i, j).v);
+      (*result)(i, j) = - beta * velocity(i, j);
     } else {
-      (*result)(i,j).u = 0.0;
-      (*result)(i,j).v = 0.0;
+      (*result)(i, j) = 0.0;
     }
   }
 

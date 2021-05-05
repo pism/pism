@@ -26,14 +26,14 @@ PETSC_ARCH="linux-opt"
   --with-fc=mpifort \
   --with-shared-libraries \
   --with-debugging=0 \
+  --with-petsc4py \
   COPTFLAGS='-O3 -march=native -mtune=native' \
   CXXOPTFLAGS='-O3 -march=native -mtune=native' \
   FOPTFLAGS='-O3 -march=native -mtune=native' \
-  --download-f2cblaslapack=1 \
-  --download-petsc4py \
-  --download-mumps --download-scalapack --download-parmetis --download-metis --download-ptscotch \
-  --download-hypre
+  --download-f2cblaslapack \
+  --download-mumps --download-scalapack
 
+export PYTHONPATH=${prefix}/lib
 make all
 make install
 make PETSC_DIR=${prefix} PETSC_ARCH="" check
