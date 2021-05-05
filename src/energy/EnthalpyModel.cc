@@ -321,7 +321,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             if (Hfrozen*one_year/dt > tillwatmax) { //tillwatmax/year
               m_log->message(2,"!!!!!!!!!! %d,%d: Assert Hfrozen=%f m/yr to not exceed tillwatmax! \n",i,j,Hfrozen*one_year/dt);
 
-              Hfrozen= tillwatmax*dt/one_year;
+              Hfrozen= tillwatmax*dt/one_year * 0.5; //adding the factor 0.5 here, because I still see jumps
 
             }
           }
