@@ -41,7 +41,7 @@ def vx_ac(filename, xs):
     ys = np.zeros_like(xs) + 0.25
 
     # method="linear" and "cubic" cause segfaults
-    result = griddata((xx, yy), vv, (xs, ys), method="nearest")
+    result = griddata((xx, yy), vv, (xs, ys), method="linear")
 
     return result
 

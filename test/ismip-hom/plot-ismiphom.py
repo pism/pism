@@ -1,6 +1,5 @@
-from bokeh.plotting import figure, output_notebook, output_file, show
-from bokeh.models import Band, ColumnDataSource
-from bokeh.layouts import gridplot
+import matplotlib
+import matplotlib.pylab as plt
 
 import numpy as np
 from scipy.interpolate import interp2d
@@ -19,7 +18,7 @@ outliers = {"a" : [],
             "c" : ["mbr1"],
             "d" : ["rhi1", "rhi2", "rhi3"]}
 
-def plot_experiment(fig, experiment, length_scale, model_type, N_samples=501, color="blue", plot_models=True):
+def plot_experiment(ax, experiment, length_scale, model_type, N_samples=501, color="blue", plot_models=True):
 
     filename = "ismip-hom-{exp}-{length}.npz".format(exp=experiment, length=length_scale)
 
@@ -39,40 +38,34 @@ def plot_experiment(fig, experiment, length_scale, model_type, N_samples=501, co
     if plot_models:
         for model in participating_models:
             v = raw_data[model]
-            fig.line(xs, v,
-                     line_color=color,
-                     name="{} ({})".format(model, model_type))
+            ax.plot(xs, v, "-", lw=1, color=color, alpha=0.5)
 
     vx_mean = np.mean(data, axis=0)
     vx_std = np.std(data, axis=0)
 
-    fig.line(xs, vx_mean,
-             legend_label="{} mean".format(model_type),
-             line_width=4,
-             name="{} mean".format(model_type),
-             line_color=color)
+    ax.plot(xs, vx_mean,
+            label="{} mean".format(model_type),
+            lw=2,
+            color=color)
 
-def plot(experiment, length_scales):
-    plots = []
-    for length_scale in length_scales:
-        p = figure(tooltips="$name, $x, $y")
-        p.title.text = "Experiment {}, {} km".format(experiment.upper(), int(length_scale))
-        p.xaxis.axis_label = 'x (normalized)'
-        p.yaxis.axis_label = 'vx (m / year)'
+def plot(experiment, length_scales, axs):
+    for length_scale, ax in zip(length_scales, axs):
+
+        ax.set_title("{} km".format(int(length_scale)))
+
+        ax.set_xlabel('x (normalized)')
+        ax.set_ylabel('vx (m / year)')
 
         models = True
-        plot_experiment(p, experiment, length_scale, "BP", color="green", plot_models=models)
-        plot_experiment(p, experiment, length_scale, "FS", color="orange", plot_models=models)
+        plot_experiment(ax, experiment, length_scale, "BP", color="green", plot_models=models)
+        plot_experiment(ax, experiment, length_scale, "FS", color="orange", plot_models=models)
 
-        p.legend.location = "top_left"
+        plot_pism(ax, experiment, length_scale)
 
-        plot_pism(p, experiment, length_scale)
+        ax.legend()
 
-        plots.append(p)
 
-    return plots
-
-def plot_pism(fig, experiment, length_scale):
+def plot_pism(ax, experiment, length_scale):
     "Plot PISM's ISMIP-HOM results"
     filename = pism_prefix + "pism-hom-{}-{}.nc".format(experiment.upper(), length_scale)
 
@@ -83,27 +76,29 @@ def plot_pism(fig, experiment, length_scale):
         x = f.variables["x"][:] / L
         if experiment in "bd":
             v = f.variables["uvelsurf"][0, 1, :]
-            fig.line(x, v, name="PISM", line_color="red", line_width=4, legend_label="PISM")
+            ax.plot(x, v, color="red", lw=2, label="PISM")
         else:
             V = f.variables["uvelsurf"][0, :, :]
             y = f.variables["y"][:] / L
             v = interp2d(x, y, V)(x, 0.25)
-            fig.line(x, v, name="PISM", line_color="red", line_width=4, legend_label="PISM")
+            ax.plot(x, v, color="red", lw=2, label="PISM")
 
     finally:
         f.close()
 
 def grid_plot(experiment_name):
-    output_file("ismip-{}.html".format(experiment_name),
-                title="ISMIP HOM Experiment {}".format(experiment_name.upper()),
-                mode="cdn")
 
-    row1 = plot(experiment_name, ["005", "010", "020"])
-    row2 = plot(experiment_name, ["040", "080", "160"])
+    fig, axs = plt.subplots(2, 3)
+    fig.dpi = 100
+    fig.set_size_inches(12, 8)
+    fig.suptitle("ISMIP HOM Experiment {}".format(experiment_name.upper()))
+    fig.tight_layout(h_pad=4)
+    fig.subplots_adjust(top=0.9, bottom=0.1)
 
-    grid_plot = gridplot([row1, row2], plot_width=400, plot_height=400)
+    row1 = plot(experiment_name, ["005", "010", "020"], axs[0])
+    row2 = plot(experiment_name, ["040", "080", "160"], axs[1])
 
-    show(grid_plot)
+    fig.savefig("ismip-{}.png".format(experiment_name))
 
 if __name__ == "__main__":
     pism_prefix = "./"
