@@ -12,15 +12,14 @@ models = {"FS" : FS, "BP" : BP}
 
 # Set to "True" to remove models that appear to be obviously wrong or produce poor-quality
 # results (oscillations).
-remove_outliers = False
+remove_outliers = True
 
 outliers = {"a" : [],
             "b" : [],
             "c" : ["mbr1"],
             "d" : ["rhi1", "rhi2", "rhi3"]}
 
-def plot_experiment(fig, experiment, length_scale, model_type, N_samples=501, color="blue", plot_models=True,
-                    plot_spread=True):
+def plot_experiment(fig, experiment, length_scale, model_type, N_samples=501, color="blue", plot_models=True):
 
     filename = "ismip-hom-{exp}-{length}.npz".format(exp=experiment, length=length_scale)
 
@@ -47,15 +46,6 @@ def plot_experiment(fig, experiment, length_scale, model_type, N_samples=501, co
     vx_mean = np.mean(data, axis=0)
     vx_std = np.std(data, axis=0)
 
-    if plot_spread:
-        b = {"x" : xs,
-             "lower" : vx_mean - vx_std,
-             "upper" : vx_mean + vx_std}
-
-        band = Band(base="x", lower="lower", upper="upper", source=ColumnDataSource(b),
-                    fill_color=color, fill_alpha=0.5)
-        fig.add_layout(band)
-
     fig.line(xs, vx_mean,
              legend_label="{} mean".format(model_type),
              line_width=4,
@@ -71,9 +61,8 @@ def plot(experiment, length_scales):
         p.yaxis.axis_label = 'vx (m / year)'
 
         models = True
-        spread = False
-        plot_experiment(p, experiment, length_scale, "BP", color="green", plot_models=models, plot_spread=spread)
-        plot_experiment(p, experiment, length_scale, "FS", color="orange", plot_models=models, plot_spread=spread)
+        plot_experiment(p, experiment, length_scale, "BP", color="green", plot_models=models)
+        plot_experiment(p, experiment, length_scale, "FS", color="orange", plot_models=models)
 
         p.legend.location = "top_left"
 
