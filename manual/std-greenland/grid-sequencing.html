@@ -41,7 +41,7 @@ first. It is, however, only possible to pick up detail from high quality data, f
 instance bed elevation and high-resolution climate data, using high grid resolution.</p>
 <p>A 20 or 10 km grid is inadequate for resolving the flow of the ice sheet through the kind
 of fjord-like, few-kilometer-wide topographical confinement which occurs, for example, at
-Jakobshavn Isbrae in the west Greenland ice sheet <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id223"><span>32</span></a>]</span>, an important
+Jakobshavn Isbrae in the west Greenland ice sheet <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id224"><span>32</span></a>]</span>, an important
 outlet glacier which both flows fast and drains a large fraction of the ice sheet. One
 possibility is to set up an even higher-resolution PISM regional model covering only one
 outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.
@@ -144,11 +144,11 @@ time series for ice volume on 10 km and 5 km grids are not very “steady” als
 that these runs should actually be longer.</p>
 <p>In this vein, if you have an available supercomputer then a good exercise is to extend our
 grid sequencing example to 3 km or 2 km resolutions
-<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id26"><span>1</span></a>]</span>; these grids are already supported in the script
+<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id27"><span>1</span></a>]</span>; these grids are already supported in the script
 <code class="docutils literal notranslate"><span class="pre">spinup.sh</span></code>. Note that the vertical grid also generally gets refined as the horizontal
 grid is refined.</p>
 <p>Going to a 1km grid is possible, but you will start to see the limitations of distributed
-file systems in writing the enormous NetCDF files in question <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id100"><span>10</span></a>]</span>.
+file systems in writing the enormous NetCDF files in question <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id101"><span>10</span></a>]</span>.
 Notice that a factor-of-five refinement in all three dimensions, e.g. from 5 km to 1 km in
 the horizontal, and from 20 m to 4 m in the vertical, generates an output NetCDF file
 which is 125 times larger. Since the already-generated 5 km result <code class="docutils literal notranslate"><span class="pre">g5km_gridseq.nc</span></code> is
@@ -260,9 +260,9 @@ stages in computing the fine grid solution.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -16,7 +16,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Sample convergence plots" href="convergence-figures.html" />
-    <link rel="prev" title="MISMIP3d" href="../simplified-geometry/mismip3d.html" />
+    <link rel="prev" title="ISMIP-HOM" href="../simplified-geometry/ismip-hom.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -41,7 +41,7 @@ the assessment of numerical errors is called <em>verification</em>… Validation
 only after verification, otherwise agreement between measured and computed results may
 well be fortuitous.</p>
 <p>P. Wesseling, (2001) <em>Principles of Computational Fluid Dynamics</em>, pp. 560–561
-<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id451"><span>113</span></a>]</span></p>
+<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id452"><span>114</span></a>]</span></p>
 </div></blockquote>
 <p>Verification is the essentially mathematical task of checking that the predictions of the
 numerical code are close to the predictions of a continuum model, the one which the
@@ -49,11 +49,11 @@ numerical code claims to approximate. It is a crucial task for a code as complic
 PISM. In verification there is no comparison between model output and observations of
 nature. Instead, one compares exact solutions of the continuum model, in circumstances in
 which they are available, to their numerical approximations.</p>
-<p>Reference <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>114</span></a>]</span> gives a broad discussion of verification and validation in
-computational fluid dynamics. See <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span> and <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span> for discussion of verification
+<p>Reference <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>115</span></a>]</span> gives a broad discussion of verification and validation in
+computational fluid dynamics. See <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span> and <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span> for discussion of verification
 issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA),
-respectively, and for exact solutions to these models, and <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span>,
-<span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span> for verification using an exact solution to the SSA equations for ice
+respectively, and for exact solutions to these models, and <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>,
+<span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span> for verification using an exact solution to the SSA equations for ice
 streams.</p>
 <p>In PISM there is a separate executable <code class="docutils literal notranslate"><span class="pre">pismv</span></code> which is used for SIA-related
 verification, and there are additional scripts for SSA-related verification. The source
@@ -78,47 +78,47 @@ class of the PISM base class.</p>
 <tbody>
 <tr class="row-even"><td><p>A</p></td>
 <td><p>isothermal SIA, steady,  flat bed, constant accumulation</p></td>
-<td><p><span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span></p></td>
+<td><p><span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span></p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>B</p></td>
 <td><p>isothermal SIA, flat bed, zero accumulation</p></td>
-<td><p><span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span>, <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id169"><span>100</span></a>]</span></p></td>
+<td><p><span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span>, <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id170"><span>100</span></a>]</span></p></td>
 <td><p>similarity solution</p></td>
 </tr>
 <tr class="row-even"><td><p>C</p></td>
 <td><p>isothermal SIA, flat bed, growing accumulation</p></td>
-<td><p><span id="id10">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span></p></td>
+<td><p><span id="id10">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span></p></td>
 <td><p>similarity solution</p></td>
 </tr>
 <tr class="row-odd"><td><p>D</p></td>
 <td><p>isothermal SIA, flat bed, oscillating accumulation</p></td>
-<td><p><span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span></p></td>
+<td><p><span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span></p></td>
 <td><p>uses compensatory accumulation</p></td>
 </tr>
 <tr class="row-even"><td><p>E</p></td>
 <td><p>isothermal SIA; as A, but with sliding in a sector</p></td>
-<td><p><span id="id12">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span></p></td>
+<td><p><span id="id12">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span></p></td>
 <td><p>uses compensatory accumulation</p></td>
 </tr>
 <tr class="row-odd"><td><p>F</p></td>
 <td><p>thermomechanically coupled SIA (mass and energy conservation), steady, flat bed</p></td>
-<td><p><span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id30"><span>68</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span></p></td>
+<td><p><span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>68</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
 <td><p>uses compensatory accumulation and heating</p></td>
 </tr>
 <tr class="row-even"><td><p>G</p></td>
 <td><p>thermomechanically coupled SIA; as F  but with oscillating accumulation</p></td>
-<td><p><span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id30"><span>68</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span></p></td>
+<td><p><span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>68</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
 <td><p>ditto</p></td>
 </tr>
 <tr class="row-odd"><td><p>H</p></td>
 <td><p>bed deformation coupled with isothermal SIA</p></td>
-<td><p><span id="id17">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>31</span></a>]</span></p></td>
+<td><p><span id="id17">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span></p></td>
 <td><p>joined similarity solution</p></td>
 </tr>
 <tr class="row-even"><td><p>I</p></td>
 <td><p>stream velocity computation using SSA (plastic till)</p></td>
-<td><p><span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span>, <span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span></p></td>
+<td><p><span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span>, <span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span></p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>J</p></td>
@@ -128,7 +128,7 @@ class of the PISM base class.</p>
 </tr>
 <tr class="row-even"><td><p>K</p></td>
 <td><p>pure conduction in ice and bedrock</p></td>
-<td><p><span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id72"><span>115</span></a>]</span></p></td>
+<td><p><span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id73"><span>116</span></a>]</span></p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>L</p></td>
@@ -240,8 +240,8 @@ model runs.</p></li>
 <p>Knowing the error decay rate may give a prediction of how fine a grid is necessary to
 achieve a desired smallness for the numerical error.</p>
 <p>Therefore one must “go down” a grid refinement “path” and measure numerical error for each
-grid <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>114</span></a>]</span>. The refinement path is defined by a sequence of spatial grid cell sizes
-which decrease toward the refinement limit of zero size <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id299"><span>116</span></a>]</span>. In PISM the
+grid <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>115</span></a>]</span>. The refinement path is defined by a sequence of spatial grid cell sizes
+which decrease toward the refinement limit of zero size <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id300"><span>117</span></a>]</span>. In PISM the
 timestep <span class="math notranslate nohighlight">\(\Delta t\)</span> is determined adaptively by a stability criterion (see
 section <a class="reference internal" href="../practical-usage/time-stepping.html#sec-adapt"><span class="std std-ref">Understanding adaptive time-stepping</span></a>). In PISM one specifies the number of grid points, thus the
 grid cell sizes because the overall dimensions of the computational box are normally
@@ -249,7 +249,7 @@ fixed; see section <a class="reference internal" href="../modeling-choices/compu
 computing a norm (or norms) of the difference between the numerical solution and the exact
 solution.</p>
 <p>For a grid refinement path example, in tests of the thermomechanically-coupled SIA model
-one refines in three dimensions, and these runs produced Figures 13, 14, and 15 of <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span>:</p>
+one refines in three dimensions, and these runs produced Figures 13, 14, and 15 of <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismv -test G -max_dt 10.0 -y 25000 -Mx 61 -My 61 -Mz 61 -z_spacing equal
 pismv -test G -max_dt 10.0 -y 25000 -Mx 91 -My 91 -Mz 91 -z_spacing equal
 pismv -test G -max_dt 10.0 -y 25000 -Mx 121 -My 121 -Mz 121 -z_spacing equal
@@ -263,14 +263,14 @@ involves more than <span class="math notranslate nohighlight">\(100\)</span> mil
 steps. Appropriate use of parallelism (<code class="docutils literal notranslate"><span class="pre">mpiexec</span> <span class="pre">-n</span> <span class="pre">NN</span> <span class="pre">pismv</span></code>) and of the <code class="docutils literal notranslate"><span class="pre">-skip</span></code>
 modification to adaptive timestepping accelerates such fine-grid runs; see section
 <a class="reference internal" href="../practical-usage/time-stepping.html#sec-adapt"><span class="std std-ref">Understanding adaptive time-stepping</span></a>.</p>
-<p>Figures <a class="reference internal" href="convergence-figures.html#fig-thickerrsb"><span class="std std-numref">Fig. 27</span></a> through <a class="reference internal" href="convergence-figures.html#fig-velerrsi"><span class="std std-numref">Fig. 31</span></a> in
+<p>Figures <a class="reference internal" href="convergence-figures.html#fig-thickerrsb"><span class="std std-numref">Fig. 34</span></a> through <a class="reference internal" href="convergence-figures.html#fig-velerrsi"><span class="std std-numref">Fig. 38</span></a> in
 <a class="reference internal" href="convergence-figures.html#sec-convergence-plots"><span class="std std-ref">Sample convergence plots</span></a> show a sampling of the results of verifying PISM using the
 tests described above. These figures were produced automatically using Python scripts
 <code class="docutils literal notranslate"><span class="pre">test/vfnow.py</span></code> and <code class="docutils literal notranslate"><span class="pre">test/vnreport.py</span></code>. See section <a class="reference internal" href="../practical-usage/scripts.html#sec-scripts"><span class="std std-ref">Utility and test scripts</span></a>.</p>
 <p>These figures <em>do not</em> show outstanding rates of convergence, relative to textbook partial
 differential equation examples. For the errors in tests B and G, see the discussion of
-free margin shape in <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id36"><span>57</span></a>]</span>. For the errors in test I, the exact continuum solution is
-not very smooth at the free boundary <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span>.</p>
+free margin shape in <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span>. For the errors in test I, the exact continuum solution is
+not very smooth at the free boundary <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span>.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="convergence-figures.html">Sample convergence plots</a></li>
@@ -283,7 +283,7 @@ not very smooth at the free boundary <span id="id25">[<a class="reference intern
       <table style="width: 100%">
         <tr>
           <td style="text-align: left; width: 30%">
-              <a class="reference internal" href="../simplified-geometry/mismip3d.html">Previous</a>
+              <a class="reference internal" href="../simplified-geometry/ismip-hom.html">Previous</a>
           </td>
           <td style="text-align: center; width: 30%">
               <a class="reference internal" href="../index.html">Up</a>
@@ -356,9 +356,9 @@ not very smooth at the free boundary <span id="id25">[<a class="reference intern
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

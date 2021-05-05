@@ -35,27 +35,27 @@
 <span id="sec-energy"></span><h1>Modeling conservation of energy<a class="headerlink" href="#modeling-conservation-of-energy" title="Permalink to this headline">¶</a></h1>
 <p>In normal use PISM solves the conservation of energy problem within the ice, the thin
 subglacial layer, and a layer of thermal bedrock. For the ice and the subglacial layer it
-uses an enthalpy-based scheme <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id29"><span>21</span></a>]</span> which allows the energy
+uses an enthalpy-based scheme <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id30"><span>21</span></a>]</span> which allows the energy
 to be conserved even when the temperature is at the pressure-melting point.</p>
 <p>Ice at the melting point is called “temperate” ice. Part of the thermal energy of
 temperate ice is in the latent heat of the liquid water stored between the crystals of the
 temperate ice. Part of the thermal energy of the whole glacier is in the latent heat of
 the liquid water under the glacier. The enthalpy scheme correctly models these storehouses
 of thermal energy, and thus it allows polythermal and fully-temperate glaciers to be
-modeled <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id27"><span>72</span></a>]</span>.</p>
+modeled <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id28"><span>72</span></a>]</span>.</p>
 <p>The state of the full conservation of energy model includes the 3D <code class="docutils literal notranslate"><span class="pre">enthalpy</span></code> variable
 plus the 2D <code class="docutils literal notranslate"><span class="pre">bwat</span></code> and <code class="docutils literal notranslate"><span class="pre">tillwat</span></code> subglacial hydrology state variables (subsection
 <a class="reference internal" href="../subglacier/hydrology.html#sec-subhydro"><span class="std std-ref">Subglacial hydrology</span></a>), all of which are seen in output files. The important basal melt rate
 computation involves all of these energy state variables, because the basal melt rate
 (<code class="docutils literal notranslate"><span class="pre">bmelt</span></code> in output files) comes from conserving energy across the ice-bedrock layer
-<span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id29"><span>21</span></a>]</span>. Fields <code class="docutils literal notranslate"><span class="pre">temp</span></code>, <code class="docutils literal notranslate"><span class="pre">liqfrac</span></code>, and <code class="docutils literal notranslate"><span class="pre">temp_pa</span></code> seen in
+<span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id30"><span>21</span></a>]</span>. Fields <code class="docutils literal notranslate"><span class="pre">temp</span></code>, <code class="docutils literal notranslate"><span class="pre">liqfrac</span></code>, and <code class="docutils literal notranslate"><span class="pre">temp_pa</span></code> seen in
 output files are all actually diagnostic outputs because all of these can be recovered
 from the enthalpy and the ice geometry.</p>
 <p>Because this part of PISM is just a conservation law, there is little need for the user to
 worry about controlling it. If desired, however, conservation of energy can be turned off
 entirely with <code class="option docutils literal notranslate"><span class="pre">-energy</span> <span class="pre">none</span></code>. The default enthalpy-based conservation of energy model
 (i.e. <code class="docutils literal notranslate"><span class="pre">-energy</span> <span class="pre">enthalpy</span></code>) can be replaced by the temperature-based (i.e. “cold ice”)
-method used in <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id32"><span>9</span></a>]</span> and verified in <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id31"><span>15</span></a>]</span> by setting option <code class="option docutils literal notranslate"><span class="pre">-energy</span>
+method used in <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span> and verified in <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id32"><span>15</span></a>]</span> by setting option <code class="option docutils literal notranslate"><span class="pre">-energy</span>
 <span class="pre">cold</span></code>.</p>
 <p>The thermal bedrock layer model is turned off by setting <code class="docutils literal notranslate"><span class="pre">-Mbz</span> <span class="pre">1</span></code> (i.e. zero spaces)
 while it is turned on by choosing a depth and number of points, as in <code class="docutils literal notranslate"><span class="pre">-Lbz</span> <span class="pre">1000</span> <span class="pre">-Mbz</span>
@@ -149,9 +149,9 @@ at the base of the ice.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

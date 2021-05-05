@@ -42,16 +42,16 @@ on reverse-slope beds is tested. The intercomparison process is described at the
 <div><p><a class="reference external" href="http://homepages.ulb.ac.be/~fpattyn/mismip/">http://homepages.ulb.ac.be/~fpattyn/mismip/</a></p>
 </div></blockquote>
 <p>Find a full text description there, along with the published report on the results
-<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id273"><span>108</span></a>]</span>; that paper includes results from PISM version 0.1. These documents are
+<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id274"><span>108</span></a>]</span>; that paper includes results from PISM version 0.1. These documents are
 essential reading for understanding MISMIP results generally, and for appreciating the
 brief discussion in this subsection.</p>
 <p>PISM’s version of MISMIP includes an attached ice shelf even though modeling the shelf is
-theoretically unnecessary in the flow line case. The analysis in <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id393"><span>111</span></a>]</span> shows
+theoretically unnecessary in the flow line case. The analysis in <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id394"><span>111</span></a>]</span> shows
 that the only effect of an ice shelf, in the flow line case, is to transfer the force
 imbalance at the calving front directly to the ice column at the grounding line. Such an
 analysis does not apply to ice shelves with two horizontal dimensions; real ice shelves
 have “buttressing” and “side drag” and other forces not present in the flow line
-<span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id138"><span>112</span></a>]</span>. See the next subsection on MISMIP3d and the Ross ice shelf example in
+<span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id139"><span>112</span></a>]</span>. See the next subsection on MISMIP3d and the Ross ice shelf example in
 section <a class="reference internal" href="../validation/ross.html#sec-ross"><span class="std std-ref">An SSA flow model for the Ross Ice Shelf in Antarctica</span></a>, among other examples.</p>
 <p>We must adapt the usual 3D PISM model to two horizontal dimensions, i.e. to do flow-line
 problems (see section <a class="reference internal" href="../practical-usage/flowline.html#sec-flowline-modeling"><span class="std std-ref">Using PISM for flow-line modeling</span></a>). The flow direction for MISMIP is
@@ -60,7 +60,7 @@ of points in the <span class="math notranslate nohighlight">\(y\)</span>-directi
 this in the cross-flow direction confuses the finite difference scheme.</p>
 <p>PISM can do MISMIP experiments with either of two applicable ice dynamics models. Model 1
 is a pure SSA model; “category 2” in the MISMIP classification. Model 2 combines SIA and
-SSA velocities as described in <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id453"><span>16</span></a>]</span>; “category 3” because it resolves
+SSA velocities as described in <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id454"><span>16</span></a>]</span>; “category 3” because it resolves
 “vertical” shear (i.e. using SIA flow).</p>
 <p>There are many runs for a complete MISMIP intercomparison submission. Specifically, for a
 given model there are <span class="math notranslate nohighlight">\(62\)</span> runs for each grid choice, and three (suggested) grid choices,
@@ -103,18 +103,18 @@ at step 7. Left: grid mode 1 (12 km grid). Right: grid mode 3 (6 km grid).</span
 <div class="figure align-default" id="fig-smexper1am1a1">
 <img alt="../../_images/SM-1a-A1.png" src="../../_images/SM-1a-A1.png" />
 <p class="caption"><span class="caption-number">Fig. 23 </span><span class="caption-text">Analytical profile for steady state of experiment 1a, step 1, from theory in
-<span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id393"><span>111</span></a>]</span>. This is a boundary layer asymptotic matching result, but not the
+<span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id394"><span>111</span></a>]</span>. This is a boundary layer asymptotic matching result, but not the
 exact solution to the equations.</span><a class="headerlink" href="#fig-smexper1am1a1" title="Permalink to this image">¶</a></p>
 </div>
 <p>The script <code class="docutils literal notranslate"><span class="pre">MISMIP.py</span></code> in <code class="docutils literal notranslate"><span class="pre">examples/mismip/mismip2d</span></code> has the ability to compute the
-profile from the Schoof’s <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id393"><span>111</span></a>]</span> asymptotic-matching boundary layer theory. This
+profile from the Schoof’s <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id394"><span>111</span></a>]</span> asymptotic-matching boundary layer theory. This
 script is a Python translation, using <code class="docutils literal notranslate"><span class="pre">scipy</span></code> and <code class="docutils literal notranslate"><span class="pre">pylab</span></code>, of the <a class="reference external" href="http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar">provided MATLAB
 codes</a>. For example,</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>python MISMIP.py -o mismip_analytic.png
 </pre></div>
 </div>
 <p>produces a <code class="docutils literal notranslate"><span class="pre">.png</span></code> image file with <a class="reference internal" href="#fig-smexper1am1a1"><span class="std std-numref">Fig. 23</span></a>. By default
-<code class="docutils literal notranslate"><span class="pre">run.py</span></code> uses the asymptotic-matching thickness result from the <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id393"><span>111</span></a>]</span> theory
+<code class="docutils literal notranslate"><span class="pre">run.py</span></code> uses the asymptotic-matching thickness result from the <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id394"><span>111</span></a>]</span> theory
 to initialize the initial ice thickness, as allowed by the MISMIP specification.</p>
 <div class="figure align-default" id="fig-mismipmode2results">
 <img alt="../../_images/profileA7-M2.png" src="../../_images/profileA7-M2.png" />
@@ -181,6 +181,7 @@ to 16 km for grid mode 2 (a factor of about 5), by using a grid refinement from 
 <li class="toctree-l3"><a class="reference internal" href="eismint-2.html">EISMINT II</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">MISMIP</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mismip3d.html">MISMIP3d</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ismip-hom.html">ISMIP-HOM</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../verification/index.html">Verification</a></li>
@@ -213,9 +214,9 @@ to 16 km for grid mode 2 (a factor of about 5), by using a grid refinement from 
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

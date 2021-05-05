@@ -42,14 +42,14 @@ for PISM, do:</p>
 </div>
 <p>The script <code class="docutils literal notranslate"><span class="pre">preprocess.sh</span></code> requires <code class="docutils literal notranslate"><span class="pre">wget</span></code> and also the <a class="reference external" href="http://nco.sourceforge.net/">NetCDF Operators</a>. It
 downloads the version 1.1 of the SeaRISE “master” present-day data set, which contains ice
-thickness and bedrock topography from BEDMAP <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id42"><span>5</span></a>]</span>, and modeled
-precipitation and surface mass balance rates from RACMO <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id112"><span>6</span></a>]</span>, among
+thickness and bedrock topography from BEDMAP <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id43"><span>5</span></a>]</span>, and modeled
+precipitation and surface mass balance rates from RACMO <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id113"><span>6</span></a>]</span>, among
 other fields.</p>
 <p>In particular, it creates three new NetCDF files which can be read by PISM. The
 spatially-varying fields, with adjusted metadata, go in <code class="docutils literal notranslate"><span class="pre">pism_Greenland_5km_v1.1.nc</span></code>.
 The other two new files contain famous time-dependent paleo-climate records from ice and
-seabed cores: <code class="docutils literal notranslate"><span class="pre">pism_dT.nc</span></code> has the GRIP temperature record <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id217"><span>7</span></a>]</span> and
-<code class="docutils literal notranslate"><span class="pre">pism_dSL.nc</span></code> has the SPECMAP sea level record <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id208"><span>8</span></a>]</span>.</p>
+seabed cores: <code class="docutils literal notranslate"><span class="pre">pism_dT.nc</span></code> has the GRIP temperature record <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id218"><span>7</span></a>]</span> and
+<code class="docutils literal notranslate"><span class="pre">pism_dSL.nc</span></code> has the SPECMAP sea level record <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id209"><span>8</span></a>]</span>.</p>
 <p>Any of these NetCDF files can be viewed with <code class="docutils literal notranslate"><span class="pre">ncview</span></code> or other NetCDF visualization
 tools; see <a class="reference internal" href="../practical-usage/netcdf-tools.html#tab-netcdfview"><span class="std std-numref">Table 24</span></a>. An application of IDV to the master data set produced
 <a class="reference internal" href="#fig-sr-input"><span class="std std-numref">Fig. 1</span></a>, for example. Use <code class="docutils literal notranslate"><span class="pre">ncdump</span> <span class="pre">-h</span></code> to see the metadata and history of
@@ -148,9 +148,9 @@ respectively, in <code class="docutils literal notranslate"><span class="pre">pi
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

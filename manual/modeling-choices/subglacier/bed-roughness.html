@@ -33,7 +33,7 @@
       
   <div class="section" id="parameterization-of-bed-roughness-in-the-sia">
 <span id="sec-bedsmooth"></span><h1>Parameterization of bed roughness in the SIA<a class="headerlink" href="#parameterization-of-bed-roughness-in-the-sia" title="Permalink to this headline">¶</a></h1>
-<p>Schoof <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id397"><span>85</span></a>]</span> describes how to alter the SIA stress balance to model
+<p>Schoof <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>85</span></a>]</span> describes how to alter the SIA stress balance to model
 ice flow over bumpy bedrock topgraphy. One computes the amount by which bumpy topography
 lowers the SIA diffusivity. An internal quantity used in this method is a smoothed version
 of the bedrock topography. As a practical matter for PISM, this theory improves the SIA’s
@@ -44,7 +44,7 @@ of PISM’s implementation, see <a class="reference internal" href="../../../tec
 the square smoothing domain in meters. If zero is given, <code class="docutils literal notranslate"><span class="pre">-bed_smoother_range</span> <span class="pre">0</span></code> then
 the mechanism is turned off. The mechanism is on by default using executable <code class="docutils literal notranslate"><span class="pre">pismr</span></code>,
 with the half-width set to 5 km (<code class="docutils literal notranslate"><span class="pre">-bed_smoother_range</span> <span class="pre">5.0e3</span></code>), giving Schoof’s
-recommended smoothing size of 10 km <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id397"><span>85</span></a>]</span>.</p>
+recommended smoothing size of 10 km <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>85</span></a>]</span>.</p>
 <p>This mechanism is turned off by default in executables <code class="docutils literal notranslate"><span class="pre">pisms</span></code> and <code class="docutils literal notranslate"><span class="pre">pismv</span></code>.</p>
 <p>Under the default setting <code class="docutils literal notranslate"><span class="pre">-o_size</span> <span class="pre">medium</span></code>, PISM writes fields <code class="variable docutils literal notranslate"><span class="pre">topgsmooth</span></code> and
 <code class="variable docutils literal notranslate"><span class="pre">schoofs_theta</span></code> from this mechanism. The thickness relative to the smoothed bedrock
@@ -140,9 +140,9 @@ diffusivity, essentially a drag coefficient, from bumpy bed.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

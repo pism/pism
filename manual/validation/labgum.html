@@ -38,20 +38,20 @@ shear-thinning fluid with a free surface. PISM ought to be able to model such fl
 some generality. We test that ability here by comparing PISM’s isothermal SIA numerical
 model to a laboratory observations of a 1% Xanthan gum suspension in water in a
 table-top, moving-margin experiment by R. Sayag and M. Worster
-<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id383"><span>118</span></a>]</span>. The “gum” fluid is more shear-thinning
+<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>119</span></a>]</span>. The “gum” fluid is more shear-thinning
 than ice, and it has much lower absolute viscosity values, but it has the same density.
 This flow has total mass <span class="math notranslate nohighlight">\(\sim 1\)</span> kg, compared to <span class="math notranslate nohighlight">\(\sim 10^{18}\)</span> kg for the Greenland ice
 sheet.</p>
 <p>We compare our numerical results to the “constant-flux” experiment from
-<span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span>. <a class="reference internal" href="#fig-labgumexperiment"><span class="std std-numref">Fig. 32</span></a> shows the experimental setup by
+<span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span>. <a class="reference internal" href="#fig-labgumexperiment"><span class="std std-numref">Fig. 39</span></a> shows the experimental setup by
 reproducing Figures 2(c) and 2(d) from that reference. A pump pushes the translucent
 blue-dyed fluid through a round 8 mm hole in the middle of a clear table-top at a mass
 rate of about 3 gm/s. The downward-pointing camera, which produced the right-hand figure,
 allows measurement of the location of margin of the “ice cap”, and in particular of its
-radius. The measured radii data are the black dots in <a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 33</span></a>.</p>
+radius. The measured radii data are the black dots in <a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 40</span></a>.</p>
 <div class="figure align-default" id="fig-labgumexperiment">
 <img alt="../../_images/labgumexperiment.png" src="../../_images/labgumexperiment.png" />
-<p class="caption"><span class="caption-number">Fig. 32 </span><span class="caption-text">Reproduction of Figures 2(c) and 2(d) from <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span>. Left: experimental
+<p class="caption"><span class="caption-number">Fig. 39 </span><span class="caption-text">Reproduction of Figures 2(c) and 2(d) from <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span>. Left: experimental
 apparatus used for “constant-flux release” experiment. Right: snapshot of constant-flux
 experiment (plan view), showing an axisymmetric front.</span><a class="headerlink" href="#fig-labgumexperiment" title="Permalink to this image">¶</a></p>
 </div>
@@ -78,7 +78,7 @@ the generation of a configuration <code class="docutils literal notranslate"><sp
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>./preprocess.py
 </pre></div>
 </div>
-<p>and then do a run for 746 model seconds <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span> on the 10 mm grid on a
+<p>and then do a run for 746 model seconds <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span> on the 10 mm grid on a
 <span class="math notranslate nohighlight">\(520\,\text{mm}\,\times 520\,\text{mm}\)</span> square domain using 4 processors:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>./rungum.sh 4 52 &amp;&gt; out.lab52 &amp;
 </pre></div>
@@ -92,7 +92,7 @@ to the experimental data:</p>
 </div>
 <p>You can also redo the whole thing on higher resolution grids (here: 5 and 2.5 mm), here
 using 6 MPI processes if the runs are done simultaneously, and when it is done after
-several hours, make a combined figure just like <a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 33</span></a>:</p>
+several hours, make a combined figure just like <a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 40</span></a>:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>./preprocess.py -Mx 104 -o initlab104.nc
 ./preprocess.py -Mx 208 -o initlab208.nc
 ./rungum.sh 2 104 &amp;&gt; out.lab104 &amp;
@@ -102,10 +102,10 @@ several hours, make a combined figure just like <a class="reference internal" hr
 </div>
 <div class="figure align-default" id="fig-labgumresult">
 <img alt="../../_images/labgumradius.png" src="../../_images/labgumradius.png" />
-<p class="caption"><span class="caption-number">Fig. 33 </span><span class="caption-text">Radius <span class="math notranslate nohighlight">\(r_N(t)\)</span> for runs with 10 mm (<code class="docutils literal notranslate"><span class="pre">ts_lab52.nc</span></code>), 5 mm (<code class="docutils literal notranslate"><span class="pre">ts_lab104.nc</span></code>), and 2.5
+<p class="caption"><span class="caption-number">Fig. 40 </span><span class="caption-text">Radius <span class="math notranslate nohighlight">\(r_N(t)\)</span> for runs with 10 mm (<code class="docutils literal notranslate"><span class="pre">ts_lab52.nc</span></code>), 5 mm (<code class="docutils literal notranslate"><span class="pre">ts_lab104.nc</span></code>), and 2.5
 mm (<code class="docutils literal notranslate"><span class="pre">ts_lab208.nc</span></code>) grids, compared to observations from Sayag &amp; Worster’s
-<span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span> table-top “ice cap” (gravity current) made from a 1% Xanthan
-gum suspension, as shown in Figure <a class="reference internal" href="#fig-labgumexperiment"><span class="std std-numref">Fig. 32</span></a>.</span><a class="headerlink" href="#fig-labgumresult" title="Permalink to this image">¶</a></p>
+<span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span> table-top “ice cap” (gravity current) made from a 1% Xanthan
+gum suspension, as shown in Figure <a class="reference internal" href="#fig-labgumexperiment"><span class="std std-numref">Fig. 39</span></a>.</span><a class="headerlink" href="#fig-labgumresult" title="Permalink to this image">¶</a></p>
 </div>
 <p>We see that on the coarsest grid the modeled volume has “steps” because the margin
 advances discretely. Note we are computing the radius by first computing the fluid-covered
@@ -116,12 +116,12 @@ first few model seconds. The early evolution is thus distinctly non-shallow, but
 that increasing the model resolution reduces most of the observation-model difference. In
 fact there is little need for “higher-order” stresses because the exact similarity
 solution of the shallow continuum equations, used by Sayag &amp; Worster, closely-fits the
-data even for small radius and time (see <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id384"><span>117</span></a>]</span>, Figure 4).</p>
+data even for small radius and time (see <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id385"><span>118</span></a>]</span>, Figure 4).</p>
 <p>In any case, the large-time observations are very closely-fit by the numerical results at
 all grid resolutions. We have used the Glen-law parameters <span class="math notranslate nohighlight">\(n,A\)</span> as calculated by Sayag &amp;
 Worster, but one could do parameter-fitting to get the “best” values if desired. In
 particular, roughly speaking, <span class="math notranslate nohighlight">\(n\)</span> controls the slope of the results in
-<a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 33</span></a> and <span class="math notranslate nohighlight">\(A\)</span> controls their vertical displacement.</p>
+<a class="reference internal" href="#fig-labgumresult"><span class="std std-numref">Fig. 40</span></a> and <span class="math notranslate nohighlight">\(A\)</span> controls their vertical displacement.</p>
 </div>
 
 
@@ -203,9 +203,9 @@ particular, roughly speaking, <span class="math notranslate nohighlight">\(n\)</
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

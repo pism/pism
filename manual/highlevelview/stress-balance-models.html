@@ -36,54 +36,54 @@
 <p>At each time-step of a typical PISM run, the geometry, temperature, and basal strength of
 the ice sheet are included into stress (momentum) balance equations to determine the
 velocity of the flowing ice. The “full” stress balance equations for flowing ice form a
-non-Newtonian Stokes model <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id124"><span>37</span></a>]</span>. PISM does not attempt to solve the Stokes equations
+non-Newtonian Stokes model <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id125"><span>37</span></a>]</span>. PISM does not attempt to solve the Stokes equations
 themselves, however. Instead it can numerically solve, in parallel, three different shallow
 approximations which are well-suited to ice sheet and ice shelf systems:</p>
 <ul class="simple">
-<li><p>the non-sliding shallow ice approximation (SIA) <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id199"><span>38</span></a>]</span>, also called the “lubrication
-approximation” <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id124"><span>37</span></a>]</span>, which describes ice as flowing by shear in planes parallel to
+<li><p>the non-sliding shallow ice approximation (SIA) <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id200"><span>38</span></a>]</span>, also called the “lubrication
+approximation” <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id125"><span>37</span></a>]</span>, which describes ice as flowing by shear in planes parallel to
 the geoid, with a strong connection of the ice base to the bedrock, and</p></li>
-<li><p>the shallow shelf approximation (SSA) <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id449"><span>14</span></a>]</span>, which describes a
-membrane-type flow of floating ice <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id293"><span>39</span></a>]</span>, or of grounded ice which is sliding over
-a weak base <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id276"><span>13</span></a>]</span>, <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span>.</p></li>
-<li><p>a first order approximation to the Stokes equations due to Blatter (<span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id55"><span>40</span></a>]</span>,
-<span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>41</span></a>]</span>). In the remainder, we refer to is as the “Blatter’s model.”</p></li>
+<li><p>the shallow shelf approximation (SSA) <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id450"><span>14</span></a>]</span>, which describes a
+membrane-type flow of floating ice <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id294"><span>39</span></a>]</span>, or of grounded ice which is sliding over
+a weak base <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id277"><span>13</span></a>]</span>, <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span>.</p></li>
+<li><p>a first order approximation to the Stokes equations due to Blatter (<span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id56"><span>40</span></a>]</span>,
+<span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id327"><span>41</span></a>]</span>). In the remainder, we refer to is as the “Blatter’s model.”</p></li>
 </ul>
 <p>The SIA equations are easier to solve numerically than the SSA and Blatter’s model, and
 easier to parallelize, because they are local in each column of ice. Specifically, they
 describe the vertical shear stress as a local function of the driving stress
-<span id="id10">[<a class="reference internal" href="../../zzz_references_html.html#id324"><span>42</span></a>]</span>. They can confidently be applied to those grounded parts of ice sheets
+<span id="id10">[<a class="reference internal" href="../../zzz_references_html.html#id325"><span>42</span></a>]</span>. They can confidently be applied to those grounded parts of ice sheets
 for which the basal ice is frozen to the bedrock, or which is minimally sliding, and where
-the bed topography is relatively slowly-varying in the map-plane <span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id124"><span>37</span></a>]</span>. These
+the bed topography is relatively slowly-varying in the map-plane <span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id125"><span>37</span></a>]</span>. These
 characteristics apply to the majority (by area) of the Greenland and Antarctic ice sheets.</p>
-<p>We solve the SIA with a non-sliding base because the traditional <span id="id12">[<a class="reference internal" href="../../zzz_references_html.html#id148"><span>43</span></a>]</span>,
-<span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id205"><span>44</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id329"><span>45</span></a>]</span> additions of ad hoc “sliding laws” into
+<p>We solve the SIA with a non-sliding base because the traditional <span id="id12">[<a class="reference internal" href="../../zzz_references_html.html#id149"><span>43</span></a>]</span>,
+<span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id206"><span>44</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id330"><span>45</span></a>]</span> additions of ad hoc “sliding laws” into
 the SIA stress balance, and especially schemes which “switch on” at the pressure-melting
-temperature <span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id104"><span>11</span></a>]</span>, have bad continuum <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id125"><span>46</span></a>]</span> and numerical (see
-<span id="id17">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span>, appendix B) modeling consequences.</p>
+temperature <span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id105"><span>11</span></a>]</span>, have bad continuum <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id126"><span>46</span></a>]</span> and numerical (see
+<span id="id17">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>, appendix B) modeling consequences.</p>
 <p>The SSA equations can confidently be applied to large floating ice shelves, which have
-small depth-to-width ratio and negligible basal resistance <span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id293"><span>39</span></a>]</span>,
-<span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id296"><span>47</span></a>]</span>. The flow speeds in ice shelves are frequently an order-of-magnitude
+small depth-to-width ratio and negligible basal resistance <span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id294"><span>39</span></a>]</span>,
+<span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id297"><span>47</span></a>]</span>. The flow speeds in ice shelves are frequently an order-of-magnitude
 higher than in the non-sliding, grounded parts of ice sheets.</p>
 <p>Terrestrial ice sheets also have fast-flowing grounded parts, however, called “ice
-streams” or “outlet glaciers” <span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id425"><span>48</span></a>]</span>. Such features appear at the
-margin of, and sometimes well into the interior of, the Greenland <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id225"><span>12</span></a>]</span>
-and Antarctic <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id43"><span>49</span></a>]</span> ice sheets. Describing these faster-flowing
+streams” or “outlet glaciers” <span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id426"><span>48</span></a>]</span>. Such features appear at the
+margin of, and sometimes well into the interior of, the Greenland <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id226"><span>12</span></a>]</span>
+and Antarctic <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id44"><span>49</span></a>]</span> ice sheets. Describing these faster-flowing
 grounded parts of ice sheets requires something more than the non-sliding SIA. This is
 because adjacent columns of ice which have different amounts of basal resistance exert
-strong “longitudinal” or “membrane” stresses <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span> on each other.</p>
+strong “longitudinal” or “membrane” stresses <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span> on each other.</p>
 <p>In PISM the SSA may be used as a “sliding law” for grounded ice which is already modeled
-everywhere by the non-sliding SIA <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span>, <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id453"><span>16</span></a>]</span>. For
+everywhere by the non-sliding SIA <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>, <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id454"><span>16</span></a>]</span>. For
 grounded ice, in addition to including shear in planes parallel to the geoid, we must
 balance the membrane stresses where there is sliding. This inclusion of a membrane stress
 balance is especially important when there are spatial and/or temporal changes in basal
 strength. This “sliding law” role for the SSA is in addition to its more obvious role in
 ice shelf modeling. The SSA plays both roles in a PISM whole ice sheet model in which
-there are large floating ice shelves (e.g. as in Antarctica <span id="id26">[<a class="reference internal" href="../../zzz_references_html.html#id142"><span>50</span></a>]</span>,
-<span id="id27">[<a class="reference internal" href="../../zzz_references_html.html#id286"><span>51</span></a>]</span>, <span id="id28">[<a class="reference internal" href="../../zzz_references_html.html#id453"><span>16</span></a>]</span>; see also <a class="reference internal" href="../validation/ross.html#sec-ross"><span class="std std-ref">An SSA flow model for the Ross Ice Shelf in Antarctica</span></a>).</p>
+there are large floating ice shelves (e.g. as in Antarctica <span id="id26">[<a class="reference internal" href="../../zzz_references_html.html#id143"><span>50</span></a>]</span>,
+<span id="id27">[<a class="reference internal" href="../../zzz_references_html.html#id287"><span>51</span></a>]</span>, <span id="id28">[<a class="reference internal" href="../../zzz_references_html.html#id454"><span>16</span></a>]</span>; see also <a class="reference internal" href="../validation/ross.html#sec-ross"><span class="std std-ref">An SSA flow model for the Ross Ice Shelf in Antarctica</span></a>).</p>
 <p>The “SIA+SSA hybrid” model is recommended for most whole ice sheet modeling purposes
 because it seems to be a good compromise given currently-available data and computational
-power. A related hybrid model described by Pollard and deConto <span id="id29">[<a class="reference internal" href="../../zzz_references_html.html#id346"><span>52</span></a>]</span> adds
+power. A related hybrid model described by Pollard and deConto <span id="id29">[<a class="reference internal" href="../../zzz_references_html.html#id347"><span>52</span></a>]</span> adds
 the shear to the SSA solution in a slightly-different manner, but it confirms the success
 of the hybrid concept.</p>
 <p>By default, however, PISM does not turn on (activate) the SSA solver. This is because a
@@ -95,27 +95,27 @@ uncertainties in basal strength boundary conditions usually dominate the modelin
 made by not including higher-order stresses in the balance.</p>
 <p>When the SSA model is applied a parameterized sliding relation must be chosen. A
 well-known SSA model with a linear basal resistance relation is the Siple Coast
-(Antarctica) ice stream model by MacAyeal <span id="id30">[<a class="reference internal" href="../../zzz_references_html.html#id276"><span>13</span></a>]</span>. The linear sliding law choice is
+(Antarctica) ice stream model by MacAyeal <span id="id30">[<a class="reference internal" href="../../zzz_references_html.html#id277"><span>13</span></a>]</span>. The linear sliding law choice is
 explained by supposing the saturated till is a linearly-viscous fluid. A free boundary
 problem with the same SSA balance equations but a different sliding law is the Schoof
-<span id="id31">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span> model of ice streams, using a plastic (Coulomb) sliding relation. In this
-model ice streams appear where there is “till failure” <span id="id32">[<a class="reference internal" href="../../zzz_references_html.html#id324"><span>42</span></a>]</span>, i.e. where the basal
+<span id="id31">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span> model of ice streams, using a plastic (Coulomb) sliding relation. In this
+model ice streams appear where there is “till failure” <span id="id32">[<a class="reference internal" href="../../zzz_references_html.html#id325"><span>42</span></a>]</span>, i.e. where the basal
 shear stress exceeds the yield stress. In this model the location of ice streams is not
 imposed in advance.</p>
 <p>As noted, both the SIA and SSA models are <em>shallow</em> approximations. These equations are
 derived from the Stokes equations by distinct small-parameter arguments, both based on a
 small depth-to-width ratio for the ice sheet. For the small-parameter argument in the SIA
-case see <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id124"><span>37</span></a>]</span>. For the corresponding SSA argument, see <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id449"><span>14</span></a>]</span>
-or the appendices of <span id="id35">[<a class="reference internal" href="../../zzz_references_html.html#id395"><span>20</span></a>]</span>. Schoof and Hindmarsh <span id="id36">[<a class="reference internal" href="../../zzz_references_html.html#id391"><span>53</span></a>]</span>
+case see <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id125"><span>37</span></a>]</span>. For the corresponding SSA argument, see <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id450"><span>14</span></a>]</span>
+or the appendices of <span id="id35">[<a class="reference internal" href="../../zzz_references_html.html#id396"><span>20</span></a>]</span>. Schoof and Hindmarsh <span id="id36">[<a class="reference internal" href="../../zzz_references_html.html#id392"><span>53</span></a>]</span>
 have analyzed the connections between these shallowest models and higher-order models,
-while <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>54</span></a>]</span> discusses ice dynamics and stress balances comprehensively.
+while <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id154"><span>54</span></a>]</span> discusses ice dynamics and stress balances comprehensively.
 Note that SIA, SSA, and higher-order models all approximate the pressure as hydrostatic.</p>
 <p>Instead of a SIA+SSA hybrid model implemented in PISM one might use the Stokes equations,
-or a “higher-order” model (e.g. Blatter’s model <span id="id38">[<a class="reference internal" href="../../zzz_references_html.html#id55"><span>40</span></a>]</span>, <span id="id39">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>41</span></a>]</span>), but
+or a “higher-order” model (e.g. Blatter’s model <span id="id38">[<a class="reference internal" href="../../zzz_references_html.html#id56"><span>40</span></a>]</span>, <span id="id39">[<a class="reference internal" href="../../zzz_references_html.html#id327"><span>41</span></a>]</span>), but
 this immediately leads to a resolution-versus-stress-inclusion tradeoff. The amount of
 computation per map-plane grid location is much higher in higher-order models, although
 careful numerical analysis can generate large performance improvements for such equations
-<span id="id40">[<a class="reference internal" href="../../zzz_references_html.html#id67"><span>55</span></a>]</span>.</p>
+<span id="id40">[<a class="reference internal" href="../../zzz_references_html.html#id68"><span>55</span></a>]</span>.</p>
 <p>Time-stepping solutions of the mass conservation and energy conservation equations, which
 use the ice velocity for advection, can use any of the SIA or SSA or SIA+SSA hybrid stress
 balances. No user action is required to turn on these conservation models. They can be
@@ -204,9 +204,9 @@ turned off by user options <code class="docutils literal notranslate"><span clas
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

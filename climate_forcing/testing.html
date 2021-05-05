@@ -62,7 +62,7 @@ pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
 </pre></div>
 </div>
 <p>Using <code class="docutils literal notranslate"><span class="pre">pisms</span></code> merely generates demonstration climate data, using EISMINT II choices
-<span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id104"><span>11</span></a>]</span>. The next run extracts the surface mass balance <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>
+<span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id105"><span>11</span></a>]</span>. The next run extracts the surface mass balance <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>
 and surface temperature <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code> from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>. It then does nothing
 interesting, exactly because a constant climate is used. Viewing <code class="docutils literal notranslate"><span class="pre">movie.nc</span></code> we see these
 same values as from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>, in variables <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>,
@@ -83,7 +83,7 @@ get the surface mass balance <code class="variable docutils literal notranslate"
 <code class="variable docutils literal notranslate"><span class="pre">air_temp</span></code> and a noticeable decrease in the surface mass balance during summer months
 (see variable <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>). Note that <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code> is constant
 in time: this is the temperature <em>at the ice surface but below firn</em> and it does not
-include seasonal variations <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id187"><span>29</span></a>]</span>.</p>
+include seasonal variations <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id188"><span>29</span></a>]</span>.</p>
 </div>
 <div class="section" id="using-low-resolution-test-runs">
 <h2>Using low-resolution test runs<a class="headerlink" href="#using-low-resolution-test-runs" title="Permalink to this headline">¶</a></h2>
@@ -126,7 +126,7 @@ section <a class="reference internal" href="surface.html#sec-surface-pdd"><span 
 <code class="variable docutils literal notranslate"><span class="pre">precipitation</span></code> (mean annual ice-equivalent precipitation rate) and some others.</p>
 <p>The variable <code class="variable docutils literal notranslate"><span class="pre">precipitation</span></code> does not evolve over time because it is part of the
 SeaRISE-Greenland data and is read in from the input file.</p>
-<p>The other two variables were used to create figure <a class="reference internal" href="#fig-pddseries"><span class="std std-numref">Fig. 37</span></a>, which shows
+<p>The other two variables were used to create figure <a class="reference internal" href="#fig-pddseries"><span class="std std-numref">Fig. 44</span></a>, which shows
 the time-series of the accumulation rate (top graph) and the air temperature (bottom
 graph) with the map view of the surface elevation on the left.</p>
 <p>Here are two things to notice:</p>
@@ -140,11 +140,11 @@ positive degree-days in the given period, because of highs of the air temperatur
 Recall the air temperature graph does not show random daily variations. Even though it
 has the maximum of about <span class="math notranslate nohighlight">\(266\)</span> Kelvin, the parameterized instantaneous air
 temperature can be above freezing. A positive value for positive degree-days is
-expected <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id79"><span>138</span></a>]</span>.</p></li>
+expected <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id80"><span>139</span></a>]</span>.</p></li>
 </ol>
 <div class="figure align-default" id="fig-pddseries">
 <img alt="../_images/pdd-movie.png" src="../_images/pdd-movie.png" />
-<p class="caption"><span class="caption-number">Fig. 37 </span><span class="caption-text">Time series of the surface mass balance rate and near-surface air temperature.</span><a class="headerlink" href="#fig-pddseries" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-number">Fig. 44 </span><span class="caption-text">Time series of the surface mass balance rate and near-surface air temperature.</span><a class="headerlink" href="#fig-pddseries" title="Permalink to this image">¶</a></p>
 </div>
 <p>We can also test the surface temperature forcing code with the following command.</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i g20km_pre100.nc -surface simple \
@@ -157,13 +157,13 @@ expected <span id="id3">[<a class="reference internal" href="../zzz_references_h
 </pre></div>
 </div>
 <p>The output <code class="docutils literal notranslate"><span class="pre">dT_movie.nc</span></code> and <code class="docutils literal notranslate"><span class="pre">pism_dT.nc</span></code> were used to create
-<a class="reference internal" href="#fig-artm-timeseries"><span class="std std-numref">Fig. 38</span></a>.</p>
+<a class="reference internal" href="#fig-artm-timeseries"><span class="std std-numref">Fig. 45</span></a>.</p>
 <p>This figure shows the GRIP temperature offsets and the time-series of the temperature at
 the ice surface at a point in southern Greenland (bottom graph), confirming that the
 temperature offsets are used correctly.</p>
 <div class="figure align-default" id="fig-artm-timeseries">
 <img alt="../_images/dT-movie.png" src="../_images/dT-movie.png" />
-<p class="caption"><span class="caption-number">Fig. 38 </span><span class="caption-text">Time series of the surface temperature compared to GRIP temperature offsets</span><a class="headerlink" href="#fig-artm-timeseries" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-number">Fig. 45 </span><span class="caption-text">Time series of the surface temperature compared to GRIP temperature offsets</span><a class="headerlink" href="#fig-artm-timeseries" title="Permalink to this image">¶</a></p>
 </div>
 </div>
 </div>
@@ -243,9 +243,9 @@ temperature offsets are used correctly.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

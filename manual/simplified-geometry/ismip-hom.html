@@ -1,0 +1,242 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ISMIP-HOM &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Verification" href="../verification/index.html" />
+    <link rel="prev" title="MISMIP3d" href="mismip3d.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+<div class="documentwrapper">
+  <div class="bodywrapper">
+    <div class="body" role="main">
+      
+  <div class="section" id="ismip-hom">
+<span id="sec-ismip-hom"></span><h1>ISMIP-HOM<a class="headerlink" href="#ismip-hom" title="Permalink to this headline">¶</a></h1>
+<p>The ISMIP-HOM intercomparison project (<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id164"><span>113</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id208"><span>105</span></a>]</span>) consists of 8 experiments:</p>
+<ul class="simple">
+<li><p><em>A</em>: ice flow over a rippled bed,</p></li>
+<li><p><em>B</em>: flow over a rippled bed along a flowline (similar to A, but the basal topography
+does not depend on <span class="math notranslate nohighlight">\(y\)</span>),</p></li>
+<li><p><em>C</em>: ice stream flow over a flat sloping bed with a spatially-variable basal friction
+coefficient <span class="math notranslate nohighlight">\(\beta\)</span>,</p></li>
+<li><p><em>D</em>: ice stream flow along a flowline (similar to C, but <span class="math notranslate nohighlight">\(\beta\)</span> does not depend on <span class="math notranslate nohighlight">\(y\)</span>)</p></li>
+<li><p><em>E1</em>: simulation of the flow along the central flowline of Haut Glacier d’Arolla with a
+no-slip boundary condition,</p></li>
+<li><p><em>E2</em>: same as E1 but with a 300m zone of zero traction.</p></li>
+<li><p><em>F1</em>: prognostic experiment modeling the relaxation of the free surface towards a steady
+state with zero surface mass balance,</p></li>
+<li><p><em>F2</em>: same as F1 but with a different slip ratio.</p></li>
+</ul>
+<p>All experiments use the isothermal Glen flow law and all sliding flow uses the linear
+sliding law.</p>
+<p>We implement ISMIP-HOM experiments A, B, C, D, E1, E2 and report computed ice velocities.</p>
+<div class="section" id="experiments-a-b-c-d">
+<span id="sec-ismip-hom-abcd"></span><h2>Experiments A, B, C, D<a class="headerlink" href="#experiments-a-b-c-d" title="Permalink to this headline">¶</a></h2>
+<p>Experiments A through D require additional code to implement periodic input geometry; see
+<code class="docutils literal notranslate"><span class="pre">examples/ismip-hom/abcd</span></code> and PISM’s source code for details.</p>
+<p>Figures <a class="reference internal" href="#fig-ismiphom-a"><span class="std std-numref">Fig. 27</span></a>, <a class="reference internal" href="#fig-ismiphom-b"><span class="std std-numref">Fig. 28</span></a>, <a class="reference internal" href="#fig-ismiphom-c"><span class="std std-numref">Fig. 29</span></a>,
+and <a class="reference internal" href="#fig-ismiphom-d"><span class="std std-numref">Fig. 30</span></a> compare PISM’s results to some “LMLa” (Blatter-Pattyn) and
+“FS” (Stokes) models from <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id208"><span>105</span></a>]</span> using data provided in the supplement.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We exclude 1 model (<code class="docutils literal notranslate"><span class="pre">mbr1</span></code>) from <a class="reference internal" href="#fig-ismiphom-c"><span class="std std-numref">Fig. 29</span></a> and three models
+(<code class="docutils literal notranslate"><span class="pre">rhi1</span></code>, <code class="docutils literal notranslate"><span class="pre">rhi2</span></code>, <code class="docutils literal notranslate"><span class="pre">rhi3</span></code>) from <a class="reference internal" href="#fig-ismiphom-d"><span class="std std-numref">Fig. 30</span></a>. Either corresponding
+data in the supplement are wrong or these results were excluded from figures 8 and 9 in
+<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id208"><span>105</span></a>]</span> as well.</p>
+</div>
+<p>In all of the figures below results from individual models are plotted using faint green
+(Blatter-Pattyn) and orange (Stokes) lines.</p>
+<p>In <a class="reference internal" href="#fig-ismiphom-c"><span class="std std-numref">Fig. 29</span></a> for the length scale <span class="math notranslate nohighlight">\(L\)</span> of 5km PISM’s results coincide with
+the whole set of curves corresponding to Stokes models: an outlier among Blatter-Pattyn
+models distorts the vertical scale of the plot.</p>
+<p>PISM results below use <span class="math notranslate nohighlight">\(101\times 101\times 5\)</span> grid points for experiments A and C and
+<span class="math notranslate nohighlight">\(101\times 5\)</span> for B and D. All 24 diagnostic computations complete in under 2 minutes on a
+2020 laptop.</p>
+<div class="figure align-default" id="fig-ismiphom-a">
+<img alt="../../_images/ismiphom-a.png" src="../../_images/ismiphom-a.png" />
+<p class="caption"><span class="caption-number">Fig. 27 </span><span class="caption-text">Surface velocity at <span class="math notranslate nohighlight">\(y = 0.25 L\)</span> for the Experiment A</span><a class="headerlink" href="#fig-ismiphom-a" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="fig-ismiphom-b">
+<img alt="../../_images/ismiphom-b.png" src="../../_images/ismiphom-b.png" />
+<p class="caption"><span class="caption-number">Fig. 28 </span><span class="caption-text">Surface velocity for the Experiment B</span><a class="headerlink" href="#fig-ismiphom-b" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="fig-ismiphom-c">
+<img alt="../../_images/ismiphom-c.png" src="../../_images/ismiphom-c.png" />
+<p class="caption"><span class="caption-number">Fig. 29 </span><span class="caption-text">Surface velocity at <span class="math notranslate nohighlight">\(y = 0.25 L\)</span> for the Experiment C</span><a class="headerlink" href="#fig-ismiphom-c" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="fig-ismiphom-d">
+<img alt="../../_images/ismiphom-d.png" src="../../_images/ismiphom-d.png" />
+<p class="caption"><span class="caption-number">Fig. 30 </span><span class="caption-text">Surface velocity for the Experiment D</span><a class="headerlink" href="#fig-ismiphom-d" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+<div class="section" id="experiment-e">
+<span id="sec-ismip-hom-e"></span><h2>Experiment E<a class="headerlink" href="#experiment-e" title="Permalink to this headline">¶</a></h2>
+<p>Unlike simplified-geometry experiments A–D, the diagnostic simulation of the flow along
+the central flowline of Haut Glacier d’Arolla does not require any code modifications and
+uses the <code class="docutils literal notranslate"><span class="pre">pismr</span></code> executable. Please see <code class="docutils literal notranslate"><span class="pre">examples/ismip-hom/e-arolla</span></code> for details.</p>
+<p>The complete command used to produce <a class="reference internal" href="#fig-ismiphom-e-surface"><span class="std std-numref">Fig. 31</span></a>,
+<a class="reference internal" href="#fig-ismiphom-e-no-slip"><span class="std std-numref">Fig. 32</span></a>, and <a class="reference internal" href="#fig-ismiphom-e-sliding"><span class="std std-numref">Fig. 33</span></a> is below:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># set ice softness</span>
+<span class="nv">A</span><span class="o">=</span><span class="k">$(</span><span class="nb">echo</span> <span class="s2">&quot;scale=50; 10^(-16) / (365.2524 * 86400.0)&quot;</span> <span class="p">|</span> bc -l<span class="k">)</span>
+
+pismr -i <span class="si">${</span><span class="nv">input</span><span class="si">}</span> -bootstrap <span class="se">\</span>
+   -Mx <span class="m">401</span> <span class="se">\</span>
+   -grid.registration corner <span class="se">\</span>
+   -grid.periodicity y <span class="se">\</span>
+   -stress_balance.model blatter <span class="se">\</span>
+   -stress_balance.blatter.flow_law isothermal_glen <span class="se">\</span>
+   -flow_law.isothermal_Glen.ice_softness <span class="si">${</span><span class="nv">A</span><span class="si">}</span> <span class="se">\</span>
+   -stress_balance.blatter.coarsening_factor <span class="m">7</span> <span class="se">\</span>
+   -blatter_Mz <span class="m">50</span> <span class="se">\</span>
+   -bp_snes_monitor_ratio <span class="se">\</span>
+   -bp_ksp_type gmres <span class="se">\</span>
+   -bp_pc_type mg <span class="se">\</span>
+   -bp_pc_mg_levels <span class="m">3</span> <span class="se">\</span>
+   -bp_mg_levels_ksp_type richardson <span class="se">\</span>
+   -bp_mg_levels_pc_type sor <span class="se">\</span>
+   -bp_mg_coarse_ksp_type preonly <span class="se">\</span>
+   -bp_mg_coarse_pc_type lu <span class="se">\</span>
+   -basal_resistance.pseudo_plastic.enabled <span class="se">\</span>
+   -basal_resistance.pseudo_plastic.q <span class="m">1</span>.0 <span class="se">\</span>
+   -basal_resistance.pseudo_plastic.u_threshold <span class="m">3</span>.1556926e7 <span class="se">\</span>
+   -basal_yield_stress.model constant <span class="se">\</span>
+   -energy none <span class="se">\</span>
+   -geometry.update.enabled <span class="nb">false</span> <span class="se">\</span>
+   -atmosphere uniform <span class="se">\</span>
+   -atmosphere.uniform.precipitation <span class="m">0</span> <span class="se">\</span>
+   -surface simple <span class="se">\</span>
+   -y 1e-16 <span class="se">\</span>
+   -o <span class="si">${</span><span class="nv">output</span><span class="si">}</span>
+</pre></div>
+</div>
+<p>This run uses the <span class="math notranslate nohighlight">\(12.5\)</span> m grid resolution along the flowline and <span class="math notranslate nohighlight">\(50\)</span> vertical levels,
+which corresponds to the vertical resolution of under <span class="math notranslate nohighlight">\(5\)</span> meters where the ice is
+thickest.</p>
+<p>This grid is small enough to perform the diagnostic computation serially, avoiding
+dependence on parallel direct solvers (e.g. MUMPS) that may be needed in parallel.</p>
+<p>We use 3 multigrid levels with a <em>very</em> aggressive coarsening factor (<span class="math notranslate nohighlight">\(7\)</span>).</p>
+<div class="figure align-default" id="fig-ismiphom-e-surface">
+<img alt="../../_images/uvelsurf.png" src="../../_images/uvelsurf.png" />
+<p class="caption"><span class="caption-number">Fig. 31 </span><span class="caption-text">Surface ice velocity for the Experiment E</span><a class="headerlink" href="#fig-ismiphom-e-surface" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="fig-ismiphom-e-no-slip">
+<img alt="../../_images/uvel_no_slip.png" src="../../_images/uvel_no_slip.png" />
+<p class="caption"><span class="caption-number">Fig. 32 </span><span class="caption-text">Ice velocity for the Experiment E1 (no slip)</span><a class="headerlink" href="#fig-ismiphom-e-no-slip" title="Permalink to this image">¶</a></p>
+</div>
+<div class="figure align-default" id="fig-ismiphom-e-sliding">
+<img alt="../../_images/uvel_sliding.png" src="../../_images/uvel_sliding.png" />
+<p class="caption"><span class="caption-number">Fig. 33 </span><span class="caption-text">Ice velocity for the Experiment E2 (zone of zero traction)</span><a class="headerlink" href="#fig-ismiphom-e-sliding" title="Permalink to this image">¶</a></p>
+</div>
+</div>
+</div>
+
+
+      <hr>
+      <table style="width: 100%">
+        <tr>
+          <td style="text-align: left; width: 30%">
+              <a class="reference internal" href="mismip3d.html">Previous</a>
+          </td>
+          <td style="text-align: center; width: 30%">
+              <a class="reference internal" href="index.html">Up</a>
+          </td>
+          <td style="text-align: right; width: 30%">
+              <a class="reference internal" href="../verification/index.html">Next</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/pism-logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation/index.html">Installing PISM</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">PISM User’s Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../std-greenland/index.html">Getting started: a Greenland ice sheet example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../highlevelview/index.html">Ice dynamics, the PISM view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../initialization/index.html">Initialization and bootstrapping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../modeling-choices/index.html">Modeling choices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../practical-usage/index.html">Practical usage</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Simplified geometry experiments</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="eismint-2.html">EISMINT II</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mismip.html">MISMIP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mismip3d.html">MISMIP3d</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">ISMIP-HOM</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../verification/index.html">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../validation/index.html">Validation case studies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../jakobshavn/index.html">Example: A regional model of the Jakobshavn outlet glacier in Greenland</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../parameters/index.html">Configuration parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../diagnostics/index.html">Diagnostic quantities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../climate_forcing/index.html">Climate forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../technical/index.html">Technical notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing/index.html">Contributing to PISM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authorship.html">Authorship</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../zzz_references_html.html">References</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      Git revision v1.0-2345-gdec8cebdb
+      committed by Constantine Khrulev
+      on 2021-05-05 15:19:18 -0800 |
+      &copy; 2004--2021, the PISM authors.
+      
+    </div>
+  </body>
+</html>

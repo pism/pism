@@ -46,7 +46,7 @@
 </div>
 <p>The “rheology” of a viscous fluid refers to the relation between the applied stress and
 the resulting deformation, the strain rate. The models of ice rheology available in PISM
-are all isotropic <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id324"><span>42</span></a>]</span>. A rheology in this class is described by a “flow law”,
+are all isotropic <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id325"><span>42</span></a>]</span>. A rheology in this class is described by a “flow law”,
 which is, in the most general case in PISM, a function <span class="math notranslate nohighlight">\(F(\sigma,T,\omega,P,d)\)</span> in the
 “constitutive relation” form</p>
 <div class="math notranslate nohighlight" id="equation-eq-constitutive">
@@ -57,7 +57,7 @@ the grain size, and <span class="math notranslate nohighlight">\(\sigma^2 = \fra
 \sigma_{ij}'\)</span> defines the second invariant <span class="math notranslate nohighlight">\(\sigma\)</span> of the stress deviator tensor.</p>
 <p>Form <a class="reference internal" href="#equation-eq-constitutive">(6)</a> of the flow law is used in the SIA, but the “viscosity” form of
 a flow law, found by inverting the constitutive relation <a class="reference internal" href="#equation-eq-constitutive">(6)</a>, is needed
-for ice shelf and ice stream (SSA) flow <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id32"><span>9</span></a>]</span>:</p>
+for ice shelf and ice stream (SSA) flow <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-viscosityform">
 <span class="eqno">(7)<a class="headerlink" href="#equation-eq-viscosityform" title="Permalink to this equation">¶</a></span>\[\sigma_{ij}' = 2 \nu(D,T,\omega,P,d)\,D_{ij}\]</div>
 <p>Here <span class="math notranslate nohighlight">\(\nu(D,T,\omega,P,d)\)</span> is the “effective viscosity” and <span class="math notranslate nohighlight">\(D^2 = \frac{1}{2}
@@ -65,20 +65,20 @@ D_{ij} D_{ij}\)</span>.</p>
 <p>Most of the flow laws in PISM are of Glen-Nye single-power type.  For example,</p>
 <div class="math notranslate nohighlight" id="equation-eq-glen">
 <span class="eqno">(8)<a class="headerlink" href="#equation-eq-glen" title="Permalink to this equation">¶</a></span>\[F(\sigma,T) = A(T) \sigma^{n-1}\]</div>
-<p>is the common temperature-dependent Glen law <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id325"><span>35</span></a>]</span>, <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id31"><span>15</span></a>]</span> (which has no
+<p>is the common temperature-dependent Glen law <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id326"><span>35</span></a>]</span>, <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id32"><span>15</span></a>]</span> (which has no
 dependence on liquid water fraction, pressure, or grain size). If the ice softness
 <span class="math notranslate nohighlight">\(A(T)=A_0\)</span> is constant then the law is isothermal, whereas if there is dependence on
 temperature then <span class="math notranslate nohighlight">\(A(T)\)</span> is usually a generalization of “Arrhenius” form</p>
 <div class="math notranslate nohighlight">
 \[A(T) = A \exp(-Q/(R T)).\]</div>
-<p>The more elaborate Goldsby-Kohlstedt law <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id139"><span>67</span></a>]</span> is a function
+<p>The more elaborate Goldsby-Kohlstedt law <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id140"><span>67</span></a>]</span> is a function
 <span class="math notranslate nohighlight">\(F(\sigma,T,P,d)\)</span>, but in this case the function <span class="math notranslate nohighlight">\(F\)</span> cannot be factored into a
 product of a function of <span class="math notranslate nohighlight">\(T,P,d\)</span> and a single power of <span class="math notranslate nohighlight">\(\sigma\)</span>, as in form
 <a class="reference internal" href="#equation-eq-glen">(8)</a>.</p>
 <p>There is only one choice for the flow law which takes full advantage of the enthalpy mode
 of PISM, which is the thermodynamical modeling (i.e. conservation of energy) default.
 Namely the Glen-Paterson-Budd-Lliboutry-Duval flow law
-<span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id29"><span>21</span></a>]</span>, <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id269"><span>34</span></a>]</span>, <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id325"><span>35</span></a>]</span>,
+<span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id30"><span>21</span></a>]</span>, <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id270"><span>34</span></a>]</span>, <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id326"><span>35</span></a>]</span>,
 which is a function <span class="math notranslate nohighlight">\(F(\sigma,T,\omega,P)\)</span>. This law is the only one in the literature
 where the ice softness depends on both the temperature and the liquid water fraction, so
 it parameterizes the (observed) softening of pressure-melting-temperature ice as its
@@ -109,8 +109,8 @@ respectively. Allowed arguments are listed in <a class="reference internal" href
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gpbld</span></code></p></td>
-<td><p>Glen-Paterson-Budd-Lliboutry-Duval law <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id269"><span>34</span></a>]</span>, the enthalpy-based
-default in PISM <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id29"><span>21</span></a>]</span>. Extends the Paterson-Budd law
+<td><p>Glen-Paterson-Budd-Lliboutry-Duval law <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id270"><span>34</span></a>]</span>, the enthalpy-based
+default in PISM <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id30"><span>21</span></a>]</span>. Extends the Paterson-Budd law
 (below) to positive liquid water fraction. If <span class="math notranslate nohighlight">\(A_{c}(T)\)</span> is from Paterson-Budd then
 this law returns</p>
 <div class="math notranslate nohighlight">
@@ -129,14 +129,14 @@ this law returns</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}A &amp;= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},\\Q &amp;= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}\end{aligned}\end{align} \]</div>
 <p>if <span class="math notranslate nohighlight">\(T^* &gt; 263\)</span> K.</p>
-<p>Here <span class="math notranslate nohighlight">\(T^*\)</span> is pressure-adjusted temperature <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id325"><span>35</span></a>]</span>.</p>
+<p>Here <span class="math notranslate nohighlight">\(T^*\)</span> is pressure-adjusted temperature <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id326"><span>35</span></a>]</span>.</p>
 </td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">arr</span></code></p></td>
 <td><p><em>Cold</em> part of Paterson-Budd. Regardless of temperature, the <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(Q\)</span> values for
 <span class="math notranslate nohighlight">\(T^*&lt;263\)</span> K in the Paterson-Budd law apply. This is the flow law used in the
 thermomechanically-coupled exact solutions run by <code class="docutils literal notranslate"><span class="pre">pismv</span> <span class="pre">-test</span> <span class="pre">F</span></code> and
-<code class="docutils literal notranslate"><span class="pre">pismv</span> <span class="pre">-test</span> <span class="pre">G</span></code> <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id31"><span>15</span></a>]</span>, <span id="id13">[<a class="reference internal" href="../../../zzz_references_html.html#id30"><span>68</span></a>]</span>.</p></td>
+<code class="docutils literal notranslate"><span class="pre">pismv</span> <span class="pre">-test</span> <span class="pre">G</span></code> <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id32"><span>15</span></a>]</span>, <span id="id13">[<a class="reference internal" href="../../../zzz_references_html.html#id31"><span>68</span></a>]</span>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">arrwarm</span></code></p></td>
 <td><p><em>Warm</em> part of Paterson-Budd. Regardless of temperature, the <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(Q\)</span> values for
@@ -146,7 +146,7 @@ thermomechanically-coupled exact solutions run by <code class="docutils literal 
 <td><p>Hooke law with</p>
 <div class="math notranslate nohighlight">
 \[A(T) = A \exp\left(-\frac{Q}{RT^*} + 3C (T_r - T^*)^\kappa\right).\]</div>
-<p>Fixed Glen exponent <span class="math notranslate nohighlight">\(n=3\)</span> and constants as in <span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id192"><span>69</span></a>]</span>, <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id329"><span>45</span></a>]</span>.</p>
+<p>Fixed Glen exponent <span class="math notranslate nohighlight">\(n=3\)</span> and constants as in <span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id193"><span>69</span></a>]</span>, <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id330"><span>45</span></a>]</span>.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">isothermal_glen</span></code></p></td>
@@ -156,7 +156,7 @@ thermomechanically-coupled exact solutions run by <code class="docutils literal 
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">gk</span></code></p></td>
 <td><p>The Goldsby-Kohlstedt flow law. This law has a combination of exponents from
-<span class="math notranslate nohighlight">\(n=1.8\)</span> to <span class="math notranslate nohighlight">\(n=4\)</span> <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id139"><span>67</span></a>]</span>. Its viscosity form
+<span class="math notranslate nohighlight">\(n=1.8\)</span> to <span class="math notranslate nohighlight">\(n=4\)</span> <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id140"><span>67</span></a>]</span>. Its viscosity form
 <a class="reference internal" href="#equation-eq-viscosityform">(7)</a> is not known, so it can only be used by the SIA stress
 balance. Because it has more than one power, option <code class="docutils literal notranslate"><span class="pre">-sia_n</span></code> has no effect,
 though <code class="docutils literal notranslate"><span class="pre">-sia_e</span></code> works as expected. This law does not use the liquid water
@@ -177,7 +177,7 @@ viscosity form so that <span class="math notranslate nohighlight">\(\sigma_{ij}'
 used (see <a class="reference internal" href="#tab-flowlaw"><span class="std std-numref">Table 14</span></a>). Simply changing to a different value from the default
 <span class="math notranslate nohighlight">\(n=3\)</span> is not recommended without a corresponding change to the enhancement factor,
 however. This is because the coefficient and the power are non-trivially linked when a
-power law is fit to experimental data <span id="id17">[<a class="reference internal" href="../../../zzz_references_html.html#id93"><span>33</span></a>]</span>, <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id325"><span>35</span></a>]</span>.</p>
+power law is fit to experimental data <span id="id17">[<a class="reference internal" href="../../../zzz_references_html.html#id94"><span>33</span></a>]</span>, <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id326"><span>35</span></a>]</span>.</p>
 <p>Here is a possible approach to adjusting both the enhancement factor and the exponent.
 Suppose <span class="math notranslate nohighlight">\(\sigma_0\)</span> is preferred as a scale (reference) for the driving stress that
 appears in both SIA and SSA models. Typically this is on the order of one bar or
@@ -221,8 +221,8 @@ driving stress of <span class="math notranslate nohighlight">\(10^5\)</span> Pa 
 <tbody>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-sia_e</span></code> (1.0)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.enhancement_factor</span></code></p></td>
-<td><p>Note (see the supplement of <span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id26"><span>1</span></a>]</span>) used <span class="math notranslate nohighlight">\(3.0\)</span>
-for Greenland ice sheet simulations while <span id="id20">[<a class="reference internal" href="../../../zzz_references_html.html#id286"><span>51</span></a>]</span> used <span class="math notranslate nohighlight">\(4.5\)</span> for
+<td><p>Note (see the supplement of <span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id27"><span>1</span></a>]</span>) used <span class="math notranslate nohighlight">\(3.0\)</span>
+for Greenland ice sheet simulations while <span id="id20">[<a class="reference internal" href="../../../zzz_references_html.html#id287"><span>51</span></a>]</span> used <span class="math notranslate nohighlight">\(4.5\)</span> for
 simulations of the Antarctic ice sheet with PISM-PIK.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-sia_n</span></code> (3.0)</p></td>
@@ -231,7 +231,7 @@ simulations of the Antarctic ice sheet with PISM-PIK.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssa_e</span></code> (1.0)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.enhancement_factor</span></code></p></td>
-<td><p>Note <span id="id21">[<a class="reference internal" href="../../../zzz_references_html.html#id286"><span>51</span></a>]</span> used <span class="math notranslate nohighlight">\(0.512\)</span> for simulations of the Antarctic ice sheet with
+<td><p>Note <span id="id21">[<a class="reference internal" href="../../../zzz_references_html.html#id287"><span>51</span></a>]</span> used <span class="math notranslate nohighlight">\(0.512\)</span> for simulations of the Antarctic ice sheet with
 PISM-PIK.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssa_n</span></code> (3.0)</p></td>
@@ -328,9 +328,9 @@ changes.</p></td>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

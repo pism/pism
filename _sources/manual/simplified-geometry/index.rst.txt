@@ -37,6 +37,9 @@ HOM = Higher Order Models :cite:`ISMIPHOM`, :cite:`HOMelmer`, HEINO = Heinrich E
 INtercOmparison :cite:`GreveTakahamaCalov`, :cite:`Calovetal2009HEINOfinal`, MISMIP
 (below), and MISMIP3d (also below).
 
+PISM did not participate in ISMIP-HOM but does support most of prescribed experiments (see
+:ref:`sec-ISMIP-HOM`).
+
 PISM participated in HEINO, but this ability is unmaintained. We believe the continuum
 problem described by HEINO, also used in EISMINT II experiment H (above), is not
 meaningfully approximate-able because of a required discontinuous jump in the basal
@@ -46,10 +49,6 @@ irrelevant if the continuum model makes such a prediction. PISM offers the physi
 continuum model described in :cite:`BBssasliding`, an SIA+SSA hybrid, as an alternative to the
 continuum model used in ISMIP-HEINO and EISMINT II experiment H. Indeed the SIA+SSA hybrid
 is offered as a unified shallow model for real ice sheets (section :ref:`sec-dynamics`).
-
-There is no current plan to support ISMIP-HOM :cite:`ISMIPHOM`, :cite:`HOMelmer`, but
-comparison of shallow PISM results to exact Stokes solutions is a goal for PISM
-evaluation.
 
 A third and fourth ISMIP parts are the two parts of the Marine Ice Sheet Model
 Intercomparison Project, MISMIP :cite:`MISMIP2012` and MISMIP3D :cite:`MISMIP3d2013`. These
@@ -64,6 +63,8 @@ experiments are supported in PISM, as described in subsections :ref:`sec-MISMIP`
    mismip.rst
 
    mismip3d.rst
+
+   ismip-hom.rst
 
 .. rubric:: Footnotes
 

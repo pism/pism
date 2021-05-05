@@ -83,7 +83,7 @@ time-dependent variable <code class="variable docutils literal notranslate"><spa
 <div class="section" id="eigen-calving">
 <span id="sec-calving-eigen-calving"></span><h2>Eigen calving<a class="headerlink" href="#eigen-calving" title="Permalink to this headline">¶</a></h2>
 <p>PISM-PIK introduced a physically-based 2D-calving parameterization
-<span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id261"><span>87</span></a>]</span>. This calving parameterization is turned on in PISM by option
+<span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id262"><span>87</span></a>]</span>. This calving parameterization is turned on in PISM by option
 <code class="option docutils literal notranslate"><span class="pre">-calving</span> <span class="pre">eigen_calving</span></code>. Average calving rates, <span class="math notranslate nohighlight">\(c\)</span>, are proportional to the product
 of principal components of the horizontal strain rates, <span class="math notranslate nohighlight">\(\dot{\epsilon}_{_\pm}\)</span>, derived
 from SSA-velocities</p>
@@ -103,7 +103,7 @@ structurally-stable calving front positions which agree well with observations. 
 rates balance calving-front ice flow velocities on average.</p>
 <p>Configuration parameters:</p>
 <ol class="simple">
-<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.eigen_calving.K"><code class="docutils literal notranslate"><span class="pre">K</span></code></a> (0<em> meter second</em>) Set proportionality constant to determine calving rate from strain rates.  Note references <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id261"><span>87</span></a>]</span>, <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id286"><span>51</span></a>]</span> use K in range <span class="math notranslate nohighlight">\(10^{9}\)</span> to <span class="math notranslate nohighlight">\(3 \times 10^{11}\)</span> m a, that is, <span class="math notranslate nohighlight">\(3 \times 10^{16}\)</span> to <span class="math notranslate nohighlight">\(10^{19}\)</span> m s.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.eigen_calving.K"><code class="docutils literal notranslate"><span class="pre">K</span></code></a> (0<em> meter second</em>) Set proportionality constant to determine calving rate from strain rates.  Note references <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id262"><span>87</span></a>]</span>, <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id287"><span>51</span></a>]</span> use K in range <span class="math notranslate nohighlight">\(10^{9}\)</span> to <span class="math notranslate nohighlight">\(3 \times 10^{11}\)</span> m a, that is, <span class="math notranslate nohighlight">\(3 \times 10^{16}\)</span> to <span class="math notranslate nohighlight">\(10^{19}\)</span> m s.</p></li>
 </ol>
 </div>
 <div class="section" id="von-mises-stress-calving">
@@ -112,7 +112,7 @@ rates balance calving-front ice flow velocities on average.</p>
 Antartic ice shelves, it does not work for outlet glaciers that flow in narrow fjords.
 Along valleys with nearly parallel walls the transverse component of the velocity is
 close to zero and the transversal strain rate is therefore also close to zero and noisy.</p>
-<p>Instead of the product of the eigen strain rates, <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id297"><span>91</span></a>]</span> propose a calving
+<p>Instead of the product of the eigen strain rates, <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id298"><span>91</span></a>]</span> propose a calving
 law where the calving rate <span class="math notranslate nohighlight">\(c\)</span> is functionally related to tensile stresses:</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv3">
 <span class="eqno">(25)<a class="headerlink" href="#equation-eq-calv3" title="Permalink to this equation">¶</a></span>\[c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},\]</div>
@@ -123,7 +123,7 @@ tensile strain rate is defined as</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv4">
 <span class="eqno">(26)<a class="headerlink" href="#equation-eq-calv4" title="Permalink to this equation">¶</a></span>\[\tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 +
 \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.\]</div>
-<p>Following <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id297"><span>91</span></a>]</span>, <span class="math notranslate nohighlight">\(\tilde{\sigma}\)</span> is given by</p>
+<p>Following <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id298"><span>91</span></a>]</span>, <span class="math notranslate nohighlight">\(\tilde{\sigma}\)</span> is given by</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv5">
 <span class="eqno">(27)<a class="headerlink" href="#equation-eq-calv5" title="Permalink to this equation">¶</a></span>\[\tilde{\sigma} = \sqrt{3} B \tilde{\dot{{\epsilon}}}_e^{1/n},\]</div>
 <p>where <span class="math notranslate nohighlight">\(B\)</span> is the ice hardness.</p>
@@ -131,7 +131,7 @@ tensile strain rate is defined as</p>
 <ol class="simple">
 <li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.Glen_exponent"><code class="docutils literal notranslate"><span class="pre">Glen_exponent</span></code></a> (3) Glen exponent in ice flow law for von Mises calving</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.flow_law"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code></a> (<code class="docutils literal notranslate"><span class="pre">gpbld</span></code>) The custom flow law for the von Mises stress computation</p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.sigma_max"><code class="docutils literal notranslate"><span class="pre">sigma_max</span></code></a> (1e+06<em> Pa</em>) Set maximum tensile stress.  Note references <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id297"><span>91</span></a>]</span> use 1.0e6 Pa.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.sigma_max"><code class="docutils literal notranslate"><span class="pre">sigma_max</span></code></a> (1e+06<em> Pa</em>) Set maximum tensile stress.  Note references <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id298"><span>91</span></a>]</span> use 1.0e6 Pa.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.threshold_file"><code class="docutils literal notranslate"><span class="pre">threshold_file</span></code></a> Name of the file containing the spatially-variable <code class="variable docutils literal notranslate"><span class="pre">vonmises_calving_threshold</span></code>.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.use_custom_flow_law"><code class="docutils literal notranslate"><span class="pre">use_custom_flow_law</span></code></a> (no) Use custom flow law in the von Mises stress computation</p></li>
 </ol>
@@ -139,16 +139,16 @@ tensile strain rate is defined as</p>
 <div class="section" id="hayhurst-calving">
 <span id="sec-calving-hayhurst"></span><h2>Hayhurst calving<a class="headerlink" href="#hayhurst-calving" title="Permalink to this headline">¶</a></h2>
 <p>The option <code class="option docutils literal notranslate"><span class="pre">-calving</span> <span class="pre">hayhurst_calving</span></code> implements the parameterization described in
-<span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>92</span></a>]</span> (equation 22).</p>
+<span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id13"><span>92</span></a>]</span> (equation 22).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>FIXME: not documented.</p>
 </div>
 <p>Configuration parameters:</p>
 <ol class="simple">
-<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.B_tilde"><code class="docutils literal notranslate"><span class="pre">B_tilde</span></code></a> (65<em> (MPa)^r / year</em>) Effective damage rate <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>92</span></a>]</span></p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.exponent_r"><code class="docutils literal notranslate"><span class="pre">exponent_r</span></code></a> (0.43) Damage law exponent <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>92</span></a>]</span></p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.sigma_threshold"><code class="docutils literal notranslate"><span class="pre">sigma_threshold</span></code></a> (0.17<em> MPa</em>) Damage threshold stress <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>92</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.B_tilde"><code class="docutils literal notranslate"><span class="pre">B_tilde</span></code></a> (65<em> (MPa)^r / year</em>) Effective damage rate <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id13"><span>92</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.exponent_r"><code class="docutils literal notranslate"><span class="pre">exponent_r</span></code></a> (0.43) Damage law exponent <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id13"><span>92</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-calving.hayhurst_calving.sigma_threshold"><code class="docutils literal notranslate"><span class="pre">sigma_threshold</span></code></a> (0.17<em> MPa</em>) Damage threshold stress <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id13"><span>92</span></a>]</span></p></li>
 </ol>
 </div>
 <div class="section" id="calving-of-thin-floating-ice">
@@ -291,9 +291,9 @@ prescribed by creating a field with an appropriately decreasing maximum extent.<
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

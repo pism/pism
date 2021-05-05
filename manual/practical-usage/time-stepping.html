@@ -50,7 +50,7 @@ updated (“<code class="docutils literal notranslate"><span class="pre">h</span
 </div>
 <p>Recall that the PISM time step is determined by an adaptive mechanism. Stable mass
 conservation and conservation of energy solutions require such an adaptive time-stepping
-scheme <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span>. The first character we see here, namely “<code class="docutils literal notranslate"><span class="pre">diffusivity</span></code>”, is the
+scheme <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>. The first character we see here, namely “<code class="docutils literal notranslate"><span class="pre">diffusivity</span></code>”, is the
 adaptive-timestepping “reason” flag. See <a class="reference internal" href="#tab-adaptiveflag"><span class="std std-numref">Table 35</span></a>. We also see
 that there was a major time step of <span class="math notranslate nohighlight">\(0.83945\)</span> model years divided into <span class="math notranslate nohighlight">\(2\)</span>
 substeps of about <span class="math notranslate nohighlight">\(0.42\)</span> years. The <code class="option docutils literal notranslate"><span class="pre">-skip</span></code> option enables this mechanism,
@@ -69,7 +69,7 @@ U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
 <span class="math notranslate nohighlight">\(\max(\max(|u|), \max(|v|))\)</span>).</p>
 <p>The third line of the above example shows that the SSA stress balance was solved.
 Information on the number of nonlinear (outer) and linear (inner) iterations is provided
-<span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span>.</p>
+<span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>.</p>
 <table class="colwidths-given docutils align-default" id="tab-adaptiveflag">
 <caption><span class="caption-number">Table 35 </span><span class="caption-text">Meaning of the adaptive time-stepping “reason” flag in the standard output
              flag line.</span><a class="headerlink" href="#tab-adaptiveflag" title="Permalink to this table">¶</a></caption>
@@ -84,10 +84,10 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">3D</span> <span class="pre">CFL</span></code></p></td>
-<td><p>three-dimensional CFL for temperature/age advection <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span></p></td>
+<td><p>three-dimensional CFL for temperature/age advection <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">diffusivity</span></code></p></td>
-<td><p>diffusivity for SIA mass conservation <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>15</span></a>]</span>, <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id185"><span>95</span></a>]</span></p></td>
+<td><p>diffusivity for SIA mass conservation <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>, <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id186"><span>95</span></a>]</span></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">end</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">run</span></code></p></td>
 <td><p>end of prescribed run time</p></td>
@@ -99,7 +99,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
 <td><p>maximum <span class="math notranslate nohighlight">\(\Delta t\)</span> was temporarily set by a derived class</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">2D</span> <span class="pre">CFL</span></code></p></td>
-<td><p>2D CFL for mass conservation in SSA regions (upwinded; <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>9</span></a>]</span>)</p></td>
+<td><p>2D CFL for mass conservation in SSA regions (upwinded; <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>)</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-ts_...</span> <span class="pre">reporting</span></code></p></td>
 <td><p>the <code class="docutils literal notranslate"><span class="pre">-ts_times</span></code> option and the configuration flag
@@ -260,9 +260,9 @@ enforce consistent sampling of periodic climate data.</p></td>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

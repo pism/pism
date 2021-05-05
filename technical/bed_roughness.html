@@ -86,7 +86,7 @@ diffusivity, giving even longer time-steps.</p></li>
 <div class="section" id="theory">
 <h2><a class="toc-backref" href="#id9">Theory</a><a class="headerlink" href="#theory" title="Permalink to this headline">¶</a></h2>
 <p>The theory is in Christian Schoof’s (2003) <em>The effect of basal topography on ice sheet
-dynamics</em> <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id397"><span>85</span></a>]</span>. His mathematical technique is to expand the
+dynamics</em> <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>85</span></a>]</span>. His mathematical technique is to expand the
 Stokes equations in two levels of horizontal scales, one for the entire ice sheet (denoted
 <span class="math notranslate nohighlight">\([L]\)</span>) and one for the horizontal scale (wavelength) of bed topography (<span class="math notranslate nohighlight">\([S]\)</span>).
 The “inner” scaling assumes that the typical ice sheet thickness <span class="math notranslate nohighlight">\([D]\)</span> is small
@@ -112,7 +112,7 @@ diffusivity <span class="math notranslate nohighlight">\(D_{SIA}\)</span> is a f
 isothermal Glen power law (power <span class="math notranslate nohighlight">\(= n\)</span>) case we recall</p>
 <div class="math notranslate nohighlight" id="equation-eq-siadiffusivity">
 <span class="eqno">(35)<a class="headerlink" href="#equation-eq-siadiffusivity" title="Permalink to this equation">¶</a></span>\[D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}\]</div>
-<p>where <span class="math notranslate nohighlight">\(\Gamma = 2 A (\rho g)^n / (n+2)\)</span> (c.f. details in <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id36"><span>57</span></a>]</span>).</p>
+<p>where <span class="math notranslate nohighlight">\(\Gamma = 2 A (\rho g)^n / (n+2)\)</span> (c.f. details in <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id37"><span>57</span></a>]</span>).</p>
 <p>Consider now the “original” bed topography <span class="math notranslate nohighlight">\(b_0(x_1,x_2)\)</span>, which we assume for the moment
 is independent of time. (Time-independence is not actually critical, and such a
 restriction can be removed.) We will use <span class="math notranslate nohighlight">\(x_1,x_2\)</span> to denote the horizontal model
@@ -134,7 +134,7 @@ the smoothing domain, but these specific ranges are not required by the formulas
 Note that the average of the local bed topgraphy is zero by definition:</p>
 <div class="math notranslate nohighlight">
 \[\fint \tilde b(x_1,x_2,\xi_1,\xi_2)\,d\xi_1\,d\xi_2 = 0.\]</div>
-<p>The result of Schoof’s scaling arguments (<span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id397"><span>85</span></a>]</span>, equation (49)) is to
+<p>The result of Schoof’s scaling arguments (<span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>85</span></a>]</span>, equation (49)) is to
 modify the diffusivity by multiplying by a factor <span class="math notranslate nohighlight">\(0 \le \theta \le 1\)</span>:</p>
 <div class="math notranslate nohighlight">
 \[D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}.\]</div>
@@ -150,13 +150,13 @@ topography, so that in PISM notation</p>
 <p>The formula for <span class="math notranslate nohighlight">\(\theta\)</span> has additional terms if there is basal sliding, but we consider
 only the non-sliding SIA here.</p>
 <p>The very important fact that <span class="math notranslate nohighlight">\(0 \le \theta \le 1\)</span> is proven in appendix A of
-<span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id397"><span>85</span></a>]</span> by a Jensen’s inequality argument. (See also the convexity
+<span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>85</span></a>]</span> by a Jensen’s inequality argument. (See also the convexity
 argument at the bottom of this page.)</p>
 </div>
 <div class="section" id="practical-application-and-taylor-approximation">
 <h2><a class="toc-backref" href="#id10">Practical application, and Taylor approximation</a><a class="headerlink" href="#practical-application-and-taylor-approximation" title="Permalink to this headline">¶</a></h2>
 <p>The above formulas already reflect the recommendations Schoof gives on how to apply his
-formulas (<span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id397"><span>85</span></a>]</span>, subsection 4.2). The rest of this page is devoted to
+formulas (<span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>85</span></a>]</span>, subsection 4.2). The rest of this page is devoted to
 how the class <code class="docutils literal notranslate"><span class="pre">stressbalance::BedSmoother</span></code> implements a practical version of this
 theory, based on these recommendations plus some additional approximation.</p>
 <p>The averages appearing in his scaling arguments are over an infinite domain, e.g.</p>
@@ -236,7 +236,7 @@ class <code class="docutils literal notranslate"><span class="pre">stressbalance
 <div class="section" id="convexity-of-p-4">
 <h3><a class="toc-backref" href="#id11">Convexity of <span class="math notranslate nohighlight">\(P_4\)</span></a><a class="headerlink" href="#convexity-of-p-4" title="Permalink to this headline">¶</a></h3>
 <p>The approximation <a class="reference internal" href="#equation-eq-thetaapprox">(37)</a> given above relates to the Jensen’s inequality argument
-used by Schoof in Appendix A of <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id397"><span>85</span></a>]</span>. For the nonsliding case, his
+used by Schoof in Appendix A of <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>85</span></a>]</span>. For the nonsliding case, his
 argument shows that because <span class="math notranslate nohighlight">\(F(s)=(1-s)^{-k}\)</span> is convex on <span class="math notranslate nohighlight">\([-1,1]\)</span> for <span class="math notranslate nohighlight">\(k&gt;0\)</span>, therefore
 <span class="math notranslate nohighlight">\(0 \le \theta \le 1\)</span>.</p>
 <p>Thus it is desirable for the approximation <span class="math notranslate nohighlight">\(P_4(z)\)</span> to be convex on the same interval,
@@ -331,9 +331,9 @@ constant. And</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -34,18 +34,18 @@
   <div class="section" id="on-the-vertical-coordinate-in-pism-and-a-critical-change-of-variable">
 <span id="sec-vertchange"></span><h1>On the vertical coordinate in PISM, and a critical change of variable<a class="headerlink" href="#on-the-vertical-coordinate-in-pism-and-a-critical-change-of-variable" title="Permalink to this headline">¶</a></h1>
 <p>In PISM all fields in the ice, including enthalpy, age, velocity, and so on, evolve within
-an ice fluid domain of <em>changing geometry</em>. See <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 40</span></a>. In
+an ice fluid domain of <em>changing geometry</em>. See <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 47</span></a>. In
 particular, the upper and lower surfaces of the ice fluid move with respect to the geoid.</p>
 <div class="figure align-default" id="fig-freebdry">
 <img alt="../_images/tempbdryfig.png" src="../_images/tempbdryfig.png" />
-<p class="caption"><span class="caption-number">Fig. 40 </span><span class="caption-text">The ice fluid domain evolves, with both the upper and lower surfaces in motion with
+<p class="caption"><span class="caption-number">Fig. 47 </span><span class="caption-text">The ice fluid domain evolves, with both the upper and lower surfaces in motion with
 respect to the geoid.</span><a class="headerlink" href="#fig-freebdry" title="Permalink to this image">¶</a></p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>FIXME: This figure should show the floating case too.</p>
 </div>
-<p>The <span class="math notranslate nohighlight">\((x,y,z)\)</span> coordinates in <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 40</span></a> are supposed to be from an orthogonal
+<p>The <span class="math notranslate nohighlight">\((x,y,z)\)</span> coordinates in <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 47</span></a> are supposed to be from an orthogonal
 coordinate system with <span class="math notranslate nohighlight">\(z\)</span> in the direction anti-parallel to gravity, so this is a
 flat-earth approximation. In practice, the data inputs to PISM are in some particular
 projection, of course.</p>
@@ -65,11 +65,11 @@ ice and ocean, respectively.</p>
 \[(x,y,z,t) \mapsto (x,y,s,t)\]</div>
 <p>throughout the PISM code. This replaces <span class="math notranslate nohighlight">\(z=b\)</span> by <span class="math notranslate nohighlight">\(s=0\)</span> as the equation of the
 base surface of the ice. The ice fluid domain in the new coordinates only has a free upper
-surface as shown in <a class="reference internal" href="#fig-sfreebdry"><span class="std std-numref">Fig. 41</span></a>.</p>
+surface as shown in <a class="reference internal" href="#fig-sfreebdry"><span class="std std-numref">Fig. 48</span></a>.</p>
 <div class="figure align-default" id="fig-sfreebdry">
 <img alt="../_images/stempbdryfig.png" src="../_images/stempbdryfig.png" />
-<p class="caption"><span class="caption-number">Fig. 41 </span><span class="caption-text">In (x,y,s) space the ice fluid domain only has an upper surface which moves,
-<span class="math notranslate nohighlight">\(s=H(x,y,t)\)</span>. Compare to <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 40</span></a>.</span><a class="headerlink" href="#fig-sfreebdry" title="Permalink to this image">¶</a></p>
+<p class="caption"><span class="caption-number">Fig. 48 </span><span class="caption-text">In (x,y,s) space the ice fluid domain only has an upper surface which moves,
+<span class="math notranslate nohighlight">\(s=H(x,y,t)\)</span>. Compare to <a class="reference internal" href="#fig-freebdry"><span class="std std-numref">Fig. 47</span></a>.</span><a class="headerlink" href="#fig-sfreebdry" title="Permalink to this image">¶</a></p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -80,7 +80,7 @@ surface as shown in <a class="reference internal" href="#fig-sfreebdry"><span cl
 \[\mathcal{R}=\left\{(x,y,s)\big| -L_x\le x \le L_x, -L_y\le y \le L_y, -Lb_z \le s \le
 L_z\right\}\]</div>
 <p>is divided into a three-dimensional grid. See <code class="docutils literal notranslate"><span class="pre">IceGrid</span></code>.</p>
-<p>The change of variable <span class="math notranslate nohighlight">\(z\to s\)</span> used here <em>is not</em> the <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id215"><span>151</span></a>]</span> change of variable
+<p>The change of variable <span class="math notranslate nohighlight">\(z\to s\)</span> used here <em>is not</em> the <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id216"><span>152</span></a>]</span> change of variable
 <span class="math notranslate nohighlight">\(\tilde s=(z-b)/H\)</span> . That change causes the conservation of energy equation to
 become singular at the boundaries of the ice sheet. Specifically, the Jenssen change
 replaces the vertical conduction term by a manifestly-singular term at ice sheet margins
@@ -267,9 +267,9 @@ relative vertical velocity <span class="math notranslate nohighlight">\(\tilde w
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

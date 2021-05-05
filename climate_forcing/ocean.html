@@ -128,13 +128,13 @@ model years; see section <a class="reference internal" href="time.html#sec-perio
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">pism::ocean::PIK</span></code></p>
 </dd>
 </dl>
-<p>This ocean model component implements the ocean forcing setup used in <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id286"><span>51</span></a>]</span>.
+<p>This ocean model component implements the ocean forcing setup used in <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>.
 The sub-shelf ice temperature is set to pressure-melting; the sub-shelf mass flux
-computation follows <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id53"><span>144</span></a>]</span>.</p>
+computation follows <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id54"><span>145</span></a>]</span>.</p>
 <p>It takes one command-line option:</p>
 <ul class="simple">
 <li><p><code class="option docutils literal notranslate"><span class="pre">-meltfactor_pik</span></code>: a melt factor <span class="math notranslate nohighlight">\(F_{\mathrm{melt}}\)</span> in sub-shelf-melting
-parameterization, see equation (5) in <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id286"><span>51</span></a>]</span>.</p></li>
+parameterization, see equation (5) in <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>.</p></li>
 </ul>
 </div>
 <div class="section" id="basal-melt-rate-and-temperature-from-thermodynamics-in-boundary-layer">
@@ -159,7 +159,7 @@ equations describing</p>
 <li><p>the salt flux balance,</p></li>
 <li><p>the pressure and salinity dependent freezing point in the boundary layer.</p></li>
 </ol>
-<p>This model is described in <span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id189"><span>136</span></a>]</span> and <span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id173"><span>145</span></a>]</span>.</p>
+<p>This model is described in <span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span> and <span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id174"><span>146</span></a>]</span>.</p>
 <p>Inputs are potential temperature (variable <code class="variable docutils literal notranslate"><span class="pre">theta_ocean</span></code>) and salinity (variable
 <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code>) read from a file. A constant salinity (see
 <a class="reference internal" href="../manual/parameters/index.html#config-constants.sea_water.salinity"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sea_water</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.salinity</span></code></a>) is used if the input file does not contain
@@ -168,7 +168,7 @@ equations describing</p>
 the surrounding ocean.</p>
 <p>This implementation uses different approximations of the temperature gradient at the base
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
-or neither (see <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id189"><span>136</span></a>]</span> for details).</p>
+or neither (see <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span> for details).</p>
 <p>It takes two command-line option:</p>
 <ul class="simple">
 <li><p><code class="option docutils literal notranslate"><span class="pre">-ocean_th_file</span></code>: specifies the NetCDF file providing potential temperature and
@@ -176,7 +176,7 @@ salinity fields.</p></li>
 <li><p><code class="option docutils literal notranslate"><span class="pre">-clip_shelf_base_salinity</span></code>: if this is set (which is the default), the sub-shelf
 salinity is clipped so that it stays in the <span class="math notranslate nohighlight">\([4, 40]\)</span> psu range. This is done to
 ensure that we stay in the range of applicability of the melting point temperature
-parameterization; see <span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id189"><span>136</span></a>]</span>. To disable salinity clipping, use the
+parameterization; see <span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span>. To disable salinity clipping, use the
 <code class="option docutils literal notranslate"><span class="pre">-no_clip_shelf_base_salinity</span></code> option or set the configuration parameter
 <a class="reference internal" href="../manual/parameters/index.html#config-ocean.th.clip_salinity"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.th</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.clip_salinity</span></code></a>  to “no”.</p></li>
 </ul>
@@ -199,12 +199,12 @@ parameterization; see <span id="id7">[<a class="reference internal" href="../zzz
 </dl>
 <p>The PICO model provides sub-shelf melt rates and temperatures consistent with the vertical
 overturning circulation in ice shelf cavities that drives the exchange with open ocean
-water masses. It is based on the ocean box model of <span id="id8">[<a class="reference internal" href="../zzz_references_html.html#id316"><span>146</span></a>]</span> and includes
+water masses. It is based on the ocean box model of <span id="id8">[<a class="reference internal" href="../zzz_references_html.html#id317"><span>147</span></a>]</span> and includes
 a geometric approach which makes it applicable to ice shelves that evolve in two
 horizontal dimensions. For each ice shelf, PICO solves the box model equations describing
 the transport between coarse ocean boxes. It applies a boundary layer melt formulation
-<span id="id9">[<a class="reference internal" href="../zzz_references_html.html#id172"><span>147</span></a>]</span>, <span id="id10">[<a class="reference internal" href="../zzz_references_html.html#id189"><span>136</span></a>]</span>. The overturning circulation is
-driven by the ice-pump <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id262"><span>148</span></a>]</span>: melting at the ice-shelf base reduces the
+<span id="id9">[<a class="reference internal" href="../zzz_references_html.html#id173"><span>148</span></a>]</span>, <span id="id10">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span>. The overturning circulation is
+driven by the ice-pump <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id263"><span>149</span></a>]</span>: melting at the ice-shelf base reduces the
 density of ambient water masses. Buoyant water rising along the shelf base draws in ocean
 water at depth, which flows across the continental shelf towards the deep grounding lines.
 The model captures this circulation by defining consecutive boxes following the flow
@@ -218,7 +218,7 @@ shelf determine basal melt rate and basal temperature at each grid point.</p>
 <li><p>overturning flux driven by the density difference between open-ocean and grounding-line box,</p></li>
 <li><p>boundary layer melt formulation.</p></li>
 </ol>
-<p>The PICO model is described in detail in <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id362"><span>149</span></a>]</span>.</p>
+<p>The PICO model is described in detail in <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id363"><span>150</span></a>]</span>.</p>
 <p>Inputs are potential temperature (variable <code class="variable docutils literal notranslate"><span class="pre">theta_ocean</span></code>), salinity (variable
 <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code>) and ocean basin mask (variable <code class="variable docutils literal notranslate"><span class="pre">basins</span></code>). Variables
 <code class="variable docutils literal notranslate"><span class="pre">theta_ocean</span></code> and <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code> may be time-dependent.</p>
@@ -233,7 +233,7 @@ the input values of the overturning circulation are calculated as an area-weight
 over all basins that intersect the ice shelf. If ocean input parameters cannot be
 identified, standard values are used (<strong>Warning:</strong> this could strongly influence melt
 rates computed by PICO). In regions where the PICO geometry cannot be identified,
-<span id="id13">[<a class="reference internal" href="../zzz_references_html.html#id53"><span>144</span></a>]</span> is applied.</p>
+<span id="id13">[<a class="reference internal" href="../zzz_references_html.html#id54"><span>145</span></a>]</span> is applied.</p>
 <p>PICO uses the following configuration parameters (prefix: <code class="docutils literal notranslate"><span class="pre">ocean.pico.</span></code>):</p>
 <ol class="simple">
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.continental_shelf_depth"><code class="docutils literal notranslate"><span class="pre">continental_shelf_depth</span></code></a> (-800<em> meters</em>) Specifies the depth up to which oceanic input temperatures and salinities are averaged over the continental shelf areas in front of the ice shelf cavities.</p></li>
@@ -415,7 +415,7 @@ respectively.</p>
 </dd>
 </dl>
 <p>The scalar time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">delta_MBP</span></code> (units: Pascal) has the meaning of the
-melange back pressure <span class="math notranslate nohighlight">\(\sigma_b\)</span> in <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id3"><span>150</span></a>]</span>. It is assumed that <span class="math notranslate nohighlight">\(\sigma_b\)</span> is
+melange back pressure <span class="math notranslate nohighlight">\(\sigma_b\)</span> in <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id4"><span>151</span></a>]</span>. It is assumed that <span class="math notranslate nohighlight">\(\sigma_b\)</span> is
 applied over the thickness of melange <span class="math notranslate nohighlight">\(h\)</span> specified using
 <a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.melange_thickness"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.melange_thickness</span></code></a>.</p>
 <p>To convert to the average pressure over the ice front thickness, we compute</p>
@@ -574,9 +574,9 @@ updates. PISM may take longer time-steps if the adaptive scheme allows it, thoug
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2303-gbe5fe6c05
+      Git revision v1.0-2345-gdec8cebdb
       committed by Constantine Khrulev
-      on 2021-04-16 11:54:46 -0800 |
+      on 2021-05-05 15:19:18 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
