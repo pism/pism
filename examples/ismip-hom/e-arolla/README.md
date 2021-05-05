@@ -1,6 +1,6 @@
-This directory contains scripts producing figures for the experiment E from the ISMIP-HOM
-benchmark (isothermal diagnostic model of the flow along the central flowline of Haut
-Glacier d’Arolla).
+This directory contains scripts that produce figures for the experiment E from the
+ISMIP-HOM benchmark (isothermal diagnostic model of the ice velocity along the central
+flowline of Haut Glacier d’Arolla).
 
 Compare to figure 10 in
 
