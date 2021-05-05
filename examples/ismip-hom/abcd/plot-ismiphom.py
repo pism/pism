@@ -91,14 +91,14 @@ def grid_plot(experiment_name):
     fig, axs = plt.subplots(2, 3)
     fig.dpi = 100
     fig.set_size_inches(12, 8)
-    fig.suptitle("ISMIP HOM Experiment {}".format(experiment_name.upper()))
+    # fig.suptitle("ISMIP HOM Experiment {}".format(experiment_name.upper()))
     fig.tight_layout(h_pad=4)
     fig.subplots_adjust(top=0.9, bottom=0.1)
 
     row1 = plot(experiment_name, ["005", "010", "020"], axs[0])
     row2 = plot(experiment_name, ["040", "080", "160"], axs[1])
 
-    fig.savefig("ismip-{}.png".format(experiment_name))
+    fig.savefig("ismiphom-{}.png".format(experiment_name))
 
 if __name__ == "__main__":
     pism_prefix = "./"
