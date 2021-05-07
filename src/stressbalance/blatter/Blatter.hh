@@ -85,6 +85,7 @@ protected:
   double m_glen_exponent;
   bool m_eta_transform;
   double m_viscosity_eps;
+  bool m_ksp_use_ew;
 
   static const int m_Nq = 100;
   static const int m_n_work = 9;
@@ -205,6 +206,15 @@ protected:
   void get_basal_velocity(IceModelVec2V &result);
 
   void report_mesh_info();
+
+  struct SolutionInfo {
+    PetscInt snes_it, ksp_it, mg_coarse_ksp_it;
+    SNESConvergedReason snes_reason;
+    KSPConvergedReason ksp_reason;
+  };
+
+  SolutionInfo solve();
+  SolutionInfo parameter_continuation();
 };
 
 } // end of namespace stressbalance
