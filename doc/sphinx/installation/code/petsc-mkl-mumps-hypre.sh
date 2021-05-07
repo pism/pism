@@ -1,11 +1,7 @@
 #!/bin/bash
 
-set -e
-set -u
-set -x
-
-# Install the latest PETSc in ~/local/petsc using ~/local/build/petsc as the build
-# directory.
+# Install the latest PETSc with Intel MKL, MUMPS and hypre in ~/local/petsc using
+# ~/local/build/petsc as the build directory.
 
 prefix=$HOME/local/petsc
 build_dir=~/local/build/petsc
@@ -19,15 +15,26 @@ git clone -b release --depth=1 https://gitlab.com/petsc/petsc.git .
 PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
+source $HOME/intel/oneapi/setvars.sh
+
+set -e
+set -u
+set -x
+
 ./configure \
+  COPTFLAGS='-O3 -march=native -mtune=native' \
+  CXXOPTFLAGS='-O3 -march=native -mtune=native' \
+  FOPTFLAGS='-O3 -march=native -mtune=native' \
   --prefix=${prefix} \
+  --with-blas-lapack-dir=$MKLROOT \
   --with-cc=mpicc \
   --with-cxx=mpicxx \
   --with-fc=mpifort \
   --with-shared-libraries \
   --with-debugging=0 \
   --with-petsc4py \
-  --download-f2cblaslapack
+  --download-hypre \
+  --download-mumps --download-scalapack
 
 export PYTHONPATH=${prefix}/lib
 make all

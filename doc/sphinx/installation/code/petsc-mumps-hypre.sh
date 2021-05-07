@@ -4,8 +4,8 @@ set -e
 set -u
 set -x
 
-# Install the latest PETSc in ~/local/petsc using ~/local/build/petsc as the build
-# directory.
+# Install the latest PETSc with MUMPS and hypre in ~/local/petsc using ~/local/build/petsc
+# as the build directory.
 
 prefix=$HOME/local/petsc
 build_dir=~/local/build/petsc
@@ -20,6 +20,9 @@ PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
 ./configure \
+  COPTFLAGS='-O3 -march=native -mtune=native' \
+  CXXOPTFLAGS='-O3 -march=native -mtune=native' \
+  FOPTFLAGS='-O3 -march=native -mtune=native' \
   --prefix=${prefix} \
   --with-cc=mpicc \
   --with-cxx=mpicxx \
@@ -27,7 +30,8 @@ PETSC_ARCH="linux-opt"
   --with-shared-libraries \
   --with-debugging=0 \
   --with-petsc4py \
-  --download-f2cblaslapack
+  --download-hypre \
+  --download-mumps --download-scalapack
 
 export PYTHONPATH=${prefix}/lib
 make all
