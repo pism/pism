@@ -249,9 +249,8 @@ Our experiments suggest that
    -bp_pc_mg_levels N \
    -bp_snes_ksp_ew  \
    -bp_snes_ksp_ew_version 3 \
-   -bp_mg_levels_ksp_type gmres \
-   -bp_mg_levels_pc_type bjacobi \
-   -bp_mg_levels_sub_pc_type ilu \
+   -bp_mg_levels_ksp_type richardson \
+   -bp_mg_levels_pc_type sor \
    -bp_mg_coarse_ksp_type gmres \
    -bp_mg_coarse_pc_type hypre \
    -bp_mg_coarse_pc_hypre_type boomeramg
@@ -264,6 +263,15 @@ avoid oversolving and ``-bp_mg_coarse_pc_type hypre -bp_mg_coarse_pc_hypre_type
 boomeramg`` selects the BoomerAMG algebraic MG preconditioner from hypre_ for the coarse
 MG level.
 
+.. note::
+
+   The Eisenstat-Walker adjustment of linear solver tolerances saves time when a
+   low-accuracy estimate of the Newton step is sufficient but may lead to solver failures,
+   especially when the initial guess is of poor quality. In an attempt to reduce
+   computational costs while maintaining robustness PISM disables ``-bp_snes_ksp_ew`` if
+   the initial guess is zero (beginning of a simulation) or if the solver fails with
+   ``-bp_snes_ksp_ew``.
+
 Some simulations may benefit from using a direct solver on the coarse MG level. For
 example, the following would use MUMPS_ on the coarse grid:
 
@@ -273,9 +281,8 @@ example, the following would use MUMPS_ on the coarse grid:
    -bp_pc_mg_levels N \
    -bp_snes_ksp_ew  \
    -bp_snes_ksp_ew_version 3 \
-   -bp_mg_levels_ksp_type gmres \
-   -bp_mg_levels_pc_type bjacobi \
-   -bp_mg_levels_sub_pc_type ilu \
+   -bp_mg_levels_ksp_type richardson \
+   -bp_mg_levels_pc_type sor \
    -bp_mg_coarse_ksp_type preonly \
    -bp_mg_coarse_pc_type lu
 

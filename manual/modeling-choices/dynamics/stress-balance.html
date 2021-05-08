@@ -236,9 +236,8 @@ only one, and most likely not the best one.</p>
 -bp_pc_mg_levels N <span class="se">\</span>
 -bp_snes_ksp_ew  <span class="se">\</span>
 -bp_snes_ksp_ew_version <span class="m">3</span> <span class="se">\</span>
--bp_mg_levels_ksp_type gmres <span class="se">\</span>
--bp_mg_levels_pc_type bjacobi <span class="se">\</span>
--bp_mg_levels_sub_pc_type ilu <span class="se">\</span>
+-bp_mg_levels_ksp_type richardson <span class="se">\</span>
+-bp_mg_levels_pc_type sor <span class="se">\</span>
 -bp_mg_coarse_ksp_type gmres <span class="se">\</span>
 -bp_mg_coarse_pc_type hypre <span class="se">\</span>
 -bp_mg_coarse_pc_hypre_type boomeramg
@@ -250,15 +249,23 @@ Eisenstat-Walker <span id="id22">[<a class="reference internal" href="../../../z
 avoid oversolving and <code class="docutils literal notranslate"><span class="pre">-bp_mg_coarse_pc_type</span> <span class="pre">hypre</span> <span class="pre">-bp_mg_coarse_pc_hypre_type</span>
 <span class="pre">boomeramg</span></code> selects the BoomerAMG algebraic MG preconditioner from <a class="reference external" href="https://hypre.readthedocs.io/">hypre</a> for the coarse
 MG level.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Eisenstat-Walker adjustment of linear solver tolerances saves time when a
+low-accuracy estimate of the Newton step is sufficient but may lead to solver failures,
+especially when the initial guess is of poor quality. In an attempt to reduce
+computational costs while maintaining robustness PISM disables <code class="docutils literal notranslate"><span class="pre">-bp_snes_ksp_ew</span></code> if
+the initial guess is zero (beginning of a simulation) or if the solver fails with
+<code class="docutils literal notranslate"><span class="pre">-bp_snes_ksp_ew</span></code>.</p>
+</div>
 <p>Some simulations may benefit from using a direct solver on the coarse MG level. For
 example, the following would use <a class="reference external" href="http://mumps.enseeiht.fr/">MUMPS</a> on the coarse grid:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-bp_pc_type mg <span class="se">\</span>
 -bp_pc_mg_levels N <span class="se">\</span>
 -bp_snes_ksp_ew  <span class="se">\</span>
 -bp_snes_ksp_ew_version <span class="m">3</span> <span class="se">\</span>
--bp_mg_levels_ksp_type gmres <span class="se">\</span>
--bp_mg_levels_pc_type bjacobi <span class="se">\</span>
--bp_mg_levels_sub_pc_type ilu <span class="se">\</span>
+-bp_mg_levels_ksp_type richardson <span class="se">\</span>
+-bp_mg_levels_pc_type sor <span class="se">\</span>
 -bp_mg_coarse_ksp_type preonly <span class="se">\</span>
 -bp_mg_coarse_pc_type lu
 </pre></div>
@@ -565,9 +572,9 @@ uniform spacing in <span class="math notranslate nohighlight">\(x\)</span> and <
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2345-gdec8cebdb
+      Git revision v1.0-2348-gf2ed7fbab
       committed by Constantine Khrulev
-      on 2021-05-05 15:19:18 -0800 |
+      on 2021-05-07 16:47:13 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
