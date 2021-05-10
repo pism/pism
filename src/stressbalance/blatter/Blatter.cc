@@ -836,9 +836,8 @@ Blatter::SolutionInfo Blatter::parameter_continuation() {
   ierr = VecSet(m_x_old, 0.0); PISM_CHK(ierr, "VecSet");
 
   m_log->message(2,
-                 "Blatter solver: %s\n"
-                 "  Starting parameter continuation with lambda = %f\n",
-                 SNESConvergedReasons[info.snes_reason], lambda);
+                 "Blatter solver: Starting parameter continuation with lambda = %f\n",
+                 lambda);
 
   for (int N = 0; N < Nc; ++N) {
     // Set the regularization parameter:
