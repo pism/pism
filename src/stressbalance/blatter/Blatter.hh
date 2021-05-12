@@ -78,13 +78,28 @@ protected:
 
   IceModelVec2Struct<Parameters> m_parameters;
 
+  // Scaling of quadrature weights (note: this does not seem to matter).
   double m_scaling;
+
+  // Ice density times g
   double m_rho_ice_g;
+
+  // Water density times g
   double m_rho_ocean_g;
 
+  // The flow law Glen exponent
   double m_glen_exponent;
+
+  // Use the eta-transformation to compute surface gradient
   bool m_eta_transform;
+
+  // Viscosity regularization constant
   double m_viscosity_eps;
+
+  // Enhancement factor for ice viscosity.
+  double m_E_viscosity;
+
+  // True if the Eisenstat-Walker method of adjusting linear solver tolerances is enabled.
   bool m_ksp_use_ew;
 
   static const int m_Nq = 100;

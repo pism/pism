@@ -67,6 +67,10 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
     double eta, deta;
     m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, &deta);
 
+    // add the enhancement factor
+    eta *= m_E_viscosity;
+    deta *= m_E_viscosity;
+
     // loop over test and trial functions, computing the upper-triangular part of
     // the element Jacobian
     for (int t = 0; t < Nk; ++t) {

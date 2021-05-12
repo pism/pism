@@ -309,6 +309,9 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
 
   m_glen_exponent = m_flow_law->exponent();
 
+  double E = m_config->get_number("stress_balance.blatter.enhancement_factor");
+  m_E_viscosity = std::pow(E, -1.0 / m_glen_exponent);
+
   double softness = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
     hardness = std::pow(softness, -1.0 / m_glen_exponent);
 

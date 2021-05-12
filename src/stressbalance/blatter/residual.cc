@@ -70,6 +70,9 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
     double eta;
     m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, nullptr);
 
+    // add the enhancement factor
+    eta *= m_E_viscosity;
+
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       const auto &psi = element.chi(q, t);
