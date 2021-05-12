@@ -30,8 +30,13 @@ PETSC_ARCH="linux-opt"
   --with-shared-libraries \
   --with-debugging=0 \
   --with-petsc4py \
+  --download-scalapack \
+  --download-mumps \
   --download-hypre \
-  --download-mumps --download-scalapack
+  --download-parmetis \
+  --download-metis \
+  --download-ptscotch \
+  --with-valgrind=0
 
 export PYTHONPATH=${prefix}/lib
 make all
