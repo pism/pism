@@ -1020,11 +1020,13 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
     m_log->message(2,"  Trying without the Eisenstat-Walker method of adjusting solver tolerances\n");
 
     // restore the previous initial guess
-    if (info.snes_reason != SNES_DIVERGED_LINE_SEARCH) {
+    if (not (info.snes_reason == SNES_DIVERGED_LINE_SEARCH or
+             info.snes_reason == SNES_DIVERGED_MAX_IT)) {
       ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
     } else {
       // We *keep* the current values in m_x if the line search failed after a few
-      // iterations: no need to discard the progress the solver made before failing.
+      // iterations or if the solver took too many iterations: no need to discard the
+      // progress it made before failing.
     }
 
     {
