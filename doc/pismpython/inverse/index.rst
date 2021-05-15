@@ -1,5 +1,3 @@
-.. include:: ../math-definitions.txt
-
 =====================
 PISM Inverse Problems
 =====================

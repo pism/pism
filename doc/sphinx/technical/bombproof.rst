@@ -1,16 +1,9 @@
 .. include:: ../global.txt
 
-.. only:: html
-
-   .. When building PDFs this will be included already.
-
-   .. include:: ../math-definitions.txt
-
 .. _sec-bombproof:
 
 BOMBPROOF, PISM's numerical scheme for conservation of energy
 =============================================================
-
 
 Introduction
 ------------

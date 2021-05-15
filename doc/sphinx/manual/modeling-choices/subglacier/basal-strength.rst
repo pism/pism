@@ -1,7 +1,5 @@
 .. include:: ../../../global.txt
 
-.. include:: ../../../math-definitions.txt
-
 .. _sec-basestrength:
 
 Controlling basal strength
@@ -162,8 +160,7 @@ knowledge of the bed type. It is defined by
 .. math::
    :label: eq-regularizedcoulomb
 
-   \newcommand{\U}{\mathbf{u}}
-   \boldsymbol{\tau}_b = - \tau_c \frac{\U}{\left(|\U| + u_{\text{threshold}} \right)^{q} |\U|^{1-q}},
+   \boldsymbol{\tau}_b = - \tau_c \frac{\uu}{\left(|\uu| + u_{\text{threshold}} \right)^{q} |\uu|^{1-q}},
 
 Set :opt:`-regularized_coulomb` to select this sliding law.
 
