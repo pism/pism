@@ -11,6 +11,13 @@ output=$2
 # This run is *serial* to make sure it works with most PETSc installations. The equivalent
 # parallel run would require PETSc built with a parallel direct solver (e.g. MUMPS).
 
+# number of MG levels
+M=3
+# coarsening factor
+C=7
+# number of vertical levels
+bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
+
 pismr -i ${input} -bootstrap \
       -Mx 401 \
       -grid.registration corner \
@@ -18,12 +25,12 @@ pismr -i ${input} -bootstrap \
       -stress_balance.model blatter \
       -stress_balance.blatter.flow_law isothermal_glen \
       -flow_law.isothermal_Glen.ice_softness ${A} \
-      -stress_balance.blatter.coarsening_factor 7 \
-      -blatter_Mz 50 \
+      -stress_balance.blatter.coarsening_factor ${C} \
+      -blatter_Mz ${bp_Mz} \
       -bp_snes_monitor_ratio \
       -bp_ksp_type gmres \
       -bp_pc_type mg \
-      -bp_pc_mg_levels 3 \
+      -bp_pc_mg_levels ${M} \
       -bp_mg_levels_ksp_type richardson \
       -bp_mg_levels_pc_type sor \
       -bp_mg_coarse_ksp_type preonly \
