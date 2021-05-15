@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Earth deformation models" href="bed-deformation.html" />
@@ -31,34 +32,7 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="math notranslate nohighlight">
-\[\begin{split}\newcommand{\Diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
-\newcommand{\diff}[2]{ \frac{\partial #1}{\partial #2} }
-\newcommand{\var}[2]{ {#1}_{\text{#2}} }
-\newcommand{\h}[1]{ \var{h}{#1} }
-\newcommand{\T}[1]{ \var{T}{#1} }
-\newcommand{\m}[1]{ \var{m}{#1} }
-\newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-\newcommand{\psw}{p_{\text{water}}}
-\newcommand{\pice}{p_{\text{ice}}}
-\newcommand{\pmelange}{\bar p_{\text{melange}}}
-\newcommand{\rhoi}{\rho_{\text{ice}}}
-\newcommand{\rhow}{\rho_{\text{water}}}
-\newcommand{\n}{\mathbf{n}}
-\newcommand{\nx}{\n_{x}}
-\newcommand{\ny}{\n_{y}}
-\newcommand{\phimin}{\phi_{\mathrm{min}}}
-\newcommand{\phimax}{\phi_{\mathrm{max}}}
-\newcommand{\bmin}{b_{\mathrm{min}}}
-\newcommand{\bmax}{b_{\mathrm{max}}}
-\newcommand{\bq}{\mathbf{q}}
-\newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
-\newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
-\newcommand{\div}{\nabla \cdot}
-\newcommand{\V}{\mathbf{V}}
-\newcommand{\Wtill}{W_{\mathrm{till}}}
-\newcommand{\zs}{z_{\text{sea level}}}\end{split}\]</div>
-<div class="section" id="subglacial-hydrology">
+  <div class="section" id="subglacial-hydrology">
 <span id="sec-subhydro"></span><h1>Subglacial hydrology<a class="headerlink" href="#subglacial-hydrology" title="Permalink to this headline">¶</a></h1>
 <p>At the present time, two simple subglacial hydrology models are implemented <em>and
 documented</em> in PISM, namely <code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">null</span></code> (and its modification <code class="docutils literal notranslate"><span class="pre">steady</span></code>) and
@@ -119,7 +93,7 @@ to replace the computed <code class="docutils literal notranslate"><span class="
 thereby effectively decoupling the hydrology model from the ice dynamics
 (esp. conservation of energy).</p>
 <p>To use water runoff computed by a PISM surface model, set
-<a class="reference internal" href="../../parameters/index.html#config-hydrology.surface_input_from_runoff"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.surface_input_from_runoff</span></code></a>. (The <a class="reference internal" href="../../../climate_forcing/surface.html#sec-surface-pdd"><span class="std std-ref">Temperature-index scheme</span></a> computes runoff
+<a class="reference internal" href="../../parameters/index.html#config-hydrology.surface_input_from_runoff"><code class="docutils literal notranslate"></code></a>. (The <a class="reference internal" href="../../../climate_forcing/surface.html#sec-surface-pdd"><span class="std std-ref">Temperature-index scheme</span></a> computes runoff
 using computed melt and the assumption that a fraction of this melt re-freezes, all other
 models assume that all melt turns into runoff.)</p>
 <table class="colwidths-given docutils align-default" id="tab-hydrology">
@@ -155,9 +129,9 @@ with a constant.</p></td>
 <div class="section" id="the-default-model-hydrology-null">
 <span id="sec-hydrology-null"></span><h2>The default model: <code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">null</span></code><a class="headerlink" href="#the-default-model-hydrology-null" title="Permalink to this headline">¶</a></h2>
 <p>In this model the water is <em>not</em> conserved but it is stored locally in the till up to a
-specified amount; the configuration parameter <a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.tillwat_max</span></code></a> sets that
+specified amount; the configuration parameter <a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"></code></a> sets that
 amount. The water is not conserved in the sense that water above the
-<a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.tillwat_max</span></code></a> level is lost permanently. This model is based on the
+<a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"></code></a> level is lost permanently. This model is based on the
 “undrained plastic bed” concept of <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id432"><span>80</span></a>]</span>; see also
 <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span>.</p>
 <p>In particular, denoting <code class="docutils literal notranslate"><span class="pre">tillwat</span></code> by <span class="math notranslate nohighlight">\(W_{till}\)</span>, the till-stored water layer effective
@@ -176,7 +150,7 @@ Mohr-Coulomb till (section <a class="reference internal" href="basal-strength.ht
 the <code class="docutils literal notranslate"><span class="pre">null</span></code> model. It <em>does not</em> model the steady state distribution of the subglacial
 water thickness.</p>
 <p>Here we assume that the water input from the surface read from the file specified using
-<a class="reference internal" href="../../parameters/index.html#config-hydrology.surface_input.file"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.surface_input</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> instantaneously percolates to the base of the ice
+<a class="reference internal" href="../../parameters/index.html#config-hydrology.surface_input.file"><code class="docutils literal notranslate"></code></a> instantaneously percolates to the base of the ice
 and enters the subglacial water system.</p>
 <p>We also assume that the subglacial drainage system instantaneously reaches its steady
 state. Under this assumption the water flux can be approximated by using an auxiliary
@@ -184,9 +158,9 @@ problem that is computationally cheaper to solve, compared to using the mass con
 <code class="docutils literal notranslate"><span class="pre">routing</span></code> model (at least at high grid resolutions).</p>
 <p>We solve</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-aux">
-<span class="eqno">(19)<a class="headerlink" href="#equation-eq-steady-hydro-aux" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\div (\V u)\]</div>
+<span class="eqno">(19)<a class="headerlink" href="#equation-eq-steady-hydro-aux" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
 <p>on the grounded part of the domain with the initial state <span class="math notranslate nohighlight">\(u_0 = \tau M\)</span>, where <span class="math notranslate nohighlight">\(\tau\)</span> is
-the scaling of the input rate (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.input_rate_scaling"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.input_rate_scaling</span></code></a>) and <span class="math notranslate nohighlight">\(M\)</span> is
+the scaling of the input rate (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.input_rate_scaling"><code class="docutils literal notranslate"></code></a>) and <span class="math notranslate nohighlight">\(M\)</span> is
 the input rate read from an input file.</p>
 <p>The velocity field <span class="math notranslate nohighlight">\(\V\)</span> approximates the steady state flow direction. In this
 implementation <span class="math notranslate nohighlight">\(\V\)</span> is the normalized gradient of</p>
@@ -205,27 +179,27 @@ is distributed among the outlets.</p>
 </div>
 <p>The term <span class="math notranslate nohighlight">\(\Delta \psi\)</span> is the adjustment needed to remove internal minima from the “raw”
 potential, filling any “lakes” it might have. This modification of <span class="math notranslate nohighlight">\(\psi\)</span> is performed
-using an iterative process; set <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_n_iterations"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.potential_n_iterations</span></code></a> to
-control the maximum number of iterations and <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_delta"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.potential_delta</span></code></a> to
+using an iterative process; set <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_n_iterations"><code class="docutils literal notranslate"></code></a> to
+control the maximum number of iterations and <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_delta"><code class="docutils literal notranslate"></code></a> to
 affect the amount it is adjusted by at each iteration.</p>
 <p>The equation <a class="reference internal" href="#equation-eq-steady-hydro-aux">(19)</a> is advanced forward in time until <span class="math notranslate nohighlight">\(\int_{\Omega}u
-&lt; \epsilon\int_{\Omega} u_0\)</span>, where <span class="math notranslate nohighlight">\(\epsilon\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.volume_ratio"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.volume_ratio</span></code></a>)
+&lt; \epsilon\int_{\Omega} u_0\)</span>, where <span class="math notranslate nohighlight">\(\epsilon\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.volume_ratio"><code class="docutils literal notranslate"></code></a>)
 is a fraction controlling the accuracy of the approximation: lower values of <span class="math notranslate nohighlight">\(\epsilon\)</span>
 would result in a better approximation and a higher computational cost (more iterations).
-Set <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.n_iterations"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.n_iterations</span></code></a> to control the maximum number of these
+Set <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.n_iterations"><code class="docutils literal notranslate"></code></a> to control the maximum number of these
 iterations.</p>
 <p>This model restricts the time step length in order to capture the temporal variability of
 the forcing: the flux is updated at least once for each time interval in the forcing file.</p>
 <p>In simulations with a slowly-varying surface input rate the flux has to be updated every
 once in a while to reflect changes in the flow pattern coming from changing geometry. Use
-<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.flux_update_interval"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.flux_update_interval</span></code></a> (years) to set the update frequency.</p>
+<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.flux_update_interval"><code class="docutils literal notranslate"></code></a> (years) to set the update frequency.</p>
 <p>See <a class="reference internal" href="../../../technical/steady-hydrology.html#sec-steady-hydro"><span class="std std-ref">Computing steady-state subglacial water flux</span></a> for technical details.</p>
 </div>
 </div>
 <div class="section" id="the-mass-conserving-model-hydrology-routing">
 <span id="sec-hydrology-routing"></span><h2>The mass-conserving model: <code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">routing</span></code><a class="headerlink" href="#the-mass-conserving-model-hydrology-routing" title="Permalink to this headline">¶</a></h2>
 <p>In this model the water <em>is</em> conserved in the map-plane. Water does get put into the till,
-with the same maximum value <a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.tillwat_max</span></code></a>, but excess water is
+with the same maximum value <a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"></code></a>, but excess water is
 horizontally-transported. An additional state variable <code class="docutils literal notranslate"><span class="pre">bwat</span></code>, the effective thickness
 of the layer of transportable water, is used by <code class="docutils literal notranslate"><span class="pre">routing</span></code>. This transportable water will
 flow in the direction of the negative of the gradient of the modeled hydraulic potential.
@@ -372,9 +346,9 @@ the width of this strip, which should typically be one or two grid cells.</p></t
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

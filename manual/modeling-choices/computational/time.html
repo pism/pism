@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Ice dynamics and thermodynamics" href="../dynamics/index.html" />
@@ -84,7 +85,7 @@ by the CF metadata conventions.</p>
 require precise application of forcing data or reporting on particular dates
 (paleo-climate runs, for example). In this mode PISM ignores the reference date in time
 unit specifications (such as “<code class="docutils literal notranslate"><span class="pre">days</span> <span class="pre">since</span> <span class="pre">1969-7-20</span></code>”), though the value set using
-<a class="reference internal" href="../../parameters/index.html#config-time.reference_date"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_date</span></code></a> configuration parameter is saved in (is passed forward into)
+<a class="reference internal" href="../../parameters/index.html#config-time.reference_date"><code class="docutils literal notranslate"></code></a> configuration parameter is saved in (is passed forward into)
 output files.</p>
 <p>The calendar setting also affects the year length. In particular, with the default choice
 of the calendar (<code class="docutils literal notranslate"><span class="pre">365_day</span></code>), <code class="docutils literal notranslate"><span class="pre">-y</span> <span class="pre">10</span></code> sets the run duration to</p>
@@ -130,7 +131,7 @@ of the calendar (<code class="docutils literal notranslate"><span class="pre">36
 </tbody>
 </table>
 <p>Selecting a non-trivial (Gregorian, Proleptic Gregorian, or Julian) calendar using the
-<a class="reference internal" href="../../parameters/index.html#config-time.calendar"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.calendar</span></code></a> configuration parameter or the <code class="option docutils literal notranslate"><span class="pre">-calendar</span></code> command-line
+<a class="reference internal" href="../../parameters/index.html#config-time.calendar"><code class="docutils literal notranslate"></code></a> configuration parameter or the <code class="option docutils literal notranslate"><span class="pre">-calendar</span></code> command-line
 option enables calendar-based time management; see <a class="reference internal" href="#tab-calendars"><span class="std std-numref">Table 8</span></a>. The
 implications of selecting such a calendar are:</p>
 <ul>
@@ -325,9 +326,9 @@ supported diagnostic quantities at the end of a time-stepping run using the opti
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

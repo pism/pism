@@ -110,17 +110,21 @@ respectively. Allowed arguments are listed in :numref:`tab-flowlaw` below.
 
        .. math::
 
-          A &= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
+          A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
 
-          Q &= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
+       .. math::
+
+          Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
        if `T^* < 263` K and
 
        .. math::
 
-          A &= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
+          A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
 
-          Q &= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
+       .. math::
+
+          Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
        if `T^* > 263` K.
 

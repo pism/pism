@@ -13,6 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Contributing to PISM" href="../contributing/index.html" />
@@ -32,94 +33,80 @@
     <div class="body" role="main">
       
   <div class="math notranslate nohighlight">
-\[\newcommand{\E}{\dot{\boldsymbol{\epsilon}}}
-\newcommand{\exponent}{\frac{1-n}{2n}}
-\newcommand{\diff}[2]{\frac{\partial {#1}}{\partial {#2}}}
-\newcommand{\p}[1]{\left(#1\right)}
-\newcommand{\f}{\rho\, g\, \nabla s}
-\newcommand{\Id}{\int_{\Omega}}
-\newcommand{\Ib}{\int_{\partial\Omega}}
-\newcommand{\Ibase}{\int_{\text{base}}}
-\newcommand{\U}{\boldsymbol{u}}
-\newcommand{\N}{\boldsymbol{n}}
-\newcommand{\dphi}[2][i]{\diff{\varphi_{#1}}{#2}}
-\newcommand{\dpsi}[2][i]{\diff{\psi_{#1}}{#2}}
-\newcommand{\Hmin}{H_{\text{min}}}
-\newcommand{\dbeta}{\diff{\beta}{\alpha}}\]</div>
+\[\]</div>
 <div class="section" id="blatter-stress-balance-solver-technical-details">
-<span id="sec-blatter-details"></span><h1><a class="toc-backref" href="#id42">Blatter stress balance solver: technical details</a><a class="headerlink" href="#blatter-stress-balance-solver-technical-details" title="Permalink to this headline">¶</a></h1>
+<span id="sec-blatter-details"></span><h1><a class="toc-backref" href="#id40">Blatter stress balance solver: technical details</a><a class="headerlink" href="#blatter-stress-balance-solver-technical-details" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#blatter-stress-balance-solver-technical-details" id="id42">Blatter stress balance solver: technical details</a></p>
+<li><p><a class="reference internal" href="#blatter-stress-balance-solver-technical-details" id="id40">Blatter stress balance solver: technical details</a></p>
 <ul>
-<li><p><a class="reference internal" href="#notation" id="id43">Notation</a></p></li>
-<li><p><a class="reference internal" href="#introduction" id="id44">Introduction</a></p></li>
-<li><p><a class="reference internal" href="#weak-form" id="id45">Weak form</a></p></li>
-<li><p><a class="reference internal" href="#boundary-conditions" id="id46">Boundary conditions</a></p>
+<li><p><a class="reference internal" href="#notation" id="id41">Notation</a></p></li>
+<li><p><a class="reference internal" href="#introduction" id="id42">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#weak-form" id="id43">Weak form</a></p></li>
+<li><p><a class="reference internal" href="#boundary-conditions" id="id44">Boundary conditions</a></p>
 <ul>
-<li><p><a class="reference internal" href="#basal-boundary" id="id47">Basal boundary</a></p></li>
-<li><p><a class="reference internal" href="#marine-margins" id="id48">Marine margins</a></p></li>
+<li><p><a class="reference internal" href="#basal-boundary" id="id45">Basal boundary</a></p></li>
+<li><p><a class="reference internal" href="#marine-margins" id="id46">Marine margins</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#solver-implementation" id="id49">Solver implementation</a></p>
+<li><p><a class="reference internal" href="#solver-implementation" id="id47">Solver implementation</a></p>
 <ul>
-<li><p><a class="reference internal" href="#discretization" id="id50">Discretization</a></p></li>
-<li><p><a class="reference internal" href="#residual-evaluation" id="id51">Residual evaluation</a></p>
+<li><p><a class="reference internal" href="#discretization" id="id48">Discretization</a></p></li>
+<li><p><a class="reference internal" href="#residual-evaluation" id="id49">Residual evaluation</a></p>
 <ul>
-<li><p><a class="reference internal" href="#main-residual-contribution" id="id52">Main residual contribution</a></p></li>
-<li><p><a class="reference internal" href="#driving-stress-contribution" id="id53">Driving stress contribution</a></p></li>
-<li><p><a class="reference internal" href="#basal-contribution" id="id54">Basal contribution</a></p></li>
-<li><p><a class="reference internal" href="#marine-boundary-contribution" id="id55">Marine boundary contribution</a></p></li>
-<li><p><a class="reference internal" href="#residual-at-dirichlet-bc-locations" id="id56">Residual at Dirichlet BC locations</a></p></li>
+<li><p><a class="reference internal" href="#main-residual-contribution" id="id50">Main residual contribution</a></p></li>
+<li><p><a class="reference internal" href="#driving-stress-contribution" id="id51">Driving stress contribution</a></p></li>
+<li><p><a class="reference internal" href="#basal-contribution" id="id52">Basal contribution</a></p></li>
+<li><p><a class="reference internal" href="#marine-boundary-contribution" id="id53">Marine boundary contribution</a></p></li>
+<li><p><a class="reference internal" href="#residual-at-dirichlet-bc-locations" id="id54">Residual at Dirichlet BC locations</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#jacobian-evaluation" id="id57">Jacobian evaluation</a></p>
+<li><p><a class="reference internal" href="#jacobian-evaluation" id="id55">Jacobian evaluation</a></p>
 <ul>
-<li><p><a class="reference internal" href="#basal-contribution-to-the-jacobian" id="id58">Basal contribution to the Jacobian</a></p></li>
-<li><p><a class="reference internal" href="#jacobian-at-dirichlet-locations" id="id59">Jacobian at Dirichlet locations</a></p></li>
+<li><p><a class="reference internal" href="#basal-contribution-to-the-jacobian" id="id56">Basal contribution to the Jacobian</a></p></li>
+<li><p><a class="reference internal" href="#jacobian-at-dirichlet-locations" id="id57">Jacobian at Dirichlet locations</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#iceberg-elimination" id="id60">Iceberg elimination</a></p></li>
-<li><p><a class="reference internal" href="#preconditioning" id="id61">Preconditioning</a></p>
+<li><p><a class="reference internal" href="#iceberg-elimination" id="id58">Iceberg elimination</a></p></li>
+<li><p><a class="reference internal" href="#preconditioning" id="id59">Preconditioning</a></p>
 <ul>
-<li><p><a class="reference internal" href="#vertical-grid-sizes-compatible-with-coarsening" id="id62">Vertical grid sizes compatible with coarsening</a></p></li>
-<li><p><a class="reference internal" href="#controlling-using-petsc-options" id="id63">Controlling using PETSc options</a></p></li>
-<li><p><a class="reference internal" href="#additional-code-needed-to-support-geometric-multigrid" id="id64">Additional code needed to support geometric multigrid</a></p></li>
+<li><p><a class="reference internal" href="#vertical-grid-sizes-compatible-with-coarsening" id="id60">Vertical grid sizes compatible with coarsening</a></p></li>
+<li><p><a class="reference internal" href="#controlling-using-petsc-options" id="id61">Controlling using PETSc options</a></p></li>
+<li><p><a class="reference internal" href="#additional-code-needed-to-support-geometric-multigrid" id="id62">Additional code needed to support geometric multigrid</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#parameter-continuation-as-a-recovery-mechanism" id="id65">Parameter continuation as a recovery mechanism</a></p></li>
-<li><p><a class="reference internal" href="#model-domain-and-mesh-structure" id="id66">Model domain and mesh structure</a></p>
+<li><p><a class="reference internal" href="#parameter-continuation-as-a-recovery-mechanism" id="id63">Parameter continuation as a recovery mechanism</a></p></li>
+<li><p><a class="reference internal" href="#model-domain-and-mesh-structure" id="id64">Model domain and mesh structure</a></p>
 <ul>
-<li><p><a class="reference internal" href="#supporting-evolving-ice-extent" id="id67">Supporting evolving ice extent</a></p></li>
+<li><p><a class="reference internal" href="#supporting-evolving-ice-extent" id="id65">Supporting evolving ice extent</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#solver-inputs-and-outputs" id="id68">Solver inputs and outputs</a></p></li>
-<li><p><a class="reference internal" href="#steps-performed-by-the-solver" id="id69">Steps performed by the solver</a></p></li>
-<li><p><a class="reference internal" href="#integration-with-the-rest-of-pism" id="id70">Integration with the rest of PISM</a></p>
+<li><p><a class="reference internal" href="#solver-inputs-and-outputs" id="id66">Solver inputs and outputs</a></p></li>
+<li><p><a class="reference internal" href="#steps-performed-by-the-solver" id="id67">Steps performed by the solver</a></p></li>
+<li><p><a class="reference internal" href="#integration-with-the-rest-of-pism" id="id68">Integration with the rest of PISM</a></p>
 <ul>
-<li><p><a class="reference internal" href="#time-stepping" id="id71">Time stepping</a></p></li>
-<li><p><a class="reference internal" href="#conservation-of-energy" id="id72">Conservation of energy</a></p></li>
+<li><p><a class="reference internal" href="#time-stepping" id="id69">Time stepping</a></p></li>
+<li><p><a class="reference internal" href="#conservation-of-energy" id="id70">Conservation of energy</a></p></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#testing-and-verification" id="id73">Testing and verification</a></p>
+<li><p><a class="reference internal" href="#testing-and-verification" id="id71">Testing and verification</a></p>
 <ul>
-<li><p><a class="reference internal" href="#verification-test-xy" id="id74">Verification test XY</a></p></li>
-<li><p><a class="reference internal" href="#verification-test-xz" id="id75">Verification test XZ</a></p></li>
-<li><p><a class="reference internal" href="#verification-test-xz-cfbc" id="id76">Verification test XZ-CFBC</a></p></li>
-<li><p><a class="reference internal" href="#verification-test-xz-vv-van-der-veen-profile" id="id77">Verification test XZ-VV (van der Veen profile)</a></p></li>
-<li><p><a class="reference internal" href="#ismip-hom-experiments-a-d" id="id78">ISMIP-HOM Experiments A-D</a></p></li>
+<li><p><a class="reference internal" href="#verification-test-xy" id="id72">Verification test XY</a></p></li>
+<li><p><a class="reference internal" href="#verification-test-xz" id="id73">Verification test XZ</a></p></li>
+<li><p><a class="reference internal" href="#verification-test-xz-cfbc" id="id74">Verification test XZ-CFBC</a></p></li>
+<li><p><a class="reference internal" href="#verification-test-xz-vv-van-der-veen-profile" id="id75">Verification test XZ-VV (van der Veen profile)</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#known-issues-and-future-work" id="id79">Known issues and future work</a></p></li>
+<li><p><a class="reference internal" href="#known-issues-and-future-work" id="id76">Known issues and future work</a></p></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="notation">
-<span id="sec-bp-notation"></span><h2><a class="toc-backref" href="#id43">Notation</a><a class="headerlink" href="#notation" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-notation"></span><h2><a class="toc-backref" href="#id41">Notation</a><a class="headerlink" href="#notation" title="Permalink to this headline">¶</a></h2>
 <table class="docutils align-default">
 <colgroup>
 <col style="width: 50%" />
@@ -132,10 +119,10 @@
 <tr class="row-even"><td><p><span class="math notranslate nohighlight">\(v\)</span></p></td>
 <td><p><span class="math notranslate nohighlight">\(y\)</span>-component of ice velocity</p></td>
 </tr>
-<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\U\)</span></p></td>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\uu\)</span></p></td>
 <td><p>2D vector <span class="math notranslate nohighlight">\((u, v)\)</span></p></td>
 </tr>
-<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\N\)</span></p></td>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\n\)</span></p></td>
 <td><p>outward-pointing normal vector at domain boundaries</p></td>
 </tr>
 <tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\eta\)</span></p></td>
@@ -178,7 +165,7 @@
 </table>
 </div>
 <div class="section" id="introduction">
-<span id="sec-bp-intro"></span><h2><a class="toc-backref" href="#id44">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-intro"></span><h2><a class="toc-backref" href="#id42">Introduction</a><a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h2>
 <p>This implementation is based on the PETSc example <code class="docutils literal notranslate"><span class="pre">snes/tutorials/ex48.c</span></code> (see
 <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span>) and is inspired by <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>156</span></a>]</span>,
 <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id10"><span>63</span></a>]</span>, <span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id8"><span>157</span></a>]</span>, <span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id9"><span>62</span></a>]</span>, and <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id5"><span>158</span></a>]</span>.</p>
@@ -224,7 +211,7 @@ the form in <a class="reference internal" href="#equation-eq-bp-viscosity">(63)<
 </div>
 </div>
 <div class="section" id="weak-form">
-<span id="sec-bp-weak-form"></span><h2><a class="toc-backref" href="#id45">Weak form</a><a class="headerlink" href="#weak-form" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-weak-form"></span><h2><a class="toc-backref" href="#id43">Weak form</a><a class="headerlink" href="#weak-form" title="Permalink to this headline">¶</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Recall the product rule</p>
@@ -232,28 +219,28 @@ the form in <a class="reference internal" href="#equation-eq-bp-viscosity">(63)<
 \[ \begin{align}\begin{aligned}\nabla \cdot (f X) &amp;= \nabla f \cdot X + f \nabla \cdot X, \text{ or}\\f\nabla \cdot X &amp;= \nabla\cdot(f X) - \nabla f \cdot X\end{aligned}\end{align} \]</div>
 <p>and the divergence theorem:</p>
 <div class="math notranslate nohighlight">
-\[\int_{\Omega} \nabla\cdot (f X) = \int_{\partial \Omega} (f X)\cdot \N\, ds.\]</div>
+\[\int_{\Omega} \nabla\cdot (f X) = \int_{\partial \Omega} (f X)\cdot \n\, ds.\]</div>
 </div>
 <p>We omit discussions of function spaces; see <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>156</span></a>]</span>, <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id5"><span>158</span></a>]</span> and
 other references mentioned above for details.</p>
 <p>To obtain the weak form, we multiply both equations in <a class="reference internal" href="#equation-eq-bp">(62)</a> by a <em>scalar</em> test
 function <span class="math notranslate nohighlight">\(\psi\)</span> and integrate over the domain <span class="math notranslate nohighlight">\(\Omega\)</span>. For the first equation, we get</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form-x">
-<span class="eqno">(65)<a class="headerlink" href="#equation-eq-bp-weak-form-x" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Id \psi \left( - \nabla\cdot (2\, \eta\, \E_1) + \rho\, g\, s_x \right) &amp;= 0,\\-\Id \psi \nabla\cdot\left( 2\, \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \left( \nabla \cdot \left( \psi\, 2\, \eta\, \E_1 \right) - \nabla \psi \cdot 2\, \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\{-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &amp;= 0.\end{aligned}\end{align} \]</div>
+<span class="eqno">(65)<a class="headerlink" href="#equation-eq-bp-weak-form-x" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Id \psi \left( - \nabla\cdot (2\, \eta\, \E_1) + \rho\, g\, s_x \right) &amp;= 0,\\-\Id \psi \nabla\cdot\left( 2\, \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \left( \nabla \cdot \left( \psi\, 2\, \eta\, \E_1 \right) - \nabla \psi \cdot 2\, \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\{-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &amp;= 0.\end{aligned}\end{align} \]</div>
 <p>Similarly, multiplying the second equation by <span class="math notranslate nohighlight">\(\psi\)</span> and integrating by parts yields</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form-y">
-<span class="eqno">(66)<a class="headerlink" href="#equation-eq-bp-weak-form-y" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.\]</div>
+<span class="eqno">(66)<a class="headerlink" href="#equation-eq-bp-weak-form-y" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.\]</div>
 <p>We combine these and say that the weak form of <a class="reference internal" href="#equation-eq-bp">(62)</a> is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form">
-<span class="eqno">(67)<a class="headerlink" href="#equation-eq-bp-weak-form" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,\]</div>
+<span class="eqno">(67)<a class="headerlink" href="#equation-eq-bp-weak-form" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,\]</div>
 <p>where <span class="math notranslate nohighlight">\(\nabla s = ( s_x, s_y )\)</span>.</p>
 <p>The first term corresponds to <a class="reference internal" href="#sec-bp-bc"><span class="std std-ref">Neumann and Robin boundary conditions</span></a>; it
-vanishes for “natural” BC <span class="math notranslate nohighlight">\(\left(2\, \eta\, \E \right) \cdot \N = 0\)</span>. In the basal and
+vanishes for “natural” BC <span class="math notranslate nohighlight">\(\left(2\, \eta\, \E \right) \cdot \n = 0\)</span>. In the basal and
 lateral cases this stress is nonzero. The third one corresponds to the gravitational
 driving stress and is replaced by a compensatory term in <a class="reference internal" href="#sec-bp-testing-verification"><span class="std std-ref">verification tests</span></a> that use manufactured solutions.</p>
 </div>
 <div class="section" id="boundary-conditions">
-<span id="sec-bp-bc"></span><h2><a class="toc-backref" href="#id46">Boundary conditions</a><a class="headerlink" href="#boundary-conditions" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-bc"></span><h2><a class="toc-backref" href="#id44">Boundary conditions</a><a class="headerlink" href="#boundary-conditions" title="Permalink to this headline">¶</a></h2>
 <p>The domain boundary consists of three disjoint parts:</p>
 <ol class="arabic">
 <li><p>The interface between ice and the underlying bed or (if the ice is floating) water.</p>
@@ -291,13 +278,13 @@ Jacobian entries corresponding to Dirichlet locations. Prescribed velocity value
 substituted into equations that depend on them (see section 3.2 of
 <span id="id15">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span> for details).</p>
 <div class="section" id="basal-boundary">
-<span id="sec-bp-bc-basal"></span><h3><a class="toc-backref" href="#id47">Basal boundary</a><a class="headerlink" href="#basal-boundary" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-bc-basal"></span><h3><a class="toc-backref" href="#id45">Basal boundary</a><a class="headerlink" href="#basal-boundary" title="Permalink to this headline">¶</a></h3>
 <p>The boundary condition corresponding to basal sliding is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-sliding">
-<span class="eqno">(68)<a class="headerlink" href="#equation-eq-bp-sliding" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \N = - \beta \, \U.\]</div>
+<span class="eqno">(68)<a class="headerlink" href="#equation-eq-bp-sliding" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n = - \beta \, \uu.\]</div>
 <p>In the weak form <a class="reference internal" href="#equation-eq-bp-weak-form">(67)</a> this corresponds to replacing the first term:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-sliding-weak-form">
-<span class="eqno">(69)<a class="headerlink" href="#equation-eq-bp-sliding-weak-form" title="Permalink to this equation">¶</a></span>\[-\Ibase (\psi\, 2\, \eta\, \E) \cdot \N\, ds = \Ibase \beta\, \U\, ds.\]</div>
+<span class="eqno">(69)<a class="headerlink" href="#equation-eq-bp-sliding-weak-form" title="Permalink to this equation">¶</a></span>\[-\Ibase (\psi\, 2\, \eta\, \E) \cdot \n\, ds = \Ibase \beta\, \uu\, ds.\]</div>
 <p>Here <span class="math notranslate nohighlight">\(\beta\)</span> has the same meaning as in <a class="reference internal" href="../manual/modeling-choices/subglacier/basal-strength.html#equation-eq-sliding-linear">(12)</a>.</p>
 <p>Where ice is grounded <span class="math notranslate nohighlight">\(\beta\)</span> is determined as described in <a class="reference internal" href="../manual/modeling-choices/subglacier/basal-strength.html#sec-basestrength"><span class="std std-ref">Controlling basal strength</span></a>. It is
 assumed to be zero (corresponding to no drag) elsewhere.</p>
@@ -322,12 +309,12 @@ using parameterizations of element faces (i.e. as surface integrals) and <em>not
 </div>
 </div>
 <div class="section" id="marine-margins">
-<span id="sec-bp-bc-marine"></span><h3><a class="toc-backref" href="#id48">Marine margins</a><a class="headerlink" href="#marine-margins" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-bc-marine"></span><h3><a class="toc-backref" href="#id46">Marine margins</a><a class="headerlink" href="#marine-margins" title="Permalink to this headline">¶</a></h3>
 <p>We assume that marine ice margins consist of <em>vertical</em> cliffs, i.e. the outward-pointing
-normal vector has the form <span class="math notranslate nohighlight">\(\N = (\cdot,\cdot,0)\)</span>.</p>
+normal vector has the form <span class="math notranslate nohighlight">\(\n = (\cdot,\cdot,0)\)</span>.</p>
 <p>The Neumann boundary condition at marine margins is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-lateral-bc">
-<span class="eqno">(70)<a class="headerlink" href="#equation-eq-bp-lateral-bc" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \N &amp;= p_{\text{ice}} - p_{\text{water}},\;\text{where}\\p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
+<span class="eqno">(70)<a class="headerlink" href="#equation-eq-bp-lateral-bc" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \n &amp;= p_{\text{ice}} - p_{\text{water}},\;\text{where}\\p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
 <p>In other words, this boundary condition corresponds to the difference between the
 cryostatic pressure of the ice on one side of the interface and the hydrostatic pressure
 of water on the other. The atmospheric pressure is ignored. Equation
@@ -356,20 +343,20 @@ margins. Our experiments show the same behavior.</p>
 </div>
 </div>
 <div class="section" id="solver-implementation">
-<span id="sec-bp-solver"></span><h2><a class="toc-backref" href="#id49">Solver implementation</a><a class="headerlink" href="#solver-implementation" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-solver"></span><h2><a class="toc-backref" href="#id47">Solver implementation</a><a class="headerlink" href="#solver-implementation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="discretization">
-<span id="sec-bp-discretization"></span><h3><a class="toc-backref" href="#id50">Discretization</a><a class="headerlink" href="#discretization" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-discretization"></span><h3><a class="toc-backref" href="#id48">Discretization</a><a class="headerlink" href="#discretization" title="Permalink to this headline">¶</a></h3>
 <p>To create a non-linear algebraic system of equations approximating <a class="reference internal" href="#equation-eq-bp-weak-form">(67)</a>,
 we create a hexahedral mesh on the domain <span class="math notranslate nohighlight">\(\Omega\)</span> and use <span class="math notranslate nohighlight">\(Q_1\)</span> Galerkin finite elements.</p>
 <p>Let <span class="math notranslate nohighlight">\(\phi_j\)</span> be the scalar trial function associated with the node <span class="math notranslate nohighlight">\(j\)</span>, then the FE
-approximation of the solution <span class="math notranslate nohighlight">\(\U\)</span> has the form</p>
+approximation of the solution <span class="math notranslate nohighlight">\(\uu\)</span> has the form</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-basis-expansion">
 <span class="eqno">(71)<a class="headerlink" href="#equation-eq-bp-basis-expansion" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}u &amp;= \sum_j \phi_j u_j,\\v &amp;= \sum_j \phi_j v_j.\end{aligned}\end{align} \]</div>
 <p>Then the problem is</p>
 <blockquote>
 <div><p>Find <span class="math notranslate nohighlight">\(u_j\)</span>, <span class="math notranslate nohighlight">\(v_j\)</span> (<span class="math notranslate nohighlight">\(j = 1,\dots,N\)</span>) so that</p>
 <div class="math notranslate nohighlight">
-\[{-\Ib \left(\psi_i 2\, \eta\, \E\right) \cdot \N\, ds} +
+\[{-\Ib \left(\psi_i 2\, \eta\, \E\right) \cdot \n\, ds} +
 {\Id \nabla \psi_i \cdot 2\, \eta\, \E} +
 {\Id \psi_i\, \rho\, g\, \nabla s} = 0\]</div>
 </div></blockquote>
@@ -382,14 +369,14 @@ this nonlinear system using Newton iterations requiring approximations of <span 
 <span class="eqno">(72)<a class="headerlink" href="#equation-eq-bp-newton-step" title="Permalink to this equation">¶</a></span>\[J(U)\, \delta U = -F(U),\]</div>
 <p>where</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual">
-<span class="eqno">(73)<a class="headerlink" href="#equation-eq-bp-residual" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F(U) &amp;= F^1(U) + F^2(U) + F^3(U),\\F^1 &amp;= -\Ib (\psi\, 2\, \eta\, \E) \cdot \N\, ds,\\F^2 &amp;= \Id \nabla \psi \cdot 2\, \eta\, \E,\\F^3 &amp;= \Id \psi\, \f.\end{aligned}\end{align} \]</div>
+<span class="eqno">(73)<a class="headerlink" href="#equation-eq-bp-residual" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F(U) &amp;= F^1(U) + F^2(U) + F^3(U),\\F^1 &amp;= -\Ib (\psi\, 2\, \eta\, \E) \cdot \n\, ds,\\F^2 &amp;= \Id \nabla \psi \cdot 2\, \eta\, \E,\\F^3 &amp;= \Id \psi\, \f.\end{aligned}\end{align} \]</div>
 <p>(compare to <a class="reference internal" href="#equation-eq-bp-weak-form">(67)</a>) and <span class="math notranslate nohighlight">\(J(U)\)</span> is a square sparse matrix containing one row
 per node in the mesh and at most 54 non-zero entries per row (there are <span class="math notranslate nohighlight">\(2\)</span> unknowns per
 node and each node belongs to at most 8 elements forming a <span class="math notranslate nohighlight">\(3\cdot3\cdot3 = 27\)</span> node
 “neighborhood”).</p>
 </div>
 <div class="section" id="residual-evaluation">
-<span id="sec-bp-residual"></span><h3><a class="toc-backref" href="#id51">Residual evaluation</a><a class="headerlink" href="#residual-evaluation" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-residual"></span><h3><a class="toc-backref" href="#id49">Residual evaluation</a><a class="headerlink" href="#residual-evaluation" title="Permalink to this headline">¶</a></h3>
 <p>The residual evaluation is performed in the usual manner, by iterating over all the
 elements containing ice (see <a class="reference internal" href="#sec-bp-mesh"><span class="std std-ref">Model domain and mesh structure</span></a>) and adding element
 contributions to the “global” residual vector.</p>
@@ -412,38 +399,38 @@ simplicity. In actuality each integral is over the <em>intersection of supports 
 and trial functions</em> appearing in the integrand.</p>
 </div>
 <div class="section" id="main-residual-contribution">
-<span id="sec-bp-residual-main"></span><h4><a class="toc-backref" href="#id52">Main residual contribution</a><a class="headerlink" href="#main-residual-contribution" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-residual-main"></span><h4><a class="toc-backref" href="#id50">Main residual contribution</a><a class="headerlink" href="#main-residual-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-ii">
 <span class="eqno">(74)<a class="headerlink" href="#equation-eq-bp-residual-ii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^2_{i,u} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_1\\&amp;= \Id \eta\, \left(\dpsi{x}\, \p{4u_x + 2v_y} + \dpsi{y}\,\p{u_y + v_x} + \dpsi{z}\, u_z \right),\\F^2_{i,v} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_2\\&amp;= \Id \eta\, \left(\dpsi{y}\, \p{2u_x + 4v_y} + \dpsi{x}\,\p{u_y + v_x} + \dpsi{z}\, v_z \right).\end{aligned}\end{align} \]</div>
 <p>Here <span class="math notranslate nohighlight">\(F_{i, u}\)</span> if the contribution to the <span class="math notranslate nohighlight">\(u\)</span>-component of the residual at the <span class="math notranslate nohighlight">\(i\)</span>-th node, etc.</p>
 </div>
 <div class="section" id="driving-stress-contribution">
-<span id="sec-bp-residual-driving-stress"></span><h4><a class="toc-backref" href="#id53">Driving stress contribution</a><a class="headerlink" href="#driving-stress-contribution" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-residual-driving-stress"></span><h4><a class="toc-backref" href="#id51">Driving stress contribution</a><a class="headerlink" href="#driving-stress-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-iii">
 <span class="eqno">(75)<a class="headerlink" href="#equation-eq-bp-residual-iii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^3_{i, u} &amp;= \Id \psi_i\, \rho\, g\, s_x,\\F^3_{i, v} &amp;= \Id \psi_i\, \rho\, g\, s_y.\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="basal-contribution">
-<span id="sec-bp-residual-basal"></span><h4><a class="toc-backref" href="#id54">Basal contribution</a><a class="headerlink" href="#basal-contribution" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-residual-basal"></span><h4><a class="toc-backref" href="#id52">Basal contribution</a><a class="headerlink" href="#basal-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-i-base">
 <span class="eqno">(76)<a class="headerlink" href="#equation-eq-bp-residual-i-base" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= \Ibase \psi_i\, \beta\, u,\\F^1_{i, v} &amp;= \Ibase \psi_i\, \beta\, v.\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="marine-boundary-contribution">
-<span id="sec-bp-residual-marine"></span><h4><a class="toc-backref" href="#id55">Marine boundary contribution</a><a class="headerlink" href="#marine-boundary-contribution" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-residual-marine"></span><h4><a class="toc-backref" href="#id53">Marine boundary contribution</a><a class="headerlink" href="#marine-boundary-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-i-margin">
-<span class="eqno">(77)<a class="headerlink" href="#equation-eq-bp-residual-i-margin" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_x,\\F^1_{i, v} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_y,\end{aligned}\end{align} \]</div>
+<span class="eqno">(77)<a class="headerlink" href="#equation-eq-bp-residual-i-margin" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_x,\\F^1_{i, v} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_y,\end{aligned}\end{align} \]</div>
 <p>where</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="residual-at-dirichlet-bc-locations">
-<span id="sec-bp-residual-dirichlet"></span><h4><a class="toc-backref" href="#id56">Residual at Dirichlet BC locations</a><a class="headerlink" href="#residual-at-dirichlet-bc-locations" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-residual-dirichlet"></span><h4><a class="toc-backref" href="#id54">Residual at Dirichlet BC locations</a><a class="headerlink" href="#residual-at-dirichlet-bc-locations" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-dirichlet">
 <span class="eqno">(78)<a class="headerlink" href="#equation-eq-bp-residual-dirichlet" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F_{i, u} &amp;= u - u_0,\\F_{i, v} &amp;= v - v_0,\end{aligned}\end{align} \]</div>
 <p>where <span class="math notranslate nohighlight">\((u_0, v_0)\)</span> is the prescribed velocity.</p>
 </div>
 </div>
 <div class="section" id="jacobian-evaluation">
-<span id="sec-bp-jacobian"></span><h3><a class="toc-backref" href="#id57">Jacobian evaluation</a><a class="headerlink" href="#jacobian-evaluation" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-jacobian"></span><h3><a class="toc-backref" href="#id55">Jacobian evaluation</a><a class="headerlink" href="#jacobian-evaluation" title="Permalink to this headline">¶</a></h3>
 <p>We use an analytical (as opposed to approximated using finite differences or automatic
 differentiation) Jacobian computed using formulas listed below.</p>
 <p>Here we focus on the derivation of the Jacobian contribution corresponding to the “main”
@@ -451,7 +438,7 @@ part of the residual (<span class="math notranslate nohighlight">\(F^2\)</span>,
 only other non-trivial contribution comes from the basal boundary condition.</p>
 <p>This Jacobian contribution has four parts:</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}\newcommand{\K}[2]{K_{i,j,#1,#2}}\\\K uu &amp;= \diff{F^2_{i, u}}{u_j},\\\K uv &amp;= \diff{F^2_{i, u}}{v_j},\\\K vu &amp;= \diff{F^2_{i, v}}{u_j},\\\K vv &amp;= \diff{F^2_{i, v}}{v_j},\end{aligned}\end{align} \]</div>
+\[ \begin{align}\begin{aligned}\K uu &amp;= \diff{F^2_{i, u}}{u_j},\\\K uv &amp;= \diff{F^2_{i, u}}{v_j},\\\K vu &amp;= \diff{F^2_{i, v}}{u_j},\\\K vv &amp;= \diff{F^2_{i, v}}{v_j},\end{aligned}\end{align} \]</div>
 <p>with <span class="math notranslate nohighlight">\(F^2_{\cdot, \cdot}\)</span> defined by <a class="reference internal" href="#equation-eq-bp-residual-ii">(74)</a>.</p>
 <p>Let <span class="math notranslate nohighlight">\(G_{i, k} = \nabla\psi_i \cdot 2\, \E_{k}\)</span>, then</p>
 <div class="math notranslate nohighlight">
@@ -482,10 +469,10 @@ only other non-trivial contribution comes from the basal boundary condition.</p>
 \[ \begin{align}\begin{aligned}\diff{u}{u_j} &amp;= \phi_j,\\\diff{u_x}{u_j} &amp;= \diff{\phi_j}{x},\end{aligned}\end{align} \]</div>
 <p>and so on.</p>
 <div class="section" id="basal-contribution-to-the-jacobian">
-<span id="sec-bp-jacobian-basal"></span><h4><a class="toc-backref" href="#id58">Basal contribution to the Jacobian</a><a class="headerlink" href="#basal-contribution-to-the-jacobian" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-jacobian-basal"></span><h4><a class="toc-backref" href="#id56">Basal contribution to the Jacobian</a><a class="headerlink" href="#basal-contribution-to-the-jacobian" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-jacobian-basal">
 <span class="eqno">(83)<a class="headerlink" href="#equation-eq-bp-jacobian-basal" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\K uu &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, u^2 \right),\\\K uv &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, u\, v,\\\K vu &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, v\, u,\\\K vv &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, v^2 \right).\end{aligned}\end{align} \]</div>
-<p>Here <span class="math notranslate nohighlight">\(\dbeta\)</span> is the derivative of <span class="math notranslate nohighlight">\(\beta\)</span> with respect to <span class="math notranslate nohighlight">\(\alpha = \frac12 |\U|^2 =
+<p>Here <span class="math notranslate nohighlight">\(\dbeta\)</span> is the derivative of <span class="math notranslate nohighlight">\(\beta\)</span> with respect to <span class="math notranslate nohighlight">\(\alpha = \frac12 |\uu|^2 =
 \frac12 \left( u^2 + v^2 \right)\)</span> (one of the outputs of PISM’s basal resistance parameterizations).</p>
 <p>Note that</p>
 <div class="math notranslate nohighlight">
@@ -501,7 +488,7 @@ with respect to <span class="math notranslate nohighlight">\(u_j\)</span> and <s
 \[ \begin{align}\begin{aligned}\K uu &amp;= \diff{\left( \Ibase\psi_i \beta\, u \right)}{u_j}\\&amp;= \Ibase \psi_i\, \diff{\left( \beta\, u \right)}{u_j}\\&amp;= \Ibase \psi_i\, \left( \beta\, \diff{u}{u_j} + \diff{\beta}{u_j}\, u \right)\\&amp;= \Ibase \psi_i\, \left( \beta\, \phi_j + \dbeta \cdot\diff{\alpha}{u_j}\, u \right)\\&amp;= \Ibase \psi_i\, \left( \beta\, \phi_j + \dbeta\, u^2\, \phi_j \right)\\&amp;= \Ibase \psi_i\, \phi_j \left( \beta + \dbeta\, u^2 \right).\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="jacobian-at-dirichlet-locations">
-<span id="sec-bp-jacobian-dirichlet"></span><h4><a class="toc-backref" href="#id59">Jacobian at Dirichlet locations</a><a class="headerlink" href="#jacobian-at-dirichlet-locations" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-jacobian-dirichlet"></span><h4><a class="toc-backref" href="#id57">Jacobian at Dirichlet locations</a><a class="headerlink" href="#jacobian-at-dirichlet-locations" title="Permalink to this headline">¶</a></h4>
 <p>The Jacobian at Dirichlet locations is set to <span class="math notranslate nohighlight">\(1\)</span>. Together with the <a class="reference internal" href="#sec-bp-residual-dirichlet"><span class="std std-ref">residual at
 Dirichlet locations</span></a> this completes the assembly of trivial
 equations at these locations.</p>
@@ -521,7 +508,7 @@ in the code and set</p>
 </div>
 </div>
 <div class="section" id="iceberg-elimination">
-<span id="sec-bc-iceberg-elimination"></span><h3><a class="toc-backref" href="#id60">Iceberg elimination</a><a class="headerlink" href="#iceberg-elimination" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bc-iceberg-elimination"></span><h3><a class="toc-backref" href="#id58">Iceberg elimination</a><a class="headerlink" href="#iceberg-elimination" title="Permalink to this headline">¶</a></h3>
 <p>As described in <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id9"><span>62</span></a>]</span>, isolated patches of ice with low basal resistance
 <em>and</em> patches connected only via a single node (a “hinge”) are problematic because the
 system <a class="reference internal" href="#equation-eq-bp">(62)</a> determines ice velocity up to rigid rotations and translations.</p>
@@ -544,7 +531,7 @@ ice (PISM’s approach) they</p>
 </div>
 </div>
 <div class="section" id="preconditioning">
-<span id="sec-bp-pc"></span><h3><a class="toc-backref" href="#id61">Preconditioning</a><a class="headerlink" href="#preconditioning" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-pc"></span><h3><a class="toc-backref" href="#id59">Preconditioning</a><a class="headerlink" href="#preconditioning" title="Permalink to this headline">¶</a></h3>
 <p>Back in 2013 Brown et al <span id="id24">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span> showed that multigrid can act as an
 effective preconditioner for BP stress balance solvers. However, all test cases considered
 in that work use periodic boundary conditions and therefore avoid all the issues related
@@ -577,7 +564,7 @@ direct solver, which is PETSc’s default.)</p>
 columns are contiguous (and <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span> are interleaved), allowing ILU factorization to
 compute a good approximation of ice velocities in areas where SIA applicable.</p>
 <div class="section" id="vertical-grid-sizes-compatible-with-coarsening">
-<span id="sec-bp-pc-grid-coarsening"></span><h4><a class="toc-backref" href="#id62">Vertical grid sizes compatible with coarsening</a><a class="headerlink" href="#vertical-grid-sizes-compatible-with-coarsening" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-pc-grid-coarsening"></span><h4><a class="toc-backref" href="#id60">Vertical grid sizes compatible with coarsening</a><a class="headerlink" href="#vertical-grid-sizes-compatible-with-coarsening" title="Permalink to this headline">¶</a></h4>
 <p>Ideally, the coarsest mesh in the hierarchy should have 2 nodes in the <span class="math notranslate nohighlight">\(z\)</span> direction, i.e.
 be <em>one element thick</em>. If <span class="math notranslate nohighlight">\(N\)</span> is the coarsening factor, the total number of vertical
 levels (<span class="math notranslate nohighlight">\(M_z\)</span>) has to have the form</p>
@@ -588,11 +575,11 @@ levels will include levels with</p>
 <div class="math notranslate nohighlight">
 \[A + 1,\, A\cdot N + 1,\, A\cdot N^2 + 1,\, \dots,\, A\cdot N^k + 1\]</div>
 <p>nodes in the <span class="math notranslate nohighlight">\(z\)</span> direction.</p>
-<p>This means that for a given <a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.coarsening_factor</span></code></a> and number
+<p>This means that for a given <a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"></code></a> and number
 of multigrid levels <code class="docutils literal notranslate"><span class="pre">-bp_pc_mg_levels</span> <span class="pre">k</span></code> the value of <span class="math notranslate nohighlight">\(M_z\)</span> cannot be chosen at random.</p>
 </div>
 <div class="section" id="controlling-using-petsc-options">
-<span id="sec-bp-pc-options"></span><h4><a class="toc-backref" href="#id63">Controlling using PETSc options</a><a class="headerlink" href="#controlling-using-petsc-options" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-pc-options"></span><h4><a class="toc-backref" href="#id61">Controlling using PETSc options</a><a class="headerlink" href="#controlling-using-petsc-options" title="Permalink to this headline">¶</a></h4>
 <p>The PETSc <code class="docutils literal notranslate"><span class="pre">SNES</span></code> object solving the BP system uses the <code class="docutils literal notranslate"><span class="pre">bp_</span></code> prefix for all
 command-line options.</p>
 <p>To choose a preconditioner, set</p>
@@ -610,7 +597,7 @@ command-line options.</p>
 </pre></div>
 </div>
 <p>An “aggressive” (i.e. greater than 2) coarsening factor may work well. Use
-<a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.coarsening_factor</span></code></a> to set it.</p>
+<a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"></code></a> to set it.</p>
 <p>See <a class="reference internal" href="#sec-bp-pc-grid-coarsening"><span class="std std-ref">Vertical grid sizes compatible with coarsening</span></a> for the discussion of the relationship between the
 number of vertical levels, number of multigrid levels, and the coarsening factor.</p>
 <p>Set</p>
@@ -625,7 +612,7 @@ level (GAMG, Hypre, BoomerAMG, …).</p>
 </div>
 </div>
 <div class="section" id="additional-code-needed-to-support-geometric-multigrid">
-<span id="sec-bp-pc-implementation"></span><h4><a class="toc-backref" href="#id64">Additional code needed to support geometric multigrid</a><a class="headerlink" href="#additional-code-needed-to-support-geometric-multigrid" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-pc-implementation"></span><h4><a class="toc-backref" href="#id62">Additional code needed to support geometric multigrid</a><a class="headerlink" href="#additional-code-needed-to-support-geometric-multigrid" title="Permalink to this headline">¶</a></h4>
 <p>To support the multigrid preconditioner we need to be able re-discretize the system on the
 mesh provided <em>by PETSc</em> in our to residual and Jacobian evaluators. In general, this
 requires</p>
@@ -643,7 +630,7 @@ hierarchy. The transpose of this matrix is used as a restriction operator.</p>
 </div>
 </div>
 <div class="section" id="parameter-continuation-as-a-recovery-mechanism">
-<span id="sec-bp-parameter-continuation"></span><h3><a class="toc-backref" href="#id65">Parameter continuation as a recovery mechanism</a><a class="headerlink" href="#parameter-continuation-as-a-recovery-mechanism" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-parameter-continuation"></span><h3><a class="toc-backref" href="#id63">Parameter continuation as a recovery mechanism</a><a class="headerlink" href="#parameter-continuation-as-a-recovery-mechanism" title="Permalink to this headline">¶</a></h3>
 <p>As in <span id="id30">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>156</span></a>]</span>, we can start with a large <span class="math notranslate nohighlight">\(\varepsilon_0\)</span>, find an approximate
 solution, then use it as an initial guess for the next solve with a reduced
 <span class="math notranslate nohighlight">\(\varepsilon_0\)</span>.</p>
@@ -653,7 +640,7 @@ solution, then use it as an initial guess for the next solve with a reduced
 </div>
 </div>
 <div class="section" id="model-domain-and-mesh-structure">
-<span id="sec-bp-mesh"></span><h3><a class="toc-backref" href="#id66">Model domain and mesh structure</a><a class="headerlink" href="#model-domain-and-mesh-structure" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-mesh"></span><h3><a class="toc-backref" href="#id64">Model domain and mesh structure</a><a class="headerlink" href="#model-domain-and-mesh-structure" title="Permalink to this headline">¶</a></h3>
 <p>The domain is</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}x &amp;\in [x_{\text{min}}, x_{\text{max}}],\\y &amp;\in [y_{\text{min}}, y_{\text{max}}],\\z &amp;\in [z_{\text{min}}, z_{\text{min}} + H],\end{aligned}\end{align} \]</div>
@@ -671,12 +658,12 @@ each vertical column of nodes contains <span class="math notranslate nohighlight
 This mesh structure is <em>exactly the same</em> as the one used in <span id="id31">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span>
 and CISM 2.1 <span id="id32">[<a class="reference internal" href="../zzz_references_html.html#id10"><span>63</span></a>]</span>.</p>
 <div class="section" id="supporting-evolving-ice-extent">
-<span id="sec-bp-ice-extent"></span><h4><a class="toc-backref" href="#id67">Supporting evolving ice extent</a><a class="headerlink" href="#supporting-evolving-ice-extent" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-ice-extent"></span><h4><a class="toc-backref" href="#id65">Supporting evolving ice extent</a><a class="headerlink" href="#supporting-evolving-ice-extent" title="Permalink to this headline">¶</a></h4>
 <p>The ice extent changes as the model runs and the solver implementation has to allow for
 these changes.</p>
 <p>To simplify the logic used to identify the interior of the ice volume and its lateral
 boundaries we compute the “type” of each node in the mesh. Given a threshold <span class="math notranslate nohighlight">\(\Hmin\)</span> (see
-<a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.ice_free_thickness_standard"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_standard</span></code></a>), we say that</p>
+<a class="reference internal" href="../manual/parameters/index.html#config-stress_balance.ice_free_thickness_standard"><code class="docutils literal notranslate"></code></a>), we say that</p>
 <ul>
 <li><p>an element contains ice if ice thickness at all its nodes equals to or exceeds <span class="math notranslate nohighlight">\(\Hmin\)</span>,</p></li>
 <li><p>a node is <em>interior</em> (within the ice) if all the elements it belongs to contain ice,</p></li>
@@ -698,7 +685,7 @@ boundaries</span></a>.</p>
 </div>
 </div>
 <div class="section" id="solver-inputs-and-outputs">
-<span id="sec-bp-inputs-outputs"></span><h3><a class="toc-backref" href="#id68">Solver inputs and outputs</a><a class="headerlink" href="#solver-inputs-and-outputs" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-inputs-outputs"></span><h3><a class="toc-backref" href="#id66">Solver inputs and outputs</a><a class="headerlink" href="#solver-inputs-and-outputs" title="Permalink to this headline">¶</a></h3>
 <p>The BP solver uses the following inputs:</p>
 <ul class="simple">
 <li><p>basal yield stress (<span class="math notranslate nohighlight">\(\tau_c\)</span>),</p></li>
@@ -717,7 +704,7 @@ geometry)</p></li>
 </ul>
 </div>
 <div class="section" id="steps-performed-by-the-solver">
-<span id="sec-bp-computation-steps"></span><h3><a class="toc-backref" href="#id69">Steps performed by the solver</a><a class="headerlink" href="#steps-performed-by-the-solver" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-computation-steps"></span><h3><a class="toc-backref" href="#id67">Steps performed by the solver</a><a class="headerlink" href="#steps-performed-by-the-solver" title="Permalink to this headline">¶</a></h3>
 <ol class="arabic simple">
 <li><p>Compute ice bottom elevation.</p></li>
 <li><p>Compute floatation function <span class="math notranslate nohighlight">\(f\)</span> (<span class="math notranslate nohighlight">\(f \le 0\)</span> if ice is grounded, <span class="math notranslate nohighlight">\(f &gt; 0\)</span> if floating).</p></li>
@@ -729,9 +716,9 @@ geometry)</p></li>
 </ol>
 </div>
 <div class="section" id="integration-with-the-rest-of-pism">
-<span id="sec-bp-pism-integration"></span><h3><a class="toc-backref" href="#id70">Integration with the rest of PISM</a><a class="headerlink" href="#integration-with-the-rest-of-pism" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-pism-integration"></span><h3><a class="toc-backref" href="#id68">Integration with the rest of PISM</a><a class="headerlink" href="#integration-with-the-rest-of-pism" title="Permalink to this headline">¶</a></h3>
 <div class="section" id="time-stepping">
-<span id="sec-bp-pism-time-stepping"></span><h4><a class="toc-backref" href="#id71">Time stepping</a><a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-pism-time-stepping"></span><h4><a class="toc-backref" href="#id69">Time stepping</a><a class="headerlink" href="#time-stepping" title="Permalink to this headline">¶</a></h4>
 <p>PISM’s explicit in time mass continuity code is <em>conditionally stable</em>. When used with the
 SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
 criterion <span id="id33">[<a class="reference internal" href="../zzz_references_html.html#id300"><span>117</span></a>]</span> and the maximum diffusivity of the SIA flow
@@ -756,11 +743,11 @@ the vertically-averaged ice flux <span class="math notranslate nohighlight">\(Q\
 \[Q = -D \nabla s.\]</div>
 <p>We solve this for the diffusivity <span class="math notranslate nohighlight">\(D\)</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-max-diffusivity">
-<span class="eqno">(86)<a class="headerlink" href="#equation-eq-bp-max-diffusivity" title="Permalink to this equation">¶</a></span>\[D = \frac{H\, |\bar{\U}|}{|\nabla s| + \epsilon}\]</div>
+<span class="eqno">(86)<a class="headerlink" href="#equation-eq-bp-max-diffusivity" title="Permalink to this equation">¶</a></span>\[D = \frac{H\, |\bar{\uu}|}{|\nabla s| + \epsilon}\]</div>
 <p>and use the maximum of this quantity for adaptive time stepping.</p>
 </div>
 <div class="section" id="conservation-of-energy">
-<span id="sec-bp-pism-energy-conservation"></span><h4><a class="toc-backref" href="#id72">Conservation of energy</a><a class="headerlink" href="#conservation-of-energy" title="Permalink to this headline">¶</a></h4>
+<span id="sec-bp-pism-energy-conservation"></span><h4><a class="toc-backref" href="#id70">Conservation of energy</a><a class="headerlink" href="#conservation-of-energy" title="Permalink to this headline">¶</a></h4>
 <p>Coupling to PISM’s energy balance models requires</p>
 <ul class="simple">
 <li><p>all 3 components of ice velocity on PISM’s grid, and</p></li>
@@ -773,9 +760,9 @@ computed using existing code.</p>
 </div>
 </div>
 <div class="section" id="testing-and-verification">
-<span id="sec-bp-testing-verification"></span><h2><a class="toc-backref" href="#id73">Testing and verification</a><a class="headerlink" href="#testing-and-verification" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-testing-verification"></span><h2><a class="toc-backref" href="#id71">Testing and verification</a><a class="headerlink" href="#testing-and-verification" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="verification-test-xy">
-<span id="sec-bp-verificaion-xy"></span><h3><a class="toc-backref" href="#id74">Verification test XY</a><a class="headerlink" href="#verification-test-xy" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-verificaion-xy"></span><h3><a class="toc-backref" href="#id72">Verification test XY</a><a class="headerlink" href="#verification-test-xy" title="Permalink to this headline">¶</a></h3>
 <dl class="field-list">
 <dt class="field-odd">Exact solution</dt>
 <dd class="field-odd"><div class="math notranslate nohighlight">
@@ -800,7 +787,7 @@ instead of Robin conditions derived from the chosen exact solution).</p>
 </dl>
 </div>
 <div class="section" id="verification-test-xz">
-<span id="sec-bp-verificaion-xz"></span><h3><a class="toc-backref" href="#id75">Verification test XZ</a><a class="headerlink" href="#verification-test-xz" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-verificaion-xz"></span><h3><a class="toc-backref" href="#id73">Verification test XZ</a><a class="headerlink" href="#verification-test-xz" title="Permalink to this headline">¶</a></h3>
 <dl class="field-list">
 <dt class="field-odd">Exact solution</dt>
 <dd class="field-odd"><div class="math notranslate nohighlight">
@@ -835,7 +822,7 @@ details.</p>
 </dl>
 </div>
 <div class="section" id="verification-test-xz-cfbc">
-<span id="sec-bp-verificaion-xz-cfbc"></span><h3><a class="toc-backref" href="#id76">Verification test XZ-CFBC</a><a class="headerlink" href="#verification-test-xz-cfbc" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-verificaion-xz-cfbc"></span><h3><a class="toc-backref" href="#id74">Verification test XZ-CFBC</a><a class="headerlink" href="#verification-test-xz-cfbc" title="Permalink to this headline">¶</a></h3>
 <p>This setup tests the “calving front boundary condition” (see <a class="reference internal" href="#sec-bp-bc-marine"><span class="std std-ref">Marine margins</span></a>).</p>
 <dl class="field-list">
 <dt class="field-odd">Exact solution</dt>
@@ -860,7 +847,7 @@ the ice is submerged.</p>
 </dl>
 </div>
 <div class="section" id="verification-test-xz-vv-van-der-veen-profile">
-<span id="sec-bp-verification-xz-vanderveen"></span><h3><a class="toc-backref" href="#id77">Verification test XZ-VV (van der Veen profile)</a><a class="headerlink" href="#verification-test-xz-vv-van-der-veen-profile" title="Permalink to this headline">¶</a></h3>
+<span id="sec-bp-verification-xz-vanderveen"></span><h3><a class="toc-backref" href="#id75">Verification test XZ-VV (van der Veen profile)</a><a class="headerlink" href="#verification-test-xz-vv-van-der-veen-profile" title="Permalink to this headline">¶</a></h3>
 <p>This setup tests the implementation of the basal sliding boundary condition (see
 <a class="reference internal" href="#sec-bp-bc-basal"><span class="std std-ref">Basal boundary</span></a>) using the van der Veen shelf profile <span id="id38">[<a class="reference internal" href="../zzz_references_html.html#id482"><span>162</span></a>]</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen">
@@ -884,29 +871,19 @@ interior of the domain</p>
 \[ \begin{align}\begin{aligned}u(x_{\text{min}}) &amp;= \frac{Q_0}{H_0},\\v(x_{\text{min}}) &amp;= 0\end{aligned}\end{align} \]</div>
 <p>and a stress BC at the right boundary:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen-right-bc">
-<span class="eqno">(88)<a class="headerlink" href="#equation-eq-bp-van-der-veen-right-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \N_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)\]</div>
+<span class="eqno">(88)<a class="headerlink" href="#equation-eq-bp-van-der-veen-right-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)\]</div>
 <p>The stress BC at the top surface is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen-top-bc">
-<span class="eqno">(89)<a class="headerlink" href="#equation-eq-bp-van-der-veen-top-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \N_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
+<span class="eqno">(89)<a class="headerlink" href="#equation-eq-bp-van-der-veen-top-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
 {\sqrt{C^{2} \alpha^{2} H^{10}(x) + Q_{0}^{2}}},\, 0\right)\]</div>
 <p>The boundary condition at the bottom surface has the form</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \N_{\text{bottom}} &amp;= - \beta \, \U,\\\beta &amp;= \frac{2 B C^{\frac{4}{3}} \left(\alpha - 1\right) H^{7}(x)}
+\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \n_{\text{bottom}} &amp;= - \beta \, \uu,\\\beta &amp;= \frac{2 B C^{\frac{4}{3}} \left(\alpha - 1\right) H^{7}(x)}
 {Q_{0} \sqrt{C^{2} \left(\alpha - 1\right)^{2} H^{10}(x) + Q_{0}^{2}}}\end{aligned}\end{align} \]</div>
-</div>
-<div class="section" id="ismip-hom-experiments-a-d">
-<span id="sec-bp-ismip-hom"></span><h3><a class="toc-backref" href="#id78">ISMIP-HOM Experiments A-D</a><a class="headerlink" href="#ismip-hom-experiments-a-d" title="Permalink to this headline">¶</a></h3>
-<p>All four simplified geometry experiments are implemented and produce ice velocities
-similar to some of the results in <span id="id39">[<a class="reference internal" href="../zzz_references_html.html#id208"><span>105</span></a>]</span>. However, some published ISMIP-HOM
-results from BP models significantly differ from others, making more in-depth comparisons
-meaningless.</p>
-<p>It is worth noting, however, that (unlike some models in <span id="id40">[<a class="reference internal" href="../zzz_references_html.html#id208"><span>105</span></a>]</span>) this
-implementation does not appear to have any convergence issues.</p>
-<p>See scripts in <code class="docutils literal notranslate"><span class="pre">test/ismip-hom</span></code> for more.</p>
 </div>
 </div>
 <div class="section" id="known-issues-and-future-work">
-<span id="sec-bp-known-issues"></span><h2><a class="toc-backref" href="#id79">Known issues and future work</a><a class="headerlink" href="#known-issues-and-future-work" title="Permalink to this headline">¶</a></h2>
+<span id="sec-bp-known-issues"></span><h2><a class="toc-backref" href="#id76">Known issues and future work</a><a class="headerlink" href="#known-issues-and-future-work" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Eliminate “wiggles” near areas with steep surface slopes.</p></li>
 <li><p>Implement drag at lateral boundaries in fjords and alpine valleys.</p></li>
@@ -921,7 +898,7 @@ implementation does not appear to have any convergence issues.</p>
 as well as air, but these details are not relevant here.</p>
 </dd>
 <dt class="label" id="f2"><span class="brackets"><a class="fn-backref" href="#id27">2</a></span></dt>
-<dd><p>The code developed by <span id="id41">[<a class="reference internal" href="../zzz_references_html.html#id9"><span>62</span></a>]</span> uses the algebraic multigrid framework
+<dd><p>The code developed by <span id="id39">[<a class="reference internal" href="../zzz_references_html.html#id9"><span>62</span></a>]</span> uses the algebraic multigrid framework
 <em>throughout</em>, i.e. even for the part of the hierarchy where the mesh structure allows
 one to use “geometric” coarsening.</p>
 </dd>
@@ -1011,9 +988,9 @@ one to use “geometric” coarsening.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

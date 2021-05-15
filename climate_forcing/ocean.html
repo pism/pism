@@ -13,6 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Technical notes" href="../technical/index.html" />
@@ -83,7 +84,7 @@ sub-shelf mass flux is a “melt rate”.</p>
 are constant <em>both</em> in space and time.</p>
 <p>The sub-shelf ice temperature is set to pressure melting and the sub-shelf melt rate is
 assumed to be proportional to the heat flux from the ocean into the ice (configuration
-parameter <a class="reference internal" href="../manual/parameters/index.html#config-ocean.sub_shelf_heat_flux_into_ice"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sub_shelf_heat_flux_into_ice</span></code></a>).</p>
+parameter <a class="reference internal" href="../manual/parameters/index.html#config-ocean.sub_shelf_heat_flux_into_ice"><code class="docutils literal notranslate"></code></a>).</p>
 <p>Alternatively, the sub-shelf melt rate in meters per year can be set using the
 <code class="option docutils literal notranslate"><span class="pre">-shelf_base_melt_rate</span></code> command-line option.</p>
 </div>
@@ -162,7 +163,7 @@ equations describing</p>
 <p>This model is described in <span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span> and <span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id174"><span>146</span></a>]</span>.</p>
 <p>Inputs are potential temperature (variable <code class="variable docutils literal notranslate"><span class="pre">theta_ocean</span></code>) and salinity (variable
 <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code>) read from a file. A constant salinity (see
-<a class="reference internal" href="../manual/parameters/index.html#config-constants.sea_water.salinity"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sea_water</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.salinity</span></code></a>) is used if the input file does not contain
+<a class="reference internal" href="../manual/parameters/index.html#config-constants.sea_water.salinity"><code class="docutils literal notranslate"></code></a>) is used if the input file does not contain
 <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code>.</p>
 <p>No ocean circulation is modeled, so melt water computed by this model is not fed back into
 the surrounding ocean.</p>
@@ -178,7 +179,7 @@ salinity is clipped so that it stays in the <span class="math notranslate nohigh
 ensure that we stay in the range of applicability of the melting point temperature
 parameterization; see <span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id190"><span>137</span></a>]</span>. To disable salinity clipping, use the
 <code class="option docutils literal notranslate"><span class="pre">-no_clip_shelf_base_salinity</span></code> option or set the configuration parameter
-<a class="reference internal" href="../manual/parameters/index.html#config-ocean.th.clip_salinity"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.th</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.clip_salinity</span></code></a>  to “no”.</p></li>
+<a class="reference internal" href="../manual/parameters/index.html#config-ocean.th.clip_salinity"><code class="docutils literal notranslate"></code></a>  to “no”.</p></li>
 </ul>
 <p>See <a class="reference internal" href="../technical/ocean-th.html#sec-ocean-th-details"><span class="std std-ref">Three-equation ocean model (implementation details)</span></a> for implementation details.</p>
 </div>
@@ -224,7 +225,7 @@ shelf determine basal melt rate and basal temperature at each grid point.</p>
 <code class="variable docutils literal notranslate"><span class="pre">theta_ocean</span></code> and <code class="variable docutils literal notranslate"><span class="pre">salinity_ocean</span></code> may be time-dependent.</p>
 <p>Forcing ocean temperature and salinity are taken from the water masses that occupy the sea
 floor in front of the ice shelves, which extends down to a specified continental shelf
-depth (see <a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.continental_shelf_depth"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pico</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.continental_shelf_depth</span></code></a>). These water masses are
+depth (see <a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.continental_shelf_depth"><code class="docutils literal notranslate"></code></a>). These water masses are
 transported by the overturning circulation into the ice shelf cavity and towards the
 grounding line. The basin mask defines regions of similar, large-scale ocean conditions;
 each region is marked with a distinct positive integer. In PICO, ocean input temperature
@@ -244,7 +245,7 @@ rates computed by PICO). In regions where the PICO geometry cannot be identified
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.number_of_boxes"><code class="docutils literal notranslate"><span class="pre">number_of_boxes</span></code></a> (5) For each ice shelf the number of ocean boxes is determined by interpolating between 1 and number_of_boxes depending on its size and geometry such that larger ice shelves are resolved with more boxes; a value of 5 is suitable for the Antarctic setup.</p></li>
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.overturning_coefficent"><code class="docutils literal notranslate"><span class="pre">overturning_coefficent</span></code></a> (1e+06<em> meters6 seconds-1 kg-1</em>) Sets the overturning strength coefficient.</p></li>
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.period"><code class="docutils literal notranslate"><span class="pre">period</span></code></a> (0<em> years</em>) Length of the period of the climate forcing data. Set to zero to disable.</p></li>
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pico</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.pico.period"><code class="docutils literal notranslate"></code></a> is active.</p></li>
 </ol>
 </div>
 <div class="section" id="scalar-sea-level-offsets">
@@ -289,12 +290,12 @@ model years; see section <a class="reference internal" href="time.html#sec-perio
 spatially-variable offsets.</p>
 <p>It uses the following configuration parameters:</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.file"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_sl_2d</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a>: specifies the name of the file containing forcing
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.file"><code class="docutils literal notranslate"></code></a>: specifies the name of the file containing forcing
 data. This file has to contain the <code class="variable docutils literal notranslate"><span class="pre">delta_SL</span></code> variable using units “meters” or
 equivalent.</p></li>
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_sl_2d</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> specifies the length of the period of the forcing
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.period"><code class="docutils literal notranslate"></code></a> specifies the length of the period of the forcing
 data, in model years; see section <a class="reference internal" href="time.html#sec-periodic-forcing"><span class="std std-ref">Periodic forcing</span></a>.</p></li>
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.reference_year"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_sl_2d</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_year</span></code></a> specifies the reference date; see section
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_sl_2d.reference_year"><code class="docutils literal notranslate"></code></a> specifies the reference date; see section
 <a class="reference internal" href="time.html#sec-periodic-forcing"><span class="std std-ref">Periodic forcing</span></a>.</p></li>
 </ul>
 </div>
@@ -417,7 +418,7 @@ respectively.</p>
 <p>The scalar time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">delta_MBP</span></code> (units: Pascal) has the meaning of the
 melange back pressure <span class="math notranslate nohighlight">\(\sigma_b\)</span> in <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id4"><span>151</span></a>]</span>. It is assumed that <span class="math notranslate nohighlight">\(\sigma_b\)</span> is
 applied over the thickness of melange <span class="math notranslate nohighlight">\(h\)</span> specified using
-<a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.melange_thickness"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.melange_thickness</span></code></a>.</p>
+<a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.melange_thickness"><code class="docutils literal notranslate"></code></a>.</p>
 <p>To convert to the average pressure over the ice front thickness, we compute</p>
 <div class="math notranslate nohighlight" id="equation-eq-melange-pressure">
 <span class="eqno">(34)<a class="headerlink" href="#equation-eq-melange-pressure" title="Permalink to this equation">¶</a></span>\[\bar p_{\text{melange}} = \frac{\sigma_b\cdot h}{H},\]</div>
@@ -428,7 +429,7 @@ applied over the thickness of melange <span class="math notranslate nohighlight"
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.file"><code class="docutils literal notranslate"><span class="pre">file</span></code></a> Name of the file containing melange back-pressure offsets</p></li>
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.melange_thickness"><code class="docutils literal notranslate"><span class="pre">melange_thickness</span></code></a> (100<em> meters</em>) Melange thickness (assumed to be constant in space and time)</p></li>
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.period"><code class="docutils literal notranslate"><span class="pre">period</span></code></a> (0<em> years</em>) Length of the period of the climate forcing data (set to zero to disable)</p></li>
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.delta_MBP.period"><code class="docutils literal notranslate"></code></a> is active</p></li>
 </ol>
 </div>
 <div class="section" id="melange-back-pressure-as-a-fraction-of-pressure-difference">
@@ -459,7 +460,7 @@ and has the meaning of <span class="math notranslate nohighlight">\(\lambda\)</s
 <ol class="simple">
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.file"><code class="docutils literal notranslate"><span class="pre">file</span></code></a> Name of the file containing melange back-pressure scaling.</p></li>
 <li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.period"><code class="docutils literal notranslate"><span class="pre">period</span></code></a> (0<em> years</em>) Length of the period of the climate forcing data. Set to zero to disable.</p></li>
-<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.frac_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-ocean.frac_MBP.period"><code class="docutils literal notranslate"></code></a> is active.</p></li>
 </ol>
 </div>
 <div class="section" id="the-caching-modifier">
@@ -574,9 +575,9 @@ updates. PISM may take longer time-steps if the adaptive scheme allows it, thoug
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Surface gradient method" href="surface-gradient.html" />
@@ -92,8 +93,8 @@ create a new, and reasonably arbitrarily, scalar function <span class="math notr
 see source files in <code class="docutils literal notranslate"><span class="pre">src/base/rheology/</span></code>.</p>
 <div class="section" id="choosing-the-flow-laws">
 <h2><a class="toc-backref" href="#id23">Choosing the flow laws</a><a class="headerlink" href="#choosing-the-flow-laws" title="Permalink to this headline">¶</a></h2>
-<p>Configuration parameters <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.flow_law"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.flow_law</span></code></a>,
-<a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.flow_law"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ssa</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.flow_law</span></code></a>, and <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.flow_law"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.flow_law</span></code></a>
+<p>Configuration parameters <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.flow_law"><code class="docutils literal notranslate"></code></a>,
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.flow_law"><code class="docutils literal notranslate"></code></a>, and <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.flow_law"><code class="docutils literal notranslate"></code></a>
 choose which flow law is used by the SIA, SSA, and the Blatter stress balances models,
 respectively. Allowed arguments are listed in <a class="reference internal" href="#tab-flowlaw"><span class="std std-numref">Table 14</span></a> below.</p>
 <table class="colwidths-given docutils align-default" id="tab-flowlaw">
@@ -116,18 +117,22 @@ this law returns</p>
 <div class="math notranslate nohighlight">
 \[A(T,\omega) = A_{c}(T) (1 + C \omega),\]</div>
 <p>where <span class="math notranslate nohighlight">\(\omega\)</span> is the liquid water fraction, <span class="math notranslate nohighlight">\(C\)</span> is a configuration parameter
-<a class="reference internal" href="../../parameters/index.html#config-flow_law.gpbld.water_frac_coeff"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.gpbld</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.water_frac_coeff</span></code></a>, and <span class="math notranslate nohighlight">\(\omega\)</span> is capped at level
-<a class="reference internal" href="../../parameters/index.html#config-flow_law.gpbld.water_frac_observed_limit"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.gpbld</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.water_frac_observed_limit</span></code></a>.</p>
+<a class="reference internal" href="../../parameters/index.html#config-flow_law.gpbld.water_frac_coeff"><code class="docutils literal notranslate"></code></a>, and <span class="math notranslate nohighlight">\(\omega\)</span> is capped at level
+<a class="reference internal" href="../../parameters/index.html#config-flow_law.gpbld.water_frac_observed_limit"><code class="docutils literal notranslate"></code></a>.</p>
 </td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">pb</span></code></p></td>
 <td><p>Paterson-Budd law, the cold-mode default. Fixed Glen exponent <span class="math notranslate nohighlight">\(n=3\)</span>. Has a split
 “Arrhenius” term <span class="math notranslate nohighlight">\(A(T) = A \exp(-Q/RT^*)\)</span> where</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}A &amp;= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},\\Q &amp;= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}\end{aligned}\end{align} \]</div>
+\[A = 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},\]</div>
+<div class="math notranslate nohighlight">
+\[Q = 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}\]</div>
 <p>if <span class="math notranslate nohighlight">\(T^* &lt; 263\)</span> K and</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}A &amp;= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},\\Q &amp;= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}\end{aligned}\end{align} \]</div>
+\[A = 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},\]</div>
+<div class="math notranslate nohighlight">
+\[Q = 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}\]</div>
 <p>if <span class="math notranslate nohighlight">\(T^* &gt; 263\)</span> K.</p>
 <p>Here <span class="math notranslate nohighlight">\(T^*\)</span> is pressure-adjusted temperature <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id326"><span>35</span></a>]</span>.</p>
 </td>
@@ -328,9 +333,9 @@ changes.</p></td>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

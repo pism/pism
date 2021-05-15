@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Ice rheology" href="rheology.html" />
@@ -106,7 +107,7 @@ non-sliding SIA.</p></td>
 <p>Unlike the rest of PISM, the Blatter solver uses a geometry-following vertical grid (see
 <a class="reference internal" href="../computational/grid.html#fig-grid-vertical-sigma"><span class="std std-numref">Fig. 19</span></a>) to approximate horizontal components of ice velocity.
 The number of vertical “levels” in this grid is controlled by
-<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mz</span></code></a>.</p>
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"></code></a>.</p>
 <p>The non-linear system resulting from the discretization of PDEs corresponding to Blatter’s
 stress balance model<a class="footnote-reference brackets" href="#bp-fem" id="id14">2</a> is much harder to solve than the one corresponding to the
 SSA system (<span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id68"><span>55</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id9"><span>62</span></a>]</span>) and (at this point)
@@ -137,8 +138,8 @@ multigrid preconditioners.</p>
 <p>To use a multigrid preconditioner the user has to specify</p>
 <ul class="simple">
 <li><p>the number of MG levels <span class="math notranslate nohighlight">\(N\)</span> using <code class="docutils literal notranslate"><span class="pre">-bp_pc_mg_levels</span> <span class="pre">N</span></code>,</p></li>
-<li><p>the coarsening factor <span class="math notranslate nohighlight">\(C\)</span> by setting <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.coarsening_factor</span></code></a>, and</p></li>
-<li><p>the vertical grid size <span class="math notranslate nohighlight">\(M_z\)</span> (<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mz</span></code></a>).</p></li>
+<li><p>the coarsening factor <span class="math notranslate nohighlight">\(C\)</span> by setting <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"></code></a>, and</p></li>
+<li><p>the vertical grid size <span class="math notranslate nohighlight">\(M_z\)</span> (<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"></code></a>).</p></li>
 </ul>
 <p>The values of these parameters have to be compatible. Specifically, <span class="math notranslate nohighlight">\(M_z\)</span> has to have the
 form</p>
@@ -218,7 +219,7 @@ computed ice velocity near steep margins. A similar issue and an attempt to addr
 described in <span id="id20">[<a class="reference internal" href="../../../zzz_references_html.html#id10"><span>63</span></a>]</span>.</p>
 <p>This implementation takes a different approach: instead of using an “upwinded” finite
 difference approximation of the surface gradient we allow using the <span class="math notranslate nohighlight">\(\eta\)</span> transformation
-described in <a class="reference internal" href="surface-gradient.html#sec-gradient"><span class="std std-ref">Surface gradient method</span></a>. Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.use_eta_transform"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.use_eta_transform</span></code></a>
+described in <a class="reference internal" href="surface-gradient.html#sec-gradient"><span class="std std-ref">Surface gradient method</span></a>. Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.use_eta_transform"><code class="docutils literal notranslate"></code></a>
 to enable it.</p>
 <div class="section" id="practical-preconditioners-choices">
 <span id="sec-blatter-preconditioners"></span><h4>Practical preconditioners choices<a class="headerlink" href="#practical-preconditioners-choices" title="Permalink to this headline">¶</a></h4>
@@ -393,16 +394,16 @@ comes with a severe restriction on time step length:</p>
 <div class="math notranslate nohighlight">
 \[\Delta t \le \frac{2 R}{D\left( 1/\Delta x^2 + 1/\Delta y^2 \right)}\]</div>
 <p>Here <span class="math notranslate nohighlight">\(D\)</span> is the maximum diffusivity of the SIA flow and <span class="math notranslate nohighlight">\(R\)</span> is
-<a class="reference internal" href="../../parameters/index.html#config-time_stepping.adaptive_ratio"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.adaptive_ratio</span></code></a>, a tuning parameter that further reduces the
+<a class="reference internal" href="../../parameters/index.html#config-time_stepping.adaptive_ratio"><code class="docutils literal notranslate"></code></a>, a tuning parameter that further reduces the
 maximum allowed time step length.</p>
 <p>The maximum diffusivity <span class="math notranslate nohighlight">\(D\)</span> may be achieved at an isolated grid point near the ice
 margin. In this case it might make sense to limit the diffusivity of the SIA flow,
 sacrificing accuracy at a few grid points to increase time step length and reduce the
-computational cost. Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.limit_diffusivity</span></code></a> to enable this
+computational cost. Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"></code></a> to enable this
 mechanism.</p>
-<p>When <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.limit_diffusivity</span></code></a> is <code class="docutils literal notranslate"><span class="pre">false</span></code> PISM stops as soon as
+<p>When <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"></code></a> is <code class="docutils literal notranslate"><span class="pre">false</span></code> PISM stops as soon as
 the SIA diffusivity at any grid point exceeds
-<a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_diffusivity</span></code></a>. We do this to make it easier to detect
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"></code></a>. We do this to make it easier to detect
 problematic model configurations: in many cases it does not make sense to continue a
 simulation if <span class="math notranslate nohighlight">\(D\)</span> is very large.</p>
 </div>
@@ -468,8 +469,8 @@ pressure: <span class="math notranslate nohighlight">\(P = k N\)</span>. This si
 <p>To enable, use <code class="option docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">weertman_sliding</span></code> (this results in constant-in-depth
 ice velocity) or <code class="option docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">weertman_sliding+sia</span></code> to use this parameterization
 as a sliding law with the deformational flow modeled using the SIA model.</p>
-<p>Use configuration parameters <a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.k"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.weertman_sliding</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.k</span></code></a> and
-<a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.A"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.weertman_sliding</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.A</span></code></a> tot set <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(A_s\)</span>, respectively. Default
+<p>Use configuration parameters <a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.k"><code class="docutils literal notranslate"></code></a> and
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.A"><code class="docutils literal notranslate"></code></a> tot set <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(A_s\)</span>, respectively. Default
 values come from <span id="id28">[<a class="reference internal" href="../../../zzz_references_html.html#id422"><span>66</span></a>]</span>.</p>
 <p class="rubric">Footnotes</p>
 <dl class="footnote brackets">
@@ -572,9 +573,9 @@ uniform spacing in <span class="math notranslate nohighlight">\(x\)</span> and <
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

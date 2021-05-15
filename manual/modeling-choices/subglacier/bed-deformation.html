@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Parameterization of bed roughness in the SIA" href="bed-roughness.html" />
@@ -33,7 +34,7 @@
       
   <div class="section" id="earth-deformation-models">
 <span id="sec-beddef"></span><h1>Earth deformation models<a class="headerlink" href="#earth-deformation-models" title="Permalink to this headline">¶</a></h1>
-<p>The option <code class="option docutils literal notranslate"><span class="pre">-bed_def</span></code> <code class="docutils literal notranslate"><span class="pre">[iso,</span> <span class="pre">lc,</span> <span class="pre">given]</span></code> (flag <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.model"><code class="docutils literal notranslate"><span class="pre">bed_deformation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.model</span></code></a>) turns one
+<p>The option <code class="option docutils literal notranslate"><span class="pre">-bed_def</span></code> <code class="docutils literal notranslate"><span class="pre">[iso,</span> <span class="pre">lc,</span> <span class="pre">given]</span></code> (flag <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.model"><code class="docutils literal notranslate"></code></a>) turns one
 of the three available bed deformation models.</p>
 <div class="section" id="point-wise-isostasy">
 <span id="sec-bed-def-iso"></span><h2>Point-wise isostasy<a class="headerlink" href="#point-wise-isostasy" title="Permalink to this headline">¶</a></h2>
@@ -44,8 +45,8 @@ multiple of the increase in ice thickness from the starting time:</p>
 <div class="math notranslate nohighlight">
 \[b(t,x,y) = b(0,x,y) - f \left[H(t,x,y) - H(0,x,y)\right].\]</div>
 <p>Here <span class="math notranslate nohighlight">\(f\)</span> is the density of ice divided by the density of the mantle, so its value is
-determined by the values of <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.mantle_density"><code class="docutils literal notranslate"><span class="pre">bed_deformation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mantle_density</span></code></a> and
-<a class="reference internal" href="../../parameters/index.html#config-constants.ice.density"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.density</span></code></a> in the configuration file.
+determined by the values of <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.mantle_density"><code class="docutils literal notranslate"></code></a> and
+<a class="reference internal" href="../../parameters/index.html#config-constants.ice.density"><code class="docutils literal notranslate"></code></a> in the configuration file.
 For an example and verification, see Test H in <a class="reference internal" href="../../verification/index.html#sec-verif"><span class="std std-ref">Verification</span></a>.</p>
 </div>
 <div class="section" id="lingle-clark">
@@ -62,7 +63,7 @@ gridded “observed” uplift data is available, for instance from a combination
 point observations and/or paleo ice load modeling, and if that uplift field is put in a
 NetCDF variable with standard name <code class="docutils literal notranslate"><span class="pre">tendency_of_bedrock_altitude</span></code> in the input file,
 then this model will initialize so that it starts with the given uplift rate.</p>
-<p>All parameters (except for <a class="reference internal" href="../../parameters/index.html#config-constants.ice.density"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.density</span></code></a>) controlling the Lingle-Clark
+<p>All parameters (except for <a class="reference internal" href="../../parameters/index.html#config-constants.ice.density"><code class="docutils literal notranslate"></code></a>) controlling the Lingle-Clark
 model are listed below (they all have the prefix <code class="docutils literal notranslate"><span class="pre">bed.deformation.</span></code>).</p>
 <ol class="simple">
 <li><p><a class="reference internal" href="../../parameters/index.html#config-bed_deformation.given.file"><code class="docutils literal notranslate"><span class="pre">given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> Name of the file containing time-dependent <code class="variable docutils literal notranslate"><span class="pre">topg_delta</span></code>.</p></li>
@@ -83,11 +84,11 @@ mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 <p>Compare the <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>, <code class="variable docutils literal notranslate"><span class="pre">usurf</span></code>, and <code class="variable docutils literal notranslate"><span class="pre">dbdt</span></code> variables in the resulting output
 files. See also the comparison done in <span id="id13">[<a class="reference internal" href="../../../zzz_references_html.html#id38"><span>31</span></a>]</span>.</p>
 <p>To include “measured” uplift rates during initialization, use the option
-<code class="option docutils literal notranslate"><span class="pre">-uplift_file</span></code> (parameter <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.bed_uplift_file"><code class="docutils literal notranslate"><span class="pre">bed_deformation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.bed_uplift_file</span></code></a>) to specify the
+<code class="option docutils literal notranslate"><span class="pre">-uplift_file</span></code> (parameter <a class="reference internal" href="../../parameters/index.html#config-bed_deformation.bed_uplift_file"><code class="docutils literal notranslate"></code></a>) to specify the
 name of the file containing the field <code class="variable docutils literal notranslate"><span class="pre">dbdt</span></code> (CF standard name:
 <code class="docutils literal notranslate"><span class="pre">tendency_of_bedrock_altitude</span></code>).</p>
 <p>Use the option <code class="option docutils literal notranslate"><span class="pre">-topg_delta_file</span></code> (parameter
-<a class="reference internal" href="../../parameters/index.html#config-bed_deformation.bed_topography_delta_file"><code class="docutils literal notranslate"><span class="pre">bed_deformation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.bed_topography_delta_file</span></code></a>) to apply a correction to the bed
+<a class="reference internal" href="../../parameters/index.html#config-bed_deformation.bed_topography_delta_file"><code class="docutils literal notranslate"></code></a>) to apply a correction to the bed
 topography field read in from an input file. This sets the bed topography <span class="math notranslate nohighlight">\(b\)</span> at the
 beginning of a run as follows:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bedcorrection">
@@ -231,9 +232,9 @@ projection and cover the modeling domain but they <strong>do not</strong> have t
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

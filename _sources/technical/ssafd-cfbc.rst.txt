@@ -1,36 +1,9 @@
 .. include:: ../global.txt
 
-.. include:: ../math-definitions.txt
-
 Calving front stress boundary condition
 =======================================
 
 .. contents::
-
-.. only:: html
-
-   .. math::
-
-      \newcommand{\nz}{\n_{z}}
-      \newcommand{\td}[1]{t^{D}_{#1}}
-      \newcommand{\D}{\displaystyle}
-      \newcommand{\dx}{\Delta x}
-      \newcommand{\dy}{\Delta y}
-      \newcommand{\viscosity}{\nu}
-      \newcommand{\partI}{(2\tilde N_{xx} + \tilde N_{yy})}
-      \newcommand{\partII}{(\tilde N_{xy})}
-
-.. raw:: latex
-
-   \providecommand{\nz}{\n_{z}}
-   \providecommand{\td}[1]{t^{D}_{#1}}
-   \providecommand{\D}{\displaystyle}
-   \providecommand{\dx}{\Delta x}
-   \providecommand{\dy}{\Delta y}
-   \providecommand{\viscosity}{\nu}
-   \providecommand{\partI}{(2\tilde N_{xx} + \tilde N_{yy})}
-   \providecommand{\partII}{(\tilde N_{xy})}
-
 
 Notation
 --------

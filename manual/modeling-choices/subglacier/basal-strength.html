@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Subglacial hydrology" href="hydrology.html" />
@@ -31,34 +32,7 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="math notranslate nohighlight">
-\[\begin{split}\newcommand{\Diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
-\newcommand{\diff}[2]{ \frac{\partial #1}{\partial #2} }
-\newcommand{\var}[2]{ {#1}_{\text{#2}} }
-\newcommand{\h}[1]{ \var{h}{#1} }
-\newcommand{\T}[1]{ \var{T}{#1} }
-\newcommand{\m}[1]{ \var{m}{#1} }
-\newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-\newcommand{\psw}{p_{\text{water}}}
-\newcommand{\pice}{p_{\text{ice}}}
-\newcommand{\pmelange}{\bar p_{\text{melange}}}
-\newcommand{\rhoi}{\rho_{\text{ice}}}
-\newcommand{\rhow}{\rho_{\text{water}}}
-\newcommand{\n}{\mathbf{n}}
-\newcommand{\nx}{\n_{x}}
-\newcommand{\ny}{\n_{y}}
-\newcommand{\phimin}{\phi_{\mathrm{min}}}
-\newcommand{\phimax}{\phi_{\mathrm{max}}}
-\newcommand{\bmin}{b_{\mathrm{min}}}
-\newcommand{\bmax}{b_{\mathrm{max}}}
-\newcommand{\bq}{\mathbf{q}}
-\newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
-\newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
-\newcommand{\div}{\nabla \cdot}
-\newcommand{\V}{\mathbf{V}}
-\newcommand{\Wtill}{W_{\mathrm{till}}}
-\newcommand{\zs}{z_{\text{sea level}}}\end{split}\]</div>
-<div class="section" id="controlling-basal-strength">
+  <div class="section" id="controlling-basal-strength">
 <span id="sec-basestrength"></span><h1><a class="toc-backref" href="#id27">Controlling basal strength</a><a class="headerlink" href="#controlling-basal-strength" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
@@ -212,8 +186,7 @@ form</p>
 hard-bedded sliding (Coulomb behavior) and viscous bed deformation without required
 knowledge of the bed type. It is defined by</p>
 <div class="math notranslate nohighlight" id="equation-eq-regularizedcoulomb">
-<span class="eqno">(13)<a class="headerlink" href="#equation-eq-regularizedcoulomb" title="Permalink to this equation">¶</a></span>\[\newcommand{\U}{\mathbf{u}}
-\boldsymbol{\tau}_b = - \tau_c \frac{\U}{\left(|\U| + u_{\text{threshold}} \right)^{q} |\U|^{1-q}},\]</div>
+<span class="eqno">(13)<a class="headerlink" href="#equation-eq-regularizedcoulomb" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b = - \tau_c \frac{\uu}{\left(|\uu| + u_{\text{threshold}} \right)^{q} |\uu|^{1-q}},\]</div>
 <p>Set <code class="option docutils literal notranslate"><span class="pre">-regularized_coulomb</span></code> to select this sliding law.</p>
 <p>The original equation (3) in <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id459"><span>78</span></a>]</span> uses the exponent <span class="math notranslate nohighlight">\(q=1/p\)</span>. Otherwise,
 same configuration parameters can be used as in the pseudo-plastic case, but they should
@@ -230,7 +203,7 @@ diffuse onset of sliding.</p>
 <span id="sec-lateral-drag"></span><h3><a class="toc-backref" href="#id29">Lateral drag</a><a class="headerlink" href="#lateral-drag" title="Permalink to this headline">¶</a></h3>
 <p>PISM prescribes lateral drag at ice margins next to ground with elevation above the ice.
 (This is relevant in outlet glaciers flowing through fjords, valley glaciers, and next to
-nunataks.) Set <a class="reference internal" href="../../parameters/index.html#config-basal_resistance.beta_lateral_margin"><code class="docutils literal notranslate"><span class="pre">basal_resistance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.beta_lateral_margin</span></code></a> to control the amount of
+nunataks.) Set <a class="reference internal" href="../../parameters/index.html#config-basal_resistance.beta_lateral_margin"><code class="docutils literal notranslate"></code></a> to control the amount of
 additional drag at these margins.</p>
 </div>
 </div>
@@ -361,7 +334,7 @@ of water in the till is, however, a nontrivial output of the hydrology (see
 from an ice stream in Antarctica, <span id="id21">[<a class="reference internal" href="../../../zzz_references_html.html#id74"><span>79</span></a>]</span> propose the following
 parameterization which is used in PISM. It is based on the ratio
 <span class="math notranslate nohighlight">\(s=W_{till}/W_{till}^{max}\)</span> where <span class="math notranslate nohighlight">\(W_{till}\)</span> is the effective thickness of water in the
-till and <span class="math notranslate nohighlight">\(W_{till}^{max}\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.tillwat_max</span></code></a>) is the maximum amount of water
+till and <span class="math notranslate nohighlight">\(W_{till}^{max}\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"></code></a>) is the maximum amount of water
 in the till (see section <a class="reference internal" href="hydrology.html#sec-subhydro"><span class="std std-ref">Subglacial hydrology</span></a>):</p>
 <div class="math notranslate nohighlight" id="equation-eq-computentill">
 <span class="eqno">(16)<a class="headerlink" href="#equation-eq-computentill" title="Permalink to this equation">¶</a></span>\[N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}\]</div>
@@ -369,14 +342,14 @@ in the till (see section <a class="reference internal" href="hydrology.html#sec-
 thickness and density, and the remaining parameters are listed below (all of these have
 the prefix <code class="docutils literal notranslate"><span class="pre">basal_yield_stress.mohr_coulomb.</span></code>).</p>
 <ol class="simple">
-<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.file"><code class="docutils literal notranslate"><span class="pre">delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> Name of the file containing space- and time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">mohr_coulomb_delta</span></code> to use instead of <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.till_effective_fraction_overburden</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.file"><code class="docutils literal notranslate"><span class="pre">delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> Name of the file containing space- and time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">mohr_coulomb_delta</span></code> to use instead of <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"><code class="docutils literal notranslate"></code></a>.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"><span class="pre">delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> (0<em> years</em>) Length of the period. Set to zero to disable.</p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.reference_year"><code class="docutils literal notranslate"><span class="pre">delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.reference_year"><code class="docutils literal notranslate"><span class="pre">delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"></code></a> is active.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.tauc_to_phi.file"><code class="docutils literal notranslate"><span class="pre">tauc_to_phi</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> File containing the basal yield stress field that should be used to recover the till friction angle distribution.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_cohesion"><code class="docutils literal notranslate"><span class="pre">till_cohesion</span></code></a> (0<em> Pascal</em>) cohesion of till; = <span class="math notranslate nohighlight">\(c_0\)</span> in most references; note Schoof uses zero but Paterson pp 168–169 gives range 0–40 kPa; but Paterson notes that “… all the pairs <span class="math notranslate nohighlight">\(c_0\)</span> and <span class="math notranslate nohighlight">\(\phi\)</span> in the table would give a yield stress for Ice Stream B that exceeds the basal shear stress there…”</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_compressibility_coefficient"><code class="docutils literal notranslate"><span class="pre">till_compressibility_coefficient</span></code></a> (0.12) coefficient of compressiblity of till; value from <span id="id22">[<a class="reference internal" href="../../../zzz_references_html.html#id431"><span>18</span></a>]</span></p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"><code class="docutils literal notranslate"><span class="pre">till_effective_fraction_overburden</span></code></a> (0.02) <span class="math notranslate nohighlight">\(\delta\)</span> in notes; <span class="math notranslate nohighlight">\(N_0 = \delta P_o\)</span> where <span class="math notranslate nohighlight">\(P_o\)</span> is overburden pressure; <span class="math notranslate nohighlight">\(N_0\)</span> is reference (low) value of effective pressure (i.e. normal stress); <span class="math notranslate nohighlight">\(N_0\)</span> scales with overburden pressure unlike <span id="id23">[<a class="reference internal" href="../../../zzz_references_html.html#id431"><span>18</span></a>]</span>; default value from Greenland and Antarctic model runs</p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water"><code class="docutils literal notranslate"><span class="pre">till_log_factor_transportable_water</span></code></a> (0.1<em> meters</em>) If <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.add_transportable_water"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.add_transportable_water</span></code></a> is set then the water amount in the transport system is added to <code class="variable docutils literal notranslate"><span class="pre">tillwat</span></code> in determining <code class="variable docutils literal notranslate"><span class="pre">tauc</span></code>.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water"><code class="docutils literal notranslate"><span class="pre">till_log_factor_transportable_water</span></code></a> (0.1<em> meters</em>) If <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.add_transportable_water"><code class="docutils literal notranslate"></code></a> is set then the water amount in the transport system is added to <code class="variable docutils literal notranslate"><span class="pre">tillwat</span></code> in determining <code class="variable docutils literal notranslate"><span class="pre">tauc</span></code>.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_phi_default"><code class="docutils literal notranslate"><span class="pre">till_phi_default</span></code></a> (30<em> degrees</em>) fill value for till friction angle</p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_reference_effective_pressure"><code class="docutils literal notranslate"><span class="pre">till_reference_effective_pressure</span></code></a> (1000<em> Pascal</em>) reference effective pressure <span class="math notranslate nohighlight">\(N_0\)</span>; value from <span id="id24">[<a class="reference internal" href="../../../zzz_references_html.html#id431"><span>18</span></a>]</span></p></li>
 <li><p><a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.till_reference_void_ratio"><code class="docutils literal notranslate"><span class="pre">till_reference_void_ratio</span></code></a> (0.69) void ratio at reference effective pressure <span class="math notranslate nohighlight">\(N_0\)</span>; value from <span id="id25">[<a class="reference internal" href="../../../zzz_references_html.html#id431"><span>18</span></a>]</span></p></li>
@@ -400,11 +373,11 @@ parameter studies to assess its effect.</p>
 <span class="eqno">(17)<a class="headerlink" href="#equation-eq-mohr-coulomb-ntill-bounds" title="Permalink to this equation">¶</a></span>\[\delta P_o \le N_{till} \le P_o.\]</div>
 <p>In other words, <span class="math notranslate nohighlight">\(\delta\)</span> controls the lower bound of the effective pressure. In addition
 to setting it using a configuration parameter one can use a space- and time-dependent
-field. Set <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.file"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> to the name of the file
+field. Set <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.file"><code class="docutils literal notranslate"></code></a> to the name of the file
 containing the variable <code class="variable docutils literal notranslate"><span class="pre">mohr_coulomb_delta</span></code> (dimensionless, <span class="math notranslate nohighlight">\(units=1\)</span>). Just like
 when using other 2D time-dependent forcing, set
-<a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> and
-<a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.reference_year"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_year</span></code></a> to use periodic data. (See
+<a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"></code></a> and
+<a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.reference_year"><code class="docutils literal notranslate"></code></a> to use periodic data. (See
 <a class="reference internal" href="../../../climate_forcing/time.html#sec-periodic-forcing"><span class="std std-ref">Periodic forcing</span></a> for details.)</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -502,9 +475,9 @@ one month.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

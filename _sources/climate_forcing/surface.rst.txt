@@ -95,8 +95,6 @@ Elevation-dependent temperature and mass balance
 :|variables|: none
 :|implementation|: ``pism::surface::Elevation``
 
-.. include:: ../math-definitions.txt
-
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
 *piecewise-linear* functions of surface elevation `h`.

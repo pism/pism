@@ -13,6 +13,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Ice dynamics, the PISM view" href="../highlevelview/index.html" />
@@ -49,10 +50,10 @@ glaciological understanding <span id="id2">[<a class="reference internal" href="
 <p>To illustrate a parameter study in this Manual we restrict consideration to just two
 important parameters for ice dynamics,</p>
 <ul class="simple">
-<li><p><span class="math notranslate nohighlight">\(q=\)</span> <a class="reference internal" href="../parameters/index.html#config-basal_resistance.pseudo_plastic.q"><code class="docutils literal notranslate"><span class="pre">basal_resistance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pseudo_plastic</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.q</span></code></a>: exponent used in
+<li><p><span class="math notranslate nohighlight">\(q=\)</span> <a class="reference internal" href="../parameters/index.html#config-basal_resistance.pseudo_plastic.q"><code class="docutils literal notranslate"></code></a>: exponent used in
 the sliding law which relates basal sliding velocity to basal shear stress in the SSA
 stress balance; see subsection <a class="reference internal" href="../modeling-choices/subglacier/basal-strength.html#sec-basestrength"><span class="std std-ref">Controlling basal strength</span></a> for more on this parameter, and</p></li>
-<li><p><span class="math notranslate nohighlight">\(e=\)</span> <a class="reference internal" href="../parameters/index.html#config-stress_balance.sia.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enhancement_factor</span></code></a>: values larger
+<li><p><span class="math notranslate nohighlight">\(e=\)</span> <a class="reference internal" href="../parameters/index.html#config-stress_balance.sia.enhancement_factor"><code class="docutils literal notranslate"></code></a>: values larger
 than one give flow “enhancement” by making the ice deform more easily in shear than is
 determined by the standard flow law <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id270"><span>34</span></a>]</span>, <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span>;
 applied only in the SIA stress balance; see section <a class="reference internal" href="../modeling-choices/dynamics/rheology.html#sec-rheology"><span class="std std-ref">Ice rheology</span></a> for more on this
@@ -277,9 +278,9 @@ perhaps, of the meaning of the optimal parameter values.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

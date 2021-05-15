@@ -13,6 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Disabling sub-models" href="../disabling.html" />
@@ -86,7 +87,7 @@ would use the following time-dependent lateral boundary conditions</p>
 <p>PISM’s regional mode uses a special mask <code class="variable docutils literal notranslate"><span class="pre">no_model_mask</span></code> (zeros in the interior of
 the modeling domain, ones at the edge of the domain or in other areas that are <em>not
 modeled</em>) to implement modifications at domain boundaries. This mask is saved to output
-files and read back in when the model is re-started. Set <a class="reference internal" href="../../parameters/index.html#config-regional.no_model_strip"><code class="docutils literal notranslate"><span class="pre">regional</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.no_model_strip</span></code></a>
+files and read back in when the model is re-started. Set <a class="reference internal" href="../../parameters/index.html#config-regional.no_model_strip"><code class="docutils literal notranslate"></code></a>
 during bootstrapping to create a “non-modeled” strip of a given width along the domain
 boundary.</p>
 <div class="section" id="energy">
@@ -103,10 +104,10 @@ is <span class="math notranslate nohighlight">\(1\)</span>.</p>
 sliding B.C. mask: all <code class="variable docutils literal notranslate"><span class="pre">no_model_mask</span></code> locations are <em>also</em> the Dirichlet B.C.
 locations for the sliding velocity. This makes it possible to prescribe the sliding
 velocity of the ice across the domain boundary. Set
-<a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.dirichlet_bc"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ssa</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.dirichlet_bc</span></code></a> to <code class="docutils literal notranslate"><span class="pre">true</span></code> to enable this feature.</p>
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.dirichlet_bc"><code class="docutils literal notranslate"></code></a> to <code class="docutils literal notranslate"><span class="pre">true</span></code> to enable this feature.</p>
 <p>In many cases it makes sense to <em>disable</em> sliding at the boundary. When the sliding
 velocity near the boundary is not prescribed, PISM sets the basal yield stress to a high
-value (see <a class="reference internal" href="../../parameters/index.html#config-regional.no_model_yield_stress"><code class="docutils literal notranslate"><span class="pre">regional</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.no_model_yield_stress</span></code></a>).</p>
+value (see <a class="reference internal" href="../../parameters/index.html#config-regional.no_model_yield_stress"><code class="docutils literal notranslate"></code></a>).</p>
 <p>The domain in PISM “wraps around”, which means that we can not accurately compute
 gradients near the boundary in the non-periodic case.</p>
 <p>Note, though, that updating the velocity field requires computing the gravitational
@@ -121,14 +122,14 @@ the edge of the domain is equivalent to prescribing the <em>flux</em> across the
 boundary.</p>
 </div>
 <p>To use <em>zero</em> surface elevation and thickness gradients, set
-<a class="reference internal" href="../../parameters/index.html#config-regional.zero_gradient"><code class="docutils literal notranslate"><span class="pre">regional</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.zero_gradient</span></code></a>. (This disables SIA flow across the boundary.)</p>
+<a class="reference internal" href="../../parameters/index.html#config-regional.zero_gradient"><code class="docutils literal notranslate"></code></a>. (This disables SIA flow across the boundary.)</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>High surface elevation and ice thickness gradients near the domain boundary <em>will</em>
 affect time-stepping even if they do now affect model evolution.</p>
 <p>The resulting high SIA diffusivity will force PISM to take unreasonably short time
 steps, wasting computational time.</p>
-<p>Consider setting <a class="reference internal" href="../../parameters/index.html#config-regional.zero_gradient"><code class="docutils literal notranslate"><span class="pre">regional</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.zero_gradient</span></code></a> if you see high SIA diffusivities
+<p>Consider setting <a class="reference internal" href="../../parameters/index.html#config-regional.zero_gradient"><code class="docutils literal notranslate"></code></a> if you see high SIA diffusivities
 near domain boundaries (save <code class="variable docutils literal notranslate"><span class="pre">diffusivity_staggered</span></code> to check).</p>
 </div>
 </div>
@@ -148,7 +149,7 @@ evolving ice thickness.</p>
 </div>
 <div class="section" id="calving">
 <h3><a class="toc-backref" href="#id6">Calving</a><a class="headerlink" href="#calving" title="Permalink to this headline">¶</a></h3>
-<p>Set <a class="reference internal" href="../../parameters/index.html#config-geometry.front_retreat.wrap_around"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.front_retreat</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.wrap_around</span></code></a> to <code class="docutils literal notranslate"><span class="pre">true</span></code> to allow calving front retreat
+<p>Set <a class="reference internal" href="../../parameters/index.html#config-geometry.front_retreat.wrap_around"><code class="docutils literal notranslate"></code></a> to <code class="docutils literal notranslate"><span class="pre">true</span></code> to allow calving front retreat
 due to calving to “wrap around” the computational domain. This may be necessary in some
 regional synthetic-geometry setups.</p>
 </div>
@@ -239,9 +240,9 @@ regional synthetic-geometry setups.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

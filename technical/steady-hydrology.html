@@ -13,6 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Three-equation ocean model (implementation details)" href="ocean-th.html" />
@@ -31,38 +32,11 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="math notranslate nohighlight">
-\[\begin{split}\newcommand{\Diff}[2]{ \frac{\mathrm{d}#1}{\mathrm{d}#2} }
-\newcommand{\diff}[2]{ \frac{\partial #1}{\partial #2} }
-\newcommand{\var}[2]{ {#1}_{\text{#2}} }
-\newcommand{\h}[1]{ \var{h}{#1} }
-\newcommand{\T}[1]{ \var{T}{#1} }
-\newcommand{\m}[1]{ \var{m}{#1} }
-\newcommand{\ms}[1]{ \var{m^{*}}{#1} }
-\newcommand{\psw}{p_{\text{water}}}
-\newcommand{\pice}{p_{\text{ice}}}
-\newcommand{\pmelange}{\bar p_{\text{melange}}}
-\newcommand{\rhoi}{\rho_{\text{ice}}}
-\newcommand{\rhow}{\rho_{\text{water}}}
-\newcommand{\n}{\mathbf{n}}
-\newcommand{\nx}{\n_{x}}
-\newcommand{\ny}{\n_{y}}
-\newcommand{\phimin}{\phi_{\mathrm{min}}}
-\newcommand{\phimax}{\phi_{\mathrm{max}}}
-\newcommand{\bmin}{b_{\mathrm{min}}}
-\newcommand{\bmax}{b_{\mathrm{max}}}
-\newcommand{\bq}{\mathbf{q}}
-\newcommand{\Up}[2]{\operatorname{Up}\left(#1\big|#2\right)}
-\newcommand{\uppair}[2]{\left\{\begin{matrix} #1 \\ #2 \end{matrix}\right\}}
-\newcommand{\div}{\nabla \cdot}
-\newcommand{\V}{\mathbf{V}}
-\newcommand{\Wtill}{W_{\mathrm{till}}}
-\newcommand{\zs}{z_{\text{sea level}}}\end{split}\]</div>
-<div class="section" id="computing-steady-state-subglacial-water-flux">
+  <div class="section" id="computing-steady-state-subglacial-water-flux">
 <span id="sec-steady-hydro"></span><h1>Computing steady-state subglacial water flux<a class="headerlink" href="#computing-steady-state-subglacial-water-flux" title="Permalink to this headline">¶</a></h1>
 <p>The “routing” subglacial hydrology model is described by equations</p>
 <div class="math notranslate nohighlight" id="equation-eq-hydrology-routing">
-<span class="eqno">(57)<a class="headerlink" href="#equation-eq-hydrology-routing" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{W}{t} + \diff{\Wtill}{t} + \div \bq = \frac{m}{\rho_w}\\\diff{\Wtill}{t} = \frac{m}{\rho_w} - C_d\\\bq = -k W^{\alpha} |\nabla \psi|^{\beta - 2} \nabla \psi\\\psi = P_o + \rho_w g (b + W)\end{aligned}\end{align} \]</div>
+<span class="eqno">(57)<a class="headerlink" href="#equation-eq-hydrology-routing" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{W}{t} + \diff{\Wtill}{t} + \Div \bq = \frac{m}{\rho_w}\\\diff{\Wtill}{t} = \frac{m}{\rho_w} - C_d\\\bq = -k W^{\alpha} |\nabla \psi|^{\beta - 2} \nabla \psi\\\psi = P_o + \rho_w g (b + W)\end{aligned}\end{align} \]</div>
 <p>on a an ice covered area <span class="math notranslate nohighlight">\(\Omega\)</span>. We assume zero flux boundary conditions on the inflow
 part of the boundary and no boundary condition on the outflow boundary. See
 <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id74"><span>79</span></a>]</span> (equations 1, 2, 6, 16, 26) for details and the notation. Here
@@ -95,7 +69,7 @@ zero), integrating over <span class="math notranslate nohighlight">\(B\)</span>,
 water is added to the corresponding drainage basin due to the source term</em>.</p>
 <p>Next, consider a related initial boundary value problem</p>
 <div class="math notranslate nohighlight" id="equation-eq-emptying-problem">
-<span class="eqno">(59)<a class="headerlink" href="#equation-eq-emptying-problem" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\div (\V u)\]</div>
+<span class="eqno">(59)<a class="headerlink" href="#equation-eq-emptying-problem" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
 <p>on <span class="math notranslate nohighlight">\(B\)</span> with <span class="math notranslate nohighlight">\(u(x, y, 0) = u_0(x, y)\)</span> (<span class="math notranslate nohighlight">\(u_0 \ge 0\)</span>), <span class="math notranslate nohighlight">\(\V = -k(x, y) \nabla \psi\)</span>, zero flux
 on the inflow boundary, and no boundary condition on the outflow boundary.</p>
 <p>Here <span class="math notranslate nohighlight">\(\psi\)</span> is the hydraulic potential corresponding to the steady state of
@@ -107,12 +81,12 @@ vector field <span class="math notranslate nohighlight">\(\V\)</span> leave <spa
 \[\int_B u(T) = \epsilon \int_B u_0.\]</div>
 <p>Integrating over time from <span class="math notranslate nohighlight">\(0\)</span> to <span class="math notranslate nohighlight">\(T\)</span>, we get</p>
 <div class="math notranslate nohighlight">
-\[\int_0^T \diff{u}{t}\, dt = - \int_0^T \div (\V u),\, \text{or}\]</div>
+\[\int_0^T \diff{u}{t}\, dt = - \int_0^T \Div (\V u),\, \text{or}\]</div>
 <div class="math notranslate nohighlight">
-\[u_0 = u(T) + \int_0^T \div (\V u).\]</div>
+\[u_0 = u(T) + \int_0^T \Div (\V u).\]</div>
 <p>Integrating over <span class="math notranslate nohighlight">\(B\)</span> and using the divergence theorem gives</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}\int_B u_0 &amp;= \int_B u(T) + \int_B \int_0^T \div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_B \div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \oint_{\partial B} (\V u) \cdot \n\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_{\omega} (\V u) \cdot \n.\end{aligned}\end{align} \]</div>
+\[ \begin{align}\begin{aligned}\int_B u_0 &amp;= \int_B u(T) + \int_B \int_0^T \Div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_B \Div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \oint_{\partial B} (\V u) \cdot \n\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_{\omega} (\V u) \cdot \n.\end{aligned}\end{align} \]</div>
 <p>Finally,</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-2">
 <span class="eqno">(60)<a class="headerlink" href="#equation-eq-steady-hydro-2" title="Permalink to this equation">¶</a></span>\[\int_B u_0 = \frac{1}{1 - \epsilon} \int_0^T \int_{\omega} (\V u) \cdot \n\]</div>
@@ -259,9 +233,9 @@ as described above.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2352-g2494fd739
+      Git revision v1.0-2353-gbb6e0106f
       committed by Constantine Khrulev
-      on 2021-05-14 12:52:22 -0800 |
+      on 2021-05-14 16:49:26 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
