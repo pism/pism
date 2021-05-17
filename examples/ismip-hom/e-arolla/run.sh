@@ -20,6 +20,9 @@ bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
 
 pismr -i ${input} -bootstrap \
       -Mx 401 \
+      -Mz 216 \
+      -Lz 215 \
+      -z_spacing equal \
       -grid.registration corner \
       -grid.periodicity y \
       -stress_balance.model blatter \
@@ -45,4 +48,5 @@ pismr -i ${input} -bootstrap \
       -atmosphere.uniform.precipitation 0 \
       -surface simple \
       -y 1e-16 \
+      -o_size big \
       -o ${output}
