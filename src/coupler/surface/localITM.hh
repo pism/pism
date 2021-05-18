@@ -61,13 +61,6 @@ public:
 
   virtual unsigned int get_timeseries_length(double dt) = 0;
 
-  virtual double get_albedo(double melt, 
-                            double snow_depth, 
-                            double firn_depth,
-                            int mask_value, 
-                            bool print) = 0;
-
-  virtual double get_albedo_pdd(double T, double S,  int mask_value, bool print) = 0; 
 
   virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print) = 0;
 
@@ -106,13 +99,7 @@ public:
   //! (ITMs).  
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
-  virtual Melt calculate_ITM_melt(double dt_series,
-                                         const double &S,
-                                         const double &T,
-                                         const double &surface_elevation,
-                                         const double &delta,
-                                         const double &lat,
-                                         double &albedo, bool print) = 0;
+
 
 
   virtual Melt calculate_ETIM_melt(double dt_series,
@@ -168,21 +155,11 @@ public:
 
   virtual unsigned int get_timeseries_length(double dt);
 
-  virtual double get_albedo(double melt, double snow_depth,double firn_depth, int mask_value, bool print);
-
-  virtual double get_albedo_pdd(double T, double S,  int mask_value, bool print);
-
   virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print);
 
   virtual double get_refreeze_fraction(const double &T);
   
-  virtual Melt calculate_ITM_melt(double dt_series,
-                                         const double &S,
-                                         const double &T,
-                                         const double &surface_elevation,
-                                         const double &delta,
-                                         const double &lat,
-                                         double &albedo, bool print);
+
 
   virtual Melt calculate_ETIM_melt(double dt_series,
                                          const double &S,
