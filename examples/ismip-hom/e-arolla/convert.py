@@ -4,8 +4,9 @@
 
 import netCDF4
 import numpy as np
+import sys
 
-data = np.loadtxt("arolla100.dat")
+data = np.loadtxt(sys.argv[1])
 
 x       = data[:,0]
 bed     = data[:, 1]
@@ -37,7 +38,7 @@ def convert(output_filename, no_slip):
         for k in range(3):
             thickness[k, :] = np.maximum(surface - bed, 0.0)
 
-        high_beta = 1e12
+        high_beta = 1e24
         TAUC = f.createVariable("tauc", "f8", ("y", "x"))
         TAUC.units = "Pa"
         if no_slip:

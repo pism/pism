@@ -7,19 +7,22 @@ A=$(echo "scale=50; 10^(-16) / (365 * 86400.0)" | bc -l)
 
 input=$1
 output=$2
-
-# This run is *serial* to make sure it works with most PETSc installations. The equivalent
-# parallel run would require PETSc built with a parallel direct solver (e.g. MUMPS).
-
+# number of grid points in the X direction
+Mx=$3
 # number of MG levels
-M=3
+M=$4
+
 # coarsening factor
-C=7
+C=4
 # number of vertical levels
 bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
 
-pismr -i ${input} -bootstrap \
-      -Mx 401 \
+echo "Using ${bp_Mz} vertical levels..."
+
+# This *parallel* run requires PETSc built with a parallel direct solver (e.g. MUMPS).
+# Use "mpiexec -n 1" to run it with PETSc built without a parallel direct solver.
+mpiexec -n 8 pismr -i ${input} -bootstrap \
+      -Mx ${Mx} \
       -Mz 216 \
       -Lz 215 \
       -z_spacing equal \
