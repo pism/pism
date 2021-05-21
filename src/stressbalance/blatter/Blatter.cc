@@ -739,10 +739,10 @@ void Blatter::report_mesh_info() {
 
   if (n_cells > 0) {
     m_log->message(2,
-                   "  Vertical resolution (m): min = %3.3f, max = %3.3f, avg = %3.3f\n",
+                   "  Vertical spacing (m): min = %3.3f, max = %3.3f, avg = %3.3f\n",
                    R_min * dxy, R_max * dxy, R_avg * dxy);
     m_log->message(2,
-                   "  Aspect ratios:           min = %3.3f, max = %3.3f, avg = %3.3f, max/min = %3.3f\n",
+                   "  Aspect ratios:        min = %3.3f, max = %3.3f, avg = %3.3f, max/min = %3.3f\n",
                    R_min, R_max, R_avg, R_max / R_min);
   }
 }
