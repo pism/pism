@@ -276,6 +276,7 @@ The section :ref:`sec-gradient` covers available methods of computing the surfac
    comes with a severe restriction on time step length:
 
    .. math::
+      :label: eq-sia-max-dt
 
       \Delta t \le \frac{2 R}{D\left( 1/\Delta x^2 + 1/\Delta y^2 \right)}
 
@@ -452,10 +453,68 @@ difference approximation of the surface gradient we allow using the `\eta` trans
 described in :ref:`sec-gradient`. Set :config:`stress_balance.blatter.use_eta_transform`
 to enable it.
 
+.. _sec-blatter-time-stepping:
+
+Adaptive time stepping
+######################
+
+PISM's explicit in time mass continuity code is *conditionally stable*. When used with the
+SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
+criterion :cite:`MortonMayers` and the maximum diffusivity of the SIA flow
+:cite:`BBssasliding`. This time step restriction does not disappear when the same mass
+continuity code is used with a stress balance model that does not explicitly compute
+"advective" and "diffusive" parts of the flow. We need a work-around.
+
+.. note::
+
+   Very little is known about stability of explicit time stepping methods of the mass
+   continuity equation coupled to a "generic" stress balance model.
+
+   We don't have a rigorous justification for the approach described below.
+
+When this BP solver is coupled to PISM, the vertically-averaged ice velocity is used in
+place of the "advective" ("sliding") velocity from the SSA. As a result, the CFL-based
+time step restriction is applied by existing PISM code.
+
+However, it is almost always the case that the diffusivity-driven time step restriction is
+more severe and so we need a replacement: CFL alone does not appear to be sufficient for
+stability.
+
+We compute an estimate of the "SIA-like" maximum diffusivity by observing that for the SIA
+the vertically-averaged ice flux `Q` satisfies
+
+.. math::
+
+   Q = -D \nabla s.
+
+We solve this for the diffusivity `D`:
+
+.. math::
+   :label: eq-bp-max-diffusivity
+
+   D = \frac{H\, |\bar{\uu}|}{|\nabla s| + \epsilon}
+
+.. FIXME: talk about the choice of \epsilon.
+
+and use the maximum of this quantity to determine the maximum allowed time step using
+:eq:`eq-sia-max-dt`.
+
+.. note::
+
+   Other models supporting this stress balance model and using an explicit in time
+   geometry evolution method (:cite:`Lipscomb2019`, :cite:`Hoffman2018`) report that the
+   CFL condition appears to be sufficient in practice.
+
+   Given the lack of a theory describing the maximum time step necessary for stability it
+   may make sense to experiment with *increasing* :config:`time_stepping.adaptive_ratio`.
+
+   Setting it to a very large value would *completely disable* the diffusivity-based time
+   step restriction.
+
 .. _sec-blatter-preconditioners:
 
 Practical preconditioners choices
-=================================
+#################################
 
 The option combination
 
@@ -500,6 +559,9 @@ MG level.
    the initial guess is zero (beginning of a simulation) or if the solver fails with
    ``-bp_snes_ksp_ew``.
 
+.. Maybe mention that setting -bp_snes_ksw_ew_rtol0 to a smaller value may make the solver
+   more robust.
+
 Some simulations may benefit from using a direct solver on the coarse MG level. For
 example, the following would use MUMPS_ on the coarse grid:
 
@@ -520,6 +582,28 @@ Note, though, that the multigrid preconditioner, even if it is effective in term
 reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
 there is a trade off between the number of iterations and the cost of a single iteration.
 Other preconditioner options may be worth considering as well.
+
+In some cases node ordering and the way the domain is split among processes in a parallel
+run may affect solver performance (see :cite:`BrownSmithAhmadia2013`, :cite:`Tezaur2015b`,
+:cite:`Tuminaro2016`). These references mention staggering the unknowns so that `u` and
+`v` components at the same node correspond to adjacent equations in the system and using
+contiguous ordering of unknowns in the same ice column. This allows the solver to capture
+vertical coupling *locally* using incomplete factorization.
+
+In addition to this, :cite:`Tezaur2015b` mention that parallel domain distribution
+partitioning ice columns among multiple processes *sometimes* leads to convergence issues.
+Following this advice, PISM does not partition the domain in the `z` direction, but some
+of our experiments show that if the solver struggles, switching to a *one-dimensional*
+domain decomposition along the `y` direction may help.
+
+Run PISM as follows to give this a try:
+
+.. code-block:: bash
+
+   mpiexec -n M pismr -Nx 1 -Ny M ...
+
+This forces PISM to split the domain into `M` parts in the `y` direction instead of the
+default (approximately `\sqrt{M}` in both `x` and `y`).
 
 Please see :ref:`sec-blatter-details` for more.
 

@@ -978,50 +978,6 @@ Steps performed by the solver
 Integration with the rest of PISM
 #################################
 
-.. _sec-bp-pism-time-stepping:
-
-Time stepping
-%%%%%%%%%%%%%
-
-PISM's explicit in time mass continuity code is *conditionally stable*. When used with the
-SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
-criterion :cite:`MortonMayers` and the maximum diffusivity of the SIA flow
-:cite:`BBssasliding`. This time step restriction does not disappear when the same mass
-continuity code is used with a different stress balance model like BP that does not
-explicitly compute "advective" and "diffusive" parts of the flow. We need a work-around.
-
-.. note::
-
-   Very little is known about stability of explicit time stepping methods of the mass
-   continuity equation coupled to a "generic" stress balance model.
-
-   We don't have a rigorous justification for the approach described below.
-
-When this BP solver is coupled to PISM, the vertically-averaged ice velocity is used in
-place of the "advective" ("sliding") velocity from the SSA. As a result, the CFL-based
-time step restriction is applied by existing PISM code.
-
-However, it is almost always the case that the diffusivity-driven time step restriction is
-more severe and so we need a replacement: CFL alone does not appear to be sufficient for
-stability.
-
-We compute an estimate of the "SIA-like" maximum diffusivity by observing that for the SIA
-the vertically-averaged ice flux `Q` satisfies
-
-.. math::
-
-   Q = -D \nabla s.
-
-We solve this for the diffusivity `D`:
-
-.. math::
-   :label: eq-bp-max-diffusivity
-
-   D = \frac{H\, |\bar{\uu}|}{|\nabla s| + \epsilon}
-
-.. FIXME: talk about \epsilon.
-
-and use the maximum of this quantity for adaptive time stepping.
 
 .. _sec-bp-pism-energy-conservation:
 
