@@ -2166,13 +2166,13 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
     pism_config:stress_balance.sia.bed_smoother.range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for ``stressbalance::BedSmoother``, in implementing the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`; set to zero to disable";
     pism_config:stress_balance.sia.bed_smoother.range_option = "bed_smoother_range";
     pism_config:stress_balance.sia.bed_smoother.range_type = "number";
     pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
 
     pism_config:stress_balance.sia.bed_smoother.theta_min = 0.0;
-    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`";
     pism_config:stress_balance.sia.bed_smoother.theta_min_type = "number";
     pism_config:stress_balance.sia.bed_smoother.theta_min_units = "1";
 
@@ -2263,23 +2263,23 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.flow_line_mode_type = "flag";
 
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled = "false";
-    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "Set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "flag";
 
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity = 5.0e15;
-    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered Viscosity used as side friction parameterization.";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered viscosity used as side friction parameterization.";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_option = "nu_bedrock";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_type = "number";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_units = "Pascal second";
 
     pism_config:stress_balance.ssa.fd.max_iterations = 300;
-    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object";
+    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of Picard iterations for the ice viscosity computation, in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.max_iterations_option = "ssafd_picard_maxi";
     pism_config:stress_balance.ssa.fd.max_iterations_type = "integer";
     pism_config:stress_balance.ssa.fd.max_iterations_units = "count";
 
     pism_config:stress_balance.ssa.fd.max_speed = 300000;
-    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
+    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the ``SSAFD`` solver.";
     pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
     pism_config:stress_balance.ssa.fd.max_speed_type = "number";
     pism_config:stress_balance.ssa.fd.max_speed_units = "km s-1";
@@ -2291,13 +2291,13 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_units = "pure number";
 
     pism_config:stress_balance.ssa.fd.relative_convergence = 1.0e-4;
-    pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the SSAFD object";
+    pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssafd_picard_rtol";
     pism_config:stress_balance.ssa.fd.relative_convergence_type = "number";
     pism_config:stress_balance.ssa.fd.relative_convergence_units = "1";
 
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries = "yes";
-    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with :config:'basal_resistance.beta_ice_free_bedrock' to avoid solver failures.";
+    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the ``SSAFD`` matrix with :config:'basal_resistance.beta_ice_free_bedrock' to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "flag";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
