@@ -21,6 +21,9 @@ class config(nodes.literal):
     def __init__(self, parameter, **kwargs):
         self.parameter = parameter
 
+        if "text" not in kwargs:
+            kwargs["text"] = parameter
+
         nodes.literal.__init__(self, parameter, **kwargs)
 
 # this node makes it possible to add soft hyphens to wrap long parameter names
