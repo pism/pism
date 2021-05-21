@@ -42,7 +42,7 @@ the assessment of numerical errors is called <em>verification</em>… Validation
 only after verification, otherwise agreement between measured and computed results may
 well be fortuitous.</p>
 <p>P. Wesseling, (2001) <em>Principles of Computational Fluid Dynamics</em>, pp. 560–561
-<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id452"><span>114</span></a>]</span></p>
+<span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id452"><span>117</span></a>]</span></p>
 </div></blockquote>
 <p>Verification is the essentially mathematical task of checking that the predictions of the
 numerical code are close to the predictions of a continuum model, the one which the
@@ -50,7 +50,7 @@ numerical code claims to approximate. It is a crucial task for a code as complic
 PISM. In verification there is no comparison between model output and observations of
 nature. Instead, one compares exact solutions of the continuum model, in circumstances in
 which they are available, to their numerical approximations.</p>
-<p>Reference <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>115</span></a>]</span> gives a broad discussion of verification and validation in
+<p>Reference <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>118</span></a>]</span> gives a broad discussion of verification and validation in
 computational fluid dynamics. See <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span> and <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span> for discussion of verification
 issues for the isothermal and thermomechanically coupled shallow ice approximation (SIA),
 respectively, and for exact solutions to these models, and <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>,
@@ -62,7 +62,7 @@ codes which are verified by <code class="docutils literal notranslate"><span cla
 run by the normal PISM executable <code class="docutils literal notranslate"><span class="pre">pismr</span></code>. In technical terms, <code class="docutils literal notranslate"><span class="pre">pismv</span></code> runs a derived
 class of the PISM base class.</p>
 <table class="colwidths-given docutils align-default" id="tab-tests">
-<caption><span class="caption-number">Table 41 </span><span class="caption-text">Exact solutions for verification</span><a class="headerlink" href="#tab-tests" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 40 </span><span class="caption-text">Exact solutions for verification</span><a class="headerlink" href="#tab-tests" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 9%" />
 <col style="width: 36%" />
@@ -84,7 +84,7 @@ class of the PISM base class.</p>
 </tr>
 <tr class="row-odd"><td><p>B</p></td>
 <td><p>isothermal SIA, flat bed, zero accumulation</p></td>
-<td><p><span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span>, <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id170"><span>100</span></a>]</span></p></td>
+<td><p><span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id37"><span>57</span></a>]</span>, <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id170"><span>103</span></a>]</span></p></td>
 <td><p>similarity solution</p></td>
 </tr>
 <tr class="row-even"><td><p>C</p></td>
@@ -104,12 +104,12 @@ class of the PISM base class.</p>
 </tr>
 <tr class="row-odd"><td><p>F</p></td>
 <td><p>thermomechanically coupled SIA (mass and energy conservation), steady, flat bed</p></td>
-<td><p><span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>68</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
+<td><p><span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>73</span></a>]</span>, <span id="id14">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
 <td><p>uses compensatory accumulation and heating</p></td>
 </tr>
 <tr class="row-even"><td><p>G</p></td>
 <td><p>thermomechanically coupled SIA; as F  but with oscillating accumulation</p></td>
-<td><p><span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>68</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
+<td><p><span id="id15">[<a class="reference internal" href="../../zzz_references_html.html#id31"><span>73</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
 <td><p>ditto</p></td>
 </tr>
 <tr class="row-odd"><td><p>H</p></td>
@@ -129,7 +129,7 @@ class of the PISM base class.</p>
 </tr>
 <tr class="row-even"><td><p>K</p></td>
 <td><p>pure conduction in ice and bedrock</p></td>
-<td><p><span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id73"><span>116</span></a>]</span></p></td>
+<td><p><span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id73"><span>119</span></a>]</span></p></td>
 <td></td>
 </tr>
 <tr class="row-odd"><td><p>L</p></td>
@@ -140,8 +140,8 @@ class of the PISM base class.</p>
 </tbody>
 </table>
 <table class="colwidths-auto docutils align-default" id="tab-tests-exec">
-<caption><span class="caption-number">Table 42 </span><span class="caption-text">Canonical PISM verification runs using the exact solutions listed in
-            <a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 41</span></a>.</span><a class="headerlink" href="#tab-tests-exec" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 41 </span><span class="caption-text">Canonical PISM verification runs using the exact solutions listed in
+            <a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 40</span></a>.</span><a class="headerlink" href="#tab-tests-exec" title="Permalink to this table">¶</a></caption>
 <thead>
 <tr class="row-odd"><th class="head"><p>Test</p></th>
 <th class="head"><p>Example invocation</p></th>
@@ -187,7 +187,7 @@ class of the PISM base class.</p>
 </tbody>
 </table>
 <table class="docutils align-default" id="tab-pismv-options">
-<caption><span class="caption-number">Table 43 </span><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">pismv</span></code> command-line options</span><a class="headerlink" href="#tab-pismv-options" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 42 </span><span class="caption-text"><code class="docutils literal notranslate"><span class="pre">pismv</span></code> command-line options</span><a class="headerlink" href="#tab-pismv-options" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 50%" />
 <col style="width: 50%" />
@@ -199,7 +199,7 @@ class of the PISM base class.</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-test</span></code></p></td>
-<td><p>Choose verification test by single character name; see <a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 41</span></a>.</p></td>
+<td><p>Choose verification test by single character name; see <a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 40</span></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-no_report</span></code></p></td>
 <td><p>Do not report errors at the end of a verification run.</p></td>
@@ -215,12 +215,12 @@ class of the PISM base class.</p>
 </tr>
 </tbody>
 </table>
-<p><a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 41</span></a> summarizes the many exact solutions currently available in PISM. Most
+<p><a class="reference internal" href="#tab-tests"><span class="std std-numref">Table 40</span></a> summarizes the many exact solutions currently available in PISM. Most
 of these exact solutions are solutions of <em>free boundary problems</em> for partial
 differential equations; only Tests A, E, J, K are fixed boundary value problems.</p>
-<p><a class="reference internal" href="#tab-tests-exec"><span class="std std-numref">Table 42</span></a> shows how to run each of them on a coarse grids. Note that tests
+<p><a class="reference internal" href="#tab-tests-exec"><span class="std std-numref">Table 41</span></a> shows how to run each of them on a coarse grids. Note that tests
 I and J require special executables <code class="docutils literal notranslate"><span class="pre">ssa_testi,ssa_testj</span></code> which are built with
-configuration flag <code class="docutils literal notranslate"><span class="pre">Pism_BUILD_EXTRA_EXECS</span></code> equal to <code class="docutils literal notranslate"><span class="pre">ON</span></code>. <a class="reference internal" href="#tab-pismv-options"><span class="std std-numref">Table 43</span></a>
+configuration flag <code class="docutils literal notranslate"><span class="pre">Pism_BUILD_EXTRA_EXECS</span></code> equal to <code class="docutils literal notranslate"><span class="pre">ON</span></code>. <a class="reference internal" href="#tab-pismv-options"><span class="std std-numref">Table 42</span></a>
 gives the special verification-related options of the <code class="docutils literal notranslate"><span class="pre">pismv</span></code> executable.</p>
 <p>Numerical errors are not, however, the dominant reasons why ice sheet models give
 imperfect results. The largest sources of errors include those from using the wrong (e.g.
@@ -241,8 +241,8 @@ model runs.</p></li>
 <p>Knowing the error decay rate may give a prediction of how fine a grid is necessary to
 achieve a desired smallness for the numerical error.</p>
 <p>Therefore one must “go down” a grid refinement “path” and measure numerical error for each
-grid <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>115</span></a>]</span>. The refinement path is defined by a sequence of spatial grid cell sizes
-which decrease toward the refinement limit of zero size <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id300"><span>117</span></a>]</span>. In PISM the
+grid <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id371"><span>118</span></a>]</span>. The refinement path is defined by a sequence of spatial grid cell sizes
+which decrease toward the refinement limit of zero size <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id300"><span>68</span></a>]</span>. In PISM the
 timestep <span class="math notranslate nohighlight">\(\Delta t\)</span> is determined adaptively by a stability criterion (see
 section <a class="reference internal" href="../practical-usage/time-stepping.html#sec-adapt"><span class="std std-ref">Understanding adaptive time-stepping</span></a>). In PISM one specifies the number of grid points, thus the
 grid cell sizes because the overall dimensions of the computational box are normally
@@ -357,9 +357,9 @@ not very smooth at the free boundary <span id="id25">[<a class="reference intern
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -47,21 +47,21 @@
 </li>
 </ul>
 </div>
-<p>References <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>86</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id262"><span>87</span></a>]</span>, <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id454"><span>16</span></a>]</span>
+<p>References <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>90</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id262"><span>91</span></a>]</span>, <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id454"><span>16</span></a>]</span>
 by the research group of Prof. Anders Levermann at the Potsdam Institute for Climate
 Impact Research (“PIK”), Germany, describe most of the mechanisms covered in this section.
 These are all improvements to the grounded, SSA-as-a-sliding law model of
 <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span>. These improvements make PISM an effective Antarctic model, as
 demonstrated by <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id144"><span>4</span></a>]</span>, <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id287"><span>51</span></a>]</span>,
-<span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id455"><span>88</span></a>]</span>, among other publications. These improvements had a separate
+<span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id455"><span>92</span></a>]</span>, among other publications. These improvements had a separate
 existence as the “PISM-PIK” model from 2009–2010, but since PISM stable0.4 are part of
 PISM itself.</p>
 <p>A summary of options to turn on most of these “PIK” mechanisms is in
-<a class="reference internal" href="#tab-pism-pik"><span class="std std-numref">Table 22</span></a>. More information on the particular mechanisms is given in
+<a class="reference internal" href="#tab-pism-pik"><span class="std std-numref">Table 21</span></a>. More information on the particular mechanisms is given in
 sub-sections <a class="reference internal" href="#sec-cfbc"><span class="std std-ref">Stress condition at calving fronts</span></a> through <a class="reference internal" href="#sec-subgrid-grounding-line"><span class="std std-ref">Sub-grid treatment of the grounding line position</span></a> that follow the
 Table.</p>
 <table class="colwidths-given docutils align-default" id="tab-pism-pik">
-<caption><span class="caption-number">Table 22 </span><span class="caption-text">Options which turn on PIK ice shelf front and grounding line mechanisms. A
+<caption><span class="caption-number">Table 21 </span><span class="caption-text">Options which turn on PIK ice shelf front and grounding line mechanisms. A
              calving law choice is needed in addition to these options.</span><a class="headerlink" href="#tab-pism-pik" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 25%" />
@@ -83,15 +83,15 @@ for the SSA stress balance solver <span id="id9">[<a class="reference internal" 
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-part_grid</span></code></p></td>
 <td><p>allow the ice shelf front to advance by a part of a grid cell, avoiding
-the development of unphysically-thinned ice shelves <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>86</span></a>]</span></p></td>
+the development of unphysically-thinned ice shelves <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>90</span></a>]</span></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-subgl</span></code></p></td>
 <td><p>apply interpolation to compute basal shear stress and basal melt near the grounding
-line <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>89</span></a>]</span></p></td>
+line <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>93</span></a>]</span></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-no_subgl_basal_melt</span></code></p></td>
 <td><p><strong>don’t</strong> apply interpolation to compute basal melt near the grounding line if
-<code class="option docutils literal notranslate"><span class="pre">-subgl</span></code> is set <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>89</span></a>]</span></p></td>
+<code class="option docutils literal notranslate"><span class="pre">-subgl</span></code> is set <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>93</span></a>]</span></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-pik</span></code></p></td>
 <td><p>equivalent to option combination <code class="docutils literal notranslate"><span class="pre">-cfbc</span> <span class="pre">-kill_icebergs</span> <span class="pre">-part_grid</span> <span class="pre">-subgl</span></code></p></td>
@@ -101,7 +101,7 @@ line <span id="id11">[<a class="reference internal" href="../../../zzz_reference
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When in doubt, PISM users should set option <code class="option docutils literal notranslate"><span class="pre">-pik</span></code> to turn on all of mechanisms in
-<a class="reference internal" href="#tab-pism-pik"><span class="std std-numref">Table 22</span></a>. The user should also choose a calving model from
+<a class="reference internal" href="#tab-pism-pik"><span class="std std-numref">Table 21</span></a>. The user should also choose a calving model from
 <a class="reference internal" href="calving.html#sec-calving"><span class="std std-ref">Calving and front retreat</span></a>. However, the <code class="option docutils literal notranslate"><span class="pre">-pik</span></code> mechanisms will not be effective if the
 non-default FEM stress balance <code class="option docutils literal notranslate"><span class="pre">-ssa_method</span> <span class="pre">fem</span></code> is chosen.</p>
 </div>
@@ -110,28 +110,28 @@ non-default FEM stress balance <code class="option docutils literal notranslate"
 <p>The vertically integrated force balance at floating calving fronts has been formulated by
 <span id="id13">[<a class="reference internal" href="../../../zzz_references_html.html#id294"><span>39</span></a>]</span> as</p>
 <div class="math notranslate nohighlight" id="equation-eq-cfbc">
-<span class="eqno">(23)<a class="headerlink" href="#equation-eq-cfbc" title="Permalink to this equation">¶</a></span>\[\int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}\;dz
+<span class="eqno">(25)<a class="headerlink" href="#equation-eq-cfbc" title="Permalink to this equation">¶</a></span>\[\int_{z_s-\frac{\rho}{\rho_w}H}^{z_s+(1-\frac{\rho}{\rho_w})H}\mathbf{\sigma}\cdot\mathbf{n}\;dz
 = \int_{z_s-\frac{\rho}{\rho_w}H}^{z_s}\rho_w g (z-z_s) \;\mathbf{n}\;dz.\]</div>
 <p>with <span class="math notranslate nohighlight">\(\mathbf{n}\)</span> being the horizontal normal vector pointing from the ice boundary
 oceanward, <span class="math notranslate nohighlight">\(\mathbf{\sigma}\)</span> the <em>Cauchy</em> stress tensor, <span class="math notranslate nohighlight">\(H\)</span> the ice thickness and <span class="math notranslate nohighlight">\(\rho\)</span>
 and <span class="math notranslate nohighlight">\(\rho_{w}\)</span> the densities of ice and seawater, respectively, for a sea level of <span class="math notranslate nohighlight">\(z_s\)</span>.
-The integration limits on the right hand side of equation <a class="reference internal" href="#equation-eq-cfbc">(23)</a> account for the
+The integration limits on the right hand side of equation <a class="reference internal" href="#equation-eq-cfbc">(25)</a> account for the
 pressure exerted by the ocean on that part of the shelf, which is below sea level (bending
 and torque neglected). The limits on the left hand side change for water-terminating
 outlet glacier or glacier fronts above sea level according to the bed topography. By
-applying the ice flow law (section <a class="reference internal" href="../dynamics/rheology.html#sec-rheology"><span class="std std-ref">Ice rheology</span></a>), equation <a class="reference internal" href="#equation-eq-cfbc">(23)</a> can be
+applying the ice flow law (section <a class="reference internal" href="../dynamics/rheology.html#sec-rheology"><span class="std std-ref">Ice rheology</span></a>), equation <a class="reference internal" href="#equation-eq-cfbc">(25)</a> can be
 rewritten in terms of strain rates (velocity derivatives), as one does with the SSA stress
 balance itself.</p>
 <p>Note that the discretized SSA stress balance, in the default finite difference
 discretization chosen by <code class="option docutils literal notranslate"><span class="pre">-ssa_method</span></code> <code class="docutils literal notranslate"><span class="pre">fd</span></code>, is solved with an iterative matrix
 scheme. If option <code class="option docutils literal notranslate"><span class="pre">-cfbc</span></code> is set then, during matrix assembly, those equations which
 are for fully-filled grid cells along the ice domain boundary have terms replaced
-according to equation <a class="reference internal" href="#equation-eq-cfbc">(23)</a>, so as to apply the correct stresses
-<span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>86</span></a>]</span>, <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id454"><span>16</span></a>]</span>.</p>
+according to equation <a class="reference internal" href="#equation-eq-cfbc">(25)</a>, so as to apply the correct stresses
+<span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>90</span></a>]</span>, <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id454"><span>16</span></a>]</span>.</p>
 </div>
 <div class="section" id="partially-filled-cells-at-the-boundaries-of-ice-shelves">
 <span id="sec-part-grid"></span><h2><a class="toc-backref" href="#id22">Partially-filled cells at the boundaries of ice shelves</a><a class="headerlink" href="#partially-filled-cells-at-the-boundaries-of-ice-shelves" title="Permalink to this headline">¶</a></h2>
-<p>Albrecht et al <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>86</span></a>]</span> argue that the correct movement of the ice shelf
+<p>Albrecht et al <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id22"><span>90</span></a>]</span> argue that the correct movement of the ice shelf
 calving front on a finite-difference grid, assuming for the moment that ice velocities are
 correctly determined (see below), requires tracking some cells as being partially-filled
 (option <code class="option docutils literal notranslate"><span class="pre">-part_grid</span></code>). If the calving front is moving forward, for example, then the
@@ -176,8 +176,8 @@ section <a class="reference internal" href="../../practical-usage/saving-diagnos
 <div class="section" id="sub-grid-treatment-of-the-grounding-line-position">
 <span id="sec-subgrid-grounding-line"></span><h2><a class="toc-backref" href="#id24">Sub-grid treatment of the grounding line position</a><a class="headerlink" href="#sub-grid-treatment-of-the-grounding-line-position" title="Permalink to this headline">¶</a></h2>
 <p>The command-line option <code class="option docutils literal notranslate"><span class="pre">-subgl</span></code> turns on a parameterization of the grounding line
-position based on the “LI” parameterization described in <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id134"><span>90</span></a>]</span> and
-<span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>89</span></a>]</span>. With this option PISM computes an extra flotation mask,
+position based on the “LI” parameterization described in <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id134"><span>94</span></a>]</span> and
+<span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id119"><span>93</span></a>]</span>. With this option PISM computes an extra flotation mask,
 available as the <code class="variable docutils literal notranslate"><span class="pre">cell_grounded_fraction</span></code> output variable, which corresponds to the
 fraction of the cell that is grounded. Cells that are ice-free or fully floating are
 assigned the value of <span class="math notranslate nohighlight">\(0\)</span> while fully-grounded icy cells get the value of <span class="math notranslate nohighlight">\(1\)</span>. Partially
@@ -280,9 +280,9 @@ value of the flotation mask. Use <code class="option docutils literal notranslat
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

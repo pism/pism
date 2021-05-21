@@ -48,17 +48,17 @@
 <span id="sec-grid"></span><h1><a class="toc-backref" href="#id5">Spatial grid</a><a class="headerlink" href="#spatial-grid" title="Permalink to this headline">¶</a></h1>
 <p>The PISM grid covering the computational box is equally spaced in horizontal (<span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span>)
 directions. Vertical spacing in the ice is quadratic by default but optionally equal
-spacing can be chosen; set using <a class="reference internal" href="../../parameters/index.html#config-grid.ice_vertical_spacing"><code class="docutils literal notranslate"></code></a> at bootstrapping. The
+spacing can be chosen; set using <a class="reference internal" href="../../parameters/index.html#config-grid.ice_vertical_spacing"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_vertical_spacing</span></code></a> at bootstrapping. The
 bedrock thermal layer model always uses equal vertical spacing.</p>
-<p>The grid is described by four numbers, namely the number of grid points <a class="reference internal" href="../../parameters/index.html#config-grid.Mx"><code class="docutils literal notranslate"></code></a>
-in the <span class="math notranslate nohighlight">\(x\)</span> direction, the number <a class="reference internal" href="../../parameters/index.html#config-grid.My"><code class="docutils literal notranslate"></code></a> in the <span class="math notranslate nohighlight">\(y\)</span> direction, the number
-<a class="reference internal" href="../../parameters/index.html#config-grid.Mz"><code class="docutils literal notranslate"></code></a> in the <span class="math notranslate nohighlight">\(z\)</span> direction within the ice, and the number <a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"></code></a>
+<p>The grid is described by four numbers, namely the number of grid points <a class="reference internal" href="../../parameters/index.html#config-grid.Mx"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mx</span></code></a>
+in the <span class="math notranslate nohighlight">\(x\)</span> direction, the number <a class="reference internal" href="../../parameters/index.html#config-grid.My"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.My</span></code></a> in the <span class="math notranslate nohighlight">\(y\)</span> direction, the number
+<a class="reference internal" href="../../parameters/index.html#config-grid.Mz"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mz</span></code></a> in the <span class="math notranslate nohighlight">\(z\)</span> direction within the ice, and the number <a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mbz</span></code></a>
 in the <span class="math notranslate nohighlight">\(z\)</span> direction within the bedrock thermal layer. These are specified by options
 <code class="option docutils literal notranslate"><span class="pre">-Mx</span></code>, <code class="option docutils literal notranslate"><span class="pre">-My</span></code>, <code class="option docutils literal notranslate"><span class="pre">-Mz</span></code>, and <code class="option docutils literal notranslate"><span class="pre">-Mbz</span></code>, respectively. Note that <code class="docutils literal notranslate"><span class="pre">Mx</span></code>,
 <code class="docutils literal notranslate"><span class="pre">My</span></code>, <code class="docutils literal notranslate"><span class="pre">Mz</span></code>, and <code class="docutils literal notranslate"><span class="pre">Mbz</span></code> all indicate the number of grid <em>points</em> so the number of grid
 <em>spaces</em> are one less.</p>
 <p>The lowest grid point in a grounded column of ice, at <span class="math notranslate nohighlight">\(z=0\)</span>, coincides with the highest
-grid point in the bedrock, so <a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"></code></a> must always be at least one.</p>
+grid point in the bedrock, so <a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mbz</span></code></a> must always be at least one.</p>
 <div class="figure align-default" id="fig-grid-vertical-pism">
 <img alt="../../../_images/grid-vertical-pism.png" src="../../../_images/grid-vertical-pism.png" />
 <p class="caption"><span class="caption-number">Fig. 18 </span><span class="caption-text">PISM’s vertical grid with uniform <span class="math notranslate nohighlight">\(z\)</span> spacing. See <a class="reference internal" href="../../../technical/vertchange.html#sec-vertchange"><span class="std std-ref">On the vertical coordinate in PISM, and a critical change of variable</span></a> for details.</span><a class="headerlink" href="#fig-grid-vertical-pism" title="Permalink to this image">¶</a></p>
@@ -72,7 +72,7 @@ See <a class="reference internal" href="#fig-grid-vertical-sigma"><span class="s
 </div>
 <p>Choosing <code class="docutils literal notranslate"><span class="pre">Mbz</span></code> <span class="math notranslate nohighlight">\(&gt;1\)</span> is required to use the bedrock thermal model. When a thermal bedrock
 layer is used, the distance <code class="docutils literal notranslate"><span class="pre">Lbz</span></code> is controlled by the <code class="option docutils literal notranslate"><span class="pre">-Lbz</span></code> option. Note that
-<a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"></code></a> is unrelated to the bed deformation model (glacial isostasy model); see
+<a class="reference internal" href="../../parameters/index.html#config-grid.Mbz"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mbz</span></code></a> is unrelated to the bed deformation model (glacial isostasy model); see
 section <a class="reference internal" href="../subglacier/bed-deformation.html#sec-beddef"><span class="std std-ref">Earth deformation models</span></a>.</p>
 <p>In the quadratically-spaced case the vertical spacing near the ice/bedrock interface is
 about four times finer than it would be with equal spacing for the same value of <code class="docutils literal notranslate"><span class="pre">Mz</span></code>,
@@ -163,7 +163,7 @@ and <span class="math notranslate nohighlight">\(x\)</span> coordinates range fr
 </div>
 </div>
 <p>To switch between <a class="reference internal" href="#equation-eq-grid-center">(2)</a> and <a class="reference internal" href="#equation-eq-grid-corner">(3)</a>,
-set the configuration parameter <a class="reference internal" href="../../parameters/index.html#config-grid.registration"><code class="docutils literal notranslate"></code></a>.</p>
+set the configuration parameter <a class="reference internal" href="../../parameters/index.html#config-grid.registration"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.registration</span></code></a>.</p>
 </div>
 <div class="section" id="grid-projections">
 <span id="sec-projections"></span><h2><a class="toc-backref" href="#id7">Grid projections</a><a class="headerlink" href="#grid-projections" title="Permalink to this headline">¶</a></h2>
@@ -339,9 +339,9 @@ standard.”</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

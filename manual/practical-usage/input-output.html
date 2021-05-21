@@ -35,10 +35,10 @@
   <div class="section" id="input-and-output">
 <span id="sec-input-output"></span><h1>Input and output<a class="headerlink" href="#input-and-output" title="Permalink to this headline">¶</a></h1>
 <p>PISM is a program that reads NetCDF files and then outputs NetCDF files. Table
-<a class="reference internal" href="#tab-input-output-options"><span class="std std-numref">Table 25</span></a> summarizes command-line options controlling the most
+<a class="reference internal" href="#tab-input-output-options"><span class="std std-numref">Table 24</span></a> summarizes command-line options controlling the most
 basic ways to input and output NetCDF files when starting and ending PISM runs.</p>
 <table class="colwidths-given docutils align-default" id="tab-input-output-options">
-<caption><span class="caption-number">Table 25 </span><span class="caption-text">Basic NetCDF input and output options</span><a class="headerlink" href="#tab-input-output-options" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 24 </span><span class="caption-text">Basic NetCDF input and output options</span><a class="headerlink" href="#tab-input-output-options" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -71,21 +71,21 @@ run using the <code class="docutils literal notranslate"><span class="pre">ssa</
 <li><p><code class="docutils literal notranslate"><span class="pre">none</span></code> (<em>no</em> output file at all),</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">small</span></code> (only variables necessary to restart PISM),</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">medium</span></code> (the default, includes diagnostic quantities listed in the
-configuration parameter <a class="reference internal" href="../parameters/index.html#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a>, if they are available in
+configuration parameter <a class="reference internal" href="../parameters/index.html#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a>, if they are available in
 the current PISM setup),</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">big_2d</span></code> (same as <code class="docutils literal notranslate"><span class="pre">medium</span></code>, plus variables listed in
-<a class="reference internal" href="../parameters/index.html#config-output.sizes.big_2d"><code class="docutils literal notranslate"></code></a>), and</p></li>
+<a class="reference internal" href="../parameters/index.html#config-output.sizes.big_2d"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big_2d</span></code></a>), and</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">big</span></code> (same as <code class="docutils literal notranslate"><span class="pre">big_2d</span></code>, plus variables listed in
-<a class="reference internal" href="../parameters/index.html#config-output.sizes.big"><code class="docutils literal notranslate"></code></a>).</p></li>
+<a class="reference internal" href="../parameters/index.html#config-output.sizes.big"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big</span></code></a>).</p></li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
-<p><a class="reference internal" href="#tab-stdout"><span class="std std-numref">Table 26</span></a> lists the controls on what is printed to the standard output.
+<p><a class="reference internal" href="#tab-stdout"><span class="std std-numref">Table 25</span></a> lists the controls on what is printed to the standard output.
 Note the <code class="docutils literal notranslate"><span class="pre">-help</span></code> and <code class="docutils literal notranslate"><span class="pre">-usage</span></code> options for getting help at the command line.</p>
 <table class="colwidths-given docutils align-default" id="tab-stdout">
-<caption><span class="caption-number">Table 26 </span><span class="caption-text">Options controlling PISM’s standard output</span><a class="headerlink" href="#tab-stdout" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 25 </span><span class="caption-text">Options controlling PISM’s standard output</span><a class="headerlink" href="#tab-stdout" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -153,8 +153,8 @@ quickly”) tool from the <a class="reference external" href="http://nco.sourcef
 <code class="docutils literal notranslate"><span class="pre">time,z,y,x</span></code> order.</p>
 <p>PISM also supports parallel I/O using parallel <a class="reference external" href="https://www.unidata.ucar.edu/software/netcdf/">NetCDF</a>, <a class="reference external" href="https://parallel-netcdf.github.io/">PnetCDF</a>, or <a class="reference external" href="https://ncar.github.io/ParallelIO/">ParallelIO</a>, which
 can give better performance in high-resolution runs.</p>
-<p>Use the command-line option <code class="option docutils literal notranslate"><span class="pre">-o_format</span></code> (parameter <a class="reference internal" href="../parameters/index.html#config-output.format"><code class="docutils literal notranslate"></code></a>) to choose
-the approach to use when writing to output files (see <a class="reference internal" href="#tab-output-format"><span class="std std-numref">Table 27</span></a>). The
+<p>Use the command-line option <code class="option docutils literal notranslate"><span class="pre">-o_format</span></code> (parameter <a class="reference internal" href="../parameters/index.html#config-output.format"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.format</span></code></a>) to choose
+the approach to use when writing to output files (see <a class="reference internal" href="#tab-output-format"><span class="std std-numref">Table 26</span></a>). The
 <code class="docutils literal notranslate"><span class="pre">netcdf4_parallel</span></code> requires parallel NetCDF, <code class="docutils literal notranslate"><span class="pre">pnetcdf</span></code> requires PnetCDF, and
 <code class="docutils literal notranslate"><span class="pre">pio_...</span></code> require ParallelIO build with parallel NetCDF and PnetCDF. Section
 <a class="reference internal" href="../../installation/pism.html#sec-install-pism-cmake-options"><span class="std std-ref">PISM’s build-time configuration</span></a>) explains how to select these libraries when
@@ -166,7 +166,7 @@ way to <em>read</em> from input files and this logic appears to work well. This 
 is no <code class="docutils literal notranslate"><span class="pre">-i_format</span></code>.</p>
 </div>
 <table class="docutils align-default" id="tab-output-format">
-<caption><span class="caption-number">Table 27 </span><span class="caption-text">Methods of writing to output files</span><a class="headerlink" href="#tab-output-format" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 26 </span><span class="caption-text">Methods of writing to output files</span><a class="headerlink" href="#tab-output-format" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 50%" />
 <col style="width: 50%" />
@@ -203,9 +203,9 @@ is no <code class="docutils literal notranslate"><span class="pre">-i_format</sp
 <p>The ParallelIO library can aggregate data in a subset of processes used by PISM. To choose
 a subset, set</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.n_writers"><code class="docutils literal notranslate"></code></a> number of “writers”</p></li>
-<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.base"><code class="docutils literal notranslate"></code></a> the index of the first writer</p></li>
-<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.stride"><code class="docutils literal notranslate"></code></a> interval between writers</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.n_writers"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pio</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.n_writers</span></code></a> number of “writers”</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.base"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pio</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.base</span></code></a> the index of the first writer</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.pio.stride"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pio</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.stride</span></code></a> interval between writers</p></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -216,7 +216,7 @@ developed by the authors of PnetCDF. This format is supported by NetCDF since ve
 <p>We recommend performing a number of test runs to determine the best choice for your
 simulations.</p>
 <p>In our test runs on 120 cores (whole Greenland setup on a 900m grid) <code class="docutils literal notranslate"><span class="pre">pio_pnetcdf</span></code> with
-<a class="reference internal" href="../parameters/index.html#config-output.pio.n_writers"><code class="docutils literal notranslate"></code></a> set to the number of cores used by PISM (120) gave the best
+<a class="reference internal" href="../parameters/index.html#config-output.pio.n_writers"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pio</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.n_writers</span></code></a> set to the number of cores used by PISM (120) gave the best
 performance.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -336,9 +336,9 @@ available targets.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

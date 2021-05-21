@@ -122,7 +122,7 @@ variable should describe what model time these records correspond to; see
 <li><p>This surface model <em>ignores</em> the atmosphere model selection made using the option
 <code class="option docutils literal notranslate"><span class="pre">-atmosphere</span></code>.</p></li>
 <li><p>PISM can handle files with virtually any number of records: it will read and store in
-memory at most <a class="reference internal" href="../manual/parameters/index.html#config-input.forcing.buffer_size"><code class="docutils literal notranslate"></code></a> records at any given time
+memory at most <a class="reference internal" href="../manual/parameters/index.html#config-input.forcing.buffer_size"><code class="docutils literal notranslate"><span class="pre">input</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.forcing</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.buffer_size</span></code></a> records at any given time
 (default: 60, or 5 years’ worth of monthly fields).</p></li>
 <li><p>when preparing a file for use with this model, it is best to use the <code class="docutils literal notranslate"><span class="pre">t,y,x</span></code>
 variable storage order: files using this order can be read in faster than ones using
@@ -212,12 +212,12 @@ balance below <span class="math notranslate nohighlight">\(\h{min}\)</span> to <
 </dd>
 </dl>
 <p>The default PDD model used by PISM, turned on by option <code class="option docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">pdd</span></code>, is based on
-<span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id80"><span>139</span></a>]</span> and EISMINT-Greenland intercomparison (see <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>134</span></a>]</span>).</p>
+<span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id80"><span>140</span></a>]</span> and EISMINT-Greenland intercomparison (see <span id="id3">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span>).</p>
 <p>Our model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
-<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_rain"><code class="docutils literal notranslate"></code></a> (default of <span class="math notranslate nohighlight">\(2^\circ C\)</span>) is interpreted as
+<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_rain"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.air_temp_all_precip_as_rain</span></code></a> (default of <span class="math notranslate nohighlight">\(2^\circ C\)</span>) is interpreted as
 rain; all precipitation during periods with air temperatures below
-<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"></code></a> (default of <span class="math notranslate nohighlight">\(0^\circ C\)</span>) is interpreted as
+<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.air_temp_all_precip_as_snow</span></code></a> (default of <span class="math notranslate nohighlight">\(0^\circ C\)</span>) is interpreted as
 snow.</p>
 <p>For long-term simulations, a PDD model generally uses an idealized seasonal temperature
 cycle. “White noise” is added to this cycle to simulate additional daily variability
@@ -238,24 +238,24 @@ standard deviation of the daily variability is controlled by command-line option
 deviation of near-surface air temperature in variable <code class="variable docutils literal notranslate"><span class="pre">air_temp_sd</span></code>, and the
 corresponding time coordinate in variable <code class="variable docutils literal notranslate"><span class="pre">time</span></code>. If <code class="docutils literal notranslate"><span class="pre">-pdd_sd_file</span></code> is not set,
 PISM uses a constant value for standard deviation, which is set by the
-configuration parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev"><code class="docutils literal notranslate"></code></a>. The default value is <span class="math notranslate nohighlight">\(5.0\)</span> degrees
-<span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>134</span></a>]</span>. However, this approach is not recommended as it induces significant
+configuration parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code></a>. The default value is <span class="math notranslate nohighlight">\(5.0\)</span> degrees
+<span id="id4">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span>. However, this approach is not recommended as it induces significant
 errors in modeled surface mass balance in both ice-covered and ice-free regions
-<span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id376"><span>140</span></a>]</span>, <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id403"><span>141</span></a>]</span>.</p>
+<span id="id5">[<a class="reference internal" href="../zzz_references_html.html#id376"><span>141</span></a>]</span>, <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id403"><span>142</span></a>]</span>.</p>
 <p>Over ice-covered grid cells, daily variability can also be parameterized as a linear
 function of near-surface air temperature <span class="math notranslate nohighlight">\(\sigma = a \cdot T + b\)</span> using the
-<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"></code></a> configuration flag, and the corresponding
-parameters <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_a"><code class="docutils literal notranslate"></code></a> and
-<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_b"><code class="docutils literal notranslate"></code></a>. This parametrization replaces prescribed standard
+<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_use_param</span></code></a> configuration flag, and the corresponding
+parameters <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_a"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_param_a</span></code></a> and
+<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_b"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_param_b</span></code></a>. This parametrization replaces prescribed standard
 deviation values over glacierized grid cells as defined by the <code class="variable docutils literal notranslate"><span class="pre">mask</span></code> variable (see
-<a class="reference internal" href="../manual/parameters/index.html#config-geometry.ice_free_thickness_standard"><code class="docutils literal notranslate"></code></a>). Default values for the slope <span class="math notranslate nohighlight">\(a\)</span> and
+<a class="reference internal" href="../manual/parameters/index.html#config-geometry.ice_free_thickness_standard"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_standard</span></code></a>). Default values for the slope <span class="math notranslate nohighlight">\(a\)</span> and
 intercept <span class="math notranslate nohighlight">\(b\)</span> were derived from the ERA-40 reanalysis over the Greenland ice sheet
-<span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id404"><span>142</span></a>]</span>.</p>
+<span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id404"><span>143</span></a>]</span>.</p>
 <p>The number of positive degree days is computed as the magnitude of the temperature
 excursion above <span class="math notranslate nohighlight">\(0\!\phantom{|}^\circ \text{C}\)</span> multiplied by the duration (in days)
 when it is above zero.</p>
 <p>In PISM there are two methods for computing the number of positive degree days. The first
-computes only the expected value, by the method described in <span id="id8">[<a class="reference internal" href="../zzz_references_html.html#id80"><span>139</span></a>]</span>. This is
+computes only the expected value, by the method described in <span id="id8">[<a class="reference internal" href="../zzz_references_html.html#id80"><span>140</span></a>]</span>. This is
 the default when a PDD is chosen (i.e. option <code class="option docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">pdd</span></code>). The second is a Monte
 Carlo simulation of the white noise itself, chosen by adding the option <code class="option docutils literal notranslate"><span class="pre">-pdd_method</span>
 <span class="pre">random_process</span></code>. This Monte Carlo simulation adds the same daily variation at every point,
@@ -267,27 +267,27 @@ desired use <code class="option docutils literal notranslate"><span class="pre">
 and ice, respectively; <span class="math notranslate nohighlight">\(\theta_{\text{refreeze}}\)</span> is the refreeze fraction.</span><a class="headerlink" href="#fig-pdd-model" title="Permalink to this image">¶</a></p>
 </div>
 <p>By default, the computation summarized in <a class="reference internal" href="#fig-pdd-model"><span class="std std-numref">Fig. 46</span></a> is performed every week.
-(This frequency is controlled by the parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.max_evals_per_year"><code class="docutils literal notranslate"></code></a>.)
+(This frequency is controlled by the parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.max_evals_per_year"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_evals_per_year</span></code></a>.)
 To compute mass balance during each week-long time-step, PISM keeps track of the current
 snow depth (using units of ice-equivalent thickness). This is necessary to determine if
 melt should be computed using the degree day factor for snow
-(<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_snow"><code class="docutils literal notranslate"></code></a>) or the corresponding factor for ice
-(<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_ice"><code class="docutils literal notranslate"></code></a>).</p>
-<p>A fraction of the melt controlled by the configuration parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze"><code class="docutils literal notranslate"></code></a>
+(<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_snow"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.factor_snow</span></code></a>) or the corresponding factor for ice
+(<a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_ice"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.factor_ice</span></code></a>).</p>
+<p>A fraction of the melt controlled by the configuration parameter <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.refreeze</span></code></a>
 (<span class="math notranslate nohighlight">\(\theta_{\text{refreeze}}\)</span> in <a class="reference internal" href="#fig-pdd-model"><span class="std std-numref">Fig. 46</span></a>, default: <span class="math notranslate nohighlight">\(0.6\)</span>)
 refreezes. The user can select whether melted ice should be allowed to refreeze using the
-configuration flag <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze_ice_melt"><code class="docutils literal notranslate"></code></a>.</p>
+configuration flag <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze_ice_melt"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.refreeze_ice_melt</span></code></a>.</p>
 <p>Since PISM does not have a principled firn model, the snow depth is set to zero at the
-beginning of the balance year. See <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.balance_year_start_day"><code class="docutils literal notranslate"></code></a>. Default is
+beginning of the balance year. See <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.balance_year_start_day"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.balance_year_start_day</span></code></a>. Default is
 <span class="math notranslate nohighlight">\(274\)</span>, corresponding to October 1<sup>st</sup>.</p>
 <p>Our PDD implementation is meant to be used with an atmosphere model implementing a cosine
 yearly cycle such as <code class="docutils literal notranslate"><span class="pre">searise_greenland</span></code> (section
 <a class="reference internal" href="atmosphere.html#sec-atmosphere-searise-greenland"><span class="std std-ref">SeaRISE-Greenland</span></a>), but it is not restricted to parameterizations
 like these.</p>
 <p>This code also implements latitude- and mean July temperature dependent ice and snow
-factors using formulas (6) and (7) in <span id="id9">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>131</span></a>]</span>; set <code class="option docutils literal notranslate"><span class="pre">-pdd_fausto</span></code> to enable.
+factors using formulas (6) and (7) in <span id="id9">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span>; set <code class="option docutils literal notranslate"><span class="pre">-pdd_fausto</span></code> to enable.
 The default standard deviation of the daily variability (option <code class="option docutils literal notranslate"><span class="pre">-pdd_std_dev</span></code>) is
-2.53 degrees when <code class="option docutils literal notranslate"><span class="pre">-pdd_fausto</span></code> is set <span id="id10">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>131</span></a>]</span>. See also configuration
+2.53 degrees when <code class="option docutils literal notranslate"><span class="pre">-pdd_fausto</span></code> is set <span id="id10">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span>. See also configuration
 parameters with the <code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto</span></code> prefix.</p>
 <p>Note that when used with periodic climate data (air temperature and precipitation) that is
 read from a file (see section <a class="reference internal" href="atmosphere.html#sec-atmosphere-given"><span class="std std-ref">Reading boundary conditions from a file</span></a>), use of
@@ -377,7 +377,7 @@ ice dynamics core.</p>
 using modeled changes in surface elevation relative to a reference elevation read from a
 file.</p>
 <p>The surface temperature is modified using an elevation lapse rate
-<span class="math notranslate nohighlight">\(\gamma_T =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.temperature_lapse_rate"><code class="docutils literal notranslate"></code></a>. Here</p>
+<span class="math notranslate nohighlight">\(\gamma_T =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.temperature_lapse_rate"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.temperature_lapse_rate</span></code></a>. Here</p>
 <div class="math notranslate nohighlight">
 \[\gamma_T = -\frac{dT}{dz}.\]</div>
 <p>Two methods of adjusting the SMB are available:</p>
@@ -385,9 +385,9 @@ file.</p>
 <li><p>Scaling using an exponential factor</p>
 <div class="math notranslate nohighlight">
 \[\mathrm{SMB} = \mathrm{SMB_{input}} \cdot \exp(C \cdot \Delta T),\]</div>
-<p>where <span class="math notranslate nohighlight">\(C =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.exp_factor"><code class="docutils literal notranslate"></code></a> and <span class="math notranslate nohighlight">\(\Delta T\)</span> is the
+<p>where <span class="math notranslate nohighlight">\(C =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.exp_factor"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.smb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.exp_factor</span></code></a> and <span class="math notranslate nohighlight">\(\Delta T\)</span> is the
 temperature difference produced by applying
-<a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.temperature_lapse_rate"><code class="docutils literal notranslate"></code></a>.</p>
+<a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.temperature_lapse_rate"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.temperature_lapse_rate</span></code></a>.</p>
 <p>This mechanisms increases the SMB by <span class="math notranslate nohighlight">\(100(\exp(C) - 1)\)</span> percent for each degree of
 temperature increase.</p>
 <p>To use this method, set <code class="option docutils literal notranslate"><span class="pre">-smb_adjustment</span> <span class="pre">scale</span></code>.</p>
@@ -395,7 +395,7 @@ temperature increase.</p>
 <li><p>Elevation lapse rate for the SMB</p>
 <div class="math notranslate nohighlight">
 \[\mathrm{SMB} = \mathrm{SMB_{input}} - \Delta h \cdot \gamma_M,\]</div>
-<p>where <span class="math notranslate nohighlight">\(\gamma_M =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.lapse_rate"><code class="docutils literal notranslate"></code></a> and <span class="math notranslate nohighlight">\(\Delta h\)</span> is the
+<p>where <span class="math notranslate nohighlight">\(\gamma_M =\)</span> <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.lapse_rate"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.smb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.lapse_rate</span></code></a> and <span class="math notranslate nohighlight">\(\Delta h\)</span> is the
 difference between modeled and reference surface elevations.</p>
 <p>To use this method, set <code class="option docutils literal notranslate"><span class="pre">-smb_adjustment</span> <span class="pre">shift</span></code>.</p>
 </li>
@@ -612,9 +612,9 @@ updates. PISM may take longer time-steps if the adaptive scheme allows it, thoug
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

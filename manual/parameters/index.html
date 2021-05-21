@@ -49,7 +49,7 @@ the parameter name. For example,</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-constants.standard_gravity 10
 </pre></div>
 </div>
-<p>sets the acceleration due to gravity (parameter <a class="reference internal" href="#config-constants.standard_gravity"><code class="docutils literal notranslate"></code></a>) to
+<p>sets the acceleration due to gravity (parameter <a class="reference internal" href="#config-constants.standard_gravity"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.standard_gravity</span></code></a>) to
 <span class="math notranslate nohighlight">\(10\)</span>. Options listed below are <em>shortcuts</em>, added for convenience.</p>
 <p>The following are equivalent and choose the temperature-based (as opposed to
 enthalpy-based) energy balance model:</p>
@@ -122,7 +122,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.anomaly.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.anomaly.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.anomaly.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.anomaly.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.anomaly</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -161,7 +161,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.delta_P.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.delta_P.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.delta_P.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.delta_P.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_P</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -200,7 +200,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.delta_T.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.delta_T.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.delta_T.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.delta_T.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_T</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -268,7 +268,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.elevation_change.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.elevation_change.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.elevation_change.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.elevation_change.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -294,7 +294,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.c_ma"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.c_ma</span></code></p>
-<p>latitude-dependence coefficient for formula (1) in <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>latitude-dependence coefficient for formula (1) in <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -304,7 +304,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.c_mj"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.c_mj</span></code></p>
-<p>latitude-dependence coefficient for formula (2) in <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>latitude-dependence coefficient for formula (2) in <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -314,7 +314,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.d_ma"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.d_ma</span></code></p>
-<p>41.83+273.15; base temperature for formula (1) in <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>41.83+273.15; base temperature for formula (1) in <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -324,7 +324,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.d_mj"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.d_mj</span></code></p>
-<p>= 14.70+273.15; base temperature for formula (2) in <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>= 14.70+273.15; base temperature for formula (2) in <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -334,7 +334,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.gamma_ma"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.gamma_ma</span></code></p>
-<p>= -6.309 / 1km; mean slope lapse rate for formula (1) in <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>= -6.309 / 1km; mean slope lapse rate for formula (1) in <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -344,7 +344,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.gamma_mj"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.gamma_mj</span></code></p>
-<p>= -5.426 / 1km; mean slope lapse rate for formula (2) in <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>= -5.426 / 1km; mean slope lapse rate for formula (2) in <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -354,7 +354,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.kappa_ma"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.kappa_ma</span></code></p>
-<p>longitude-dependence coefficient for formula (1) in <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>longitude-dependence coefficient for formula (1) in <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -364,7 +364,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.kappa_mj"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.kappa_mj</span></code></p>
-<p>longitude-dependence coefficient for formula (2) in <span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>longitude-dependence coefficient for formula (2) in <span id="id8">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -374,7 +374,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.fausto_air_temp.summer_peak_day"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.fausto_air_temp.summer_peak_day</span></code></p>
-<p>day of year for July 15; used in corrected formula (4) in <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>day of year for July 15; used in corrected formula (4) in <span id="id9">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -410,7 +410,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.frac_P.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.frac_P.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.frac_P.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.frac_P.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.frac_P</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -449,7 +449,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.given.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.given.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.given.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.given.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -755,7 +755,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.precip_scaling.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.precip_scaling.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.precip_scaling.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.precip_scaling.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.precip_scaling</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -837,7 +837,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-atmosphere.yearly_cycle.scaling.reference_year"></span><code class="docutils literal notranslate"><span class="pre">atmosphere.yearly_cycle.scaling.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.yearly_cycle.scaling.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-atmosphere.yearly_cycle.scaling.period"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.yearly_cycle</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.scaling</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -847,7 +847,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-basal_resistance.beta_ice_free_bedrock"></span><code class="docutils literal notranslate"><span class="pre">basal_resistance.beta_ice_free_bedrock</span></code></p>
-<p>value is for ice stream E from <span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id196"><span>132</span></a>]</span>; thus sliding velocity, but we hope it doesn’t matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress<dl class="field-list simple">
+<p>value is for ice stream E from <span id="id11">[<a class="reference internal" href="../../zzz_references_html.html#id196"><span>134</span></a>]</span>; thus sliding velocity, but we hope it doesn’t matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -932,7 +932,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-basal_resistance.regularized_coulomb.enabled"></span><code class="docutils literal notranslate"><span class="pre">basal_resistance.regularized_coulomb.enabled</span></code></p>
-<p>Use the regularized Coulomb till friction model (basal sliding law) as in equation (3) in <span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id459"><span>78</span></a>]</span><dl class="field-list simple">
+<p>Use the regularized Coulomb till friction model (basal sliding law) as in equation (3) in <span id="id13">[<a class="reference internal" href="../../zzz_references_html.html#id459"><span>83</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -1000,7 +1000,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-basal_yield_stress.mohr_coulomb.delta.file"></span><code class="docutils literal notranslate"><span class="pre">basal_yield_stress.mohr_coulomb.delta.file</span></code></p>
-<p>Name of the file containing space- and time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">mohr_coulomb_delta</span></code> to use instead of <a class="reference internal" href="#config-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Name of the file containing space- and time-dependent variable <code class="variable docutils literal notranslate"><span class="pre">mohr_coulomb_delta</span></code> to use instead of <a class="reference internal" href="#config-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.till_effective_fraction_overburden</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> string</dd>
 <dt class="field-even">Default value</dt>
@@ -1026,7 +1026,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-basal_yield_stress.mohr_coulomb.delta.reference_year"></span><code class="docutils literal notranslate"><span class="pre">basal_yield_stress.mohr_coulomb.delta.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-basal_yield_stress.mohr_coulomb.delta.period"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -1091,7 +1091,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water"></span><code class="docutils literal notranslate"><span class="pre">basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water</span></code></p>
-<p>If <a class="reference internal" href="#config-basal_yield_stress.add_transportable_water"><code class="docutils literal notranslate"></code></a> is set then the water amount in the transport system is added to <code class="variable docutils literal notranslate"><span class="pre">tillwat</span></code> in determining <code class="variable docutils literal notranslate"><span class="pre">tauc</span></code>.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.<dl class="field-list simple">
+<p>If <a class="reference internal" href="#config-basal_yield_stress.add_transportable_water"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.add_transportable_water</span></code></a> is set then the water amount in the transport system is added to <code class="variable docutils literal notranslate"><span class="pre">tillwat</span></code> in determining <code class="variable docutils literal notranslate"><span class="pre">tauc</span></code>.  Normally only the water in the till is used.  This factor multiplies the logarithm in that formula.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1268,7 +1268,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-bed_deformation.lc.grid_size_factor"></span><code class="docutils literal notranslate"><span class="pre">bed_deformation.lc.grid_size_factor</span></code></p>
-<p>The spectral grid size is <code class="docutils literal notranslate"><span class="pre">(Z*(grid.Mx</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span> <span class="pre">1,</span> <span class="pre">Z*(grid.My</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span> <span class="pre">1)</span></code> where <code class="docutils literal notranslate"><span class="pre">Z</span></code> is given by this parameter. See <span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>83</span></a>]</span>, <span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span>.<dl class="field-list simple">
+<p>The spectral grid size is <code class="docutils literal notranslate"><span class="pre">(Z*(grid.Mx</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span> <span class="pre">1,</span> <span class="pre">Z*(grid.My</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">+</span> <span class="pre">1)</span></code> where <code class="docutils literal notranslate"><span class="pre">Z</span></code> is given by this parameter. See <span id="id18">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>88</span></a>]</span>, <span id="id19">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -1288,7 +1288,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-bed_deformation.lithosphere_flexural_rigidity"></span><code class="docutils literal notranslate"><span class="pre">bed_deformation.lithosphere_flexural_rigidity</span></code></p>
-<p>lithosphere flexural rigidity used by the bed deformation model. See <span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>83</span></a>]</span>, <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
+<p>lithosphere flexural rigidity used by the bed deformation model. See <span id="id20">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>88</span></a>]</span>, <span id="id21">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1298,7 +1298,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-bed_deformation.mantle_density"></span><code class="docutils literal notranslate"><span class="pre">bed_deformation.mantle_density</span></code></p>
-<p>half-space (mantle) density used by the bed deformation model. See <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>83</span></a>]</span>, <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
+<p>half-space (mantle) density used by the bed deformation model. See <span id="id22">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>88</span></a>]</span>, <span id="id23">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1308,7 +1308,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-bed_deformation.mantle_viscosity"></span><code class="docutils literal notranslate"><span class="pre">bed_deformation.mantle_viscosity</span></code></p>
-<p>half-space (mantle) viscosity used by the bed deformation model. See <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>83</span></a>]</span>, <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
+<p>half-space (mantle) viscosity used by the bed deformation model. See <span id="id24">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>88</span></a>]</span>, <span id="id25">[<a class="reference internal" href="../../zzz_references_html.html#id38"><span>31</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1318,7 +1318,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-bed_deformation.model"></span><code class="docutils literal notranslate"><span class="pre">bed_deformation.model</span></code></p>
-<p>Selects a bed deformation model to use. <code class="docutils literal notranslate"><span class="pre">iso</span></code> is point-wise isostasy, <code class="docutils literal notranslate"><span class="pre">lc</span></code> is the Lingle-Clark model (see <span id="id26">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>83</span></a>]</span>, requires <a class="reference external" href="http://www.fftw.org/">FFTW</a>), <code class="docutils literal notranslate"><span class="pre">given</span></code> uses prescribed bed topography changes read from a file.<dl class="field-list simple">
+<p>Selects a bed deformation model to use. <code class="docutils literal notranslate"><span class="pre">iso</span></code> is point-wise isostasy, <code class="docutils literal notranslate"><span class="pre">lc</span></code> is the Lingle-Clark model (see <span id="id26">[<a class="reference internal" href="../../zzz_references_html.html#id266"><span>88</span></a>]</span>, requires <a class="reference external" href="http://www.fftw.org/">FFTW</a>), <code class="docutils literal notranslate"><span class="pre">given</span></code> uses prescribed bed topography changes read from a file.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> keyword</dd>
 <dt class="field-even">Default value</dt>
@@ -1440,7 +1440,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.eigen_calving.K"></span><code class="docutils literal notranslate"><span class="pre">calving.eigen_calving.K</span></code></p>
-<p>Set proportionality constant to determine calving rate from strain rates.  Note references <span id="id27">[<a class="reference internal" href="../../zzz_references_html.html#id262"><span>87</span></a>]</span>, <span id="id28">[<a class="reference internal" href="../../zzz_references_html.html#id287"><span>51</span></a>]</span> use K in range <span class="math notranslate nohighlight">\(10^{9}\)</span> to <span class="math notranslate nohighlight">\(3 \times 10^{11}\)</span> m a, that is, <span class="math notranslate nohighlight">\(3 \times 10^{16}\)</span> to <span class="math notranslate nohighlight">\(10^{19}\)</span> m s.<dl class="field-list simple">
+<p>Set proportionality constant to determine calving rate from strain rates.  Note references <span id="id27">[<a class="reference internal" href="../../zzz_references_html.html#id262"><span>91</span></a>]</span>, <span id="id28">[<a class="reference internal" href="../../zzz_references_html.html#id287"><span>51</span></a>]</span> use K in range <span class="math notranslate nohighlight">\(10^{9}\)</span> to <span class="math notranslate nohighlight">\(3 \times 10^{11}\)</span> m a, that is, <span class="math notranslate nohighlight">\(3 \times 10^{16}\)</span> to <span class="math notranslate nohighlight">\(10^{19}\)</span> m s.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1479,7 +1479,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.hayhurst_calving.B_tilde"></span><code class="docutils literal notranslate"><span class="pre">calving.hayhurst_calving.B_tilde</span></code></p>
-<p>Effective damage rate <span id="id29">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>92</span></a>]</span><dl class="field-list simple">
+<p>Effective damage rate <span id="id29">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>96</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1489,7 +1489,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.hayhurst_calving.exponent_r"></span><code class="docutils literal notranslate"><span class="pre">calving.hayhurst_calving.exponent_r</span></code></p>
-<p>Damage law exponent <span id="id30">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>92</span></a>]</span><dl class="field-list simple">
+<p>Damage law exponent <span id="id30">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>96</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1499,7 +1499,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.hayhurst_calving.sigma_threshold"></span><code class="docutils literal notranslate"><span class="pre">calving.hayhurst_calving.sigma_threshold</span></code></p>
-<p>Damage threshold stress <span id="id31">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>92</span></a>]</span><dl class="field-list simple">
+<p>Damage threshold stress <span id="id31">[<a class="reference internal" href="../../zzz_references_html.html#id13"><span>96</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1542,7 +1542,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.rate_scaling.reference_year"></span><code class="docutils literal notranslate"><span class="pre">calving.rate_scaling.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-calving.rate_scaling.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-calving.rate_scaling.period"><code class="docutils literal notranslate"><span class="pre">calving</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.rate_scaling</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -1604,7 +1604,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-calving.vonmises_calving.sigma_max"></span><code class="docutils literal notranslate"><span class="pre">calving.vonmises_calving.sigma_max</span></code></p>
-<p>Set maximum tensile stress.  Note references <span id="id32">[<a class="reference internal" href="../../zzz_references_html.html#id298"><span>91</span></a>]</span> use 1.0e6 Pa.<dl class="field-list simple">
+<p>Set maximum tensile stress.  Note references <span id="id32">[<a class="reference internal" href="../../zzz_references_html.html#id298"><span>95</span></a>]</span> use 1.0e6 Pa.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1653,7 +1653,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.fresh_water.latent_heat_of_fusion"></span><code class="docutils literal notranslate"><span class="pre">constants.fresh_water.latent_heat_of_fusion</span></code></p>
-<p>latent heat of fusion for water <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>72</span></a>]</span><dl class="field-list simple">
+<p>latent heat of fusion for water <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>77</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1673,7 +1673,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.fresh_water.specific_heat_capacity"></span><code class="docutils literal notranslate"><span class="pre">constants.fresh_water.specific_heat_capacity</span></code></p>
-<p>at melting point T_0 <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>72</span></a>]</span><dl class="field-list simple">
+<p>at melting point T_0 <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>77</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1683,7 +1683,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.global_ocean_area"></span><code class="docutils literal notranslate"><span class="pre">constants.global_ocean_area</span></code></p>
-<p>area of the global ocean <span id="id35">[<a class="reference internal" href="../../zzz_references_html.html#id89"><span>94</span></a>]</span><dl class="field-list simple">
+<p>area of the global ocean <span id="id35">[<a class="reference internal" href="../../zzz_references_html.html#id89"><span>98</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1693,7 +1693,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.ice.beta_Clausius_Clapeyron"></span><code class="docutils literal notranslate"><span class="pre">constants.ice.beta_Clausius_Clapeyron</span></code></p>
-<p>Clausius-Clapeyron constant relating melting temperature and pressure: <span class="math notranslate nohighlight">\(\beta = dT / dP\)</span> <span id="id36">[<a class="reference internal" href="../../zzz_references_html.html#id271"><span>133</span></a>]</span><dl class="field-list simple">
+<p>Clausius-Clapeyron constant relating melting temperature and pressure: <span class="math notranslate nohighlight">\(\beta = dT / dP\)</span> <span id="id36">[<a class="reference internal" href="../../zzz_references_html.html#id271"><span>135</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1713,7 +1713,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.ice.grain_size"></span><code class="docutils literal notranslate"><span class="pre">constants.ice.grain_size</span></code></p>
-<p>Default constant ice grain size to use with the Goldsby-Kohlstedt <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>67</span></a>]</span> flow law<dl class="field-list simple">
+<p>Default constant ice grain size to use with the Goldsby-Kohlstedt <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>65</span></a>]</span> flow law<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1819,7 +1819,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.bedrock_thermal.conductivity"></span><code class="docutils literal notranslate"><span class="pre">energy.bedrock_thermal.conductivity</span></code></p>
-<p>= W m-1 K-1; for bedrock used in thermal model <span id="id38">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span><dl class="field-list simple">
+<p>= W m-1 K-1; for bedrock used in thermal model <span id="id38">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1839,7 +1839,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.bedrock_thermal.file"></span><code class="docutils literal notranslate"><span class="pre">energy.bedrock_thermal.file</span></code></p>
-<p>Name of the file containing the geothermal flux field <code class="variable docutils literal notranslate"><span class="pre">bheatflx</span></code>. Leave empty to read it from the <a class="reference internal" href="#config-input.file"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Name of the file containing the geothermal flux field <code class="variable docutils literal notranslate"><span class="pre">bheatflx</span></code>. Leave empty to read it from the <a class="reference internal" href="#config-input.file"><code class="docutils literal notranslate"><span class="pre">input</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> string</dd>
 <dt class="field-even">Default value</dt>
@@ -1849,7 +1849,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.bedrock_thermal.specific_heat_capacity"></span><code class="docutils literal notranslate"><span class="pre">energy.bedrock_thermal.specific_heat_capacity</span></code></p>
-<p>for bedrock used in thermal model <span id="id39">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span><dl class="field-list simple">
+<p>for bedrock used in thermal model <span id="id39">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1949,7 +1949,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.margin_exclude_horizontal_advection"></span><code class="docutils literal notranslate"><span class="pre">energy.margin_exclude_horizontal_advection</span></code></p>
-<p>Exclude horizontal advection of energy at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Exclude horizontal advection of energy at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"><span class="pre">energy</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.margin_ice_thickness_limit</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -1959,7 +1959,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.margin_exclude_strain_heating"></span><code class="docutils literal notranslate"><span class="pre">energy.margin_exclude_strain_heating</span></code></p>
-<p>Exclude strain heating at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Exclude strain heating at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"><span class="pre">energy</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.margin_ice_thickness_limit</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -1969,7 +1969,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-energy.margin_exclude_vertical_advection"></span><code class="docutils literal notranslate"><span class="pre">energy.margin_exclude_vertical_advection</span></code></p>
-<p>Exclude vertical advection of energy at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Exclude vertical advection of energy at grid points near ice margins. See <a class="reference internal" href="#config-energy.margin_ice_thickness_limit"><code class="docutils literal notranslate"><span class="pre">energy</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.margin_ice_thickness_limit</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -2058,7 +2058,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.A"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.A</span></code></p>
-<p><span class="math notranslate nohighlight">\(A_{\text{Hooke}} = (1/B_0)^n\)</span> where n=3 and B_0 = 1.928 <span class="math notranslate nohighlight">\(a^{1/3}\)</span> Pa. See <span id="id45">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>69</span></a>]</span><dl class="field-list simple">
+<p><span class="math notranslate nohighlight">\(A_{\text{Hooke}} = (1/B_0)^n\)</span> where n=3 and B_0 = 1.928 <span class="math notranslate nohighlight">\(a^{1/3}\)</span> Pa. See <span id="id45">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2068,7 +2068,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.C"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.C</span></code></p>
-<p>See <span id="id46">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>69</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id46">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2078,7 +2078,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.Q"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.Q</span></code></p>
-<p>Activation energy, see <span id="id47">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>69</span></a>]</span><dl class="field-list simple">
+<p>Activation energy, see <span id="id47">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2088,7 +2088,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.Tr"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.Tr</span></code></p>
-<p>See <span id="id48">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>69</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id48">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2098,7 +2098,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.k"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.k</span></code></p>
-<p>See <span id="id49">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>69</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id49">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2377,7 +2377,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.discharge_given.reference_year"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.discharge_given.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.discharge_given.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.discharge_given.period"><code class="docutils literal notranslate"><span class="pre">frontal_melt</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.discharge_given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -2416,7 +2416,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.given.reference_year"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.given.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.given.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.given.period"><code class="docutils literal notranslate"><span class="pre">frontal_melt</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -2465,7 +2465,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.routing.parameter_a"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.routing.parameter_a</span></code></p>
-<p>parameter A in eqn. 1 in <span id="id60">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>parameter A in eqn. 1 in <span id="id60">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2475,7 +2475,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.routing.parameter_b"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.routing.parameter_b</span></code></p>
-<p>parameter B in eqn. 1 in <span id="id61">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>parameter B in eqn. 1 in <span id="id61">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2498,7 +2498,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.routing.power_alpha"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.routing.power_alpha</span></code></p>
-<p>exponent <span class="math notranslate nohighlight">\(\alpha\)</span> in eqn. 1 in <span id="id62">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>exponent <span class="math notranslate nohighlight">\(\alpha\)</span> in eqn. 1 in <span id="id62">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2508,7 +2508,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.routing.power_beta"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.routing.power_beta</span></code></p>
-<p>exponent <span class="math notranslate nohighlight">\(\beta\)</span> in eqn. 1 in <span id="id63">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>exponent <span class="math notranslate nohighlight">\(\beta\)</span> in eqn. 1 in <span id="id63">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2518,7 +2518,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-frontal_melt.routing.reference_year"></span><code class="docutils literal notranslate"><span class="pre">frontal_melt.routing.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.routing.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-frontal_melt.routing.period"><code class="docutils literal notranslate"><span class="pre">frontal_melt</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.routing</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -2554,7 +2554,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-geometry.front_retreat.prescribed.reference_year"></span><code class="docutils literal notranslate"><span class="pre">geometry.front_retreat.prescribed.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-geometry.front_retreat.prescribed.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-geometry.front_retreat.prescribed.period"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.front_retreat</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.prescribed</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -2675,7 +2675,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-grid.Lbz"></span><code class="docutils literal notranslate"><span class="pre">grid.Lbz</span></code></p>
-<p>Thickness of the thermal bedrock layer. (Inactive if <a class="reference internal" href="#config-grid.Mbz"><code class="docutils literal notranslate"></code></a> &lt; 2)<dl class="field-list simple">
+<p>Thickness of the thermal bedrock layer. (Inactive if <a class="reference internal" href="#config-grid.Mbz"><code class="docutils literal notranslate"><span class="pre">grid</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mbz</span></code></a> &lt; 2)<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -3131,7 +3131,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-hydrology.surface_input.reference_year"></span><code class="docutils literal notranslate"><span class="pre">hydrology.surface_input.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-hydrology.surface_input.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-hydrology.surface_input.period"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.surface_input</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3651,7 +3651,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.anomaly.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.anomaly.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.anomaly.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.anomaly.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.anomaly</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3723,7 +3723,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.delta_MBP.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.delta_MBP.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_MBP.period"><code class="docutils literal notranslate"></code></a> is active<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_MBP.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3759,7 +3759,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.delta_T.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.delta_T.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_T.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_T.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_T</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3798,7 +3798,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.delta_mass_flux.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.delta_mass_flux.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_mass_flux.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_mass_flux.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_mass_flux</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3837,7 +3837,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.delta_sl.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.delta_sl.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_sl.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_sl.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_sl</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3870,7 +3870,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.delta_sl_2d.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.delta_sl_2d.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_sl_2d.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.delta_sl_2d.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_sl_2d</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3906,7 +3906,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.frac_MBP.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.frac_MBP.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.frac_MBP.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.frac_MBP.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.frac_MBP</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3945,7 +3945,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.frac_mass_flux.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.frac_mass_flux.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.frac_mass_flux.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.frac_mass_flux.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.frac_mass_flux</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -3984,7 +3984,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.given.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.given.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.given.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.given.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -4111,7 +4111,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.pico.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.pico.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.pico.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.pico.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pico</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -4137,7 +4137,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.runoff_to_ocean_melt_b"></span><code class="docutils literal notranslate"><span class="pre">ocean.runoff_to_ocean_melt_b</span></code></p>
-<p>parameter B in eqn. 1 in <span id="id68">[<a class="reference internal" href="../../zzz_references_html.html#id26"><span>136</span></a>]</span><dl class="field-list simple">
+<p>parameter B in eqn. 1 in <span id="id68">[<a class="reference internal" href="../../zzz_references_html.html#id26"><span>138</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4147,7 +4147,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.runoff_to_ocean_melt_power_alpha"></span><code class="docutils literal notranslate"><span class="pre">ocean.runoff_to_ocean_melt_power_alpha</span></code></p>
-<p>exponent <span class="math notranslate nohighlight">\(\alpha\)</span> in eqn. 1 in <span id="id69">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>exponent <span class="math notranslate nohighlight">\(\alpha\)</span> in eqn. 1 in <span id="id69">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4157,7 +4157,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.runoff_to_ocean_melt_power_beta"></span><code class="docutils literal notranslate"><span class="pre">ocean.runoff_to_ocean_melt_power_beta</span></code></p>
-<p>exponent <span class="math notranslate nohighlight">\(\beta\)</span> in eqn. 1 in <span id="id70">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>135</span></a>]</span><dl class="field-list simple">
+<p>exponent <span class="math notranslate nohighlight">\(\beta\)</span> in eqn. 1 in <span id="id70">[<a class="reference internal" href="../../zzz_references_html.html#id457"><span>137</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4177,7 +4177,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.th.clip_salinity"></span><code class="docutils literal notranslate"><span class="pre">ocean.th.clip_salinity</span></code></p>
-<p>Clip shelf base salinity so that it is in the range [4, 40] k/kg. See <span id="id71">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>137</span></a>]</span>.<dl class="field-list simple">
+<p>Clip shelf base salinity so that it is in the range [4, 40] k/kg. See <span id="id71">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>139</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -4203,7 +4203,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.th.gamma_S"></span><code class="docutils literal notranslate"><span class="pre">ocean.th.gamma_S</span></code></p>
-<p>Turbulent salt transfer coefficient. See <span id="id72">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>137</span></a>]</span>.<dl class="field-list simple">
+<p>Turbulent salt transfer coefficient. See <span id="id72">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>139</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4216,7 +4216,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.th.gamma_T"></span><code class="docutils literal notranslate"><span class="pre">ocean.th.gamma_T</span></code></p>
-<p>Turbulent heat transfer coefficient. See <span id="id73">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>137</span></a>]</span>.<dl class="field-list simple">
+<p>Turbulent heat transfer coefficient. See <span id="id73">[<a class="reference internal" href="../../zzz_references_html.html#id190"><span>139</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4242,7 +4242,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-ocean.th.reference_year"></span><code class="docutils literal notranslate"><span class="pre">ocean.th.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-ocean.th.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-ocean.th.period"><code class="docutils literal notranslate"><span class="pre">ocean</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.th</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -4298,7 +4298,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.backup_size"></span><code class="docutils literal notranslate"><span class="pre">output.backup_size</span></code></p>
-<p>The “size” of a backup file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"></code></a><dl class="field-list simple">
+<p>The “size” of a backup file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big_2d</span></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big</span></code></a><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> keyword</dd>
 <dt class="field-even">Default value</dt>
@@ -4314,7 +4314,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.compression_level"></span><code class="docutils literal notranslate"><span class="pre">output.compression_level</span></code></p>
-<p>Compression level for 2D and 3D output variables (if supported by <a class="reference internal" href="#config-output.format"><code class="docutils literal notranslate"></code></a>)<dl class="field-list simple">
+<p>Compression level for 2D and 3D output variables (if supported by <a class="reference internal" href="#config-output.format"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.format</span></code></a>)<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -4553,7 +4553,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.size"></span><code class="docutils literal notranslate"><span class="pre">output.size</span></code></p>
-<p>The “size” of an output file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"></code></a><dl class="field-list simple">
+<p>The “size” of an output file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big_2d</span></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big</span></code></a><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> keyword</dd>
 <dt class="field-even">Default value</dt>
@@ -4569,7 +4569,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.sizes.big"></span><code class="docutils literal notranslate"><span class="pre">output.sizes.big</span></code></p>
-<p>Comma-separated list of variables to write to the output (in addition to <code class="docutils literal notranslate"><span class="pre">model_state</span></code> variables and variables listed in <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a> and <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"></code></a>) if <code class="docutils literal notranslate"><span class="pre">big</span></code> output size is selected. Does not include fields written by sub-models.<dl class="field-list simple">
+<p>Comma-separated list of variables to write to the output (in addition to <code class="docutils literal notranslate"><span class="pre">model_state</span></code> variables and variables listed in <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a> and <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big_2d</span></code></a>) if <code class="docutils literal notranslate"><span class="pre">big</span></code> output size is selected. Does not include fields written by sub-models.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> string</dd>
 <dt class="field-even">Default value</dt>
@@ -4579,7 +4579,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.sizes.big_2d"></span><code class="docutils literal notranslate"><span class="pre">output.sizes.big_2d</span></code></p>
-<p>Comma-separated list of variables to write to the output (in addition to <code class="docutils literal notranslate"><span class="pre">model_state</span></code> variables and variables listed in <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a>) if <code class="docutils literal notranslate"><span class="pre">big_2d</span></code> output size is selected. Does not include fields written by boundary models.<dl class="field-list simple">
+<p>Comma-separated list of variables to write to the output (in addition to <code class="docutils literal notranslate"><span class="pre">model_state</span></code> variables and variables listed in <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a>) if <code class="docutils literal notranslate"><span class="pre">big_2d</span></code> output size is selected. Does not include fields written by boundary models.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> string</dd>
 <dt class="field-even">Default value</dt>
@@ -4612,7 +4612,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-output.snapshot.size"></span><code class="docutils literal notranslate"><span class="pre">output.snapshot.size</span></code></p>
-<p>The “size” of a snapshot file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"></code></a><dl class="field-list simple">
+<p>The “size” of a snapshot file. See parameters <a class="reference internal" href="#config-output.sizes.medium"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.medium</span></code></a>, <a class="reference internal" href="#config-output.sizes.big_2d"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big_2d</span></code></a>, <a class="reference internal" href="#config-output.sizes.big"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sizes</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.big</span></code></a><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> keyword</dd>
 <dt class="field-even">Default value</dt>
@@ -4883,7 +4883,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.calving_front_stress_bc"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.calving_front_stress_bc</span></code></p>
-<p>Apply CFBC condition as in <span id="id75">[<a class="reference internal" href="../../zzz_references_html.html#id22"><span>86</span></a>]</span>, <span id="id76">[<a class="reference internal" href="../../zzz_references_html.html#id454"><span>16</span></a>]</span>.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in <span id="id77">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>.<dl class="field-list simple">
+<p>Apply CFBC condition as in <span id="id75">[<a class="reference internal" href="../../zzz_references_html.html#id22"><span>90</span></a>]</span>, <span id="id76">[<a class="reference internal" href="../../zzz_references_html.html#id454"><span>16</span></a>]</span>.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in <span id="id77">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -4945,7 +4945,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.bed_smoother.range"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.bed_smoother.range</span></code></p>
-<p>half-width of smoothing domain for stressbalance::BedSmoother, in implementing <span id="id78">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>85</span></a>]</span> bed roughness parameterization for SIA; set value to zero to turn off mechanism<dl class="field-list simple">
+<p>half-width of smoothing domain for <code class="docutils literal notranslate"><span class="pre">stressbalance::BedSmoother</span></code>, in implementing the bed roughness parameterization for SIA <span id="id78">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>64</span></a>]</span>; set to zero to disable<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4958,7 +4958,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.bed_smoother.theta_min"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.bed_smoother.theta_min</span></code></p>
-<p>minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in <span id="id79">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>85</span></a>]</span> bed roughness parameterization for SIA<dl class="field-list simple">
+<p>minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in the bed roughness parameterization for SIA <span id="id79">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>64</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5023,7 +5023,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.grain_size_age_coupling"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.grain_size_age_coupling</span></code></p>
-<p>Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt <span id="id81">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>67</span></a>]</span> flow law<dl class="field-list simple">
+<p>Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt <span id="id81">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>65</span></a>]</span> flow law<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5036,7 +5036,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.limit_diffusivity"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.limit_diffusivity</span></code></p>
-<p>Limit SIA diffusivity by <a class="reference internal" href="#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Limit SIA diffusivity by <a class="reference internal" href="#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_diffusivity</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5124,7 +5124,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.epsilon"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.epsilon</span></code></p>
-<p>Initial amount of regularization in computation of product of effective viscosity and thickness (<span class="math notranslate nohighlight">\(\nu H\)</span>).  This default value for <span class="math notranslate nohighlight">\(\nu H\)</span> comes e.g. from a hardness for the Ross ice shelf (<span class="math notranslate nohighlight">\(\bar B\)</span>) = 1.9e8 Pa <span class="math notranslate nohighlight">\(s^{1/3}\)</span> <span id="id82">[<a class="reference internal" href="../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span> = 9.49e+14 Pa s ~ 30 MPa year, the value in <span id="id83">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>138</span></a>]</span>, but with a tiny thickness <span class="math notranslate nohighlight">\(H\)</span> of about 1 cm.<dl class="field-list simple">
+<p>Initial amount of regularization in computation of product of effective viscosity and thickness (<span class="math notranslate nohighlight">\(\nu H\)</span>).  This default value for <span class="math notranslate nohighlight">\(\nu H\)</span> comes e.g. from a hardness for the Ross ice shelf (<span class="math notranslate nohighlight">\(\bar B\)</span>) = 1.9e8 Pa <span class="math notranslate nohighlight">\(s^{1/3}\)</span> <span id="id82">[<a class="reference internal" href="../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span> = 9.49e+14 Pa s ~ 30 MPa year, the value in <span id="id83">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>62</span></a>]</span>, but with a tiny thickness <span class="math notranslate nohighlight">\(H\)</span> of about 1 cm.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5173,7 +5173,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.lateral_drag.enabled"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.lateral_drag.enabled</span></code></p>
-<p>set viscosity at ice shelf margin next to ice free bedrock as friction parameterization<dl class="field-list simple">
+<p>Set viscosity at ice shelf margin next to ice free bedrock as friction parameterization<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5183,7 +5183,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.lateral_drag.viscosity"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.lateral_drag.viscosity</span></code></p>
-<p>Staggered Viscosity used as side friction parameterization.<dl class="field-list simple">
+<p>Staggered viscosity used as side friction parameterization.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5196,7 +5196,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.max_iterations"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.max_iterations</span></code></p>
-<p>Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object<dl class="field-list simple">
+<p>Maximum number of Picard iterations for the ice viscosity computation, in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> object<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5209,7 +5209,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.max_speed"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.max_speed</span></code></p>
-<p>Upper bound for the ice speed computed by the SSAFD solver.<dl class="field-list simple">
+<p>Upper bound for the ice speed computed by the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> solver.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5235,7 +5235,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.relative_convergence"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.relative_convergence</span></code></p>
-<p>Relative change tolerance for the effective viscosity in the SSAFD object<dl class="field-list simple">
+<p>Relative change tolerance for the effective viscosity in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> object<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5248,7 +5248,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.fd.replace_zero_diagonal_entries"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.fd.replace_zero_diagonal_entries</span></code></p>
-<p>Replace zero diagonal entries in the SSAFD matrix with :config:’basal_resistance.beta_ice_free_bedrock’ to avoid solver failures.<dl class="field-list simple">
+<p>Replace zero diagonal entries in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> matrix with :config:’basal_resistance.beta_ice_free_bedrock’ to avoid solver failures.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5303,7 +5303,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.ssa.strength_extension.constant_nu"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.ssa.strength_extension.constant_nu</span></code></p>
-<p>The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 <span class="math notranslate nohighlight">\(Pa s^{1/3}\)</span> <span id="id84">[<a class="reference internal" href="../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 year-1:  <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span>.  Compare the value of 9.45e14 Pa s = 30 MPa year in <span id="id85">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>138</span></a>]</span>.<dl class="field-list simple">
+<p>The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 <span class="math notranslate nohighlight">\(Pa s^{1/3}\)</span> <span id="id84">[<a class="reference internal" href="../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 year-1:  <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span>.  Compare the value of 9.45e14 Pa s = 30 MPa year in <span id="id85">[<a class="reference internal" href="../../zzz_references_html.html#id370"><span>62</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5339,7 +5339,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.weertman_sliding.A"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.weertman_sliding.A</span></code></p>
-<p>Sliding parameter in the Weertman-style sliding parameterization <span id="id86">[<a class="reference internal" href="../../zzz_references_html.html#id422"><span>66</span></a>]</span><dl class="field-list simple">
+<p>Sliding parameter in the Weertman-style sliding parameterization <span id="id86">[<a class="reference internal" href="../../zzz_references_html.html#id422"><span>63</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5385,7 +5385,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.anomaly.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.anomaly.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.anomaly.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.anomaly.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.anomaly</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5434,7 +5434,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.delta_T.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.delta_T.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.delta_T.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.delta_T.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta_T</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5473,7 +5473,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.elevation_change.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.elevation_change.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.elevation_change.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.elevation_change.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5554,7 +5554,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.force_to_thickness.ice_free_alpha_factor"></span><code class="docutils literal notranslate"><span class="pre">surface.force_to_thickness.ice_free_alpha_factor</span></code></p>
-<p><a class="reference internal" href="#config-surface.force_to_thickness.alpha"><code class="docutils literal notranslate"></code></a> is multiplied by this factor in areas that are ice-free according to the target ice thickness and <a class="reference internal" href="#config-surface.force_to_thickness.ice_free_thickness_threshold"><code class="docutils literal notranslate"></code></a><dl class="field-list simple">
+<p><a class="reference internal" href="#config-surface.force_to_thickness.alpha"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.force_to_thickness</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.alpha</span></code></a> is multiplied by this factor in areas that are ice-free according to the target ice thickness and <a class="reference internal" href="#config-surface.force_to_thickness.ice_free_thickness_threshold"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.force_to_thickness</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_threshold</span></code></a><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5567,7 +5567,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.force_to_thickness.ice_free_thickness_threshold"></span><code class="docutils literal notranslate"><span class="pre">surface.force_to_thickness.ice_free_thickness_threshold</span></code></p>
-<p>threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use <a class="reference internal" href="#config-surface.force_to_thickness.ice_free_alpha_factor"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use <a class="reference internal" href="#config-surface.force_to_thickness.ice_free_alpha_factor"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.force_to_thickness</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_alpha_factor</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5629,7 +5629,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.given.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.given.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.given.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.given.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.given</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5691,7 +5691,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.ismip6.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.ismip6.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.ismip6.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.ismip6.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ismip6</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5714,7 +5714,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.air_temp_all_precip_as_rain"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.air_temp_all_precip_as_rain</span></code></p>
-<p>threshold temperature above which all precipitation is rain; must exceed <a class="reference internal" href="#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"></code></a> to avoid division by zero, because difference is in a denominator<dl class="field-list simple">
+<p>threshold temperature above which all precipitation is rain; must exceed <a class="reference internal" href="#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.air_temp_all_precip_as_snow</span></code></a> to avoid division by zero, because difference is in a denominator<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5744,7 +5744,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.factor_ice"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.factor_ice</span></code></p>
-<p>EISMINT-Greenland value <span id="id87">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span>; = (8 mm liquid-water-equivalent) / (pos degree day)<dl class="field-list simple">
+<p>EISMINT-Greenland value <span id="id87">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span>; = (8 mm liquid-water-equivalent) / (pos degree day)<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5754,7 +5754,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.factor_snow"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.factor_snow</span></code></p>
-<p>EISMINT-Greenland value <span id="id88">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span>; = (3 mm liquid-water-equivalent) / (pos degree day)<dl class="field-list simple">
+<p>EISMINT-Greenland value <span id="id88">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span>; = (3 mm liquid-water-equivalent) / (pos degree day)<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5764,7 +5764,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.T_c"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.T_c</span></code></p>
-<p>= -1 + 273.15; for formula (6) in <span id="id89">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>= -1 + 273.15; for formula (6) in <span id="id89">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5774,7 +5774,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.T_w"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.T_w</span></code></p>
-<p>= 10 + 273.15; for formula (6) in <span id="id90">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>= 10 + 273.15; for formula (6) in <span id="id90">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5784,7 +5784,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.beta_ice_c"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.beta_ice_c</span></code></p>
-<p>water-equivalent thickness; for formula (6) in <span id="id91">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>water-equivalent thickness; for formula (6) in <span id="id91">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5794,7 +5794,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.beta_ice_w"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.beta_ice_w</span></code></p>
-<p>water-equivalent thickness; for formula (6) in <span id="id92">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>water-equivalent thickness; for formula (6) in <span id="id92">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5804,7 +5804,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.beta_snow_c"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.beta_snow_c</span></code></p>
-<p>water-equivalent thickness; for formula (6) in <span id="id93">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>water-equivalent thickness; for formula (6) in <span id="id93">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5814,7 +5814,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.beta_snow_w"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.beta_snow_w</span></code></p>
-<p>water-equivalent thickness; for formula (6) in <span id="id94">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>water-equivalent thickness; for formula (6) in <span id="id94">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5824,7 +5824,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.enabled"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.enabled</span></code></p>
-<p>Set PDD parameters using formulas (6) and (7) in <span id="id95">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>Set PDD parameters using formulas (6) and (7) in <span id="id95">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5837,7 +5837,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.fausto.latitude_beta_w"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.fausto.latitude_beta_w</span></code></p>
-<p>latitude below which to use warm case, in formula (6) in <span id="id96">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>131</span></a>]</span><dl class="field-list simple">
+<p>latitude below which to use warm case, in formula (6) in <span id="id96">[<a class="reference internal" href="../../zzz_references_html.html#id118"><span>133</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5880,7 +5880,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.max_evals_per_year"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.max_evals_per_year</span></code></p>
-<p>maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also <a class="reference internal" href="#config-surface.pdd.std_dev"><code class="docutils literal notranslate"></code></a><dl class="field-list simple">
+<p>maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also <a class="reference internal" href="#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code></a><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5916,7 +5916,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.refreeze"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.refreeze</span></code></p>
-<p>EISMINT-Greenland value <span id="id97">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span><dl class="field-list simple">
+<p>EISMINT-Greenland value <span id="id97">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5926,7 +5926,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.refreeze_ice_melt"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.refreeze_ice_melt</span></code></p>
-<p>If set to “yes”, refreeze <a class="reference internal" href="#config-surface.pdd.refreeze"><code class="docutils literal notranslate"></code></a> fraction of melted ice, otherwise all of the melted ice runs off.<dl class="field-list simple">
+<p>If set to “yes”, refreeze <a class="reference internal" href="#config-surface.pdd.refreeze"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.refreeze</span></code></a> fraction of melted ice, otherwise all of the melted ice runs off.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5936,7 +5936,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev</span></code></p>
-<p>std dev of daily temp variation; = EISMINT-Greenland value <span id="id98">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>134</span></a>]</span><dl class="field-list simple">
+<p>std dev of daily temp variation; = EISMINT-Greenland value <span id="id98">[<a class="reference internal" href="../../zzz_references_html.html#id368"><span>136</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5972,7 +5972,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev.reference_year"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev.reference_year</span></code></p>
-<p>Reference year to use when <a class="reference internal" href="#config-surface.pdd.std_dev.period"><code class="docutils literal notranslate"></code></a> is active.<dl class="field-list simple">
+<p>Reference year to use when <a class="reference internal" href="#config-surface.pdd.std_dev.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> integer</dd>
 <dt class="field-even">Default value</dt>
@@ -5985,7 +5985,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev_lapse_lat_base"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev_lapse_lat_base</span></code></p>
-<p>std_dev is a function of latitude, with value <a class="reference internal" href="#config-surface.pdd.std_dev"><code class="docutils literal notranslate"></code></a> at this latitude; this value only active if <a class="reference internal" href="#config-surface.pdd.std_dev_lapse_lat_rate"><code class="docutils literal notranslate"></code></a> is nonzero<dl class="field-list simple">
+<p>std_dev is a function of latitude, with value <a class="reference internal" href="#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code></a> at this latitude; this value only active if <a class="reference internal" href="#config-surface.pdd.std_dev_lapse_lat_rate"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_lapse_lat_rate</span></code></a> is nonzero<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6005,7 +6005,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev_param_a"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev_param_a</span></code></p>
-<p>Parameter <span class="math notranslate nohighlight">\(a\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"></code></a> is set to yes.<dl class="field-list simple">
+<p>Parameter <span class="math notranslate nohighlight">\(a\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_use_param</span></code></a> is set to yes.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6015,7 +6015,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev_param_b"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev_param_b</span></code></p>
-<p>Parameter <span class="math notranslate nohighlight">\(b\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"></code></a> is set to yes.<dl class="field-list simple">
+<p>Parameter <span class="math notranslate nohighlight">\(b\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_use_param</span></code></a> is set to yes.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6025,7 +6025,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-surface.pdd.std_dev_use_param"></span><code class="docutils literal notranslate"><span class="pre">surface.pdd.std_dev_use_param</span></code></p>
-<p>Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by <a class="reference internal" href="#config-geometry.ice_free_thickness_standard"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by <a class="reference internal" href="#config-geometry.ice_free_thickness_standard"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_standard</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -6081,7 +6081,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.eemian_end"></span><code class="docutils literal notranslate"><span class="pre">time.eemian_end</span></code></p>
-<p>End of the Eemian interglacial period. See <span id="id99">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>75</span></a>]</span>.<dl class="field-list simple">
+<p>End of the Eemian interglacial period. See <span id="id99">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6091,7 +6091,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.eemian_start"></span><code class="docutils literal notranslate"><span class="pre">time.eemian_start</span></code></p>
-<p>Start of the Eemian interglacial period. See <span id="id100">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>75</span></a>]</span>.<dl class="field-list simple">
+<p>Start of the Eemian interglacial period. See <span id="id100">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6101,7 +6101,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.holocene_start"></span><code class="docutils literal notranslate"><span class="pre">time.holocene_start</span></code></p>
-<p>Start of the Holocene interglacial period. See <span id="id101">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>75</span></a>]</span>.<dl class="field-list simple">
+<p>Start of the Holocene interglacial period. See <span id="id101">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6167,7 +6167,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time_stepping.hit_extra_times"></span><code class="docutils literal notranslate"><span class="pre">time_stepping.hit_extra_times</span></code></p>
-<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.extra.times"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.extra.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.extra</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -6193,7 +6193,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time_stepping.hit_save_times"></span><code class="docutils literal notranslate"><span class="pre">time_stepping.hit_save_times</span></code></p>
-<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.snapshot.times"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.snapshot.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.snapshot</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -6206,7 +6206,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time_stepping.hit_ts_times"></span><code class="docutils literal notranslate"><span class="pre">time_stepping.hit_ts_times</span></code></p>
-<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.timeseries.times"><code class="docutils literal notranslate"></code></a>.<dl class="field-list simple">
+<p>Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="#config-output.timeseries.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.timeseries</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -6332,9 +6332,9 @@ removed in a later PISM version.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

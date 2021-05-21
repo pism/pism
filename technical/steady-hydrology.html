@@ -36,15 +36,15 @@
 <span id="sec-steady-hydro"></span><h1>Computing steady-state subglacial water flux<a class="headerlink" href="#computing-steady-state-subglacial-water-flux" title="Permalink to this headline">¶</a></h1>
 <p>The “routing” subglacial hydrology model is described by equations</p>
 <div class="math notranslate nohighlight" id="equation-eq-hydrology-routing">
-<span class="eqno">(57)<a class="headerlink" href="#equation-eq-hydrology-routing" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{W}{t} + \diff{\Wtill}{t} + \Div \bq = \frac{m}{\rho_w}\\\diff{\Wtill}{t} = \frac{m}{\rho_w} - C_d\\\bq = -k W^{\alpha} |\nabla \psi|^{\beta - 2} \nabla \psi\\\psi = P_o + \rho_w g (b + W)\end{aligned}\end{align} \]</div>
+<span class="eqno">(59)<a class="headerlink" href="#equation-eq-hydrology-routing" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{W}{t} + \diff{\Wtill}{t} + \Div \bq = \frac{m}{\rho_w}\\\diff{\Wtill}{t} = \frac{m}{\rho_w} - C_d\\\bq = -k W^{\alpha} |\nabla \psi|^{\beta - 2} \nabla \psi\\\psi = P_o + \rho_w g (b + W)\end{aligned}\end{align} \]</div>
 <p>on a an ice covered area <span class="math notranslate nohighlight">\(\Omega\)</span>. We assume zero flux boundary conditions on the inflow
 part of the boundary and no boundary condition on the outflow boundary. See
-<span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id74"><span>79</span></a>]</span> (equations 1, 2, 6, 16, 26) for details and the notation. Here
+<span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id74"><span>84</span></a>]</span> (equations 1, 2, 6, 16, 26) for details and the notation. Here
 we also assume that <span class="math notranslate nohighlight">\(m \ge 0\)</span>.</p>
 <p>Our goal is to estimate <span class="math notranslate nohighlight">\(Q = \bq \cdot \n\)</span>, the flux through the outflow part of the
-boundary of <span class="math notranslate nohighlight">\(\Omega\)</span> corresponding to the steady state of <a class="reference internal" href="#equation-eq-hydrology-routing">(57)</a> using
+boundary of <span class="math notranslate nohighlight">\(\Omega\)</span> corresponding to the steady state of <a class="reference internal" href="#equation-eq-hydrology-routing">(59)</a> using
 a method that is computationally cheaper than using the explicit in time approximation
-of <a class="reference internal" href="#equation-eq-hydrology-routing">(57)</a> described by <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id74"><span>79</span></a>]</span>.</p>
+of <a class="reference internal" href="#equation-eq-hydrology-routing">(59)</a> described by <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id74"><span>84</span></a>]</span>.</p>
 <p>Pick a contiguous section <span class="math notranslate nohighlight">\(\omega\)</span> of <span class="math notranslate nohighlight">\(\partial \Omega\)</span> (the terminus of an outlet
 glacier, for example). Let <span class="math notranslate nohighlight">\(B\)</span> be the union of all the trajectories of the vector field
 <span class="math notranslate nohighlight">\(\bq\)</span> in <span class="math notranslate nohighlight">\(\Omega\)</span> that pass through <span class="math notranslate nohighlight">\(\omega\)</span>. The area <span class="math notranslate nohighlight">\(B\)</span> is the “drainage basin”
@@ -61,19 +61,19 @@ boundary is orthogonal to <span class="math notranslate nohighlight">\(\bq\)</sp
 <p>Therefore <span class="math notranslate nohighlight">\(\bq \cdot \n = 0\)</span> on <span class="math notranslate nohighlight">\(\gamma\)</span> and</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\oint_{\partial B} \bq \cdot \n\; ds &amp;= \int_{\omega} \bq \cdot \n\; ds + \int_{\gamma} \bq \cdot \n\; ds\\&amp;= \int_{\omega} \bq \cdot \n ds.\end{aligned}\end{align} \]</div>
-<p>Assuming the steady state (and setting time derivatives in <a class="reference internal" href="#equation-eq-hydrology-routing">(57)</a> to
+<p>Assuming the steady state (and setting time derivatives in <a class="reference internal" href="#equation-eq-hydrology-routing">(59)</a> to
 zero), integrating over <span class="math notranslate nohighlight">\(B\)</span>, and applying the divergence theorem gives</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-1">
-<span class="eqno">(58)<a class="headerlink" href="#equation-eq-steady-hydro-1" title="Permalink to this equation">¶</a></span>\[\int_{\omega} \bq \cdot \n\; ds = \int_{B} \frac{m}{\rho_w},\]</div>
+<span class="eqno">(60)<a class="headerlink" href="#equation-eq-steady-hydro-1" title="Permalink to this equation">¶</a></span>\[\int_{\omega} \bq \cdot \n\; ds = \int_{B} \frac{m}{\rho_w},\]</div>
 <p>i.e. <em>in a steady state the flux through a terminus is equal to the total rate at which
 water is added to the corresponding drainage basin due to the source term</em>.</p>
 <p>Next, consider a related initial boundary value problem</p>
 <div class="math notranslate nohighlight" id="equation-eq-emptying-problem">
-<span class="eqno">(59)<a class="headerlink" href="#equation-eq-emptying-problem" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
+<span class="eqno">(61)<a class="headerlink" href="#equation-eq-emptying-problem" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
 <p>on <span class="math notranslate nohighlight">\(B\)</span> with <span class="math notranslate nohighlight">\(u(x, y, 0) = u_0(x, y)\)</span> (<span class="math notranslate nohighlight">\(u_0 \ge 0\)</span>), <span class="math notranslate nohighlight">\(\V = -k(x, y) \nabla \psi\)</span>, zero flux
 on the inflow boundary, and no boundary condition on the outflow boundary.</p>
 <p>Here <span class="math notranslate nohighlight">\(\psi\)</span> is the hydraulic potential corresponding to the steady state of
-<a class="reference internal" href="#equation-eq-hydrology-routing">(57)</a> and <span class="math notranslate nohighlight">\(k(x, y)\)</span> is a strictly positive but otherwise arbitrary
+<a class="reference internal" href="#equation-eq-hydrology-routing">(59)</a> and <span class="math notranslate nohighlight">\(k(x, y)\)</span> is a strictly positive but otherwise arbitrary
 conductivity function.</p>
 <p>Note that since <span class="math notranslate nohighlight">\(\psi\)</span> is a steady state hydraulic potential all trajectories of the
 vector field <span class="math notranslate nohighlight">\(\V\)</span> leave <span class="math notranslate nohighlight">\(B\)</span> and for <span class="math notranslate nohighlight">\(\epsilon &gt; 0\)</span> there is a time <span class="math notranslate nohighlight">\(T &gt; 0\)</span> such that</p>
@@ -89,14 +89,14 @@ vector field <span class="math notranslate nohighlight">\(\V\)</span> leave <spa
 \[ \begin{align}\begin{aligned}\int_B u_0 &amp;= \int_B u(T) + \int_B \int_0^T \Div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_B \Div (\V u)\\&amp;= \epsilon \int_B u_0 + \int_0^T \oint_{\partial B} (\V u) \cdot \n\\&amp;= \epsilon \int_B u_0 + \int_0^T \int_{\omega} (\V u) \cdot \n.\end{aligned}\end{align} \]</div>
 <p>Finally,</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-2">
-<span class="eqno">(60)<a class="headerlink" href="#equation-eq-steady-hydro-2" title="Permalink to this equation">¶</a></span>\[\int_B u_0 = \frac{1}{1 - \epsilon} \int_0^T \int_{\omega} (\V u) \cdot \n\]</div>
-<p>Combining <a class="reference internal" href="#equation-eq-steady-hydro-1">(58)</a> and <a class="reference internal" href="#equation-eq-steady-hydro-2">(60)</a> and choosing <span class="math notranslate nohighlight">\(u_0 = \tau m\,
+<span class="eqno">(62)<a class="headerlink" href="#equation-eq-steady-hydro-2" title="Permalink to this equation">¶</a></span>\[\int_B u_0 = \frac{1}{1 - \epsilon} \int_0^T \int_{\omega} (\V u) \cdot \n\]</div>
+<p>Combining <a class="reference internal" href="#equation-eq-steady-hydro-1">(60)</a> and <a class="reference internal" href="#equation-eq-steady-hydro-2">(62)</a> and choosing <span class="math notranslate nohighlight">\(u_0 = \tau m\,
 /\, \rho_w\)</span> for some <span class="math notranslate nohighlight">\(\tau &gt; 0\)</span><a class="footnote-reference brackets" href="#id4" id="id3">1</a> gives us a way to estimate the flux through the
 outflow boundary <em>if we know the direction of the steady state flux</em>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-3">
-<span class="eqno">(61)<a class="headerlink" href="#equation-eq-steady-hydro-3" title="Permalink to this equation">¶</a></span>\[\int_{\omega} \bq \cdot \n\; ds = \frac{1}{\tau(1 - \epsilon)} \int_0^T \int_{\omega} (\V u) \cdot \n\; ds.\]</div>
-<p>Here the right hand side of <a class="reference internal" href="#equation-eq-steady-hydro-3">(61)</a> can be estimated by advancing an
-explicit-in-time approximation of <a class="reference internal" href="#equation-eq-emptying-problem">(59)</a> until <span class="math notranslate nohighlight">\(\int_B u\)</span> drops below
+<span class="eqno">(63)<a class="headerlink" href="#equation-eq-steady-hydro-3" title="Permalink to this equation">¶</a></span>\[\int_{\omega} \bq \cdot \n\; ds = \frac{1}{\tau(1 - \epsilon)} \int_0^T \int_{\omega} (\V u) \cdot \n\; ds.\]</div>
+<p>Here the right hand side of <a class="reference internal" href="#equation-eq-steady-hydro-3">(63)</a> can be estimated by advancing an
+explicit-in-time approximation of <a class="reference internal" href="#equation-eq-emptying-problem">(61)</a> until <span class="math notranslate nohighlight">\(\int_B u\)</span> drops below
 a chosen threshold.</p>
 <p>However, the direction of the steady state flux <span class="math notranslate nohighlight">\(\bq\)</span> depends on steady state
 distributions of <span class="math notranslate nohighlight">\(W\)</span> and <span class="math notranslate nohighlight">\(\Wtill\)</span> and these quantities are expensive to compute.</p>
@@ -118,11 +118,11 @@ plus a small increment <span class="math notranslate nohighlight">\(\Delta \psi\
 </ol>
 <p>Next, note that it is not necessary to identify the drainage basin <span class="math notranslate nohighlight">\(B\)</span> for a terminus
 <span class="math notranslate nohighlight">\(\omega\)</span>: it is defined by <span class="math notranslate nohighlight">\(\psi\)</span> and therefore an approximation of
-<a class="reference internal" href="#equation-eq-emptying-problem">(59)</a> will automatically distribute water inputs from the ice surface
+<a class="reference internal" href="#equation-eq-emptying-problem">(61)</a> will automatically distribute water inputs from the ice surface
 (or melting) along the ice margin.</p>
 <div class="section" id="the-algorithm">
 <span id="sec-steady-hydro-algorithm"></span><h2>The algorithm<a class="headerlink" href="#the-algorithm" title="Permalink to this headline">¶</a></h2>
-<p>Using an explicit time stepping approximation of <a class="reference internal" href="#equation-eq-emptying-problem">(59)</a> we can estimate
+<p>Using an explicit time stepping approximation of <a class="reference internal" href="#equation-eq-emptying-problem">(61)</a> we can estimate
 <span class="math notranslate nohighlight">\(\int_{\omega} \bq \cdot \n \; ds\)</span> as follows.</p>
 <ol class="arabic">
 <li><p>Given ice thickness <span class="math notranslate nohighlight">\(H\)</span> and bed elevation <span class="math notranslate nohighlight">\(b\)</span> compute <span class="math notranslate nohighlight">\(\tilde \psi\)</span> by filling “dips”
@@ -233,9 +233,9 @@ as described above.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2353-gbb6e0106f
+      Git revision v1.0-2364-g99af66609
       committed by Constantine Khrulev
-      on 2021-05-14 16:49:26 -0800 |
+      on 2021-05-21 13:46:01 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
