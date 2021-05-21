@@ -578,6 +578,21 @@ example, the following would use MUMPS_ on the coarse grid:
 
 *if* PETSc is built with MUMPS_.
 
+.. note::
+
+   Parallel direct solvers such as MUMPS really benefit from using optimized BLAS and
+   LAPACK libraries.
+
+   Please see section 3.5.3 of :cite:`petsc-user-ref` for instructions. At the time of
+   writing
+
+   .. code-block:: bash
+
+      --download-f2cblaslapack --download-blis
+
+   is recommended as a portable high-performance option. However, it makes sense to try
+   other freely-available libraries (Intel MKL, OpenBLAS) as well.
+
 Note, though, that the multigrid preconditioner, even if it is effective in terms of
 reducing the number of Krylov iterations, may not be the cheapest one :cite:`Tezaur2015b`:
 there is a trade off between the number of iterations and the cost of a single iteration.
