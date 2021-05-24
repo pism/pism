@@ -27,5 +27,5 @@ mark_as_advanced(PISM_DEBIAN_PACKAGE_LIST)
 set(DOCKER_USERNAME "ckhrulev" CACHE STRING "Docker user name to use when building images")
 mark_as_advanced(DOCKER_USERNAME)
 
-add_subdirectory(ubuntu)
+add_subdirectory(ubuntu-ci)
 add_subdirectory(archlinux)
