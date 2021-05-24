@@ -898,14 +898,14 @@ netcdf pism_config {
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "Kelvin";
 
     pism_config:flow_law.Hooke.A = 4.42165e-9;
-    pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and B_0 = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
+    pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and `B_0` = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
     pism_config:flow_law.Hooke.A_type = "number";
     pism_config:flow_law.Hooke.A_units = "Pascal-3 second-1";
 
     pism_config:flow_law.Hooke.C = 0.16612;
     pism_config:flow_law.Hooke.C_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.C_type = "number";
-    pism_config:flow_law.Hooke.C_units = "Kelvin^{flow_law.Hooke.k}";
+    pism_config:flow_law.Hooke.C_units = "Kelvin^k";
 
     pism_config:flow_law.Hooke.Q = 7.88e4;
     pism_config:flow_law.Hooke.Q_doc = "Activation energy, see :cite:`Hooke`";
@@ -923,22 +923,22 @@ netcdf pism_config {
     pism_config:flow_law.Hooke.k_units = "pure number";
 
     pism_config:flow_law.Paterson_Budd.A_cold = 3.61e-13;
-    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd A_cold, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd `A_\\text{cold}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_cold_type = "number";
     pism_config:flow_law.Paterson_Budd.A_cold_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.A_warm = 1.73e3;
-    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd A_warm, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd `A_\\text{warm}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_warm_type = "number";
     pism_config:flow_law.Paterson_Budd.A_warm_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.Q_cold = 6.0e4;
-    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd Q_cold, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd `Q_\\text{cold}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_cold_type = "number";
     pism_config:flow_law.Paterson_Budd.Q_cold_units = "Joule / mol";
 
     pism_config:flow_law.Paterson_Budd.Q_warm = 13.9e4;
-    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd Q_warm, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd `Q_\\text{warm}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_warm_type = "number";
     pism_config:flow_law.Paterson_Budd.Q_warm_units = "Joule / mol";
 
@@ -968,7 +968,7 @@ netcdf pism_config {
     pism_config:flow_law.gpbld.water_frac_observed_limit_units = "1";
 
     pism_config:flow_law.isothermal_Glen.ice_softness = 3.1689e-24;
-    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by IsothermalGlenIce :cite:`EISMINT96`";
+    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by the isothermal Glen flow law :cite:`EISMINT96`";
     pism_config:flow_law.isothermal_Glen.ice_softness_type = "number";
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
@@ -2166,7 +2166,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
     pism_config:stress_balance.sia.bed_smoother.range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for ``stressbalance::BedSmoother``, in implementing the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`; set to zero to disable";
+    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain in the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`; set to zero to disable";
     pism_config:stress_balance.sia.bed_smoother.range_option = "bed_smoother_range";
     pism_config:stress_balance.sia.bed_smoother.range_type = "number";
     pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
