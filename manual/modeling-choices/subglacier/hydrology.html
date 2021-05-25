@@ -36,7 +36,7 @@
 <span id="sec-subhydro"></span><h1>Subglacial hydrology<a class="headerlink" href="#subglacial-hydrology" title="Permalink to this headline">¶</a></h1>
 <p>At the present time, two simple subglacial hydrology models are implemented <em>and
 documented</em> in PISM, namely <code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">null</span></code> (and its modification <code class="docutils literal notranslate"><span class="pre">steady</span></code>) and
-<code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">routing</span></code>; see <a class="reference internal" href="#tab-hydrologychoice"><span class="std std-numref">Table 18</span></a> and <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id74"><span>84</span></a>]</span>.
+<code class="docutils literal notranslate"><span class="pre">-hydrology</span> <span class="pre">routing</span></code>; see <a class="reference internal" href="#tab-hydrologychoice"><span class="std std-numref">Table 15</span></a> and <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id74"><span>84</span></a>]</span>.
 In both models, some of the water in the subglacial layer is stored locally in a layer of
 subglacial till by the hydrology model. In the <code class="docutils literal notranslate"><span class="pre">routing</span></code> model water is conserved by
 horizontally-transporting the excess water (namely <code class="docutils literal notranslate"><span class="pre">bwat</span></code>) according to the gradient of
@@ -52,7 +52,7 @@ for mass accounting, even though <code class="docutils literal notranslate"><spa
 <a class="reference internal" href="../../practical-usage/mass-conservation.html#sec-mass-conservation-hydrology"><span class="std std-ref">Mass accounting in subglacial hydrology models</span></a> for details.</p>
 </div>
 <table class="colwidths-given docutils align-default" id="tab-hydrologychoice">
-<caption><span class="caption-number">Table 18 </span><span class="caption-text">Command-line options to choose the hydrology model</span><a class="headerlink" href="#tab-hydrologychoice" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 15 </span><span class="caption-text">Command-line options to choose the hydrology model</span><a class="headerlink" href="#tab-hydrologychoice" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 29%" />
 <col style="width: 71%" />
@@ -82,7 +82,7 @@ and <code class="docutils literal notranslate"><span class="pre">tillwat</span><
 </tr>
 </tbody>
 </table>
-<p>See <a class="reference internal" href="#tab-hydrology"><span class="std std-numref">Table 19</span></a> for options which apply to all hydrology models. Note
+<p>See <a class="reference internal" href="#tab-hydrology"><span class="std std-numref">Table 16</span></a> for options which apply to all hydrology models. Note
 that the primary water source for these models is the energy conservation model which
 computes the basal melt rate <code class="docutils literal notranslate"><span class="pre">basal_melt_rate_grounded</span></code>. There is, however, also option
 <code class="option docutils literal notranslate"><span class="pre">-hydrology_input_to_bed_file</span></code> which allows the user to <em>add</em> water directly into the
@@ -97,7 +97,7 @@ thereby effectively decoupling the hydrology model from the ice dynamics
 using computed melt and the assumption that a fraction of this melt re-freezes, all other
 models assume that all melt turns into runoff.)</p>
 <table class="colwidths-given docutils align-default" id="tab-hydrology">
-<caption><span class="caption-number">Table 19 </span><span class="caption-text">Subglacial hydrology command-line options which apply to all hydrology models</span><a class="headerlink" href="#tab-hydrology" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 16 </span><span class="caption-text">Subglacial hydrology command-line options which apply to all hydrology models</span><a class="headerlink" href="#tab-hydrology" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 50%" />
 <col style="width: 50%" />
@@ -137,7 +137,7 @@ amount. The water is not conserved in the sense that water above the
 <p>In particular, denoting <code class="docutils literal notranslate"><span class="pre">tillwat</span></code> by <span class="math notranslate nohighlight">\(W_{till}\)</span>, the till-stored water layer effective
 thickness evolves by the simple equation</p>
 <div class="math notranslate nohighlight" id="equation-eq-tillwatevolve">
-<span class="eqno">(20)<a class="headerlink" href="#equation-eq-tillwatevolve" title="Permalink to this equation">¶</a></span>\[\frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\]</div>
+<span class="eqno">(23)<a class="headerlink" href="#equation-eq-tillwatevolve" title="Permalink to this equation">¶</a></span>\[\frac{\partial W_{till}}{\partial t} = \frac{m}{\rho_w} - C\]</div>
 <p>where <span class="math notranslate nohighlight">\(m=\)</span> <code class="variable docutils literal notranslate"><span class="pre">basal_melt_rate_grounded</span></code> (kg <span class="math notranslate nohighlight">\(\text{m}^{-2}\,\text{s}^{-1}\)</span>), <span class="math notranslate nohighlight">\(\rho_w\)</span>
 is the density of fresh water, and <span class="math notranslate nohighlight">\(C\)</span> <code class="variable docutils literal notranslate"><span class="pre">hydrology_tillwat_decay_rate</span></code>. At all times
 bounds <span class="math notranslate nohighlight">\(0 \le W_{till} \le W_{till}^{max}\)</span> are satisfied.</p>
@@ -158,7 +158,7 @@ problem that is computationally cheaper to solve, compared to using the mass con
 <code class="docutils literal notranslate"><span class="pre">routing</span></code> model (at least at high grid resolutions).</p>
 <p>We solve</p>
 <div class="math notranslate nohighlight" id="equation-eq-steady-hydro-aux">
-<span class="eqno">(21)<a class="headerlink" href="#equation-eq-steady-hydro-aux" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
+<span class="eqno">(24)<a class="headerlink" href="#equation-eq-steady-hydro-aux" title="Permalink to this equation">¶</a></span>\[\diff{u}{t} = -\Div (\V u)\]</div>
 <p>on the grounded part of the domain with the initial state <span class="math notranslate nohighlight">\(u_0 = \tau M\)</span>, where <span class="math notranslate nohighlight">\(\tau\)</span> is
 the scaling of the input rate (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.input_rate_scaling"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.input_rate_scaling</span></code></a>) and <span class="math notranslate nohighlight">\(M\)</span> is
 the input rate read from an input file.</p>
@@ -182,7 +182,7 @@ potential, filling any “lakes” it might have. This modification of <span cla
 using an iterative process; set <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_n_iterations"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.potential_n_iterations</span></code></a> to
 control the maximum number of iterations and <a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.potential_delta"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.potential_delta</span></code></a> to
 affect the amount it is adjusted by at each iteration.</p>
-<p>The equation <a class="reference internal" href="#equation-eq-steady-hydro-aux">(21)</a> is advanced forward in time until <span class="math notranslate nohighlight">\(\int_{\Omega}u
+<p>The equation <a class="reference internal" href="#equation-eq-steady-hydro-aux">(24)</a> is advanced forward in time until <span class="math notranslate nohighlight">\(\int_{\Omega}u
 &lt; \epsilon\int_{\Omega} u_0\)</span>, where <span class="math notranslate nohighlight">\(\epsilon\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.steady.volume_ratio"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.steady</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.volume_ratio</span></code></a>)
 is a fraction controlling the accuracy of the approximation: lower values of <span class="math notranslate nohighlight">\(\epsilon\)</span>
 would result in a better approximation and a higher computational cost (more iterations).
@@ -207,19 +207,19 @@ In the <code class="docutils literal notranslate"><span class="pre">routing</spa
 subglacial water is at the overburden pressure <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id409"><span>86</span></a>]</span>. Ultimately the
 transportable water will reach the ice sheet grounding line or ice-free-land margin, at
 which point it will be lost. The amount that is lost this way is reported to the user.</p>
-<p>In this model <code class="docutils literal notranslate"><span class="pre">tillwat</span></code> also evolves by equation <a class="reference internal" href="#equation-eq-tillwatevolve">(20)</a>, but several
+<p>In this model <code class="docutils literal notranslate"><span class="pre">tillwat</span></code> also evolves by equation <a class="reference internal" href="#equation-eq-tillwatevolve">(23)</a>, but several
 additional parameters are used in determining how the transportable water <code class="docutils literal notranslate"><span class="pre">bwat</span></code> flows
-in the model; see <a class="reference internal" href="#tab-hydrologyrouting"><span class="std std-numref">Table 20</span></a>. Specifically, the horizontal
+in the model; see <a class="reference internal" href="#tab-hydrologyrouting"><span class="std std-numref">Table 17</span></a>. Specifically, the horizontal
 subglacial water flux is determined by a generalized Darcy flux relation <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id86"><span>17</span></a>]</span>,
 <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id399"><span>87</span></a>]</span></p>
 <div class="math notranslate nohighlight" id="equation-eq-flux">
-<span class="eqno">(22)<a class="headerlink" href="#equation-eq-flux" title="Permalink to this equation">¶</a></span>\[\bq = - k\, W^\alpha\, |\nabla \psi|^{\beta-2} \nabla \psi\]</div>
+<span class="eqno">(25)<a class="headerlink" href="#equation-eq-flux" title="Permalink to this equation">¶</a></span>\[\bq = - k\, W^\alpha\, |\nabla \psi|^{\beta-2} \nabla \psi\]</div>
 <p>where <span class="math notranslate nohighlight">\(\bq\)</span> is the lateral water flux, <span class="math notranslate nohighlight">\(W=\)</span> <code class="docutils literal notranslate"><span class="pre">bwat</span></code> is the effective thickness of the
 layer of transportable water, <span class="math notranslate nohighlight">\(\psi\)</span> is the hydraulic potential, and <span class="math notranslate nohighlight">\(k\)</span>, <span class="math notranslate nohighlight">\(\alpha\)</span>,
-<span class="math notranslate nohighlight">\(\beta\)</span> are controllable parameters (<a class="reference internal" href="#tab-hydrologyrouting"><span class="std std-numref">Table 20</span></a>).</p>
+<span class="math notranslate nohighlight">\(\beta\)</span> are controllable parameters (<a class="reference internal" href="#tab-hydrologyrouting"><span class="std std-numref">Table 17</span></a>).</p>
 <p>In the <code class="docutils literal notranslate"><span class="pre">routing</span></code> model the hydraulic potential <span class="math notranslate nohighlight">\(\psi\)</span> is determined by</p>
 <div class="math notranslate nohighlight" id="equation-eq-hydraulicpotential">
-<span class="eqno">(23)<a class="headerlink" href="#equation-eq-hydraulicpotential" title="Permalink to this equation">¶</a></span>\[\psi = P_o + \rho_w g (b + W)\]</div>
+<span class="eqno">(26)<a class="headerlink" href="#equation-eq-hydraulicpotential" title="Permalink to this equation">¶</a></span>\[\psi = P_o + \rho_w g (b + W)\]</div>
 <p>where <span class="math notranslate nohighlight">\(P_o=\rho_i g H\)</span> is the ice overburden pressure, <span class="math notranslate nohighlight">\(g\)</span> is gravity, <span class="math notranslate nohighlight">\(\rho_i\)</span> is ice
 density, <span class="math notranslate nohighlight">\(\rho_w\)</span> is fresh water density, <span class="math notranslate nohighlight">\(H\)</span> is ice thickness, and <span class="math notranslate nohighlight">\(b\)</span> is the bedrock
 elevation.</p>
@@ -233,7 +233,7 @@ start with short runs of order a few model years. We also recommend <code class=
 <code class="docutils literal notranslate"><span class="pre">hourly</span></code> reporting for scalar and spatially-distributed time-series to see hydrology
 model behavior, especially on fine grids (e.g. <span class="math notranslate nohighlight">\(&lt; 1\)</span> km).</p>
 <table class="colwidths-given docutils align-default" id="tab-hydrologyrouting">
-<caption><span class="caption-number">Table 20 </span><span class="caption-text">Command-line options specific to hydrology model <code class="docutils literal notranslate"><span class="pre">routing</span></code></span><a class="headerlink" href="#tab-hydrologyrouting" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 17 </span><span class="caption-text">Command-line options specific to hydrology model <code class="docutils literal notranslate"><span class="pre">routing</span></code></span><a class="headerlink" href="#tab-hydrologyrouting" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 56%" />
 <col style="width: 44%" />
@@ -245,17 +245,17 @@ model behavior, especially on fine grids (e.g. <span class="math notranslate noh
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-hydrology_hydraulic_conductivity</span></code> <span class="math notranslate nohighlight">\(k\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(=k\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(22)</a>.</p></td>
+<td><p><span class="math notranslate nohighlight">\(=k\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(25)</a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-hydrology_null_strip</span></code> (km)</p></td>
 <td><p>In the boundary strip water is removed and this is reported. This option specifies
 the width of this strip, which should typically be one or two grid cells.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-hydrology_gradient_power_in_flux</span></code> <span class="math notranslate nohighlight">\(\beta\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(=\beta\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(22)</a>.</p></td>
+<td><p><span class="math notranslate nohighlight">\(=\beta\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(25)</a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-hydrology_thickness_power_in_flux</span></code> <span class="math notranslate nohighlight">\(\alpha\)</span></p></td>
-<td><p><span class="math notranslate nohighlight">\(=\alpha\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(22)</a>.</p></td>
+<td><p><span class="math notranslate nohighlight">\(=\alpha\)</span> in formula <a class="reference internal" href="#equation-eq-flux">(25)</a>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -346,9 +346,9 @@ the width of this strip, which should typically be one or two grid cells.</p></t
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

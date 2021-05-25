@@ -1,0 +1,253 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shallow ice approximation (SIA) &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Weertman-style sliding law" href="weertman.html" />
+    <link rel="prev" title="Shallow shelf approximation (SSA)" href="ssa.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+<div class="documentwrapper">
+  <div class="bodywrapper">
+    <div class="body" role="main">
+      
+  <div class="section" id="shallow-ice-approximation-sia">
+<span id="sec-sia"></span><h1>Shallow ice approximation (SIA)<a class="headerlink" href="#shallow-ice-approximation-sia" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The explicit time stepping of the mass continuity equation in the case of the SIA flow
+comes with a severe restriction on time step length:</p>
+<div class="math notranslate nohighlight" id="equation-eq-sia-max-dt">
+<span class="eqno">(4)<a class="headerlink" href="#equation-eq-sia-max-dt" title="Permalink to this equation">¶</a></span>\[\Delta t \le \frac{2 R}{D\left( 1/\Delta x^2 + 1/\Delta y^2 \right)}\]</div>
+<p>Here <span class="math notranslate nohighlight">\(D\)</span> is the maximum diffusivity of the SIA flow and <span class="math notranslate nohighlight">\(R\)</span> is
+<a class="reference internal" href="../../parameters/index.html#config-time_stepping.adaptive_ratio"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.adaptive_ratio</span></code></a>, a tuning parameter that further reduces the
+maximum allowed time step length.</p>
+<p>The maximum diffusivity <span class="math notranslate nohighlight">\(D\)</span> may be achieved at an isolated grid point near the ice
+margin. In this case it might make sense to limit the diffusivity of the SIA flow,
+sacrificing accuracy at a few grid points to increase time step length and reduce the
+computational cost. Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.limit_diffusivity</span></code></a> to enable this
+mechanism.</p>
+<p>When <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.limit_diffusivity</span></code></a> is <code class="docutils literal notranslate"><span class="pre">false</span></code> PISM stops as soon as
+the SIA diffusivity at any grid point exceeds
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_diffusivity</span></code></a>. We do this to make it easier to detect
+problematic model configurations: in many cases it does not make sense to continue a
+simulation if <span class="math notranslate nohighlight">\(D\)</span> is very large.</p>
+</div>
+<div class="section" id="surface-gradient-method">
+<span id="sec-sia-gradient"></span><h2>Surface gradient method<a class="headerlink" href="#surface-gradient-method" title="Permalink to this headline">¶</a></h2>
+<p>PISM computes surface gradients to determine the “driving stress”</p>
+<div class="math notranslate nohighlight">
+\[(\tau_{d,x},\tau_{d,y}) = - \rho g H \nabla h,\]</div>
+<p>where <span class="math notranslate nohighlight">\(H\)</span> is the ice thickness, and <span class="math notranslate nohighlight">\(h\)</span> is the ice surface elevation.</p>
+<p>In the SIA model surface gradients at <em>staggered</em> grid locations are computed using one of
+the following three finite-difference approximations (selected using
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.surface_gradient_method"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.surface_gradient_method</span></code></a>):</p>
+<ol class="arabic">
+<li><p><code class="docutils literal notranslate"><span class="pre">mahaffy</span></code>: This most “standard” way computes the surface slope onto the staggered
+grid for the SIA <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id282"><span>63</span></a>]</span>. It makes <span class="math notranslate nohighlight">\(O(\Delta x^2,\Delta y^2)\)</span> errors.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">haseloff</span></code>: This is the default method. It only differs from <code class="docutils literal notranslate"><span class="pre">mahaffy</span></code> at
+ice-margin locations, where the slope is approximated using one-sided finite
+differences in cases where an adjacent ice-free bedrock surface elevation is above the
+ice elevation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eta</span></code>: In this method we first transform the thickness <span class="math notranslate nohighlight">\(H\)</span> by <span class="math notranslate nohighlight">\(\eta = H^{(2n+2)/n}\)</span>
+and then differentiate the sum of the thickness and the bed using centered differences:</p>
+<div class="math notranslate nohighlight">
+\[\nabla h = \nabla H + \nabla b = \frac{n}{(2n+2)}
+\eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.\]</div>
+<p>Here <span class="math notranslate nohighlight">\(b\)</span> is the bed elevation, <span class="math notranslate nohighlight">\(h\)</span> is the surface elevation, and <span class="math notranslate nohighlight">\(n\)</span> is the Glen
+exponent. This transformation sometimes has the benefits that the surface values of the
+horizontal velocity and vertical velocity, and the driving stress, are better behaved
+near the margin. See <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id37"><span>57</span></a>]</span> for technical explanation of this transformation and
+compare <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id381"><span>64</span></a>]</span>. The actual finite difference schemes applied to compute
+the surface slope are similar to option <code class="docutils literal notranslate"><span class="pre">mahaffy</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method may improve the model performance near <em>grounded</em> margins but
+should not be used in simulations of marine ice sheets.</p>
+</div>
+</li>
+</ol>
+<p>To the best of our knowledge there is no theoretical advice on the best, most robust
+mechanism.</p>
+</div>
+<div class="section" id="parameterization-of-bed-roughness">
+<span id="sec-bedsmooth"></span><h2>Parameterization of bed roughness<a class="headerlink" href="#parameterization-of-bed-roughness" title="Permalink to this headline">¶</a></h2>
+<p>Schoof <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>65</span></a>]</span> describes how to alter the SIA stress balance to model
+ice flow over bumpy bedrock topgraphy. One computes the amount by which bumpy topography
+lowers the SIA diffusivity. An internal quantity used in this method is a smoothed version
+of the bedrock topography. As a practical matter for PISM, this theory improves the SIA’s
+ability to handle bed roughness because it parameterizes the effects of “higher-order”
+stresses which act on the ice as it flows over bumps. For additional technical description
+of PISM’s implementation, see <a class="reference internal" href="../../../technical/bed_roughness.html#sec-bed-roughness"><span class="std std-ref">Using Schoof’s parameterized bed roughness technique in PISM</span></a>.</p>
+<p>There are two associated parameters:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.bed_smoother.range"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.bed_smoother</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.range</span></code></a> gives the half-width of the square
+smoothing domain in meters. If zero is given then the mechanism is turned off. The
+mechanism is on by default using executable <code class="docutils literal notranslate"><span class="pre">pismr</span></code>, with the half-width set to 5 km,
+giving Schoof’s recommended smoothing size of 10 km <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>65</span></a>]</span>.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.bed_smoother.theta_min"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.bed_smoother</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.theta_min</span></code></a> is the minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in
+the parameterization.</p></li>
+</ul>
+<p>This mechanism is turned off by default in executables <code class="docutils literal notranslate"><span class="pre">pisms</span></code> and <code class="docutils literal notranslate"><span class="pre">pismv</span></code>.</p>
+<p>Under the default <a class="reference internal" href="../../parameters/index.html#config-output.size"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.size</span></code></a> (<code class="docutils literal notranslate"><span class="pre">medium</span></code>), PISM writes fields <code class="variable docutils literal notranslate"><span class="pre">topgsmooth</span></code>
+and <code class="variable docutils literal notranslate"><span class="pre">schoofs_theta</span></code> from this mechanism. The thickness relative to the smoothed
+bedrock elevation, namely <code class="variable docutils literal notranslate"><span class="pre">topgsmooth</span></code>, is the difference between the unsmoothed
+surface elevation and the smoothed bedrock elevation. It is <em>only used internally by this
+mechanism</em>, to compute a modified value of the diffusivity; the rest of PISM does not use
+this or any other smoothed bed. The field <code class="variable docutils literal notranslate"><span class="pre">schoofs_theta</span></code> is a number <span class="math notranslate nohighlight">\(\theta\)</span>
+between <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.bed_smoother.theta_min"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.bed_smoother</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.theta_min</span></code></a> (usually zero) and <span class="math notranslate nohighlight">\(1\)</span>, with
+values significantly below one indicating a reduction in diffusivity, essentially a drag
+coefficient, from bumpy bed.</p>
+</div>
+<div class="section" id="coupling-to-the-age-of-the-ice">
+<span id="sec-sia-age-coupling"></span><h2>Coupling to the age of the ice<a class="headerlink" href="#coupling-to-the-age-of-the-ice" title="Permalink to this headline">¶</a></h2>
+<p>The age of the ice can be used in two parameterizations in the SIA stress balance model:</p>
+<ol class="arabic">
+<li><p>Ice grain size parameterization based on data from <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id98"><span>66</span></a>]</span> and
+<span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id268"><span>67</span></a>]</span> (Vostok core data). In PISM, only the Goldsby-Kohlstedt flow law
+(see <a class="reference internal" href="rheology.html#sec-rheology"><span class="std std-ref">Ice rheology</span></a>) uses the grain size.</p>
+<p>Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.grain_size_age_coupling"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.grain_size_age_coupling</span></code></a> to enable this parameterization.</p>
+</li>
+<li><p>The flow enhancement factor can be coupled to the age of the ice as in
+<span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id153"><span>68</span></a>]</span>: <span class="math notranslate nohighlight">\(e\)</span> in <a class="reference internal" href="rheology.html#equation-eq-sia-enhancement">(12)</a> is set to</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor_interglacial"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enhancement_factor_interglacial</span></code></a> during Eemian and Holocene,</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enhancement_factor</span></code></a> otherwise.</p></li>
+</ul>
+<p>See <a class="reference internal" href="../../parameters/index.html#config-time.eemian_start"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.eemian_start</span></code></a>, <a class="reference internal" href="../../parameters/index.html#config-time.eemian_end"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.eemian_end</span></code></a>, and
+<a class="reference internal" href="../../parameters/index.html#config-time.holocene_start"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.holocene_start</span></code></a>.</p>
+<p>Set <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.e_age_coupling"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.e_age_coupling</span></code></a> to enable this parameterization.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="parameters">
+<span id="sec-sia-parameters"></span><h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.Glen_exponent"><code class="docutils literal notranslate"><span class="pre">Glen_exponent</span></code></a> (3) Glen exponent in ice flow law for SIA</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.bed_smoother.range"><code class="docutils literal notranslate"><span class="pre">bed_smoother</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.range</span></code></a> (5000<em> meters</em>) half-width of smoothing domain in the bed roughness parameterization for SIA <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>65</span></a>]</span>; set to zero to disable</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.bed_smoother.theta_min"><code class="docutils literal notranslate"><span class="pre">bed_smoother</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.theta_min</span></code></a> (0) minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in the bed roughness parameterization for SIA <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id398"><span>65</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.e_age_coupling"><code class="docutils literal notranslate"><span class="pre">e_age_coupling</span></code></a> (no) Couple the SIA enhancement factor to age as in <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id149"><span>43</span></a>]</span>.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">enhancement_factor</span></code></a> (1) Flow enhancement factor for SIA</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor_interglacial"><code class="docutils literal notranslate"><span class="pre">enhancement_factor_interglacial</span></code></a> (1) Flow enhancement factor for SIA; used for ice accumulated during interglacial periods.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.flow_law"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code></a> (<code class="docutils literal notranslate"><span class="pre">gpbld</span></code>) The SIA flow law.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.grain_size_age_coupling"><code class="docutils literal notranslate"><span class="pre">grain_size_age_coupling</span></code></a> (no) Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id140"><span>69</span></a>]</span> flow law</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.limit_diffusivity"><code class="docutils literal notranslate"><span class="pre">limit_diffusivity</span></code></a> (no) Limit SIA diffusivity by <a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_diffusivity</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.max_diffusivity"><code class="docutils literal notranslate"><span class="pre">max_diffusivity</span></code></a> (100<em> m2 s-1</em>) Maximum allowed diffusivity of the SIA flow. PISM stops with an error message if the SIA diffusivity exceeds this limit.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.surface_gradient_method"><code class="docutils literal notranslate"><span class="pre">surface_gradient_method</span></code></a> (<code class="docutils literal notranslate"><span class="pre">haseloff</span></code>) method used for surface gradient calculation at staggered grid points</p></li>
+</ol>
+</div>
+</div>
+
+
+      <hr>
+      <table style="width: 100%">
+        <tr>
+          <td style="text-align: left; width: 30%">
+              <a class="reference internal" href="ssa.html">Previous</a>
+          </td>
+          <td style="text-align: center; width: 30%">
+              <a class="reference internal" href="stress-balance.html">Up</a>
+          </td>
+          <td style="text-align: right; width: 30%">
+              <a class="reference internal" href="weertman.html">Next</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/pism-logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/index.html">Installing PISM</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">PISM User’s Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../std-greenland/index.html">Getting started: a Greenland ice sheet example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../highlevelview/index.html">Ice dynamics, the PISM view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initialization/index.html">Initialization and bootstrapping</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Modeling choices</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../computational/index.html">Model domain, grid, and time</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Ice dynamics and thermodynamics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../subglacier/index.html">The subglacier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../marine/index.html">Marine ice sheet modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../regional/index.html">Modeling individual outlet glaciers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../disabling.html">Disabling sub-models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hard-choices.html">Dealing with more difficult modeling choices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../practical-usage/index.html">Practical usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simplified-geometry/index.html">Simplified geometry experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../verification/index.html">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../validation/index.html">Validation case studies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../jakobshavn/index.html">Example: A regional model of the Jakobshavn outlet glacier in Greenland</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../parameters/index.html">Configuration parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../diagnostics/index.html">Diagnostic quantities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../climate_forcing/index.html">Climate forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../technical/index.html">Technical notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing/index.html">Contributing to PISM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authorship.html">Authorship</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../zzz_references_html.html">References</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      Git revision v1.0-2372-g6f4ea1cd6
+      committed by Constantine Khrulev
+      on 2021-05-24 16:22:56 -0800 |
+      &copy; 2004--2021, the PISM authors.
+      
+    </div>
+  </body>
+</html>

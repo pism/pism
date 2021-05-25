@@ -35,26 +35,11 @@
   <div class="section" id="computing-ice-age">
 <span id="sec-age"></span><h1>Computing ice age<a class="headerlink" href="#computing-ice-age" title="Permalink to this headline">¶</a></h1>
 <p>By default, PISM does not compute the age of the ice because it does not directly impact
-ice flow when using the default flow laws. It is very easy to turn on. Just set
-<code class="option docutils literal notranslate"><span class="pre">-age</span></code>. A 3D variable <code class="docutils literal notranslate"><span class="pre">age</span></code> will appear in output files. It is read at input if
-<code class="docutils literal notranslate"><span class="pre">-age</span></code> is set and otherwise it is ignored even if present in the input file. If <code class="docutils literal notranslate"><span class="pre">-age</span></code>
-is set and the variable <code class="docutils literal notranslate"><span class="pre">age</span></code> is absent in the input file then the initial age is set to
-zero.</p>
-<p>The age of the ice can be used in two parameterizations in the SIA stress balance model:</p>
-<ol class="arabic simple">
-<li><p>Ice grain size parameterization based on data from <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id98"><span>78</span></a>]</span> and
-<span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id268"><span>79</span></a>]</span> (Vostok core data). In PISM, only the Goldsby-Kohlstedt flow law
-(see <a class="reference internal" href="rheology.html#sec-rheology"><span class="std std-ref">Ice rheology</span></a>) uses the grain size.</p></li>
-<li><p>The flow enhancement factor can be coupled to the age of the ice as in
-<span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id153"><span>80</span></a>]</span>: during Eemian and Holocene <span class="math notranslate nohighlight">\(e\)</span> is set to</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor_interglacial"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enhancement_factor_interglacial</span></code></a> during Eemian and Holocene,</p></li>
-<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.sia.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sia</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enhancement_factor</span></code></a> otherwise.</p></li>
-</ul>
-</li>
-</ol>
-<p>See <a class="reference internal" href="../../parameters/index.html#config-time.eemian_start"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.eemian_start</span></code></a>, <a class="reference internal" href="../../parameters/index.html#config-time.eemian_end"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.eemian_end</span></code></a>, and
-<a class="reference internal" href="../../parameters/index.html#config-time.holocene_start"><code class="docutils literal notranslate"><span class="pre">time</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.holocene_start</span></code></a>.</p>
+ice flow when using the default flow laws. Set <a class="reference internal" href="../../parameters/index.html#config-age.enabled"><code class="docutils literal notranslate"><span class="pre">age</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> to turn it on. A 3D
+variable <code class="docutils literal notranslate"><span class="pre">age</span></code> will appear in output files. It is read at input if <a class="reference internal" href="../../parameters/index.html#config-age.enabled"><code class="docutils literal notranslate"><span class="pre">age</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a>
+is set and otherwise it is ignored even if present in the input file. If
+<a class="reference internal" href="../../parameters/index.html#config-age.enabled"><code class="docutils literal notranslate"><span class="pre">age</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> is set and the variable <code class="docutils literal notranslate"><span class="pre">age</span></code> is absent in the input file then the
+initial age is set to <a class="reference internal" href="../../parameters/index.html#config-age.initial_value"><code class="docutils literal notranslate"><span class="pre">age</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.initial_value</span></code></a>.</p>
 </div>
 
 
@@ -141,9 +126,9 @@ zero.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

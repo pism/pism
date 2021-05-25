@@ -89,7 +89,7 @@ time-dependent variable <code class="variable docutils literal notranslate"><spa
 of principal components of the horizontal strain rates, <span class="math notranslate nohighlight">\(\dot{\epsilon}_{_\pm}\)</span>, derived
 from SSA-velocities</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv2">
-<span class="eqno">(26)<a class="headerlink" href="#equation-eq-calv2" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}c &amp;= K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-},\\\dot{\epsilon}_{_\pm} &amp;&gt; 0.\end{aligned}\end{align} \]</div>
+<span class="eqno">(29)<a class="headerlink" href="#equation-eq-calv2" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}c &amp;= K\; \dot{\epsilon}_{_+}\; \dot{\epsilon}_{_-},\\\dot{\epsilon}_{_\pm} &amp;&gt; 0.\end{aligned}\end{align} \]</div>
 <p>The rate <span class="math notranslate nohighlight">\(c\)</span> is in <span class="math notranslate nohighlight">\(\text{m}\,\text{s}^{-1}\)</span>, and the principal strain rates
 <span class="math notranslate nohighlight">\(\dot\epsilon_\pm\)</span> have units <span class="math notranslate nohighlight">\(\text{s}^{-1}\)</span>, so <span class="math notranslate nohighlight">\(K\)</span> has units <span class="math notranslate nohighlight">\(\text{m}\,\text{s}\)</span>. The
 constant <span class="math notranslate nohighlight">\(K\)</span> incorporates material properties of the ice at the front. It can be set using
@@ -116,17 +116,17 @@ close to zero and the transversal strain rate is therefore also close to zero an
 <p>Instead of the product of the eigen strain rates, <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id298"><span>95</span></a>]</span> propose a calving
 law where the calving rate <span class="math notranslate nohighlight">\(c\)</span> is functionally related to tensile stresses:</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv3">
-<span class="eqno">(27)<a class="headerlink" href="#equation-eq-calv3" title="Permalink to this equation">¶</a></span>\[c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},\]</div>
+<span class="eqno">(30)<a class="headerlink" href="#equation-eq-calv3" title="Permalink to this equation">¶</a></span>\[c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},\]</div>
 <p>where <span class="math notranslate nohighlight">\(\tilde{\sigma}\)</span> is the tensile von Mises stress and <span class="math notranslate nohighlight">\(\sigma_{max}\)</span> is a threshold
 that has units <span class="math notranslate nohighlight">\(Pa\)</span> (see <a class="reference internal" href="../../parameters/index.html#config-calving.vonmises_calving.sigma_max"><code class="docutils literal notranslate"><span class="pre">calving</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.vonmises_calving</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.sigma_max</span></code></a>). As the tensile
 fracture strength is much smaller than the compressive fracture strength, the effective
 tensile strain rate is defined as</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv4">
-<span class="eqno">(28)<a class="headerlink" href="#equation-eq-calv4" title="Permalink to this equation">¶</a></span>\[\tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 +
+<span class="eqno">(31)<a class="headerlink" href="#equation-eq-calv4" title="Permalink to this equation">¶</a></span>\[\tilde{\dot{\epsilon}}_e = \left(\frac{1}{2}\left(\max(0,\dot{\epsilon}_{_+})^2 +
 \max(0,\dot{\epsilon}_{_-})^2\right)\right)^{1/2}.\]</div>
 <p>Following <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id298"><span>95</span></a>]</span>, <span class="math notranslate nohighlight">\(\tilde{\sigma}\)</span> is given by</p>
 <div class="math notranslate nohighlight" id="equation-eq-calv5">
-<span class="eqno">(29)<a class="headerlink" href="#equation-eq-calv5" title="Permalink to this equation">¶</a></span>\[\tilde{\sigma} = \sqrt{3} B \tilde{\dot{{\epsilon}}}_e^{1/n},\]</div>
+<span class="eqno">(32)<a class="headerlink" href="#equation-eq-calv5" title="Permalink to this equation">¶</a></span>\[\tilde{\sigma} = \sqrt{3} B \tilde{\dot{{\epsilon}}}_e^{1/n},\]</div>
 <p>where <span class="math notranslate nohighlight">\(B\)</span> is the ice hardness.</p>
 <p>Configuration parameters:</p>
 <ol class="simple">
@@ -292,9 +292,9 @@ prescribed by creating a field with an appropriately decreasing maximum extent.<
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

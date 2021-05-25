@@ -33,28 +33,28 @@
     <div class="body" role="main">
       
   <div class="section" id="surface-mass-and-energy-process-model-components">
-<h1><a class="toc-backref" href="#id14">Surface mass and energy process model components</a><a class="headerlink" href="#surface-mass-and-energy-process-model-components" title="Permalink to this headline">¶</a></h1>
+<h1><a class="toc-backref" href="#id26">Surface mass and energy process model components</a><a class="headerlink" href="#surface-mass-and-energy-process-model-components" title="Permalink to this headline">¶</a></h1>
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
 <ul class="simple">
-<li><p><a class="reference internal" href="#surface-mass-and-energy-process-model-components" id="id14">Surface mass and energy process model components</a></p>
+<li><p><a class="reference internal" href="#surface-mass-and-energy-process-model-components" id="id26">Surface mass and energy process model components</a></p>
 <ul>
-<li><p><a class="reference internal" href="#the-invisible-model" id="id15">The “invisible” model</a></p></li>
-<li><p><a class="reference internal" href="#reading-top-surface-boundary-conditions-from-a-file" id="id16">Reading top-surface boundary conditions from a file</a></p></li>
-<li><p><a class="reference internal" href="#elevation-dependent-temperature-and-mass-balance" id="id17">Elevation-dependent temperature and mass balance</a></p></li>
-<li><p><a class="reference internal" href="#temperature-index-scheme" id="id18">Temperature-index scheme</a></p></li>
-<li><p><a class="reference internal" href="#pik" id="id19">PIK</a></p></li>
-<li><p><a class="reference internal" href="#scalar-temperature-offsets" id="id20">Scalar temperature offsets</a></p></li>
-<li><p><a class="reference internal" href="#adjustments-using-modeled-change-in-surface-elevation" id="id21">Adjustments using modeled change in surface elevation</a></p></li>
-<li><p><a class="reference internal" href="#mass-flux-adjustment" id="id22">Mass flux adjustment</a></p></li>
-<li><p><a class="reference internal" href="#using-climate-data-anomalies" id="id23">Using climate data anomalies</a></p></li>
-<li><p><a class="reference internal" href="#the-caching-modifier" id="id24">The caching modifier</a></p></li>
+<li><p><a class="reference internal" href="#the-invisible-model" id="id27">The “invisible” model</a></p></li>
+<li><p><a class="reference internal" href="#reading-top-surface-boundary-conditions-from-a-file" id="id28">Reading top-surface boundary conditions from a file</a></p></li>
+<li><p><a class="reference internal" href="#elevation-dependent-temperature-and-mass-balance" id="id29">Elevation-dependent temperature and mass balance</a></p></li>
+<li><p><a class="reference internal" href="#temperature-index-scheme" id="id30">Temperature-index scheme</a></p></li>
+<li><p><a class="reference internal" href="#pik" id="id31">PIK</a></p></li>
+<li><p><a class="reference internal" href="#scalar-temperature-offsets" id="id32">Scalar temperature offsets</a></p></li>
+<li><p><a class="reference internal" href="#adjustments-using-modeled-change-in-surface-elevation" id="id33">Adjustments using modeled change in surface elevation</a></p></li>
+<li><p><a class="reference internal" href="#mass-flux-adjustment" id="id34">Mass flux adjustment</a></p></li>
+<li><p><a class="reference internal" href="#using-climate-data-anomalies" id="id35">Using climate data anomalies</a></p></li>
+<li><p><a class="reference internal" href="#the-caching-modifier" id="id36">The caching modifier</a></p></li>
 </ul>
 </li>
 </ul>
 </div>
 <div class="section" id="the-invisible-model">
-<span id="sec-surface-simple"></span><h2><a class="toc-backref" href="#id15">The “invisible” model</a><a class="headerlink" href="#the-invisible-model" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-simple"></span><h2><a class="toc-backref" href="#id27">The “invisible” model</a><a class="headerlink" href="#the-invisible-model" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">simple</span></code></p>
@@ -75,7 +75,7 @@ component may be desired in cold environments (e.g. East Antarctic ice sheet) in
 melt is negligible and heat from firn processes is ignored.</p>
 </div>
 <div class="section" id="reading-top-surface-boundary-conditions-from-a-file">
-<span id="sec-surface-given"></span><h2><a class="toc-backref" href="#id16">Reading top-surface boundary conditions from a file</a><a class="headerlink" href="#reading-top-surface-boundary-conditions-from-a-file" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-given"></span><h2><a class="toc-backref" href="#id28">Reading top-surface boundary conditions from a file</a><a class="headerlink" href="#reading-top-surface-boundary-conditions-from-a-file" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">given</span></code></p>
@@ -112,7 +112,7 @@ variable should describe what model time these records correspond to; see
 <a class="reference internal" href="time.html#sec-model-time"><span class="std std-ref">Managing model time</span></a> for details.</p>
 <p>For example, to use monthly records and period of 1 year, create a file (say,
 “<code class="docutils literal notranslate"><span class="pre">foo.nc</span></code>”) with 12 records. The <code class="variable docutils literal notranslate"><span class="pre">time</span></code> variable may contain <span class="math notranslate nohighlight">\(0, 1, 2, 3,
-\dots, 11\)</span> and have the units of “month” <a class="footnote-reference brackets" href="#id13" id="id1">1</a>. Then, run</p>
+\dots, 11\)</span> and have the units of “month” <a class="footnote-reference brackets" href="#id25" id="id1">1</a>. Then, run</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -surface given -surface_given_file foo.nc -surface_given_period 1
 </pre></div>
 </div>
@@ -138,7 +138,7 @@ the <code class="docutils literal notranslate"><span class="pre">t,x,y</span></c
 </div>
 </div>
 <div class="section" id="elevation-dependent-temperature-and-mass-balance">
-<span id="sec-surface-elevation"></span><h2><a class="toc-backref" href="#id17">Elevation-dependent temperature and mass balance</a><a class="headerlink" href="#elevation-dependent-temperature-and-mass-balance" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-elevation"></span><h2><a class="toc-backref" href="#id29">Elevation-dependent temperature and mass balance</a><a class="headerlink" href="#elevation-dependent-temperature-and-mass-balance" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">elevation</span></code></p>
@@ -199,7 +199,7 @@ balance below <span class="math notranslate nohighlight">\(\h{min}\)</span> to <
 <code class="option docutils literal notranslate"><span class="pre">-atmosphere</span></code> option.</p>
 </div>
 <div class="section" id="temperature-index-scheme">
-<span id="sec-surface-pdd"></span><h2><a class="toc-backref" href="#id18">Temperature-index scheme</a><a class="headerlink" href="#temperature-index-scheme" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-pdd"></span><h2><a class="toc-backref" href="#id30">Temperature-index scheme</a><a class="headerlink" href="#temperature-index-scheme" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">pdd</span></code></p>
@@ -311,9 +311,43 @@ individual components:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SMB</span> <span class="o">=</span> <span class="n">surface_accumulation_flux</span> <span class="o">-</span> <span class="n">surface_runoff_flux</span>
 </pre></div>
 </div>
+<p class="rubric">Parameters</p>
+<p>Prefix: <code class="docutils literal notranslate"><span class="pre">surface.pdd.</span></code>.</p>
+<ol class="simple">
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_rain"><code class="docutils literal notranslate"><span class="pre">air_temp_all_precip_as_rain</span></code></a> (275.15<em> Kelvin</em>) threshold temperature above which all precipitation is rain; must exceed <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.air_temp_all_precip_as_snow</span></code></a> to avoid division by zero, because difference is in a denominator</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.air_temp_all_precip_as_snow"><code class="docutils literal notranslate"><span class="pre">air_temp_all_precip_as_snow</span></code></a> (273.15<em> Kelvin</em>) threshold temperature below which all precipitation is snow</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.balance_year_start_day"><code class="docutils literal notranslate"><span class="pre">balance_year_start_day</span></code></a> (274<em> ordinal day number</em>) day of year for October 1st, beginning of the balance year in northern latitudes.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_ice"><code class="docutils literal notranslate"><span class="pre">factor_ice</span></code></a> (0.00879121<em> meter / (Kelvin day)</em>) EISMINT-Greenland value <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span>; = (8 mm liquid-water-equivalent) / (pos degree day)</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.factor_snow"><code class="docutils literal notranslate"><span class="pre">factor_snow</span></code></a> (0.0032967<em> meter / (Kelvin day)</em>) EISMINT-Greenland value <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span>; = (3 mm liquid-water-equivalent) / (pos degree day)</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.T_c"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.T_c</span></code></a> (272.15<em> Kelvin</em>) = -1 + 273.15; for formula (6) in <span id="id13">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.T_w"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.T_w</span></code></a> (283.15<em> Kelvin</em>) = 10 + 273.15; for formula (6) in <span id="id14">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.beta_ice_c"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.beta_ice_c</span></code></a> (0.015<em> meter / (Kelvin day)</em>) water-equivalent thickness; for formula (6) in <span id="id15">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.beta_ice_w"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.beta_ice_w</span></code></a> (0.007<em> meter / (Kelvin day)</em>) water-equivalent thickness; for formula (6) in <span id="id16">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.beta_snow_c"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.beta_snow_c</span></code></a> (0.003<em> meter / (Kelvin day)</em>) water-equivalent thickness; for formula (6) in <span id="id17">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.beta_snow_w"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.beta_snow_w</span></code></a> (0.003<em> meter / (Kelvin day)</em>) water-equivalent thickness; for formula (6) in <span id="id18">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.enabled"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> (false) Set PDD parameters using formulas (6) and (7) in <span id="id19">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.fausto.latitude_beta_w"><code class="docutils literal notranslate"><span class="pre">fausto</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.latitude_beta_w</span></code></a> (72<em> degree_north</em>) latitude below which to use warm case, in formula (6) in <span id="id20">[<a class="reference internal" href="../zzz_references_html.html#id118"><span>133</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.firn_compaction_to_accumulation_ratio"><code class="docutils literal notranslate"><span class="pre">firn_compaction_to_accumulation_ratio</span></code></a> (0.75) How much firn as a fraction of accumulation is turned into ice</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.firn_depth_file"><code class="docutils literal notranslate"><span class="pre">firn_depth_file</span></code></a> The name of the file to read the firn_depth from.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.interpret_precip_as_snow"><code class="docutils literal notranslate"><span class="pre">interpret_precip_as_snow</span></code></a> (no) Interpret precipitation as snow fall.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.max_evals_per_year"><code class="docutils literal notranslate"><span class="pre">max_evals_per_year</span></code></a> (52) maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code></a></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.method"><code class="docutils literal notranslate"><span class="pre">method</span></code></a> (<code class="docutils literal notranslate"><span class="pre">expectation_integral</span></code>) PDD implementation method</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.positive_threshold_temp"><code class="docutils literal notranslate"><span class="pre">positive_threshold_temp</span></code></a> (273.15<em> Kelvin</em>) temperature used to determine meaning of “positive” degree day</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze"><code class="docutils literal notranslate"><span class="pre">refreeze</span></code></a> (0.6) EISMINT-Greenland value <span id="id21">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze_ice_melt"><code class="docutils literal notranslate"><span class="pre">refreeze_ice_melt</span></code></a> (yes) If set to “yes”, refreeze <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.refreeze"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.refreeze</span></code></a> fraction of melted ice, otherwise all of the melted ice runs off.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">std_dev</span></code></a> (5<em> Kelvin</em>) std dev of daily temp variation; = EISMINT-Greenland value <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id368"><span>136</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev.file"><code class="docutils literal notranslate"><span class="pre">std_dev</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> The name of the file to read <code class="docutils literal notranslate"><span class="pre">air_temp_sd</span></code> (standard deviation of air temperature) from.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev.period"><code class="docutils literal notranslate"><span class="pre">std_dev</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> (0<em> years</em>) Length of the period of the climate forcing data. Set to zero to disable.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev.reference_year"><code class="docutils literal notranslate"><span class="pre">std_dev</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_lapse_lat_base"><code class="docutils literal notranslate"><span class="pre">std_dev_lapse_lat_base</span></code></a> (72<em> degree_north</em>) std_dev is a function of latitude, with value <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev</span></code></a> at this latitude; this value only active if <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_lapse_lat_rate"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_lapse_lat_rate</span></code></a> is nonzero</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_lapse_lat_rate"><code class="docutils literal notranslate"><span class="pre">std_dev_lapse_lat_rate</span></code></a> (0<em> Kelvin / degree_north</em>) std_dev is a function of latitude, with rate of change with respect to latitude given by this constant</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_a"><code class="docutils literal notranslate"><span class="pre">std_dev_param_a</span></code></a> (-0.15) Parameter <span class="math notranslate nohighlight">\(a\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_use_param</span></code></a> is set to yes.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_param_b"><code class="docutils literal notranslate"><span class="pre">std_dev_param_b</span></code></a> (0.66<em> Kelvin</em>) Parameter <span class="math notranslate nohighlight">\(b\)</span> in <span class="math notranslate nohighlight">\(\Sigma = aT + b\)</span>, with <span class="math notranslate nohighlight">\(T\)</span> in degrees C. Used only if <a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.pdd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.std_dev_use_param</span></code></a> is set to yes.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.pdd.std_dev_use_param"><code class="docutils literal notranslate"><span class="pre">std_dev_use_param</span></code></a> (no) Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by <a class="reference internal" href="../manual/parameters/index.html#config-geometry.ice_free_thickness_standard"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_standard</span></code></a>.</p></li>
+</ol>
 </div>
 <div class="section" id="pik">
-<span id="sec-surface-pik"></span><h2><a class="toc-backref" href="#id19">PIK</a><a class="headerlink" href="#pik" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-pik"></span><h2><a class="toc-backref" href="#id31">PIK</a><a class="headerlink" href="#pik" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">pik</span></code></p>
@@ -326,13 +360,13 @@ individual components:</p>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">pism::surface::PIK</span></code></p>
 </dd>
 </dl>
-<p>This surface model component implements the setup used in <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>. The
+<p>This surface model component implements the setup used in <span id="id23">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>. The
 <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code> is read from an input (<code class="docutils literal notranslate"><span class="pre">-i</span></code>) file; the ice surface
 temperature is computed as a function of latitude (variable <code class="variable docutils literal notranslate"><span class="pre">lat</span></code>) and surface
-elevation (dynamically updated by PISM). See equation (1) in <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>.</p>
+elevation (dynamically updated by PISM). See equation (1) in <span id="id24">[<a class="reference internal" href="../zzz_references_html.html#id287"><span>51</span></a>]</span>.</p>
 </div>
 <div class="section" id="scalar-temperature-offsets">
-<span id="sec-surface-delta-t"></span><h2><a class="toc-backref" href="#id20">Scalar temperature offsets</a><a class="headerlink" href="#scalar-temperature-offsets" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-delta-t"></span><h2><a class="toc-backref" href="#id32">Scalar temperature offsets</a><a class="headerlink" href="#scalar-temperature-offsets" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">...,delta_T</span></code></p>
@@ -361,7 +395,7 @@ at a different stage in the computation of top-surface boundary conditions neede
 ice dynamics core.</p>
 </div>
 <div class="section" id="adjustments-using-modeled-change-in-surface-elevation">
-<span id="sec-surface-elevation-change"></span><h2><a class="toc-backref" href="#id21">Adjustments using modeled change in surface elevation</a><a class="headerlink" href="#adjustments-using-modeled-change-in-surface-elevation" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-elevation-change"></span><h2><a class="toc-backref" href="#id33">Adjustments using modeled change in surface elevation</a><a class="headerlink" href="#adjustments-using-modeled-change-in-surface-elevation" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">...,elevation_change</span></code></p>
@@ -400,28 +434,20 @@ difference between modeled and reference surface elevations.</p>
 <p>To use this method, set <code class="option docutils literal notranslate"><span class="pre">-smb_adjustment</span> <span class="pre">shift</span></code>.</p>
 </li>
 </ul>
-<p>It uses the following options.</p>
-<ul class="simple">
-<li><p><code class="option docutils literal notranslate"><span class="pre">-temp_lapse_rate</span></code> gives the temperature lapse rate, in <span class="math notranslate nohighlight">\(K/km\)</span>. Note that we
-use the following definition of the temperature lapse rate:</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-smb_adjustment</span></code> chooses SMB lapse rate (<code class="docutils literal notranslate"><span class="pre">shift</span></code>) or SMB scaling (<code class="docutils literal notranslate"><span class="pre">scale</span></code>).</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-smb_exp_factor</span></code> specifies the exponential factor used to scale the SMB</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-smb_lapse_rate</span></code> gives the surface mass balance lapse rate, in <span class="math notranslate nohighlight">\(m/year/km\)</span>.
-Here, <span class="math notranslate nohighlight">\(\gamma_M=-\frac{dM}{dz}\)</span>.</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-surface_elevation_change_file</span></code> specifies the file containing the reference surface
-elevation field (standard name: <code class="variable docutils literal notranslate"><span class="pre">surface_altitude</span></code>). This file can contain several
-surface elevation records to use lapse rate corrections relative to time-dependent
-surface. If one record is provided, the reference surface elevation is assumed to be
-time-independent.</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-surface_elevation_change_period</span></code> gives the period, in model years, to use when
-interpreting data in the file given with <code class="docutils literal notranslate"><span class="pre">-surface_given_file</span></code>,</p></li>
-<li><p><code class="option docutils literal notranslate"><span class="pre">-surface_elevation_change_reference_year</span></code> takes the time <span class="math notranslate nohighlight">\(T\)</span> in model years. The
-record for <span class="math notranslate nohighlight">\(t\)</span> years in <code class="docutils literal notranslate"><span class="pre">-surface_given_file</span></code> is interpreted as corresponding to
-<span class="math notranslate nohighlight">\(t\)</span> years since <span class="math notranslate nohighlight">\(T\)</span>.</p></li>
-</ul>
+<p class="rubric">Parameters</p>
+<p>Prefix: <code class="docutils literal notranslate"><span class="pre">surface.elevation_change.</span></code>.</p>
+<ol class="simple">
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.file"><code class="docutils literal notranslate"><span class="pre">file</span></code></a> Name of the file containing the reference surface elevation field (variable <code class="variable docutils literal notranslate"><span class="pre">usurf</span></code>).</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.period"><code class="docutils literal notranslate"><span class="pre">period</span></code></a> (0<em> years</em>) Length of the period of the climate forcing data. Set to zero to disable.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.reference_year"><code class="docutils literal notranslate"><span class="pre">reference_year</span></code></a> (0<em> years</em>) Reference year to use when <a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.period"><code class="docutils literal notranslate"><span class="pre">surface</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.elevation_change</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.exp_factor"><code class="docutils literal notranslate"><span class="pre">smb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.exp_factor</span></code></a> (0<em> Kelvin-1</em>) Exponential for the surface mass balance.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.lapse_rate"><code class="docutils literal notranslate"><span class="pre">smb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.lapse_rate</span></code></a> (0<em> (m / year) / km</em>) Lapse rate for the surface mass balance.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.smb.method"><code class="docutils literal notranslate"><span class="pre">smb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.method</span></code></a> (<code class="docutils literal notranslate"><span class="pre">shift</span></code>) Choose the SMB adjustment method. <code class="docutils literal notranslate"><span class="pre">scale</span></code>: use temperature-change-dependent scaling factor. <code class="docutils literal notranslate"><span class="pre">shift</span></code>: use the SMB lapse rate.</p></li>
+<li><p><a class="reference internal" href="../manual/parameters/index.html#config-surface.elevation_change.temperature_lapse_rate"><code class="docutils literal notranslate"><span class="pre">temperature_lapse_rate</span></code></a> (0<em> K / km</em>) Lapse rate for the temperature at the top of the ice.</p></li>
+</ol>
 </div>
 <div class="section" id="mass-flux-adjustment">
-<span id="sec-surface-forcing"></span><h2><a class="toc-backref" href="#id22">Mass flux adjustment</a><a class="headerlink" href="#mass-flux-adjustment" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-forcing"></span><h2><a class="toc-backref" href="#id34">Mass flux adjustment</a><a class="headerlink" href="#mass-flux-adjustment" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">...,forcing</span></code></p>
@@ -471,7 +497,7 @@ the target thickness field has less than
 <code class="option docutils literal notranslate"><span class="pre">-force_to_thickness_ice_free_alpha_factor</span></code> option to set <span class="math notranslate nohighlight">\(C\)</span>.</p>
 </div>
 <div class="section" id="using-climate-data-anomalies">
-<span id="sec-surface-anomaly"></span><h2><a class="toc-backref" href="#id23">Using climate data anomalies</a><a class="headerlink" href="#using-climate-data-anomalies" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-anomaly"></span><h2><a class="toc-backref" href="#id35">Using climate data anomalies</a><a class="headerlink" href="#using-climate-data-anomalies" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="option docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">...,anomaly</span></code></p>
@@ -499,7 +525,7 @@ model years; see <a class="reference internal" href="time.html#sec-periodic-forc
 similar, but applies anomalies at the atmosphere level.</p>
 </div>
 <div class="section" id="the-caching-modifier">
-<span id="sec-surface-cache"></span><h2><a class="toc-backref" href="#id24">The caching modifier</a><a class="headerlink" href="#the-caching-modifier" title="Permalink to this headline">¶</a></h2>
+<span id="sec-surface-cache"></span><h2><a class="toc-backref" href="#id36">The caching modifier</a><a class="headerlink" href="#the-caching-modifier" title="Permalink to this headline">¶</a></h2>
 <dl class="field-list simple">
 <dt class="field-odd">Options</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-surface</span> <span class="pre">...,cache</span></code></p>
@@ -523,7 +549,7 @@ updates. PISM may take longer time-steps if the adaptive scheme allows it, thoug
 </ul>
 <p class="rubric">Footnotes</p>
 <dl class="footnote brackets">
-<dt class="label" id="id13"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dt class="label" id="id25"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
 <dd><p>You can use other time units supported by <a class="reference external" href="https://www.unidata.ucar.edu/software/udunits/">UDUNITS</a>.</p>
 </dd>
 </dl>
@@ -612,9 +638,9 @@ updates. PISM may take longer time-steps if the adaptive scheme allows it, thoug
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -1653,7 +1653,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.fresh_water.latent_heat_of_fusion"></span><code class="docutils literal notranslate"><span class="pre">constants.fresh_water.latent_heat_of_fusion</span></code></p>
-<p>latent heat of fusion for water <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>77</span></a>]</span><dl class="field-list simple">
+<p>latent heat of fusion for water <span id="id33">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>80</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1673,7 +1673,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.fresh_water.specific_heat_capacity"></span><code class="docutils literal notranslate"><span class="pre">constants.fresh_water.specific_heat_capacity</span></code></p>
-<p>at melting point T_0 <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>77</span></a>]</span><dl class="field-list simple">
+<p>at melting point T_0 <span id="id34">[<a class="reference internal" href="../../zzz_references_html.html#id28"><span>80</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -1713,7 +1713,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-constants.ice.grain_size"></span><code class="docutils literal notranslate"><span class="pre">constants.ice.grain_size</span></code></p>
-<p>Default constant ice grain size to use with the Goldsby-Kohlstedt <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>65</span></a>]</span> flow law<dl class="field-list simple">
+<p>Default constant ice grain size to use with the Goldsby-Kohlstedt <span id="id37">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>69</span></a>]</span> flow law<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2058,7 +2058,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.A"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.A</span></code></p>
-<p><span class="math notranslate nohighlight">\(A_{\text{Hooke}} = (1/B_0)^n\)</span> where n=3 and B_0 = 1.928 <span class="math notranslate nohighlight">\(a^{1/3}\)</span> Pa. See <span id="id45">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
+<p><span class="math notranslate nohighlight">\(A_{\text{Hooke}} = (1/B_0)^n\)</span> where n=3 and <span class="math notranslate nohighlight">\(B_0\)</span> = 1.928 <span class="math notranslate nohighlight">\(a^{1/3}\)</span> Pa. See <span id="id45">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>79</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2068,17 +2068,17 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.C"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.C</span></code></p>
-<p>See <span id="id46">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id46">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>79</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
-<dd class="field-even"><p>0.16612<em> (Kelvin^{flow_law.Hooke.k})</em></p>
+<dd class="field-even"><p>0.16612<em> (Kelvin^k)</em></p>
 </dd>
 </dl>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.Q"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.Q</span></code></p>
-<p>Activation energy, see <span id="id47">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
+<p>Activation energy, see <span id="id47">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>79</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2088,7 +2088,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.Tr"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.Tr</span></code></p>
-<p>See <span id="id48">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id48">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>79</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2098,7 +2098,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Hooke.k"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Hooke.k</span></code></p>
-<p>See <span id="id49">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>74</span></a>]</span><dl class="field-list simple">
+<p>See <span id="id49">[<a class="reference internal" href="../../zzz_references_html.html#id193"><span>79</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2108,7 +2108,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Paterson_Budd.A_cold"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Paterson_Budd.A_cold</span></code></p>
-<p>Paterson-Budd A_cold, see <span id="id50">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
+<p>Paterson-Budd <span class="math notranslate nohighlight">\(A_\text{cold}\)</span>, see <span id="id50">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2118,7 +2118,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Paterson_Budd.A_warm"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Paterson_Budd.A_warm</span></code></p>
-<p>Paterson-Budd A_warm, see <span id="id51">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
+<p>Paterson-Budd <span class="math notranslate nohighlight">\(A_\text{warm}\)</span>, see <span id="id51">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2128,7 +2128,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Paterson_Budd.Q_cold"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Paterson_Budd.Q_cold</span></code></p>
-<p>Paterson-Budd Q_cold, see <span id="id52">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
+<p>Paterson-Budd <span class="math notranslate nohighlight">\(Q_\text{cold}\)</span>, see <span id="id52">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2138,7 +2138,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.Paterson_Budd.Q_warm"></span><code class="docutils literal notranslate"><span class="pre">flow_law.Paterson_Budd.Q_warm</span></code></p>
-<p>Paterson-Budd Q_warm, see <span id="id53">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
+<p>Paterson-Budd <span class="math notranslate nohighlight">\(Q_\text{warm}\)</span>, see <span id="id53">[<a class="reference internal" href="../../zzz_references_html.html#id326"><span>35</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -2198,7 +2198,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-flow_law.isothermal_Glen.ice_softness"></span><code class="docutils literal notranslate"><span class="pre">flow_law.isothermal_Glen.ice_softness</span></code></p>
-<p>ice softness used by IsothermalGlenIce <span id="id59">[<a class="reference internal" href="../../zzz_references_html.html#id106"><span>58</span></a>]</span><dl class="field-list simple">
+<p>ice softness used by the isothermal Glen flow law <span id="id59">[<a class="reference internal" href="../../zzz_references_html.html#id106"><span>58</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4945,7 +4945,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.bed_smoother.range"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.bed_smoother.range</span></code></p>
-<p>half-width of smoothing domain for <code class="docutils literal notranslate"><span class="pre">stressbalance::BedSmoother</span></code>, in implementing the bed roughness parameterization for SIA <span id="id78">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>64</span></a>]</span>; set to zero to disable<dl class="field-list simple">
+<p>half-width of smoothing domain in the bed roughness parameterization for SIA <span id="id78">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>65</span></a>]</span>; set to zero to disable<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -4958,7 +4958,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.bed_smoother.theta_min"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.bed_smoother.theta_min</span></code></p>
-<p>minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in the bed roughness parameterization for SIA <span id="id79">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>64</span></a>]</span><dl class="field-list simple">
+<p>minimum value of <span class="math notranslate nohighlight">\(\theta\)</span> in the bed roughness parameterization for SIA <span id="id79">[<a class="reference internal" href="../../zzz_references_html.html#id398"><span>65</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -5023,7 +5023,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.sia.grain_size_age_coupling"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.sia.grain_size_age_coupling</span></code></p>
-<p>Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt <span id="id81">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>65</span></a>]</span> flow law<dl class="field-list simple">
+<p>Use age of the ice to compute grain size to use with the Goldsby-Kohlstedt <span id="id81">[<a class="reference internal" href="../../zzz_references_html.html#id140"><span>69</span></a>]</span> flow law<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> flag</dd>
 <dt class="field-even">Default value</dt>
@@ -5339,7 +5339,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-stress_balance.weertman_sliding.A"></span><code class="docutils literal notranslate"><span class="pre">stress_balance.weertman_sliding.A</span></code></p>
-<p>Sliding parameter in the Weertman-style sliding parameterization <span id="id86">[<a class="reference internal" href="../../zzz_references_html.html#id422"><span>63</span></a>]</span><dl class="field-list simple">
+<p>Sliding parameter in the Weertman-style sliding parameterization <span id="id86">[<a class="reference internal" href="../../zzz_references_html.html#id422"><span>70</span></a>]</span><dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6081,7 +6081,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.eemian_end"></span><code class="docutils literal notranslate"><span class="pre">time.eemian_end</span></code></p>
-<p>End of the Eemian interglacial period. See <span id="id99">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
+<p>End of the Eemian interglacial period. See <span id="id99">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>68</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6091,7 +6091,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.eemian_start"></span><code class="docutils literal notranslate"><span class="pre">time.eemian_start</span></code></p>
-<p>Start of the Eemian interglacial period. See <span id="id100">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
+<p>Start of the Eemian interglacial period. See <span id="id100">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>68</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6101,7 +6101,7 @@ removed in a later PISM version.</p>
 </p>
 </li>
 <li><p><span class="target" id="config-time.holocene_start"></span><code class="docutils literal notranslate"><span class="pre">time.holocene_start</span></code></p>
-<p>Start of the Holocene interglacial period. See <span id="id101">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>80</span></a>]</span>.<dl class="field-list simple">
+<p>Start of the Holocene interglacial period. See <span id="id101">[<a class="reference internal" href="../../zzz_references_html.html#id153"><span>68</span></a>]</span>.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
 <dd class="field-odd"> number</dd>
 <dt class="field-even">Default value</dt>
@@ -6332,9 +6332,9 @@ removed in a later PISM version.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

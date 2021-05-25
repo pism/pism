@@ -16,7 +16,7 @@
     <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Parameterization of bed roughness in the SIA" href="bed-roughness.html" />
+    <link rel="next" title="Marine ice sheet modeling" href="../marine/index.html" />
     <link rel="prev" title="Subglacial hydrology" href="hydrology.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
@@ -92,7 +92,7 @@ name of the file containing the field <code class="variable docutils literal not
 topography field read in from an input file. This sets the bed topography <span class="math notranslate nohighlight">\(b\)</span> at the
 beginning of a run as follows:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bedcorrection">
-<span class="eqno">(24)<a class="headerlink" href="#equation-eq-bedcorrection" title="Permalink to this equation">¶</a></span>\[b = b_{0} + \Delta b.\]</div>
+<span class="eqno">(27)<a class="headerlink" href="#equation-eq-bedcorrection" title="Permalink to this equation">¶</a></span>\[b = b_{0} + \Delta b.\]</div>
 <p>Here <span class="math notranslate nohighlight">\(b_{0}\)</span> is the bed topography (<code class="variable docutils literal notranslate"><span class="pre">topg</span></code>) read in from an input file and <span class="math notranslate nohighlight">\(\Delta b\)</span>
 is the <code class="variable docutils literal notranslate"><span class="pre">topg_delta</span></code> field read in from the file specified using this option.</p>
 <p>A correction like this can be used to get a bed topography field at the end of a
@@ -120,7 +120,7 @@ coupling to such a model.</p>
 <p>The bed topography <span class="math notranslate nohighlight">\(b\)</span> is set to</p>
 <div class="math notranslate nohighlight">
 \[b(t,x,y) = b_{\text{ref}}(x,y) + \Delta b(t,x,y),\]</div>
-<p>which is a time-dependent version of <a class="reference internal" href="#equation-eq-bedcorrection">(24)</a>.</p>
+<p>which is a time-dependent version of <a class="reference internal" href="#equation-eq-bedcorrection">(27)</a>.</p>
 <p>This class uses two input files:</p>
 <ol class="arabic simple">
 <li><p>Reference topography <span class="math notranslate nohighlight">\(b_{\text{ref}}(x,y)\)</span> (variable <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>, in meters).</p></li>
@@ -159,7 +159,7 @@ projection and cover the modeling domain but they <strong>do not</strong> have t
               <a class="reference internal" href="index.html">Up</a>
           </td>
           <td style="text-align: right; width: 30%">
-              <a class="reference internal" href="bed-roughness.html">Next</a>
+              <a class="reference internal" href="../marine/index.html">Next</a>
           </td>
         </tr>
       </table>
@@ -232,9 +232,9 @@ projection and cover the modeling domain but they <strong>do not</strong> have t
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

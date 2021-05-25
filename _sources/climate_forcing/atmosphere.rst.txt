@@ -395,7 +395,7 @@ followed by post-processing:
 .. note::
 
    - Discontinuities in the surface gradient (e.g. at ice margins) may cause oscillations
-     in the computed precipitation field probably due to the Gibbs phenomenon. To address
+     in the computed precipitation field (probably due to the Gibbs phenomenon). To address
      this our implementation includes the ability to smooth the surface topography using a
      Gaussian filter. Set
      :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` to a

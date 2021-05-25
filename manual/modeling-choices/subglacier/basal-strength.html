@@ -93,28 +93,28 @@ there is an implementation of SIA-based sliding only for verification test E; se
 <h2><a class="toc-backref" href="#id28">Choosing the sliding law</a><a class="headerlink" href="#choosing-the-sliding-law" title="Permalink to this headline">¶</a></h2>
 <p>In PISM the sliding law can be chosen to be a purely-plastic (Coulomb) model, namely,</p>
 <div class="math notranslate nohighlight" id="equation-eq-plastic">
-<span class="eqno">(12)<a class="headerlink" href="#equation-eq-plastic" title="Permalink to this equation">¶</a></span>\[|\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b =
+<span class="eqno">(15)<a class="headerlink" href="#equation-eq-plastic" title="Permalink to this equation">¶</a></span>\[|\boldsymbol{\tau}_b| \le \tau_c \quad \text{and} \quad \boldsymbol{\tau}_b =
 - \tau_c \frac{\mathbf{u}}{|\mathbf{u}|} \quad\text{if and only if}\quad |\mathbf{u}| &gt; 0.\]</div>
-<p>Equation <a class="reference internal" href="#equation-eq-plastic">(12)</a> says that the (vector) basal shear stress <span class="math notranslate nohighlight">\(\boldsymbol{\tau}_b\)</span>
+<p>Equation <a class="reference internal" href="#equation-eq-plastic">(15)</a> says that the (vector) basal shear stress <span class="math notranslate nohighlight">\(\boldsymbol{\tau}_b\)</span>
 is at most the yield stress <span class="math notranslate nohighlight">\(\tau_c\)</span>, and that only when the shear stress reaches the
 yield value can there be sliding. The sliding law can, however, also be chosen to be the
 power law</p>
 <div class="math notranslate nohighlight" id="equation-eq-pseudoplastic">
-<span class="eqno">(13)<a class="headerlink" href="#equation-eq-pseudoplastic" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}},\]</div>
+<span class="eqno">(16)<a class="headerlink" href="#equation-eq-pseudoplastic" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b =  - \tau_c \frac{\mathbf{u}}{u_{\text{threshold}}^q |\mathbf{u}|^{1-q}},\]</div>
 <p>where <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span> is a parameter with units of velocity (see below). Condition
-<a class="reference internal" href="#equation-eq-plastic">(12)</a> is studied in <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id396"><span>20</span></a>]</span> and <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id397"><span>82</span></a>]</span> in particular,
+<a class="reference internal" href="#equation-eq-plastic">(15)</a> is studied in <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id396"><span>20</span></a>]</span> and <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id397"><span>82</span></a>]</span> in particular,
 while power laws for sliding are common across the glaciological literature (e.g. see
 <span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id94"><span>33</span></a>]</span>, <span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id154"><span>54</span></a>]</span>). Notice that the coefficient <span class="math notranslate nohighlight">\(\tau_c\)</span> in
-<a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a> has units of stress, regardless of the power <span class="math notranslate nohighlight">\(q\)</span>.</p>
-<p>In both of the above equations <a class="reference internal" href="#equation-eq-plastic">(12)</a> and <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a> we call
+<a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a> has units of stress, regardless of the power <span class="math notranslate nohighlight">\(q\)</span>.</p>
+<p>In both of the above equations <a class="reference internal" href="#equation-eq-plastic">(15)</a> and <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a> we call
 <span class="math notranslate nohighlight">\(\tau_c\)</span> the <em>yield stress</em>. It corresponds to the variable <code class="variable docutils literal notranslate"><span class="pre">tauc</span></code> in PISM output files.
-We call the power law <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a> a “pseudo-plastic” law with power <span class="math notranslate nohighlight">\(q\)</span> and
+We call the power law <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a> a “pseudo-plastic” law with power <span class="math notranslate nohighlight">\(q\)</span> and
 threshold velocity <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span>. At the threshold velocity the basal shear
 stress <span class="math notranslate nohighlight">\(\boldsymbol{\tau}_b\)</span> has exact magnitude <span class="math notranslate nohighlight">\(\tau_c\)</span>. In equation
-<a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a>, <span class="math notranslate nohighlight">\(q\)</span> is the power controlled by <code class="docutils literal notranslate"><span class="pre">-pseudo_plastic_q</span></code>, and the
+<a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a>, <span class="math notranslate nohighlight">\(q\)</span> is the power controlled by <code class="docutils literal notranslate"><span class="pre">-pseudo_plastic_q</span></code>, and the
 threshold velocity <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span> is controlled by <code class="docutils literal notranslate"><span class="pre">-pseudo_plastic_uthreshold</span></code>.
-The plastic model <a class="reference internal" href="#equation-eq-plastic">(12)</a> is the <span class="math notranslate nohighlight">\(q=0\)</span> case of <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a>.</p>
-<p>See <a class="reference internal" href="#tab-sliding-power-law"><span class="std std-numref">Table 16</span></a> for options controlling the choice of sliding law. The
+The plastic model <a class="reference internal" href="#equation-eq-plastic">(15)</a> is the <span class="math notranslate nohighlight">\(q=0\)</span> case of <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a>.</p>
+<p>See <a class="reference internal" href="#tab-sliding-power-law"><span class="std std-numref">Table 13</span></a> for options controlling the choice of sliding law. The
 purely plastic case is the default; just use <code class="docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">ssa+sia</span></code> to turn it on.
 (Or use <code class="docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">ssa</span></code> if a model with no vertical shear is desired.)</p>
 <div class="admonition warning">
@@ -123,7 +123,7 @@ purely plastic case is the default; just use <code class="docutils literal notra
 <code class="docutils literal notranslate"><span class="pre">-pseudo_plastic</span></code> is not set.</p>
 </div>
 <table class="colwidths-given docutils align-default" id="tab-sliding-power-law">
-<caption><span class="caption-number">Table 16 </span><span class="caption-text">Sliding law command-line options</span><a class="headerlink" href="#tab-sliding-power-law" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 13 </span><span class="caption-text">Sliding law command-line options</span><a class="headerlink" href="#tab-sliding-power-law" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -145,18 +145,18 @@ inactive.</p></td>
 default is <span class="math notranslate nohighlight">\(0.01\)</span> m/a. This parameter is inactive if <code class="docutils literal notranslate"><span class="pre">-pseudo_plastic</span></code> is set.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-pseudo_plastic_q</span></code></p></td>
-<td><p>Set the exponent <span class="math notranslate nohighlight">\(q\)</span> in <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a>.  The default is <span class="math notranslate nohighlight">\(0.25\)</span>.</p></td>
+<td><p>Set the exponent <span class="math notranslate nohighlight">\(q\)</span> in <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a>.  The default is <span class="math notranslate nohighlight">\(0.25\)</span>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-pseudo_plastic_uthreshold</span></code> (m/a)</p></td>
-<td><p>Set <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span> in <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a>.  The default is <span class="math notranslate nohighlight">\(100\)</span> m/a.</p></td>
+<td><p>Set <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span> in <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a>.  The default is <span class="math notranslate nohighlight">\(100\)</span> m/a.</p></td>
 </tr>
 </tbody>
 </table>
-<p>Equation <a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a> is a very flexible power law form. For example, the linear
+<p>Equation <a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a> is a very flexible power law form. For example, the linear
 case is <span class="math notranslate nohighlight">\(q=1\)</span>, in which case if <span class="math notranslate nohighlight">\(\beta=\tau_c/u_{\text{threshold}}\)</span> then the law is of the
 form</p>
 <div class="math notranslate nohighlight" id="equation-eq-sliding-linear">
-<span class="eqno">(14)<a class="headerlink" href="#equation-eq-sliding-linear" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b = - \beta \mathbf{u}\]</div>
+<span class="eqno">(17)<a class="headerlink" href="#equation-eq-sliding-linear" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b = - \beta \mathbf{u}\]</div>
 <p>(The “<span class="math notranslate nohighlight">\(\beta\)</span>” coefficient is also called <span class="math notranslate nohighlight">\(\beta^2\)</span> in some sources (see <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id277"><span>13</span></a>]</span>,
 for example).) If you want such a linear sliding law, and you have a value
 <span class="math notranslate nohighlight">\(\beta=\)</span> <code class="docutils literal notranslate"><span class="pre">beta</span></code> in <span class="math notranslate nohighlight">\(\text{Pa}\,\text{s}\,\text{m}^{-1}\)</span>, then use this option
@@ -186,7 +186,7 @@ form</p>
 hard-bedded sliding (Coulomb behavior) and viscous bed deformation without required
 knowledge of the bed type. It is defined by</p>
 <div class="math notranslate nohighlight" id="equation-eq-regularizedcoulomb">
-<span class="eqno">(15)<a class="headerlink" href="#equation-eq-regularizedcoulomb" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b = - \tau_c \frac{\uu}{\left(|\uu| + u_{\text{threshold}} \right)^{q} |\uu|^{1-q}},\]</div>
+<span class="eqno">(18)<a class="headerlink" href="#equation-eq-regularizedcoulomb" title="Permalink to this equation">¶</a></span>\[\boldsymbol{\tau}_b = - \tau_c \frac{\uu}{\left(|\uu| + u_{\text{threshold}} \right)^{q} |\uu|^{1-q}},\]</div>
 <p>Set <code class="option docutils literal notranslate"><span class="pre">-regularized_coulomb</span></code> to select this sliding law.</p>
 <p>The original equation (3) in <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id459"><span>83</span></a>]</span> uses the exponent <span class="math notranslate nohighlight">\(q=1/p\)</span>. Otherwise,
 same configuration parameters can be used as in the pseudo-plastic case, but they should
@@ -197,7 +197,7 @@ have different values, namely <span class="math notranslate nohighlight">\(q\)</
 </pre></div>
 </div>
 <p>The model’s performance should be close to the pseudo-plastic implementation (Eq.
-<a class="reference internal" href="#equation-eq-pseudoplastic">(13)</a>), although there ought to be slightly more fast sliding and a less
+<a class="reference internal" href="#equation-eq-pseudoplastic">(16)</a>), although there ought to be slightly more fast sliding and a less
 diffuse onset of sliding.</p>
 <div class="section" id="lateral-drag">
 <span id="sec-lateral-drag"></span><h3><a class="toc-backref" href="#id29">Lateral drag</a><a class="headerlink" href="#lateral-drag" title="Permalink to this headline">¶</a></h3>
@@ -211,7 +211,7 @@ additional drag at these margins.</p>
 <h2><a class="toc-backref" href="#id30">Determining the yield stress</a><a class="headerlink" href="#determining-the-yield-stress" title="Permalink to this headline">¶</a></h2>
 <p>Other than setting it to a constant, which only applies in some special cases, the above
 discussion does not determine the yield stress <span class="math notranslate nohighlight">\(\tau_c\)</span>. As shown in
-<a class="reference internal" href="#tab-yieldstress"><span class="std std-numref">Table 17</span></a>, there are two schemes for determining <span class="math notranslate nohighlight">\(\tau_c\)</span> in a
+<a class="reference internal" href="#tab-yieldstress"><span class="std std-numref">Table 14</span></a>, there are two schemes for determining <span class="math notranslate nohighlight">\(\tau_c\)</span> in a
 spatially-variable manner:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">-yield_stress</span> <span class="pre">mohr_coulomb</span></code> (the default) determines the yields stress by models of
@@ -230,14 +230,14 @@ determined in part by a material property field <span class="math notranslate no
 variable <code class="variable docutils literal notranslate"><span class="pre">tillphi</span></code>). These quantities are related by the Mohr-Coulomb criterion
 <span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id94"><span>33</span></a>]</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-mohrcoulomb">
-<span class="eqno">(16)<a class="headerlink" href="#equation-eq-mohrcoulomb" title="Permalink to this equation">¶</a></span>\[\tau_c = c_{0} + (\tan\phi)\,N_{till}.\]</div>
+<span class="eqno">(19)<a class="headerlink" href="#equation-eq-mohrcoulomb" title="Permalink to this equation">¶</a></span>\[\tau_c = c_{0} + (\tan\phi)\,N_{till}.\]</div>
 <p>Here <span class="math notranslate nohighlight">\(c_0\)</span> is called the “till cohesion”, whose default value in PISM is zero (see
 <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id396"><span>20</span></a>]</span>, formula (2.4)) but which can be set by option <code class="option docutils literal notranslate"><span class="pre">-till_cohesion</span></code>.</p>
 <p>Option combination <code class="docutils literal notranslate"><span class="pre">-yield_stress</span> <span class="pre">constant</span> <span class="pre">-tauc</span> <span class="pre">X</span></code> can be used to fix the yield stress
 to have value <span class="math notranslate nohighlight">\(\tau_c = X\)</span> at all grounded locations and all times if desired. This is
 unlikely to be a good modelling choice for real ice sheets.</p>
 <table class="colwidths-given docutils align-default" id="tab-yieldstress">
-<caption><span class="caption-number">Table 17 </span><span class="caption-text">Command-line options controlling how yield stress is determined</span><a class="headerlink" href="#tab-yieldstress" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 14 </span><span class="caption-text">Command-line options controlling how yield stress is determined</span><a class="headerlink" href="#tab-yieldstress" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 38%" />
 <col style="width: 63%" />
@@ -249,7 +249,7 @@ unlikely to be a good modelling choice for real ice sheets.</p>
 </thead>
 <tbody>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-yield_stress</span> <span class="pre">mohr_coulomb</span></code></p></td>
-<td><p>The default. Use equation <a class="reference internal" href="#equation-eq-mohrcoulomb">(16)</a> to determine <span class="math notranslate nohighlight">\(\tau_c\)</span>. Only
+<td><p>The default. Use equation <a class="reference internal" href="#equation-eq-mohrcoulomb">(19)</a> to determine <span class="math notranslate nohighlight">\(\tau_c\)</span>. Only
 effective if <code class="docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">ssa</span></code> or <code class="docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">ssa+sia</span></code> is also set.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-till_cohesion</span></code></p></td>
@@ -269,7 +269,7 @@ water, nor does this mechanism affect water conservation.</p></td>
 <td><p>Use a constant till friction angle. The default is <span class="math notranslate nohighlight">\(30^{\circ}\)</span>.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-topg_to_phi</span></code> (<em>list of 4 numbers</em>)</p></td>
-<td><p>Compute <span class="math notranslate nohighlight">\(\phi\)</span> using equation <a class="reference internal" href="#equation-eq-phipiecewise">(17)</a>.</p></td>
+<td><p>Compute <span class="math notranslate nohighlight">\(\phi\)</span> using equation <a class="reference internal" href="#equation-eq-phipiecewise">(20)</a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-yield_stress</span> <span class="pre">constant</span></code></p></td>
 <td><p>Keep the current values of the till yield stress <span class="math notranslate nohighlight">\(\tau_c\)</span>. That is, do not update
@@ -284,7 +284,7 @@ otherwise <span class="math notranslate nohighlight">\(\tau_c\)</span> is update
 </tbody>
 </table>
 <p>We find that an effective, though heuristic, way to determine <span class="math notranslate nohighlight">\(\phi\)</span> in
-<a class="reference internal" href="#equation-eq-mohrcoulomb">(16)</a> is to make it a function of bed elevation
+<a class="reference internal" href="#equation-eq-mohrcoulomb">(19)</a> is to make it a function of bed elevation
 <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id27"><span>1</span></a>]</span>, <span id="id17">[<a class="reference internal" href="../../../zzz_references_html.html#id287"><span>51</span></a>]</span>,
 <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id454"><span>16</span></a>]</span>. This heuristic is motivated by hypothesis that basal material
 with a marine history should be weak <span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id206"><span>44</span></a>]</span>. PISM has a mechanism
@@ -297,14 +297,14 @@ option is</p>
 stands for the bed elevation. To explain these, we define <span class="math notranslate nohighlight">\(M = (\phimax - \phimin) /
 (\bmax - \bmin)\)</span>. Then</p>
 <div class="math notranslate nohighlight" id="equation-eq-phipiecewise">
-<span class="eqno">(17)<a class="headerlink" href="#equation-eq-phipiecewise" title="Permalink to this equation">¶</a></span>\[\begin{split}\phi(x,y) =
+<span class="eqno">(20)<a class="headerlink" href="#equation-eq-phipiecewise" title="Permalink to this equation">¶</a></span>\[\begin{split}\phi(x,y) =
 \begin{cases}
   \phimin, &amp; b(x,y) \le \bmin, \\
   \phimin + (b(x,y) - \bmin) \,M, &amp; \bmin &lt; b(x,y) &lt; \bmax, \\
   \phimax, &amp; \bmax \le b(x,y).
 \end{cases}\end{split}\]</div>
 <p>It is worth noting that an earth deformation model (see section <a class="reference internal" href="bed-deformation.html#sec-beddef"><span class="std std-ref">Earth deformation models</span></a>) changes
-<span class="math notranslate nohighlight">\(b(x,y)\)</span> (NetCDF variable <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>) used in <a class="reference internal" href="#equation-eq-phipiecewise">(17)</a>, so that a sequence
+<span class="math notranslate nohighlight">\(b(x,y)\)</span> (NetCDF variable <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>) used in <a class="reference internal" href="#equation-eq-phipiecewise">(20)</a>, so that a sequence
 of runs such as</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
 pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
@@ -327,7 +327,7 @@ same <code class="variable docutils literal notranslate"><span class="pre">tillp
 the till <span class="math notranslate nohighlight">\(N_{till}\)</span> is determined by the modeled amount of water in the till. Lower
 effective pressure means that more of the weight of the ice is carried by the pressurized
 water in the till and thus the ice can slide more easily. That is, equation
-<a class="reference internal" href="#equation-eq-mohrcoulomb">(16)</a> sets the value of <span class="math notranslate nohighlight">\(\tau_c\)</span> proportionately to <span class="math notranslate nohighlight">\(N_{till}\)</span>. The amount
+<a class="reference internal" href="#equation-eq-mohrcoulomb">(19)</a> sets the value of <span class="math notranslate nohighlight">\(\tau_c\)</span> proportionately to <span class="math notranslate nohighlight">\(N_{till}\)</span>. The amount
 of water in the till is, however, a nontrivial output of the hydrology (see
 <a class="reference internal" href="hydrology.html#sec-subhydro"><span class="std std-ref">Subglacial hydrology</span></a>) and conservation-of-energy (see <a class="reference internal" href="../dynamics/energy-balance.html#sec-energy"><span class="std std-ref">Modeling conservation of energy</span></a>) submodels in PISM.</p>
 <p>Following <span id="id20">[<a class="reference internal" href="../../../zzz_references_html.html#id431"><span>18</span></a>]</span>, based on laboratory experiments with till extracted
@@ -337,7 +337,7 @@ parameterization which is used in PISM. It is based on the ratio
 till and <span class="math notranslate nohighlight">\(W_{till}^{max}\)</span> (<a class="reference internal" href="../../parameters/index.html#config-hydrology.tillwat_max"><code class="docutils literal notranslate"><span class="pre">hydrology</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.tillwat_max</span></code></a>) is the maximum amount of water
 in the till (see section <a class="reference internal" href="hydrology.html#sec-subhydro"><span class="std std-ref">Subglacial hydrology</span></a>):</p>
 <div class="math notranslate nohighlight" id="equation-eq-computentill">
-<span class="eqno">(18)<a class="headerlink" href="#equation-eq-computentill" title="Permalink to this equation">¶</a></span>\[N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}\]</div>
+<span class="eqno">(21)<a class="headerlink" href="#equation-eq-computentill" title="Permalink to this equation">¶</a></span>\[N_{till} = \min\left\{P_o, N_0 \left(\frac{\delta P_o}{N_0}\right)^s \, 10^{(e_0/C_c) \left(1 - s\right).}\right\}\]</div>
 <p>Here <span class="math notranslate nohighlight">\(P_o\)</span> is the ice overburden pressure, which is determined entirely by the ice
 thickness and density, and the remaining parameters are listed below (all of these have
 the prefix <code class="docutils literal notranslate"><span class="pre">basal_yield_stress.mohr_coulomb.</span></code>).</p>
@@ -370,7 +370,7 @@ parameter studies to assess its effect.</p>
 <p>The effective pressure <span class="math notranslate nohighlight">\(N_{till}\)</span> above satisfies (see equation 20 in
 <span id="id26">[<a class="reference internal" href="../../../zzz_references_html.html#id74"><span>84</span></a>]</span>)</p>
 <div class="math notranslate nohighlight" id="equation-eq-mohr-coulomb-ntill-bounds">
-<span class="eqno">(19)<a class="headerlink" href="#equation-eq-mohr-coulomb-ntill-bounds" title="Permalink to this equation">¶</a></span>\[\delta P_o \le N_{till} \le P_o.\]</div>
+<span class="eqno">(22)<a class="headerlink" href="#equation-eq-mohr-coulomb-ntill-bounds" title="Permalink to this equation">¶</a></span>\[\delta P_o \le N_{till} \le P_o.\]</div>
 <p>In other words, <span class="math notranslate nohighlight">\(\delta\)</span> controls the lower bound of the effective pressure. In addition
 to setting it using a configuration parameter one can use a space- and time-dependent
 field. Set <a class="reference internal" href="../../parameters/index.html#config-basal_yield_stress.mohr_coulomb.delta.file"><code class="docutils literal notranslate"><span class="pre">basal_yield_stress</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.mohr_coulomb</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.delta</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file</span></code></a> to the name of the file
@@ -475,9 +475,9 @@ one month.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

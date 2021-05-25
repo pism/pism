@@ -836,7 +836,7 @@ to use PETSc's GAMG on the coarsest multigrid level.
 .. note::
 
    It would be interesting to compare different preconditioning options on the coarsest MG
-   level (GAMG, Hypre, BoomerAMG, ...).
+   level (GAMG, Hypre BoomerAMG, ...).
 
 .. _sec-bp-pc-implementation:
 

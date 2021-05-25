@@ -34,27 +34,27 @@
       
   <div class="section" id="modeling-melange-back-pressure">
 <span id="sec-model-melange-pressure"></span><h1>Modeling melange back-pressure<a class="headerlink" href="#modeling-melange-back-pressure" title="Permalink to this headline">¶</a></h1>
-<p>Equation <a class="reference internal" href="pik.html#equation-eq-cfbc">(25)</a> above, describing the stress boundary condition for ice shelves,
+<p>Equation <a class="reference internal" href="pik.html#equation-eq-cfbc">(28)</a> above, describing the stress boundary condition for ice shelves,
 can be written in terms of velocity components:</p>
 <div class="math notranslate nohighlight" id="equation-eq-cfbc-uv">
-<span class="eqno">(30)<a class="headerlink" href="#equation-eq-cfbc-uv" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2 \nu H (2u_x + u_y) \nx + 2 \nu H (u_y + v_x)  \ny &amp;= \displaystyle \int_{b}^{h}(\pice(z) - \psw(z)) dz\, \nx,\\2 \nu H (u_y + v_x)  \nx + 2 \nu H (2v_y + u_x) \ny &amp;= \displaystyle \int_{b}^{h}(\pice(z) - \psw(z)) dz\, \ny.\end{aligned}\end{align} \]</div>
+<span class="eqno">(33)<a class="headerlink" href="#equation-eq-cfbc-uv" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2 \nu H (2u_x + u_y) \nx + 2 \nu H (u_y + v_x)  \ny &amp;= \displaystyle \int_{b}^{h}(\pice(z) - \psw(z)) dz\, \nx,\\2 \nu H (u_y + v_x)  \nx + 2 \nu H (2v_y + u_x) \ny &amp;= \displaystyle \int_{b}^{h}(\pice(z) - \psw(z)) dz\, \ny.\end{aligned}\end{align} \]</div>
 <p>Here <span class="math notranslate nohighlight">\(\nu\)</span> is the vertically-averaged ice viscosity, <span class="math notranslate nohighlight">\(H\)</span> is the ice thickness, <span class="math notranslate nohighlight">\(b\)</span> is the
 elevation of the bottom and <span class="math notranslate nohighlight">\(h\)</span> of the top ice surface, <span class="math notranslate nohighlight">\(\psw\)</span> and <span class="math notranslate nohighlight">\(\pice\)</span> are pressures
 of the column of ice and water, respectively:</p>
 <div class="math notranslate nohighlight" id="equation-eq-cfbc-pressures">
-<span class="eqno">(31)<a class="headerlink" href="#equation-eq-cfbc-pressures" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\pice &amp;= \rhoi\, g (h - z),\\\psw &amp;= \rhow\, g\, \max(\zs - z,\, 0).\end{aligned}\end{align} \]</div>
-<p>We call the integral on the right hand side of <a class="reference internal" href="#equation-eq-cfbc-uv">(30)</a> the <em>pressure difference
+<span class="eqno">(34)<a class="headerlink" href="#equation-eq-cfbc-pressures" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\pice &amp;= \rhoi\, g (h - z),\\\psw &amp;= \rhow\, g\, \max(\zs - z,\, 0).\end{aligned}\end{align} \]</div>
+<p>We call the integral on the right hand side of <a class="reference internal" href="#equation-eq-cfbc-uv">(33)</a> the <em>pressure difference
 term</em>.</p>
 <p>It can be re-written as</p>
 <div class="math notranslate nohighlight" id="equation-eq-cfbc-pressure-difference">
-<span class="eqno">(32)<a class="headerlink" href="#equation-eq-cfbc-pressure-difference" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\int_b^h \pice(z) - \psw(z) dz &amp;= H (\bar p_{\text{ice}} - \bar p_{\text{water}}),\, \text{where}\\\bar p_{\text{ice}} &amp;= \frac12\, \rho_{\text{ice}}\, g\, H,\\\bar p_{\text{water}} &amp;= \frac12\, \rho_{\text{water}}\, g\, \frac{\max(z_s - b)^2}{H}.\end{aligned}\end{align} \]</div>
+<span class="eqno">(35)<a class="headerlink" href="#equation-eq-cfbc-pressure-difference" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\int_b^h \pice(z) - \psw(z) dz &amp;= H (\bar p_{\text{ice}} - \bar p_{\text{water}}),\, \text{where}\\\bar p_{\text{ice}} &amp;= \frac12\, \rho_{\text{ice}}\, g\, H,\\\bar p_{\text{water}} &amp;= \frac12\, \rho_{\text{water}}\, g\, \frac{\max(z_s - b)^2}{H}.\end{aligned}\end{align} \]</div>
 <p>PISM’s ocean model components provide <span class="math notranslate nohighlight">\(\bar p_{\text{water}}\)</span>, the vertically-averaged
 pressure of the water column adjacent to an ice margin.</p>
 <p>To model the effect of melange <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id24"><span>97</span></a>]</span> on the stress boundary condition
-we modify the pressure difference term in <a class="reference internal" href="#equation-eq-cfbc-uv">(30)</a>, adding <span class="math notranslate nohighlight">\(\pmelange\)</span>, the
+we modify the pressure difference term in <a class="reference internal" href="#equation-eq-cfbc-uv">(33)</a>, adding <span class="math notranslate nohighlight">\(\pmelange\)</span>, the
 vertically-averaged melange back pressure:</p>
 <div class="math notranslate nohighlight" id="equation-eq-cfbc-3">
-<span class="eqno">(33)<a class="headerlink" href="#equation-eq-cfbc-3" title="Permalink to this equation">¶</a></span>\[\int_{b}^{h}(\pice - (\psw + \pmelange))\, dz.\]</div>
+<span class="eqno">(36)<a class="headerlink" href="#equation-eq-cfbc-3" title="Permalink to this equation">¶</a></span>\[\int_{b}^{h}(\pice - (\psw + \pmelange))\, dz.\]</div>
 <p>By default, <span class="math notranslate nohighlight">\(\pmelange\)</span> is zero, but PISM implements two ocean model components to support
 scalar time-dependent melange pressure forcing. Please see the <a class="reference internal" href="../../../climate_forcing/ocean.html#sec-ocean-frac-mbp"><span class="std std-ref">Climate Forcing
 Manual</span></a> for details.</p>
@@ -144,9 +144,9 @@ Manual</span></a> for details.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

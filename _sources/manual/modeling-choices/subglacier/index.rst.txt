@@ -20,5 +20,3 @@ latter for the non-sliding SIA flow.
    hydrology.rst
 
    bed-deformation.rst
-
-   bed-roughness.rst

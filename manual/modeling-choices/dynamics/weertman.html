@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Surface gradient method &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <title>Weertman-style sliding law &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -16,8 +16,8 @@
     <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="Modeling conservation of energy" href="energy-balance.html" />
-    <link rel="prev" title="Ice rheology" href="rheology.html" />
+    <link rel="next" title="Blatter’s stress balance model" href="blatter.html" />
+    <link rel="prev" title="Shallow ice approximation (SIA)" href="sia.html" />
    
   <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
@@ -32,64 +32,86 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="section" id="surface-gradient-method">
-<span id="sec-gradient"></span><h1>Surface gradient method<a class="headerlink" href="#surface-gradient-method" title="Permalink to this headline">¶</a></h1>
-<p>PISM computes surface gradients to determine the “driving stress”</p>
+  <div class="section" id="weertman-style-sliding-law">
+<span id="sec-weertman"></span><h1>Weertman-style sliding law<a class="headerlink" href="#weertman-style-sliding-law" title="Permalink to this headline">¶</a></h1>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This kind of sliding is, in general, a bad idea. We implement it to simplify
+comparisons of the “hybrid” model mentioned above to older studies using this
+parameterization.</p>
+</div>
+<p>The “Weertman-type sliding law” (<span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id154"><span>54</span></a>]</span>, equations 5.35 and 5.91) has
+the form</p>
 <div class="math notranslate nohighlight">
-\[(\tau_{d,x},\tau_{d,y}) = - \rho g H \nabla h,\]</div>
-<p>where <span class="math notranslate nohighlight">\(H\)</span> is the ice thickness, and <span class="math notranslate nohighlight">\(h\)</span> is the ice surface elevation. The driving stress
-enters into both the SIA and SSA stress balances, but in the former the driving stress is
-needed on a staggered grid, while in the latter the driving stress is needed on the
-regular grid.</p>
-<p>Surface gradients are computed by finite differences in several slightly-different ways.
-There are options for choosing which method to use <strong>in the SIA model</strong>, but to the best
-of our knowledge there is no theoretical advice on the best, most robust mechanism.</p>
-<p>The SSA model uses centered finite differences, switching from centered to one-sided near
-the ice margin and does not recognize choices other than <code class="option docutils literal notranslate"><span class="pre">-gradient</span> <span class="pre">eta</span></code>.</p>
-<p>There are three <code class="option docutils literal notranslate"><span class="pre">-gradient</span></code> methods in PISM:</p>
-<table class="colwidths-given docutils align-default" id="tab-sia-gradient">
-<caption><span class="caption-number">Table 15 </span><span class="caption-text">Options controlling the surface gradient computation in the SIA code</span><a class="headerlink" href="#tab-sia-gradient" title="Permalink to this table">¶</a></caption>
+\[\begin{split}\mathbf{u}_s =
+\begin{cases}
+\mathbf{0}, &amp; T_b &lt; T_m, \\
+-C_b(\rho g H)^{p-q}|\nabla h|^{p-1}\nabla h, &amp; T_b = T_m,
+\end{cases}\end{split}\]</div>
+<p><span class="math notranslate nohighlight">\(T_b\)</span> is the ice temperature, and <span class="math notranslate nohighlight">\(T_m\)</span> is the pressure-melting temperature. The constant
+<span class="math notranslate nohighlight">\(C_b\)</span> and exponents <span class="math notranslate nohighlight">\(p\)</span> and <span class="math notranslate nohighlight">\(q\)</span> are tuning parameters.</p>
+<p>The particular form implemented in PISM comes from equation 5 in <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id422"><span>70</span></a>]</span>:</p>
+<div class="math notranslate nohighlight" id="equation-eq-weertman-sliding">
+<span class="eqno">(5)<a class="headerlink" href="#equation-eq-weertman-sliding" title="Permalink to this equation">¶</a></span>\[\mathbf{u}_s = -\frac{2 A_s \beta_c (\rho g H)^{n}}{N - P} |\nabla h|^{n-1} \nabla h.\]</div>
+<table class="colwidths-given docutils align-default" id="tab-weertman-notation">
+<caption><span class="caption-number">Table 11 </span><span class="caption-text">Notation used in <a class="reference internal" href="#equation-eq-weertman-sliding">(5)</a></span><a class="headerlink" href="#tab-weertman-notation" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 75%" />
+<col style="width: 10%" />
+<col style="width: 90%" />
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>Option</p></th>
-<th class="head"><p>Description</p></th>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Meaning</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-gradient</span> <span class="pre">mahaffy</span></code></p></td>
-<td><p>This most “standard” way computes the surface slope onto the staggered grid for the
-SIA <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id282"><span>75</span></a>]</span>. It makes <span class="math notranslate nohighlight">\(O(\Delta x^2,\Delta y^2)\)</span> errors. For computations
-of driving stress on the regular grid, centered differencing is used instead.</p></td>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(H\)</span></p></td>
+<td><p>ice thickness</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-gradient</span> <span class="pre">haseloff</span></code></p></td>
-<td><p>This is the default method. It only differs from <code class="docutils literal notranslate"><span class="pre">mahaffy</span></code> at ice-margin
-locations, where the slope is approximated using one-sided finite differences in
-cases where an adjacent ice-free bedrock surface elevation is above the ice
-elevation.</p></td>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(h\)</span></p></td>
+<td><p>ice surface elevation</p></td>
 </tr>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-gradient</span> <span class="pre">eta</span></code></p></td>
-<td><p>In this method we first transform the thickness <span class="math notranslate nohighlight">\(H\)</span> by <span class="math notranslate nohighlight">\(\eta = H^{(2n+2)/n}\)</span> and
-then differentiate the sum of the thickness and the bed using centered differences:</p>
-<div class="math notranslate nohighlight">
-\[\nabla h = \nabla H + \nabla b = \frac{n}{(2n+2)}
-\eta^{(-n-2)/(2n+2)} \nabla \eta + \nabla b.\]</div>
-<p>Here <span class="math notranslate nohighlight">\(b\)</span> is the bed elevation and <span class="math notranslate nohighlight">\(h\)</span> is the surface elevation. This transformation
-sometimes has the benefits that the surface values of the horizontal velocity and
-vertical velocity, and the driving stress, are better behaved near the margin. See
-<span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id37"><span>57</span></a>]</span> for technical explanation of this transformation and compare
-<span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id381"><span>76</span></a>]</span>. The actual finite difference schemes applied to compute the
-surface slope are similar to option <code class="docutils literal notranslate"><span class="pre">mahaffy</span></code>.</p>
-</td>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(n\)</span></p></td>
+<td><p>flow law exponent</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(g\)</span></p></td>
+<td><p>acceleration due to gravity</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\rho\)</span></p></td>
+<td><p>ice density</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(N\)</span></p></td>
+<td><p>ice overburden pressure, <span class="math notranslate nohighlight">\(N = \rho g H\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(P\)</span></p></td>
+<td><p>basal water pressure</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(A_s\)</span></p></td>
+<td><p>sliding parameter</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\beta_c\)</span></p></td>
+<td><p>“constriction parameter” capturing the effect of valley walls on the flow;
+set to <span class="math notranslate nohighlight">\(1\)</span> in this implementation</p></td>
 </tr>
 </tbody>
 </table>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code class="option docutils literal notranslate"><span class="pre">-gradient</span> <span class="pre">eta</span></code> may improve the model performance near <em>grounded</em>
-margins but should not be used in simulations of marine ice sheets.</p>
+<p>We assume that the basal water pressure is a given constant fraction of the overburden
+pressure: <span class="math notranslate nohighlight">\(P = k N\)</span>. This simplifies <a class="reference internal" href="#equation-eq-weertman-sliding">(5)</a> to</p>
+<div class="math notranslate nohighlight">
+\[\mathbf{u}_s = -\frac{2 A_s}{1 - k} ( \rho g H\, |\nabla h| )^{n-1} \nabla h.\]</div>
+<p>This parameterization is used for grounded ice <em>where the base of the ice is temperate</em>.</p>
+<p>To enable, use <code class="option docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">weertman_sliding</span></code> (this results in constant-in-depth
+ice velocity) or <code class="option docutils literal notranslate"><span class="pre">-stress_balance</span> <span class="pre">weertman_sliding+sia</span></code> to use this parameterization
+as a sliding law with the deformational flow modeled using the SIA model.</p>
+<p>Use configuration parameters <a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.k"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.weertman_sliding</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.k</span></code></a> and
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.A"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.weertman_sliding</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.A</span></code></a> to set <span class="math notranslate nohighlight">\(k\)</span> and <span class="math notranslate nohighlight">\(A_s\)</span>, respectively. Default
+values come from <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id422"><span>70</span></a>]</span>.</p>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.A"><code class="docutils literal notranslate"><span class="pre">A</span></code></a> (1.8e-16<em> Pa-3 year-1 m-2</em>) Sliding parameter in the Weertman-style sliding parameterization <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id422"><span>70</span></a>]</span></p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.weertman_sliding.k"><code class="docutils literal notranslate"><span class="pre">k</span></code></a> (0.2) The ratio of the basal water pressure and the ice overburden pressure in the Weertman-style sliding parameterization.</p></li>
+</ol>
 </div>
 </div>
 
@@ -98,13 +120,13 @@ margins but should not be used in simulations of marine ice sheets.</p>
       <table style="width: 100%">
         <tr>
           <td style="text-align: left; width: 30%">
-              <a class="reference internal" href="rheology.html">Previous</a>
+              <a class="reference internal" href="sia.html">Previous</a>
           </td>
           <td style="text-align: center; width: 30%">
-              <a class="reference internal" href="index.html">Up</a>
+              <a class="reference internal" href="stress-balance.html">Up</a>
           </td>
           <td style="text-align: right; width: 30%">
-              <a class="reference internal" href="energy-balance.html">Next</a>
+              <a class="reference internal" href="blatter.html">Next</a>
           </td>
         </tr>
       </table>
@@ -177,9 +199,9 @@ margins but should not be used in simulations of marine ice sheets.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -187,7 +187,7 @@ near-surface air temperature.</p></li>
 </ul>
 </div>
 <table class="colwidths-given docutils align-default" id="id15">
-<caption><span class="caption-number">Table 43 </span><span class="caption-text">Near-surface air temperature parameterizations</span><a class="headerlink" href="#id15" title="Permalink to this table">¶</a></caption>
+<caption><span class="caption-number">Table 40 </span><span class="caption-text">Near-surface air temperature parameterizations</span><a class="headerlink" href="#id15" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -461,7 +461,7 @@ force from <span id="id10">[<a class="reference internal" href="../zzz_reference
 <p>We compute the Fourier transform of the precipitation field using the formula below (see
 equation 49 in <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id49"><span>144</span></a>]</span> or equation 3 in <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id50"><span>145</span></a>]</span>).</p>
 <div class="math notranslate nohighlight" id="equation-eq-orographic-precipitation">
-<span class="eqno">(34)<a class="headerlink" href="#equation-eq-orographic-precipitation" title="Permalink to this equation">¶</a></span>\[\hat P_{\text{LT}}(k, l) = \frac{C_w i \sigma \hat h(k, l)}
+<span class="eqno">(37)<a class="headerlink" href="#equation-eq-orographic-precipitation" title="Permalink to this equation">¶</a></span>\[\hat P_{\text{LT}}(k, l) = \frac{C_w i \sigma \hat h(k, l)}
 {(1 - i m H_w) (1 + i \sigma \tau_c) (1 + i \sigma \tau_f)},\]</div>
 <p>where <span class="math notranslate nohighlight">\(h\)</span> is the surface elevation, <span class="math notranslate nohighlight">\(C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gamma\)</span>
 relates the condensation rate to vertical motion (see the appendix of
@@ -471,12 +471,12 @@ constants are defined below.</p>
 <p>The spatial pattern of precipitation is recovered using an inverse Fourier transform
 followed by post-processing:</p>
 <div class="math notranslate nohighlight" id="equation-eq-orographic-post-processing">
-<span class="eqno">(35)<a class="headerlink" href="#equation-eq-orographic-post-processing" title="Permalink to this equation">¶</a></span>\[P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.\]</div>
+<span class="eqno">(38)<a class="headerlink" href="#equation-eq-orographic-post-processing" title="Permalink to this equation">¶</a></span>\[P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.\]</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul>
 <li><p>Discontinuities in the surface gradient (e.g. at ice margins) may cause oscillations
-in the computed precipitation field probably due to the Gibbs phenomenon. To address
+in the computed precipitation field (probably due to the Gibbs phenomenon). To address
 this our implementation includes the ability to smooth the surface topography using a
 Gaussian filter. Set
 <a class="reference internal" href="../manual/parameters/index.html#config-atmosphere.orographic_precipitation.smoothing_standard_deviation"><code class="docutils literal notranslate"><span class="pre">atmosphere</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.orographic_precipitation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.smoothing_standard_deviation</span></code></a> to a
@@ -606,9 +606,9 @@ with the prefix <code class="docutils literal notranslate"><span class="pre">atm
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

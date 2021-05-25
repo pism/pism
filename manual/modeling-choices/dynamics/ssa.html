@@ -1,0 +1,243 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shallow shelf approximation (SSA) &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Shallow ice approximation (SIA)" href="sia.html" />
+    <link rel="prev" title="Choosing the stress balance" href="stress-balance.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+<div class="documentwrapper">
+  <div class="bodywrapper">
+    <div class="body" role="main">
+      
+  <div class="section" id="shallow-shelf-approximation-ssa">
+<span id="sec-ssa"></span><h1>Shallow shelf approximation (SSA)<a class="headerlink" href="#shallow-shelf-approximation-ssa" title="Permalink to this headline">¶</a></h1>
+<p>If the SSA stress balance is used, a choice of two solvers is available, namely
+<code class="docutils literal notranslate"><span class="pre">-ssa_method</span> <span class="pre">fd</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">-ssa_method</span> <span class="pre">fem</span></code>. See <a class="reference internal" href="#tab-ssa-usage"><span class="std std-numref">Table 9</span></a>, which
+describes additional controls on the numerical solution of the stress balance equations.
+If option <code class="docutils literal notranslate"><span class="pre">-ssa_method</span> <span class="pre">fd</span></code> is chosen then several more controls on numerics are
+available; see <a class="reference internal" href="#tab-ssafd-controls"><span class="std std-numref">Table 10</span></a>. If the ice sheet being modeled has any
+floating ice then the user is advised to read section <a class="reference internal" href="../marine/pik.html#sec-pism-pik"><span class="std std-ref">PIK options for marine ice sheets</span></a> on modeling
+marine ice sheets.</p>
+<p>When using SSA as a “sliding law” one also needs to model the yield stress, or a
+pseudo-yield-stress in the case of power law sliding (section <a class="reference internal" href="../subglacier/basal-strength.html#sec-basestrength"><span class="std std-ref">Controlling basal strength</span></a>).</p>
+<p>The basal yield stress is normally a function of the amount of water stored in the till
+and a (generally) spatially-varying till strength. The amount of stored basal water is
+modeled by the subglacial hydrology model (section <a class="reference internal" href="../subglacier/hydrology.html#sec-subhydro"><span class="std std-ref">Subglacial hydrology</span></a>) based on the basal
+melt rate which is, primarily, thermodynamically-determined (see <a class="reference internal" href="energy-balance.html#sec-energy"><span class="std std-ref">Modeling conservation of energy</span></a>).</p>
+<table class="colwidths-given docutils align-default" id="tab-ssa-usage">
+<caption><span class="caption-number">Table 9 </span><span class="caption-text">Choice of, and controls on, the numerical SSA stress balance.</span><a class="headerlink" href="#tab-ssa-usage" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssa_method</span></code> [ <code class="docutils literal notranslate"><span class="pre">fd</span> <span class="pre">|</span> <span class="pre">fem</span></code> ]</p></td>
+<td><p>Both finite difference (<code class="docutils literal notranslate"><span class="pre">fd</span></code>; the default) and finite element (<code class="docutils literal notranslate"><span class="pre">fem</span></code>) versions
+of the SSA numerical solver are implemented in PISM. The <code class="docutils literal notranslate"><span class="pre">fd</span></code> solver is the only
+one which allows PIK options (section <a class="reference internal" href="../marine/pik.html#sec-pism-pik"><span class="std std-ref">PIK options for marine ice sheets</span></a>). <code class="docutils literal notranslate"><span class="pre">fd</span></code> uses Picard
+iteration <span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span>, while <code class="docutils literal notranslate"><span class="pre">fem</span></code> uses a Newton method. The <code class="docutils literal notranslate"><span class="pre">fem</span></code> solver
+has surface velocity inversion capability <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id166"><span>26</span></a>]</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssa_eps</span></code> (<span class="math notranslate nohighlight">\(10^{13}\)</span>)</p></td>
+<td><p>The numerical schemes for the SSA compute an effective viscosity <span class="math notranslate nohighlight">\(\nu\)</span> which
+depends on strain rates and ice hardness (thus temperature). The minimum value of
+the effective viscosity times the thickness (i.e. <span class="math notranslate nohighlight">\(\nu H\)</span>) largely determines the
+difficulty of solving the numerical SSA. This constant is added to keep <span class="math notranslate nohighlight">\(\nu H\)</span>
+bounded away from zero: <span class="math notranslate nohighlight">\(\nu H \to \nu H + \epsilon_{\text{SSA}}\)</span>, where
+<span class="math notranslate nohighlight">\(\epsilon_{\text{SSA}}\)</span> is set using this option. Units of <code class="option docutils literal notranslate"><span class="pre">ssa_eps</span></code> are
+<span class="math notranslate nohighlight">\(\text{Pa}\,\text{m}\,\text{s}\)</span>. Set to zero to turn off this lower bound.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssa_view_nuh</span></code></p></td>
+<td><p>View the product <span class="math notranslate nohighlight">\(\nu H\)</span> for your simulation as a runtime viewer (section
+<a class="reference internal" href="../../practical-usage/diagnostic-viewers.html#sec-diagnostic-viewers"><span class="std std-ref">Run-time diagnostic viewers</span></a>). In a typical Greenland run we see a wide range of
+values for <span class="math notranslate nohighlight">\(\nu H\)</span> from <span class="math notranslate nohighlight">\(\sim 10^{14}\)</span> to <span class="math notranslate nohighlight">\(\sim 10^{20}\)</span>
+<span class="math notranslate nohighlight">\(\text{Pa}\,\text{m}\,\text{s}\)</span>.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="colwidths-given docutils align-default" id="tab-ssafd-controls">
+<caption><span class="caption-number">Table 10 </span><span class="caption-text">Controls on the numerical iteration of the <code class="docutils literal notranslate"><span class="pre">-ssa_method</span> <span class="pre">fd</span></code> solver</span><a class="headerlink" href="#tab-ssafd-controls" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 67%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssafd_picard_maxi</span></code> (300)</p></td>
+<td><p>Set the maximum allowed number of Picard (nonlinear) iterations in solving the
+shallow shelf approximation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssafd_picard_rtol</span></code> (<span class="math notranslate nohighlight">\(10^{-4}\)</span>)</p></td>
+<td><p>The Picard iteration computes a vertically-averaged effective viscosity which is
+used to solve the equations for horizontal velocity. Then the new velocities are
+used to recompute an effective viscosity, and so on. This option sets the relative
+change tolerance for the effective viscosity. The Picard iteration stops when
+successive values <span class="math notranslate nohighlight">\(\nu^{(k)}\)</span> of the vertically-averaged effective viscosity
+satisfy</p>
+<div class="math notranslate nohighlight">
+\[\|(\nu^{(k)} - \nu^{(k-1)}) H\|_1 \le Z \|\nu^{(k)} H\|_1\]</div>
+<p>where <span class="math notranslate nohighlight">\(Z=\)</span> <code class="docutils literal notranslate"><span class="pre">ssafd_picard_rtol</span></code>.</p>
+</td>
+</tr>
+<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssafd_ksp_rtol</span></code> (<span class="math notranslate nohighlight">\(10^{-5}\)</span>)</p></td>
+<td><p>Set the relative change tolerance for the iteration inside the Krylov linear solver
+used at each Picard iteration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ssafd_max_speed</span></code> (<span class="math notranslate nohighlight">\(50 km/yr\)</span>)</p></td>
+<td><p>Limits computed SSA velocities: ice speed is capped at this limit after each Picard
+iteration of the SSAFD solver. This may allow PISM to take longer time steps by
+ignoring high velocities at a few troublesome locations.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.Glen_exponent"><code class="docutils literal notranslate"><span class="pre">Glen_exponent</span></code></a> (3) Glen exponent in ice flow law for SSA</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.compute_surface_gradient_inward"><code class="docutils literal notranslate"><span class="pre">compute_surface_gradient_inward</span></code></a> (no) If yes then use inward first-order differencing in computing surface gradient in the SSA objects.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.dirichlet_bc"><code class="docutils literal notranslate"><span class="pre">dirichlet_bc</span></code></a> (no) apply SSA velocity Dirichlet boundary condition</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">enhancement_factor</span></code></a> (1) Flow enhancement factor for SSA</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.epsilon"><code class="docutils literal notranslate"><span class="pre">epsilon</span></code></a> (1e+13<em> Pascal second meter</em>) Initial amount of regularization in computation of product of effective viscosity and thickness (<span class="math notranslate nohighlight">\(\nu H\)</span>).  This default value for <span class="math notranslate nohighlight">\(\nu H\)</span> comes e.g. from a hardness for the Ross ice shelf (<span class="math notranslate nohighlight">\(\bar B\)</span>) = 1.9e8 Pa <span class="math notranslate nohighlight">\(s^{1/3}\)</span> <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span> = 9.49e+14 Pa s ~ 30 MPa year, the value in <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id370"><span>62</span></a>]</span>, but with a tiny thickness <span class="math notranslate nohighlight">\(H\)</span> of about 1 cm.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.brutal_sliding"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.brutal_sliding</span></code></a> (false) Enhance sliding speed brutally.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.brutal_sliding_scale"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.brutal_sliding_scale</span></code></a> (1) Brutal SSA Sliding Scale</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.flow_line_mode"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.flow_line_mode</span></code></a> (false) Set <span class="math notranslate nohighlight">\(v\)</span> (the <span class="math notranslate nohighlight">\(y\)</span> component of the ice velocity) to zero when assembling the system</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.lateral_drag.enabled"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.lateral_drag</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> (false) Set viscosity at ice shelf margin next to ice free bedrock as friction parameterization</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.lateral_drag.viscosity"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.lateral_drag</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.viscosity</span></code></a> (5e+15<em> Pascal second</em>) Staggered viscosity used as side friction parameterization.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.max_iterations"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_iterations</span></code></a> (300) Maximum number of Picard iterations for the ice viscosity computation, in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> object</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.max_speed"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max_speed</span></code></a> (300000<em> km s-1</em>) Upper bound for the ice speed computed by the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> solver.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.nuH_iter_failure_underrelaxation"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.nuH_iter_failure_underrelaxation</span></code></a> (0.8) In event of “Effective viscosity not converged” failure, use outer iteration rule nuH &lt;- nuH + f (nuH - nuH_old), where f is this parameter.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.relative_convergence"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.relative_convergence</span></code></a> (0.0001) Relative change tolerance for the effective viscosity in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> object</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.fd.replace_zero_diagonal_entries"><code class="docutils literal notranslate"><span class="pre">fd</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.replace_zero_diagonal_entries</span></code></a> (yes) Replace zero diagonal entries in the <code class="docutils literal notranslate"><span class="pre">SSAFD</span></code> matrix with :config:’basal_resistance.beta_ice_free_bedrock’ to avoid solver failures.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.flow_law"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code></a> (<code class="docutils literal notranslate"><span class="pre">gpbld</span></code>) The SSA flow law.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.method"><code class="docutils literal notranslate"><span class="pre">method</span></code></a> (<code class="docutils literal notranslate"><span class="pre">fd</span></code>) Algorithm for computing the SSA solution.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.read_initial_guess"><code class="docutils literal notranslate"><span class="pre">read_initial_guess</span></code></a> (yes) Read the initial guess from the input file when re-starting.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.strength_extension.constant_nu"><code class="docutils literal notranslate"><span class="pre">strength_extension</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.constant_nu</span></code></a> (9.48681e+14<em> Pascal second</em>) The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  This value for nu comes from hardness (bar B)=1.9e8 <span class="math notranslate nohighlight">\(Pa s^{1/3}\)</span> <span id="id5">[<a class="reference internal" href="../../../zzz_references_html.html#id280"><span>61</span></a>]</span> and a typical strain rate of 0.001 year-1:  <span class="math notranslate nohighlight">\(\nu = (\bar B) / (2 \cdot 0.001^{2/3})\)</span>.  Compare the value of 9.45e14 Pa s = 30 MPa year in <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id370"><span>62</span></a>]</span>.</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.ssa.strength_extension.min_thickness"><code class="docutils literal notranslate"><span class="pre">strength_extension</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.min_thickness</span></code></a> (50<em> meters</em>) The SSA is made elliptic by use of a constant value for the product of viscosity (nu) and thickness (H).  At ice thicknesses below this value the product nu*H switches from the normal vertical integral to a constant value.  The geometry itself is not affected by this value.</p></li>
+</ol>
+</div>
+</div>
+
+
+      <hr>
+      <table style="width: 100%">
+        <tr>
+          <td style="text-align: left; width: 30%">
+              <a class="reference internal" href="stress-balance.html">Previous</a>
+          </td>
+          <td style="text-align: center; width: 30%">
+              <a class="reference internal" href="stress-balance.html">Up</a>
+          </td>
+          <td style="text-align: right; width: 30%">
+              <a class="reference internal" href="sia.html">Next</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/pism-logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/index.html">Installing PISM</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">PISM User’s Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../std-greenland/index.html">Getting started: a Greenland ice sheet example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../highlevelview/index.html">Ice dynamics, the PISM view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initialization/index.html">Initialization and bootstrapping</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Modeling choices</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../computational/index.html">Model domain, grid, and time</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Ice dynamics and thermodynamics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../subglacier/index.html">The subglacier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../marine/index.html">Marine ice sheet modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../regional/index.html">Modeling individual outlet glaciers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../disabling.html">Disabling sub-models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hard-choices.html">Dealing with more difficult modeling choices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../practical-usage/index.html">Practical usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simplified-geometry/index.html">Simplified geometry experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../verification/index.html">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../validation/index.html">Validation case studies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../jakobshavn/index.html">Example: A regional model of the Jakobshavn outlet glacier in Greenland</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../parameters/index.html">Configuration parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../diagnostics/index.html">Diagnostic quantities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../climate_forcing/index.html">Climate forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../technical/index.html">Technical notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing/index.html">Contributing to PISM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authorship.html">Authorship</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../zzz_references_html.html">References</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      Git revision v1.0-2372-g6f4ea1cd6
+      committed by Constantine Khrulev
+      on 2021-05-24 16:22:56 -0800 |
+      &copy; 2004--2021, the PISM authors.
+      
+    </div>
+  </body>
+</html>

@@ -11,8 +11,6 @@ Ice dynamics and thermodynamics
 
    rheology.rst
 
-   surface-gradient.rst
-
    energy-balance.rst
 
    age.rst

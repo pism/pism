@@ -53,7 +53,7 @@ options as in an actual modeling run. Note that <code class="option docutils lit
 disable geometry updates, so one can check if surface elevation feedbacks modeled using
 lapse rates (and similar) work correctly. Please use the <code class="option docutils literal notranslate"><span class="pre">-no_mass</span></code> command-line
 option to fix ice geometry. (This may be necessary if the mass balance rate data would
-result in extreme ice sheet growth that is not balanced by ice flow in this setup.</p>
+result in extreme ice sheet growth that is not balanced by ice flow in this setup.)</p>
 <p>As an example, set up an ice sheet state file and check if climate data is read in
 correctly:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
@@ -69,7 +69,7 @@ interesting, exactly because a constant climate is used. Viewing <code class="do
 same values as from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>, in variables <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>,
 <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code>, reported back to us as the time- and space-dependent climate at
 times <code class="docutils literal notranslate"><span class="pre">ys:dt:ye</span></code>. It is a boring “movie.”</p>
-<p>A more interesting example uses a <a class="reference internal" href="surface.html#sec-surface-pdd"><span class="std std-ref">positive degree-day scheme</span></a>).
+<p>A more interesting example uses a <a class="reference internal" href="surface.html#sec-surface-pdd"><span class="std std-ref">positive degree-day scheme</span></a>.
 This scheme uses a variable called <code class="variable docutils literal notranslate"><span class="pre">precipitation</span></code>, and a calculation of melting, to
 get the surface mass balance <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>.</p>
 <p>Assuming that <code class="docutils literal notranslate"><span class="pre">g20km_10ka.nc</span></code> was created <a class="reference internal" href="../manual/std-greenland/run-1.html#sec-runscript"><span class="std std-ref">as described in the User’s Manual</span></a>, running</p>
@@ -244,9 +244,9 @@ temperature offsets are used correctly.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2364-g99af66609
+      Git revision v1.0-2372-g6f4ea1cd6
       committed by Constantine Khrulev
-      on 2021-05-21 13:46:01 -0800 |
+      on 2021-05-24 16:22:56 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

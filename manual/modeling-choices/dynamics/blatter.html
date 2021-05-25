@@ -1,0 +1,399 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blatter’s stress balance model &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Ice rheology" href="rheology.html" />
+    <link rel="prev" title="Weertman-style sliding law" href="weertman.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+<div class="documentwrapper">
+  <div class="bodywrapper">
+    <div class="body" role="main">
+      
+  <div class="section" id="blatter-s-stress-balance-model">
+<span id="sec-blatter"></span><h1>Blatter’s stress balance model<a class="headerlink" href="#blatter-s-stress-balance-model" title="Permalink to this headline">¶</a></h1>
+<p>Unlike the rest of PISM, the Blatter solver uses a geometry-following vertical grid (see
+<a class="reference internal" href="../computational/grid.html#fig-grid-vertical-sigma"><span class="std std-numref">Fig. 19</span></a>) to approximate horizontal components of ice velocity.
+The number of vertical “levels” in this grid is controlled by
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mz</span></code></a>.</p>
+<p>The non-linear system resulting from the discretization of PDEs corresponding to Blatter’s
+stress balance model is much harder to solve than the one corresponding to the
+SSA system (<span id="id1">[<a class="reference internal" href="../../../zzz_references_html.html#id68"><span>55</span></a>]</span>, <span id="id2">[<a class="reference internal" href="../../../zzz_references_html.html#id9"><span>71</span></a>]</span>) and (at this point)
+experimentation with preconditioner choices seems inevitable. We use PETSc’s command-line
+options to control these choices.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Blatter solver uses the <code class="docutils literal notranslate"><span class="pre">-bp_</span></code> command-line option prefix.</p>
+<p>Run PISM like this</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pismr -stress_balance blatter <span class="o">[</span>other options<span class="o">]</span> -help <span class="p">|</span> grep <span class="s2">&quot;-bp_&quot;</span>
+</pre></div>
+</div>
+<p>to see the complete list of PETSc option controlling this solver.</p>
+</div>
+<p>The multigrid (MG) preconditioner using semi-coarsening in the vertical direction followed
+by further (horizontal) coarsening using algebraic multigrid methods appears to be
+effective <span id="id3">[<a class="reference internal" href="../../../zzz_references_html.html#id9"><span>71</span></a>]</span>. The option combination</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-bp_pc_type mg <span class="se">\</span>
+-bp_pc_mg_levels N <span class="se">\</span>
+-bp_mg_levels_ksp_type gmres <span class="se">\</span>
+-bp_mg_coarse_pc_type gamg
+</pre></div>
+</div>
+<p>roughly corresponds to this approach (see <a class="reference internal" href="#sec-blatter-preconditioners"><span class="std std-ref">Practical preconditioners choices</span></a> for more).</p>
+<p>Unlike <span id="id4">[<a class="reference internal" href="../../../zzz_references_html.html#id9"><span>71</span></a>]</span>, who used a purely
+algebraic approach, these options select a combination of geometric and algebraic
+multigrid preconditioners.</p>
+<p>To use a multigrid preconditioner the user has to specify</p>
+<ul class="simple">
+<li><p>the number of MG levels <span class="math notranslate nohighlight">\(N\)</span> using <code class="docutils literal notranslate"><span class="pre">-bp_pc_mg_levels</span> <span class="pre">N</span></code>,</p></li>
+<li><p>the coarsening factor <span class="math notranslate nohighlight">\(C\)</span> by setting <a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.coarsening_factor</span></code></a>, and</p></li>
+<li><p>the vertical grid size <span class="math notranslate nohighlight">\(M_z\)</span> (<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.Mz</span></code></a>).</p></li>
+</ul>
+<p>The values of these parameters have to be compatible. Specifically, <span class="math notranslate nohighlight">\(M_z\)</span> has to have the
+form</p>
+<div class="math notranslate nohighlight" id="equation-eq-bp-vertical-grid-size">
+<span class="eqno">(6)<a class="headerlink" href="#equation-eq-bp-vertical-grid-size" title="Permalink to this equation">¶</a></span>\[M_z = A\cdot C^{N - 1} + 1\]</div>
+<p>for some positive integer <span class="math notranslate nohighlight">\(A\)</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PISM stops with an error message if <a class="reference internal" href="#equation-eq-bp-vertical-grid-size">(6)</a> is not satisfied.</p>
+</div>
+<p>To set up a multigrid preconditioner PISM needs to build a hierarchy of vertical grids<a class="footnote-reference brackets" href="#semi-coarsening" id="id5">1</a> with <span class="math notranslate nohighlight">\(M_z\)</span> points on the finest grid.. Starting with this grid, PISM
+creates the next one by dividing the number of vertical <em>spaces</em> by the coarsening factor
+<span class="math notranslate nohighlight">\(C\)</span>. Then the newly-created grid is coarsened and this process is continued, stopping when
+the desired number <span class="math notranslate nohighlight">\(N\)</span> of grids (MG levels) reached.</p>
+<p>Overall, the number of points <span class="math notranslate nohighlight">\(M_{z}^k\)</span> in the vertical grid number <span class="math notranslate nohighlight">\(k\)</span> in the hierarchy
+is</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}M_{z}^0 &amp;= M_z,\\M_{z}^k &amp;= (M_{k-1} - 1)\, /\, C + 1.\end{aligned}\end{align} \]</div>
+<p>This process explains the compatibility condition <a class="reference internal" href="#equation-eq-bp-vertical-grid-size">(6)</a>: the
+number of <strong>spaces</strong> in all vertical grids in the hierarchy <em>except for the coarsest one</em>
+has to be divisible by <span class="math notranslate nohighlight">\(C\)</span>.</p>
+<table class="colwidths-given docutils align-default" id="tab-blatter-mg-levels">
+<caption><span class="caption-number">Table 12 </span><span class="caption-text">Some vertical grid hierarchies</span><a class="headerlink" href="#tab-blatter-mg-levels" title="Permalink to this table">¶</a></caption>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 75%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Coarsening factor <span class="math notranslate nohighlight">\(C\)</span></p></th>
+<th class="head"><p>Possible sizes of vertical grids in a hierarchy</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(2\)</span></p></td>
+<td><p>2, 3, 5, 9, 17, 33, <strong>65</strong>, 129, 257, 513, 1025, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(3\)</span></p></td>
+<td><p>2, 4, 10, 28, 82, 244, 730, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(4\)</span></p></td>
+<td><p>2, 5, 17, <strong>65</strong>, 257, 1025, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(5\)</span></p></td>
+<td><p>2, 6, 26, 126, 626, 3126, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(6\)</span></p></td>
+<td><p>2, 7, 37, 217, 1297, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(7\)</span></p></td>
+<td><p>2, 8, 50, 344, 2402, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(8\)</span></p></td>
+<td><p>2, 9, <strong>65</strong>, 513, 4097, <span class="math notranslate nohighlight">\(\dots\)</span></p></td>
+</tr>
+</tbody>
+</table>
+<p>By default <span class="math notranslate nohighlight">\(C = 2\)</span>, but <em>aggressive coarsening</em> (i.e. larger values of <span class="math notranslate nohighlight">\(C\)</span>, up to around
+<span class="math notranslate nohighlight">\(8\)</span>) has been observed to work. As highlighted in <a class="reference internal" href="#tab-blatter-mg-levels"><span class="std std-numref">Table 12</span></a>,
+sometimes the same number of vertical grid levels can be achieved using more than one
+combination of the coarsening factor and the number of MG levels.</p>
+<p>For example, we can set up a solver using <span class="math notranslate nohighlight">\(65\)</span> vertical levels and <span class="math notranslate nohighlight">\(3\)</span> MG levels with the
+coarsening factor of <span class="math notranslate nohighlight">\(8\)</span>, or <span class="math notranslate nohighlight">\(4\)</span> MG levels and the factor of <span class="math notranslate nohighlight">\(4\)</span>, or <span class="math notranslate nohighlight">\(7\)</span> MG levels and the
+coarsening factor of <span class="math notranslate nohighlight">\(2\)</span>. In general, the computational cost of an MG preconditioner
+application increases with the number of MG levels, so the first hierarchy (<span class="math notranslate nohighlight">\(2, 9, 65\)</span>,
+<span class="math notranslate nohighlight">\(C=8\)</span>) <em>may</em> be the best choice. <em>However,</em> coarsening that is too aggressive may make a
+less effective preconditioner, requiring more Krylov iterations and increasing the
+computational cost. Again, one may have to experiment to find settings that work best in a
+particular setup.</p>
+<p>The coarsest grid in a hierarchy should be as small as possible (corresponding to <span class="math notranslate nohighlight">\(A = 1\)</span>
+in <a class="reference internal" href="#equation-eq-bp-vertical-grid-size">(6)</a>); two levels is the minimum achievable in the context of
+the finite element method used to discretize the system (this corresponds to a mesh that
+is just one element thick).</p>
+<div class="section" id="surface-gradient-computation">
+<span id="sec-blatter-gradient"></span><h2>Surface gradient computation<a class="headerlink" href="#surface-gradient-computation" title="Permalink to this headline">¶</a></h2>
+<p>Some synthetic geometry experiments with grounded margins show “checkerboard” artifacts in
+computed ice velocity near steep margins. A similar issue and an attempt to address it are
+described in <span id="id6">[<a class="reference internal" href="../../../zzz_references_html.html#id10"><span>72</span></a>]</span>.</p>
+<p>This implementation takes a different approach: instead of using an “upwinded” finite
+difference approximation of the surface gradient we allow using the <span class="math notranslate nohighlight">\(\eta\)</span> transformation
+described in <a class="reference internal" href="sia.html#sec-sia-gradient"><span class="std std-ref">Surface gradient method</span></a>. Set
+<a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.use_eta_transform"><code class="docutils literal notranslate"><span class="pre">stress_balance</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.blatter</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.use_eta_transform</span></code></a> to enable it.</p>
+</div>
+<div class="section" id="adaptive-time-stepping">
+<span id="sec-blatter-time-stepping"></span><h2>Adaptive time stepping<a class="headerlink" href="#adaptive-time-stepping" title="Permalink to this headline">¶</a></h2>
+<p>PISM’s explicit in time mass continuity code is <em>conditionally stable</em>. When used with the
+SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
+criterion <span id="id7">[<a class="reference internal" href="../../../zzz_references_html.html#id300"><span>73</span></a>]</span> and the maximum diffusivity of the SIA flow
+<span id="id8">[<a class="reference internal" href="../../../zzz_references_html.html#id33"><span>9</span></a>]</span>. This time step restriction does not disappear when the same mass
+continuity code is used with a stress balance model that does not explicitly compute
+“advective” and “diffusive” parts of the flow. We need a work-around.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Very little is known about stability of explicit time stepping methods of the mass
+continuity equation coupled to a “generic” stress balance model.</p>
+<p>We don’t have a rigorous justification for the approach described below.</p>
+</div>
+<p>When this BP solver is coupled to PISM, the vertically-averaged ice velocity is used in
+place of the “advective” (“sliding”) velocity from the SSA. As a result, the CFL-based
+time step restriction is applied by existing PISM code.</p>
+<p>However, it is almost always the case that the diffusivity-driven time step restriction is
+more severe and so we need a replacement: CFL alone does not appear to be sufficient for
+stability.</p>
+<p>We compute an estimate of the “SIA-like” maximum diffusivity by observing that for the SIA
+the vertically-averaged ice flux <span class="math notranslate nohighlight">\(Q\)</span> satisfies</p>
+<div class="math notranslate nohighlight">
+\[Q = -D \nabla s.\]</div>
+<p>We solve this for the diffusivity <span class="math notranslate nohighlight">\(D\)</span>:</p>
+<div class="math notranslate nohighlight" id="equation-eq-bp-max-diffusivity">
+<span class="eqno">(7)<a class="headerlink" href="#equation-eq-bp-max-diffusivity" title="Permalink to this equation">¶</a></span>\[D = \frac{H\, |\bar{\uu}|}{|\nabla s| + \epsilon}\]</div>
+<p>and use the maximum of this quantity to determine the maximum allowed time step using
+<a class="reference internal" href="sia.html#equation-eq-sia-max-dt">(4)</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Other models supporting this stress balance model and using an explicit in time
+geometry evolution method (<span id="id9">[<a class="reference internal" href="../../../zzz_references_html.html#id10"><span>72</span></a>]</span>, <span id="id10">[<a class="reference internal" href="../../../zzz_references_html.html#id8"><span>74</span></a>]</span>) report that the
+CFL condition appears to be sufficient in practice.</p>
+<p>Given the lack of a theory describing the maximum time step necessary for stability it
+may make sense to experiment with <em>increasing</em> <a class="reference internal" href="../../parameters/index.html#config-time_stepping.adaptive_ratio"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.adaptive_ratio</span></code></a>.</p>
+<p>Setting it to a very large value would <em>completely disable</em> the diffusivity-based time
+step restriction.</p>
+</div>
+</div>
+<div class="section" id="practical-preconditioners-choices">
+<span id="sec-blatter-preconditioners"></span><h2>Practical preconditioners choices<a class="headerlink" href="#practical-preconditioners-choices" title="Permalink to this headline">¶</a></h2>
+<p>The option combination</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-bp_pc_type mg <span class="se">\</span>
+-bp_pc_mg_levels N <span class="se">\</span>
+-bp_mg_levels_ksp_type gmres <span class="se">\</span>
+-bp_mg_coarse_pc_type gamg
+</pre></div>
+</div>
+<p>sets up the <em>kind</em> is a multigrid preconditioner known to be effective, but it is not the
+only one, and most likely not the best one.</p>
+<p>Our experiments suggest that</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-bp_pc_type mg <span class="se">\</span>
+-bp_pc_mg_levels N <span class="se">\</span>
+-bp_snes_ksp_ew  <span class="se">\</span>
+-bp_snes_ksp_ew_version <span class="m">3</span> <span class="se">\</span>
+-bp_mg_levels_ksp_type richardson <span class="se">\</span>
+-bp_mg_levels_pc_type sor <span class="se">\</span>
+-bp_mg_coarse_ksp_type gmres <span class="se">\</span>
+-bp_mg_coarse_pc_type hypre <span class="se">\</span>
+-bp_mg_coarse_pc_hypre_type boomeramg
+</pre></div>
+</div>
+<p>may work better<a class="footnote-reference brackets" href="#bp-pc-settings" id="id11">2</a>, but requires PETSc built with <a class="reference external" href="https://hypre.readthedocs.io/">hypre</a>.</p>
+<p>Here <code class="docutils literal notranslate"><span class="pre">-bp_snes_ksp_ew</span> <span class="pre">-bp_snes_ksp_ew_version</span> <span class="pre">3</span></code> enables Luis Chacón’s variant of the
+Eisenstat-Walker <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id3"><span>75</span></a>]</span> method of adjusting linear solver tolerances to
+avoid oversolving and <code class="docutils literal notranslate"><span class="pre">-bp_mg_coarse_pc_type</span> <span class="pre">hypre</span> <span class="pre">-bp_mg_coarse_pc_hypre_type</span>
+<span class="pre">boomeramg</span></code> selects the BoomerAMG algebraic MG preconditioner from <a class="reference external" href="https://hypre.readthedocs.io/">hypre</a> for the coarse
+MG level.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The Eisenstat-Walker adjustment of linear solver tolerances saves time when a
+low-accuracy estimate of the Newton step is sufficient but may lead to solver failures,
+especially when the initial guess is of poor quality. In an attempt to reduce
+computational costs while maintaining robustness PISM disables <code class="docutils literal notranslate"><span class="pre">-bp_snes_ksp_ew</span></code> if
+the initial guess is zero (beginning of a simulation) or if the solver fails with
+<code class="docutils literal notranslate"><span class="pre">-bp_snes_ksp_ew</span></code>.</p>
+</div>
+<p>Some simulations may benefit from using a direct solver on the coarse MG level. For
+example, the following would use <a class="reference external" href="http://mumps.enseeiht.fr/">MUMPS</a> on the coarse grid:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-bp_pc_type mg <span class="se">\</span>
+-bp_pc_mg_levels N <span class="se">\</span>
+-bp_snes_ksp_ew  <span class="se">\</span>
+-bp_snes_ksp_ew_version <span class="m">3</span> <span class="se">\</span>
+-bp_mg_levels_ksp_type richardson <span class="se">\</span>
+-bp_mg_levels_pc_type sor <span class="se">\</span>
+-bp_mg_coarse_ksp_type preonly <span class="se">\</span>
+-bp_mg_coarse_pc_type lu
+</pre></div>
+</div>
+<p><em>if</em> PETSc is built with <a class="reference external" href="http://mumps.enseeiht.fr/">MUMPS</a>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Parallel direct solvers such as MUMPS really benefit from using optimized BLAS and
+LAPACK libraries.</p>
+<p>Please see section 3.5.3 of <span id="id13">[<a class="reference internal" href="../../../zzz_references_html.html#id468"><span>76</span></a>]</span> for instructions. At the time of
+writing</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>--download-f2cblaslapack --download-blis
+</pre></div>
+</div>
+<p>is recommended as a portable high-performance option. However, it makes sense to try
+other freely-available libraries (Intel MKL, OpenBLAS) as well.</p>
+</div>
+<p>Note, though, that the multigrid preconditioner, even if it is effective in terms of
+reducing the number of Krylov iterations, may not be the cheapest one <span id="id14">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>77</span></a>]</span>:
+there is a trade off between the number of iterations and the cost of a single iteration.
+Other preconditioner options may be worth considering as well.</p>
+<p>In some cases node ordering and the way the domain is split among processes in a parallel
+run may affect solver performance (see <span id="id15">[<a class="reference internal" href="../../../zzz_references_html.html#id68"><span>55</span></a>]</span>, <span id="id16">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>77</span></a>]</span>,
+<span id="id17">[<a class="reference internal" href="../../../zzz_references_html.html#id9"><span>71</span></a>]</span>). These references mention staggering the unknowns so that <span class="math notranslate nohighlight">\(u\)</span> and
+<span class="math notranslate nohighlight">\(v\)</span> components at the same node correspond to adjacent equations in the system and using
+contiguous ordering of unknowns in the same ice column. This allows the solver to capture
+vertical coupling <em>locally</em> using incomplete factorization.</p>
+<p>In addition to this, <span id="id18">[<a class="reference internal" href="../../../zzz_references_html.html#id12"><span>77</span></a>]</span> mention that parallel domain distribution
+partitioning ice columns among multiple processes <em>sometimes</em> leads to convergence issues.
+Following this advice, PISM does not partition the domain in the <span class="math notranslate nohighlight">\(z\)</span> direction, but some
+of our experiments show that if the solver struggles, switching to a <em>one-dimensional</em>
+domain decomposition along the <span class="math notranslate nohighlight">\(y\)</span> direction may help (see
+<a class="reference internal" href="../computational/grid.html#sec-domain-distribution"><span class="std std-ref">Parallel domain distribution</span></a>).</p>
+<p>Run PISM as follows to give this a try:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mpiexec -n M pismr -Nx <span class="m">1</span> -Ny M ...
+</pre></div>
+</div>
+<p>This forces PISM to split the domain into <span class="math notranslate nohighlight">\(M\)</span> parts in the <span class="math notranslate nohighlight">\(y\)</span> direction instead of the
+default (approximately <span class="math notranslate nohighlight">\(\sqrt{M}\)</span> in both <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span>).</p>
+<p>Please see <a class="reference internal" href="../../../technical/blatter-pattyn.html#sec-blatter-details"><span class="std std-ref">Blatter stress balance solver: technical details</span></a> for more.</p>
+</div>
+<div class="section" id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<p>Below is the complete list of configuration parameters controlling this solver (prefix:
+<code class="docutils literal notranslate"><span class="pre">stress_balance.blatter.</span></code>):</p>
+<ol class="simple">
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Glen_exponent"><code class="docutils literal notranslate"><span class="pre">Glen_exponent</span></code></a> (3) Glen exponent in ice flow law for the Blatter stress balance solver</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.Mz"><code class="docutils literal notranslate"><span class="pre">Mz</span></code></a> (5) Number of vertical grid levels in the ice</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.coarsening_factor"><code class="docutils literal notranslate"><span class="pre">coarsening_factor</span></code></a> (2) Coarsening factor in the <span class="math notranslate nohighlight">\(z\)</span> direction</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.enhancement_factor"><code class="docutils literal notranslate"><span class="pre">enhancement_factor</span></code></a> (1) Flow enhancement factor for the Blatter stress balance flow law</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.flow_law"><code class="docutils literal notranslate"><span class="pre">flow_law</span></code></a> (<code class="docutils literal notranslate"><span class="pre">gpbld</span></code>) The flow law used by the Blatter-Pattyn stress balance model</p></li>
+<li><p><a class="reference internal" href="../../parameters/index.html#config-stress_balance.blatter.use_eta_transform"><code class="docutils literal notranslate"><span class="pre">use_eta_transform</span></code></a> (no) Use the <span class="math notranslate nohighlight">\(\eta\)</span> transform to improve the accuracy of the surface gradient approximation near grounded margins (see <span id="id19">[<a class="reference internal" href="../../../zzz_references_html.html#id37"><span>57</span></a>]</span> for details).</p></li>
+</ol>
+<p class="rubric">Footnotes</p>
+<dl class="footnote brackets">
+<dt class="label" id="semi-coarsening"><span class="brackets"><a class="fn-backref" href="#id5">1</a></span></dt>
+<dd><p>Horizontal coordinates of grid points are the same in all grids in a
+hierarchy, i.e. each grid is “extruded” from PISM’s 2D grid with
+uniform spacing in <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> directions.</p>
+</dd>
+<dt class="label" id="bp-pc-settings"><span class="brackets"><a class="fn-backref" href="#id11">2</a></span></dt>
+<dd><p>These settings are inspired by <span id="id20">[<a class="reference internal" href="../../../zzz_references_html.html#id68"><span>55</span></a>]</span>.</p>
+</dd>
+</dl>
+</div>
+</div>
+
+
+      <hr>
+      <table style="width: 100%">
+        <tr>
+          <td style="text-align: left; width: 30%">
+              <a class="reference internal" href="weertman.html">Previous</a>
+          </td>
+          <td style="text-align: center; width: 30%">
+              <a class="reference internal" href="stress-balance.html">Up</a>
+          </td>
+          <td style="text-align: right; width: 30%">
+              <a class="reference internal" href="rheology.html">Next</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../../index.html">
+    <img class="logo" src="../../../_static/pism-logo.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../acknowledgements.html">Acknowledgements</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation/index.html">Installing PISM</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">PISM User’s Manual</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../std-greenland/index.html">Getting started: a Greenland ice sheet example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../highlevelview/index.html">Ice dynamics, the PISM view</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../initialization/index.html">Initialization and bootstrapping</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">Modeling choices</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../computational/index.html">Model domain, grid, and time</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">Ice dynamics and thermodynamics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../subglacier/index.html">The subglacier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../marine/index.html">Marine ice sheet modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../regional/index.html">Modeling individual outlet glaciers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../disabling.html">Disabling sub-models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hard-choices.html">Dealing with more difficult modeling choices</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../practical-usage/index.html">Practical usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../simplified-geometry/index.html">Simplified geometry experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../verification/index.html">Verification</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../validation/index.html">Validation case studies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../jakobshavn/index.html">Example: A regional model of the Jakobshavn outlet glacier in Greenland</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../parameters/index.html">Configuration parameters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../diagnostics/index.html">Diagnostic quantities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../climate_forcing/index.html">Climate forcing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../technical/index.html">Technical notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing/index.html">Contributing to PISM</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../authorship.html">Authorship</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../zzz_references_html.html">References</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      Git revision v1.0-2372-g6f4ea1cd6
+      committed by Constantine Khrulev
+      on 2021-05-24 16:22:56 -0800 |
+      &copy; 2004--2021, the PISM authors.
+      
+    </div>
+  </body>
+</html>
