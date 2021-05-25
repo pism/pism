@@ -10,4 +10,4 @@ USER builder
 ENV PETSC_DIR="/usr/lib/petsc"
 
 COPY pism.sh /tmp/
-RUN /tmp/pism.sh
+RUN bash /tmp/pism.sh
