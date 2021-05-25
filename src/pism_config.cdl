@@ -1907,12 +1907,12 @@ netcdf pism_config {
     pism_config:output.compression_level_units = "count";
 
     pism_config:output.extra.append = "no";
-    pism_config:output.extra.append_doc = "Append to an existing output file.";
+    pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
     pism_config:output.extra.append_option = "extra_append";
     pism_config:output.extra.append_type = "flag";
 
     pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
+    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file_name`.";
     pism_config:output.extra.file_option = "extra_file";
     pism_config:output.extra.file_type = "string";
 

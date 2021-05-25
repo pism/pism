@@ -29,7 +29,7 @@ CC=mpicc CXX=mpicxx cmake \
     ..
 
 make -j8 all
-PYTHONPATH=$PWD/site-packages:$PYTHONPATH ctest --output-on-failure
+# PYTHONPATH=$PWD/site-packages:$PYTHONPATH ctest --output-on-failure
 make install
 popd
 popd

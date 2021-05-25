@@ -13,7 +13,7 @@ Shallow ice approximation (SIA)
    .. math::
       :label: eq-sia-max-dt
 
-      \Delta t \le \frac{2 R}{D\left( 1/\Delta x^2 + 1/\Delta y^2 \right)}
+      \dt \le \frac{2 R}{D\left( 1/\dx^2 + 1/\dy^2 \right)}
 
    Here `D` is the maximum diffusivity of the SIA flow and `R` is
    :config:`time_stepping.adaptive_ratio`, a tuning parameter that further reduces the
@@ -49,7 +49,7 @@ the following three finite-difference approximations (selected using
 :config:`stress_balance.sia.surface_gradient_method`):
 
 #. ``mahaffy``: This most "standard" way computes the surface slope onto the staggered
-   grid for the SIA :cite:`Mahaffy`. It makes `O(\Delta x^2,\Delta y^2)` errors.
+   grid for the SIA :cite:`Mahaffy`. It makes `O(\dx^2,\dy^2)` errors.
 
 #. ``haseloff``: This is the default method. It only differs from ``mahaffy`` at
    ice-margin locations, where the slope is approximated using one-sided finite

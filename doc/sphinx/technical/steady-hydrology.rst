@@ -173,17 +173,17 @@ Using an explicit time stepping approximation of :eq:`eq-emptying-problem` we ca
 
       Q &\leftarrow (0, 0).
 
-#. Compute the CFL time step `\Delta t` using `u` and `\V`.
+#. Compute the CFL time step `\dt` using `u` and `\V`.
 
-#. Perform an explicit step from `t` to `t + \Delta t`, updating `u`.
+#. Perform an explicit step from `t` to `t + \dt`, updating `u`.
 
 #. Accumulate this step's contribution to `Q`:
 
    .. math::
 
-      Q \leftarrow Q + \Delta t \cdot \V u.
+      Q \leftarrow Q + \dt \cdot \V u.
 
-#. Set `t \leftarrow t + \Delta t`
+#. Set `t \leftarrow t + \dt`
 
 #. If `\int_{\Omega} u\; dx\, dy > \epsilon`, go to 4.
 
