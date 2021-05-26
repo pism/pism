@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -223,6 +223,9 @@ void IceModel::max_timestep(double &dt_result, unsigned int &skip_counter_result
     // "max" and "end of the run" limit the "big" time-step (in
     // the context of the "skipping" mechanism), so we might need to
     // reset the skip_counter_result to 1.
+
+    // FIXME: this string comparison is broken because m_adaptive_timestep_reason is
+    // modified to include "overrides ..." in it.
     if ((m_adaptive_timestep_reason == "max" ||
          m_adaptive_timestep_reason == "end of the run") &&
         skip_counter_result > 1) {
