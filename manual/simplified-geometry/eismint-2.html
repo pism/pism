@@ -59,8 +59,12 @@ km in both <span class="math notranslate nohighlight">\(x\)</span> and <span cla
 experiment A. Experiments I and J are similar to experiment A but with non-flat “trough”
 bed topography. Experiments K and L are similar to experiment C but with non-flat “mound”
 bed topography.</p>
-<p>See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 31</span></a> for how to run all EISMINT II experiments in PISM.
+<p>See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 31</span></a> for how to run supported EISMINT II experiments in PISM.
 Experiments E – L are only documented in <span id="id6">[<a class="reference internal" href="../../zzz_references_html.html#id104"><span>113</span></a>]</span>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Experiments G and H are not supported.</p>
+</div>
 <table class="colwidths-given docutils align-default" id="tab-eisii">
 <caption><span class="caption-number">Table 31 </span><span class="caption-text">Running the EISMINT II experiments in PISM. Use <code class="docutils literal notranslate"><span class="pre">-skip</span> <span class="pre">-skip_max</span> <span class="pre">5</span></code>, on
              the <span class="math notranslate nohighlight">\(61\times 61\)</span> default grid, for significant speedup.</span><a class="headerlink" href="#tab-eisii" title="Permalink to this table">¶</a></caption>
@@ -88,12 +92,6 @@ Experiments E – L are only documented in <span id="id6">[<a class="reference i
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-eisII</span> <span class="pre">F</span> <span class="pre">-Mx</span> <span class="pre">61</span> <span class="pre">-My</span> <span class="pre">61</span> <span class="pre">-Mz</span> <span class="pre">81</span> <span class="pre">-Lz</span> <span class="pre">6000</span> <span class="pre">-y</span> <span class="pre">2e5</span> <span class="pre">-o</span> <span class="pre">eisIIF.nc</span></code></p></td>
 <td><p>colder; famous spokes <span id="id7">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span></p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-eisII</span> <span class="pre">G</span> <span class="pre">-Mx</span> <span class="pre">61</span> <span class="pre">-My</span> <span class="pre">61</span> <span class="pre">-Mz</span> <span class="pre">201</span> <span class="pre">-Lz</span> <span class="pre">5000</span> <span class="pre">-y</span> <span class="pre">2e5</span> <span class="pre">-o</span> <span class="pre">eisIIG.nc</span></code></p></td>
-<td><p>sliding (regardless of temperature)</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-eisII</span> <span class="pre">H</span> <span class="pre">-Mx</span> <span class="pre">61</span> <span class="pre">-My</span> <span class="pre">61</span> <span class="pre">-Mz</span> <span class="pre">201</span> <span class="pre">-Lz</span> <span class="pre">5000</span> <span class="pre">-y</span> <span class="pre">2e5</span> <span class="pre">-o</span> <span class="pre">eisIIH.nc</span></code></p></td>
-<td><p>melt-temperature activated sliding</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-eisII</span> <span class="pre">E</span> <span class="pre">-i</span> <span class="pre">eisIIA.nc</span> <span class="pre">-y</span> <span class="pre">2e5</span> <span class="pre">-o</span> <span class="pre">eisIIE.nc</span></code></p></td>
 <td><p>shifted climate maps</p></td>
@@ -156,14 +154,14 @@ EISMINT II experiments.</p>
 experiment. See <a class="reference internal" href="#tab-eisii"><span class="std std-numref">Table 31</span></a>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-Mmax</span></code></p></td>
-<td><p>0.5 [ABDEFGHIK],</p>
+<td><p>0.5 [ABDEFIK],</p>
 <p>0.25 [CJL]</p>
 </td>
 <td><p><span class="math notranslate nohighlight">\(m / year\)</span></p></td>
 <td><p>max value of accumulation rate</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-Rel</span></code></p></td>
-<td><p>450 [ABEFGHIK],</p>
+<td><p>450 [ABEFIK],</p>
 <p>425 [CDJL]</p>
 </td>
 <td><p>km</p></td>
@@ -180,7 +178,7 @@ experiment. See <a class="reference internal" href="#tab-eisii"><span class="std
 <td><p>radial gradient of surface temperature</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-Tmin</span></code></p></td>
-<td><p>238.15 [ACDEGHIJKL],</p>
+<td><p>238.15 [ACDEIJKL],</p>
 <p>243.15 [B],</p>
 <p>223.15 [F]</p>
 </td>
@@ -279,9 +277,9 @@ II default.</p></td>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2383-g1faf9798b
+      Git revision v1.0-2384-g694e513a6
       committed by Constantine Khrulev
-      on 2021-05-26 14:55:49 -0800 |
+      on 2021-05-26 15:16:27 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
