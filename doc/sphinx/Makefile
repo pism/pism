@@ -71,7 +71,7 @@ pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^
 
 installation/code/install_libraries.sh: installation/debian-packages.csv Makefile
-	/bin/echo -n "sudo apt-get install -y " > $@
+	/bin/echo -n "apt-get install -y " > $@
 	cut -f1 -d, $< | sed "s/\`//g" | xargs >> $@
 
 clean:
