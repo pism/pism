@@ -340,8 +340,8 @@ Spatially-variable fields
 
 #. ``ice_margin_pressure_difference``
 
-   :Units: Pa m
-   :Description: vertically-integrated pressure difference at ice margins (including calving fronts)
+   :Units: Pa
+   :Description: vertically-averaged pressure difference at ice margins (including calving fronts)
 
 #. ``ice_mass``
 
@@ -380,11 +380,6 @@ Spatially-variable fields
 
    :Units: ---
    :Description: ice-type (ice-free/grounded/floating/ocean) integer mask
-
-#. ``melange_back_pressure_fraction``
-
-   :Units: 1
-   :Description: dimensionless pressure fraction at calving fronts due to presence of melange 
 
 #. ``nuH``
 
@@ -1069,10 +1064,10 @@ Scalar time-series
    :Units: m2 s-1
    :Description: maximum diffusivity
 
-#. ``max_hor_vel``
+#. ``max_sliding_vel``
 
    :Units: m year-1
-   :Description: maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval
+   :Description: max(max(abs(u)), max(abs(v))) for the sliding velocity of ice over grid in last time step during time-series reporting interval
 
 #. ``sea_level_rise_potential``
 

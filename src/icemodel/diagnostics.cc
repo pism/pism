@@ -1525,11 +1525,11 @@ class MaxHorizontalVelocity : public TSDiag<TSSnapshotDiagnostic, IceModel>
 {
 public:
   MaxHorizontalVelocity(const IceModel *m)
-    : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_hor_vel") {
+    : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_sliding_vel") {
 
     set_units("m second-1", "m year-1");
     m_variable.set_string("long_name",
-                               "maximum abs component of horizontal ice velocity"
+                               "max(max(abs(u)), max(abs(v))) for the sliding velocity of ice"
                                " over grid in last time step during time-series reporting interval");
     m_variable.set_number("valid_min", 0.0);
   }
@@ -2824,7 +2824,7 @@ void IceModel::init_diagnostics() {
     {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
     // time-stepping
     {"max_diffusivity", s(new scalar::MaxDiffusivity(this))},
-    {"max_hor_vel",     s(new scalar::MaxHorizontalVelocity(this))},
+    {"max_sliding_vel", s(new scalar::MaxHorizontalVelocity(this))},
     {"dt",              s(new scalar::TimeStepLength(this))},
     // balancing the books
     {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},

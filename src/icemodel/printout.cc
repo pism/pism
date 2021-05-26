@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -154,7 +154,7 @@ These quantities are reported in this base class version:
   - `ivol` is the total ice sheet volume
   - `iarea` is the total area occupied by positive thickness ice
   - `max_diffusivity` is the maximum diffusivity
-  - `max_hor_vel` is the maximum diffusivity
+  - `max_sliding_vel` is max(max(abs(u)), max(abs(v)))
 
 Configuration parameters `output.runtime.time_unit_name`, `output.runtime.volume_scale_factor_log10`,
 and `output.runtime.area_scale_factor_log10` control the appearance and units.
@@ -185,9 +185,9 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
 
   if (printPrototype == true) {
     m_log->message(2,
-               "P         time:       ivol      iarea  max_diffusivity  max_hor_vel\n");
+               "P         time:       ivol      iarea  max_diffusivity  max_sliding_vel\n");
     m_log->message(2,
-               "U         %s   %skm^3  %skm^2         m^2 s^-1       m/%s\n",
+               "U         %s   %skm^3  %skm^2         m^2 s^-1           m/%s\n",
                time_units.c_str(),volscalestr,areascalestr,time_units.c_str());
     return;
   }
@@ -236,7 +236,7 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
                                          "m second-1", velocity_units);
 
     m_log->message(2,
-               "S %s:   %8.5f  %9.5f     %12.5f %12.5f\n",
+               "S %s:   %8.5f  %9.5f     %12.5f     %12.5f\n",
                tempstr,
                volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
                max_diffusivity, maxvel);

@@ -65,7 +65,7 @@ diag.json: dummy.nc surface_input.nc
 # entries from diag-2.json will override ones in diag.json (in other words, the order
 # matters here)
 update_diagnostics: diag.json diag-2.json
-	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
+	python3 ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
 
 pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^
