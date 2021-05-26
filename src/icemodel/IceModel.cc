@@ -440,7 +440,7 @@ void IceModel::step(bool do_mass_continuity,
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"),
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("medium"),
                    m_time->current());
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
