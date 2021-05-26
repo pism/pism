@@ -735,10 +735,10 @@ the seasonal snow cover.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">ice_margin_pressure_difference</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Units</dt>
-<dd class="field-odd"><p>Pa m</p>
+<dd class="field-odd"><p>Pa</p>
 </dd>
 <dt class="field-even">Description</dt>
-<dd class="field-even"><p>vertically-integrated pressure difference at ice margins (including calving fronts)</p>
+<dd class="field-even"><p>vertically-averaged pressure difference at ice margins (including calving fronts)</p>
 </dd>
 </dl>
 </li>
@@ -818,16 +818,6 @@ the seasonal snow cover.</p>
 </dd>
 <dt class="field-even">Description</dt>
 <dd class="field-even"><p>ice-type (ice-free/grounded/floating/ocean) integer mask</p>
-</dd>
-</dl>
-</li>
-<li><p><code class="docutils literal notranslate"><span class="pre">melange_back_pressure_fraction</span></code></p>
-<dl class="field-list simple">
-<dt class="field-odd">Units</dt>
-<dd class="field-odd"><p>1</p>
-</dd>
-<dt class="field-even">Description</dt>
-<dd class="field-even"><p>dimensionless pressure fraction at calving fronts due to presence of melange</p>
 </dd>
 </dl>
 </li>
@@ -2254,13 +2244,13 @@ the seasonal snow cover.</p>
 </dd>
 </dl>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">max_hor_vel</span></code></p>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_sliding_vel</span></code></p>
 <dl class="field-list simple">
 <dt class="field-odd">Units</dt>
 <dd class="field-odd"><p>m year-1</p>
 </dd>
 <dt class="field-even">Description</dt>
-<dd class="field-even"><p>maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval</p>
+<dd class="field-even"><p>max(max(abs(u)), max(abs(v))) for the sliding velocity of ice over grid in last time step during time-series reporting interval</p>
 </dd>
 </dl>
 </li>
@@ -2514,9 +2504,9 @@ the seasonal snow cover.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2375-g9aaf3924a
+      Git revision v1.0-2383-g1faf9798b
       committed by Constantine Khrulev
-      on 2021-05-25 20:15:59 -0800 |
+      on 2021-05-26 14:55:49 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

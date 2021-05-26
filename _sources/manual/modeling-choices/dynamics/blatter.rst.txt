@@ -210,6 +210,16 @@ and use the maximum of this quantity to determine the maximum allowed time step 
    Setting it to a very large value would *completely disable* the diffusivity-based time
    step restriction.
 
+.. note::
+
+   The "time step skipping mechanism" enabled using :config:`time_stepping.skip.enabled`
+   (see :ref:`sec-adapt`) has a different effect when the Blatter stress balance model is
+   used: the full 3D ice velocity is updated during every sub-step and only the energy
+   balance and age models takes the "long" time step.
+
+   Since the Blatter solver is likely to dominate the computational cost, setting
+   :config:`time_stepping.skip.enabled` to "true" is not likely to be beneficial.
+
 .. _sec-blatter-preconditioners:
 
 Practical preconditioners choices

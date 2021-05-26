@@ -16,8 +16,8 @@
     <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Balancing the books" href="mass-conservation.html" />
-    <link rel="prev" title="Signals, to control a running PISM model" href="signals.html" />
+    <link rel="next" title="Scalar diagnostic quantities" href="saving-time-series.html" />
+    <link rel="prev" title="Input and output" href="input-output.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -34,6 +34,89 @@
       
   <div class="section" id="understanding-adaptive-time-stepping">
 <span id="sec-adapt"></span><h1>Understanding adaptive time-stepping<a class="headerlink" href="#understanding-adaptive-time-stepping" title="Permalink to this headline">¶</a></h1>
+<p>It is helpful to keep in mind this fundamental fact:</p>
+<blockquote>
+<div><p><em>length of time steps taken by a model affects results of a simulation.</em></p>
+</div></blockquote>
+<p>This applies to all evolutionary models and PISM is no different.</p>
+<p>We expect model results to converge to the solution of the continuum problem corresponding
+to a model as <span class="math notranslate nohighlight">\(\dt\)</span> goes to zero. Also, results using different <span class="math notranslate nohighlight">\(\dt\)</span> should be “close” to
+this solution and to each other, <em>but they need not be the same</em>.</p>
+<p>One important consequence is that changes in PISM settings that may not seem to be related
+to physical choices may affect results <em>if</em> they affect time stepping.</p>
+<p>Here is a possibly-incomplete list of PISM components and settings that may affect time
+step length.</p>
+<ol class="arabic">
+<li><p>Numerical stability criteria.</p>
+<ol class="arabic simple">
+<li><p>Diffusivity-based time step restriction for the mass continuity (mass transport)
+step using SIA diffusivity (or its estimate when the Blatter solver is used).</p></li>
+<li><p>The value of <a class="reference internal" href="../parameters/index.html#config-time_stepping.adaptive_ratio"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.adaptive_ratio</span></code></a> adjusting the diffusivity-based
+time step restriction (see <a class="reference internal" href="../modeling-choices/dynamics/sia.html#equation-eq-sia-max-dt">(4)</a>).</p></li>
+<li><p>CFL time step restriction for the mass continuity step using sliding velocity, (or
+vertically-averaged horizontal velocity with the Blatter solver).</p></li>
+<li><p>CFL time step restriction for horizontal advection within the ice volume within
+energy balance and age models. Uses horizontal (<span class="math notranslate nohighlight">\(u,v\)</span>) components of the ice
+velocity within the 3D volume of the ice.</p></li>
+</ol>
+</li>
+<li><p>Reporting.</p>
+<ol class="arabic simple">
+<li><p>If  <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_ts_times"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_ts_times</span></code></a> is set, PISM will adjust time step lengths
+to “hit” times requested with <a class="reference internal" href="../parameters/index.html#config-output.timeseries.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.timeseries</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.</p></li>
+<li><p>If <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_extra_times"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_extra_times</span></code></a> is set (the default), PISM will adjust
+time step lengths to “hit” times requested with <a class="reference internal" href="../parameters/index.html#config-output.extra.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.extra</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.</p></li>
+<li><p>If <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_save_times"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_save_times</span></code></a> is set, PISM will adjust time step lengths
+to “hit” times requested with <a class="reference internal" href="../parameters/index.html#config-output.snapshot.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.snapshot</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.</p></li>
+</ol>
+</li>
+<li><p>Time-step “skipping” to reduce computational costs:
+<a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.enabled"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> and <a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.max"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max</span></code></a>.</p>
+<p>This mechanism enables PISM to take a number of “cheap” mass-balance steps (including
+SIA diffusivity updates) before more expensive temperature, age, and SSA stress balance
+computations are done.</p>
+<p>Time step “skipping” roughly corresponds to asynchronous coupling between</p>
+<ul class="simple">
+<li><p>ice flow by shear in planes parallel to the geoid and</p></li>
+<li><p>membrane-type ice flow and advection of energy and tracers (such as age).</p></li>
+</ul>
+<p>This is only effective if the time step is being limited by the diffusivity time step
+restriction associated to mass continuity using the SIA.</p>
+<p>PISM computes time step restrictions <span class="math notranslate nohighlight">\(\{\dt_0, \dt_1, \dots, \dt_n \}\)</span> from <em>all</em> of
+PISM’s sub-modules and sorts them from from smallest to largest. Then the maximum
+allowed time step is</p>
+<div class="math notranslate nohighlight">
+\[\dt_{\text{max}} = \dt_0.\]</div>
+<p>If <a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.enabled"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> is set <em>and</em> the most severe restriction comes
+from the SIA-diffusivity-based stability criterion for mass continuity, it skips</p>
+<div class="math notranslate nohighlight" id="equation-eq-dt-skip">
+<span class="eqno">(37)<a class="headerlink" href="#equation-eq-dt-skip" title="Permalink to this equation">¶</a></span>\[N = \min\left(\left\lfloor 0.95\, \frac{\dt_1}{\dt_0} \right\rfloor,
+              N_{\text{max}}  \right)\]</div>
+<p>energy, age, and 3D velocity updates, where <span class="math notranslate nohighlight">\(N_{\text{max}}\)</span> is set using
+<a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.max"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max</span></code></a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The effects of this mechanism are not well understood. Please use with caution.</p>
+<p>The maximum recommended value for <a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.max"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max</span></code></a> depends on the
+context. The temperature field should be updated when the surface changes
+significantly, and likewise the basal sliding velocity if it comes from the SSA
+calculation.</p>
+</div>
+</li>
+<li><p>Atmosphere, surface process, ocean, and sea level forcing components.</p></li>
+<li><p>The Lingle-Clark bed deformation model (see <a class="reference internal" href="../modeling-choices/subglacier/bed-deformation.html#sec-bed-def-lc"><span class="std std-ref">Lingle-Clark</span></a> and
+<a class="reference internal" href="../parameters/index.html#config-bed_deformation.lc.update_interval"><code class="docutils literal notranslate"><span class="pre">bed_deformation</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.lc</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.update_interval</span></code></a>).</p></li>
+<li><p>If <a class="reference internal" href="../parameters/index.html#config-geometry.front_retreat.use_cfl"><code class="docutils literal notranslate"><span class="pre">geometry</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.front_retreat</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.use_cfl</span></code></a> is set, PISM adjusts time step lengths to
+satisfy the CFL condition that uses the total front retreat rate coming from calving
+and frontal melt models.</p></li>
+<li><p>The time step length never exceeds <a class="reference internal" href="../parameters/index.html#config-time_stepping.maximum_time_step"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.maximum_time_step</span></code></a>.</p></li>
+<li><p>If <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_multiples"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_multiples</span></code></a> is set to a positive number, PISM will “hit”
+multiples of the number of model years specified. For example, if stability criteria
+require a time-step of 11 years and the <code class="docutils literal notranslate"><span class="pre">-timestep_hit_multiples</span> <span class="pre">3</span></code> option is set,
+PISM will take a 9 model year long time step. This can be useful to enforce consistent
+sampling of periodic climate data.</p></li>
+<li><p>The time step length never exceeds the total length of the run.</p></li>
+</ol>
 <p>At each time step the PISM standard output includes “flags” and then a summary of the
 model state using a few numbers. A typical example is</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>v$Eh  diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
@@ -45,14 +128,14 @@ y  SSA:     3 outer iterations, ~17.0 KSP iterations each
 example, give a very terse description of which physical processes were modeled in that
 time step. Here “<code class="docutils literal notranslate"><span class="pre">v</span></code>” means that a stress balance was solved to compute the velocity.
 Then the enthalpy was updated (“<code class="docutils literal notranslate"><span class="pre">E</span></code>”) and the ice thickness and surface elevation were
-updated (“<code class="docutils literal notranslate"><span class="pre">h</span></code>”). The rest of the flags line looks like</p>
+updated (“<code class="docutils literal notranslate"><span class="pre">h</span></code>”). The rest of the line looks like</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>diffusivity (dt=0.83945 in 2 substeps; av dt_sub_mass_cont=0.41972)
 </pre></div>
 </div>
 <p>Recall that the PISM time step is determined by an adaptive mechanism. Stable mass
 conservation and conservation of energy solutions require such an adaptive time-stepping
-scheme <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>. The first character we see here, namely “<code class="docutils literal notranslate"><span class="pre">diffusivity</span></code>”, is the
-adaptive-timestepping “reason” flag. See <a class="reference internal" href="#tab-adaptiveflag"><span class="std std-numref">Table 28</span></a>. We also see that
+scheme <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>. The first word we see here, namely “<code class="docutils literal notranslate"><span class="pre">diffusivity</span></code>”, is the
+adaptive-timestepping “reason”. See <a class="reference internal" href="#tab-dt-reason"><span class="std std-numref">Table 24</span></a>. We also see that
 there was a major time step of <span class="math notranslate nohighlight">\(0.83945\)</span> model years divided into <span class="math notranslate nohighlight">\(2\)</span> substeps of about
 <span class="math notranslate nohighlight">\(0.42\)</span> years. The parameter <a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.enabled"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> enables this mechanism,
 while <a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.max"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max</span></code></a> sets the maximum number of such substeps. The
@@ -61,19 +144,25 @@ so as to satisfy certain numerical stability criteria, however.</p>
 <p>The second line in the above, the line which starts with “<code class="docutils literal notranslate"><span class="pre">S</span></code>”, is the summary. Its
 format, and the units for these numbers, is simple and is given by a couple of lines
 printed near the beginning of the standard output for the run:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>P       YEAR:       ivol      iarea  max_diffusivity  max_hor_vel
-U      years   10^6_km^3  10^6_km^2         m^2 s^-1       m/year
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>P       YEAR:       ivol      iarea  max_diffusivity  max_sliding_vel
+U      years   10^6_km^3  10^6_km^2         m^2 s^-1           m/year
 </pre></div>
 </div>
 <p>That is, in each summary we have the total ice volume, total ice area, maximum diffusivity
-(of the SIA mass conservation equation), and maximum horizontal velocity (i.e.
-<span class="math notranslate nohighlight">\(\max(\max(|u|), \max(|v|))\)</span>).</p>
+(of the SIA mass conservation equation), and “maximum sliding velocity”. Specifically, the
+last number is <span class="math notranslate nohighlight">\(\max(\max(|u|), \max(|v|))\)</span>, i.e. the number that appears in the CFL time
+step restriction for the “advective” part of the flow in the mass continuity equation.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">max_sliding_vel</span></code> reported here is not the same as the maximum sliding speed,
+<span class="math notranslate nohighlight">\(\max(\sqrt{u^2 + v^2})\)</span>.</p>
+</div>
 <p>The third line of the above example shows that the SSA stress balance was solved.
 Information on the number of nonlinear (outer) and linear (inner) iterations is provided
 <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id33"><span>9</span></a>]</span>.</p>
-<table class="colwidths-given docutils align-default" id="tab-adaptiveflag">
-<caption><span class="caption-number">Table 28 </span><span class="caption-text">Meaning of some adaptive time-stepping “reason” flags in the standard
-             output line</span><a class="headerlink" href="#tab-adaptiveflag" title="Permalink to this table">¶</a></caption>
+<table class="colwidths-given docutils align-default" id="tab-dt-reason">
+<caption><span class="caption-number">Table 24 </span><span class="caption-text">Meaning of some adaptive time-stepping “reasons” in the standard
+             output line</span><a class="headerlink" href="#tab-dt-reason" title="Permalink to this table">¶</a></caption>
 <colgroup>
 <col style="width: 33%" />
 <col style="width: 67%" />
@@ -92,7 +181,7 @@ stress balance model. Uses sliding velocity with all other stress balance choice
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">diffusivity</span></code></p></td>
 <td><p>SIA-diffusivity-based time step restriction for the mass continuity equation
-<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>, <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id186"><span>99</span></a>]</span></p></td>
+<span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id32"><span>15</span></a>]</span>, <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id186"><span>98</span></a>]</span></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">energy</span></code>, <code class="docutils literal notranslate"><span class="pre">age</span> <span class="pre">model</span></code></p></td>
 <td><p>CFL condition using horizontal (<span class="math notranslate nohighlight">\(u\)</span>, <span class="math notranslate nohighlight">\(v\)</span>) components of the ice velocity within the
@@ -108,11 +197,11 @@ velocity: PISM’s 3D advection scheme is explicit in <span class="math notransl
 <td><p>maximum allowed <span class="math notranslate nohighlight">\(\dt\)</span> set with <a class="reference internal" href="../parameters/index.html#config-time_stepping.maximum_time_step"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.maximum_time_step</span></code></a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-ts_...</span> <span class="pre">reporting</span></code></p></td>
-<td><p>the <code class="docutils literal notranslate"><span class="pre">-ts_times</span></code> option and the configuration flag
+<td><p>the <code class="docutils literal notranslate"><span class="pre">-ts_times</span></code> option and the configuration parameter
 <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_ts_times"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_ts_times</span></code></a>; see section <a class="reference internal" href="saving-time-series.html#sec-saving-time-series"><span class="std std-ref">Scalar diagnostic quantities</span></a></p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-extra_...</span> <span class="pre">reporting</span></code></p></td>
-<td><p>the <code class="docutils literal notranslate"><span class="pre">-extra_times</span></code> option and the configuration flag
+<td><p>the <code class="docutils literal notranslate"><span class="pre">-extra_times</span></code> option and the configuration parameter
 <a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_extra_times"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.hit_extra_times</span></code></a>; see section <a class="reference internal" href="saving-diagnostics.html#sec-saving-diagnostics"><span class="std std-ref">Spatially-varying diagnostic quantities</span></a></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">surface</span></code></p></td>
@@ -130,19 +219,6 @@ see section <a class="reference internal" href="../modeling-choices/marine/calvi
 </tr>
 </tbody>
 </table>
-<p><code class="option docutils literal notranslate"><span class="pre">-skip_max</span></code></p>
-<p>Number of mass-balance steps, including SIA diffusivity updates, to perform before
-temperature, age, and SSA stress balance computations are done. This is only effective if
-the time step is being limited by the diffusivity time step restriction associated to mass
-continuity using the SIA. The maximum recommended value for <code class="docutils literal notranslate"><span class="pre">-skip_max</span></code> is,
-unfortunately, dependent on the context. The temperature field should be updated when the
-surface changes significantly, and likewise the basal sliding velocity if it comes (as it
-should) from the SSA calculation.</p>
-<p><code class="option docutils literal notranslate"><span class="pre">-timestep_hit_multiples</span></code></p>
-<p>Hit multiples of the number of model years specified. For example, if stability criteria
-require a time-step of 11 years and the <code class="docutils literal notranslate"><span class="pre">-timestep_hit_multiples</span> <span class="pre">3</span></code> option is set, PISM
-will take a 9 model year long time step. This can be useful to enforce consistent sampling
-of periodic climate data.</p>
 <div class="section" id="parameters">
 <span id="sec-time-stepping-parameters"></span><h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
 <p>Prefix: <code class="docutils literal notranslate"><span class="pre">time_stepping.</span></code></p>
@@ -165,13 +241,13 @@ of periodic climate data.</p>
       <table style="width: 100%">
         <tr>
           <td style="text-align: left; width: 30%">
-              <a class="reference internal" href="signals.html">Previous</a>
+              <a class="reference internal" href="input-output.html">Previous</a>
           </td>
           <td style="text-align: center; width: 30%">
               <a class="reference internal" href="index.html">Up</a>
           </td>
           <td style="text-align: right; width: 30%">
-              <a class="reference internal" href="mass-conservation.html">Next</a>
+              <a class="reference internal" href="saving-time-series.html">Next</a>
           </td>
         </tr>
       </table>
@@ -206,6 +282,7 @@ of periodic climate data.</p>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Practical usage</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="netcdf-tools.html">Handling NetCDF files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="input-output.html">Input and output</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Understanding adaptive time-stepping</a></li>
 <li class="toctree-l3"><a class="reference internal" href="saving-time-series.html">Scalar diagnostic quantities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="saving-diagnostics.html">Spatially-varying diagnostic quantities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="saving-snapshots.html">Snapshots of the model state</a></li>
@@ -213,7 +290,6 @@ of periodic climate data.</p>
 <li class="toctree-l3"><a class="reference internal" href="parameters.html">PISM’s configuration parameters and how to change them</a></li>
 <li class="toctree-l3"><a class="reference internal" href="regridding.html">Regridding</a></li>
 <li class="toctree-l3"><a class="reference internal" href="signals.html">Signals, to control a running PISM model</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Understanding adaptive time-stepping</a></li>
 <li class="toctree-l3"><a class="reference internal" href="mass-conservation.html">Balancing the books</a></li>
 <li class="toctree-l3"><a class="reference internal" href="petsc-options.html">PETSc options for PISM users</a></li>
 <li class="toctree-l3"><a class="reference internal" href="scripts.html">Utility and test scripts</a></li>
@@ -253,9 +329,9 @@ of periodic climate data.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2375-g9aaf3924a
+      Git revision v1.0-2383-g1faf9798b
       committed by Constantine Khrulev
-      on 2021-05-25 20:15:59 -0800 |
+      on 2021-05-26 14:55:49 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

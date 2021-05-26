@@ -461,7 +461,7 @@ force from <span id="id10">[<a class="reference internal" href="../zzz_reference
 <p>We compute the Fourier transform of the precipitation field using the formula below (see
 equation 49 in <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id49"><span>144</span></a>]</span> or equation 3 in <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id50"><span>145</span></a>]</span>).</p>
 <div class="math notranslate nohighlight" id="equation-eq-orographic-precipitation">
-<span class="eqno">(37)<a class="headerlink" href="#equation-eq-orographic-precipitation" title="Permalink to this equation">¶</a></span>\[\hat P_{\text{LT}}(k, l) = \frac{C_w i \sigma \hat h(k, l)}
+<span class="eqno">(38)<a class="headerlink" href="#equation-eq-orographic-precipitation" title="Permalink to this equation">¶</a></span>\[\hat P_{\text{LT}}(k, l) = \frac{C_w i \sigma \hat h(k, l)}
 {(1 - i m H_w) (1 + i \sigma \tau_c) (1 + i \sigma \tau_f)},\]</div>
 <p>where <span class="math notranslate nohighlight">\(h\)</span> is the surface elevation, <span class="math notranslate nohighlight">\(C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gamma\)</span>
 relates the condensation rate to vertical motion (see the appendix of
@@ -471,7 +471,7 @@ constants are defined below.</p>
 <p>The spatial pattern of precipitation is recovered using an inverse Fourier transform
 followed by post-processing:</p>
 <div class="math notranslate nohighlight" id="equation-eq-orographic-post-processing">
-<span class="eqno">(38)<a class="headerlink" href="#equation-eq-orographic-post-processing" title="Permalink to this equation">¶</a></span>\[P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.\]</div>
+<span class="eqno">(39)<a class="headerlink" href="#equation-eq-orographic-post-processing" title="Permalink to this equation">¶</a></span>\[P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.\]</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <ul>
@@ -606,9 +606,9 @@ with the prefix <code class="docutils literal notranslate"><span class="pre">atm
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2375-g9aaf3924a
+      Git revision v1.0-2383-g1faf9798b
       committed by Constantine Khrulev
-      on 2021-05-25 20:15:59 -0800 |
+      on 2021-05-26 14:55:49 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

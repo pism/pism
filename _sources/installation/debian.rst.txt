@@ -22,12 +22,12 @@ You may be able to install these by running
 
    Click :download:`here <code/install_libraries.sh>` to download this file.
 
-(You may need to change this command to match your package system.)
+(You may need to add ``sudo`` or change this command to match your package system.)
 
 The command above takes care of all PISM prerequisites, including PETSc. Set
-``PETSC_DIR=/usr/lib/petsc``\ [#]_ and follow the steps in :ref:`sec-install-pism` to build PISM
-itself.
+``PETSC_DIR=/usr/lib/petsc``\ [#petsc-arch]_ and follow the steps in
+:ref:`sec-install-pism` to build PISM itself.
 
 .. rubric:: Footnotes
 
-.. [#] In this case you do not need to set ``PETSC_ARCH``.
+.. [#petsc-arch] In this case you do not need to set ``PETSC_ARCH``.
