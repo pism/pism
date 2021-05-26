@@ -13,7 +13,7 @@
     <script src="../../../_static/underscore.js"></script>
     <script src="../../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="Model time" href="time.html" />
@@ -98,7 +98,7 @@ precedence over options,</p>
 <p>This is not the only possible interpretation, but it is consistent with the finite-volume
 handling of mass (ice thickness) evolution is PISM.</p>
 <p>Consider a grid with minimum and maximum <span class="math notranslate nohighlight">\(x\)</span> coordinates <span class="math notranslate nohighlight">\(x_\text{min}\)</span> and <span class="math notranslate nohighlight">\(x_\text{max}\)</span>
-and the spacing <span class="math notranslate nohighlight">\(\Delta x\)</span>. The cell-centered interpretation implies that the domain
+and the spacing <span class="math notranslate nohighlight">\(\dx\)</span>. The cell-centered interpretation implies that the domain
 extends <em>past</em> <span class="math notranslate nohighlight">\(x_\text{min}\)</span> and <span class="math notranslate nohighlight">\(x_\text{max}\)</span> by one half of the grid spacing, see
 <a class="reference internal" href="#fig-cell-center"><span class="std std-numref">Fig. 20</span></a>.</p>
 <div class="figure align-center" id="fig-cell-center">
@@ -113,7 +113,7 @@ boundaries, black circles represent grid points.</p>
 <p>When getting the size of the domain from an input file, PISM will compute grid parameters
 as follows:</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}\Delta x &amp;= x_1 - x_0\\L_x &amp;= \frac12 ((x_\text{max} - x_\text{min}) + \Delta x).\end{aligned}\end{align} \]</div>
+\[ \begin{align}\begin{aligned}\dx &amp;= x_1 - x_0\\L_x &amp;= \frac12 ((x_\text{max} - x_\text{min}) + \dx).\end{aligned}\end{align} \]</div>
 <p>This is not an issue when re-starting from a PISM output file but can cause confusion when
 specifying grid parameters at bootstrapping and reading in fields using “regridding.”</p>
 <p>For example:</p>
@@ -130,7 +130,7 @@ specifying grid parameters at bootstrapping and reading in fields using “regri
 the grid spacing of <span class="math notranslate nohighlight">\(5\)</span> km.</p>
 <p>In summary, with the default (center) grid registration</p>
 <div class="math notranslate nohighlight" id="equation-eq-grid-center">
-<span class="eqno">(2)<a class="headerlink" href="#equation-eq-grid-center" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Delta x &amp;= \frac{2 L_x}{M_x},\\x_\text{min} &amp;= x_c - L_x + \frac12 \Delta x,\\x_\text{max} &amp;= x_c + L_x - \frac12 \Delta x,\end{aligned}\end{align} \]</div>
+<span class="eqno">(2)<a class="headerlink" href="#equation-eq-grid-center" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\dx &amp;= \frac{2 L_x}{M_x},\\x_\text{min} &amp;= x_c - L_x + \frac12 \dx,\\x_\text{max} &amp;= x_c + L_x - \frac12 \dx,\end{aligned}\end{align} \]</div>
 <p>where <span class="math notranslate nohighlight">\(x_c\)</span> is the <span class="math notranslate nohighlight">\(x\)</span>-coordinate of the domain center.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -153,7 +153,7 @@ same total SMB</em>.</p>
 and <span class="math notranslate nohighlight">\(x\)</span> coordinates range from <span class="math notranslate nohighlight">\(-10000\)</span> to <span class="math notranslate nohighlight">\(10000\)</span>.</p>
 <p>With the “corner” grid registration</p>
 <div class="math notranslate nohighlight" id="equation-eq-grid-corner">
-<span class="eqno">(3)<a class="headerlink" href="#equation-eq-grid-corner" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Delta x &amp;= \frac{2 L_x}{M_x - 1},\\x_\text{min} &amp;= x_c - L_x,\\x_\text{max} &amp;= x_c + L_x.\end{aligned}\end{align} \]</div>
+<span class="eqno">(3)<a class="headerlink" href="#equation-eq-grid-corner" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\dx &amp;= \frac{2 L_x}{M_x - 1},\\x_\text{min} &amp;= x_c - L_x,\\x_\text{max} &amp;= x_c + L_x.\end{aligned}\end{align} \]</div>
 <p>See <a class="reference internal" href="#fig-cell-corner"><span class="std std-numref">Fig. 21</span></a> for an illustration.</p>
 <div class="figure align-center" id="fig-cell-corner">
 <a class="reference internal image-reference" href="../../../_images/grid-corner-both.png"><img alt="../../../_images/grid-corner-both.png" src="../../../_images/grid-corner-both.png" style="width: 80%;" /></a>
@@ -239,7 +239,7 @@ For example,</p>
 <p>splits a <span class="math notranslate nohighlight">\(101 \times 101\)</span> grid into 3 strips along the <span class="math notranslate nohighlight">\(x\)</span> axis.</p>
 <p>To see the parallel domain decomposition from a completed run, see the <code class="variable docutils literal notranslate"><span class="pre">rank</span></code>
 variable in the output file, e.g. using <code class="docutils literal notranslate"><span class="pre">-o_size</span> <span class="pre">big</span></code>. The same <code class="variable docutils literal notranslate"><span class="pre">rank</span></code> variable is
-available as a spatial diagnostic field (section <a class="reference internal" href="../../practical-usage/saving-diagnostics.html#sec-saving-diagnostics"><span class="std std-ref">Saving time series of spatially-varying diagnostic quantities</span></a>).</p>
+available as a spatial diagnostic field (section <a class="reference internal" href="../../practical-usage/saving-diagnostics.html#sec-saving-diagnostics"><span class="std std-ref">Spatially-varying diagnostic quantities</span></a>).</p>
 <p class="rubric">Footnotes</p>
 <dl class="footnote brackets">
 <dt class="label" id="id3"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
@@ -339,9 +339,9 @@ standard.”</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

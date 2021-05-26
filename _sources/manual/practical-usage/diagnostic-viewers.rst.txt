@@ -48,6 +48,6 @@ shows ice thickness and ice temperature at the surface.
        active.
    * - :opt:`-ssa_nuh_viewer_size` (number)
      - Adjust the viewer size.
-   * - :opt:`-ksp_monitor_draw`
+   * - :opt:`-ssafd_ksp_monitor_draw`
      - Iteration monitor for the Krylov subspace routines (KSP) in PETSc. Residual norm
        versus iteration number.

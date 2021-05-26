@@ -13,7 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Contributing to PISM" href="../contributing/index.html" />
@@ -616,13 +616,13 @@ level (GAMG, Hypre BoomerAMG, …).</p>
 mesh provided <em>by PETSc</em> in our to residual and Jacobian evaluators. In general, this
 requires</p>
 <ul class="simple">
-<li><p>re-computing grid-related constants (<span class="math notranslate nohighlight">\(\Delta x\)</span>, etc) using the grid (avoid using
+<li><p>re-computing grid-related constants (<span class="math notranslate nohighlight">\(\dx\)</span>, etc) using the grid (avoid using
 hard-wired constants, e.g. computed using the fine grid), and</p></li>
 <li><p>additional code to restrict gridded inputs from the fine grid mesh to coarser meshes.</p></li>
 </ul>
 <p>This solver does not support coarsening in horizontal directions, so gridded
-two-dimensional inputs can be used on all multigrid levels. The grid spacing (<span class="math notranslate nohighlight">\(\Delta x\)</span>,
-<span class="math notranslate nohighlight">\(\Delta y\)</span>) remains the same as well.</p>
+two-dimensional inputs can be used on all multigrid levels. The grid spacing (<span class="math notranslate nohighlight">\(\dx\)</span>,
+<span class="math notranslate nohighlight">\(\dy\)</span>) remains the same as well.</p>
 <p>To transfer the one three-dimensional gridded input field (ice hardness), we create
 interpolation matrices mapping from a coarse level to the next (finer) level in the
 hierarchy. The transpose of this matrix is used as a restriction operator.</p>
@@ -650,9 +650,9 @@ sea level, ice thickness, and the floatation criterion where floating) and <span
 thickness.</p>
 <p>Coordinates of the mesh nodes have the form</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-mesh-nodes">
-<span class="eqno">(90)<a class="headerlink" href="#equation-eq-bp-mesh-nodes" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}x_i &amp;= x_{\text{min}} + i \cdot \Delta x,\\y_j &amp;= y_{\text{min}} + j \cdot \Delta y,\\z_k &amp;= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.\end{aligned}\end{align} \]</div>
-<p>Each element’s projection onto the plane <span class="math notranslate nohighlight">\(z = 0\)</span> is a rectangle with sides <span class="math notranslate nohighlight">\(\Delta x\)</span> and
-<span class="math notranslate nohighlight">\(\Delta y\)</span>, but the spacing between nodes in the vertical direction is <em>not</em> constant:
+<span class="eqno">(90)<a class="headerlink" href="#equation-eq-bp-mesh-nodes" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}x_i &amp;= x_{\text{min}} + i \cdot \dx,\\y_j &amp;= y_{\text{min}} + j \cdot \dy,\\z_k &amp;= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.\end{aligned}\end{align} \]</div>
+<p>Each element’s projection onto the plane <span class="math notranslate nohighlight">\(z = 0\)</span> is a rectangle with sides <span class="math notranslate nohighlight">\(\dx\)</span> and
+<span class="math notranslate nohighlight">\(\dy\)</span>, but the spacing between nodes in the vertical direction is <em>not</em> constant:
 each vertical column of nodes contains <span class="math notranslate nohighlight">\(M_z\)</span> nodes with the spacing of <span class="math notranslate nohighlight">\(H / (M_z - 1)\)</span>.
 This mesh structure is <em>exactly the same</em> as the one used in <span id="id31">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span>
 and CISM 2.1 <span id="id32">[<a class="reference internal" href="../zzz_references_html.html#id10"><span>72</span></a>]</span>.</p>
@@ -958,9 +958,9 @@ one to use “geometric” coarsening.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Saving time series of scalar diagnostic quantities &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <title>Scalar diagnostic quantities &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -13,10 +13,10 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Saving time series of spatially-varying diagnostic quantities" href="saving-diagnostics.html" />
+    <link rel="next" title="Spatially-varying diagnostic quantities" href="saving-diagnostics.html" />
     <link rel="prev" title="Input and output" href="input-output.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
@@ -32,21 +32,25 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="section" id="saving-time-series-of-scalar-diagnostic-quantities">
-<span id="sec-saving-time-series"></span><h1>Saving time series of scalar diagnostic quantities<a class="headerlink" href="#saving-time-series-of-scalar-diagnostic-quantities" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="scalar-diagnostic-quantities">
+<span id="sec-saving-time-series"></span><h1>Scalar diagnostic quantities<a class="headerlink" href="#scalar-diagnostic-quantities" title="Permalink to this headline">¶</a></h1>
 <p>It is also possible to save time-series of certain scalar diagnostic quantities using a
 combination of the options <code class="docutils literal notranslate"><span class="pre">-ts_file</span></code>, <code class="docutils literal notranslate"><span class="pre">-ts_times</span></code>, and <code class="docutils literal notranslate"><span class="pre">-ts_vars</span></code>. For example,</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -y 1e4 -o output.nc -ts_file time-series.nc \
-      -ts_times 0:1:1e4 -ts_vars ice_volume_glacierized,ice_area_glacierized_grounded
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -y 1e4 -o output.nc \
+      -ts_file time-series.nc -ts_times 0:1:1e4 \
+      -ts_vars ice_volume_glacierized,ice_area_glacierized_grounded
 </pre></div>
 </div>
 <p>will run for 10000 years, saving total ice volume and grounded ice area to
-<code class="docutils literal notranslate"><span class="pre">time-series.nc</span></code> <em>yearly</em>. See tables <a class="reference internal" href="#tab-time-series-opts"><span class="std std-numref">Table 24</span></a> for the list of
+<code class="docutils literal notranslate"><span class="pre">time-series.nc</span></code> <em>yearly</em>. See tables <a class="reference internal" href="#sec-ts-parameters"><span class="std std-ref">Parameters</span></a> below for the list of
 options and <a class="reference internal" href="../diagnostics/index.html#sec-ts-vars"><span class="std std-ref">Scalar time-series</span></a> for the full list of supported time-series.</p>
-<p>Note that, similarly to the snapshot-saving code (section <a class="reference internal" href="saving-snapshots.html#sec-snapshots"><span class="std std-ref">Saving re-startable snapshots of the model state</span></a>), this
-mechanism does not affect adaptive time-stepping. Here, however, PISM will save exactly
-the number of time-series records requested.</p>
-<p>Omitting the <code class="docutils literal notranslate"><span class="pre">-ts_vars</span></code> option makes PISM save <em>all</em> available variables listed in
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Similarly to the snapshot-saving code (section <a class="reference internal" href="saving-snapshots.html#sec-snapshots"><span class="std std-ref">Snapshots of the model state</span></a>), this mechanism
+does not affect adaptive time-stepping. Here, however, PISM will save exactly the
+number of time-series records requested.</p>
+</div>
+<p>Omitting the <code class="option docutils literal notranslate"><span class="pre">-ts_vars</span></code> makes PISM save <em>all</em> available variables listed in
 <a class="reference internal" href="../diagnostics/index.html#sec-ts-vars"><span class="std std-ref">Scalar time-series</span></a>. Because scalar time-series take minimal storage space, compared to
 spatially-varying data, this is usually a reasonable choice. Run PISM with the
 <code class="option docutils literal notranslate"><span class="pre">-list_diagnostics</span></code> option to see the list of all available time-series.</p>
@@ -58,60 +62,51 @@ the existing file will be moved to <code class="docutils literal notranslate"><s
 stored, or when an <code class="docutils literal notranslate"><span class="pre">-extra_file</span></code> is saved, whichever comes first. Sending an <code class="docutils literal notranslate"><span class="pre">USR1</span></code>
 (or <code class="docutils literal notranslate"><span class="pre">USR2</span></code>) signal to a PISM process flushes these buffers, making it possible to
 monitor the run. (See section <a class="reference internal" href="signals.html#sec-signal"><span class="std std-ref">Signals, to control a running PISM model</span></a> for more about PISM’s signal handling.)</p>
-<table class="colwidths-given docutils align-default" id="tab-time-series-opts">
-<caption><span class="caption-number">Table 24 </span><span class="caption-text">Command-line options controlling saving scalar time-series</span><a class="headerlink" href="#tab-time-series-opts" title="Permalink to this table">¶</a></caption>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 75%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Option</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ts_file</span></code></p></td>
-<td><p>Specifies the file to save to.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ts_times</span></code></p></td>
-<td><p>Specifies times to save at as a MATLAB-style range <span class="math notranslate nohighlight">\(a:\Delta t:b\)</span>, a
-comma-separated list, or a keyword (<code class="docutils literal notranslate"><span class="pre">hourly</span></code>, <code class="docutils literal notranslate"><span class="pre">daily</span></code>, <code class="docutils literal notranslate"><span class="pre">monthly</span></code>,
-<code class="docutils literal notranslate"><span class="pre">yearly</span></code>). See section <a class="reference internal" href="saving-diagnostics.html#sec-saving-diagnostics"><span class="std std-ref">Saving time series of spatially-varying diagnostic quantities</span></a>.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-ts_vars</span></code></p></td>
-<td><p>Comma-separated list of variables. Omitting this option is equivalent to listing
-the <em>all</em> variables.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-ts_append</span></code></p></td>
-<td><p>Append time series to file if it already exists. No effect if file does not yet
-exist.</p></td>
-</tr>
-</tbody>
-</table>
+<div class="section" id="parameters">
+<span id="sec-ts-parameters"></span><h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.timeseries.append"><code class="docutils literal notranslate"><span class="pre">append</span></code></a> (false) If true, append to the scalar time series output file.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.timeseries.buffer_size"><code class="docutils literal notranslate"><span class="pre">buffer_size</span></code></a> (10000) Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.timeseries.filename"><code class="docutils literal notranslate"><span class="pre">filename</span></code></a> Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.timeseries.times"><code class="docutils literal notranslate"><span class="pre">times</span></code></a> List or range of times defining reporting time intervals.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.timeseries.variables"><code class="docutils literal notranslate"><span class="pre">variables</span></code></a> Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.</p></li>
+</ol>
+</div>
+<div class="section" id="comments">
+<span id="sec-ts-comments"></span><h2>Comments<a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h2>
 <p>Besides the above information on usage, here are comments on the physical significance of
 several scalar diagnostics:</p>
-<ul class="simple">
+<ul>
 <li><p>For each variable named <code class="docutils literal notranslate"><span class="pre">..._flux</span></code>, positive values mean ice sheet mass gain.</p></li>
 <li><p>PISM reports ice volume, ice mass, and several other quantities for “glacierized” areas.
 These quantities do not include contributions from areas where the ice thickness is
 equal to or below the value of the configuration parameter
-<code class="docutils literal notranslate"><span class="pre">output.ice_free_thickness_standard</span></code> (in meters). Corresponding quantities without the
+<a class="reference internal" href="../parameters/index.html#config-output.ice_free_thickness_standard"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.ice_free_thickness_standard</span></code></a>. Corresponding quantities without the
 suffix <em>do</em> include areas with a thin, “seasonal” ice cover.</p></li>
-<li><p>Ice volume and area are computed and then split among floating and grounded portions:
-<code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized</span></code> <span class="math notranslate nohighlight">\(\mapsto\)</span> (<code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized_shelf</span></code>,
-<code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized_grounded</span></code>) while <code class="docutils literal notranslate"><span class="pre">ice_area_glacierized</span></code> <span class="math notranslate nohighlight">\(\mapsto\)</span>
-(<code class="docutils literal notranslate"><span class="pre">ice_area_glacierized_shelf</span></code>, <code class="docutils literal notranslate"><span class="pre">ice_area_glacierized_grounded</span></code>). The volumes have units
-<span class="math notranslate nohighlight">\(m^3\)</span> and the areas have units <span class="math notranslate nohighlight">\(m^2\)</span>.</p></li>
+<li><p>Ice volume and area are computed and then split among floating and grounded portions:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathtt{ice\_volume\_glacierized}\, \mapsto\, &amp;(\mathtt{ice\_volume\_glacierized\_shelf},\\&amp;\phantom{(}\mathtt{ice\_volume\_glacierized\_grounded}),\end{aligned}\end{align} \]</div>
+<p>while</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathtt{ice\_area\_glacierized}\, \mapsto\, &amp;(\mathtt{ice\_area\_glacierized\_shelf},\\&amp;\phantom{(}\mathtt{ice\_area\_glacierized\_grounded})\end{aligned}\end{align} \]</div>
+<p>The volumes have units <span class="math notranslate nohighlight">\(m^3\)</span> and the areas have units <span class="math notranslate nohighlight">\(m^2\)</span>.</p>
+</li>
 <li><p>The thermodynamic state of the ice sheet can be assessed, in part, by the amount of cold
-or temperate (“<code class="docutils literal notranslate"><span class="pre">temp</span></code>”) ice. Thus there is another splitting: <code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized</span></code>
-<span class="math notranslate nohighlight">\(\mapsto\)</span> (<code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized_cold</span></code>, <code class="docutils literal notranslate"><span class="pre">ice_volume_glacierized_temperate</span></code>) and
-<code class="docutils literal notranslate"><span class="pre">ice_area_glacierized</span></code> <span class="math notranslate nohighlight">\(\mapsto\)</span>
-(<code class="docutils literal notranslate"><span class="pre">ice_area_glacierized_cold_base</span></code>, <code class="docutils literal notranslate"><span class="pre">ice_area_glacierized_temperate_base</span></code>).</p></li>
+or temperate ice. Thus there is another splitting:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathtt{ice\_volume\_glacierized} \mapsto
+&amp;(\mathtt{ice\_volume\_glacierized\_cold},\\&amp;\phantom{(}\mathtt{ice\_volume\_glacierized\_temperate})\end{aligned}\end{align} \]</div>
+<p>and</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\mathtt{ice\_area\_glacierized}\, \mapsto\,
+&amp;(\mathtt{ice\_area\_glacierized\_cold\_base},\\&amp;\phantom{(}\mathtt{ice\_area\_glacierized\_temperate\_base}).\end{aligned}\end{align} \]</div>
+</li>
 <li><p>The sea level rise potential <code class="variable docutils literal notranslate"><span class="pre">sea_level_rise_potential</span></code> is the increase in sea
 level (in meters) that would result from melting all the grounded ice not displacing sea
 water and distributing the corresponding <em>fresh water</em> volume uniformly over the entire
-global ocean (<span class="math notranslate nohighlight">\(362.5 \cdot 10^6\, km^2\)</span>, see <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id89"><span>98</span></a>]</span>). This follows the
-definition used in the SeaRISE project <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id55"><span>2</span></a>]</span>.</p></li>
+global ocean (<span class="math notranslate nohighlight">\(362.5 \cdot 10^6\, km^2\)</span>, see <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id89"><span>98</span></a>]</span> and
+<a class="reference internal" href="../parameters/index.html#config-constants.global_ocean_area"><code class="docutils literal notranslate"><span class="pre">constants</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.global_ocean_area</span></code></a>). This follows the definition used in the SeaRISE
+project <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id55"><span>2</span></a>]</span>.</p></li>
 <li><p>Fields <code class="docutils literal notranslate"><span class="pre">max_diffusivity</span></code> and <code class="docutils literal notranslate"><span class="pre">max_hor_vel</span></code> relate to PISM time-stepping. These
 quantities appear in per-time-step form in the standard output from PISM (i.e. at
 default verbosity). <code class="docutils literal notranslate"><span class="pre">max_diffusivity</span></code> determines the length of the mass continuity
@@ -119,6 +114,7 @@ sub-steps for the SIA stress balance (sub-)model. <code class="docutils literal 
 CFL-type restriction for mass continuity and conservation of energy contributions of the
 SSA stress balance (i.e. sliding) velocity.</p></li>
 </ul>
+</div>
 </div>
 
 
@@ -167,9 +163,9 @@ SSA stress balance (i.e. sliding) velocity.</p></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Practical usage</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="netcdf-tools.html">Handling NetCDF files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="input-output.html">Input and output</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Saving time series of scalar diagnostic quantities</a></li>
-<li class="toctree-l3"><a class="reference internal" href="saving-diagnostics.html">Saving time series of spatially-varying diagnostic quantities</a></li>
-<li class="toctree-l3"><a class="reference internal" href="saving-snapshots.html">Saving re-startable snapshots of the model state</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Scalar diagnostic quantities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saving-diagnostics.html">Spatially-varying diagnostic quantities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saving-snapshots.html">Snapshots of the model state</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic-viewers.html">Run-time diagnostic viewers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="parameters.html">PISM’s configuration parameters and how to change them</a></li>
 <li class="toctree-l3"><a class="reference internal" href="regridding.html">Regridding</a></li>
@@ -214,9 +210,9 @@ SSA stress balance (i.e. sliding) velocity.</p></li>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -2,8 +2,8 @@
 
 .. _sec-blatter:
 
-Blatter's stress balance model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Blatter's model
+^^^^^^^^^^^^^^^
 
 Unlike the rest of PISM, the Blatter solver uses a geometry-following vertical grid (see
 :numref:`fig-grid-vertical-sigma`) to approximate horizontal components of ice velocity.
@@ -24,7 +24,8 @@ options to control these choices.
 
    .. code-block:: bash
 
-      pismr -stress_balance blatter [other options] -help | grep "-bp_"
+      pismr -stress_balance blatter \
+            [other options] -help | grep "-bp_"
 
    to see the complete list of PETSc option controlling this solver.
 

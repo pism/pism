@@ -399,7 +399,7 @@ followed by post-processing:
      this our implementation includes the ability to smooth the surface topography using a
      Gaussian filter. Set
      :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` to a
-     positive number to enable smoothing. Values around `\Delta x` appear to be effective.
+     positive number to enable smoothing. Values around `\dx` appear to be effective.
 
    - The spectral method used to implement this model requires that the input (i.e.
      surface elevation `h`) is periodic in `x` and `y`. To simulate periodic `h` the

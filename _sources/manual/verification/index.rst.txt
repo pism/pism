@@ -154,7 +154,7 @@ achieve a desired smallness for the numerical error.
 Therefore one must "go down" a grid refinement "path" and measure numerical error for each
 grid :cite:`Roache`. The refinement path is defined by a sequence of spatial grid cell sizes
 which decrease toward the refinement limit of zero size :cite:`MortonMayers`. In PISM the
-timestep :math:`\Delta t` is determined adaptively by a stability criterion (see
+timestep `\dt` is determined adaptively by a stability criterion (see
 section :ref:`sec-adapt`). In PISM one specifies the number of grid points, thus the
 grid cell sizes because the overall dimensions of the computational box are normally
 fixed; see section :ref:`sec-coords`. By "measuring the error for each grid" we mean

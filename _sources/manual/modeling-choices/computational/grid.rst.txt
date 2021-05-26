@@ -80,7 +80,7 @@ This is not the only possible interpretation, but it is consistent with the fini
 handling of mass (ice thickness) evolution is PISM.
 
 Consider a grid with minimum and maximum `x` coordinates `x_\text{min}` and `x_\text{max}`
-and the spacing `\Delta x`. The cell-centered interpretation implies that the domain
+and the spacing `\dx`. The cell-centered interpretation implies that the domain
 extends *past* |xmin| and |xmax| by one half of the grid spacing, see
 :numref:`fig-cell-center`.
 
@@ -101,9 +101,9 @@ as follows:
 
 .. math::
 
-   \Delta x &= x_1 - x_0
+   \dx &= x_1 - x_0
 
-   L_x &= \frac12 ((x_\text{max} - x_\text{min}) + \Delta x).
+   L_x &= \frac12 ((x_\text{max} - x_\text{min}) + \dx).
 
 This is not an issue when re-starting from a PISM output file but can cause confusion when
 specifying grid parameters at bootstrapping and reading in fields using "regridding."
@@ -128,11 +128,11 @@ In summary, with the default (center) grid registration
 .. math::
    :label: eq-grid-center
 
-   \Delta x &= \frac{2 L_x}{M_x},
+   \dx &= \frac{2 L_x}{M_x},
 
-   x_\text{min} &= x_c - L_x + \frac12 \Delta x,
+   x_\text{min} &= x_c - L_x + \frac12 \dx,
 
-   x_\text{max} &= x_c + L_x - \frac12 \Delta x,
+   x_\text{max} &= x_c + L_x - \frac12 \dx,
 
 where `x_c` is the `x`\-coordinate of the domain center.
 
@@ -163,7 +163,7 @@ With the "corner" grid registration
 .. math::
    :label: eq-grid-corner
 
-   \Delta x &= \frac{2 L_x}{M_x - 1},
+   \dx &= \frac{2 L_x}{M_x - 1},
 
    x_\text{min} &= x_c - L_x,
 

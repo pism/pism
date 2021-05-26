@@ -13,7 +13,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Input data" href="input-data.html" />
@@ -45,14 +45,14 @@ studies often involve modeling present and past states using actions like the on
 demonstrated here. Our particular choices made here are motivated by the evaluation of
 initialization methods in <span id="id1">[<a class="reference internal" href="../../zzz_references_html.html#id27"><span>1</span></a>]</span>.</p>
 <p>We use data assembled by the <a class="reference external" href="http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment">Sea-level Response to Ice Sheet Evolution (SeaRISE)</a> assessment process <span id="id2">[<a class="reference internal" href="../../zzz_references_html.html#id55"><span>2</span></a>]</span>. SeaRISE is a
-community-organized assessment process providing an upper bound on ice sheet contributions
-to sea level in the next 100–200 years, especially for the IPCC AR5 report in 2013.</p>
+community-organized assessment process that provided an upper bound on ice sheet
+contributions to sea level in the next 100–200 years for the IPCC AR5 report in 2013.</p>
 <p>This example is a hands-on first look at PISM. It is not an in-depth tutorial, and some
 details of what is happening are only explained later in this Manual, which thoroughly
 discusses PISM options, nontrivial modeling choices, and how to preprocess input data.</p>
-<p>The basic runs here, mostly on coarse <span class="math notranslate nohighlight">\(20\)</span> and <span class="math notranslate nohighlight">\(10\,\textrm{km}\)</span> grids, can be
+<p>The basic runs here, mostly on coarse <span class="math notranslate nohighlight">\(20\)</span> and <span class="math notranslate nohighlight">\(10\km\)</span> grids, can be
 done on a typical workstation or laptop. PISM is, however, designed to make high
-resolution (e.g. <span class="math notranslate nohighlight">\(5\,\textrm{km}\)</span> to <span class="math notranslate nohighlight">\(\sim 500\,\textrm{m}\)</span> grids for
+resolution (e.g. <span class="math notranslate nohighlight">\(5\km\)</span> to <span class="math notranslate nohighlight">\(\sim 500\,\text{m}\)</span> grids for
 whole-Greenland ice sheet modeling) possible by exploiting large-scale parallel
 processing. See <span id="id3">[<a class="reference internal" href="../../zzz_references_html.html#id27"><span>1</span></a>]</span>, <span id="id4">[<a class="reference internal" href="../../zzz_references_html.html#id142"><span>3</span></a>]</span>,
 <span id="id5">[<a class="reference internal" href="../../zzz_references_html.html#id144"><span>4</span></a>]</span>, among other published high-resolution PISM examples.</p>
@@ -155,9 +155,9 @@ processing. See <span id="id3">[<a class="reference internal" href="../../zzz_re
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

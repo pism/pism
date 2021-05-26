@@ -22,12 +22,11 @@ The scheme is conditionally-stable. The length of the time step is limited only 
 maximum magnitude of the horizontal velocities within the ice, i.e. horizontal CFL. This
 condition for stability is included in the PISM adaptive time-stepping technique.
 
-Accuracy is necessarily a second goal. Our shallow scheme has truncation error `O(\Delta
-z^2)` in many circumstances, though it reverts to lower order when it "detects trouble" in
-the form of large vertical velocities. Overall the scheme has order `O(\Delta t,\Delta
-x,\Delta y, \Delta z^2)` in circumstances where the vertical ice flow velocity is small
-enough, relative to conductivity, and otherwise reverts to
-`O(\Delta t,\Delta x,\Delta y, \Delta z^1)`.
+Accuracy is necessarily a second goal. Our shallow scheme has truncation error `O(\dz^2)`
+in many circumstances, though it reverts to lower order when it "detects trouble" in the
+form of large vertical velocities. Overall the scheme has order `O(\dt,\dx,\dy, \dz^2)` in
+circumstances where the vertical ice flow velocity is small enough, relative to
+conductivity, and otherwise reverts to `O(\dt,\dx,\dy, \dz^1)`.
 
 The conservation of energy problem for the ice is in terms of an enthalpy field
 :cite:`AschwandenBuelerKhroulevBlatter`. The current scheme supercedes the cold-ice,
@@ -219,8 +218,8 @@ term `\Phi`, are
 .. math::
 
    \Phi_{ijk}^n = \Sigma_{ijk}^n - \rho_i
-   \left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
-   + v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).
+   \left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\dx}
+   + v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\dy} \right).
 
 The CFL stability condition for this part of the scheme is
 
@@ -228,8 +227,8 @@ The CFL stability condition for this part of the scheme is
 .. math::
    :label: CFL
 
-   \Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
-   + \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.
+   \dt \,\left( \left|\frac{u_{ijk}^n}{\dx}\right|
+   + \left|\frac{v_{ijk}^n}{\dy}\right| \right) \le 1.
 
 The routine ``max_timestep_cfl_3d()`` computes the maximum of velocity
 magnitudes. This produces a time step restriction based on the above CFL condition. Then
@@ -237,7 +236,7 @@ magnitudes. This produces a time step restriction based on the above CFL conditi
 other stability criteria.
 
 In the analysis below we assume an equally-spaced grid `z_0,\dots,z_{M_z}`
-with `\Delta z = z_{k+1} - z_k`.  In fact PISM has a remapping scheme in each
+with `\dz = z_{k+1} - z_k`.  In fact PISM has a remapping scheme in each
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
 of energy computation described here.  (Similar structure applies to the age
@@ -252,10 +251,10 @@ approximation to :eq:`vertProblem` is
    :label: bombone
 
     \rho_i &\left(
-           \frac{E_k^{n+1} - E_k^n}{\Delta t}
-           + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
-           + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
-         &= \frac{k_i}{c_i}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n.
+           \frac{E_k^{n+1} - E_k^n}{\dt}
+           + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \dz}
+           + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\dz} \right) \\
+         &= \frac{k_i}{c_i}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\dz^2} + \Phi_k^n.
 
 Equation :eq:`bombone`, along with a determination of `\lambda` by
 :eq:`lambdachoice` below, is the scheme BOMBPROOF.  It includes two approximations
@@ -266,15 +265,15 @@ formula has higher accuracy,
 
 .. math::
 
-   w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
-   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),
+   w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \dz}
+   = w \frac{\partial E}{\partial z} + O(\dt,\dz^2),
 
 while the first order upwind formula has lower accuracy,
 
 .. math::
 
-   w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
-   = w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z).
+   w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\dz}
+   = w \frac{\partial E}{\partial z} + O(\dt,\dz).
 
 Thus we prefer to use the centered formula when possible, but we apply (implicit)
 upwinding when it is needed for its added stability benefits.
@@ -282,14 +281,14 @@ upwinding when it is needed for its added stability benefits.
 We now rewrite :eq:`bombone` for computational purposes as one of a system of equations
 for the unknowns `\{E_k^{n+1}\}`.  In this system the coefficients will be
 scaled so that the diagonal entries of the matrix have limit one as
-`\Delta t\to 0`.  Let
+`\dt\to 0`.  Let
 
 .. math::
 
-   \nu &= \frac{\Delta t}{\Delta z},\\
-   R &= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.
+   \nu &= \frac{\dt}{\dz},\\
+   R &= \frac{k_i \dt}{\rho_i c_i \dz^2}.
 
-Now multiply equation :eq:`bombone` by `\Delta t`, divide it by `\rho_i`,
+Now multiply equation :eq:`bombone` by `\dt`, divide it by `\rho_i`,
 and rearrange:
 
 .. math::
@@ -298,7 +297,7 @@ and rearrange:
     \left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}\\ +
     \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1}\\ +
     \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}\\
-    = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n
+    = E_k^n + \dt \rho_i^{-1}\Phi_k^n
 
 Here `\uppair{a}{b} = a` when `w_k^n\ge 0` and `\uppair{a}{b} = b` when `w_k^n < 0`.
 
@@ -334,7 +333,7 @@ However, the pure implicit centered difference scheme (`\lambda=1`), namely
 
     &\left(-R - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R\right) E_k^{n+1} \\
     &+ \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1}
-    = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n
+    = E_k^n + \dt \rho_i^{-1}\Phi_k^n
 
 is *less stable* than implicit first-order upwinding. It is less stable in the same sense
 that Crank-Nicolson is a less stable scheme than backwards Euler for the simplest heat
@@ -364,7 +363,7 @@ coincides with the surface of the ice. With these assumptions, if
 
    \lambda = \min
    \left\{
-   1, \min_{k=0,\dots,N} \left\{ \frac{2 k_i}{|w_k^n| \rho_i c_i \Delta z} \right\}
+   1, \min_{k=0,\dots,N} \left\{ \frac{2 k_i}{|w_k^n| \rho_i c_i \dz} \right\}
    \right\},
 
 reset at each time step `n`, then scheme :eq:`bombone`, :eq:`bombtwo` is
@@ -374,7 +373,7 @@ unconditionally-stable in the following two senses:
  
 2. Suppose we freeze the coefficients of the problem to have constant values in time and
    space. (Concretely, we assume that `\lambda` is chosen independently of the time step
-   `n`, and that `\Delta t` is the same for each time step. We assume constant vertical
+   `n`, and that `\dt` is the same for each time step. We assume constant vertical
    velocity `w_k^n=w_0`. We also consider a spatially-periodic or unbounded version of our
    problem, with no boundary conditions.) Then a von Neumann analysis of the constant
    coefficient problem yields a growth factor less than one for all modes on the grid.
@@ -421,12 +420,12 @@ The coefficient of `E_{k+1}^{n+1}` is clearly nonnegative for any valid value of
 
 Therefore the only concerns are for the coefficient of `E_{k-1}^{n+1}` when `w_k^n\le 0` and the
 coefficient of `E_{k+1}^{n+1}` when `w_k^n\ge 0`.  But if `\lambda` is smaller than
-`2k_i/(|w_k^n| \rho_i c_i \Delta z)` then
+`2k_i/(|w_k^n| \rho_i c_i \dz)` then
 
 .. math::
 
-   R - \nu |w_k^n| (\lambda/2) = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2} - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2} \ge \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
-    - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k_i}{|w_k^n| \rho_i c_i \Delta z} = 0.
+   R - \nu |w_k^n| (\lambda/2) = \frac{k_i \dt}{\rho_i c_i \dz^2} - \frac{\dt |w_k^n|}{\dz} \frac{\lambda}{2} \ge \frac{k_i \dt}{\rho_i c_i \dz^2}
+    - \frac{\dt |w_k^n|}{\dz} \frac{k_i}{|w_k^n| \rho_i c_i \dz} = 0.
 
 Thus all the coefficients in :eq:`formax` are nonnegative.  On the other hand, in equation :eq:`formax`, all coefficients on the right side sum to
 
@@ -462,34 +461,34 @@ The heart of the von Neumann analysis is the substitution of a growing or decayi
 
 .. math::
 
-   E_k^n = \sigma^n e^{i\mu\,(k\Delta z)}.
+   E_k^n = \sigma^n e^{i\mu\,(k\dz)}.
 
-Here `k\Delta z = z_k` is a grid point. Such a mode is a solution to :eq:`prevon` if and
+Here `k\dz = z_k` is a grid point. Such a mode is a solution to :eq:`prevon` if and
 only if
 
 .. math::
 
-    \sigma\Big[  &(-R - \nu w_0(\lambda/2)) e^{-i\mu\Delta z}
+    \sigma\Big[  &(-R - \nu w_0(\lambda/2)) e^{-i\mu\dz}
     + (1 + 2 R - \nu w_0 (1-\lambda)) \\
-    &+ (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
-    + \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.
+    &+ (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\dz}
+    + \nu w_0 (1-\lambda) e^{+i\mu\dz} \Big] = 1.
 
 This equation reduces by standard manipulations to
 
 .. math::
 
-   \sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
-   + i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.
+   \sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \dz/2)
+   + i\,\nu w_0 (1-\lambda/2)\sin(\mu\dz)}.
 
 Note `4 R - 2 \nu w_0 (1-\lambda) \ge 0` without restrictions on
-numerical parameters `\Delta t`, `\Delta z`, because `w_0<0` in the
+numerical parameters `\dt`, `\dz`, because `w_0<0` in the
 case under consideration.  Therefore
 
 .. math::
 
    |\sigma|^2 = \frac{1}{\left[1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)
-   \cos^2(\mu \Delta z/2)\right]^2
-   + \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2}.
+   \cos^2(\mu \dz/2)\right]^2
+   + \left[\nu w_0 (1-\lambda/2)\sin(\mu\dz)\right]^2}.
 
 This positive number is less than one, so `|\sigma| < 1`.  It follows that all
 modes decay exponentially.
@@ -514,7 +513,7 @@ then :eq:`formax` implies an equality of the form
 
 .. math::
 
-   A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \Delta t\, \tau_k^n
+   A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \dt\, \tau_k^n
 
 where `\tau_k^n` is the truncation error of the scheme and `A,B_\pm` are nonnegative
 coefficients, which need no detail for now other than to note that `1 + B_- + B_+ = A`.
@@ -523,7 +522,7 @@ Letting `{\bar e}^n = \max_k |e_k^n|` we have, because of the positivity of coef
 .. math::
    :label: prebound
 
-    A |e_k^{n+1}| \le {\bar e}^n + \left(B_- + B_+\right){\bar e}^{n+1} + \Delta t\,\bar\tau^n
+    A |e_k^{n+1}| \le {\bar e}^n + \left(B_- + B_+\right){\bar e}^{n+1} + \dt\,\bar\tau^n
 
 for all `k`, where `\bar\tau^n = \max_k |\tau_k^n|`.  Now let `k` be the index for
 which `|e_k^{n+1}| = {\bar e}^{n+1}`.  For that `k` we can replace `|e_k^{n+1}|` in
@@ -532,9 +531,9 @@ each side of the resulting inequality gives
 
 .. math::
 
-   {\bar e}^{n+1} \le {\bar e}^n + \Delta t\,\bar\tau^n,
+   {\bar e}^{n+1} \le {\bar e}^n + \dt\,\bar\tau^n,
 
-It follows that `\bar e^n \le C \Delta t`, for some finite `C`, if `\bar e^0 = 0`
+It follows that `\bar e^n \le C \dt`, for some finite `C`, if `\bar e^0 = 0`
 :cite:`MortonMayers`.  Thus a maximum principle for BOMBPROOF implies convergence
 in the standard way :cite:`MortonMayers`.  This convergence proof has the same
 assumptions as case 1 in the theorem, and thus it only *suggests* convergence

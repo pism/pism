@@ -13,7 +13,7 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Modeling choices" href="../modeling-choices/index.html" />
@@ -35,10 +35,16 @@
   <div class="section" id="bootstrapping">
 <span id="sec-bootstrapping"></span><h1>Bootstrapping<a class="headerlink" href="#bootstrapping" title="Permalink to this headline">¶</a></h1>
 <p>“Bootstrapping” in PISM means starting a modeling run with less than sufficient data, and
-letting essentially heuristic models fill in needed fields. These heuristics are applied
-before the first time step is taken, so they are part of an initialization process.
-Bootstrapping uses the option <code class="option docutils literal notranslate"><span class="pre">-bootstrap</span></code>; see section <a class="reference internal" href="../std-greenland/run-1.html#sec-runscript"><span class="std std-ref">First run</span></a> for an
-example.</p>
+then either</p>
+<ul class="simple">
+<li><p>interpolating some of the missing fields from a separate file, and</p></li>
+<li><p>letting essentially heuristic models fill in remaining ones.</p></li>
+</ul>
+<p>So, “bootstrapping” is used whenever some fields are missing <em>or</em> interpolation is
+necessary, for example when going to a finer grid during grid sequencing.</p>
+<p>These steps are performed before the first time step is taken, so they are part of an
+initialization process. Bootstrapping uses the option <code class="option docutils literal notranslate"><span class="pre">-bootstrap</span></code>; see section
+<a class="reference internal" href="../std-greenland/run-1.html#sec-runscript"><span class="std std-ref">First run</span></a> for an example.</p>
 <p>The need for an identified stage like “bootstrapping” comes from the fact that initial
 conditions for the evolution equations describing an ice sheet are not all observable. As
 a principal example of this problem, these initial conditions include the temperature
@@ -69,25 +75,24 @@ filling in temperature, stress, and velocity fields.</p></li>
 computational box for the ice with <code class="option docutils literal notranslate"><span class="pre">-Lz</span></code> (section <a class="reference internal" href="../modeling-choices/computational/box.html#sec-coords"><span class="std std-ref">Computational box</span></a>). The data read
 from the file can determine the horizontal extent of the model, if options <code class="option docutils literal notranslate"><span class="pre">-Lx</span></code>,
 <code class="option docutils literal notranslate"><span class="pre">-Ly</span></code> are not set. The additional required specification of vertical extent by
-<code class="option docutils literal notranslate"><span class="pre">-Lz</span></code> is reasonably natural because typical data used in “bootstrapping” are
+<code class="option docutils literal notranslate"><span class="pre">-Lz</span></code> is reasonably natural because input data used in “bootstrapping” are
 two-dimensional. Using <code class="option docutils literal notranslate"><span class="pre">-bootstrap</span></code> without specifying all four options <code class="option docutils literal notranslate"><span class="pre">-Mx</span></code>,
 <code class="option docutils literal notranslate"><span class="pre">-My</span></code>, <code class="option docutils literal notranslate"><span class="pre">-Mz</span></code>, <code class="option docutils literal notranslate"><span class="pre">-Lz</span></code> is an error.</p>
 <p>If <code class="option docutils literal notranslate"><span class="pre">-Lx</span></code> and <code class="option docutils literal notranslate"><span class="pre">-Ly</span></code> specify horizontal grid dimensions smaller than in the
 bootstrapping file, PISM will cut out the center portion of the domain. Alternatively,
 options <code class="option docutils literal notranslate"><span class="pre">-x_range</span></code> and <code class="option docutils literal notranslate"><span class="pre">-y_range</span></code> each take a list of two numbers, a list of
-minimum and maximum <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> coordinates, respectively (in meters), which
-makes it possible to select a subset that is not centered in the bootstrapping file’s
-grid.</p>
+minimum and maximum <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> coordinates, respectively (in meters), which makes it
+possible to select a subset that is not centered in the bootstrapping file’s grid.</p>
 <p>For the key issue of what heuristic is used to determine the temperatures at depth, there
 are two methods. The default method uses ice thickness, surface temperature, surface mass
 balance, and geothermal flux. The temperature is set to the solution of a steady
 one-dimensional differential equation in which conduction and vertical advection are in
 balance, and the vertical velocity linearly-interpolates between the surface mass balance
-rate at the top and zero at the bottom. The non-default method, set with option
-<code class="option docutils literal notranslate"><span class="pre">-boot_temperature_heuristic</span> <span class="pre">quartic_guess</span></code>, was the default in older PISM versions
-(<code class="docutils literal notranslate"><span class="pre">stable0.5</span></code> and earlier); it does not use the surface mass balance and instead makes a
-more-heuristic estimate of the vertical temperature profile based only on the ice
-thickness, surface temperature, and geothermal flux.</p>
+rate at the top and zero at the bottom. The non-default method, selected by setting
+<a class="reference internal" href="../parameters/index.html#config-bootstrapping.temperature_heuristic"><code class="docutils literal notranslate"><span class="pre">bootstrapping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.temperature_heuristic</span></code></a> to <code class="docutils literal notranslate"><span class="pre">quartic_guess</span></code>, was the default in
+older PISM versions (<code class="docutils literal notranslate"><span class="pre">stable0.5</span></code> and earlier); it does not use the surface mass balance
+and instead makes a more-heuristic estimate of the vertical temperature profile based only
+on the ice thickness, surface temperature, and geothermal flux.</p>
 <div class="section" id="bootstrap-file-format">
 <span id="sec-bootstrapping-format"></span><h2><code class="docutils literal notranslate"><span class="pre">-bootstrap</span></code> file format<a class="headerlink" href="#bootstrap-file-format" title="Permalink to this headline">¶</a></h2>
 <p>Allowed formats for a bootstrapping file are relatively simple to describe.</p>
@@ -104,14 +109,13 @@ example see <code class="docutils literal notranslate"><span class="pre">ncdump<
 variable names need not match corresponding variables in a PISM output file. See the
 <a class="reference internal" href="../../technical/cf-standard-names.html#sec-cf-standard-names"><span class="std std-ref">CF standard names used by PISM</span></a> for a list of CF standard names used in
 PISM.</p>
-<p>Specifically, the bed elevation (topography) is read by <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> =
+<p>For example, the bed elevation (topography) is read by <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> =
 <code class="docutils literal notranslate"><span class="pre">bedrock_altitude</span></code> and the ice thickness by <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> =
 <code class="docutils literal notranslate"><span class="pre">land_ice_thickness</span></code>.</p>
 </li>
 <li><p>Any two-dimensional variable except bed topography and ice thickness may be missing.
 For missing variables some heuristic will be applied. See <a class="reference internal" href="../highlevelview/model-hierarchy.html#tab-modelhierarchy"><span class="std std-numref">Table 4</span></a>
-for a sketch of the data necessary for bootstrapping; see <code class="docutils literal notranslate"><span class="pre">src/base/iMbootstrap.cc</span></code>
-for all further details.</p></li>
+for a sketch of the data necessary for bootstrapping.</p></li>
 <li><p>Surface elevation is ignored if present. Users with surface elevation and bed elevation
 data should compute the ice thickness variable, put it in the bootstrapping file, and
 set its <code class="docutils literal notranslate"><span class="pre">standard_name</span></code> to <code class="docutils literal notranslate"><span class="pre">land_ice_thickness</span></code>.</p></li>
@@ -204,9 +208,9 @@ having ice thickness in feet or temperature in Fahrenheit <em>is</em> allowed.</
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

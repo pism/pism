@@ -21,7 +21,6 @@ and a (generally) spatially-varying till strength. The amount of stored basal wa
 modeled by the subglacial hydrology model (section :ref:`sec-subhydro`) based on the basal
 melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energy`).
 
-
 .. list-table:: Choice of, and controls on, the numerical SSA stress balance.
    :name: tab-ssa-usage
    :header-rows: 1
@@ -92,3 +91,32 @@ Parameters
 
 .. pism-parameters::
    :prefix: stress_balance.ssa.
+
+.. _sec-ssa-remarks:
+
+Technical remarks
+#################
+
+Ice stress balance models ignoring inertia are "diagnostic" models that do not have a
+"state" evolving through time: the ice velocity is fully determined by ice geometry, basal
+boundary conditions, and the ice viscosity.
+
+In addition to this, shallow stress balance models (other than the SIA) correspond to
+*nonlinear* systems of equations, which means that computing an estimate of the ice
+velocity is an iterative process starting with a particular *initial guess*.
+
+The quality of this guess may affect the number of iterations needed and even whether the
+solver succeeds at all. It also has an influence on the computed solution: if an equation
+has a unique solution, estimates produced using different initial guesses should be
+*close*, but they need not be *identical*. If an equation has multiple solutions, even a
+"small" change in the initial guess may give a completely different result.
+
+In the context of a evolutionary model we can usually assume that the change in the state
+of the model from one step to the next is "small" and we use (`u, v`) estimates from one
+time step as the initial guess for the next. To ensure that stopping and re-starting a
+simulation does not affect results we save these to the output file as variables
+:var:`u_ssa` and :var:`v_ssa` and read them in when re-starting a stopped simulation.
+
+One could say that the continuum SSA model does not have a state, but its implementation
+does. Set :config:`stress_balance.ssa.read_initial_guess` to "false" to ignore it during
+initialization and use the zero initial guess instead.

@@ -19,50 +19,54 @@ Jakobshavn Isbrae in the west Greenland ice sheet :cite:`Joughinetal08`, an impo
 outlet glacier which both flows fast and drains a large fraction of the ice sheet. One
 possibility is to set up an even higher-resolution PISM regional model covering only one
 outlet glacier, but this requires decisions about coupling to the whole ice sheet flow.
-(See section :ref:`sec-jako`.) But here we will work on high resolution for the whole ice
+(See section :ref:`sec-jako`.) Here we will work on high resolution for the whole ice
 sheet, and thus all outlet glaciers.
 
 Consider the following command and compare it to the :ref:`first one <firstcommand>`:
 
 .. code-block:: none
 
-   mpiexec -n 4 pismr -i pism_Greenland_5km_v1.1.nc -bootstrap -Mx 301 -My 561 \
-     -Mz 201 -Mbz 21 -z_spacing equal -Lz 4000 -Lbz 2000 -ys -200 -ye 0 \
-     -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt ...
+   mpiexec -n 4 pismr \
+           -bootstrap -i pism_Greenland_5km_v1.1.nc \
+           -Mx 301 -My 561 \
+           -Mz 201 -Lz 4000 -z_spacing equal \
+           -Mbz 21 -Lbz 2000 \
+           -ys -200 -ye 0 \
+           -regrid_file g20km_10ka_hy.nc \
+           -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt ...
 
 Instead of a 20 km grid in the horizontal (``-Mx 76 -My 141``) we ask for a 5 km grid
 (``-Mx 301 -My 561``). Instead of vertical grid resolution of 40 m (``-Mz 101 -z_spacing
 equal -Lz 4000``) we ask for a vertical resolution of 20 m (``-Mz 201 -z_spacing equal -Lz
-4000``).\ [#]_ Most significantly, however, we say ``-regrid_file g20km_10ka_hy.nc`` to
-regrid --- specifically, to bilinearly-interpolate --- fields from a model result computed on
-the coarser 20 km grid. The regridded fields (``-regrid_vars litho_temp,...``) are the
-evolving mass and energy state variables which are already approximately at equilibrium on
-the coarse grid. Because we are bootstrapping (i.e. using the ``-bootstrap`` option), the
-other variables, especially the bedrock topography ``topg`` and the climate data, are
-brought in to PISM at "full" resolution, that is, on the original 5 km grid in the data
-file ``pism_Greenland_5km_v1.1.nc``.
+4000``).\ [#bootstrapping-grid]_ Most significantly, however, we say ``-regrid_file
+g20km_10ka_hy.nc`` to regrid --- specifically, to bilinearly-interpolate --- fields from a
+model result computed on the coarser 20 km grid. The regridded fields (``-regrid_vars
+litho_temp,...``) are the evolving mass and energy state variables which are already
+approximately at equilibrium on the coarse grid. Because we are bootstrapping (i.e. using
+the ``-bootstrap`` option), the other variables, especially the bedrock topography
+``topg`` and the climate data, are brought in to PISM at "full" resolution, that is, on
+the original 5 km grid in the data file ``pism_Greenland_5km_v1.1.nc``.
 
-This technique could be called "grid sequencing".\ [#]_ The result of the above command
-will be to compute the near-equilibrium result on the fine 5 km grid, taking advantage of
-the coarse-gridded computation of approximate equilibrium, and despite a run of only 200
-model years (``-ys -200 -ye 0``). How close to equilibrium we get depends on both
-durations, i.e. on both the coarse and fine grid run durations, but certainly the
+This technique could be called "grid sequencing".\ [#not-mg]_ The result of the above
+command will be to compute the near-equilibrium result on the fine 5 km grid, taking
+advantage of the coarse-gridded computation of approximate equilibrium, and despite a run
+of only 200 model years (``-ys -200 -ye 0``). How close to equilibrium we get depends on
+both durations, i.e. on both the coarse and fine grid run durations, but certainly the
 computational effort is reduced by doing a short run on the fine grid. Note that in the
 previous subsection we also used regridding. In that application, however,
 ``-regrid_file`` only "brings in" fields from a run on the same resolution.
 
-Generally the fine grid run duration in grid sequencing should be at least `t =
-\Delta x / v_{\text{min}}` where `\Delta x` is the fine grid resolution and
-`v_{\text{min}}` is the lowest ice flow speed that we expect to be relevant to our
-modeling purposes. That is, the duration should be such that slow ice at least has a
-chance to cross one grid cell. In this case, if `\Delta x = 5` km and
-`v_{\text{min}} = 25` m/year then we get `t=200` a. Though we use this as the
-duration, it is a bit short, and the reader might compare `t=500` results (i.e.
-using `v_{\text{min}} = 10` m/year).
+Generally the fine grid run duration in grid sequencing should be at least `t = \dx /
+v_{\text{min}}` where `\dx` is the fine grid resolution and `v_{\text{min}}` is the lowest
+ice flow speed that we expect to be relevant to our modeling purposes. That is, the
+duration should be such that slow ice at least has a chance to cross one grid cell. In
+this case, if `\dx = 5` km and `v_{\text{min}} = 25` m/year then we get `t=200` a. Though
+we use this as the duration, it is a bit short, and the reader might compare `t=500`
+results (i.e. using `v_{\text{min}} = 10` m/year).
 
-Actually we will demonstrate how to go from `20\,\text{km}` to `5\,\text{km}`
-in two steps, `20\,\text{km}\,\to\,10\,\text{km}\,\to\,5\,\text{km}`, with durations
-of 10 ka, 2 ka, and 200 a, respectively. The 20 km coarse grid run is already done; the
+Actually we will demonstrate how to go from `20\km` to `5\km` in two
+steps, `20\km\,\to\,10\km\,\to\,5\km`, with durations of `10000`,
+`2000`, and `200` years, respectively. The 20 km coarse grid run is already done; the
 result is in ``g20km_10ka_hy.nc``. So we run the following script which is ``gridseq.sh``
 in ``examples/std-greenland/``. It calls ``spinup.sh`` to collect all the right PISM
 options:
@@ -159,8 +163,9 @@ at least as valuable as individual high-resolution runs.
 
 .. rubric:: Footnotes
 
-.. [#] See subsections :ref:`sec-bootstrapping`, :ref:`sec-coords`, and :ref:`sec-grid`
-       for more about determining the computation domain and grid at bootstrapping.
+.. [#bootstrapping-grid] See subsections :ref:`sec-bootstrapping`, :ref:`sec-coords`, and
+   :ref:`sec-grid` for more about determining the computation domain and grid at
+   bootstrapping.
 
-.. [#] It is not quite "multigrid." That would both involve refinement and coarsening
-       stages in computing the fine grid solution.
+.. [#not-mg] It is not quite "multigrid." That would both involve refinement and
+   coarsening stages in computing the fine grid solution.

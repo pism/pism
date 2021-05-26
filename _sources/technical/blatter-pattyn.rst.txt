@@ -847,14 +847,14 @@ To support the multigrid preconditioner we need to be able re-discretize the sys
 mesh provided *by PETSc* in our to residual and Jacobian evaluators. In general, this
 requires
 
-* re-computing grid-related constants (`\Delta x`, etc) using the grid (avoid using
+* re-computing grid-related constants (`\dx`, etc) using the grid (avoid using
   hard-wired constants, e.g. computed using the fine grid), and
 
 * additional code to restrict gridded inputs from the fine grid mesh to coarser meshes.
 
 This solver does not support coarsening in horizontal directions, so gridded
-two-dimensional inputs can be used on all multigrid levels. The grid spacing (`\Delta x`,
-`\Delta y`) remains the same as well.
+two-dimensional inputs can be used on all multigrid levels. The grid spacing (`\dx`,
+`\dy`) remains the same as well.
 
 To transfer the one three-dimensional gridded input field (ice hardness), we create
 interpolation matrices mapping from a coarse level to the next (finer) level in the
@@ -899,14 +899,14 @@ Coordinates of the mesh nodes have the form
 .. math::
    :label: eq-bp-mesh-nodes
 
-   x_i &= x_{\text{min}} + i \cdot \Delta x,
+   x_i &= x_{\text{min}} + i \cdot \dx,
 
-   y_j &= y_{\text{min}} + j \cdot \Delta y,
+   y_j &= y_{\text{min}} + j \cdot \dy,
 
    z_k &= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.
 
-Each element's projection onto the plane `z = 0` is a rectangle with sides `\Delta x` and
-`\Delta y`, but the spacing between nodes in the vertical direction is *not* constant:
+Each element's projection onto the plane `z = 0` is a rectangle with sides `\dx` and
+`\dy`, but the spacing between nodes in the vertical direction is *not* constant:
 each vertical column of nodes contains `M_z` nodes with the spacing of `H / (M_z - 1)`.
 This mesh structure is *exactly the same* as the one used in :cite:`BrownSmithAhmadia2013`
 and CISM 2.1 :cite:`Lipscomb2019`.

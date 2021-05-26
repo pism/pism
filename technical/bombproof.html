@@ -13,7 +13,7 @@
     <script src="../_static/underscore.js"></script>
     <script src="../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Computing steady-state subglacial water flux" href="steady-hydrology.html" />
@@ -48,12 +48,11 @@ properties, and address the basal boundary condition.</p>
 <p>The scheme is conditionally-stable. The length of the time step is limited only by the
 maximum magnitude of the horizontal velocities within the ice, i.e. horizontal CFL. This
 condition for stability is included in the PISM adaptive time-stepping technique.</p>
-<p>Accuracy is necessarily a second goal. Our shallow scheme has truncation error <span class="math notranslate nohighlight">\(O(\Delta
-z^2)\)</span> in many circumstances, though it reverts to lower order when it “detects trouble” in
-the form of large vertical velocities. Overall the scheme has order <span class="math notranslate nohighlight">\(O(\Delta t,\Delta
-x,\Delta y, \Delta z^2)\)</span> in circumstances where the vertical ice flow velocity is small
-enough, relative to conductivity, and otherwise reverts to
-<span class="math notranslate nohighlight">\(O(\Delta t,\Delta x,\Delta y, \Delta z^1)\)</span>.</p>
+<p>Accuracy is necessarily a second goal. Our shallow scheme has truncation error <span class="math notranslate nohighlight">\(O(\dz^2)\)</span>
+in many circumstances, though it reverts to lower order when it “detects trouble” in the
+form of large vertical velocities. Overall the scheme has order <span class="math notranslate nohighlight">\(O(\dt,\dx,\dy, \dz^2)\)</span> in
+circumstances where the vertical ice flow velocity is small enough, relative to
+conductivity, and otherwise reverts to <span class="math notranslate nohighlight">\(O(\dt,\dx,\dy, \dz^1)\)</span>.</p>
 <p>The conservation of energy problem for the ice is in terms of an enthalpy field
 <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id30"><span>21</span></a>]</span>. The current scheme supercedes the cold-ice,
 temperature-based scheme described in the appendices of <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id32"><span>15</span></a>]</span> and in
@@ -193,18 +192,18 @@ magnitude of the horizontal velocity components. To state the upwind scheme itse
 term <span class="math notranslate nohighlight">\(\Phi\)</span>, are</p>
 <div class="math notranslate nohighlight">
 \[\Phi_{ijk}^n = \Sigma_{ijk}^n - \rho_i
-\left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\Delta x}
-+ v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\Delta y} \right).\]</div>
+\left( u_{ijk}^n\,\frac{\Up{E_{\bullet jk}^n}{u_{ijk}^n}}{\dx}
++ v_{ijk}^n\,\frac{\Up{E_{i\bullet k}^n}{v_{ijk}^n}}{\dy} \right).\]</div>
 <p>The CFL stability condition for this part of the scheme is</p>
 <div class="math notranslate nohighlight" id="equation-cfl">
-<span class="eqno">(53)<a class="headerlink" href="#equation-cfl" title="Permalink to this equation">¶</a></span>\[\Delta t \,\left( \left|\frac{u_{ijk}^n}{\Delta x}\right|
-+ \left|\frac{v_{ijk}^n}{\Delta y}\right| \right) \le 1.\]</div>
+<span class="eqno">(53)<a class="headerlink" href="#equation-cfl" title="Permalink to this equation">¶</a></span>\[\dt \,\left( \left|\frac{u_{ijk}^n}{\dx}\right|
++ \left|\frac{v_{ijk}^n}{\dy}\right| \right) \le 1.\]</div>
 <p>The routine <code class="docutils literal notranslate"><span class="pre">max_timestep_cfl_3d()</span></code> computes the maximum of velocity
 magnitudes. This produces a time step restriction based on the above CFL condition. Then
 <code class="docutils literal notranslate"><span class="pre">IceModel::max_timestep()</span></code> implements adaptive time-stepping based on this and
 other stability criteria.</p>
 <p>In the analysis below we assume an equally-spaced grid <span class="math notranslate nohighlight">\(z_0,\dots,z_{M_z}\)</span>
-with <span class="math notranslate nohighlight">\(\Delta z = z_{k+1} - z_k\)</span>.  In fact PISM has a remapping scheme in each
+with <span class="math notranslate nohighlight">\(\dz = z_{k+1} - z_k\)</span>.  In fact PISM has a remapping scheme in each
 column, wherein the enthalpy in a column of ice is stored on an unequally-spaced
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
 of energy computation described here.  (Similar structure applies to the age
@@ -214,10 +213,10 @@ computation.  See classes <code class="docutils literal notranslate"><span class
 approximation to <a class="reference internal" href="#equation-vertproblem">(51)</a> is</p>
 <div class="math notranslate nohighlight" id="equation-bombone">
 <span class="eqno">(54)<a class="headerlink" href="#equation-bombone" title="Permalink to this equation">¶</a></span>\[\begin{split} \rho_i &amp;\left(
-        \frac{E_k^{n+1} - E_k^n}{\Delta t}
-        + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
-        + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z} \right) \\
-      &amp;= \frac{k_i}{c_i}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\Delta z^2} + \Phi_k^n.\end{split}\]</div>
+        \frac{E_k^{n+1} - E_k^n}{\dt}
+        + \lambda w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \dz}
+        + (1-\lambda) w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\dz} \right) \\
+      &amp;= \frac{k_i}{c_i}\, \frac{E_{k+1}^{n+1} - 2 E_{k}^{n+1} + E_{k-1}^{n+1}}{\dz^2} + \Phi_k^n.\end{split}\]</div>
 <p>Equation <a class="reference internal" href="#equation-bombone">(54)</a>, along with a determination of <span class="math notranslate nohighlight">\(\lambda\)</span> by
 <a class="reference internal" href="#equation-lambdachoice">(58)</a> below, is the scheme BOMBPROOF.  It includes two approximations
 of vertical advection,  implicit centered difference  (<span class="math notranslate nohighlight">\(\lambda = 1\)</span>) and
@@ -225,28 +224,28 @@ implicit first-order upwinding (<span class="math notranslate nohighlight">\(\la
 nonnegative coefficients which sum to one, a convex combination.  The centered
 formula has higher accuracy,</p>
 <div class="math notranslate nohighlight">
-\[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \Delta z}
-= w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z^2),\]</div>
+\[w_k^n \frac{E_{k+1}^{n+1} - E_{k-1}^{n+1}}{2 \dz}
+= w \frac{\partial E}{\partial z} + O(\dt,\dz^2),\]</div>
 <p>while the first order upwind formula has lower accuracy,</p>
 <div class="math notranslate nohighlight">
-\[w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\Delta z}
-= w \frac{\partial E}{\partial z} + O(\Delta t,\Delta z).\]</div>
+\[w_k^{n} \frac{\Up{E_{\bullet}^{n+1}}{w_k^{n}}}{\dz}
+= w \frac{\partial E}{\partial z} + O(\dt,\dz).\]</div>
 <p>Thus we prefer to use the centered formula when possible, but we apply (implicit)
 upwinding when it is needed for its added stability benefits.</p>
 <p>We now rewrite <a class="reference internal" href="#equation-bombone">(54)</a> for computational purposes as one of a system of equations
 for the unknowns <span class="math notranslate nohighlight">\(\{E_k^{n+1}\}\)</span>.  In this system the coefficients will be
 scaled so that the diagonal entries of the matrix have limit one as
-<span class="math notranslate nohighlight">\(\Delta t\to 0\)</span>.  Let</p>
+<span class="math notranslate nohighlight">\(\dt\to 0\)</span>.  Let</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\nu &amp;= \frac{\Delta t}{\Delta z},\\
-R &amp;= \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}.\end{split}\]</div>
-<p>Now multiply equation <a class="reference internal" href="#equation-bombone">(54)</a> by <span class="math notranslate nohighlight">\(\Delta t\)</span>, divide it by <span class="math notranslate nohighlight">\(\rho_i\)</span>,
+\[\begin{split}\nu &amp;= \frac{\dt}{\dz},\\
+R &amp;= \frac{k_i \dt}{\rho_i c_i \dz^2}.\end{split}\]</div>
+<p>Now multiply equation <a class="reference internal" href="#equation-bombone">(54)</a> by <span class="math notranslate nohighlight">\(\dt\)</span>, divide it by <span class="math notranslate nohighlight">\(\rho_i\)</span>,
 and rearrange:</p>
 <div class="math notranslate nohighlight" id="equation-bombtwo">
 <span class="eqno">(55)<a class="headerlink" href="#equation-bombtwo" title="Permalink to this equation">¶</a></span>\[\begin{split} \left(-R - \nu w_k^n \uppair{1-\lambda/2}{\lambda/2}\right) E_{k-1}^{n+1}\\ +
  \left(1 + 2 R + \nu w_k^n (1-\lambda) \uppair{+1}{-1}\right) E_k^{n+1}\\ +
  \left(-R + \nu w_k^n \uppair{\lambda/2}{1-\lambda/2} \right) E_{k+1}^{n+1}\\
- = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n\end{split}\]</div>
+ = E_k^n + \dt \rho_i^{-1}\Phi_k^n\end{split}\]</div>
 <p>Here <span class="math notranslate nohighlight">\(\uppair{a}{b} = a\)</span> when <span class="math notranslate nohighlight">\(w_k^n\ge 0\)</span> and <span class="math notranslate nohighlight">\(\uppair{a}{b} = b\)</span> when <span class="math notranslate nohighlight">\(w_k^n &lt; 0\)</span>.</p>
 <p>Equation <a class="reference internal" href="#equation-bombtwo">(55)</a> has coefficients which are scaled to have no units.  It is
 ready to be put in the system managed by <code class="docutils literal notranslate"><span class="pre">enthSystemCtx</span></code>.</p>
@@ -268,7 +267,7 @@ smoother. The proof below shows the corresponding “wiggle-free” property for
 <div class="math notranslate nohighlight" id="equation-centered">
 <span class="eqno">(57)<a class="headerlink" href="#equation-centered" title="Permalink to this equation">¶</a></span>\[\begin{split} &amp;\left(-R - \nu w_k^n/2\right) E_{k-1}^{n+1} + \left(1 + 2 R\right) E_k^{n+1} \\
  &amp;+ \left(-R + \nu w_k^n/2\right) E_{k+1}^{n+1}
- = E_k^n + \Delta t \rho_i^{-1}\Phi_k^n\end{split}\]</div>
+ = E_k^n + \dt \rho_i^{-1}\Phi_k^n\end{split}\]</div>
 <p>is <em>less stable</em> than implicit first-order upwinding. It is less stable in the same sense
 that Crank-Nicolson is a less stable scheme than backwards Euler for the simplest heat
 equation <span class="math notranslate nohighlight">\(u_t = u_{xx}\)</span> <span id="id15">[<a class="reference internal" href="../zzz_references_html.html#id300"><span>73</span></a>]</span>. In fact, although oscillatory modes cannot
@@ -291,7 +290,7 @@ coincides with the surface of the ice. With these assumptions, if</p>
 <div class="math notranslate nohighlight" id="equation-lambdachoice">
 <span class="eqno">(58)<a class="headerlink" href="#equation-lambdachoice" title="Permalink to this equation">¶</a></span>\[\lambda = \min
 \left\{
-1, \min_{k=0,\dots,N} \left\{ \frac{2 k_i}{|w_k^n| \rho_i c_i \Delta z} \right\}
+1, \min_{k=0,\dots,N} \left\{ \frac{2 k_i}{|w_k^n| \rho_i c_i \dz} \right\}
 \right\},\]</div>
 <p>reset at each time step <span class="math notranslate nohighlight">\(n\)</span>, then scheme <a class="reference internal" href="#equation-bombone">(54)</a>, <a class="reference internal" href="#equation-bombtwo">(55)</a> is
 unconditionally-stable in the following two senses:</p>
@@ -299,7 +298,7 @@ unconditionally-stable in the following two senses:</p>
 <li><p>A maximum principle applies without further assumptions.</p></li>
 <li><p>Suppose we freeze the coefficients of the problem to have constant values in time and
 space. (Concretely, we assume that <span class="math notranslate nohighlight">\(\lambda\)</span> is chosen independently of the time step
-<span class="math notranslate nohighlight">\(n\)</span>, and that <span class="math notranslate nohighlight">\(\Delta t\)</span> is the same for each time step. We assume constant vertical
+<span class="math notranslate nohighlight">\(n\)</span>, and that <span class="math notranslate nohighlight">\(\dt\)</span> is the same for each time step. We assume constant vertical
 velocity <span class="math notranslate nohighlight">\(w_k^n=w_0\)</span>. We also consider a spatially-periodic or unbounded version of our
 problem, with no boundary conditions.) Then a von Neumann analysis of the constant
 coefficient problem yields a growth factor less than one for all modes on the grid.</p></li>
@@ -339,10 +338,10 @@ The coefficient of <span class="math notranslate nohighlight">\(E_{k+1}^{n+1}\)<
 <span class="math notranslate nohighlight">\(w_k^n \le 0\)</span>.</p>
 <p>Therefore the only concerns are for the coefficient of <span class="math notranslate nohighlight">\(E_{k-1}^{n+1}\)</span> when <span class="math notranslate nohighlight">\(w_k^n\le 0\)</span> and the
 coefficient of <span class="math notranslate nohighlight">\(E_{k+1}^{n+1}\)</span> when <span class="math notranslate nohighlight">\(w_k^n\ge 0\)</span>.  But if <span class="math notranslate nohighlight">\(\lambda\)</span> is smaller than
-<span class="math notranslate nohighlight">\(2k_i/(|w_k^n| \rho_i c_i \Delta z)\)</span> then</p>
+<span class="math notranslate nohighlight">\(2k_i/(|w_k^n| \rho_i c_i \dz)\)</span> then</p>
 <div class="math notranslate nohighlight">
-\[R - \nu |w_k^n| (\lambda/2) = \frac{k_i \Delta t}{\rho_i c_i \Delta z^2} - \frac{\Delta t |w_k^n|}{\Delta z} \frac{\lambda}{2} \ge \frac{k_i \Delta t}{\rho_i c_i \Delta z^2}
- - \frac{\Delta t |w_k^n|}{\Delta z} \frac{k_i}{|w_k^n| \rho_i c_i \Delta z} = 0.\]</div>
+\[R - \nu |w_k^n| (\lambda/2) = \frac{k_i \dt}{\rho_i c_i \dz^2} - \frac{\dt |w_k^n|}{\dz} \frac{\lambda}{2} \ge \frac{k_i \dt}{\rho_i c_i \dz^2}
+ - \frac{\dt |w_k^n|}{\dz} \frac{k_i}{|w_k^n| \rho_i c_i \dz} = 0.\]</div>
 <p>Thus all the coefficients in <a class="reference internal" href="#equation-formax">(59)</a> are nonnegative.  On the other hand, in equation <a class="reference internal" href="#equation-formax">(59)</a>, all coefficients on the right side sum to</p>
 <div class="math notranslate nohighlight">
 \[1+2R+\nu w_k^n \uppair{1-\lambda}{-1+\lambda} = 1+2R+\nu w_k^n (1-\lambda) \uppair{+1}{-1},\]</div>
@@ -364,25 +363,25 @@ Let’s assume the velocity is downward, <span class="math notranslate nohighlig
 <p>The heart of the von Neumann analysis is the substitution of a growing or decaying
 (in time index <span class="math notranslate nohighlight">\(n\)</span>) oscillatory mode on the grid of spatial wave number <span class="math notranslate nohighlight">\(\mu\)</span>:</p>
 <div class="math notranslate nohighlight">
-\[E_k^n = \sigma^n e^{i\mu\,(k\Delta z)}.\]</div>
-<p>Here <span class="math notranslate nohighlight">\(k\Delta z = z_k\)</span> is a grid point. Such a mode is a solution to <a class="reference internal" href="#equation-prevon">(60)</a> if and
+\[E_k^n = \sigma^n e^{i\mu\,(k\dz)}.\]</div>
+<p>Here <span class="math notranslate nohighlight">\(k\dz = z_k\)</span> is a grid point. Such a mode is a solution to <a class="reference internal" href="#equation-prevon">(60)</a> if and
 only if</p>
 <div class="math notranslate nohighlight">
-\[\begin{split}\sigma\Big[  &amp;(-R - \nu w_0(\lambda/2)) e^{-i\mu\Delta z}
+\[\begin{split}\sigma\Big[  &amp;(-R - \nu w_0(\lambda/2)) e^{-i\mu\dz}
 + (1 + 2 R - \nu w_0 (1-\lambda)) \\
-&amp;+ (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\Delta z}
-+ \nu w_0 (1-\lambda) e^{+i\mu\Delta z} \Big] = 1.\end{split}\]</div>
+&amp;+ (-R  + \nu w_0 (\lambda/2)) e^{+i\mu\dz}
++ \nu w_0 (1-\lambda) e^{+i\mu\dz} \Big] = 1.\end{split}\]</div>
 <p>This equation reduces by standard manipulations to</p>
 <div class="math notranslate nohighlight">
-\[\sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \Delta z/2)
-+ i\,\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)}.\]</div>
+\[\sigma = \frac{1}{1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)\cos^2(\mu \dz/2)
++ i\,\nu w_0 (1-\lambda/2)\sin(\mu\dz)}.\]</div>
 <p>Note <span class="math notranslate nohighlight">\(4 R - 2 \nu w_0 (1-\lambda) \ge 0\)</span> without restrictions on
-numerical parameters <span class="math notranslate nohighlight">\(\Delta t\)</span>, <span class="math notranslate nohighlight">\(\Delta z\)</span>, because <span class="math notranslate nohighlight">\(w_0&lt;0\)</span> in the
+numerical parameters <span class="math notranslate nohighlight">\(\dt\)</span>, <span class="math notranslate nohighlight">\(\dz\)</span>, because <span class="math notranslate nohighlight">\(w_0&lt;0\)</span> in the
 case under consideration.  Therefore</p>
 <div class="math notranslate nohighlight">
 \[|\sigma|^2 = \frac{1}{\left[1 + \left(4 R - 2 \nu w_0 (1-\lambda)\right)
-\cos^2(\mu \Delta z/2)\right]^2
-+ \left[\nu w_0 (1-\lambda/2)\sin(\mu\Delta z)\right]^2}.\]</div>
+\cos^2(\mu \dz/2)\right]^2
++ \left[\nu w_0 (1-\lambda/2)\sin(\mu\dz)\right]^2}.\]</div>
 <p>This positive number is less than one, so <span class="math notranslate nohighlight">\(|\sigma| &lt; 1\)</span>.  It follows that all
 modes decay exponentially.
 <strong>END OF PROOF OF 2.</strong></p>
@@ -402,19 +401,19 @@ stable in the same sense.</p>
 where <span class="math notranslate nohighlight">\(E(\dots)\)</span> is the unknown exact solution (exact enthalpy field) <span id="id20">[<a class="reference internal" href="../zzz_references_html.html#id300"><span>73</span></a>]</span>,
 then <a class="reference internal" href="#equation-formax">(59)</a> implies an equality of the form</p>
 <div class="math notranslate nohighlight">
-\[A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \Delta t\, \tau_k^n\]</div>
+\[A e_k^{n+1} = e_k^n + B_- e_{k-1}^{n+1} + B_+ e_{k+1}^{n+1} + \dt\, \tau_k^n\]</div>
 <p>where <span class="math notranslate nohighlight">\(\tau_k^n\)</span> is the truncation error of the scheme and <span class="math notranslate nohighlight">\(A,B_\pm\)</span> are nonnegative
 coefficients, which need no detail for now other than to note that <span class="math notranslate nohighlight">\(1 + B_- + B_+ = A\)</span>.
 Letting <span class="math notranslate nohighlight">\({\bar e}^n = \max_k |e_k^n|\)</span> we have, because of the positivity of coefficients,</p>
 <div class="math notranslate nohighlight" id="equation-prebound">
-<span class="eqno">(61)<a class="headerlink" href="#equation-prebound" title="Permalink to this equation">¶</a></span>\[ A |e_k^{n+1}| \le {\bar e}^n + \left(B_- + B_+\right){\bar e}^{n+1} + \Delta t\,\bar\tau^n\]</div>
+<span class="eqno">(61)<a class="headerlink" href="#equation-prebound" title="Permalink to this equation">¶</a></span>\[ A |e_k^{n+1}| \le {\bar e}^n + \left(B_- + B_+\right){\bar e}^{n+1} + \dt\,\bar\tau^n\]</div>
 <p>for all <span class="math notranslate nohighlight">\(k\)</span>, where <span class="math notranslate nohighlight">\(\bar\tau^n = \max_k |\tau_k^n|\)</span>.  Now let <span class="math notranslate nohighlight">\(k\)</span> be the index for
 which <span class="math notranslate nohighlight">\(|e_k^{n+1}| = {\bar e}^{n+1}\)</span>.  For that <span class="math notranslate nohighlight">\(k\)</span> we can replace <span class="math notranslate nohighlight">\(|e_k^{n+1}|\)</span> in
 equation <a class="reference internal" href="#equation-prebound">(61)</a> with <span class="math notranslate nohighlight">\({\bar e}^{n+1}\)</span>.  Subtracting the same quantity from
 each side of the resulting inequality gives</p>
 <div class="math notranslate nohighlight">
-\[{\bar e}^{n+1} \le {\bar e}^n + \Delta t\,\bar\tau^n,\]</div>
-<p>It follows that <span class="math notranslate nohighlight">\(\bar e^n \le C \Delta t\)</span>, for some finite <span class="math notranslate nohighlight">\(C\)</span>, if <span class="math notranslate nohighlight">\(\bar e^0 = 0\)</span>
+\[{\bar e}^{n+1} \le {\bar e}^n + \dt\,\bar\tau^n,\]</div>
+<p>It follows that <span class="math notranslate nohighlight">\(\bar e^n \le C \dt\)</span>, for some finite <span class="math notranslate nohighlight">\(C\)</span>, if <span class="math notranslate nohighlight">\(\bar e^0 = 0\)</span>
 <span id="id21">[<a class="reference internal" href="../zzz_references_html.html#id300"><span>73</span></a>]</span>.  Thus a maximum principle for BOMBPROOF implies convergence
 in the standard way <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id300"><span>73</span></a>]</span>.  This convergence proof has the same
 assumptions as case 1 in the theorem, and thus it only <em>suggests</em> convergence
@@ -549,9 +548,9 @@ the future <code class="docutils literal notranslate"><span class="pre">OceanMod
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

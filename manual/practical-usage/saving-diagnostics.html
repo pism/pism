@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Saving time series of spatially-varying diagnostic quantities &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
+    <title>Spatially-varying diagnostic quantities &#8212; PISM, a Parallel Ice Sheet Model 1.2 documentation</title>
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -13,11 +13,11 @@
     <script src="../../_static/underscore.js"></script>
     <script src="../../_static/doctools.js"></script>
     <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
+    <script type="text/x-mathjax-config">MathJax.Hub.Config({"TeX": {"Macros": {"dx": "\\Delta x", "dy": "\\Delta y", "dz": "\\Delta z", "dt": "\\Delta t", "km": "\\,\\text{km}", "Diff": [" \\frac{\\mathrm{d}#1}{\\mathrm{d}#2} ", "2"], "diff": [" \\frac{\\partial #1}{\\partial #2} ", "2"], "var": [" {#1}_{\\text{#2}} ", "2"], "h": [" \\var{h}{#1} ", "1"], "T": [" \\var{T}{#1} ", "1"], "m": [" \\var{m}{#1} ", "1"], "ms": [" \\var{m^{*}}{#1} ", "1"], "psw": "p_{\\text{water}}", "pice": "p_{\\text{ice}}", "pmelange": "\\bar p_{\\text{melange}}", "rhoi": "\\rho_{\\text{ice}}", "rhow": "\\rho_{\\text{water}}", "n": "\\boldsymbol{n}", "nx": "\\n_{x}", "ny": "\\n_{y}", "phimin": "\\phi_{\\mathrm{min}}", "phimax": "\\phi_{\\mathrm{max}}", "bmin": "b_{\\mathrm{min}}", "bmax": "b_{\\mathrm{max}}", "bq": "\\mathbf{q}", "Up": ["\\operatorname{Up}\\left(#1\\big|#2\\right)", "2"], "uppair": ["\\left\\{\\begin{matrix} #1 \\\\ #2 \\end{matrix}\\right\\}", "2"], "Div": "\\nabla \\cdot", "V": "\\mathbf{V}", "Wtill": "W_{\\mathrm{till}}", "zs": "z_{\\text{sea level}}", "uu": "\\boldsymbol{u}", "nz": "\\n_{z}", "td": ["t^{D}_{#1}", "1"], "D": "\\displaystyle", "viscosity": "\\nu", "partI": "(2\\tilde N_{xx} + \\tilde N_{yy})", "partII": "(\\tilde N_{xy})", "E": "\\dot{\\boldsymbol{\\epsilon}}", "exponent": "\\frac{1-n}{2n}", "p": ["\\left(#1\\right)", "1"], "f": "\\rho\\, g\\, \\nabla s", "Id": "\\int_{\\Omega}", "Ib": "\\int_{\\partial\\Omega}", "Ibase": "\\int_{\\text{base}}", "dphi": ["\\diff{\\varphi_{#1}}{#2}", "2", "i"], "dpsi": ["\\diff{\\psi_{#1}}{#2}", "2", "i"], "Hmin": "H_{\\text{min}}", "dbeta": "\\diff{\\beta}{\\alpha}", "K": ["K_{i,j,#1,#2}", "2"]}}})</script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Saving re-startable snapshots of the model state" href="saving-snapshots.html" />
-    <link rel="prev" title="Saving time series of scalar diagnostic quantities" href="saving-time-series.html" />
+    <link rel="next" title="Snapshots of the model state" href="saving-snapshots.html" />
+    <link rel="prev" title="Scalar diagnostic quantities" href="saving-time-series.html" />
    
   <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
   
@@ -32,22 +32,25 @@
   <div class="bodywrapper">
     <div class="body" role="main">
       
-  <div class="section" id="saving-time-series-of-spatially-varying-diagnostic-quantities">
-<span id="sec-saving-diagnostics"></span><h1>Saving time series of spatially-varying diagnostic quantities<a class="headerlink" href="#saving-time-series-of-spatially-varying-diagnostic-quantities" title="Permalink to this headline">¶</a></h1>
-<p>Sometimes it is useful to have PISM save a handful of diagnostic <em>maps</em> at some interval
-like every 10 years or even every month. One can use snapshots (section
-<a class="reference internal" href="saving-snapshots.html#sec-snapshots"><span class="std std-ref">Saving re-startable snapshots of the model state</span></a>), but doing so can easily fill your hard-drive because snapshots are
+  <div class="section" id="spatially-varying-diagnostic-quantities">
+<span id="sec-saving-diagnostics"></span><h1>Spatially-varying diagnostic quantities<a class="headerlink" href="#spatially-varying-diagnostic-quantities" title="Permalink to this headline">¶</a></h1>
+<p>Sometimes it is useful to have PISM save a handful of diagnostic <em>maps</em> at some interval,
+for example every 10 years or even every month. One can use snapshots (section
+<a class="reference internal" href="saving-snapshots.html#sec-snapshots"><span class="std std-ref">Snapshots of the model state</span></a>), but doing so can easily fill your hard-drive because snapshots are
 complete (i.e. re-startable) model states. Sometimes you want a <em>subset</em> of model
-variables saved frequently in an output file.</p>
-<p>Use options <code class="docutils literal notranslate"><span class="pre">-extra_file</span></code>, <code class="docutils literal notranslate"><span class="pre">-extra_times</span></code>, and <code class="docutils literal notranslate"><span class="pre">-extra_vars</span></code> for this. For example,</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -y 10000 -o output.nc -extra_file extras.nc \
-      -extra_times 0:10:1e4 -extra_vars velsurf_mag,velbase_mag
+variables saved frequently.</p>
+<p>Use options <code class="option docutils literal notranslate"><span class="pre">-extra_file</span></code>, <code class="option docutils literal notranslate"><span class="pre">-extra_times</span></code>, and <code class="option docutils literal notranslate"><span class="pre">-extra_vars</span></code> for this. For
+example,</p>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -y 10000 -o output.nc \
+      -extra_file extras.nc \
+      -extra_times 0:10:1e4 \
+      -extra_vars velsurf_mag,velbase_mag
 </pre></div>
 </div>
-<p>will run for 10000 years, saving the magnitude of horizontal velocities at the ice surface
-and at the base of ice every 10 years. Times are specified using a comma-separated list or
-a MATLAB-style range. See <a class="reference internal" href="#tab-extras"><span class="std std-numref">Table 25</span></a> for all the options controlling this
-feature. The section <a class="reference internal" href="../diagnostics/index.html#sec-extra-vars"><span class="std std-ref">Spatially-variable fields</span></a> list all the variable choices.</p>
+<p>will run for <span class="math notranslate nohighlight">\(10000\)</span> years, saving the magnitude of horizontal velocities at the ice
+surface and at the base of ice every 10 years. Times are specified using a comma-separated
+list or a MATLAB-style range. See <a class="reference internal" href="#sec-extra-parameters"><span class="std std-ref">Parameters</span></a> below for all the parameters
+controlling this feature. The section <a class="reference internal" href="../diagnostics/index.html#sec-extra-vars"><span class="std std-ref">Spatially-variable fields</span></a> list all the variable choices.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Some diagnostics are only available if the simulation uses a sub-model that provides
@@ -56,12 +59,15 @@ available. To print a warning and continue instead of stopping, set
 <a class="reference internal" href="../parameters/index.html#config-output.extra.stop_missing"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.extra</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.stop_missing</span></code></a> to “false”.</p>
 </div>
 <p>Note that options <code class="option docutils literal notranslate"><span class="pre">-extra_times</span></code>, <code class="option docutils literal notranslate"><span class="pre">-save_times</span></code>, <code class="option docutils literal notranslate"><span class="pre">-ts_times</span></code> take <em>dates</em>
-if a non-trivial calendar is selected. For example,</p>
+if a non-trivial calendar is selected. Here are some examples.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pismr ... -extra_times <span class="m">10</span>       <span class="c1"># every 10 years</span>
 pismr ... -extra_times 2days    <span class="c1"># every 2 days</span>
-pismr ... -calendar gregorian -extra_times <span class="m">1</span>-1-1:daily:11-1-1 <span class="c1"># daily for 10 years</span>
-pismr ... -calendar gregorian -extra_times daily -ys <span class="m">1</span>-1-1 -ye <span class="m">11</span>-1-1
-pismr ... -calendar gregorian -extra_times 2hours -ys <span class="m">1</span>-1-1 -ye <span class="m">1</span>-2-1
+pismr ... -calendar gregorian <span class="se">\</span>
+          -extra_times <span class="m">1</span>-1-1:daily:11-1-1 <span class="c1"># daily for 10 years</span>
+pismr ... -calendar gregorian <span class="se">\</span>
+          -extra_times daily -ys <span class="m">1</span>-1-1 -ye <span class="m">11</span>-1-1
+pismr ... -calendar gregorian <span class="se">\</span>
+          -extra_times 2hours -ys <span class="m">1</span>-1-1 -ye <span class="m">1</span>-2-1
 </pre></div>
 </div>
 <p>The step in the range specification can have the form <code class="docutils literal notranslate"><span class="pre">Nunit</span></code>, for example <code class="docutils literal notranslate"><span class="pre">5days</span></code>.
@@ -90,56 +96,36 @@ the end of every year.</p>
 </div>
 <p>will save ice thickness at the end of every month while running PISM for the duration of
 climate forcing data in <code class="docutils literal notranslate"><span class="pre">climate.nc</span></code>.</p>
-<p>Times given using <code class="docutils literal notranslate"><span class="pre">-extra_times</span></code> describe the reporting intervals by giving the
+<p>Times given using <code class="option docutils literal notranslate"><span class="pre">-extra_times</span></code> describe the reporting intervals by giving the
 endpoints of these reporting intervals. The save itself occurs at the end of each
 interval. This implies, for example, that <code class="docutils literal notranslate"><span class="pre">0:1:10</span></code> will produce 10 records at times
 1,…,10 and <em>not</em> 11 records.</p>
 <p>If the file <code class="docutils literal notranslate"><span class="pre">foo.nc</span></code>, specified by <code class="docutils literal notranslate"><span class="pre">-extra_file</span> <span class="pre">foo.nc</span></code>, already exists then by
 default the existing file will be moved to <code class="docutils literal notranslate"><span class="pre">foo.nc~</span></code> and the new time series will go
 into <code class="docutils literal notranslate"><span class="pre">foo.nc</span></code>. To append the time series onto the end of the existing file, use option
-<code class="docutils literal notranslate"><span class="pre">-extra_append</span></code>.</p>
+<code class="option docutils literal notranslate"><span class="pre">-extra_append</span></code>.</p>
 <p>The list of available diagnostic quantities depends on the model setup. For example, a run
 with only one vertical grid level in the bedrock thermal layer will not be able to save
 <code class="docutils literal notranslate"><span class="pre">litho_temp</span></code>, an SIA-only run does not use a basal yield stress model and so will not
 provide <code class="docutils literal notranslate"><span class="pre">tauc</span></code>, etc. To see which quantities are available in a particular setup, use
 the <code class="option docutils literal notranslate"><span class="pre">-list_diagnostics</span></code> option, which prints the list of diagnostics and stops.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">-extra_file</span></code> mechanism modifies PISM’s adaptive time-stepping scheme so as to step
-to, and save at, <em>exactly</em> the times requested. By contrast, as noted in subsection
-<a class="reference internal" href="saving-time-series.html#sec-saving-time-series"><span class="std std-ref">Saving time series of scalar diagnostic quantities</span></a>, the <code class="docutils literal notranslate"><span class="pre">-ts_file</span></code> mechanism does not alter PISM’s time-steps
-and instead uses linear interpolation to save at the requested times in between PISM’s
-actual time-steps.</p>
-<table class="colwidths-given docutils align-default" id="tab-extras">
-<caption><span class="caption-number">Table 25 </span><span class="caption-text">Command-line options controlling extra diagnostic output</span><a class="headerlink" href="#tab-extras" title="Permalink to this table">¶</a></caption>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 75%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>Option</p></th>
-<th class="head"><p>Description</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-extra_file</span></code></p></td>
-<td><p>Specifies the file to save to; should be different from the output (<code class="option docutils literal notranslate"><span class="pre">-o</span></code>)
-file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-extra_times</span></code></p></td>
-<td><p>Specifies times to save at either as a MATLAB-style range <span class="math notranslate nohighlight">\(a:\Delta t:b\)</span> or a
-comma-separated list.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-extra_vars</span></code></p></td>
-<td><p>Comma-separated list of variables</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="option docutils literal notranslate"><span class="pre">-extra_split</span></code></p></td>
-<td><p>Save to separate files, similar to <code class="option docutils literal notranslate"><span class="pre">-save_split</span></code>.</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="option docutils literal notranslate"><span class="pre">-extra_append</span></code></p></td>
-<td><p>Append variables to file if it already exists. No effect if file does not yet
-exist, and no effect if <code class="option docutils literal notranslate"><span class="pre">-extra_split</span></code> is set.</p></td>
-</tr>
-</tbody>
-</table>
+<p>The <code class="option docutils literal notranslate"><span class="pre">-extra_file</span></code> mechanism modifies PISM’s adaptive time-stepping scheme so as to
+step to, and save at, <em>exactly</em> the times requested. By contrast, as noted in subsection
+<a class="reference internal" href="saving-time-series.html#sec-saving-time-series"><span class="std std-ref">Scalar diagnostic quantities</span></a>, the <code class="option docutils literal notranslate"><span class="pre">-ts_file</span></code> mechanism does not alter PISM’s
+time-steps and instead uses linear interpolation to save at the requested times in between
+PISM’s actual time-steps.</p>
+<div class="section" id="parameters">
+<span id="sec-extra-parameters"></span><h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this headline">¶</a></h2>
+<p>Prefix: <code class="docutils literal notranslate"><span class="pre">output.extra.</span></code></p>
+<ol class="simple">
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.append"><code class="docutils literal notranslate"><span class="pre">append</span></code></a> (no) Append to an existing output file.  No effect if file does not yet exist, and no effect if <a class="reference internal" href="../parameters/index.html#config-output.extra.split"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.extra</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.split</span></code></a> is set.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.file"><code class="docutils literal notranslate"><span class="pre">file</span></code></a> Name of the file that will contain spatially-variable diagnostics. Should be different from <a class="reference internal" href="../parameters/index.html#config-output.file_name"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.file_name</span></code></a>.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.split"><code class="docutils literal notranslate"><span class="pre">split</span></code></a> (no) Save spatially-variable diagnostics to separate files (one per time record).</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.stop_missing"><code class="docutils literal notranslate"><span class="pre">stop_missing</span></code></a> (yes) Stop if requested variable is not available instead of warning.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.times"><code class="docutils literal notranslate"><span class="pre">times</span></code></a> List or a range of times defining reporting intervals for spatially-variable diagnostics.</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-output.extra.vars"><code class="docutils literal notranslate"><span class="pre">vars</span></code></a> Comma-separated list of spatially-variable diagnostics.</p></li>
+</ol>
+</div>
 </div>
 
 
@@ -188,9 +174,9 @@ exist, and no effect if <code class="option docutils literal notranslate"><span 
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Practical usage</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="netcdf-tools.html">Handling NetCDF files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="input-output.html">Input and output</a></li>
-<li class="toctree-l3"><a class="reference internal" href="saving-time-series.html">Saving time series of scalar diagnostic quantities</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Saving time series of spatially-varying diagnostic quantities</a></li>
-<li class="toctree-l3"><a class="reference internal" href="saving-snapshots.html">Saving re-startable snapshots of the model state</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saving-time-series.html">Scalar diagnostic quantities</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Spatially-varying diagnostic quantities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saving-snapshots.html">Snapshots of the model state</a></li>
 <li class="toctree-l3"><a class="reference internal" href="diagnostic-viewers.html">Run-time diagnostic viewers</a></li>
 <li class="toctree-l3"><a class="reference internal" href="parameters.html">PISM’s configuration parameters and how to change them</a></li>
 <li class="toctree-l3"><a class="reference internal" href="regridding.html">Regridding</a></li>
@@ -235,9 +221,9 @@ exist, and no effect if <code class="option docutils literal notranslate"><span 
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2372-g6f4ea1cd6
+      Git revision v1.0-2375-g9aaf3924a
       committed by Constantine Khrulev
-      on 2021-05-24 16:22:56 -0800 |
+      on 2021-05-25 20:15:59 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
