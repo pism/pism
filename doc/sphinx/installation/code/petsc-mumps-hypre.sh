@@ -7,7 +7,7 @@ set -x
 # Install the latest PETSc with MUMPS and hypre in ~/local/petsc using ~/local/build/petsc
 # as the build directory.
 
-prefix=$HOME/local/petsc
+prefix=$HOME/local/petsc-mumps-hypre
 build_dir=~/local/build/petsc
 
 rm -rf ${build_dir}
