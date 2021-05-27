@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -567,8 +567,8 @@ def run():
     vecs.add(residual, writing=True)
     vecs.add(r_mag, writing=True)
 
-    # Write solution out to netcdf file
-    forward_run.write(output_filename, append=append_mode)
+    # Write solution out to netcdf file (always append because the file was created already)
+    forward_run.write(output_filename, append=True)
     # If we're not in append mode, the previous command just nuked
     # the output file.  So we rewrite the siple log.
     if not append_mode:
