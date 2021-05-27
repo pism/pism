@@ -109,6 +109,7 @@
 .. _Emacs: https://www.gnu.org/software/emacs/
 .. _GDB: https://www.gnu.org/software/gdb/
 .. _LLDB: https://lldb.llvm.org/
+.. _LLD: https://lld.llvm.org/
 .. _Valgrind: http://www.valgrind.org/
 .. _ccache: https://ccache.dev/
 
