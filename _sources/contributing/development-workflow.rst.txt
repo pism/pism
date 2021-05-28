@@ -117,6 +117,16 @@ To further speed up re-compiling PISM, install ccache_ and configure PISM as fol
 
    CC="ccache mpicc" CXX="ccache mpicxx" cmake ...
 
+It may be helpful to use LLD_ to link PISM during development since it is a lot faster
+than GNU ld. Add the following CMake_ options to give this a try.
+
+.. code-block:: bash
+
+   -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld" \
+   -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld" \
+   -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
+
+
 .. _sec-debugging-pism:
 
 Debugging
@@ -213,9 +223,12 @@ of tests.
 It is often helpful to be able to run the same tests locally. To do this, install Docker_
 and `CircleCI CLI`_ (command-line interface), then run
 
-.. code-block:: none
+.. code-block:: bash
 
-   circleci local execute
+   circleci local execute --job={job}
+   # where job is one of
+   # build-gcc build-clang
+   # build-clang-minimal build-gcc-minimal build-manual
 
 in PISM's source code directory.
 
@@ -250,6 +263,9 @@ Here are some test writing tips:
   - Repeat the test twice, once using a refinement path along `x` and the second time
     along `y`; make sure that you see the same convergence rate.
 - It is good to check if the implementation preserves symmetries if the setup has any.
+- If a test uses a temporary file, make sure that it will not clash with names of files
+  used by other tests. One easy way to do this is by generating a unique file name using
+  ``mktemp`` (in Bash scripts) or ``str(uuid.uuid4())`` (in Python).
 
 Python bindings make it possible to test many PISM's components in isolation from the rest
 of the code. See tests in `test/regression` for some examples.
@@ -258,6 +274,18 @@ of the code. See tests in `test/regression` for some examples.
 
    This manual should cover PISM's Python bindings. If you see this, please e-mail
    |pism-email| and remind us to document them.
+
+Running tests
+~~~~~~~~~~~~~
+
+Run ``make test`` in parallel by adding
+
+.. code-block:: bash
+
+   export CTEST_PARALLEL_LEVEL=N
+
+to your ``.bashrc``. This will tell ``ctest`` to run ``N`` at the same time. Or run
+``ctest -j N`` instead of ``make test``.
 
 .. _sec-editing-the-manual:
 

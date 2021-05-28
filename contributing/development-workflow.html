@@ -70,8 +70,12 @@ request).</p></li>
 <li><p><a class="reference internal" href="#issues-caught-by-automatic-tests" id="id13">Issues caught by automatic tests</a></p></li>
 </ul>
 </li>
-<li><p><a class="reference internal" href="#writing-tests" id="id14">Writing tests</a></p></li>
-<li><p><a class="reference internal" href="#editing-pism-s-manual" id="id15">Editing PISM’s manual</a></p></li>
+<li><p><a class="reference internal" href="#writing-tests" id="id14">Writing tests</a></p>
+<ul>
+<li><p><a class="reference internal" href="#running-tests" id="id15">Running tests</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#editing-pism-s-manual" id="id16">Editing PISM’s manual</a></p></li>
 </ul>
 </li>
 </ul>
@@ -155,6 +159,13 @@ significantly speed up compilation.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nv">CC</span><span class="o">=</span><span class="s2">&quot;ccache mpicc&quot;</span> <span class="nv">CXX</span><span class="o">=</span><span class="s2">&quot;ccache mpicxx&quot;</span> cmake ...
 </pre></div>
 </div>
+<p>It may be helpful to use <a class="reference external" href="https://lld.llvm.org/">LLD</a> to link PISM during development since it is a lot faster
+than GNU ld. Add the following <a class="reference external" href="https://cmake.org/">CMake</a> options to give this a try.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>-DCMAKE_EXE_LINKER_FLAGS<span class="o">=</span><span class="s2">&quot;-fuse-ld=lld&quot;</span> <span class="se">\</span>
+-DCMAKE_SHARED_LINKER_FLAGS<span class="o">=</span><span class="s2">&quot;-fuse-ld=lld&quot;</span> <span class="se">\</span>
+-DCMAKE_MODULE_LINKER_FLAGS<span class="o">=</span><span class="s2">&quot;-fuse-ld=lld&quot;</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="debugging">
 <span id="sec-debugging-pism"></span><h2><a class="toc-backref" href="#id11">Debugging</a><a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
@@ -232,7 +243,10 @@ integration system attempts to build PISM and (if it was built successfully) run
 of tests.</p>
 <p>It is often helpful to be able to run the same tests locally. To do this, install <a class="reference external" href="https://www.docker.com/">Docker</a>
 and <a class="reference external" href="https://circleci.com/docs/2.0/local-cli/">CircleCI CLI</a> (command-line interface), then run</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>circleci local execute
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>circleci <span class="nb">local</span> execute --job<span class="o">={</span>job<span class="o">}</span>
+<span class="c1"># where job is one of</span>
+<span class="c1"># build-gcc build-clang</span>
+<span class="c1"># build-clang-minimal build-gcc-minimal build-manual</span>
 </pre></div>
 </div>
 <p>in PISM’s source code directory.</p>
@@ -264,6 +278,9 @@ along <code class="docutils literal notranslate"><span class="pre">y</span></cod
 </ul>
 </li>
 <li><p>It is good to check if the implementation preserves symmetries if the setup has any.</p></li>
+<li><p>If a test uses a temporary file, make sure that it will not clash with names of files
+used by other tests. One easy way to do this is by generating a unique file name using
+<code class="docutils literal notranslate"><span class="pre">mktemp</span></code> (in Bash scripts) or <code class="docutils literal notranslate"><span class="pre">str(uuid.uuid4())</span></code> (in Python).</p></li>
 </ul>
 <p>Python bindings make it possible to test many PISM’s components in isolation from the rest
 of the code. See tests in <code class="docutils literal notranslate"><span class="pre">test/regression</span></code> for some examples.</p>
@@ -272,9 +289,18 @@ of the code. See tests in <code class="docutils literal notranslate"><span class
 <p>This manual should cover PISM’s Python bindings. If you see this, please e-mail
 <a class="reference external" href="mailto:uaf-pism&#37;&#52;&#48;alaska&#46;edu">uaf-pism<span>&#64;</span>alaska<span>&#46;</span>edu</a> and remind us to document them.</p>
 </div>
+<div class="section" id="running-tests">
+<h3><a class="toc-backref" href="#id15">Running tests</a><a class="headerlink" href="#running-tests" title="Permalink to this headline">¶</a></h3>
+<p>Run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code> in parallel by adding</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">CTEST_PARALLEL_LEVEL</span><span class="o">=</span>N
+</pre></div>
+</div>
+<p>to your <code class="docutils literal notranslate"><span class="pre">.bashrc</span></code>. This will tell <code class="docutils literal notranslate"><span class="pre">ctest</span></code> to run <code class="docutils literal notranslate"><span class="pre">N</span></code> at the same time. Or run
+<code class="docutils literal notranslate"><span class="pre">ctest</span> <span class="pre">-j</span> <span class="pre">N</span></code> instead of <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code>.</p>
+</div>
 </div>
 <div class="section" id="editing-pism-s-manual">
-<span id="sec-editing-the-manual"></span><h2><a class="toc-backref" href="#id15">Editing PISM’s manual</a><a class="headerlink" href="#editing-pism-s-manual" title="Permalink to this headline">¶</a></h2>
+<span id="sec-editing-the-manual"></span><h2><a class="toc-backref" href="#id16">Editing PISM’s manual</a><a class="headerlink" href="#editing-pism-s-manual" title="Permalink to this headline">¶</a></h2>
 <p>PISM’s manual is written using the <a class="reference external" href="https://docutils.readthedocs.io/en/sphinx-docs/user/rst/quickstart.html">reStructuredText</a> markup and <a class="reference external" href="http://www.sphinx-doc.org/en/master/usage/installation.html">Sphinx</a>.</p>
 <p>See <a class="reference internal" href="../installation/documentation.html#sec-install-documentation"><span class="std std-ref">Rebuilding PISM documentation</span></a> for a list of tools needed to build PISM’s
 documentation.</p>
@@ -384,9 +410,9 @@ make sure that it is up to date, run <code class="docutils literal notranslate">
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2386-gc86c9da98
+      Git revision v1.0-2390-ge68c89bed
       committed by Constantine Khrulev
-      on 2021-05-26 16:08:43 -0800 |
+      on 2021-05-27 15:58:06 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
