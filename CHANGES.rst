@@ -48,6 +48,9 @@ Changes since v1.2
 - Implement scaling of calving rates using a time-dependent factor. Set
   `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
   (units: "1").
+- Add the new command-line option `-refinement_factor N`. Use this to select a regional
+  modeling domain using `-x_range ... -y_range ...`, with use a grid that is `N` times
+  finer.
 
 Changes from v1.1 to v1.2
 =========================
