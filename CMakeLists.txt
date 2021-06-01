@@ -29,6 +29,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=
   set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
 endif()
 
+# Add a flag that makes it easier to use LLDB to debug code compiled with Clang:
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-fstandalone-debug)
+endif()
+
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
