@@ -19,8 +19,6 @@ bp_Mz=$(echo "$C^($M - 1) + 1" | bc)
 
 echo "Using ${bp_Mz} vertical levels..."
 
-# This *parallel* run requires PETSc built with a parallel direct solver (e.g. MUMPS).
-# Use "mpiexec -n 1" to run it with PETSc built without a parallel direct solver.
 mpiexec -n 8 pismr -i ${input} -bootstrap \
       -Mx ${Mx} \
       -Mz 216 \
@@ -39,8 +37,8 @@ mpiexec -n 8 pismr -i ${input} -bootstrap \
       -bp_pc_mg_levels ${M} \
       -bp_mg_levels_ksp_type richardson \
       -bp_mg_levels_pc_type sor \
-      -bp_mg_coarse_ksp_type preonly \
-      -bp_mg_coarse_pc_type lu \
+      -bp_mg_coarse_ksp_type cg \
+      -bp_mg_coarse_pc_type gamg \
       -basal_resistance.pseudo_plastic.enabled \
       -basal_resistance.pseudo_plastic.q 1.0 \
       -basal_resistance.pseudo_plastic.u_threshold 3.1556926e7 \
