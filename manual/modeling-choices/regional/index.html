@@ -77,6 +77,22 @@ shape and extent.</p>
 </pre></div>
 </div>
 <p>to enable PISM’s “regional mode.”</p>
+<p>To run a regional mode simulation using a subset of the grid in an input file, use</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pismr -regional -bootstrap -i input.NYC <span class="se">\</span>
+      -x_range x_min,x_max <span class="se">\</span>
+      -y_range y_min,y_max
+</pre></div>
+</div>
+<p>where <span class="math notranslate nohighlight">\(x_{\text{min}}\)</span>, <span class="math notranslate nohighlight">\(x_{\text{max}}\)</span>, etc (in meters) define a bounding box for a
+sub-domain.</p>
+<p>To use the same subset of the domain, but at a higher resolution, add
+<code class="option docutils literal notranslate"><span class="pre">-refinement_factor</span> <span class="pre">N</span></code> for a grid <span class="math notranslate nohighlight">\(N\)</span> times finer than the one in <code class="docutils literal notranslate"><span class="pre">input.nc</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pismr -regional -bootstrap -i input.NYC <span class="se">\</span>
+      -x_range x_min,x_max <span class="se">\</span>
+      -y_range y_min,y_max <span class="se">\</span>
+      -refinement_factor N
+</pre></div>
+</div>
 <p>Ideally, modeling a region containing an ice mass extending to the edge of the domain
 would use the following time-dependent lateral boundary conditions</p>
 <ul class="simple">
@@ -240,9 +256,9 @@ regional synthetic-geometry setups.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2392-g76e172716
+      Git revision v1.0-2396-gcc75fed5a
       committed by Constantine Khrulev
-      on 2021-06-01 08:54:20 -0800 |
+      on 2021-06-01 14:03:50 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

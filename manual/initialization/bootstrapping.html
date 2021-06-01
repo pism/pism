@@ -79,9 +79,9 @@ from the file can determine the horizontal extent of the model, if options <code
 two-dimensional. Using <code class="option docutils literal notranslate"><span class="pre">-bootstrap</span></code> without specifying all four options <code class="option docutils literal notranslate"><span class="pre">-Mx</span></code>,
 <code class="option docutils literal notranslate"><span class="pre">-My</span></code>, <code class="option docutils literal notranslate"><span class="pre">-Mz</span></code>, <code class="option docutils literal notranslate"><span class="pre">-Lz</span></code> is an error.</p>
 <p>If <code class="option docutils literal notranslate"><span class="pre">-Lx</span></code> and <code class="option docutils literal notranslate"><span class="pre">-Ly</span></code> specify horizontal grid dimensions smaller than in the
-bootstrapping file, PISM will cut out the center portion of the domain. Alternatively,
-options <code class="option docutils literal notranslate"><span class="pre">-x_range</span></code> and <code class="option docutils literal notranslate"><span class="pre">-y_range</span></code> each take a list of two numbers, a list of
-minimum and maximum <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> coordinates, respectively (in meters), which makes it
+bootstrapping file, PISM will cut out the center portion of the domain. In PISM’s regional
+mode, options <code class="option docutils literal notranslate"><span class="pre">-x_range</span></code> and <code class="option docutils literal notranslate"><span class="pre">-y_range</span></code> each take a list of two numbers, a list
+of minimum and maximum <span class="math notranslate nohighlight">\(x\)</span> and <span class="math notranslate nohighlight">\(y\)</span> coordinates, respectively (in meters), which makes it
 possible to select a subset that is not centered in the bootstrapping file’s grid.</p>
 <p>For the key issue of what heuristic is used to determine the temperatures at depth, there
 are two methods. The default method uses ice thickness, surface temperature, surface mass
@@ -208,9 +208,9 @@ having ice thickness in feet or temperature in Fahrenheit <em>is</em> allowed.</
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2392-g76e172716
+      Git revision v1.0-2396-gcc75fed5a
       committed by Constantine Khrulev
-      on 2021-06-01 08:54:20 -0800 |
+      on 2021-06-01 14:03:50 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

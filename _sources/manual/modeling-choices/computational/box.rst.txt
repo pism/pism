@@ -69,9 +69,9 @@ half-widths and have units of kilometers when set by command-line options or dis
      - Depth of the computational domain in the bedrock thermal layer
    * - :opt:`-x_range A,B` (meters)
      - Specify the range of `x` coordinates. Use this to select a subset of an input grid
-       that isn't in the center of a domain.
+       that isn't in the center of a domain in PISM's regional mode.
    * - :opt:`-y_range A,B` (meters)
-     - Specify the range of `y` coordinates.
+     - Specify the range of `y` coordinates in PISM's regional mode.
 
 See :ref:`sec-grid-registration` for details about the interpretation of `L_x`, `L_y`, and
 the way the grid spacing is computed.

@@ -51,9 +51,9 @@ two-dimensional. Using :opt:`-bootstrap` without specifying all four options :op
 :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
 
 If :opt:`-Lx` and :opt:`-Ly` specify horizontal grid dimensions smaller than in the
-bootstrapping file, PISM will cut out the center portion of the domain. Alternatively,
-options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list of
-minimum and maximum `x` and `y` coordinates, respectively (in meters), which makes it
+bootstrapping file, PISM will cut out the center portion of the domain. In PISM's regional
+mode, options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list
+of minimum and maximum `x` and `y` coordinates, respectively (in meters), which makes it
 possible to select a subset that is not centered in the bootstrapping file's grid.
 
 For the key issue of what heuristic is used to determine the temperatures at depth, there
