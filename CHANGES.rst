@@ -51,6 +51,8 @@ Changes since v1.2
 - Add the new command-line option `-refinement_factor N`. Use this to select a regional
   modeling domain using `-x_range ... -y_range ...`, with use a grid that is `N` times
   finer.
+- Fix a bug in the code managing time step restrictions (this affected the last time step
+  of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
 
 Changes from v1.1 to v1.2
 =========================

@@ -2717,7 +2717,7 @@ netcdf pism_config {
     pism_config:time_stepping.hit_multiples = 0.0;
     pism_config:time_stepping.hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable.";
     pism_config:time_stepping.hit_multiples_option = "timestep_hit_multiples";
-    pism_config:time_stepping.hit_multiples_type = "number";
+    pism_config:time_stepping.hit_multiples_type = "integer";
     pism_config:time_stepping.hit_multiples_units = "years";
 
     pism_config:time_stepping.hit_save_times = "no";
