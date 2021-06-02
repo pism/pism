@@ -631,8 +631,6 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   std::vector<double> GL_distance_max1(n_shelves, 0.0);
   std::vector<double> CF_distance_max(n_shelves, 0.0);
   std::vector<double> CF_distance_max1(n_shelves, 0.0);
-  double* ptrGL;
-  double* ptrCF;
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
