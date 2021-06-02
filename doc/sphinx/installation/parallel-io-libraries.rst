@@ -95,7 +95,7 @@ Installing CDI-PIO and dependencies
 Installing YAXT
 ~~~~~~~~~~~~~~~
 
-.. literalinclude:: code/yaxt.sh
+.. literalinclude:: code/cdi/yaxt.sh
    :language: bash
    :linenos:
    :lines: 7-
@@ -103,7 +103,7 @@ Installing YAXT
 Installing NetCDF with PNetCDF support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: code/netcdfCDI.sh
+.. literalinclude:: code/cdi/netcdf-c.sh
    :language: bash
    :linenos:
    :lines: 7-
@@ -114,7 +114,7 @@ the indicated version.
 Installing NetCDF Fortran
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: code/netcdff.sh
+.. literalinclude:: code/cdi/netcdf-f.sh
    :language: bash
    :linenos:
    :lines: 7-
@@ -125,7 +125,7 @@ the indicated version.
 Installing PPM
 ~~~~~~~~~~~~~~
 
-.. literalinclude:: code/PPM.sh
+.. literalinclude:: code/cdi/PPM.sh
    :language: bash
    :linenos:
    :lines: 7-
@@ -133,7 +133,7 @@ Installing PPM
 Installing CDI-PIO
 ~~~~~~~~~~~~~~~~~~
 
-.. literalinclude:: code/CDI.sh
+.. literalinclude:: code/cdi/CDI.sh
    :language: bash
    :linenos:
    :lines: 7-
