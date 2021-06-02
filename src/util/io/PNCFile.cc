@@ -23,7 +23,6 @@
 #include "PNCFile.hh"
 
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
-#include "pism_cdi_type_conversion.hh"
 
 #include "pism/util/error_handling.hh"
 
@@ -50,6 +49,9 @@ void PNCFile::open_impl(const std::string &fname,
                         IO_Mode mode,
                         int FileID,
                         const std::map<std::string, int> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   int stat;
 
   init_hints();
@@ -62,6 +64,9 @@ void PNCFile::open_impl(const std::string &fname,
 
 
 void PNCFile::create_impl(const std::string &fname, int FileID, int filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat;
 
   init_hints();
@@ -96,6 +101,8 @@ void PNCFile::redef_impl() const {
 
 
 void PNCFile::def_dim_impl(const std::string &name, size_t length, int dim) const {
+  (void) dim;
+
   int dimid = 0, stat;
 
   stat = ncmpi_def_dim(m_file_id, name.c_str(), length, &dimid); check(PISM_ERROR_LOCATION, stat);

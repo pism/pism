@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,6 +42,9 @@ void NC4_Par::open_impl(const std::string &fname,
                         IO_Mode mode,
                         int FileID,
                         const std::map<std::string, int> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
@@ -54,6 +57,9 @@ void NC4_Par::open_impl(const std::string &fname,
 }
 
 void NC4_Par::create_impl(const std::string &fname, int FileID, int filetype) {
+  (void) FileID;
+  (void) filetype;
+
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 

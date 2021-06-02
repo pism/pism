@@ -48,6 +48,9 @@ NC4_Serial::~NC4_Serial() {
 }
 
 void NC4_Serial::create_impl(const std::string &fname, int FileID, int filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {

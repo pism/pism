@@ -110,7 +110,6 @@ protected:
 
   void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
 
-private:
   int m_rank;
 
   int get_varid(const std::string &variable_name) const;
@@ -122,7 +121,7 @@ private:
                      const std::vector<unsigned int> &count,
                      const std::vector<unsigned int> &imap, double *ip,
                      bool transposed) const;
-  };
+};
 
 } // end of namespace io
 } // end of namespace pism

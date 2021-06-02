@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2014, 2015, 2016, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,20 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-
-//! Convert PISM's IO types into NetCDF types and back. Note that NC_* may be
+//! Convert PISM's IO types into CDI types and back. Note that CDI_* may be
 //! macros, so you need to include the appropriate NetCDF header first.
-#include "pism/pism_config.hh"
-#if (Pism_USE_CDIPIO==1)
+
 extern "C"{
 #include "cdi.h"
 }
-#endif
 
 namespace pism {
 
 static int pism_type_to_cdi_type(pism::IO_Type input) {
-#if (Pism_USE_CDIPIO==1)
   switch (input) {
   case PISM_BYTE:
     return CDI_DATATYPE_INT8;
@@ -46,11 +42,9 @@ static int pism_type_to_cdi_type(pism::IO_Type input) {
   default:
     return 0; //to be clarified
   }
-#endif
 }
 
 static pism::IO_Type cdi_type_to_pism_type(int input) {
-#if (Pism_USE_CDIPIO==1)
   switch (input) {
   case CDI_DATATYPE_INT8:
     return PISM_BYTE;
@@ -67,9 +61,6 @@ static pism::IO_Type cdi_type_to_pism_type(int input) {
   default:
     return PISM_NAT; //to be clarified
   }
-#endif
 }
-
-
 
 } // end of namespace pism

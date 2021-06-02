@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -90,8 +90,6 @@ protected:
   void inq_varid_impl(const std::string &variable_name, bool &exists) const;
 
   void inq_varname_impl(unsigned int j, std::string &result) const;
-
-  void set_compression_level_impl(int level) const;
 
   // att
   void get_att_double_impl(const std::string &variable_name, const std::string &att_name,

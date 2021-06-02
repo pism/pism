@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -361,9 +361,11 @@ int NCFile::get_ncvlistID() const {
 }
 
 int NCFile::get_ncstreamID_impl() const {
+  return 0;
 }
 
 int NCFile::get_ncvlistID_impl() const {
+  return 0;
 }
 
 void NCFile::set_calendar(double year_length, const std::string &calendar_string) const {

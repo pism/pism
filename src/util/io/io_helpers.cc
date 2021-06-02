@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -731,7 +731,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                             const IceGrid& grid,
                             const File &file,
                             const double *input) {
-  const Logger &log = *grid.ctx()->log();
+
   auto name = var.get_name();
 
   if (not file.find_variable(name)) {

@@ -208,7 +208,6 @@ void IceModel::save_variables(const File &file,
   // supports it.
   file.set_compression_level(m_config->get_number("output.compression_level"));
 
-  const Profiling &profiling = m_ctx->profiling();
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
@@ -216,8 +215,6 @@ void IceModel::save_variables(const File &file,
   io::define_timeseries(m_timestamp,
                         m_config->get_string("time.dimension_name"),
                         file, PISM_FLOAT);
-  // append to the time dimension
-  io::append_time(file, *m_config, time);
 
   // Write metadata *before* everything else:
   //

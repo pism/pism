@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <sstream> // std::istringstream
+#include <cassert>
 
 #include "Time.hh"
 
@@ -295,14 +296,15 @@ void Time::init_from_input_file(const File &file,
 void Time::dateCDI2seconds(double *T) {
   double seconds_per_day = 86400.0;
   int sign = *T >=0 ? 1 : -1;
-  int year = int(abs(*T / 10000));
-  int month = int(abs((abs(*T) - year*10000) / 100));
-  int day = int(abs((abs(*T) - year*10000) - month * 100));
+  int year = int(std::abs(*T / 10000));
+  int month = int(std::abs((std::abs(*T) - year*10000) / 100));
+  int day = int(std::abs((std::abs(*T) - year*10000) - month * 100));
   calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
   double doy = year * (m_year_length);
   if (month!=0 && day!=0) {
     int doyi;
     int cal = ccs_date2doy( calendar, year, month, day, &doyi );
+    assert(cal == 0);
     doy += seconds_per_day * doyi;
   }
   int Ti = year*10000 + month*100 + day;

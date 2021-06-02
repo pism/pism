@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 #else
     local_comm = PETSC_COMM_WORLD;
 #endif
-    Context::Ptr ctx = context_from_options(local_comm, "pismr");
+    std::shared_ptr<Context> ctx = context_from_options(local_comm, "pismr");
     Logger::Ptr log = ctx->log();
 
     std::string usage =

@@ -171,8 +171,8 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 #else
     break;
 #endif
-#if (Pism_USE_CDIPIO==1)
   case PISM_CDI:
+#if (Pism_USE_CDIPIO==1)
     return io::NCFile::Ptr(new io::CDI(com));
 #endif
   case PISM_GUESS:

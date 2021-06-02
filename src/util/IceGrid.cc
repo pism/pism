@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1524,28 +1524,19 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
 #endif
 
 int IceGrid::local_length(int dof) const {
-#if (Pism_USE_CDIPIO==1)
   return xm() * ym() * dof;
-#else
-(void) dof;
-#endif
 }
 
-void IceGrid::io_transpose(const double* input, double* inputIO, int dof) const {
-#if (Pism_USE_CDIPIO==1)
+void IceGrid::io_transpose(const double* input, double* output, int dof) const {
   int countx = xm(), county = ym(), countz = dof;
 
   for (int y = 0; y < county; y++) {
     for (int x = 0; x < countx; x++) {
       for (int z = 0; z < countz; z++) {
-        inputIO[(z*county+y)*countx+x] = input[(y*countx+x)*countz+z];
+        output[(z*county+y)*countx+x] = input[(y*countx+x)*countz+z];
       }
     }
   }
-#else
-  (void) input;
-  (void) inputIO;
-#endif
 }
 
 } // end of namespace pism

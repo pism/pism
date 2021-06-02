@@ -32,7 +32,6 @@
 #include "pism/util/error_handling.hh"
 
 #include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
-#include "pism_cdi_type_conversion.hh"
 
 namespace pism {
 namespace io {
@@ -78,6 +77,9 @@ void NC_Serial::open_impl(const std::string &fname,
                         IO_Mode mode,
                         int FileID,
                         const std::map<std::string, int> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
@@ -95,6 +97,9 @@ void NC_Serial::open_impl(const std::string &fname,
 
 //! \brief Create a NetCDF file.
 void NC_Serial::create_impl(const std::string &fname, int FileID, int filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -172,6 +177,8 @@ void NC_Serial::redef_impl() const {
 
 //! \brief Define a dimension.
 void NC_Serial::def_dim_impl(const std::string &name, size_t length, int dim) const {
+  (void) dim;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
