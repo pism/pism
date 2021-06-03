@@ -53,36 +53,32 @@ int String::process(const std::string& option,
                     const std::string& default_value,
                     ArgumentFlag argument_flag) {
 
-  char tmp[TEMPORARY_STRING_LENGTH];
+  char string[TEMPORARY_STRING_LENGTH];
+  memset(string, 0, TEMPORARY_STRING_LENGTH);
+
   PetscBool flag = PETSC_FALSE;
 
-  memset(tmp, 0, TEMPORARY_STRING_LENGTH);
-
   PetscErrorCode ierr;
-  ierr = PetscOptionsBegin(MPI_COMM_SELF, "", "", "");
-  PISM_CHK(ierr, "PetscOptionsBegin");
+  ierr = PetscOptionsGetString(NULL, // default option database
+                               NULL, // no prefix
+                               option.c_str(),
+                               string,
+                               TEMPORARY_STRING_LENGTH,
+                               &flag);
+  PISM_CHK(ierr, "PetscOptionsGetString");
 
-  ierr = PetscOptionsString(option.c_str(),
-                            description.c_str(),
-                            "", // manual page
-                            default_value.c_str(), // default value
-                            tmp,                   // output
-                            TEMPORARY_STRING_LENGTH, // max. length of the output
-                            &flag);                  // PETSC_TRUE if found, else PETSC_FALSE
-  PISM_CHK(ierr, "PetscOptionsString");
-
-  ierr = PetscOptionsEnd();
-  PISM_CHK(ierr, "PetscOptionsEnd");
-
-  std::string result = tmp;
+  std::string result = string;
 
   if (flag == PETSC_TRUE) {
     if (result.empty()) {
       if (argument_flag == ALLOW_EMPTY) {
         this->set("", true);
       } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command line option '%s' requires an argument.",
-                                      option.c_str());
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "command line option '%s'\n"
+                                      "(%s)\n"
+                                      "requires an argument.",
+                                      option.c_str(), description.c_str());
       }
     } else {
       this->set(result, true);
