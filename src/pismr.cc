@@ -52,39 +52,40 @@ using namespace pism;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc,&argv);
 
+  // The communicator for processes involved in computation (as opposed to I/O).
   MPI_Comm com = MPI_COMM_WORLD;
-  MPI_Comm local_comm;
-#if (Pism_USE_CDIPIO==1)
-  int nwriters, IOmode;
-  bool async;
   {
+#if (Pism_USE_CDIPIO==1)
+  int cdipio_nwriters, cdipio_IOmode;
+  bool cdipio_async;
+  {
+    MPI_Comm world = MPI_COMM_WORLD;
+    // Initialize PETSc on MPI_COMM_WORLD to be able to use PetscOptionsXXX in the code
+    // below. Will be finalized at the end of this code block.
     petsc::Initializer petsc(argc, argv, help);
-    {
-      Context::Ptr ctx = initial_context_from_options(com, "pismr");
-      nwriters = ctx->get_n_writers();
-      IOmode = ctx->get_IOmode();
-      async = ctx->get_async();
-    }
+
+    auto log = logger_from_options(com);
+    units::System::Ptr sys(new units::System);
+    auto config = config_from_options(world, *log, sys);
+
+    nwriters = config->get_number("output.pio.a_writers");
+    IOmode   = config->get_number("output.pio.mode");
+    async    = config->get_flag("output.pio.async");
   }
-#else
+  cdipio::Initializer cdipio(cdipio_nwriters, cdipio_IOmode, world, cdipio_async);
+  com = cdipio.get_comp_comm();
+  if (com == MPI_COMM_NULL) {
+    // com is null if this process is a part of the I/O sub-communicator
+    // YAXT and CDI-PIO may get finalized here
+    return 0;
+  }
+  cdipio.activate_namespace();
+#endif
+  PETSC_COMM_WORLD = com;
   petsc::Initializer petsc(argc, argv, help);
-#endif
-  {
-#if (Pism_USE_CDIPIO==1)
-  cdipio::Initializer cdipio(nwriters, IOmode, com, async);
-  local_comm = cdipio.get_comp_comm();
-#endif
   try {
-#if (Pism_USE_CDIPIO==1)
-    if (local_comm != MPI_COMM_NULL) {
-      cdipio.activate_namespace();
-      PETSC_COMM_WORLD = local_comm;
-      petsc::Initializer petsc(argc, argv, help);
-#else
-    local_comm = PETSC_COMM_WORLD;
-#endif
-    std::shared_ptr<Context> ctx = context_from_options(local_comm, "pismr");
-    Logger::Ptr log = ctx->log();
+    auto ctx = context_from_options(com, "pismr");
+    auto log = ctx->log();
 
     std::string usage =
       "  pismr -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
@@ -105,8 +106,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    options::String profiling_log = options::String("-profile",
-                                                    "Save detailed profiling data to a file.");
+    auto profiling_log = options::String("-profile",
+                                         "Save detailed profiling data to a file.");
 
     Config::Ptr config = ctx->config();
 
@@ -150,15 +151,14 @@ int main(int argc, char *argv[]) {
     if (profiling_log.is_set()) {
       ctx->profiling().report(profiling_log);
     }
-#if (Pism_USE_CDIPIO==1)
-   }
-#endif
   }
   catch (...) {
     handle_fatal_errors(com);
     return 1;
   }
-  } // Finalize YAXT and CDI-PIO
+  // PETSc is finalized at the end of scope.
+  // YAXT and CDI-PIO are finalized at the end of the scope.
+  }
   MPI_Finalize();
   return 0;
 }
