@@ -156,9 +156,9 @@ int Context::pio_iosys_id() const {
     }
 
     int
-      base      = config()->get_number("output.pio.base"),
-      stride    = config()->get_number("output.pio.stride"),
-      n_writers = config()->get_number("output.pio.n_writers");
+      base      = config()->get_number("output.parallelio.base"),
+      stride    = config()->get_number("output.parallelio.stride"),
+      n_writers = config()->get_number("output.parallelio.n_writers");
 
     if (n_writers > this->size()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,

@@ -1957,43 +1957,43 @@ netcdf pism_config {
     pism_config:output.ice_free_thickness_standard_type = "number";
     pism_config:output.ice_free_thickness_standard_units = "meters";
 
-    pism_config:output.pio.base = 0;
-    pism_config:output.pio.base_doc = "Rank of the first I/O task";
-    pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "count";
+    pism_config:output.parallelio.base = 0;
+    pism_config:output.parallelio.base_doc = "Rank of the first I/O task";
+    pism_config:output.parallelio.base_type = "integer";
+    pism_config:output.parallelio.base_units = "count";
 
-    pism_config:output.pio.n_writers = 1;
-    pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
-    pism_config:output.pio.n_writers_type = "integer";
-    pism_config:output.pio.n_writers_units = "count";
+    pism_config:output.parallelio.n_writers = 1;
+    pism_config:output.parallelio.n_writers_doc = "Number of I/O tasks to use";
+    pism_config:output.parallelio.n_writers_type = "integer";
+    pism_config:output.parallelio.n_writers_units = "count";
 
-    pism_config:output.pio.a_writers = 1;
-    pism_config:output.pio.a_writers_doc = "Number of I/O tasks to use for asynch writing";
-    pism_config:output.pio.a_writers_type = "integer";
-    pism_config:output.pio.a_writers_units = "count";
+    pism_config:output.cdi_pio.a_writers = 1;
+    pism_config:output.cdi_pio.a_writers_doc = "Number of I/O tasks to use for asynch writing";
+    pism_config:output.cdi_pio.a_writers_type = "integer";
+    pism_config:output.cdi_pio.a_writers_units = "count";
 
-    pism_config:output.pio.stride = 1;
-    pism_config:output.pio.stride_doc = "Offset between I/O tasks";
-    pism_config:output.pio.stride_type = "integer";
-    pism_config:output.pio.stride_units = "count";
+    pism_config:output.parallelio.stride = 1;
+    pism_config:output.parallelio.stride_doc = "Offset between I/O tasks";
+    pism_config:output.parallelio.stride_type = "integer";
+    pism_config:output.parallelio.stride_units = "count";
 
-    pism_config:output.pio.async = "no";
-    pism_config:output.pio.async_doc = "Whether to use asynchronous IO";
-    pism_config:output.pio.async_type = "flag";
+    pism_config:output.cdi_pio.async = "no";
+    pism_config:output.cdi_pio.async_doc = "Whether to use asynchronous IO";
+    pism_config:output.cdi_pio.async_type = "flag";
 
-    pism_config:output.pio.mode = 6;
-    pism_config:output.pio.mode_doc = "Mode to use for asynchronous IO";
-    pism_config:output.pio.mode_type = "integer";
-    pism_config:output.pio.mode_units = "count";
+    pism_config:output.cdi_pio.mode = 6;
+    pism_config:output.cdi_pio.mode_doc = "Mode to use for asynchronous IO";
+    pism_config:output.cdi_pio.mode_type = "integer";
+    pism_config:output.cdi_pio.mode_units = "count";
 
-    pism_config:output.pio.filetype = 4;
-    pism_config:output.pio.filetype_doc = "Filetype to use for asynchronous IO";
-    pism_config:output.pio.filetype_type = "integer";
-    pism_config:output.pio.filetype_units = "count";
+    pism_config:output.cdi_pio.filetype = 4;
+    pism_config:output.cdi_pio.filetype_doc = "Filetype to use for asynchronous IO";
+    pism_config:output.cdi_pio.filetype_type = "integer";
+    pism_config:output.cdi_pio.filetype_units = "count";
 
-    pism_config:output.pio.CDIrestart = "no";
-    pism_config:output.pio.CDIrestart_doc = "Whether the restart is from CDI";
-    pism_config:output.pio.CDIrestart_type = "flag";
+    pism_config:output.cdi_pio.CDIrestart = "no";
+    pism_config:output.cdi_pio.CDIrestart_doc = "Whether the restart is from CDI";
+    pism_config:output.cdi_pio.CDIrestart_type = "flag";
 
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";

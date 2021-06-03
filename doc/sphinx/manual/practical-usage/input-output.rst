@@ -151,9 +151,9 @@ building PISM.
 The ParallelIO library can aggregate data in a subset of processes used by PISM. To choose
 a subset, set
 
-- :config:`output.pio.n_writers` number of "writers"
-- :config:`output.pio.base` the index of the first writer
-- :config:`output.pio.stride` interval between writers
+- :config:`output.parallelio.n_writers` number of "writers"
+- :config:`output.parallelio.base` the index of the first writer
+- :config:`output.parallelio.stride` interval between writers
 
 .. note::
 
@@ -165,7 +165,7 @@ We recommend performing a number of test runs to determine the best choice for y
 simulations.
 
 In our test runs on 120 cores (whole Greenland setup on a 900m grid) ``pio_pnetcdf`` with
-:config:`output.pio.n_writers` set to the number of cores used by PISM (120) gave the best
+:config:`output.parallelio.n_writers` set to the number of cores used by PISM (120) gave the best
 performance.
 
 .. note::
@@ -200,14 +200,14 @@ CDI-PIO
 The CDI-PIO library uses a part of the allocated resources to aggregate the data and write
 the output files. To write the output files asynchronously set:
 
-- :config:`output.pio.async` flag to use asynchronous writing
-- :config:`output.pio.a_writers` number of "writers"
+- :config:`output.cdi_pio.async` flag to use asynchronous writing
+- :config:`output.cdi_pio.a_writers` number of "writers"
 
 CDI-PIO supports different NetCDF file formats. The default is NC2 and it should work fine
 for the majority of cases but when the file dimension becomes too large, it is possible to
 set other file formats:
 
-- :config:`output.pio.filetype` NetCDF file format
+- :config:`output.cdi_pio.filetype` NetCDF file format
 
 .. note::
 
@@ -216,7 +216,7 @@ set other file formats:
 
 CDI-PIO supports also different writing modes and they can be set with the parameter:
 
-- :config:`output.pio.mode`
+- :config:`output.cdi_pio.mode`
 
 The default parameter is the one which was giving best performance in our experiments.
 
@@ -234,7 +234,7 @@ are listed as follows:
 Since the output files written with CDI-PIO are slightly different, a parameter can be 
 define to specify if the restart file was written with CDI-PIO
 
-- :config:`output.pio.CDIrestart` flag which specifies if the restart file was written with CDI-PIO
+- :config:`output.cdi_pio.CDIrestart` flag which specifies if the restart file was written with CDI-PIO
 
 This helps to convert the time written by CDI-PIO in seconds.
 Finally, due to the second limitation mentioned previously, a couple of attributes of the restart 
