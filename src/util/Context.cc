@@ -54,7 +54,7 @@ public:
        LoggerPtr log,
        const std::string &p)
     : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
-      logger(log), pio_iosys_id(-1), local_comm(MPI_COMM_NULL) {
+      logger(log), pio_iosys_id(-1) {
     // empty
   }
   MPI_Comm com;
@@ -66,7 +66,6 @@ public:
   Profiling profiling;
   LoggerPtr logger;
   int pio_iosys_id;
-  MPI_Comm local_comm;
 };
 
 Context::Context(MPI_Comm c, UnitsSystemPtr sys,
