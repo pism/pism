@@ -1901,6 +1901,11 @@ netcdf pism_config {
     pism_config:output.backup_size_option = "backup_size";
     pism_config:output.backup_size_type = "keyword";
 
+    pism_config:output.cdi_pio.n_writers = 1;
+    pism_config:output.cdi_pio.n_writers_doc = "Number of I/O tasks to use for asynchronous writing";
+    pism_config:output.cdi_pio.n_writers_type = "integer";
+    pism_config:output.cdi_pio.n_writers_units = "count";
+
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
@@ -1966,11 +1971,6 @@ netcdf pism_config {
     pism_config:output.parallelio.n_writers_doc = "Number of I/O tasks to use";
     pism_config:output.parallelio.n_writers_type = "integer";
     pism_config:output.parallelio.n_writers_units = "count";
-
-    pism_config:output.cdi_pio.a_writers = 1;
-    pism_config:output.cdi_pio.a_writers_doc = "Number of I/O tasks to use for asynch writing";
-    pism_config:output.cdi_pio.a_writers_type = "integer";
-    pism_config:output.cdi_pio.a_writers_units = "count";
 
     pism_config:output.parallelio.stride = 1;
     pism_config:output.parallelio.stride_doc = "Offset between I/O tasks";

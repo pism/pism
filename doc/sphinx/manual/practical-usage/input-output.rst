@@ -201,7 +201,7 @@ The CDI-PIO library uses a part of the allocated resources to aggregate the data
 the output files. To write the output files asynchronously set:
 
 - :config:`output.cdi_pio.async` flag to use asynchronous writing
-- :config:`output.cdi_pio.a_writers` number of "writers"
+- :config:`output.cdi_pio.n_writers` number of "writers"
 
 CDI-PIO supports different NetCDF file formats. The default is NC2 and it should work fine
 for the majority of cases but when the file dimension becomes too large, it is possible to

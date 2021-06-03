@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     units::System::Ptr sys(new units::System);
     auto config = config_from_options(world, *log, sys);
 
-    nwriters = config->get_number("output.cdi_pio.a_writers");
+    nwriters = config->get_number("output.cdi_pio.n_writers");
     IOmode   = config->get_number("output.cdi_pio.mode");
     async    = config->get_flag("output.cdi_pio.async");
   }
