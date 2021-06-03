@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <map>
 #include <cmath>
- #include <iostream>
 
 #include "CDI.hh"
 
