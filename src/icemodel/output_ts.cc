@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -118,16 +118,16 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
 //! Flush scalar time-series.
 void IceModel::flush_timeseries() {
   // flush all the time-series buffers:
-  {
-  File file(m_grid->com, m_ts_diagnostics.begin()->second->get_output_filename(), PISM_NETCDF3, PISM_READWRITE);
-  for (auto d : m_ts_diagnostics) {
-    d.second->flush(file);
-  }
-  }
-
-  // update run_stats in the time series output file
   if (not m_ts_diagnostics.empty()) {
-    File file(m_grid->com, m_ts_filename, PISM_NETCDF3, PISM_READWRITE);
+
+    auto filename = m_ts_diagnostics.begin()->second->get_output_filename();
+    File file(m_grid->com, filename, PISM_NETCDF3, PISM_READWRITE);
+
+    for (auto d : m_ts_diagnostics) {
+      d.second->flush(file);
+    }
+
+    // update run_stats in the time series output file
     write_run_stats(file);
   }
 }
