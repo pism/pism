@@ -163,10 +163,10 @@ static void relabel(RelabelingType type,
     }
     loop.check();
     GlobalSum(grid->com, area.data(), area1.data(), area.size());
+
     // copy data
     area = area1;
-    // free auxiliary vector
-    area1.clear();
+
     for (unsigned int k = 0; k < area.size(); ++k) {
       area[k] = grid->cell_area() * area[k];
     }
@@ -659,9 +659,6 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   // copy data
   GL_distance_max = GL_distance_max1;
   CF_distance_max = CF_distance_max1;
-  // free auxiliary vectors
-  GL_distance_max1.clear();
-  CF_distance_max1.clear();
 
   double GL_distance_ref = *std::max_element(GL_distance_max.begin(), GL_distance_max.end());
 

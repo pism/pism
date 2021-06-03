@@ -364,14 +364,11 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
   GlobalSum(m_grid->com, count.data(), countr.data(), m_n_basins);
   GlobalSum(m_grid->com, salinity.data(), salinityr.data(), m_n_basins);
   GlobalSum(m_grid->com, temperature.data(), temperaturer.data(), m_n_basins);
+
   // copy values
-  count = countr;
-  salinity = salinityr;
+  count       = countr;
+  salinity    = salinityr;
   temperature = temperaturer;
-  // free auxiliary vectors
-  countr.clear();
-  salinityr.clear();
-  temperaturer.clear();
 
   for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
 
@@ -434,9 +431,6 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
     // copy data
     n_shelf_cells = n_shelf_cellsr;
     n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
-    // free auxiliary vectors
-    n_shelf_cellsr.clear();
-    n_shelf_cells_per_basinr.clear();
   }
 
   // now set potential temperature and salinity box 0:
@@ -786,10 +780,10 @@ void Pico::compute_box_average(int box_id,
   std::vector<int> n_cells(m_n_shelves);
   GlobalSum(m_grid->com, n_cells_per_box.data(), n_cells.data(), m_n_shelves);
   GlobalSum(m_grid->com, result.data(), result1.data(), m_n_shelves);
+
   // copy data
   result = result1;
-  // free auxiliary vectors
-  result1.clear();
+
   for (int s = 0; s < m_n_shelves; ++s) {
     if (n_cells[s] > 0) {
       result[s] /= (double)n_cells[s];
