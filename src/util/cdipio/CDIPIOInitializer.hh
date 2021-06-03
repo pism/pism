@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,28 +18,23 @@
  */
 
 #include <mpi.h>
-//#if (Pism_USE_CDIPIO==1)
-//extern "C"{
-//#include "cdipio.h"
-//#include "cdi.h"
-//}
-//#endif
 
 namespace pism {
 namespace cdipio {
 
- class Initializer {
- public:
- 	Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async);
- 	~Initializer();
- 	MPI_Comm get_comp_comm();
- 	int get_pionamespace();
- 	void activate_namespace();
- private:
- 	MPI_Comm m_local_comm;
- 	int m_pioNamespace;
-	bool m_async;
- };
+class Initializer {
+public:
+  Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async);
+  ~Initializer();
+  MPI_Comm comp_comm();
+  int pio_namespace();
+  void activate_namespace();
 
-}
-}
+private:
+  MPI_Comm m_comp_comm;
+  int m_pioNamespace;
+  bool m_async;
+};
+
+} // namespace cdipio
+} // namespace pism

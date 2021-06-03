@@ -1,60 +1,49 @@
 #include "CDIPIOInitializer.hh"
 
-#include "pism/util/IceGrid.hh"
-
-#include "pism/util/error_handling.hh"
-
 #include <mpi.h>
-#if (Pism_USE_CDIPIO==1)
-extern "C"{
-#include "cdipio.h"
+
+extern "C" {
 #include "cdi.h"
+#include "cdipio.h"
 }
-#endif
-
-
 
 namespace pism {
 namespace cdipio {
 
-Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async) {
-#if (Pism_USE_CDIPIO==1)
-	m_async = async;
-	if (m_async) {
-		xt_initialize(glob);
-		float partInflate = 1.0;
-		m_local_comm = pioInit(glob, n_writers, IOmode, &m_pioNamespace, partInflate, cdiPioNoPostCommSetup);
-	} else {
-		m_local_comm = MPI_COMM_WORLD;
-		m_pioNamespace = -1;
-	}
-#endif
+Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async)
+  : m_async(async) {
+
+  if (m_async) {
+    xt_initialize(glob);
+    float partInflate = 1.0;
+    m_comp_comm      = pioInit(glob, n_writers, IOmode,
+                               &m_pioNamespace, partInflate, cdiPioNoPostCommSetup);
+  } else {
+    m_comp_comm    = MPI_COMM_WORLD;
+    m_pioNamespace = -1;
+  }
 }
 
 Initializer::~Initializer() {
-#if (Pism_USE_CDIPIO==1)
-	if (m_async) {
-		pioFinalize();
-		xt_finalize();
-	}
-#endif
+  if (m_async) {
+    pioFinalize();
+    xt_finalize();
+  }
 }
 
-MPI_Comm Initializer::get_comp_comm() {
-#if (Pism_USE_CDIPIO==1)
-	return m_local_comm;
-#endif
+MPI_Comm Initializer::comp_comm() {
+  return m_comp_comm;
 }
 
-int Initializer::get_pionamespace() {
-#if (Pism_USE_CDIPIO==1)
-	return m_pioNamespace;
-#endif
+int Initializer::pio_namespace() {
+  return m_pioNamespace;
 }
 
 void Initializer::activate_namespace() {
-	if (m_async) namespaceSetActive(m_pioNamespace);
+  if (m_async) {
+    namespaceSetActive(m_pioNamespace);
+  }
 }
 
-}
-}
+} // namespace cdipio
+} // namespace pism
