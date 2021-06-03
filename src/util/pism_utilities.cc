@@ -22,6 +22,7 @@
 #include <cstdarg>              // va_list, va_start(), va_end()
 #include <sstream>              // istringstream, ostringstream
 #include <cstdio>               // vsnprintf
+#include <cassert>              // assert
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
@@ -128,11 +129,13 @@ bool member(const std::string &string, const std::set<std::string> &set) {
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  assert(local != result);
   int err = MPI_Allreduce(local, result, count, MPI_DOUBLE, op, comm);
   PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
 void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op) {
+  assert(local != result);
   int err = MPI_Allreduce(local, result, count, MPI_INT, op, comm);
   PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
