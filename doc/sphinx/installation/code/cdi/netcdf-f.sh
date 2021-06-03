@@ -6,11 +6,11 @@ set -x
 
 # Install NetCDF Fortran using NetCDF in ~/local/netcdf.
 
-netcdf=~/local/netcdf
+netcdf=~/local/cdipio/
 
 version=4.4.3
-prefix=$HOME/local/netcdff
-build_dir=~/local/build/netcdff
+prefix=$HOME/local/cdipio/
+build_dir=~/local/build/cdipio/netcdf-f
 url=https://github.com/Unidata/netcdf-fortran/archive/v4.4.3.tar.gz
 
 mkdir -p ${build_dir}
@@ -21,12 +21,17 @@ tar zxf v${version}.tar.gz
 
 pushd netcdf-fortran-${version}
 
-LD_LIBRARY_PATH=${netcdf}/lib:${LD_LIBRARY_PATH}
-CPPFLAGS=-I${netcdf}/include
-LDFLAGS=-L${netcdf}/lib
-./configure --prefix=${prefix} --disable-fortran-type-check
-make check
-make install
+export CPPFLAGS=-I${netcdf}/include
+export LDFLAGS=-L${netcdf}/lib
+
+# Compiler flags needed to build this version of NetCDF-Fortran with gfortran from GCC 10:
+export FCFLAGS="-w -fallow-argument-mismatch -O2"
+export FFLAGS="-w -fallow-argument-mismatch -O2"
+
+./configure --prefix=${prefix} \
+            --disable-fortran-type-check | tee netcdf-f-configure.log
+make check | tee netcdf-f-make-check.log
+make install | tee netcdf-f-make-install.log
 
 popd
 popd

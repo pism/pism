@@ -4,14 +4,14 @@ set -e
 set -u
 set -x
 
-# Install YAXT 0.9.0 in ~/local/yaxt,
-# using ~/local/build/yaxt as the build directory.
+# Install YAXT 0.9.0 in ~/local/cdipio/yaxt,
+# using ~/local/build/cdipio/yaxt as the build directory.
 
-prefix=$HOME/local/yaxt
+prefix=$HOME/local/cdipio/
 version=0.9.0
-build_dir=~/local/build/yaxt
+build_dir=~/local/build/cdipio/yaxt
 CFLAGS="-std=gnu99 -O3"
-url=https://www.dkrz.de/redmine/attachments/498/yaxt-0.9.0.tar.gz
+url=https://www.dkrz.de/redmine/attachments/download/498/yaxt-0.9.0.tar.gz
 
 mkdir -p ${build_dir}
 pushd ${build_dir}
@@ -21,7 +21,13 @@ tar xzf yaxt-${version}.tar.gz
 
 pushd yaxt-${version}
 
-./configure --prefix=${prefix} --enable-shared --enable-static CFLAGS="-std=gnu99 -O3"
+ignore_mpi_defect="--without-regard-for-quality"
+
+export CC=mpicc
+./configure --prefix=${prefix} \
+            --enable-shared \
+            --enable-static \
+            ${ignore_mpi_defect} CFLAGS="-std=gnu99 -O3"
 make
 make install
 
