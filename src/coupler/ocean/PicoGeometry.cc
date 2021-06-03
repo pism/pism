@@ -18,7 +18,6 @@
  */
 
 #include <algorithm> // max_element
-#include <numeric> // accumulate vector
 #include "PicoGeometry.hh"
 #include "pism/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
