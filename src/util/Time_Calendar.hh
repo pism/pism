@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ public:
 
   virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
-                                    const Logger &log, bool CDIrestart);
+                                    const Logger &log, bool CDI);
 
 
   virtual double mod(double time, unsigned int) const;
