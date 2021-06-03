@@ -804,10 +804,8 @@ void Pico::compute_box_area(int box_id,
                             const IceModelVec2Int &box_mask,
                             std::vector<double> &result) {
   result.resize(m_n_shelves);
-  std::vector<double> result1(m_n_shelves);
   IceModelVec::AccessList list{ &shelf_mask, &box_mask };
-  double* ptrres;
-  double* ptrres1;
+
   auto cell_area = m_grid->cell_area();
 
   for (Points p(*m_grid); p; p.next()) {
@@ -820,12 +818,9 @@ void Pico::compute_box_area(int box_id,
     }
   }
   
-  // compute global sums
-  ptrres = result.data(); // point to first value (index 0)
-  ptrres1 = result1.data();
-  ptrres++; // point to second value (index 1)
-  ptrres1++;
-  GlobalSum(m_grid->com, ptrres, ptrres1, m_n_shelves-1); // GlobalSum from index 1 to index m_n_shelves-1
+  // compute GlobalSum from index 1 to index m_n_shelves-1
+  std::vector<double> result1(m_n_shelves);
+  GlobalSum(m_grid->com, &result[1], &result1[1], m_n_shelves-1);
   // copy data
   for (int i = 1; i < m_n_shelves; i++) {
     result[i] = result1[i];
