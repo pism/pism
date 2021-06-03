@@ -234,7 +234,7 @@ are listed as follows:
 Since the output files written with CDI-PIO are slightly different, a parameter can be 
 define to specify if the restart file was written with CDI-PIO
 
-- :config:`output.cdi_pio.CDIrestart` flag which specifies if the restart file was written with CDI-PIO
+- :config:`input.cdi_pio` flag which specifies if the restart file was written with CDI-PIO
 
 This helps to convert the time written by CDI-PIO in seconds.
 Finally, due to the second limitation mentioned previously, a couple of attributes of the restart 

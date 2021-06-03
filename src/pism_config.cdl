@@ -1412,6 +1412,10 @@ netcdf pism_config {
     pism_config:input.bootstrap_option = "bootstrap";
     pism_config:input.bootstrap_type = "flag";
 
+    pism_config:input.cdi_pio = "no";
+    pism_config:input.cdi_pio_doc = "Specify whether the input file was written using CDI-PIO (used to convert the time stored in the file from ``YYMMDD.day_fraction`` to seconds)";
+    pism_config:input.cdi_pio_type = "flag";
+
     pism_config:input.file = "";
     pism_config:input.file_doc = "Input file name";
     pism_config:input.file_option = "i";
@@ -1990,10 +1994,6 @@ netcdf pism_config {
     pism_config:output.cdi_pio.filetype_doc = "Filetype to use for asynchronous IO";
     pism_config:output.cdi_pio.filetype_type = "integer";
     pism_config:output.cdi_pio.filetype_units = "count";
-
-    pism_config:output.cdi_pio.CDIrestart = "no";
-    pism_config:output.cdi_pio.CDIrestart_doc = "Whether the restart is from CDI";
-    pism_config:output.cdi_pio.CDIrestart_type = "flag";
 
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";

@@ -79,7 +79,7 @@ void IceModel::time_setup() {
   initialize_time(m_grid->com,
                   m_config->get_string("time.dimension_name"),
                   *m_log, *m_time,
-                  m_config->get_flag("output.cdi_pio.CDIrestart"));
+                  m_config->get_flag("input.cdi_pio"));
 
   bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 
