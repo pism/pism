@@ -177,38 +177,6 @@ int Context::pio_iosys_id() const {
   return m_impl->pio_iosys_id;
 }
 
-int Context::get_n_writers() const {
-  int n_writers = 0;
-#if (Pism_USE_CDIPIO==1)
-  n_writers = config()->get_number("output.pio.a_writers");
-#endif
-  return n_writers;
-}
-
-int Context::get_filetype() const {
-  int filetype = 0;
-#if (Pism_USE_CDIPIO==1)
-  filetype = config()->get_number("output.pio.filetype");
-#endif
-  return filetype;
-}
-
-bool Context::get_async() const {
-  bool async = false;
-#if (Pism_USE_CDIPIO==1)
-  async = config()->get_flag("output.pio.async");
-#endif
-  return async;
-}
-
-int Context::get_IOmode() const {
-  int IOmode=0;
-#if (Pism_USE_CDIPIO==1)
-  IOmode = config()->get_number("output.pio.mode");
-#endif
-  return IOmode;
-}
-
 std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
@@ -227,16 +195,6 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &p
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
   return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
-}
-
-std::shared_ptr<Context> initial_context_from_options(MPI_Comm com, const std::string &prefix) {
-
-  units::System::Ptr sys(new units::System);
-  Logger::Ptr logger = logger_from_options(com);
-  Config::Ptr config = config_from_options(com, *logger, sys);
-  print_config(*logger, 3, *config);
-  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
-  return std::shared_ptr<Context>(new Context(com, sys, config, EC, NULL, logger, prefix));
 }
 
 } // end of namespace pism

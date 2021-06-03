@@ -55,10 +55,6 @@ public:
   ~Context();
 
   MPI_Comm com() const;
-  int get_n_writers() const;
-  bool get_async() const;
-  int get_filetype() const;
-  int get_IOmode() const;
   int size() const;
   int rank() const;
   UnitsSystemPtr unit_system() const;
@@ -85,7 +81,6 @@ private:
 
 //! Create a default context using options.
 std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix);
-std::shared_ptr<Context> initial_context_from_options(MPI_Comm com, const std::string &prefix);
 
 } // end of namespace pism
 
