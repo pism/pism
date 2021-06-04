@@ -292,7 +292,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     int filetype = m_config->get_number("output.cdi_pio.filetype");
     // Open snap file/s
     if (m_save_snapshots) {
-      char filename[PETSC_MAX_PATH_LEN];
+      std::string filename;
       int nsnap;
       if (not m_split_snapshots) {
         nsnap = 1;
@@ -302,10 +302,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
       for (int sn = 0; sn < nsnap; sn++) {
         if (not m_split_snapshots) {
-          strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+          filename = m_snapshots_filename;
         } else {
-	  snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-                   m_snapshots_filename.c_str(), m_time->date(m_snapshot_times[sn]).c_str());
+	  filename = pism::printf("%s_%s.nc",
+                                  m_snapshots_filename.c_str(),
+                                  m_time->date(m_snapshot_times[sn]).c_str());
         }
 
         int fileID = -1;
@@ -336,7 +337,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
     // Open Extra file/s
     if (m_save_extra) {
-      char filename[PETSC_MAX_PATH_LEN];
+      std::string filename;
       int nsnap;
       if (not m_split_extra) {
         nsnap = 1;
@@ -348,9 +349,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
         }
       }
 
-      for (int sn = 0; sn<nsnap; sn++) {
+      for (int sn = 0; sn < nsnap; sn++) {
         if (not m_split_extra) {
-          strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+          filename = m_extra_filename;
         } else {
           double tt;
           if (not m_config->get_flag("output.ISMIP6")) {
@@ -358,8 +359,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
           } else {
             tt = m_extra_times[sn];
           }
-          snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-                   m_extra_filename.c_str(), m_time->date(tt).c_str());
+          filename = pism::printf("%s_%s.nc",
+                                  m_extra_filename.c_str(),
+                                  m_time->date(tt).c_str());
         }
         int fileID = -1;
         IO_Mode mode = PISM_READWRITE_MOVE;
