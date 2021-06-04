@@ -414,12 +414,12 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
 
   // write scalar
   int ndims  = static_cast<int>(start.size());
-  int idxlen = 1, j;
+  int idxlen = 1;
   Xt_int *idx;
   for (int j = 0; j < ndims; ++j)
     idxlen *= count[j];
   idx = (Xt_int *)malloc(idxlen * sizeof(Xt_int));
-  for (j = 0; j < idxlen; j++)
+  for (int j = 0; j < idxlen; j++)
     idx[j] = j;
   Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
   int varid         = m_varsID[variable_name];
@@ -493,7 +493,7 @@ void CDI::inq_varid_impl(const std::string &variable_name, bool &exists) const {
 // inquire variable name
 void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
   for (auto &i : m_varsID) {
-    if (i.second == j) {
+    if (i.second == (int)j) {
       result = i.first;
       break; // to stop searching
     }
