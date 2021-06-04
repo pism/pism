@@ -435,6 +435,7 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
   for (int j = 0; j < ndims; ++j)
     idxlen *= count[j];
   idx = (Xt_int *)malloc(idxlen * sizeof(Xt_int));
+  // FIXME: possible memory leak (who's responsible for calling free()?)
   for (int j = 0; j < idxlen; j++)
     idx[j] = j;
   Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
@@ -811,6 +812,8 @@ void CDI::get_vara_double_impl(const std::string &variable_name, const std::vect
   (void)start;
   (void)count;
   (void)ip;
+  // FIXME: this "implementation" just fails without letting the user know that it reading
+  // data is not implemented
 }
 
 void CDI::get_varm_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
@@ -821,8 +824,9 @@ void CDI::get_varm_double_impl(const std::string &variable_name, const std::vect
   (void)count;
   (void)imap;
   (void)ip;
+  // FIXME: this "implementation" just fails without letting the user know that it reading
+  // data is not implemented
 }
-
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
   (void)fillmode;
