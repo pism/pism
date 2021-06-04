@@ -219,7 +219,9 @@ double CDI::year_calendar(double time) const {
 
 void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
   calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
-  int cal                = ccs_doy2date(calendar, year, doy, month, day);
+  assert(calendar != NULL);
+  int cal = ccs_doy2date(calendar, year, doy, month, day);
+  ccs_free_calendar(calendar);
 }
 
 long int CDI::day_calendar(double nyearsf) const {
