@@ -29,7 +29,6 @@
 #include "pism/util/io/pism_cdi_type_conversion.hh"
 
 #include "pism/external/calcalcs/calcalcs.h"
-#include "pism/external/calcalcs/utCalendar2_cal.h"
 
 #include "pism/util/error_handling.hh"
 
