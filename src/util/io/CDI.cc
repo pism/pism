@@ -58,6 +58,8 @@ void CDI::open_impl(const std::string &fname,
                     IO_Mode mode,
                     int FileID,
                     const std::map<std::string, int> &dimsa) {
+  // FIXME: in general the assumption below is incorrect
+  //
   // the file is already created and opened - restore file info into the class
   m_file_id = FileID;
   m_vlistID = streamInqVlist(m_file_id);
@@ -97,6 +99,7 @@ void CDI::map_zaxisID() const {
 }
 
 void CDI::create_impl(const std::string &filename, int FileID, int filetype) {
+  // FIXME: parameter FileID is not used
   m_file_id = streamOpenWrite(filename.c_str(), filetype);
   m_tID     = -1;
   m_zsID    = -1;
