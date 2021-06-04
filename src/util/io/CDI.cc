@@ -747,13 +747,13 @@ void CDI::define_timestep_impl(int tsID) const {
 }
 
 // write variables
-void CDI::write_darray_impl(const std::string &variable_name, const IceGrid &grid, unsigned int z_count,
+void CDI::write_darray_impl(const std::string &variable_name,
+                            const IceGrid &grid, unsigned int z_count,
                             unsigned int record, const double *input) {
   // transpose input data
   int dim = grid.local_length((int)z_count);
-  double *inputIO;
-  inputIO = (double *)malloc(dim * sizeof(double));
-  grid.io_transpose(input, inputIO, (int)z_count);
+  std::vector<double> inputIO(dim);
+  grid.io_transpose(input, inputIO.data(), (int)z_count);
 
   int varid = m_varsID[variable_name];
 
@@ -761,7 +761,7 @@ void CDI::write_darray_impl(const std::string &variable_name, const IceGrid &gri
   Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
   size_t nmiss        = 0;
   if (!m_beforediag || m_diagvars.count(variable_name) == 0) {
-    streamWriteVarPart(m_file_id, varid, inputIO, nmiss, decompid);
+    streamWriteVarPart(m_file_id, varid, inputIO.data(), nmiss, decompid);
   }
 }
 
