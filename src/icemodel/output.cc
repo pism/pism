@@ -289,7 +289,7 @@ void IceModel::open_files() {
 if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   if (not m_opened) {
     m_opened = true;
-    int filetype = m_ctx->get_filetype();
+    int filetype = m_config->get_number("output.cdi_pio.filetype");
     // Open snap file/s
     if (m_save_snapshots) {
       char filename[PETSC_MAX_PATH_LEN];
