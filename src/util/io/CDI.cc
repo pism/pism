@@ -186,8 +186,9 @@ void CDI::wrapup_def_dim() const {
 void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
   def_vlist();
   def_zs();
-  if (dim == -1)
+  if (dim == -1) {
     dim = 4;
+  }
   (this->*(pvcDefDim[dim]))(name, length);
   m_dimsAxis[name] = dim;
 }
@@ -239,8 +240,9 @@ void CDI::def_ref_date_impl(double time) const {
   double nyearsf = year_calendar(time);
   int doy        = int((nyearsf - (long int)nyearsf) * m_days_year);
   double dayf    = ((nyearsf - (long int)nyearsf) * m_days_year) - doy;
-  if (doy != 0)
+  if (doy != 0) {
     monthday_calendar(int(nyearsf), doy, &month, &day);
+  }
   int ref_date = (int)nyearsf * 10000 + month * 100 + day;
   int sgn      = time >= 0 ? 1 : -1;
   taxisDefVdate(m_tID, sgn * ref_date);
@@ -283,8 +285,10 @@ void CDI::wrapup_inq_dimlen() const {
 
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int dim = m_dimsAxis[dimension_name];
-  if (dim != -1)
+  if (dim != -1) {
     result = (this->*(pvcInqDimlen[dim]))(dimension_name);
+  }
+  // FIXME: and what if dim == -1???
 }
 
 // inquire current timestep
@@ -300,8 +304,9 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 // define variable
 void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   // No need to define the dimensions as variables
-  if (m_dimsAxis.count(name))
+  if (m_dimsAxis.count(name)) {
     return;
+  }
   // Define variables
   def_vlist();
   int tdim = 0;
@@ -324,8 +329,9 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype, const std
   int tsteptype = TIME_CONSTANT;
   for (auto d : dims) {
     it = m_dimsAxis.find(d);
-    if (it != m_dimsAxis.end() && it->second == 3)
+    if (it != m_dimsAxis.end() && it->second == 3) {
       tsteptype = TIME_VARIABLE;
+    }
   }
 
   int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
@@ -341,8 +347,9 @@ void CDI::def_var_mscalar_impl(const std::string &name, IO_Type nctype, const st
   int tsteptype = TIME_CONSTANT;
   for (auto d : dims) {
     it = m_dimsAxis.find(d);
-    if (it != m_dimsAxis.end() && it->second == 3)
+    if (it != m_dimsAxis.end() && it->second == 3) {
       tsteptype = TIME_VARIABLE;
+    }
   }
 
   int varID = vlistDefVar(m_vlistID, m_gridgID, m_zsID, tsteptype);
@@ -358,16 +365,19 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
   int tsteptype = TIME_CONSTANT;
 
   for (auto d : dims) {
-    if (m_dimsAxis[d] == 3)
+    if (m_dimsAxis[d] == 3) {
       tsteptype = TIME_VARIABLE;
+    }
     if (m_dimsAxis[d] == 2) {
-      if (m_zID.count(d))
+      if (m_zID.count(d)) {
         zaxisID = m_zID[d];
+      }
     }
   }
 
-  if (zaxisID == -1)
+  if (zaxisID == -1) {
     zaxisID = m_zsID;
+  }
 
   int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
@@ -521,8 +531,9 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype,
                               const std::vector<double> &data) const {
   // if variable_name is a dimension, return
-  if (m_dimsAxis.count(variable_name))
+  if (m_dimsAxis.count(variable_name)) {
     return;
+  }
   int varID = -1;
   if (variable_name == "PISM_GLOBAL") {
     varID = CDI_GLOBAL;
@@ -579,8 +590,9 @@ void CDI::wrapup_put_att_text() const {
 void CDI::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                             const std::string &value) const {
   // basic checks
-  if (value.empty() || att_name.empty())
+  if (value.empty() || att_name.empty()) {
     return;
+  }
   // write dimension attribute
   if (m_dimsAxis.count(variable_name)) {
     if (m_DimAtt.count(att_name) && m_dimsAxis[variable_name] < 3) {
@@ -723,8 +735,10 @@ void CDI::get_att_text_impl(const std::string &variable_name, const std::string 
 
 // create main grid
 void CDI::create_grid_impl(int lengthx, int lengthy) const {
-  if (m_gridID == -1)
+  if (m_gridID == -1) {
     m_gridID = gridCreate(GRID_LONLAT, lengthx * lengthy);
+  }
+  // FIXME: that happens if this is called twice?
 }
 
 // define timestep
@@ -760,8 +774,9 @@ std::map<std::string, int> CDI::get_dim_map_impl() {
 }
 
 void CDI::def_vlist_impl() const {
-  if (streamInqVlist(m_file_id) == -1)
+  if (streamInqVlist(m_file_id) == -1) {
     streamDefVlist(m_file_id, m_vlistID);
+  }
 }
 
 void CDI::set_diagvars_impl(const std::set<std::string> &variables) const {
