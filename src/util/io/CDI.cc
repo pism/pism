@@ -221,6 +221,7 @@ void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
   calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
   assert(calendar != NULL);
   int cal = ccs_doy2date(calendar, year, doy, month, day);
+  assert(cal == 0);
   ccs_free_calendar(calendar);
 }
 
