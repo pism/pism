@@ -89,51 +89,54 @@ Here we use CMake's variable ``CMAKE_FIND_ROOT_PATH`` to tell CMake to use libra
 ``~/local/netcdf`` and ``~/local/pnetcdf``, to install in ``~/local/parallelio``, and to
 disable ParallelIO features not used by PISM.
 
-Installing CDI-PIO and dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. _sec-install-cdi-pio:
 
-Installing YAXT
-~~~~~~~~~~~~~~~
+Installing CDI-PIO and its dependencies
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+YAXT
+~~~~
 
 .. literalinclude:: code/cdi/yaxt.sh
    :language: bash
    :linenos:
    :lines: 7-
 
-Installing NetCDF with PNetCDF support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+NetCDF with PNetCDF support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: code/cdi/netcdf-c.sh
    :language: bash
    :linenos:
    :lines: 7-
 
-CDI-PIO is not supporting yet the latest version of NetCDF so it is recommend to install 
-the indicated version.
+CDI-PIO does not support the current version of NetCDF yet so it is recommended to install
+the indicated version. Note that this version of NetCDF requires an older version of HDF5
+(see above, FIXME).
 
-Installing NetCDF Fortran
-~~~~~~~~~~~~~~~~~~~~~~~~~
+NetCDF Fortran
+~~~~~~~~~~~~~~
 
 .. literalinclude:: code/cdi/netcdf-f.sh
    :language: bash
    :linenos:
    :lines: 7-
 
-CDI-PIO is not supporting yet the latest version of NetCDF Fortran so it is recommend to install 
-the indicated version.
+CDI-PIO does not support the current version of NetCDF Fortran yet so it is recommended to
+install the indicated version.
 
-Installing PPM
-~~~~~~~~~~~~~~
+PPM
+~~~
 
-.. literalinclude:: code/cdi/PPM.sh
+.. literalinclude:: code/cdi/ppm.sh
    :language: bash
    :linenos:
    :lines: 7-
 
-Installing CDI-PIO
-~~~~~~~~~~~~~~~~~~
+CDI-PIO
+~~~~~~~
 
-.. literalinclude:: code/cdi/CDI.sh
+.. literalinclude:: code/cdi/cdi.sh
    :language: bash
    :linenos:
    :lines: 7-
