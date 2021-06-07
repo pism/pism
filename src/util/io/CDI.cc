@@ -30,12 +30,9 @@
 
 #include "pism/external/calcalcs/calcalcs.h"
 
-#include "pism/util/error_handling.hh"
-
 extern "C" {
 #include "cdi.h"
 #include "cdipio.h"
-#include "yaxt.h"
 }
 
 namespace pism {

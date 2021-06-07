@@ -33,15 +33,6 @@
 #include <pio.h>
 #endif
 
-
-#if (Pism_USE_CDIPIO==1)
-#include <mpi.h>
-extern "C"{
-#include "cdipio.h"
-#include "cdi.h"
-}
-#endif
-
 namespace pism {
 
 class Context::Impl {

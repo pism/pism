@@ -29,11 +29,9 @@
 #include "pism/util/Profiling.hh"
 
 #if (Pism_USE_CDIPIO==1)
-#include <mpi.h>
 extern "C"{
 #include "cdipio.h"
 #include "cdi.h"
-#include "yaxt.h"
 }
 #endif
 

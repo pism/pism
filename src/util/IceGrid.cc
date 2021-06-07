@@ -38,12 +38,6 @@
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
-#if (Pism_USE_CDIPIO==1)
-extern "C"{
-#include "yaxt.h"
-}
-#endif
-
 #if (Pism_USE_PIO==1)
 // Why do I need this???
 #define _NETCDF
