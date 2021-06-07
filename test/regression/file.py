@@ -206,10 +206,10 @@ class File(TestCase):
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
-            f.dimension_length("time") == 1
-            f.dimension_length("x") == 3
-            f.dimension_length("y") == 5
-            f.dimension_length("z") == 0
+            assert f.dimension_length("time") == 1
+            assert f.dimension_length("x") == 3
+            assert f.dimension_length("y") == 5
+            assert f.dimension_length("z") == 0
             f.close()
 
     def test_dimensions(self):
