@@ -30,7 +30,7 @@
 
 #if (Pism_USE_CDIPIO==1)
 extern "C" {
-#include "yaxt.h"
+#include "yaxt.h"               // Xt_idxlist
 }
 #endif
 

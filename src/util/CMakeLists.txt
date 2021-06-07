@@ -78,7 +78,7 @@ if (Pism_USE_PIO)
   list(APPEND PISMUTIL_SRC io/ParallelIO.cc)
 endif()
 
-# Check if CDI is enabled and add a source code file if necessary.
+# Check if CDI is enabled and add more files if necessary.
 if (Pism_USE_CDIPIO)
   list(APPEND PISMUTIL_SRC io/CDI.cc)
   list(APPEND PISMUTIL_SRC cdipio/CDIPIOInitializer.cc)

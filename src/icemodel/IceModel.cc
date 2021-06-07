@@ -59,13 +59,6 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/coupler/util/ScalarForcing.hh"
 
-#if (Pism_USE_CDIPIO==1)
-extern "C"{
-#include "cdipio.h"
-#include "cdi.h"
-}
-#endif
-
 namespace pism {
 
 IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)

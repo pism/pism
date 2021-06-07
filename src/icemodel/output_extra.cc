@@ -28,13 +28,6 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 
-#if (Pism_USE_CDIPIO==1)
-extern "C"{
-#include "cdipio.h"
-#include "cdi.h"
-}
-#endif
-
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-extra_times`.
