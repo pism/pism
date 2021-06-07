@@ -4,8 +4,9 @@ set -e
 set -u
 set -x
 
-# Install PPM using parallel HDF5 in ~/local/cdipio/hdf5, NetCDF-C in
-# ~/local/cdipio/netcdf-c and NetCDF Fortran in ~/local/cdipio/netcdf-f
+# Install PPM in ~/local/cdipio using
+# parallel HDF5, NetCDF-C, and NetCDF-Fortran in
+# ~/local/cdipio/
 hdf5=~/local/cdipio/
 netcdf=~/local/cdipio/
 netcdff=~/local/cdipio/
@@ -34,7 +35,6 @@ export FC=mpifort
             --with-netcdf-root=${netcdf} \
             --with-netcdf-fc-lib=${netcdff}/lib \
             --with-netcdf-fc-mod=${netcdff}/include
-
 
 make
 make install

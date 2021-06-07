@@ -24,7 +24,13 @@ sed -i 's/256/4096/g' src/cdi_limits.h
 
 export CC=mpicc
 export FC=mpifort
-./configure --prefix=${prefix} \
+export CFLAGS="-std=gnu99 -O3"
+export PPM_CORE_CFLAGS=-I${ppm}/include
+export PPM_CORE_LIBS="-L${ppm}/lib -lscalesppmcore -lscalesppm"
+export YAXT_CFLAGS="-I${yaxt}/include"
+export YAXT_C_LIBS="-L${yaxt}/lib -lyaxt_c"
+export YAXT_LIBS="-L${yaxt}/lib -lyaxt"
+export ./configure --prefix=${prefix} \
             --with-netcdf=${netcdf} \
             --disable-grib \
             --disable-cgribex \
@@ -33,13 +39,7 @@ export FC=mpifort
             --disable-ieg \
             --enable-mpi \
             --enable-shared \
-            --enable-static \
-            PPM_CORE_CFLAGS=-I${ppm}/include \
-            PPM_CORE_LIBS="-L${ppm}/lib -lscalesppmcore -lscalesppm" \
-            YAXT_CFLAGS="-I${yaxt}/include" \
-            YAXT_C_LIBS="-L${yaxt}/lib -lyaxt_c" \
-            YAXT_LIBS="-L${yaxt}/lib -lyaxt" \
-            CFLAGS="-std=gnu99 -O3"
+            --enable-static
 
 make
 make install

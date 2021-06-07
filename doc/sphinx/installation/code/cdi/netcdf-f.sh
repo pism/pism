@@ -4,7 +4,8 @@ set -u
 set -e
 set -x
 
-# Install NetCDF Fortran using NetCDF in ~/local/netcdf.
+# Install NetCDF-Fortran in ~/local/cdipio
+# using NetCDF-C in ~/local/cdipio.
 
 netcdf=~/local/cdipio/
 

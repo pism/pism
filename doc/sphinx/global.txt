@@ -138,6 +138,9 @@
 .. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
 .. _Lustre: http://lustre.org/
 .. _Large-Files: https://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html
+.. _YAXT: https://www.dkrz.de/redmine/projects/yaxt
+.. _PPM: https://www.dkrz.de/redmine/projects/scales-ppm
+.. _CDI-PIO: https://gitlab.dkrz.de/mpim-sw/libcdi
 
 .. PISM-related external links
 

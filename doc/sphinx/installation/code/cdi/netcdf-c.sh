@@ -4,9 +4,10 @@ set -u
 set -e
 set -x
 
-# Install NetCDF with PNetCDF support using parallel HDF5 
-# in ~/local/cdipio/hdf5 and and PNetCDF in ~/local/pnetcdf and
-# ~/local/build/cdipio/netcdf-c as a build directory.
+# Install NetCDF with PNetCDF support in ~/local/cdipio using
+# - parallel HDF5 in ~/local/cdipio/
+# - PNetCDF in ~/local/pnetcdf
+# and using ~/local/build/cdipio/netcdf-c as a build directory.
 
 hdf5=~/local/cdipio/
 pnetcdf=~/local/pnetcdf

@@ -4,7 +4,7 @@ set -e
 set -u
 set -x
 
-# Install HDF5 1.10.5 with parallel I/O in ~/local/hdf5,
+# Install HDF5 1.10.5 with parallel I/O in ~/local/cdipio,
 # using ~/local/build/hdf5 as the build directory.
 
 version=1.10.5
