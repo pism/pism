@@ -27,7 +27,7 @@
 #include <vector>
 #include <set>
 
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm, MPI_Op
 
 namespace pism {
 

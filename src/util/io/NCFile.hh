@@ -24,7 +24,7 @@
 #include <vector>
 #include <map>
 #include <set>
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 
 #include "IO_Flags.hh"
 

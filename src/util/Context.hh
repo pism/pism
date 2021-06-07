@@ -23,7 +23,7 @@
 #include <memory>
 #include <string>
 
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 
 namespace pism {
 

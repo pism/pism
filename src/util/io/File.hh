@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <string>
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 #include <map>
 #include <set>
 
