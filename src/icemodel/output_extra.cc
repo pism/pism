@@ -311,8 +311,8 @@ void IceModel::write_extras() {
     filename = m_extra_filename;
   }
 
-  if (streamIDs.count(filename) > 0) {
-    fileID = streamIDs[filename];
+  if (m_streamIDs.count(filename) > 0) {
+    fileID = m_streamIDs[filename];
     m_extra_file_is_ready = true;
   }
 
@@ -334,7 +334,7 @@ void IceModel::write_extras() {
                                   mode,
                                   m_ctx->pio_iosys_id(),
                                   fileID,
-                                  DimExtraMap));
+                                  m_DimExtraMap));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -374,7 +374,7 @@ void IceModel::write_extras() {
     // make sure all changes are written
     m_extra_file->sync();
     if (m_extra_file->backend() == PISM_CDI) {
-      streamIDs[filename] = m_extra_file->get_streamID();
+      m_streamIDs[filename] = m_extra_file->get_streamID();
     }
   }
   if (current_extra < m_extra_times.size() - 1) {

@@ -422,10 +422,10 @@ protected:
   unsigned int m_current_snapshot;
   void init_snapshots();
   void write_snapshot();
-  std::map<std::string, int> DimSnapMap;
-  std::map<std::string, int> DimOutMap;
+  std::map<std::string, int> m_DimSnapMap;
+  std::map<std::string, int> m_DimOutMap;
   MaxTimestep save_max_timestep(double my_t);
-  std::map<std::string, int> streamIDs, vlistIDs;
+  std::map<std::string, int> m_streamIDs, m_vlistIDs;
 
   //! file to write scalar time-series to
   std::string m_ts_filename;
@@ -447,7 +447,7 @@ protected:
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
-  std::map<std::string, int> DimExtraMap;
+  std::map<std::string, int> m_DimExtraMap;
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups

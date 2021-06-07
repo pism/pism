@@ -134,8 +134,8 @@ void IceModel::save_results() {
   const Profiling &profiling = m_ctx->profiling();
   int fileID = -1;
   IO_Mode mode = PISM_READWRITE_MOVE;
-  if (streamIDs.count(filename) > 0) {
-    fileID = streamIDs[filename];
+  if (m_streamIDs.count(filename) > 0) {
+    fileID = m_streamIDs[filename];
     mode = PISM_READWRITE;
   }
 
@@ -149,7 +149,7 @@ void IceModel::save_results() {
               mode,
               m_ctx->pio_iosys_id(),
               fileID,
-              DimOutMap);
+              m_DimOutMap);
     file.set_split(false);
     profiling.end("io.open");
 
@@ -163,7 +163,7 @@ void IceModel::save_results() {
     expose_windows();
 
     if (file.backend() == PISM_CDI) {
-      streamIDs[filename] = file.get_streamID();
+      m_streamIDs[filename] = file.get_streamID();
     }
   }
   profiling.end("io.model_state");
@@ -316,17 +316,17 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
                     mode,
                     m_ctx->pio_iosys_id(),
                     fileID,
-                    DimSnapMap,
+                    m_DimSnapMap,
                     filetype);
-          streamIDs[filename] = file.get_streamID();
+          m_streamIDs[filename] = file.get_streamID();
 
           write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
           m_snapshots_file_is_ready = true;
           write_run_stats(file);
           file.file_calendar(-1.0, m_time->calendar());
           save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
-          vlistIDs[filename] = file.get_vlistID();
-          DimSnapMap = file.get_dimensions_map();
+          m_vlistIDs[filename] = file.get_vlistID();
+          m_DimSnapMap = file.get_dimensions_map();
         }
         m_snapshots_file_is_ready = false;
       }
@@ -370,9 +370,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
                     mode,
                     m_ctx->pio_iosys_id(),
                     fileID,
-                    DimExtraMap,
+                    m_DimExtraMap,
                     filetype);
-          streamIDs[filename] = file.get_streamID();
+          m_streamIDs[filename] = file.get_streamID();
 
           std::string time_name = m_config->get_string("time.dimension_name");
           io::define_time(file, *m_ctx);
@@ -390,8 +390,8 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
                          false);
 
           if (file.backend() == PISM_CDI) {
-            vlistIDs[filename] = file.get_vlistID();
-            DimExtraMap = file.get_dimensions_map();
+            m_vlistIDs[filename] = file.get_vlistID();
+            m_DimExtraMap = file.get_dimensions_map();
           }
         }
         m_extra_file_is_ready = false;
@@ -419,9 +419,9 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
                 mode,
                 m_ctx->pio_iosys_id(),
                 fileID,
-                DimOutMap,
+                m_DimOutMap,
                 filetype);
-      streamIDs[filename] = file.get_streamID();
+      m_streamIDs[filename] = file.get_streamID();
 
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
@@ -430,8 +430,8 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
       save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                      0, PISM_FLOAT, false);
       if (file.backend() == PISM_CDI) {
-        vlistIDs[filename] = file.get_vlistID();
-        DimOutMap = file.get_dimensions_map();
+        m_vlistIDs[filename] = file.get_vlistID();
+        m_DimOutMap = file.get_dimensions_map();
       }
     }
   }
@@ -456,11 +456,11 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.close_streams");
   // Close all files
-  for (auto const& streamID : streamIDs) {
+  for (auto const& streamID : m_streamIDs) {
     streamClose(streamID.second);
   }
   // Destroy all streams
-  for (auto const& vlistID : vlistIDs) {
+  for (auto const& vlistID : m_vlistIDs) {
     vlistDestroy(vlistID.second);
   }
   profiling.end("io.close_streams");

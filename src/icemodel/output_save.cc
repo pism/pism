@@ -144,8 +144,8 @@ void IceModel::write_snapshot() {
     filename = m_snapshots_filename;
   }
 
-  if (streamIDs.count(filename) > 0) {
-    fileID = streamIDs[filename];
+  if (m_streamIDs.count(filename) > 0) {
+    fileID = m_streamIDs[filename];
     m_snapshots_file_is_ready = true;
   }
 
@@ -165,7 +165,7 @@ void IceModel::write_snapshot() {
               mode,
               m_ctx->pio_iosys_id(),
               fileID,
-              DimSnapMap);
+              m_DimSnapMap);
     if (m_split_snapshots) {
 	file.set_split(true);
     } else {
@@ -182,7 +182,7 @@ void IceModel::write_snapshot() {
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
 
     if (file.backend() == PISM_CDI) {
-      streamIDs[filename] = file.get_streamID();
+      m_streamIDs[filename] = file.get_streamID();
     }
   }
   if (m_current_snapshot < m_snapshot_times.size()) m_sthwritten = true;
