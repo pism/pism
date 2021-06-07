@@ -37,15 +37,8 @@ static char help[] =
 #include "pism/regional/IceRegionalModel.hh"
 
 #if (Pism_USE_CDIPIO==1)
-#include <mpi.h>
-extern "C"{
-#include "cdipio.h"
-#include "yaxt.h"
-#include "cdi.h"
-}
-#endif
-
 #include "pism/util/cdipio/CDIPIOInitializer.hh"
+#endif
 
 using namespace pism;
 
