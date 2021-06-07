@@ -28,6 +28,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/pism_cdi_type_conversion.hh"
+#include "pism/util/error_handling.hh"
 
 #include "pism/external/calcalcs/calcalcs.h"
 
@@ -41,7 +42,6 @@ namespace io {
 
 CDI::CDI(MPI_Comm c) : NCFile(c) {
   m_beforediag = true;
-  wrapup_inq_dimlen();
   wrapup_put_att_text();
 }
 
@@ -108,7 +108,6 @@ void CDI::close_impl() {
   m_dimsAxis.clear();
   m_zID.clear();
   m_diagvars.clear();
-  pvcInqDimlen.clear();
   pvcPutAttT.clear();
 }
 
@@ -250,40 +249,24 @@ void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const 
   exists = m_dimsAxis.count(dimension_name) ? true : false;
 }
 
-// wrapup inq_dimlen_impl function
-unsigned int CDI::inq_dimlen_x(const std::string &dimension_name) const {
-  return gridInqXsize(m_gridID);
-}
-
-unsigned int CDI::inq_dimlen_y(const std::string &dimension_name) const {
-  return gridInqYsize(m_gridID);
-}
-
-unsigned int CDI::inq_dimlen_z(const std::string &dimension_name) const {
-  return zaxisInqSize(m_zID[dimension_name]);
-}
-
-unsigned int CDI::inq_dimlen_t(const std::string &dimension_name) const {
-  return inq_current_timestep() + 1;
-}
-
-void CDI::wrapup_inq_dimlen() const {
-  pInqDimlen pFn = &CDI::inq_dimlen_x;
-  pvcInqDimlen.push_back(pFn);
-  pFn = &CDI::inq_dimlen_y;
-  pvcInqDimlen.push_back(pFn);
-  pFn = &CDI::inq_dimlen_z;
-  pvcInqDimlen.push_back(pFn);
-  pFn = &CDI::inq_dimlen_t;
-  pvcInqDimlen.push_back(pFn);
-}
-
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int dim = m_dimsAxis[dimension_name];
-  if (dim != -1) {
-    result = (this->*(pvcInqDimlen[dim]))(dimension_name);
+  switch (dim) {
+  case 0:
+    result = gridInqXsize(m_gridID);
+    break;
+  case 1:
+    result = gridInqYsize(m_gridID);
+    break;
+  case 2:
+    result = zaxisInqSize(m_zID[dimension_name]);
+    break;
+  case 3:
+    result = inq_current_timestep() + 1;
+    break;
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid dim == %d", dim);
   }
-  // FIXME: and what if dim == -1???
 }
 
 // inquire current timestep

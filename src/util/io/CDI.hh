@@ -155,15 +155,6 @@ private:
   // inquire attribute helper
   void inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *attlen) const;
 
-  // inquire dimension length wrappers
-  unsigned int inq_dimlen_t(const std::string &dimension_name) const;
-  unsigned int inq_dimlen_x(const std::string &dimension_name) const;
-  unsigned int inq_dimlen_y(const std::string &dimension_name) const;
-  unsigned int inq_dimlen_z(const std::string &dimension_name) const;
-  void wrapup_inq_dimlen() const;
-  typedef unsigned int (CDI::*pInqDimlen)(const std::string &) const;
-  mutable std::vector<pInqDimlen> pvcInqDimlen;
-
   // put attribute text wrappers
   void put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const;
   void put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const;
