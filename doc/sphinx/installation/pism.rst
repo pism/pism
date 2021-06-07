@@ -183,7 +183,8 @@ To build PISM using CDI-PIO libraries installed as described in
 
 .. code-block:: bash
 
-   cmake -DCMAKE_FIND_ROOT_PATH="~/local/yaxt;~/local/CDI" \
+   export PKG_CONFIG_PATH=~/local/cdipio/lib/pkgconfig
+   cmake -DCMAKE_FIND_ROOT_PATH="~/local/cdipio;~/local/pnetcdf" \
          -DPism_USE_CDIPIO \
          ..
 
