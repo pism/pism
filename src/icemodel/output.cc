@@ -443,12 +443,12 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
 
 void IceModel::expose_windows() {
 #if (Pism_USE_CDIPIO==1)
-if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+  if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
     if (m_sthwritten) {
       pioWriteTimestep();
       m_sthwritten = false;
     }
-}
+  }
 #endif
 }
 

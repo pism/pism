@@ -379,7 +379,9 @@ void IceModel::write_extras() {
       streamIDs[filename] = m_extra_file->get_streamID();
     }
   }
-  if (current_extra < m_extra_times.size()-1) m_sthwritten = true;
+  if (current_extra < m_extra_times.size() - 1) {
+    m_sthwritten = true;
+  }
   profiling.end("io.extra_file");
 
   flush_timeseries();
