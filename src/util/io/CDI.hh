@@ -177,9 +177,9 @@ private:
   mutable std::map<std::string, int> m_DimAtt;
 
   // define variable wrappers
-  void def_var_scalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
-  void def_var_mscalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
-  void def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_var_mscalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 };
 } // namespace io
 } // namespace pism

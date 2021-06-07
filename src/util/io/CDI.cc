@@ -310,15 +310,15 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
   }
 
   if (dims.empty() || dims.size() - tdim == 0) { // scalar variable
-    def_var_scalar_impl(name, nctype, dims);
+    def_var_scalar(name, nctype, dims);
   } else if (dims.size() - tdim == 1) { // time-dependent scalar variable
-    def_var_mscalar_impl(name, nctype, dims);
+    def_var_mscalar(name, nctype, dims);
   } else { // multi-dimensional variable
-    def_var_multi_impl(name, nctype, dims);
+    def_var_multi(name, nctype, dims);
   }
 }
 
-void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void CDI::def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   def_zs();
   std::map<std::string, int>::iterator it;
   int tsteptype = TIME_CONSTANT;
@@ -336,7 +336,7 @@ void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype, const std
   m_varsID[name] = varID;
 }
 
-void CDI::def_var_mscalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void CDI::def_var_mscalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   def_zs();
   std::map<std::string, int>::iterator it;
   int tsteptype = TIME_CONSTANT;
@@ -355,7 +355,7 @@ void CDI::def_var_mscalar_impl(const std::string &name, IO_Type nctype, const st
 }
 
 
-void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
   int zaxisID   = -1;
   int tsteptype = TIME_CONSTANT;
 
