@@ -164,14 +164,6 @@ private:
   typedef unsigned int (CDI::*pInqDimlen)(const std::string &) const;
   mutable std::vector<pInqDimlen> pvcInqDimlen;
 
-  // put dimension wrappers
-  void put_dim_x(const std::string &variable_name, const double *op) const;
-  void put_dim_y(const std::string &variable_name, const double *op) const;
-  void put_dim_z(const std::string &variable_name, const double *op) const;
-  void wrapup_put_dim() const;
-  typedef void (CDI::*pPutDim)(const std::string &, const double *) const;
-  mutable std::vector<pPutDim> pvcPutDim;
-
   // put attribute text wrappers
   void put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const;
   void put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const;
@@ -188,9 +180,6 @@ private:
   void def_var_scalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   void def_var_mscalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   void def_var_multi_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
-  void wrapup_def_var() const;
-  typedef void (CDI::*pDefVar)(const std::string &, IO_Type, const std::vector<std::string> &) const;
-  mutable std::vector<pDefVar> pvcDefVar;
 };
 } // namespace io
 } // namespace pism

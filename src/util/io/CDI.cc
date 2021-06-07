@@ -42,9 +42,7 @@ namespace io {
 CDI::CDI(MPI_Comm c) : NCFile(c) {
   m_beforediag = true;
   wrapup_inq_dimlen();
-  wrapup_put_dim();
   wrapup_put_att_text();
-  wrapup_def_var();
 }
 
 CDI::~CDI() {
@@ -111,9 +109,7 @@ void CDI::close_impl() {
   m_zID.clear();
   m_diagvars.clear();
   pvcInqDimlen.clear();
-  pvcPutDim.clear();
   pvcPutAttT.clear();
-  pvcDefVar.clear();
 }
 
 void CDI::def_vlist() const {
@@ -309,17 +305,17 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype, const std::vecto
   // Define variables
   def_vlist();
   int tdim = 0;
-  if (std::find(dims.begin(), dims.end(), "time") != dims.end())
+  if (std::find(dims.begin(), dims.end(), "time") != dims.end()) {
     tdim = 1;
-  int dim;
-  if (dims.empty() || dims.size() - tdim == 0) { // scalar variable
-    dim = 0;
-  } else if (dims.size() - tdim == 1) { // multi-scalar variable
-    dim = 1;
-  } else { // multi-dimensional variable
-    dim = 2;
   }
-  (this->*(pvcDefVar[dim]))(name, nctype, dims);
+
+  if (dims.empty() || dims.size() - tdim == 0) { // scalar variable
+    def_var_scalar_impl(name, nctype, dims);
+  } else if (dims.size() - tdim == 1) { // time-dependent scalar variable
+    def_var_mscalar_impl(name, nctype, dims);
+  } else { // multi-dimensional variable
+    def_var_multi_impl(name, nctype, dims);
+  }
 }
 
 void CDI::def_var_scalar_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
@@ -385,45 +381,24 @@ void CDI::def_var_multi_impl(const std::string &name, IO_Type nctype, const std:
   m_varsID[name] = varID;
 }
 
-void CDI::wrapup_def_var() const {
-  pDefVar pFn = &CDI::def_var_scalar_impl;
-  pvcDefVar.push_back(pFn);
-  pFn = &CDI::def_var_mscalar_impl;
-  pvcDefVar.push_back(pFn);
-  pFn = &CDI::def_var_multi_impl;
-  pvcDefVar.push_back(pFn);
-}
-
-
-// write spatial dimensions
-void CDI::put_dim_x(const std::string &variable_name, const double *op) const {
-  gridDefXvals(m_gridID, op);
-}
-
-void CDI::put_dim_y(const std::string &variable_name, const double *op) const {
-  gridDefYvals(m_gridID, op);
-}
-
-void CDI::put_dim_z(const std::string &variable_name, const double *op) const {
-  zaxisDefLevels(m_zID[variable_name], op);
-}
-
-void CDI::wrapup_put_dim() const {
-  pPutDim pFn = &CDI::put_dim_x;
-  pvcPutDim.push_back(pFn);
-  pFn = &CDI::put_dim_y;
-  pvcPutDim.push_back(pFn);
-  pFn = &CDI::put_dim_z;
-  pvcPutDim.push_back(pFn);
-}
-
 // write spatial dimensions and scalars
 void CDI::put_vara_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
                                const std::vector<unsigned int> &count, const double *op) const {
   // write dimensions values if not done yet
   if (m_dimsAxis.count(variable_name)) {
     int dim = m_dimsAxis[variable_name];
-    (this->*(pvcPutDim[dim]))(variable_name, op);
+    switch (dim) {
+    case 0:
+      gridDefXvals(m_gridID, op);
+      break;
+    case 1:
+      gridDefYvals(m_gridID, op);
+      break;
+    case 2:
+    default:
+      zaxisDefLevels(m_zID[variable_name], op);
+      break;
+    }
     return;
   }
 
