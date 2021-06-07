@@ -81,6 +81,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_opened(false),
+    m_sthwritten(false),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
     m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
