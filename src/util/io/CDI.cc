@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <map>
@@ -40,7 +41,6 @@ namespace io {
 
 CDI::CDI(MPI_Comm c) : NCFile(c) {
   m_beforediag = true;
-  wrapup_def_dim();
   wrapup_inq_dimlen();
   wrapup_put_dim();
   wrapup_put_att_text();
@@ -110,7 +110,6 @@ void CDI::close_impl() {
   m_dimsAxis.clear();
   m_zID.clear();
   m_diagvars.clear();
-  pvcDefDim.clear();
   pvcInqDimlen.clear();
   pvcPutDim.clear();
   pvcPutAttT.clear();
@@ -136,57 +135,60 @@ void CDI::def_zs() const {
   }
 }
 
-// wrapup def_dim_impl function
-void CDI::def_x_dim(const std::string &name, size_t length) const {
-  gridDefXsize(m_gridID, (int)length);
-  gridDefXname(m_gridID, name.c_str());
-}
-
-void CDI::def_y_dim(const std::string &name, size_t length) const {
-  gridDefYsize(m_gridID, (int)length);
-  gridDefYname(m_gridID, name.c_str());
-}
-
-void CDI::def_z_dim(const std::string &name, size_t length) const {
-  // define z axis only if it's new
-  if (!m_zID.count(name)) {
-    m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
-    zaxisDefName(m_zID[name], name.c_str());
-  }
-}
-
-void CDI::def_t_dim(const std::string &name, size_t length) const {
-  // define time axis if it was not done before
-  if (m_tID == -1) {
-    m_tID = taxisCreate(TAXIS_ABSOLUTE);
-    taxisDefCalendar(m_tID, m_cdi_calendar);
-    vlistDefTaxis(m_vlistID, m_tID);
-  }
-}
-
-void CDI::def_g_dim(const std::string &name, size_t length) const {
-  m_gridgID = gridCreate(GRID_LONLAT, length);
-  gridDefXsize(m_gridgID, length);
-  gridDefXname(m_gridgID, name.c_str());
-  gridDefYsize(m_gridgID, 1);
-  gridDefYname(m_gridgID, "y_dummy");
-}
-
-void CDI::wrapup_def_dim() const {
-  pvcDefDim.push_back(&CDI::def_x_dim);
-  pvcDefDim.push_back(&CDI::def_y_dim);
-  pvcDefDim.push_back(&CDI::def_z_dim);
-  pvcDefDim.push_back(&CDI::def_t_dim);
-  pvcDefDim.push_back(&CDI::def_g_dim);
-}
-
 void CDI::def_dim_impl(const std::string &name, size_t length, int dim) const {
+
+  assert(dim >= -1);
+  assert(dim <= 4);
+
   def_vlist();
   def_zs();
   if (dim == -1) {
     dim = 4;
   }
-  (this->*(pvcDefDim[dim]))(name, length);
+
+  switch (dim) {
+  case 0:
+    {
+      gridDefXsize(m_gridID, (int)length);
+      gridDefXname(m_gridID, name.c_str());
+      break;
+    }
+  case 1:
+    {
+      gridDefYsize(m_gridID, (int)length);
+      gridDefYname(m_gridID, name.c_str());
+      break;
+    }
+  case 2:
+    {
+      // define z axis only if it's new
+      if (!m_zID.count(name)) {
+        m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
+        zaxisDefName(m_zID[name], name.c_str());
+      }
+      break;
+    }
+  case 3:
+    {
+      // define time axis if it was not done before
+      if (m_tID == -1) {
+        m_tID = taxisCreate(TAXIS_ABSOLUTE);
+        taxisDefCalendar(m_tID, m_cdi_calendar);
+        vlistDefTaxis(m_vlistID, m_tID);
+      }
+      break;
+    }
+  case 4:
+  default:
+    {
+      m_gridgID = gridCreate(GRID_LONLAT, length);
+      gridDefXsize(m_gridgID, length);
+      gridDefXname(m_gridgID, name.c_str());
+      gridDefYsize(m_gridgID, 1);
+      gridDefYname(m_gridgID, "y_dummy");
+      break;
+    }
+  }
   m_dimsAxis[name] = dim;
 }
 
@@ -736,7 +738,7 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
   if (m_gridID == -1) {
     m_gridID = gridCreate(GRID_LONLAT, lengthx * lengthy);
   }
-  // FIXME: that happens if this is called twice?
+  // FIXME: that happens if this is called twice, but with different lengthx and lengthy?
 }
 
 // define timestep

@@ -155,16 +155,6 @@ private:
   // inquire attribute helper
   void inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *attlen) const;
 
-  // define dimension wrappers
-  void def_x_dim(const std::string &name, size_t length) const;
-  void def_y_dim(const std::string &name, size_t length) const;
-  void def_z_dim(const std::string &name, size_t length) const;
-  void def_t_dim(const std::string &name, size_t length) const;
-  void def_g_dim(const std::string &name, size_t length) const;
-  void wrapup_def_dim() const;
-  typedef void (CDI::*pDefDim)(const std::string &, size_t) const;
-  mutable std::vector<pDefDim> pvcDefDim;
-
   // inquire dimension length wrappers
   unsigned int inq_dimlen_t(const std::string &dimension_name) const;
   unsigned int inq_dimlen_x(const std::string &dimension_name) const;
