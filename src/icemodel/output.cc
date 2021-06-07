@@ -379,7 +379,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
           std::string time_name = m_config->get_string("time.dimension_name");
           io::define_time(file, *m_ctx);
           file.write_attribute(time_name, "bounds", "time_bounds");
-          io::define_time_bounds(m_extra_bounds, file);
+          io::define_time_bounds(m_extra_bounds, "time", "nv", file);
           write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
           m_extra_file_is_ready = true;
           write_run_stats(file);
