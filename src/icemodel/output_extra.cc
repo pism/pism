@@ -346,7 +346,7 @@ void IceModel::write_extras() {
     }
 
     write_run_stats(*m_extra_file);
-    m_extra_file->file_calendar(m_time->year_length(), m_time->calendar());
+    m_extra_file->set_calendar(m_time->year_length(), m_time->calendar());
     save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,

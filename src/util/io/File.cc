@@ -918,7 +918,7 @@ void File::set_beforediag(bool value) const {
   m_impl->nc->set_bdiag(value);
 }
 
-void File::file_calendar(double year_length, const std::string &calendar_string) const {
+void File::set_calendar(double year_length, const std::string &calendar_string) const {
  m_impl->nc->set_calendar(year_length, calendar_string);
 }
 

@@ -172,7 +172,7 @@ public:
   int get_vlistID() const;
   bool is_split() const;
   void set_split(bool split) const;
-  void file_calendar(double year_length, const std::string &calendar_string) const;
+  void set_calendar(double year_length, const std::string &calendar_string) const;
 
 private:
   struct Impl;

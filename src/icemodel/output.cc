@@ -156,7 +156,7 @@ void IceModel::save_results() {
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
     write_run_stats(file);
 
-    file.file_calendar(m_time->year_length(), m_time->calendar());
+    file.set_calendar(m_time->year_length(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
     m_sthwritten = true;
@@ -263,7 +263,9 @@ void IceModel::save_variables(const File &file,
     }
   }
   file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
-  if (not realsave) return;
+  if (not realsave) {
+    return;
+  }
 
   io::append_time(file, *m_config, time);
   file.set_dimatt();
@@ -323,7 +325,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
           write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
           m_snapshots_file_is_ready = true;
           write_run_stats(file);
-          file.file_calendar(-1.0, m_time->calendar());
+          file.set_calendar(-1.0, m_time->calendar());
           save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
           m_vlistIDs[filename] = file.get_vlistID();
           m_DimSnapMap = file.get_dimensions_map();
@@ -381,7 +383,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
           write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
           m_extra_file_is_ready = true;
           write_run_stats(file);
-          file.file_calendar(-1.0, m_time->calendar());
+          file.set_calendar(-1.0, m_time->calendar());
           save_variables(file,
                          m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                          m_extra_vars,
@@ -426,7 +428,7 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
       write_run_stats(file);
-      file.file_calendar(-1.0, m_time->calendar());
+      file.set_calendar(-1.0, m_time->calendar());
       save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                      0, PISM_FLOAT, false);
       if (file.backend() == PISM_CDI) {
