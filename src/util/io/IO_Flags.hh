@@ -56,6 +56,9 @@ enum IO_Mode {
   PISM_READWRITE_MOVE    = 10
 };
 
+// Axis types
+enum AxisType {UNKNOWN_AXIS = 0, X_AXIS = 1, Y_AXIS = 2, Z_AXIS = 3, T_AXIS = 4};
+
 // This is the special value corresponding to the "unlimited" dimension length.
 // Gets cast to "int", so it should match the value used by NetCDF.
 enum Dim_Length {

@@ -192,7 +192,7 @@ File::File(MPI_Comm com,
            IO_Mode mode,
            int iosysid,
            int FileID,
-           const std::map<std::string, int> &dimsa,
+           const std::map<std::string, AxisType> &dimsa,
            int filetype)
   : m_impl(new Impl) {
 
@@ -275,7 +275,7 @@ void File::set_compression_level(int level) const {
 void File::open(const std::string &filename,
                 IO_Mode mode,
                 int FileID,
-                const std::map<std::string, int> &dimsa,
+                const std::map<std::string, AxisType> &dimsa,
                 int filetype) {
   try {
 
@@ -595,7 +595,7 @@ AxisType File::dimension_type(const std::string &name,
   return UNKNOWN_AXIS;          // LCOV_EXCL_LINE
 }
 
-void File::define_dimension(const std::string &name, size_t length, int dim) const {
+void File::define_dimension(const std::string &name, size_t length, AxisType dim) const {
   try {
     m_impl->nc->def_dim(name, length, dim);
   } catch (RuntimeError &e) {
@@ -890,7 +890,7 @@ std::map<std::string, int> File::get_variables_map() const {
   return m_impl->nc->get_var_map();
 }
 
-std::map<std::string, int> File::get_dimensions_map() const {
+std::map<std::string, AxisType> File::get_dimensions_map() const {
   return m_impl->nc->get_dim_map();
 }
 

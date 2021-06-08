@@ -39,7 +39,7 @@ protected:
   void open_impl(const std::string &filename,
                  IO_Mode mode,
                  int FileID = -1,
-                 const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+                 const std::map<std::string, AxisType> &dimsa = {});
 
   void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
 
@@ -53,7 +53,7 @@ protected:
   void redef_impl() const;
 
   // dim
-  void def_dim_impl(const std::string &name, size_t length, int dim) const;
+  void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 

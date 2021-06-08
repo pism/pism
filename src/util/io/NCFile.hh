@@ -66,7 +66,7 @@ public:
   void open(const std::string &filename,
             IO_Mode mode,
             int FileID = -1,
-            const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+            const std::map<std::string, AxisType> &dimsa = {});
 
   void create(const std::string &filename, int FileID = -1, int filetype = 0);
 
@@ -80,7 +80,7 @@ public:
   void redef() const;
 
   // dim
-  void def_dim(const std::string &name, size_t length, int dim) const;
+  void def_dim(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid(const std::string &dimension_name, bool &exists) const;
 
@@ -157,7 +157,7 @@ public:
   void define_timestep(int tsID) const;
   void def_ref_date(double time) const;
   std::map<std::string, int> get_var_map();
-  std::map<std::string, int> get_dim_map();
+  std::map<std::string, AxisType> get_dim_map();
   void def_vlist() const;
   void set_diagvars(const std::set<std::string> &variables) const;
   void set_bdiag(bool value) const;
@@ -172,8 +172,9 @@ protected:
   virtual void open_impl(const std::string &filename,
                          IO_Mode mode,
                          int FileID = -1,
-                         const std::map<std::string, int> &dimsa = std::map<std::string, int>()) = 0;
-  virtual void create_impl(const std::string &filename, int FileID = -1, int filetype=0) = 0;
+                         const std::map<std::string, AxisType> &dimsa = {}) = 0;
+  virtual void create_impl(const std::string &filename, int FileID = -1,
+                           int filetype=0) = 0;
   virtual void sync_impl() const = 0;
   virtual void close_impl() = 0;
 
@@ -183,7 +184,7 @@ protected:
   virtual void redef_impl() const = 0;
 
   // dim
-  virtual void def_dim_impl(const std::string &name, size_t length, int dim) const = 0;
+  virtual void def_dim_impl(const std::string &name, size_t length, AxisType dim) const = 0;
 
   virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
 
@@ -255,7 +256,7 @@ protected:
   virtual void define_timestep_impl(int tsID) const;
   virtual void def_ref_date_impl(double time) const;
   virtual std::map<std::string, int> get_var_map_impl();
-  virtual std::map<std::string, int> get_dim_map_impl();
+  virtual std::map<std::string, AxisType> get_dim_map_impl();
   virtual void def_vlist_impl() const;
   virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
   virtual void set_bdiag_impl(bool value) const;

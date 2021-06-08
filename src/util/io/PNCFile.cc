@@ -48,7 +48,7 @@ static void check(const ErrorLocation &where, int return_code) {
 void PNCFile::open_impl(const std::string &fname,
                         IO_Mode mode,
                         int FileID,
-                        const std::map<std::string, int> &dimsa) {
+                        const std::map<std::string, AxisType> &dimsa) {
   (void) FileID;
   (void) dimsa;
 
@@ -100,7 +100,7 @@ void PNCFile::redef_impl() const {
 }
 
 
-void PNCFile::def_dim_impl(const std::string &name, size_t length, int dim) const {
+void PNCFile::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
   (void) dim;
 
   int dimid = 0, stat;

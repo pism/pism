@@ -30,8 +30,6 @@
 
 namespace pism {
 
-enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
-
 class IceGrid;
 
 /*!
@@ -58,7 +56,7 @@ public:
        IO_Mode mode,
        int iosysid = -1,
        int FileID = -1,
-       const std::map<std::string, int> &dimsa = std::map<std::string, int>(),
+       const std::map<std::string, AxisType> &dimsa = {},
        int filetype = 0);
   ~File();
 
@@ -93,7 +91,8 @@ public:
 
   // dimensions
 
-  void define_dimension(const std::string &name, size_t length, int dim = -1) const;
+  void define_dimension(const std::string &name, size_t length,
+                        AxisType dim = UNKNOWN_AXIS) const;
 
   unsigned int dimension_length(const std::string &name) const;
 
@@ -165,7 +164,7 @@ public:
   void new_timestep(int tsID) const;
   void reference_date(double time) const;
   std::map<std::string, int> get_variables_map() const;
-  std::map<std::string, int> get_dimensions_map() const;
+  std::map<std::string, AxisType> get_dimensions_map() const;
   void define_vlist() const;
   void send_diagnostics(const std::set<std::string> &variables) const;
   void set_beforediag(bool value) const;
@@ -183,7 +182,7 @@ private:
   void open(const std::string &filename,
             IO_Mode mode,
             int FileID = -1,
-            const std::map<std::string, int> &dimsa = std::map<std::string, int>(), 
+            const std::map<std::string, AxisType> &dimsa = {},
 	    int filetype = 0);
 
   // disable copying and assignments

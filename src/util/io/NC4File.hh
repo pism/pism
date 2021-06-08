@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ protected:
   virtual void redef_impl() const;
 
   // dim
-  virtual void def_dim_impl(const std::string &name, size_t length, int dim) const;
+  virtual void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
 
   virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 

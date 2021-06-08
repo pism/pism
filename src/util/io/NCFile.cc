@@ -65,7 +65,7 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 void NCFile::open(const std::string &filename,
                   IO_Mode mode,
                   int FileID,
-                  const std::map<std::string, int> &dimsa) {
+                  const std::map<std::string, AxisType> &dimsa) {
   this->open_impl(filename,
                   mode,
                   FileID,
@@ -105,7 +105,7 @@ void NCFile::redef() const {
   }
 }
 
-void NCFile::def_dim(const std::string &name, size_t length, int dim) const {
+void NCFile::def_dim(const std::string &name, size_t length, AxisType dim) const {
   redef();
   this->def_dim_impl(name, length, dim);
 }
@@ -315,18 +315,16 @@ std::map<std::string, int> NCFile::get_var_map() {
   return this->get_var_map_impl();
 }
 
-std::map<std::string, int> NCFile::get_dim_map() {
+std::map<std::string, AxisType> NCFile::get_dim_map() {
   return this->get_dim_map_impl();
 }
 
 std::map<std::string, int> NCFile::get_var_map_impl() {
-  std::map<std::string, int> emptymap;
-  return emptymap;
+  return {};
 }
 
-std::map<std::string, int> NCFile::get_dim_map_impl() {
-  std::map<std::string, int> emptymap;
-  return emptymap;
+std::map<std::string, AxisType> NCFile::get_dim_map_impl() {
+  return {};
 }
 
 void NCFile::def_vlist() const {

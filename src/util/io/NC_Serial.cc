@@ -76,7 +76,7 @@ void NC_Serial::set_compression_level_impl(int level) const {
 void NC_Serial::open_impl(const std::string &fname,
                         IO_Mode mode,
                         int FileID,
-                        const std::map<std::string, int> &dimsa) {
+                        const std::map<std::string, AxisType> &dimsa) {
   (void) FileID;
   (void) dimsa;
 
@@ -176,7 +176,7 @@ void NC_Serial::redef_impl() const {
 
 
 //! \brief Define a dimension.
-void NC_Serial::def_dim_impl(const std::string &name, size_t length, int dim) const {
+void NC_Serial::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
   (void) dim;
 
   int stat = NC_NOERR;

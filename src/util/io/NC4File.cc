@@ -71,7 +71,7 @@ void NC4File::redef_impl() const {
 }
 
 // dim
-void NC4File::def_dim_impl(const std::string &name, size_t length, int dim) const {
+void NC4File::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
   (void) dim;
 
   int dimid = 0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ protected:
   void open_impl(const std::string &filename,
                  IO_Mode mode,
                  int FileID = -1,
-                 const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+                 const std::map<std::string, int> &dimsa = {});
   void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
   void sync_impl() const;
   void close_impl();

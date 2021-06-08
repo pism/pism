@@ -67,7 +67,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                             const double *input);
 
 void define_dimension(const File &nc, unsigned long int length,
-                      const VariableMetadata &metadata, int dim = -1);
+                      const VariableMetadata &metadata, AxisType dim = UNKNOWN_AXIS);
 
 void define_time(const File &file, const Context &ctx);
 

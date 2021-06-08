@@ -30,8 +30,8 @@ public:
 
 protected:
   void open_impl(const std::string &filename, IO_Mode mode,
-                 //const std::map<std::string, int> &varsi = std::map<std::string, int>(),
-                 int FileID = -1, const std::map<std::string, int> &dimsa = std::map<std::string, int>());
+                 int FileID = -1,
+                 const std::map<std::string, AxisType> &dimsa = {});
 
   void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
 
@@ -45,7 +45,7 @@ protected:
   void redef_impl() const;
 
   // dim
-  void def_dim_impl(const std::string &name, size_t length, int dim) const;
+  void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 
@@ -104,7 +104,7 @@ protected:
   void define_timestep_impl(int tsID) const;
   void def_ref_date_impl(double time) const;
   std::map<std::string, int> get_var_map_impl();
-  std::map<std::string, int> get_dim_map_impl();
+  std::map<std::string, AxisType> get_dim_map_impl();
   void def_vlist_impl() const;
   void set_diagvars_impl(const std::set<std::string> &variables) const;
   void set_bdiag_impl(bool value) const;
@@ -118,7 +118,7 @@ private:
   mutable int m_tID;
   mutable int m_vlistID;
   mutable std::map<std::string, int> m_varsID;
-  mutable std::map<std::string, int> m_dimsAxis;
+  mutable std::map<std::string, AxisType> m_dimsAxis;
   mutable std::map<std::string, int> m_zID;
   mutable std::set<std::string> m_diagvars;
 
@@ -144,6 +144,8 @@ private:
   void def_vlist() const;
   void def_zs() const;
 
+  int var_id(const std::string &name) const;
+
   // inquire current timestep helper
   int inq_current_timestep() const;
 
@@ -154,18 +156,6 @@ private:
 
   // inquire attribute helper
   void inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *attlen) const;
-
-  // put attribute text wrappers
-  void put_att_text_units_x_impl(const std::string &variable_name, const std::string &value) const;
-  void put_att_text_longname_x_impl(const std::string &variable_name, const std::string &value) const;
-  void put_att_text_units_y_impl(const std::string &variable_name, const std::string &value) const;
-  void put_att_text_longname_y_impl(const std::string &variable_name, const std::string &value) const;
-  void put_att_text_units_z_impl(const std::string &variable_name, const std::string &value) const;
-  void put_att_text_longname_z_impl(const std::string &variable_name, const std::string &value) const;
-  void wrapup_put_att_text() const;
-  typedef void (CDI::*pPutAttT)(const std::string &, const std::string &) const;
-  mutable std::vector<std::vector<pPutAttT> > pvcPutAttT;
-  mutable std::map<std::string, int> m_DimAtt;
 
   // define variable wrappers
   void def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
