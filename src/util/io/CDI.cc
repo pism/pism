@@ -252,16 +252,11 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
     result = zaxisInqSize(m_zID[dimension_name]);
     break;
   case T_AXIS:
-    result = inq_current_timestep() + 1;
+    result = streamInqCurTimestepID(m_file_id) + 1 + 1;
     break;
   default:
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid dim == %d", dim);
   }
-}
-
-// inquire current timestep
-int CDI::inq_current_timestep() const {
-  return streamInqCurTimestepID(m_file_id) + 1;
 }
 
 // inquire time dimension name

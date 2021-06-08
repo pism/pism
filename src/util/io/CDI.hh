@@ -146,9 +146,6 @@ private:
 
   int var_id(const std::string &name) const;
 
-  // inquire current timestep helper
-  int inq_current_timestep() const;
-
   // calendar conversion
   double year_calendar(double time) const;
   long int day_calendar(double nyearsf) const;
