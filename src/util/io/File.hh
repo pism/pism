@@ -177,8 +177,6 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
-  mutable std::map<std::string, bool> m_dim_written;
-  mutable bool m_split;
   void open(const std::string &filename,
             IO_Mode mode,
             int FileID = -1,

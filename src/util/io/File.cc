@@ -60,6 +60,8 @@ struct File::Impl {
   MPI_Comm com;
   IO_Backend backend;
   io::NCFile::Ptr nc;
+  std::map<std::string, bool> dim_written;
+  bool split;
 };
 
 IO_Backend string_to_backend(const std::string &backend) {
@@ -238,26 +240,26 @@ int File::get_vlistID() const {
 }
 
 bool File::is_split() const {
-  return m_split;
+  return m_impl->split;
 }
 
 void File::set_split(bool split) const {
-  m_split = split;
+  m_impl->split = split;
 }
 
 void File::reset_dimension_written() const {
-  m_dim_written["x"]  = false;
-  m_dim_written["y"]  = false;
-  m_dim_written["zb"] = false;
-  m_dim_written["z"]  = false;
+  m_impl->dim_written["x"]  = false;
+  m_impl->dim_written["y"]  = false;
+  m_impl->dim_written["zb"] = false;
+  m_impl->dim_written["z"]  = false;
 }
 
 bool File::get_dimension_written(const std::string &name) const {
-  return m_dim_written[name];
+  return m_impl->dim_written[name];
 }
 
 void File::set_dimension_written(const std::string &name) const {
-  m_dim_written[name] = true;
+  m_impl->dim_written[name] = true;
 }
 
 MPI_Comm File::com() const {
