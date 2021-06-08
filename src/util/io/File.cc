@@ -245,19 +245,19 @@ void File::set_split(bool split) const {
   m_split = split;
 }
 
-void File::set_dimatt() const {
-  m_dimatt[std::string("x")] = std::string("not written");
-  m_dimatt[std::string("y")] = std::string("not written");
-  m_dimatt[std::string("zb")] = std::string("not written");
-  m_dimatt[std::string("z")] = std::string("not written");
+void File::reset_dimension_written() const {
+  m_dim_written["x"]  = false;
+  m_dim_written["y"]  = false;
+  m_dim_written["zb"] = false;
+  m_dim_written["z"]  = false;
 }
 
-std::string File::get_dimatt_value(std::string &dim_name) const {
-  return m_dimatt[dim_name];
+bool File::get_dimension_written(const std::string &name) const {
+  return m_dim_written[name];
 }
 
-void File::set_dimatt_value(std::string &dim_name, std::string &dimatt_value) const {
-  m_dimatt[dim_name] = dimatt_value;
+void File::set_dimension_written(const std::string &name) const {
+  m_dim_written[name] = true;
 }
 
 MPI_Comm File::com() const {

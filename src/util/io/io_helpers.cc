@@ -327,18 +327,9 @@ static void define_dimensions(const SpatialVariableMetadata& var,
 
 static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
-  bool written;
-  std::string nname = name;
-  std::string value = file.get_dimatt_value(nname);
-  std::string svalue = "written";
-  if (value.compare("written")==0) {
-    written = true;
-  } else {
-    written = false;
-  }
-  if (not written) {
+  if (not file.get_dimension_written(name)) {
     file.write_variable(name, {0}, {(unsigned int)data.size()}, data.data());
-    file.set_dimatt_value(nname, svalue);
+    file.set_dimension_written(name);
   }
 }
 

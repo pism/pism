@@ -64,11 +64,11 @@ public:
 
   MPI_Comm com() const;
 
-  void set_dimatt() const;
+  void reset_dimension_written() const;
 
-  std::string get_dimatt_value(std::string &dim_name) const; 
+  bool get_dimension_written(const std::string &name) const;
 
-  void set_dimatt_value(std::string &dim_name, std::string &dimatt_value) const; 
+  void set_dimension_written(const std::string &name) const;
 
   void close();
 
@@ -177,7 +177,7 @@ public:
 private:
   struct Impl;
   Impl *m_impl;
-  mutable std::map<std::string, std::string> m_dimatt;
+  mutable std::map<std::string, bool> m_dim_written;
   mutable bool m_split;
   void open(const std::string &filename,
             IO_Mode mode,

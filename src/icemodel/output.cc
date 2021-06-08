@@ -268,7 +268,7 @@ void IceModel::save_variables(const File &file,
   }
 
   io::append_time(file, *m_config, time);
-  file.set_dimatt();
+  file.reset_dimension_written();
   file.send_diagnostics(variables);
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
