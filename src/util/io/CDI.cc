@@ -191,6 +191,8 @@ void CDI::set_calendar_impl(double year_length, const std::string &calendar_stri
     m_days_year    = 360;
     m_cdi_calendar = CALENDAR_360DAYS;
   } else {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unsupported calendar: %s",
+                                  calendar_string.c_str());
   }
   m_calendar_string = calendar_string;
 }
