@@ -197,54 +197,56 @@ performance.
 CDI-PIO
 ~~~~~~~
 
-The CDI-PIO library uses a part of the allocated resources to aggregate the data and write
-the output files. To write the output files asynchronously set:
+The CDI-PIO library uses a subset of allocated MPI processes to aggregate data and write
+output files. To write output files asynchronously set:
 
-- :config:`output.cdi_pio.async` flag to use asynchronous writing
-- :config:`output.cdi_pio.n_writers` number of "writers"
+- :config:`output.cdi_pio.async` to use asynchronous writing,
+- :config:`output.cdi_pio.n_writers` to specify the number of "writers".
 
-CDI-PIO supports different NetCDF file formats. The default is NC2 and it should work fine
-for the majority of cases but when the file dimension becomes too large, it is possible to
-set other file formats:
+CDI-PIO supports several NetCDF file formats. The default value (``NC2``) corresponds to
+the choice that gave the best performance in our experiments, but you may need to switch
+to a different format using :config:`output.cdi_pio.filetype` if grid dimensions are too
+large. See NetCDF documentation on Large-Files_ for details.
 
-- :config:`output.cdi_pio.filetype` NetCDF file format
+CDI-PIO also supports different writing modes which can be set using
+:config:`output.cdi_pio.mode`.
 
-.. note::
+CDI is designed for climate data and is less flexible than the NetCDF library. The
+limitations and differences with standard output data in PISM are listed below.
 
-   NC2 gives the best performance so it should be used whenever possible, for further details
-   see NetCDF documentation on Large-Files_
+- Coordinate variables ``x`` and ``y`` are stored as ``float``.
 
-CDI-PIO supports also different writing modes and they can be set with the parameter:
+- Dimensions attributes are limited and can not be added freely.
 
-- :config:`output.cdi_pio.mode`
+- Integer variables writing is not supported (``integer`` variables are written as
+  ``float``).
 
-The default parameter is the one which was giving best performance in our experiments.
+- The ``time`` dimension is written in the format ``YYMMDD.%f``, where ``%f`` represents a
+  fraction of the day.
 
-CDI library is specifically implemented for Climate Data, thus it has less flexibility than 
-NetCDF or PNetCDF libraries. The limitations and differences with standard output data in PISM 
-are listed as follows:
+- The ``julian`` calendar (see :config:`time.calendar`) is not supported.
 
- - ``x`` and ``y`` dimensions are ``float``.
- - Dimensions attributes are limited and can not be added freely, thus they may not be identical 
-   to the original output files.
- - Integer variables writing is not supported, thus the ``integer`` variables are written as ``float``.
- - The ``time`` dimension is written in the format ``YYMMDD.%f``, where ``%f`` represents a 
-   fraction of the day. In addition, the ``julian`` calendar is not supported.
+- CDI cannot write correct ``standard_name`` attributes for ``x`` and ``y`` coordinate
+  variables.
 
-Since the output files written with CDI-PIO are slightly different, a parameter can be 
-define to specify if the restart file was written with CDI-PIO
+Re-starting PISM from a file written using CDI
+==============================================
 
-- :config:`input.cdi_pio` flag which specifies if the restart file was written with CDI-PIO
+Some metadata in files produced using CDI are incorrect, so we have to pre-process a file
+before re-starting PISM from it.
 
-This helps to convert the time written by CDI-PIO in seconds.
-Finally, due to the second limitation mentioned previously, a couple of attributes of the restart 
-file should be modified before starting a new run. This can be done with
+#. Use ``ncatted`` from NCO_ to adjust metadata:
 
-.. code-block:: bash
+   .. code-block:: bash
 
-   ncatted -a units,time,o,c,"seconds since 1-1-1" -a standard_name,x,o,c,"x" -a standard_name,y,o,c,"y" ${restart_file}
+      ncatted -a units,time,o,c,"seconds since 1-1-1" \
+              -a standard_name,x,o,c,"x" \
+              -a standard_name,y,o,c,"y" pism-output.nc input.nc
 
-The advantage of CDI-PIO is not limited to the simulation runtime but also to the post-processing
-phase. Since the library does not allow to write a variable with an arbitrary order of dimensions, the 
-variables are written in the most convenient order ``time,z,y,x`` and there is no need for transposition 
-in the post-processing phase.
+#. Set :config:`input.cdi_pio` to re-start PISM from a file written using CDI-PIO:
+
+   .. code-block:: bash
+
+      pismr -i input.nc -input.cdi_pio ...
+
+   This tells PISM to convert time written by CDI-PIO to seconds since a reference date.

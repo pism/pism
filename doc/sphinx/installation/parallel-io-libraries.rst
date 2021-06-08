@@ -107,7 +107,7 @@ PISM's CDI-PIO support requires the following libraries
 - CDI-PIO_ version ``cdipio-dev-snapshot-20210223``
 
 CDI-PIO does not support the current version of NetCDF yet so it is recommended to install
-the library versions listed above.
+library versions listed above.
 
 .. note::
 
