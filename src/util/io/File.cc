@@ -98,7 +98,8 @@ static std::string backend_to_string(IO_Backend backend) {
      {PISM_PIO_NETCDF4C, "pio_netcdf4c"},
      {PISM_PIO_NETCDF4P, "pio_netcdf4p"},
      {PISM_PIO_PNETCDF, "pio_pnetcdf"},
-     {PISM_PNETCDF, "pnetcdf"}
+     {PISM_PNETCDF, "pnetcdf"},
+     {PISM_CDI, "cdi"}
   };
 
   return backends[backend];
