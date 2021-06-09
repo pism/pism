@@ -79,7 +79,7 @@ is
 
    M_{z}^0 &= M_z,
 
-   M_{z}^k &= (M_{k-1} - 1)\, /\, C + 1.
+   M_{z}^k &= (M_{z}^{k-1} - 1)\, /\, C + 1.
 
 This process explains the compatibility condition :eq:`eq-bp-vertical-grid-size`: the
 number of **spaces** in all vertical grids in the hierarchy *except for the coarsest one*

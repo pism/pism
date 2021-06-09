@@ -88,7 +88,7 @@ the desired number <span class="math notranslate nohighlight">\(N\)</span> of gr
 <p>Overall, the number of points <span class="math notranslate nohighlight">\(M_{z}^k\)</span> in the vertical grid number <span class="math notranslate nohighlight">\(k\)</span> in the hierarchy
 is</p>
 <div class="math notranslate nohighlight">
-\[ \begin{align}\begin{aligned}M_{z}^0 &amp;= M_z,\\M_{z}^k &amp;= (M_{k-1} - 1)\, /\, C + 1.\end{aligned}\end{align} \]</div>
+\[ \begin{align}\begin{aligned}M_{z}^0 &amp;= M_z,\\M_{z}^k &amp;= (M_{z}^{k-1} - 1)\, /\, C + 1.\end{aligned}\end{align} \]</div>
 <p>This process explains the compatibility condition <a class="reference internal" href="#equation-eq-bp-vertical-grid-size">(6)</a>: the
 number of <strong>spaces</strong> in all vertical grids in the hierarchy <em>except for the coarsest one</em>
 has to be divisible by <span class="math notranslate nohighlight">\(C\)</span>.</p>
@@ -399,9 +399,9 @@ uniform spacing in <span class="math notranslate nohighlight">\(x\)</span> and <
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2403-g3073fba61
+      Git revision v1.0-2405-g6d55a95d2
       committed by Constantine Khrulev
-      on 2021-06-03 09:00:43 -0800 |
+      on 2021-06-07 14:56:32 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
