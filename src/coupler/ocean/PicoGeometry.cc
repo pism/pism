@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,6 @@
  */
 
 #include <algorithm> // max_element
-
 #include "PicoGeometry.hh"
 #include "pism/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -139,6 +138,7 @@ static void relabel(RelabelingType type,
   }
 
   std::vector<double> area(max_index + 1, 0.0);
+  std::vector<double> area1(max_index + 1, 0.0);
   {
 
     ParallelSection loop(grid->com);
@@ -161,9 +161,13 @@ static void relabel(RelabelingType type,
       loop.failed();
     }
     loop.check();
+    GlobalSum(grid->com, area.data(), area1.data(), area.size());
+
+    // copy data
+    area = area1;
 
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = grid->cell_area() * GlobalSum(grid->com, area[k]);
+      area[k] = grid->cell_area() * area[k];
     }
   }
 
@@ -623,7 +627,9 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   int n_shelves = shelf_mask.range().max + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
+  std::vector<double> GL_distance_max1(n_shelves, 0.0);
   std::vector<double> CF_distance_max(n_shelves, 0.0);
+  std::vector<double> CF_distance_max1(n_shelves, 0.0);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -647,10 +653,11 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   }
 
   // compute global maximums
-  for (int k = 0; k < n_shelves; ++k) {
-    GL_distance_max[k] = GlobalMax(m_grid->com, GL_distance_max[k]);
-    CF_distance_max[k] = GlobalMax(m_grid->com, CF_distance_max[k]);
-  }
+  GlobalMax(m_grid->com, GL_distance_max.data(), GL_distance_max1.data(), n_shelves);
+  GlobalMax(m_grid->com, CF_distance_max.data(), CF_distance_max1.data(), n_shelves);
+  // copy data
+  GL_distance_max = GL_distance_max1;
+  CF_distance_max = CF_distance_max1;
 
   double GL_distance_ref = *std::max_element(GL_distance_max.begin(), GL_distance_max.end());
 
