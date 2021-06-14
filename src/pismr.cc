@@ -36,10 +36,6 @@ static char help[] =
 #include "pism/regional/IceGrid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
-#if (Pism_USE_CDIPIO==1)
-#include "pism/util/cdipio/CDIPIOInitializer.hh"
-#endif
-
 using namespace pism;
 
 int main(int argc, char *argv[]) {

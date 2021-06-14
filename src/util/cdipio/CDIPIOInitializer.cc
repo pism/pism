@@ -2,11 +2,6 @@
 
 #include <mpi.h>
 
-extern "C" {
-#include "cdi.h"
-#include "cdipio.h"
-}
-
 namespace pism {
 namespace cdipio {
 

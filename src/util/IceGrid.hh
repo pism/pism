@@ -28,11 +28,7 @@
 
 #include "pism/pism_config.hh"
 
-#if (Pism_USE_CDIPIO==1)
-extern "C" {
-#include "yaxt.h"               // Xt_idxlist
-}
-#endif
+#include "pism/util/cdipio/CDIPIOInitializer.hh"
 
 namespace pism {
 

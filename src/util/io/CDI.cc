@@ -33,11 +33,6 @@
 
 #include "pism/external/calcalcs/calcalcs.h"
 
-extern "C" {
-#include "cdi.h"
-#include "cdipio.h"
-}
-
 namespace pism {
 namespace io {
 
