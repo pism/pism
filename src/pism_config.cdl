@@ -1905,10 +1905,6 @@ netcdf pism_config {
     pism_config:output.backup_size_option = "backup_size";
     pism_config:output.backup_size_type = "keyword";
 
-    pism_config:output.cdi_pio.async = "no";
-    pism_config:output.cdi_pio.async_doc = "Specifies whether CDI-PIO should use asynchronous I/O";
-    pism_config:output.cdi_pio.async_type = "flag";
-
     pism_config:output.cdi_pio.filetype = 4;
     pism_config:output.cdi_pio.filetype_doc = "Filetype to use for asynchronous I/O";
     pism_config:output.cdi_pio.filetype_type = "integer";
@@ -1919,7 +1915,7 @@ netcdf pism_config {
     pism_config:output.cdi_pio.mode_type = "integer";
     pism_config:output.cdi_pio.mode_units = "count";
 
-    pism_config:output.cdi_pio.n_writers = 1;
+    pism_config:output.cdi_pio.n_writers = 0;
     pism_config:output.cdi_pio.n_writers_doc = "Number of I/O tasks to use for asynchronous writing";
     pism_config:output.cdi_pio.n_writers_type = "integer";
     pism_config:output.cdi_pio.n_writers_units = "count";

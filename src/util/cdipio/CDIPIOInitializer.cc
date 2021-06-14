@@ -5,9 +5,15 @@
 namespace pism {
 namespace cdipio {
 
-Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async)
-  : m_async(async) {
-
+Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob) {
+  // check if CDIPIO is used
+  if (n_writers > 0) {
+    m_async = true;
+  } else {
+    m_async = false;
+  }
+  
+  // initialize CDIPIO library
   if (m_async) {
     xt_initialize(glob);
     float partInflate = 1.0;
@@ -20,6 +26,7 @@ Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async)
 }
 
 Initializer::~Initializer() {
+  // finalize CDIPIO and YAXT libraries
   if (m_async) {
     pioFinalize();
     xt_finalize();

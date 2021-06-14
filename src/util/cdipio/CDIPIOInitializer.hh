@@ -30,7 +30,7 @@ namespace cdipio {
 
 class Initializer {
 public:
-  Initializer(int n_writers, int IOmode, MPI_Comm glob, bool async);
+  Initializer(int n_writers, int IOmode, MPI_Comm glob);
   ~Initializer();
   MPI_Comm comp_comm();
   int pio_namespace();

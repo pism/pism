@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
 #if (Pism_USE_CDIPIO==1)
     MPI_Comm world = MPI_COMM_WORLD;
     int cdipio_nwriters, cdipio_io_mode;
-    bool cdipio_async;
     {
       // Initialize PETSc on MPI_COMM_WORLD to be able to use PetscOptionsXXX in the code
       // below. Will be finalized at the end of this code block.
@@ -59,10 +58,9 @@ int main(int argc, char *argv[]) {
 
       cdipio_nwriters = config->get_number("output.cdi_pio.n_writers");
       cdipio_io_mode  = config->get_number("output.cdi_pio.mode");
-      cdipio_async    = config->get_flag("output.cdi_pio.async");
     }
     std::unique_ptr<cdipio::Initializer> cdipio;
-    cdipio.reset(new cdipio::Initializer(cdipio_nwriters, cdipio_io_mode, world, cdipio_async));
+    cdipio.reset(new cdipio::Initializer(cdipio_nwriters, cdipio_io_mode, world));
     com = cdipio->comp_comm();
     if (com == MPI_COMM_NULL) {
       // com is null if this process is a part of the I/O sub-communicator
