@@ -605,11 +605,6 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
     write_dimensions(var, grid, file);
   }
 
-  if (var.get_time_independent()) {
-    // mark this variable as "not written" so that write_spatial_variable can avoid
-    // writing it more than once.
-    var.set_written(false);
-  }
 }
 
 //! Read a variable from a file into an array `output`.
@@ -734,13 +729,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (var.get_time_independent() && !file.is_split()) {
-    bool written = var.get_written();
-    if (written) {
-      return;
-    } else {
-      var.set_written(true);
-    }
+  if (var.get_time_independent()) {
+    bool written = file.is_var_written(name);
+    if (written) return;
   }
 
   // make sure we have at least one level

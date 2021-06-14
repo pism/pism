@@ -170,9 +170,8 @@ public:
   void set_beforediag(bool value) const;
   int get_streamID() const;
   int get_vlistID() const;
-  bool is_split() const;
-  void set_split(bool split) const;
   void set_calendar(double year_length, const std::string &calendar_string) const;
+  bool is_var_written(const std::string &name) const;
 
 private:
   struct Impl;

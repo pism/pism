@@ -143,7 +143,6 @@ void IceModel::save_results() {
               m_ctx->pio_iosys_id(),
               fileID,
               m_DimOutMap);
-    file.set_split(false);
     profiling.end("io.open");
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

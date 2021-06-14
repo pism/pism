@@ -166,11 +166,7 @@ void IceModel::write_snapshot() {
               m_ctx->pio_iosys_id(),
               fileID,
               m_DimSnapMap);
-    if (m_split_snapshots) {
-	file.set_split(true);
-    } else {
-	file.set_split(false);
-    }
+
     if (not m_snapshots_file_is_ready) {
       write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 

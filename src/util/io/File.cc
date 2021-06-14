@@ -61,7 +61,7 @@ struct File::Impl {
   IO_Backend backend;
   io::NCFile::Ptr nc;
   std::map<std::string, bool> dim_written;
-  bool split;
+  std::vector<std::string> ivars;
 };
 
 IO_Backend string_to_backend(const std::string &backend) {
@@ -240,14 +240,6 @@ int File::get_vlistID() const {
   return m_impl->nc->get_ncvlistID();
 }
 
-bool File::is_split() const {
-  return m_impl->split;
-}
-
-void File::set_split(bool split) const {
-  m_impl->split = split;
-}
-
 void File::reset_dimension_written() const {
   m_impl->dim_written["x"]  = false;
   m_impl->dim_written["y"]  = false;
@@ -261,6 +253,17 @@ bool File::get_dimension_written(const std::string &name) const {
 
 void File::set_dimension_written(const std::string &name) const {
   m_impl->dim_written[name] = true;
+}
+
+bool File::is_var_written(const std::string &name) const {
+  bool w;
+  if(std::find(m_impl->ivars.begin(), m_impl->ivars.end(), name) != m_impl->ivars.end()) {
+    w = true;
+  } else {
+    w = false;
+    m_impl->ivars.push_back(name);
+  }
+  return w;
 }
 
 MPI_Comm File::com() const {

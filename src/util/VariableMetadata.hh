@@ -80,8 +80,6 @@ public:
 
   void set_time_independent(bool flag);
   void set_output_type(IO_Type type);
-  void set_written(bool flag) const;
-  bool get_written() const;
 
   void clear_all_doubles();
   void clear_all_strings();
