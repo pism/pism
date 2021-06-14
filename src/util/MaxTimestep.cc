@@ -32,14 +32,14 @@ MaxTimestep::MaxTimestep(double v)
   // empty
 }
 
-MaxTimestep::MaxTimestep(const std::string &new_description)
-  : m_finite(false), m_value(0.0), m_description(new_description) {
-  // empty
+MaxTimestep::MaxTimestep(const std::string &description)
+  : MaxTimestep() {
+  m_description = description;
 }
 
-MaxTimestep::MaxTimestep(double v, const std::string &new_description)
-  : m_finite(true), m_value(v), m_description(new_description) {
-  // empty
+MaxTimestep::MaxTimestep(double v, const std::string &description)
+  : MaxTimestep(v) {
+  m_description = description;
 }
 
 bool MaxTimestep::finite() const {
