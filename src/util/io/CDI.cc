@@ -376,10 +376,10 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
   for (int j = 0; j < ndims; ++j)
     idxlen *= count[j];
   idx = (Xt_int *)malloc(idxlen * sizeof(Xt_int));
-  // FIXME: possible memory leak (who's responsible for calling free()?)
   for (int j = 0; j < idxlen; j++)
     idx[j] = j;
   Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
+  free(idx);
   int varid         = m_varsID[variable_name];
   size_t nmiss      = 0;
   streamWriteVarPart(m_file_id, varid, op, nmiss, decomp);

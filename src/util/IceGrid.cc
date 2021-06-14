@@ -1509,6 +1509,7 @@ Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
     }
 
     Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
+    free(idx);
     m_impl->yaxt_decompositions[dof] = decomp;
     return m_impl->yaxt_decompositions[dof];
   } else {
