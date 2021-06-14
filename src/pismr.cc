@@ -65,17 +65,21 @@ int main(int argc, char *argv[]) {
       cdipio_io_mode  = config->get_number("output.cdi_pio.mode");
       cdipio_async    = config->get_flag("output.cdi_pio.async");
     }
-    cdipio::Initializer cdipio(cdipio_nwriters, cdipio_io_mode, world, cdipio_async);
-    com = cdipio.comp_comm();
+    std::unique_ptr<cdipio::Initializer> cdipio;
+    cdipio.reset(new cdipio::Initializer(cdipio_nwriters, cdipio_io_mode, world, cdipio_async));
+    com = cdipio->comp_comm();
     if (com == MPI_COMM_NULL) {
       // com is null if this process is a part of the I/O sub-communicator
-      // YAXT and CDI-PIO may get finalized here
+      // YAXT and CDI-PIO are finalized here
+      cdipio.reset(nullptr);
+      MPI_Finalize();
       return 0;
     }
-    cdipio.activate_namespace();
+    cdipio->activate_namespace();
 #endif
     PETSC_COMM_WORLD = com;
-    petsc::Initializer petsc(argc, argv, help);
+    std::unique_ptr<petsc::Initializer> petsc;
+    petsc.reset(new petsc::Initializer(argc, argv, help));
     try {
       auto ctx = context_from_options(com, "pismr");
       auto log = ctx->log();
@@ -149,6 +153,8 @@ int main(int argc, char *argv[]) {
       handle_fatal_errors(com);
       return 1;
     }
+    petsc.reset(nullptr);
+    cdipio.reset(nullptr);
     // PETSc is finalized at the end of scope.
     // YAXT and CDI-PIO are finalized at the end of the scope.
   }
