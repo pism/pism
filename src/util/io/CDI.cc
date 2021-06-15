@@ -25,12 +25,10 @@
 #include <string.h>
 
 #include "CDI.hh"
-
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/pism_cdi_type_conversion.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
-
 #include "pism/external/calcalcs/calcalcs.h"
 
 namespace pism {
@@ -103,7 +101,9 @@ void CDI::close_impl() {
 
 void CDI::def_vlist() const {
   if (m_vlistID == -1) {
+    // create variable list
     m_vlistID = vlistCreate();
+    // create dummy grid to handle scalar values
     m_gridsID = gridCreate(GRID_LONLAT, 1);
     gridDefXsize(m_gridsID, 1);
     gridDefXname(m_gridsID, "x_dummy");
@@ -113,6 +113,7 @@ void CDI::def_vlist() const {
 }
 
 void CDI::def_zs() const {
+  // create surface Z axis (only if it was not done before)
   if (m_zsID == -1) {
     m_zsID      = zaxisCreate(ZAXIS_SURFACE, 1);
     m_zID["zs"] = m_zsID;
@@ -159,6 +160,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
     }
   default:
     {
+      // define grid for 1D data
       m_gridgID = gridCreate(GRID_LONLAT, length);
       gridDefXsize(m_gridgID, length);
       gridDefXname(m_gridgID, name.c_str());
@@ -170,7 +172,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
   m_dimsAxis[name] = dim;
 }
 
-// define reference date
+// set file calendar (CDIPIO needs to know calendar type)
 void CDI::set_calendar_impl(double year_length, const std::string &calendar_string) const {
   m_year_length = year_length;
   if (calendar_string == "gregorian" || calendar_string == "standard") {
@@ -192,11 +194,12 @@ void CDI::set_calendar_impl(double year_length, const std::string &calendar_stri
   m_calendar_string = calendar_string;
 }
 
-
+// evaluate year from time input
 double CDI::year_calendar(double time) const {
   return abs(time / m_year_length);
 }
 
+// evaluate month and day
 void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
   calcalcs_cal *calendar = ccs_init_calendar(m_calendar_string.c_str());
   assert(calendar != NULL);
@@ -205,6 +208,7 @@ void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
   ccs_free_calendar(calendar);
 }
 
+// evaluate hours, minutes and seconds
 long int CDI::day_calendar(double nyearsf) const {
   long int seconds = round(nyearsf * 86400);
   long int minutes, hours;
@@ -214,7 +218,9 @@ long int CDI::day_calendar(double nyearsf) const {
   return hours * 10000 + minutes * 100 + seconds;
 }
 
+// define time (CDI support specific time format)
 void CDI::def_ref_date_impl(double time) const {
+  // conversion of "time" input into CDI format 
   int month = 0, day = 0;
   double nyearsf = year_calendar(time);
   int doy        = int((nyearsf - (long int)nyearsf) * m_days_year);
@@ -222,6 +228,7 @@ void CDI::def_ref_date_impl(double time) const {
   if (doy != 0) {
     monthday_calendar(int(nyearsf), doy, &month, &day);
   }
+  // define time in CDI format
   int ref_date = (int)nyearsf * 10000 + month * 100 + day;
   int sgn      = time >= 0 ? 1 : -1;
   taxisDefVdate(m_tID, sgn * ref_date);
@@ -234,6 +241,7 @@ void CDI::inq_dimid_impl(const std::string &dimension_name, bool &exists) const 
   exists = m_dimsAxis.count(dimension_name) > 0;
 }
 
+// inquire dimension length
 void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const {
   int dim = m_dimsAxis[dimension_name];
   switch (dim) {
@@ -262,7 +270,7 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 // define variable
 void CDI::def_var_impl(const std::string &name, IO_Type nctype,
                        const std::vector<std::string> &dims) const {
-  // No need to define dimensions as variables
+  // No need to define dimensions as variables (CDI does not support it)
   if (m_dimsAxis.count(name)) {
     return;
   }
@@ -284,8 +292,10 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype,
 }
 
 void CDI::def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+  // define surface Z axis (if not done before)
   def_zs();
 
+  // inquire if variable is time dependent or not
   int tsteptype = TIME_CONSTANT;
   for (auto d : dims) {
     auto it = m_dimsAxis.find(d);
@@ -294,18 +304,21 @@ void CDI::def_var_scalar(const std::string &name, IO_Type nctype, const std::vec
     }
   }
 
+  // define variable - dummy scalar grid is used
   int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
   int type = pism_type_to_cdi_type(nctype);
   vlistDefVarDatatype(m_vlistID, varID, type);
+  // add variable ID to the map - variable ID can not be inquired (needs to be saved)
   m_varsID[name] = varID;
 }
 
 void CDI::def_var_mscalar(const std::string &name, IO_Type nctype,
                           const std::vector<std::string> &dims) const {
-
+  // define surface Z axis (if not done before)
   def_zs();
 
+  // inquire if variable is time dependent or not
   int tsteptype = TIME_CONSTANT;
   for (auto d : dims) {
     auto it = m_dimsAxis.find(d);
@@ -314,10 +327,12 @@ void CDI::def_var_mscalar(const std::string &name, IO_Type nctype,
     }
   }
 
+  // define variable - dummy 1D grid is used
   int varID = vlistDefVar(m_vlistID, m_gridgID, m_zsID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
   int type = pism_type_to_cdi_type(nctype);
   vlistDefVarDatatype(m_vlistID, varID, type);
+  // add variable ID to the map - variable ID can not be inquired (needs to be saved)
   m_varsID[name] = varID;
 }
 
@@ -326,6 +341,7 @@ void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vect
   int zaxisID   = -1;
   int tsteptype = TIME_CONSTANT;
 
+  // inquire if variable is time dependent or not and the associated Z axis
   for (auto d : dims) {
     if (m_dimsAxis[d] == T_AXIS) {
       tsteptype = TIME_VARIABLE;
@@ -341,10 +357,12 @@ void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vect
     zaxisID = m_zsID;
   }
 
+  // define variable
   int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
   int type = pism_type_to_cdi_type(nctype);
   vlistDefVarDatatype(m_vlistID, varID, type);
+  // add variable ID to the map - variable ID can not be inquired (needs to be saved)
   m_varsID[name] = varID;
 }
 
@@ -371,6 +389,7 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
 
   // write scalar
   int ndims  = static_cast<int>(start.size());
+  // define dummy YAXT decomp to write scalar variables with CDIPIO
   int idxlen = 1;
   Xt_int *idx;
   for (int j = 0; j < ndims; ++j)
@@ -380,8 +399,10 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
     idx[j] = j;
   Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
   free(idx);
+  // inquire variable ID from the map
   int varid         = m_varsID[variable_name];
   size_t nmiss      = 0;
+  // write scalar variable
   streamWriteVarPart(m_file_id, varid, op, nmiss, decomp);
 }
 
@@ -432,6 +453,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::s
   }
 }
 
+// inquire variable ID using map
 int CDI::var_id(const std::string &name) const {
   if (name == "PISM_GLOBAL") {
     return CDI_GLOBAL;
@@ -439,7 +461,6 @@ int CDI::var_id(const std::string &name) const {
     return m_varsID[name];
   }
 }
-
 
 // inquire variable number of attributes
 void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const {
@@ -481,6 +502,7 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
   cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), type, data.size(), &data[0]);
 }
 
+// write variable attribute (text)
 void CDI::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                             const std::string &value) const {
   // skip empty attributes
@@ -489,7 +511,7 @@ void CDI::put_att_text_impl(const std::string &variable_name, const std::string 
   }
 
   bool dimension = m_dimsAxis.count(variable_name) > 0;
-  // write dimension attribute
+  // write dimension attribute (limited supported dimension attributes)
   if (dimension) {
     int type = m_dimsAxis[variable_name];
     switch (type) {
@@ -565,6 +587,7 @@ void CDI::inq_attname_impl(const std::string &variable_name, unsigned int n, std
   result = name;
 }
 
+// inquire attribute name, time and length
 void CDI::inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *attlen) const {
   cdiInqAtt(m_vlistID, varID, attnum, attname, atttype, attlen);
 }
@@ -655,7 +678,7 @@ void CDI::write_darray_impl(const std::string &variable_name,
   (void) record;
   // CDI cannot write an arbitrary record in the file, so "record" is ignored
 
-  // transpose input data
+  // transpose input data (limitation of CDIPIO)
   int dim = grid.local_length(z_count);
   std::vector<double> buffer(dim);
   grid.io_transpose(input, buffer.data(), (int)z_count);
@@ -666,6 +689,9 @@ void CDI::write_darray_impl(const std::string &variable_name,
   // create decomposition if new
   Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
   size_t nmiss        = 0;
+  // write variable if it is written once or if this is the last call
+  // CDIPIO does not support writing the same variable multiple times
+  // at the same time step
   if (!m_beforediag || m_diagvars.count(variable_name) == 0) {
     streamWriteVarPart(m_file_id, varid, buffer.data(), nmiss, decompid);
   }
@@ -679,6 +705,7 @@ std::map<std::string, AxisType> CDI::get_dim_map_impl() {
   return m_dimsAxis;
 }
 
+// define variables list (if not done before)
 void CDI::def_vlist_impl() const {
   if (streamInqVlist(m_file_id) == -1) {
     streamDefVlist(m_file_id, m_vlistID);
