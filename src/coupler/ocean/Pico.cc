@@ -243,6 +243,10 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   // FIXME: m_n_shelves is not really the number of shelves.
   m_n_shelves = m_geometry->ice_shelf_mask().max() + 1;
 
+  // Split ice shelves when spread over non-neighboring basins
+  //split_ice_shelves(cell_type,m_geometry->basin_mask(),m_geometry->ice_shelf_mask());
+
+
   // Physical part of PICO
   {
 

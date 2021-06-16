@@ -43,11 +43,6 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
-  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
-  {
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
-  }
-
   m_boxes.metadata().set_number("_FillValue", 0.0);
 
   m_ice_rises.metadata().set_numbers("flag_values",
