@@ -36,6 +36,10 @@ static char help[] =
 #include "pism/regional/IceGrid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
+#if (Pism_USE_CDIPIO==1)
+#include "pism/util/cdipio/CDIPIOInitializer.hh"
+#endif
+
 using namespace pism;
 
 int main(int argc, char *argv[]) {
@@ -147,10 +151,11 @@ int main(int argc, char *argv[]) {
       handle_fatal_errors(com);
       return 1;
     }
+    // Enforce the order: PETSc gets finalized first, then CDI-PIO and YAXT, then MPI.
     petsc.reset(nullptr);
+#if (Pism_USE_CDIPIO==1)
     cdipio.reset(nullptr);
-    // PETSc is finalized at the end of scope.
-    // YAXT and CDI-PIO are finalized at the end of the scope.
+#endif
   }
   MPI_Finalize();
   return 0;

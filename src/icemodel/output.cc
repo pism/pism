@@ -39,6 +39,13 @@
 #include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
 
+#if (Pism_USE_CDIPIO==1)
+extern "C" {
+#include <cdipio.h>             // pioWriteTimestep()
+#include <cdi.h>                // streamClose(), vlistDestroy()
+}
+#endif
+
 namespace pism {
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
