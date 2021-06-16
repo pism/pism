@@ -2423,12 +2423,12 @@ netcdf pism_config {
     pism_config:surface.itm.max_evals_per_year_type = "integer";
     pism_config:surface.itm.max_evals_per_year_units = "count";
 
-    pism_config:surface.itm.itm_c = -35.0;
+    pism_config:surface.itm.itm_c = -93.0;
     pism_config:surface.itm.itm_c_doc = "factor in melt calculation";
     pism_config:surface.itm.itm_c_type = "number";
     pism_config:surface.itm.itm_c_units = "W m-2";
 
-    pism_config:surface.itm.itm_lambda = 10.0;
+    pism_config:surface.itm.itm_lambda = 29.0;
     pism_config:surface.itm.itm_lambda_doc = "factor in melt calculation";
     pism_config:surface.itm.itm_lambda_type = "number";
     pism_config:surface.itm.itm_lambda_units = "W m-2 K-1";
@@ -2457,7 +2457,7 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.obliquity =  23.44;
     pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.itm.paleo.obliquity_type = "number";
-    pism_config:surface.itm.paleo.obliquity_units = "degree";   
+    pism_config:surface.itm.paleo.obliquity_units = "degree";
 
     pism_config:surface.itm.paleo.long_peri =  102.94719;
     pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
