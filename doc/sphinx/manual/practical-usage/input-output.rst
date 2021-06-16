@@ -198,10 +198,8 @@ CDI-PIO
 ~~~~~~~
 
 The CDI-PIO library uses a subset of allocated MPI processes to aggregate data and write
-output files. To write output files asynchronously set:
-
-- :config:`output.cdi_pio.async` to use asynchronous writing,
-- :config:`output.cdi_pio.n_writers` to specify the number of "writers".
+output files. To write output files asynchronously set :config:`output.cdi_pio.n_writers`
+to specify the number of "writers".
 
 CDI-PIO supports several NetCDF file formats. The default value (``NC2``) corresponds to
 the choice that gave the best performance in our experiments, but you may need to switch
