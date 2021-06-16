@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,6 @@
 #include <memory>
 
 namespace pism {
-namespace petsc {
 
 template<typename T>
 class Wrapper {
@@ -50,7 +49,6 @@ private:
   Wrapper & operator=(Wrapper const &);
 };
 
-} // end of namespace petsc
 } // end of namespace pism
 
 #endif /* _WRAPPER_H_ */
