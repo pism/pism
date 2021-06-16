@@ -22,11 +22,11 @@
 
 #include <petsctao.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class Tao : public petsc::Wrapper< ::Tao > {
+class Tao : public Wrapper< ::Tao > {
 public:
   Tao();
   Tao(::Tao m);
