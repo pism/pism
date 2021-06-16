@@ -20,7 +20,7 @@
 //! macros, so you need to include the appropriate NetCDF header first.
 
 extern "C"{
-#include "cdi.h"
+#include <cdi.h>
 }
 
 namespace pism {

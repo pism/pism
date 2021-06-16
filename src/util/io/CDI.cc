@@ -25,12 +25,19 @@
 #include <string.h>
 
 #include "CDI.hh"
+
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/pism_cdi_type_conversion.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/external/calcalcs/calcalcs.h"
 #include "pism/util/cdipio/Idxlist.hh"
+
+extern "C" {
+#include "cdi.h"
+#include "cdipio.h"
+#include "yaxt.h"
+}
 
 namespace pism {
 namespace io {

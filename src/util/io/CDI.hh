@@ -20,12 +20,6 @@
 #include <map>
 #include <set>
 
-extern "C" {
-#include "cdi.h"
-#include "cdipio.h"
-#include "yaxt.h"
-}
-
 namespace pism {
 namespace io {
 
