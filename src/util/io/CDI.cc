@@ -30,6 +30,7 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/external/calcalcs/calcalcs.h"
+#include "pism/util/cdipio/Idxlist.hh"
 
 namespace pism {
 namespace io {
@@ -687,7 +688,7 @@ void CDI::write_darray_impl(const std::string &variable_name,
   assert(varid != CDI_GLOBAL);
 
   // create decomposition if new
-  Xt_idxlist decompid = grid.yaxt_decomposition((int)z_count);
+  Xt_idxlist decompid = *grid.yaxt_decomposition(z_count);
   size_t nmiss        = 0;
   // write variable if it is written once or if this is the last call
   // CDIPIO does not support writing the same variable multiple times

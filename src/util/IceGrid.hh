@@ -28,9 +28,11 @@
 
 #include "pism/pism_config.hh"
 
-#include "pism/util/cdipio/CDIPIOInitializer.hh"
-
 namespace pism {
+
+namespace yaxt {
+class Idxlist;
+} // end of namespace yaxt
 
 class Context;
 class Config;
@@ -319,7 +321,7 @@ public:
 
   int pio_io_decomposition(int dof, int output_datatype) const;
 #if (Pism_USE_CDIPIO==1)
-  Xt_idxlist yaxt_decomposition(int dof) const;
+  std::shared_ptr<yaxt::Idxlist> yaxt_decomposition(int dof) const;
 #endif
   int local_length(int dof) const;
   void io_transpose(const double* input, double* inputIO, int dof) const;

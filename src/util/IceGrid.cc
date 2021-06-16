@@ -44,6 +44,10 @@
 #include <pio.h>
 #endif
 
+#if (Pism_USE_CDIPIO==1)
+#include "pism/util/cdipio/Idxlist.hh"
+#endif
+
 namespace pism {
 
 //! Internal structures of IceGrid.
@@ -120,8 +124,8 @@ struct IceGrid::Impl {
   //! ParallelIO I/O decompositions.
   std::map<int, int> io_decompositions;
 #if (Pism_USE_CDIPIO==1)
-  // Yaxt decompositions
-  std::map<int, Xt_idxlist> yaxt_decompositions;
+  // YAXT decompositions
+  std::map<int, std::shared_ptr<yaxt::Idxlist> > yaxt_decompositions;
 #endif
 };
 
@@ -1490,27 +1494,14 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
 }
 
 #if (Pism_USE_CDIPIO==1)
-Xt_idxlist IceGrid::yaxt_decomposition(int dof) const {
-  if ( m_impl->yaxt_decompositions.find(dof) == m_impl->yaxt_decompositions.end() ) {
-    // domain decomposition for transposed data
-    std::vector<int> gdimlen{dof, (int)My(), (int)Mx()};
-    std::vector<int> start{0, ys(), xs()};
-    std::vector<int> count{dof, ym(), xm()};
-    Xt_int *idx;
-    int idxlen = count[0] * count[1] * count[2];
-    idx = (Xt_int*) malloc(idxlen * sizeof(Xt_int));
+std::shared_ptr<yaxt::Idxlist> IceGrid::yaxt_decomposition(int dof) const {
+  if (not m_impl->yaxt_decompositions[dof]) {
 
-    for (int z = 0; z < count[0]; z++) {
-      for (int y = 0; y < count[1]; y++) {
-        for (int x = 0; x < count[2]; x++) {
-          idx[(z*count[1]+y)*count[2]+x] = ((z+start[0]) * gdimlen[1] + (y+start[1])) * gdimlen[2] + (x+start[2]);
-        }
-      }
-    }
+    using yaxt::Idxlist;
+    std::shared_ptr<Idxlist> decomp(new Idxlist(Mx(), My(), xs(), ys(), xm(), ym(), dof));
 
-    Xt_idxlist decomp = xt_idxvec_new(idx, idxlen);
-    free(idx);
     m_impl->yaxt_decompositions[dof] = decomp;
+
     return m_impl->yaxt_decompositions[dof];
   } else {
     return m_impl->yaxt_decompositions[dof];
