@@ -33,7 +33,7 @@ protected:
                  int FileID = -1,
                  const std::map<std::string, AxisType> &dimsa = {});
 
-  void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
+  void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
 
   void sync_impl() const;
 
@@ -158,6 +158,9 @@ private:
   void def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   void def_var_mscalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   void def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+
+  // keyword integer conversion
+  int define_filetype(const std::string &filetype);
 };
 } // namespace io
 } // namespace pism

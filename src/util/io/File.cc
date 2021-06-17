@@ -196,7 +196,7 @@ File::File(MPI_Comm com,
            int iosysid,
            int FileID,
            const std::map<std::string, AxisType> &dimsa,
-           int filetype)
+           const std::string &filetype)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -282,7 +282,7 @@ void File::open(const std::string &filename,
                 IO_Mode mode,
                 int FileID,
                 const std::map<std::string, AxisType> &dimsa,
-                int filetype) {
+                const std::string &filetype) {
   try {
 
     // opening for reading

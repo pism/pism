@@ -288,7 +288,7 @@ void IceModel::open_files() {
 if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
   if (not m_opened) {
     m_opened = true;
-    int filetype = m_config->get_number("output.cdi_pio.filetype");
+    std::string filetype = m_config->get_string("output.cdi_pio.filetype");
     // Open snap file/s
     if (m_save_snapshots) {
       std::string filename;

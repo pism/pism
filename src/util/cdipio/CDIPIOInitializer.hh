@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <string> 
 #include <mpi.h>
 
 namespace pism {
@@ -24,7 +25,7 @@ namespace cdipio {
 
 class Initializer {
 public:
-  Initializer(int n_writers, int IOmode, MPI_Comm glob);
+  Initializer(int n_writers, std::string &IOmode, MPI_Comm glob);
   ~Initializer();
   MPI_Comm comp_comm();
   int pio_namespace();
@@ -34,6 +35,7 @@ private:
   MPI_Comm m_comp_comm;
   int m_pioNamespace;
   bool m_async;
+  int define_mode(std::string &IOmode);
 };
 
 } // namespace cdipio

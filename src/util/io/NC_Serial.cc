@@ -96,7 +96,7 @@ void NC_Serial::open_impl(const std::string &fname,
 }
 
 //! \brief Create a NetCDF file.
-void NC_Serial::create_impl(const std::string &fname, int FileID, int filetype) {
+void NC_Serial::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
   (void) FileID;
   (void) filetype;
 

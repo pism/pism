@@ -41,7 +41,7 @@ protected:
                  int FileID = -1,
                  const std::map<std::string, AxisType> &dimsa = {});
 
-  void create_impl(const std::string &filename, int FileID = -1, int filetype = 0);
+  void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
 
   void sync_impl() const;
 

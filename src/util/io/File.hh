@@ -57,7 +57,7 @@ public:
        int iosysid = -1,
        int FileID = -1,
        const std::map<std::string, AxisType> &dimsa = {},
-       int filetype = 0);
+       const std::string &filetype = std::string());
   ~File();
 
   IO_Backend backend() const;
@@ -180,7 +180,7 @@ private:
             IO_Mode mode,
             int FileID = -1,
             const std::map<std::string, AxisType> &dimsa = {},
-	    int filetype = 0);
+	    const std::string& filetype = std::string());
 
   // disable copying and assignments
   File(const File &other);

@@ -90,13 +90,26 @@ void CDI::map_zaxisID() const {
   m_zsID = m_zID["zs"];
 }
 
-void CDI::create_impl(const std::string &filename, int FileID, int filetype) {
+void CDI::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
   // FIXME: parameter FileID is not used
-  m_file_id = streamOpenWrite(filename.c_str(), filetype);
+  int itype = define_filetype(filetype);
+  m_file_id = streamOpenWrite(filename.c_str(), itype);
   m_tID     = -1;
   m_zsID    = -1;
   m_gridID  = -1;
   m_vlistID = -1;
+}
+
+int CDI::define_filetype(const std::string &filetype) {
+  if (filetype == "CDI_FILETYPE_NC") {
+    return CDI_FILETYPE_NC;
+  } else if (filetype == "CDI_FILETYPE_NC2") {
+    return CDI_FILETYPE_NC2;
+  } else if (filetype == "CDI_FILETYPE_NC4") {
+    return CDI_FILETYPE_NC4;
+  } else if (filetype == "CDI_FILETYPE_NC4C") {
+    return CDI_FILETYPE_NC4C;
+  }
 }
 
 void CDI::close_impl() {

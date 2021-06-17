@@ -11,7 +11,7 @@ extern "C" {
 namespace pism {
 namespace cdipio {
 
-Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob) {
+Initializer::Initializer(int n_writers, std::string &IOmode, MPI_Comm glob) {
   // check if CDIPIO is used
   if (n_writers > 0) {
     m_async = true;
@@ -23,7 +23,8 @@ Initializer::Initializer(int n_writers, int IOmode, MPI_Comm glob) {
   if (m_async) {
     xt_initialize(glob);
     float partInflate = 1.0;
-    m_comp_comm      = pioInit(glob, n_writers, IOmode,
+    int mode = define_mode(IOmode);
+    m_comp_comm      = pioInit(glob, n_writers, mode,
                                &m_pioNamespace, partInflate, cdiPioNoPostCommSetup);
   } else {
     m_comp_comm    = MPI_COMM_WORLD;
@@ -50,6 +51,26 @@ int Initializer::pio_namespace() {
 void Initializer::activate_namespace() {
   if (m_async) {
     namespaceSetActive(m_pioNamespace);
+  }
+}
+
+int Initializer::define_mode(std::string &IOmode) {
+  if (IOmode == "PIO_NONE") {
+    return PIO_NONE;
+  } else if (IOmode == "PIO_MPI") {
+    return PIO_MPI;
+  } else if (IOmode == "PIO_WRITER") {
+    return PIO_WRITER;
+  } else if (IOmode == "PIO_ASYNCH") {
+    return PIO_ASYNCH;
+  } else if (IOmode == "PIO_FPGUARD") {
+    return PIO_FPGUARD;
+  } else if (IOmode == "PIO_MPI_FW_ORDERED") {
+    return PIO_MPI_FW_ORDERED;
+  } else if (IOmode == "PIO_MPI_FW_AT_ALL") {
+    return PIO_MPI_FW_AT_ALL;
+  } else if (IOmode == "PIO_MPI_FW_AT_REBLOCK") {
+    return PIO_MPI_FW_AT_REBLOCK;
   }
 }
 
