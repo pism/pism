@@ -57,6 +57,9 @@ void CDI::open_impl(const std::string &fname,
   // FIXME: in general the assumption below is incorrect
   //
   // the file is already created and opened - restore file info into the class
+  if (mode == PISM_READONLY) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
+  }
   m_file_id = FileID;
   m_vlistID = streamInqVlist(m_file_id);
   m_tID     = vlistInqTaxis(m_vlistID);
@@ -765,8 +768,7 @@ void CDI::get_vara_double_impl(const std::string &variable_name, const std::vect
   (void)start;
   (void)count;
   (void)ip;
-  // FIXME: this "implementation" just fails without letting the user know that it reading
-  // data is not implemented
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
 }
 
 void CDI::get_varm_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
@@ -777,8 +779,7 @@ void CDI::get_varm_double_impl(const std::string &variable_name, const std::vect
   (void)count;
   (void)imap;
   (void)ip;
-  // FIXME: this "implementation" just fails without letting the user know that it reading
-  // data is not implemented
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
 }
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {
