@@ -104,15 +104,20 @@ void CDI::create_impl(const std::string &filename, int FileID, const std::string
 }
 
 int CDI::define_filetype(const std::string &filetype) {
-  if (filetype == "CDI_FILETYPE_NC") {
-    return CDI_FILETYPE_NC;
-  } else if (filetype == "CDI_FILETYPE_NC2") {
-    return CDI_FILETYPE_NC2;
-  } else if (filetype == "CDI_FILETYPE_NC4") {
-    return CDI_FILETYPE_NC4;
-  } else if (filetype == "CDI_FILETYPE_NC4C") {
-    return CDI_FILETYPE_NC4C;
+  std::map<std::string, int> types =
+    {
+     {"CDI_FILETYPE_NC", CDI_FILETYPE_NC},
+     {"CDI_FILETYPE_NC2", CDI_FILETYPE_NC2},
+     {"CDI_FILETYPE_NC4", CDI_FILETYPE_NC4},
+     {"CDI_FILETYPE_NC4C", CDI_FILETYPE_NC4C}
+    };
+
+  if (types.find(filetype) == types.end()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid CDI-PIO file type %s", filetype.c_str());
   }
+
+  return types[filetype];
 }
 
 void CDI::close_impl() {
