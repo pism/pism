@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2021 PISM Authors
+/* Copyright (C) 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <string> 
+#ifndef CDIPIOINITIALIZER_H
+#define CDIPIOINITIALIZER_H
+
+#include <string>
 #include <mpi.h>
 
 namespace pism {
@@ -25,7 +28,7 @@ namespace cdipio {
 
 class Initializer {
 public:
-  Initializer(int n_writers, std::string &IOmode, MPI_Comm glob);
+  Initializer(unsigned int n_writers, const std::string &IOmode, MPI_Comm glob);
   ~Initializer();
   MPI_Comm comp_comm();
   int pio_namespace();
@@ -34,9 +37,11 @@ public:
 private:
   MPI_Comm m_comp_comm;
   int m_pioNamespace;
-  bool m_async;
-  int define_mode(std::string &IOmode);
+  bool m_initialized;
+  int define_mode(const std::string &IOmode);
 };
 
 } // namespace cdipio
 } // namespace pism
+
+#endif /* CDIPIOINITIALIZER_H */
