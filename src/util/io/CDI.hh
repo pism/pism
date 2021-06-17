@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
+// Copyright (C) 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,9 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NCFile.hh"
+#ifndef PISM_CDI_H
+#define PISM_CDI_H
+
 #include <map>
 #include <set>
+
+#include "NCFile.hh"
 
 namespace pism {
 namespace io {
@@ -164,3 +168,5 @@ private:
 };
 } // namespace io
 } // namespace pism
+
+#endif /* PISM_CDI_H */
