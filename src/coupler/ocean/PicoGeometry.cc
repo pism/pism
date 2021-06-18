@@ -133,6 +133,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
 
     std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
     std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
+
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
     split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
@@ -508,6 +509,9 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
                                        const IceModelVec2Int &basin_mask,
                                        std::vector<int> &result) {
 
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> result1(2*m_n_basins, 0);
+
   IceModelVec::AccessList list{ &cell_type, &basin_mask };
 
   for (Points p(*m_grid); p; p.next()) {
@@ -543,9 +547,12 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
       }
     }
   }
-  //GlobalSum(m_grid->com, result.data(), 2*m_n_basins);
+
+  GlobalSum(m_grid->com, result.data(), result1.data(), 2*m_n_basins);
+  // copy values
+  result       = result1;
+
   for (int b = 1; b < 2*m_n_basins; ++b) {
-    result[b] = GlobalSum(m_grid->com, result[b]);
     if (b%2==0)
       m_log->message(2, "PICO, get basin neighbors of b=%d: b1=%d and b2=%d \n",b/2,result[b],result[b+1]);
   }
@@ -562,6 +569,10 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
                                                      std::vector<int> &cfs_in_basins_per_shelf) {
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves*m_n_basins,0);
+  std::vector<int> most_shelf_cells_in_basinr(m_n_shelves, 0);
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask };
 
@@ -582,13 +593,15 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
       }
     }
 
-    //GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), m_n_shelves*m_n_basins);
-    //GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    // copy values
+    cfs_in_basins_per_shelf       = cfs_in_basins_per_shelfr;
+    n_shelf_cells_per_basin       = n_shelf_cells_per_basinr;
+
     for (int s = 0; s < m_n_shelves; s++) {
       int n_shelf_cells_per_basin_max = 0;
       for (int b = 0; b < m_n_basins; b++) {
-        cfs_in_basins_per_shelf[s*m_n_basins+b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s*m_n_basins+b]);
-        n_shelf_cells_per_basin[s*m_n_basins+b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s*m_n_basins+b]);
         if (n_shelf_cells_per_basin[s*m_n_basins+b] > n_shelf_cells_per_basin_max) {
           most_shelf_cells_in_basin[s] = b;
           n_shelf_cells_per_basin_max = n_shelf_cells_per_basin[s*m_n_basins+b];
@@ -611,10 +624,11 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   m_tmp.copy_from(shelf_mask);
 
+  std::vector<int> n_shelf_cells_to_split(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cells_to_splitr(m_n_shelves*m_n_basins,0);
+
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp};
 
-
-  std::vector<int> n_shelf_cells_to_split(m_n_shelves*m_n_basins,0);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (cell_type.as_int(i, j) == MASK_FLOATING) {
@@ -627,13 +641,16 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
     }
   }
 
-  //GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), m_n_shelves*m_n_basins);
+  GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), n_shelf_cells_to_splitr.data(), m_n_shelves*m_n_basins);
+  // copy values
+  n_shelf_cells_to_split       = n_shelf_cells_to_splitr;
+
+  // no GlobalSum needed here, only local:
   std::vector<int> add_shelf_instance(m_n_shelves*m_n_basins,0);
   int m_shelf_numbers_to_add = 0;
   for (int s = 0; s < m_n_shelves; s++) {
     int b0 = most_shelf_cells_in_basin[s];
     for (int b = 0; b < m_n_basins; b++) {
-      n_shelf_cells_to_split[s*m_n_basins+b] = GlobalSum(m_grid->com, n_shelf_cells_to_split[s*m_n_basins+b]);
       if (n_shelf_cells_to_split[s*m_n_basins+b] > 0) {
         m_shelf_numbers_to_add += 1;
         add_shelf_instance[s*m_n_basins+b] = m_n_shelves + m_shelf_numbers_to_add;
