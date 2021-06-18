@@ -427,17 +427,13 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
   for (auto c : count) {
     idxlen *= c;
   }
-  std::vector<Xt_int> idx(idxlen);
-  for (int j = 0; j < idxlen; j++) {
-    idx[j] = j;
-  }
-  Xt_idxlist decomp = xt_idxvec_new(idx.data(), idxlen);
 
-  size_t nmiss      = 0;
+  yaxt::Idxlist decomp(idxlen);
+
+  size_t nmiss = 0;
+
   // write scalar variable
   streamWriteVarPart(m_file_id, var_id(variable_name), op, nmiss, decomp);
-
-  xt_idxlist_delete(decomp);
 }
 
 // inquire number of variables

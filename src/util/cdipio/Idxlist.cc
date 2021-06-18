@@ -44,6 +44,15 @@ Idxlist::Idxlist(int Mx, int My, int xs, int ys, int xm, int ym, int dof) {
   m_value = xt_idxvec_new(idx.data(), idxlen);
 }
 
+// Dummy YAXT decomposition used to write scalar variables with CDI-PIO.
+Idxlist::Idxlist(int N) {
+  std::vector<Xt_int> idx(N);
+  for (int j = 0; j < N; j++) {
+    idx[j] = j;
+  }
+  m_value = xt_idxvec_new(idx.data(), N);
+}
+
 Idxlist::~Idxlist() {
   if (m_value != NULL) {
     xt_idxlist_delete(m_value);

@@ -32,13 +32,15 @@ namespace yaxt {
 
 /** Wrapper around YAXT Xt_idxlist. Simplifies memory management.
  *
- * The constructor takes ownership of the argument passed to it.
+ * The constructor creates a domain decomposition given the size of the global grid and
+ * the size and location of the local sub-domain.
  *
- * The destructor calls PIOc_freedecomp().
+ * The destructor calls xt_idxlist_delete.
  */
 class Idxlist : public Wrapper< ::Xt_idxlist > {
 public:
   Idxlist(int Mx, int My, int xs, int ys, int xm, int ym, int dof);
+  Idxlist(int N);
   ~Idxlist();
 };
 
