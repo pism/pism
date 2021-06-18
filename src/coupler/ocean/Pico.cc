@@ -424,8 +424,6 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
   std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
   std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves*m_n_basins,0);
 
-  //std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
-
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins

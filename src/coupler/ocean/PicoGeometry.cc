@@ -43,6 +43,11 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
+  ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
+  {
+    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+  }
+
   m_boxes.metadata().set_number("_FillValue", 0.0);
 
   m_ice_rises.metadata().set_numbers("flag_values",
@@ -133,7 +138,6 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
 
     std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
     std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
-
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
     split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);

@@ -77,7 +77,6 @@ for testcase in "test01" "test02" "test03"; do
   [[ "$T13f" == "$Tc13" ]] && echo basin 13 equal || echo basin 13 not-equal;
   [[ "$T14f" == "$Tc14" ]] && echo basin 14 equal || echo basin 14 not-equal;
 
-
 done
 
 
