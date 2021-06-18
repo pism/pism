@@ -588,21 +588,25 @@ void CDI::inq_atttype_impl(const std::string &variable_name, const std::string &
   int varID = var_id(variable_name);
 
   // find attribute type
-  int natt, n, atype, alen, cditype;
+  int att_type = 0;
   char name[CDI_MAX_NAME];
-  std::string aname;
-  if (att_name == "history" && varID == CDI_GLOBAL) {
-    cditype = CDI_DATATYPE_TXT;
+  if (varID == CDI_GLOBAL and att_name == "history") {
+    att_type = CDI_DATATYPE_TXT;
   } else {
+    int natt = 0;
     cdiInqNatts(m_vlistID, varID, &natt);
-    for (n = 0; n < natt; n++) {
+    for (int n = 0; n < natt; n++) {
+      int atype = 0;
+      int alen = 0;
       inq_att_impl(varID, n, name, &atype, &alen);
-      if (aname == att_name) {
-        cditype = atype;
+      if (name == att_name) {
+        att_type = atype;
+        break;
       }
     }
   }
-  result = cdi_type_to_pism_type(cditype);
+
+  result = cdi_type_to_pism_type(att_type);
 }
 
 // inquire attribute name
@@ -622,32 +626,36 @@ void CDI::inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *
 }
 
 // get variable attribute (double)
-void CDI::get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+void CDI::get_att_double_impl(const std::string &variable_name,
+                              const std::string &att_name,
                               std::vector<double> &result) const {
   // find variable ID
   int varID = var_id(variable_name);
 
   // find attribute length
-  int natt, n, atype, alen, cdilen;
-  char name[CDI_MAX_NAME];
-  std::string aname;
+  int length = 0;
+
+  int natt = 0;
   cdiInqNatts(m_vlistID, varID, &natt);
-  for (n = 0; n < natt; n++) {
+  for (int n = 0; n < natt; n++) {
+    int atype = 0;
+    int alen = 0;
+    char name[CDI_MAX_NAME];
     inq_att_impl(varID, n, name, &atype, &alen);
-    aname = name;
-    if (aname == att_name) {
-      cdilen = alen;
+    if (name == att_name) {
+      length = alen;
     }
   }
 
-  if (cdilen == 0) {
+  if (length == 0) {
     result.clear();
     return;
   }
-  result.resize(cdilen);
+
+  result.resize(length);
 
   // read attribute
-  cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), cdilen, std::addressof(result[0]));
+  cdiInqAttFlt(m_vlistID, varID, att_name.c_str(), length, std::addressof(result[0]));
 }
 
 // get variable attribute (text)
