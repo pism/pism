@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
+// Copyright (C) 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,40 +70,31 @@ void CDI::open_impl(const std::string &fname,
 }
 
 void CDI::map_varsID() const {
-  int Nvars, varID;
-  char VarName[CDI_MAX_NAME];
-  Nvars = vlistNvars(m_vlistID);
-  for (varID = 0; varID < Nvars; varID++) {
-    vlistInqVarName(m_vlistID, varID, VarName);
-    m_varsID[VarName] = varID;
+  char name[CDI_MAX_NAME];
+  int Nvars = vlistNvars(m_vlistID);
+
+  for (int varID = 0; varID < Nvars; varID++) {
+    vlistInqVarName(m_vlistID, varID, name);
+    m_varsID[name] = varID;
   }
 }
 
 void CDI::map_zaxisID() const {
-  int zaxisID;
-  char zname[CDI_MAX_NAME];
+  char name[CDI_MAX_NAME];
   // find number of zaxis
   int nz = vlistNzaxis(m_vlistID);
+
   // find zaxisID and zaxisName
   for (int n = 0; n < nz; n++) {
-    zaxisID = vlistZaxis(m_vlistID, n);
-    zaxisInqName(zaxisID, zname);
-    m_zID[zname] = zaxisID;
+    int zaxisID = vlistZaxis(m_vlistID, n);
+    zaxisInqName(zaxisID, name);
+    m_zID[name] = zaxisID;
   }
+
   m_zsID = m_zID["zs"];
 }
 
-void CDI::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
-  // FIXME: parameter FileID is not used
-  int itype = define_filetype(filetype);
-  m_file_id = streamOpenWrite(filename.c_str(), itype);
-  m_tID     = -1;
-  m_zsID    = -1;
-  m_gridID  = -1;
-  m_vlistID = -1;
-}
-
-int CDI::define_filetype(const std::string &filetype) {
+static int file_type(const std::string &string) {
   std::map<std::string, int> types =
     {
      {"CDI_FILETYPE_NC", CDI_FILETYPE_NC},
@@ -112,12 +103,21 @@ int CDI::define_filetype(const std::string &filetype) {
      {"CDI_FILETYPE_NC4C", CDI_FILETYPE_NC4C}
     };
 
-  if (types.find(filetype) == types.end()) {
+  if (types.find(string) == types.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid CDI-PIO file type %s", filetype.c_str());
+                                  "invalid CDI-PIO file type %s", string.c_str());
   }
 
-  return types[filetype];
+  return types[string];
+}
+
+void CDI::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
+  // FIXME: parameter FileID is not used
+  m_file_id = streamOpenWrite(filename.c_str(), file_type(filetype));
+  m_tID     = -1;
+  m_zsID    = -1;
+  m_gridID  = -1;
+  m_vlistID = -1;
 }
 
 void CDI::close_impl() {
@@ -132,8 +132,12 @@ void CDI::def_vlist() const {
   if (m_vlistID == -1) {
     // create variable list
     m_vlistID = vlistCreate();
+    // FIXME: who's responsible for calling vlistDestroy()?
+
     // create dummy grid to handle scalar values
     m_gridsID = gridCreate(GRID_LONLAT, 1);
+    // FIXME: who's responsible for calling gridDestroy()?
+
     gridDefXsize(m_gridsID, 1);
     gridDefXname(m_gridsID, "x_dummy");
     gridDefYsize(m_gridsID, 1);
@@ -145,6 +149,7 @@ void CDI::def_zs() const {
   // create surface Z axis (only if it was not done before)
   if (m_zsID == -1) {
     m_zsID      = zaxisCreate(ZAXIS_SURFACE, 1);
+    // FIXME: who's responsible for calling zaxisDestroy()?
     m_zID["zs"] = m_zsID;
     zaxisDefName(m_zsID, "zs");
   }
@@ -173,6 +178,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
       // define z axis only if it's new
       if (!m_zID.count(name)) {
         m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
+        // FIXME: who's responsible for calling zaxisDestroy()?
         zaxisDefName(m_zID[name], name.c_str());
       }
       break;
@@ -182,6 +188,7 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
       // define time axis if it was not done before
       if (m_tID == -1) {
         m_tID = taxisCreate(TAXIS_ABSOLUTE);
+        // FIXME: who's responsible for calling taxisDestroy()?
         taxisDefCalendar(m_tID, m_cdi_calendar);
         vlistDefTaxis(m_vlistID, m_tID);
       }
@@ -191,6 +198,8 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
     {
       // define grid for 1D data
       m_gridgID = gridCreate(GRID_LONLAT, length);
+      // FIXME: who's responsible for calling gridDestroy()?
+
       gridDefXsize(m_gridgID, length);
       gridDefXname(m_gridgID, name.c_str());
       gridDefYsize(m_gridgID, 1);
@@ -287,7 +296,8 @@ void CDI::inq_dimlen_impl(const std::string &dimension_name, unsigned int &resul
     result = streamInqCurTimestepID(m_file_id) + 1 + 1;
     break;
   default:
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid dim == %d", dim);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid dimension %s", dimension_name.c_str());
   }
 }
 
@@ -320,27 +330,35 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype,
   }
 }
 
-void CDI::def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+/*!
+ * Returns TIME_VARIABLE if `dims` contain the time dimension and TIME_CONSTANT otherwise.
+ */
+int CDI::timestep_type(const std::vector<std::string> &dims) const {
+  for (auto d : dims) {
+    auto it = m_dimsAxis.find(d);
+    if (it != m_dimsAxis.end() and it->second == T_AXIS) {
+      return TIME_VARIABLE;
+    }
+  }
+  return TIME_CONSTANT;
+}
+
+void CDI::def_var_scalar(const std::string &name, IO_Type nctype,
+                         const std::vector<std::string> &dims) const {
   // define surface Z axis (if not done before)
   def_zs();
 
   // inquire if variable is time dependent or not
-  int tsteptype = TIME_CONSTANT;
-  for (auto d : dims) {
-    auto it = m_dimsAxis.find(d);
-    if (it != m_dimsAxis.end() && it->second == T_AXIS) {
-      tsteptype = TIME_VARIABLE;
-    }
-  }
+  int tsteptype = timestep_type(dims);
 
   // define variable - dummy scalar grid is used
   int varID = vlistDefVar(m_vlistID, m_gridsID, m_zsID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
-  int type = pism_type_to_cdi_type(nctype);
-  vlistDefVarDatatype(m_vlistID, varID, type);
+  vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
   // add variable ID to the map - variable ID can not be inquired (needs to be saved)
   m_varsID[name] = varID;
 }
+
 
 void CDI::def_var_mscalar(const std::string &name, IO_Type nctype,
                           const std::vector<std::string> &dims) const {
@@ -348,13 +366,7 @@ void CDI::def_var_mscalar(const std::string &name, IO_Type nctype,
   def_zs();
 
   // inquire if variable is time dependent or not
-  int tsteptype = TIME_CONSTANT;
-  for (auto d : dims) {
-    auto it = m_dimsAxis.find(d);
-    if (it != m_dimsAxis.end() && it->second == T_AXIS) {
-      tsteptype = TIME_VARIABLE;
-    }
-  }
+  int tsteptype = timestep_type(dims);
 
   // define variable - dummy 1D grid is used
   int varID = vlistDefVar(m_vlistID, m_gridgID, m_zsID, tsteptype);
@@ -367,14 +379,11 @@ void CDI::def_var_mscalar(const std::string &name, IO_Type nctype,
 
 
 void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
-  int zaxisID   = -1;
-  int tsteptype = TIME_CONSTANT;
+  int zaxisID   = m_zsID;
+  int tsteptype = timestep_type(dims);
 
-  // inquire if variable is time dependent or not and the associated Z axis
+  // get the associated Z axis
   for (auto d : dims) {
-    if (m_dimsAxis[d] == T_AXIS) {
-      tsteptype = TIME_VARIABLE;
-    }
     if (m_dimsAxis[d] == Z_AXIS) {
       if (m_zID.count(d)) {
         zaxisID = m_zID[d];
@@ -382,15 +391,11 @@ void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vect
     }
   }
 
-  if (zaxisID == -1) {
-    zaxisID = m_zsID;
-  }
-
   // define variable
   int varID = vlistDefVar(m_vlistID, m_gridID, zaxisID, tsteptype);
   vlistDefVarName(m_vlistID, varID, name.c_str());
-  int type = pism_type_to_cdi_type(nctype);
-  vlistDefVarDatatype(m_vlistID, varID, type);
+  vlistDefVarDatatype(m_vlistID, varID, pism_type_to_cdi_type(nctype));
+
   // add variable ID to the map - variable ID can not be inquired (needs to be saved)
   m_varsID[name] = varID;
 }
@@ -428,11 +433,9 @@ void CDI::put_vara_double_impl(const std::string &variable_name, const std::vect
   }
   Xt_idxlist decomp = xt_idxvec_new(idx.data(), idxlen);
 
-  // inquire variable ID from the map
-  int varid         = m_varsID[variable_name];
   size_t nmiss      = 0;
   // write scalar variable
-  streamWriteVarPart(m_file_id, varid, op, nmiss, decomp);
+  streamWriteVarPart(m_file_id, var_id(variable_name), op, nmiss, decomp);
 
   xt_idxlist_delete(decomp);
 }
@@ -443,44 +446,38 @@ void CDI::inq_nvars_impl(int &result) const {
 }
 
 // inquire variable dimensions
-void CDI::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
-  std::string name;
-  int varID        = m_varsID[variable_name];
-  int current_grid = vlistInqVarGrid(m_vlistID, varID);
-  char xname[CDI_MAX_NAME];
+void CDI::inq_vardimid_impl(const std::string &variable_name,
+                            std::vector<std::string> &result) const {
 
-  if (current_grid == m_gridID) {
-    // insert x dim
-    auto it = result.begin();
-    gridInqXname(m_gridID, xname);
-    name = xname;
-    result.insert(it, name);
-    // insert y dim
-    it = result.begin();
-    gridInqYname(m_gridID, xname);
-    name = xname;
-    result.insert(it, name);
+  int varid = var_id(variable_name);
+
+  result.clear();
+
+  if (vlistInqVarGrid(m_vlistID, varid) == m_gridID) {
+
+    // insert time dim
+    if (vlistInqVarTsteptype(m_vlistID, varid) == TIME_VARIABLE) {
+      result.push_back("time");
+    }
+
     // insert z dim
-    name.clear();
-    int current_z = vlistInqVarZaxis(m_vlistID, varID);
+    int z = vlistInqVarZaxis(m_vlistID, varid);
     for (auto &i : m_zID) {
-      if (i.second == current_z) {
-        name = i.first;
-        break; // to stop searching
+      if (i.second == z) {
+        result.push_back(i.first);
+        break;
       }
     }
-    if (!name.empty()) {
-      it = result.begin();
-      result.insert(it, name);
-    }
-    // insert time dim
-    if (vlistInqVarTsteptype(m_vlistID, varID) == TIME_VARIABLE) {
-      it = result.begin();
-      result.insert(it, "time");
-    }
-  } else {
-    result.clear();
-    return;
+
+    char name[CDI_MAX_NAME];
+
+    // insert y dim
+    gridInqYname(m_gridID, name);
+    result.push_back(name);
+
+    // insert x dim
+    gridInqXname(m_gridID, name);
+    result.push_back(name);
   }
 }
 
@@ -495,8 +492,7 @@ int CDI::var_id(const std::string &name) const {
 
 // inquire variable number of attributes
 void CDI::inq_varnatts_impl(const std::string &variable_name, int &result) const {
-  int varID = var_id(variable_name);
-  cdiInqNatts(m_vlistID, varID, &result);
+  cdiInqNatts(m_vlistID, var_id(variable_name), &result);
 }
 
 // inquire variable ID
@@ -516,8 +512,7 @@ void CDI::inq_varname_impl(unsigned int j, std::string &result) const {
 
 // delete variable attribute
 void CDI::del_att_impl(const std::string &variable_name, const std::string &att_name) const {
-  int varID = var_id(variable_name);
-  cdiDelAtt(m_vlistID, varID, att_name.c_str());
+  cdiDelAtt(m_vlistID, var_id(variable_name), att_name.c_str());
 }
 
 // write variable attribute (double)
@@ -528,9 +523,12 @@ void CDI::put_att_double_impl(const std::string &variable_name, const std::strin
     return;
   }
 
-  int varID = var_id(variable_name);
-  int type = pism_type_to_cdi_type(nctype);
-  cdiDefAttFlt(m_vlistID, varID, att_name.c_str(), type, data.size(), &data[0]);
+  cdiDefAttFlt(m_vlistID,
+               var_id(variable_name),
+               att_name.c_str(),
+               pism_type_to_cdi_type(nctype),
+               data.size(),
+               &data[0]);
 }
 
 // write variable attribute (text)
@@ -653,37 +651,43 @@ void CDI::get_att_double_impl(const std::string &variable_name, const std::strin
 }
 
 // get variable attribute (text)
-void CDI::get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const {
+void CDI::get_att_text_impl(const std::string &variable_name,
+                            const std::string &att_name,
+                            std::string &result) const {
   // find variable ID
   int varID = var_id(variable_name);
 
   // find attribute length
-  int natt, n, atype, alen, cdilen;
-  char name[CDI_MAX_NAME];
-  std::string aname;
-  if (att_name == "history" && varID == CDI_GLOBAL) {
-    cdilen = streamInqHistorySize(m_file_id);
-  } else {
-    cdiInqNatts(m_vlistID, varID, &natt);
-    for (n = 0; n < natt; n++) {
-      inq_att_impl(varID, n, name, &atype, &alen);
-      if (aname == att_name) {
-        cdilen = alen;
-      }
+  int length = 0;
+  if (varID == CDI_GLOBAL and att_name == "history") {
+    length = streamInqHistorySize(m_file_id);
+
+    if (length == 0) {
+      result.clear();
+      return;
     }
-  }
 
-  if (cdilen == 0) {
-    result.clear();
-    return;
-  }
-  result.resize(cdilen);
+    result.resize(length);
 
-  // read attribute
-  if (att_name == "history" && varID == CDI_GLOBAL) {
     streamInqHistoryString(m_file_id, std::addressof(result[0]));
   } else {
-    cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), cdilen, std::addressof(result[0]));
+    int natt = 0;
+    cdiInqNatts(m_vlistID, varID, &natt);
+
+    for (int n = 0; n < natt; n++) {
+      int alen = 0;
+      int atype = 0;
+      char name[CDI_MAX_NAME];
+      inq_att_impl(varID, n, name, &atype, &alen);
+      if (name == att_name) {
+        length = alen;
+        break;
+      }
+    }
+
+    result.resize(length);
+
+    cdiInqAttTxt(m_vlistID, varID, att_name.c_str(), length, std::addressof(result[0]));
   }
 }
 
@@ -693,6 +697,7 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
     // We should use GRID_PROJECTION, but CDI halts with the error "unimplemented grid
     // type: 12" in cdiPioQueryVarDims().
     m_gridID = gridCreate(GRID_LONLAT, lengthx * lengthy);
+    // FIXME: who's responsible for calling gridDestroy()?
   }
   // FIXME: that happens if this is called twice, but with different lengthx and lengthy?
 }
@@ -743,10 +748,12 @@ void CDI::def_vlist_impl() const {
   }
 }
 
+// FIXME: what is the purpose of this?
 void CDI::set_diagvars_impl(const std::set<std::string> &variables) const {
   m_diagvars = variables;
 }
 
+// FIXME: what is the purpose of this?
 void CDI::set_bdiag_impl(bool value) const {
   m_beforediag = value;
 }
@@ -775,18 +782,22 @@ void CDI::get_vara_double_impl(const std::string &variable_name, const std::vect
   (void)start;
   (void)count;
   (void)ip;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "file reading not supported with CDI-PIO in PISM");
 }
 
-void CDI::get_varm_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
-                               const std::vector<unsigned int> &count, const std::vector<unsigned int> &imap,
+void CDI::get_varm_double_impl(const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const std::vector<unsigned int> &imap,
                                double *ip) const {
   (void)variable_name;
   (void)start;
   (void)count;
   (void)imap;
   (void)ip;
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "file reading not supported with CDI-PIO in PISM");
 }
 
 void CDI::set_fill_impl(int fillmode, int &old_modep) const {

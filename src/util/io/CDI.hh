@@ -163,8 +163,7 @@ private:
   void def_var_mscalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
   void def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
 
-  // keyword integer conversion
-  int define_filetype(const std::string &filetype);
+  int timestep_type(const std::vector<std::string> &dims) const;
 };
 } // namespace io
 } // namespace pism
