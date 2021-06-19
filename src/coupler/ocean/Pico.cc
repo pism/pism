@@ -200,7 +200,7 @@ void Pico::write_model_state_impl(const File &output) const {
   m_Toc_box0.write(output);
   m_overturning.write(output);
 
-  OceanModel::define_model_state_impl(output);
+  OceanModel::write_model_state_impl(output);
 }
 
 void Pico::update_impl(const Geometry &geometry, double t, double dt) {
