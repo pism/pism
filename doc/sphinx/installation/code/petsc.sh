@@ -4,8 +4,8 @@ set -e
 set -u
 set -x
 
-# Install the latest PETSc release in ~/local/petsc
-# using ~/local/build/petsc as the build directory.
+# Install the latest PETSc in ~/local/petsc using ~/local/build/petsc as the build
+# directory.
 
 prefix=$HOME/local/petsc
 build_dir=~/local/build/petsc
@@ -26,14 +26,10 @@ PETSC_ARCH="linux-opt"
   --with-fc=mpifort \
   --with-shared-libraries \
   --with-debugging=0 \
-  COPTFLAGS='-O3 -march=native -mtune=native' \
-  CXXOPTFLAGS='-O3 -march=native -mtune=native' \
-  FOPTFLAGS='-O3 -march=native -mtune=native' \
-  --download-f2cblaslapack=1 \
-  --download-petsc4py \
-  --download-mumps --download-scalapack --download-parmetis --download-metis --download-ptscotch \
-  --download-hypre
+  --with-petsc4py \
+  --download-f2cblaslapack
 
+export PYTHONPATH=${prefix}/lib
 make all
 make install
 make PETSC_DIR=${prefix} PETSC_ARCH="" check

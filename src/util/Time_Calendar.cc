@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -276,13 +276,9 @@ double Time_Calendar::year_fraction(double T) const {
 }
 
 std::string Time_Calendar::date(double T) const {
-  char tmp[256];
-
   auto date = m_time_units.date(T, m_calendar_string);
 
-  snprintf(tmp, 256, "%04d-%02d-%02d", date.year, date.month, date.day);
-
-  return std::string(tmp);
+  return pism::printf("%04d-%02d-%02d", date.year, date.month, date.day);
 }
 
 double Time_Calendar::calendar_year_start(double T) const {

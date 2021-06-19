@@ -11,6 +11,7 @@
 # extension.
 import os
 import sys
+import re
 
 sys.path.append(os.path.abspath("."))
 
@@ -147,3 +148,23 @@ latex_elements = {
     'releasename': "version",
     'preamble': r'\usepackage{txfonts}'
 }
+
+mathjax_config = {"TeX": {"Macros": {}}}
+
+# Add math definitions to the LaTeX preamble and MathJax settings:
+for line in open("math-definitions.tex"):
+    M = re.match(r"\\newcommand{\\([a-zA-Z]+)}(\[([0-9]+)\])?(\[(.+)\])?{(.+)}", line)
+
+    if M:
+        name = M.group(1)
+        definition = M.group(6)
+        if M.group(2):
+            args = M.group(3)
+            if M.group(4):
+                default = M.group(5)
+                mathjax_config["TeX"]["Macros"][name] = [definition, args, default]
+            else:
+                mathjax_config["TeX"]["Macros"][name] = [definition, args]
+        else:
+            mathjax_config["TeX"]["Macros"][name] = definition
+        latex_elements["preamble"] += line

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2021 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -58,6 +58,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
 
   m_seconds_per_year = units::convert(m_sys, 1, "second", "years");
 
+  m_e_factor = m_config->get_number("stress_balance.sia.enhancement_factor");
+  m_e_factor_interglacial = m_config->get_number("stress_balance.sia.enhancement_factor_interglacial");
+
   {
     rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
     m_flow_law = ice_factory.create();
@@ -113,8 +116,7 @@ void SIAFD::init() {
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
                    "  e=%f for ice accumulated during glacial periods\n",
-                   m_flow_law->enhancement_factor_interglacial(),
-                   m_flow_law->enhancement_factor());
+                   m_e_factor_interglacial, m_e_factor);
   }
 }
 
@@ -563,8 +565,6 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   const double
     current_time                    = m_grid->ctx()->time()->current(),
-    enhancement_factor              = m_flow_law->enhancement_factor(),
-    enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial(),
     D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool
@@ -611,7 +611,7 @@ void SIAFD::compute_diffusivity(bool full_update,
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
   std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_number("constants.ice.grain_size", "m"));
-  std::vector<double> e_factor(Mz, enhancement_factor);
+  std::vector<double> e_factor(Mz, m_e_factor);
 
   double D_max = 0.0;
   int high_diffusivity_counter = 0;
@@ -667,9 +667,9 @@ void SIAFD::compute_diffusivity(bool full_update,
             for (int k = 0; k <= ks; ++k) {
               const double accumulation_time = current_time - A[k];
               if (interglacial(accumulation_time)) {
-                e_factor[k] = enhancement_factor_interglacial;
+                e_factor[k] = m_e_factor_interglacial;
               } else {
-                e_factor[k] = enhancement_factor;
+                e_factor[k] = m_e_factor;
               }
             }
           }

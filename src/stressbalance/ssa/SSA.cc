@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -78,6 +78,8 @@ SSA::SSA(IceGrid::ConstPtr g)
     m_taud(m_grid, "taud", WITHOUT_GHOSTS),
     m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
 {
+
+  m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
 
   strength_extension = new SSAStrengthExtension(*m_config);
 
@@ -231,14 +233,6 @@ static int weight(bool margin_bc,
 /*!
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
-
-If configuration parameter `sia.surface_gradient_method` = `eta` then the surface
-gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
-\f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
-this quantity is more regular at ice sheet margins, and so we get a better
-surface gradient. When the thickness at a grid point is very small (below \c
-minThickEtaTransform in the procedure), the formula is slightly modified to
-give a lower driving stress. The transformation is not used in floating ice.
  */
 void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &surface_elevation,

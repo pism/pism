@@ -35,6 +35,9 @@ public:
   GPBLD(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
 protected:
   double softness_impl(double enthalpy, double pressure) const;
+  void flow_n_impl(const double *stress, const double *enthalpy,
+                   const double *pressure, const double *grainsize,
+                   unsigned int n, double *result) const;
   double m_T_0, m_water_frac_coeff, m_water_frac_observed_limit;
 };
 

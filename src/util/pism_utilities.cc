@@ -22,6 +22,7 @@
 #include <cstdarg>              // va_list, va_start(), va_end()
 #include <sstream>              // istringstream, ostringstream
 #include <cstdio>               // vsnprintf
+#include <cassert>              // assert
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
@@ -128,7 +129,14 @@ bool member(const std::string &string, const std::set<std::string> &set) {
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  assert(local != result);
   int err = MPI_Allreduce(local, result, count, MPI_DOUBLE, op, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+}
+
+void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op) {
+  assert(local != result);
+  int err = MPI_Allreduce(local, result, count, MPI_INT, op, comm);
   PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
@@ -141,6 +149,10 @@ void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
 }
 
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
+}
+
+void GlobalSum(MPI_Comm comm, int *local, int *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_SUM);
 }
 
@@ -182,56 +194,42 @@ std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
   std::string result;
 
-  snprintf(buffer, sizeof(buffer), "PISM (%s)\n", pism::revision);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "CMake %s.\n", pism::cmake_version);
-  result += buffer;
+  result += pism::printf("PISM (%s)\n", pism::revision);
+  result += pism::printf("CMake %s.\n", pism::cmake_version);
 
   PetscGetVersion(buffer, TEMPORARY_STRING_LENGTH);
   result += buffer;
   result += "\n";
-
-  snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
-           pism::petsc_configure_flags);
-  result += buffer;
+  result += pism::printf("PETSc configure: %s\n", pism::petsc_configure_flags);
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
-  snprintf(buffer, TEMPORARY_STRING_LENGTH, "OpenMPI %d.%d.%d\n",
-           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+  result += pism::printf("OpenMPI %d.%d.%d\n",
+                         OMPI_MAJOR_VERSION,
+                         OMPI_MINOR_VERSION,
+                         OMPI_RELEASE_VERSION);
 #else
   // Assume that other MPI libraries implement this part of the MPI-3 standard...
   int string_length = TEMPORARY_STRING_LENGTH;
   MPI_Get_library_version(buffer, &string_length);
+  result += buffer;
 #endif
-  result += buffer;
 
-  snprintf(buffer, sizeof(buffer), "NetCDF %s.\n", nc_inq_libvers());
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "FFTW %s.\n", fftw_version);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "GSL %s.\n", GSL_VERSION);
-  result += buffer;
+  result += pism::printf("NetCDF %s.\n", nc_inq_libvers());
+  result += pism::printf("FFTW %s.\n", fftw_version);
+  result += pism::printf("GSL %s.\n", GSL_VERSION);
 
 #if (Pism_USE_PROJ==1)
-  snprintf(buffer, sizeof(buffer), "PROJ %s.\n", pj_release);
-  result += buffer;
+  result += pism::printf("PROJ %s.\n", pj_release);
 #endif
 
 #if (Pism_USE_JANSSON==1)
-  snprintf(buffer, sizeof(buffer), "Jansson %s.\n", JANSSON_VERSION);
-  result += buffer;
+  result += pism::printf("Jansson %s.\n", JANSSON_VERSION);
 #endif
 
 #if (Pism_BUILD_PYTHON_BINDINGS==1)
-  snprintf(buffer, sizeof(buffer), "SWIG %s.\n", pism::swig_version);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "petsc4py %s.\n", pism::petsc4py_version);
-  result += buffer;
+  result += pism::printf("SWIG %s.\n", pism::swig_version);
+  result += pism::printf("petsc4py %s.\n", pism::petsc4py_version);
 #endif
 
   return result;

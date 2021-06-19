@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <sstream>
+#include <sstream> // std::istringstream
 
 #include "Time.hh"
 
@@ -328,9 +328,7 @@ void Time::init(const Logger &log) {
 }
 
 std::string Time::date(double T) const {
-  char tmp[256];
-  snprintf(tmp, 256, "%.3f", seconds_to_years(T));
-  return std::string(tmp);
+  return pism::printf("%.3f", seconds_to_years(T));
 }
 
 std::string Time::date() const {
@@ -346,9 +344,7 @@ std::string Time::end_date() const {
 }
 
 std::string Time::run_length() const {
-  char tmp[256];
-  snprintf(tmp, 256, "%3.3f", seconds_to_years(m_run_end - m_run_start));
-  return std::string(tmp);
+  return pism::printf("%3.3f", seconds_to_years(m_run_end - m_run_start));
 }
 
 double Time::mod(double time, unsigned int period_years) const {

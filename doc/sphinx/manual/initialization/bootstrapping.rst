@@ -6,10 +6,17 @@ Bootstrapping
 -------------
 
 "Bootstrapping" in PISM means starting a modeling run with less than sufficient data, and
-letting essentially heuristic models fill in needed fields. These heuristics are applied
-before the first time step is taken, so they are part of an initialization process.
-Bootstrapping uses the option :opt:`-bootstrap`; see section :ref:`sec-runscript` for an
-example.
+then either
+
+- interpolating some of the missing fields from a separate file, and
+- letting essentially heuristic models fill in remaining ones.
+
+So, "bootstrapping" is used whenever some fields are missing *or* interpolation is
+necessary, for example when going to a finer grid during grid sequencing.
+
+These steps are performed before the first time step is taken, so they are part of an
+initialization process. Bootstrapping uses the option :opt:`-bootstrap`; see section
+:ref:`sec-runscript` for an example.
 
 The need for an identified stage like "bootstrapping" comes from the fact that initial
 conditions for the evolution equations describing an ice sheet are not all observable. As
@@ -39,27 +46,26 @@ When using :opt:`-bootstrap` you will need to specify both grid dimensions (usin
 computational box for the ice with :opt:`-Lz` (section :ref:`sec-coords`). The data read
 from the file can determine the horizontal extent of the model, if options :opt:`-Lx`,
 :opt:`-Ly` are not set. The additional required specification of vertical extent by
-:opt:`-Lz` is reasonably natural because typical data used in "bootstrapping" are
+:opt:`-Lz` is reasonably natural because input data used in "bootstrapping" are
 two-dimensional. Using :opt:`-bootstrap` without specifying all four options :opt:`-Mx`,
 :opt:`-My`, :opt:`-Mz`, :opt:`-Lz` is an error.
 
 If :opt:`-Lx` and :opt:`-Ly` specify horizontal grid dimensions smaller than in the
-bootstrapping file, PISM will cut out the center portion of the domain. Alternatively,
-options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list of
-minimum and maximum :math:`x` and :math:`y` coordinates, respectively (in meters), which
-makes it possible to select a subset that is not centered in the bootstrapping file's
-grid.
+bootstrapping file, PISM will cut out the center portion of the domain. In PISM's regional
+mode, options :opt:`-x_range` and :opt:`-y_range` each take a list of two numbers, a list
+of minimum and maximum `x` and `y` coordinates, respectively (in meters), which makes it
+possible to select a subset that is not centered in the bootstrapping file's grid.
 
 For the key issue of what heuristic is used to determine the temperatures at depth, there
 are two methods. The default method uses ice thickness, surface temperature, surface mass
 balance, and geothermal flux. The temperature is set to the solution of a steady
 one-dimensional differential equation in which conduction and vertical advection are in
 balance, and the vertical velocity linearly-interpolates between the surface mass balance
-rate at the top and zero at the bottom. The non-default method, set with option
-:opt:`-boot_temperature_heuristic quartic_guess`, was the default in older PISM versions
-(``stable0.5`` and earlier); it does not use the surface mass balance and instead makes a
-more-heuristic estimate of the vertical temperature profile based only on the ice
-thickness, surface temperature, and geothermal flux.
+rate at the top and zero at the bottom. The non-default method, selected by setting
+:config:`bootstrapping.temperature_heuristic` to ``quartic_guess``, was the default in
+older PISM versions (``stable0.5`` and earlier); it does not use the surface mass balance
+and instead makes a more-heuristic estimate of the vertical temperature profile based only
+on the ice thickness, surface temperature, and geothermal flux.
 
 .. _sec-bootstrapping-format:
 
@@ -81,13 +87,12 @@ Allowed formats for a bootstrapping file are relatively simple to describe.
    :ref:`sec-cf-standard-names` for a list of CF standard names used in
    PISM.
 
-   Specifically, the bed elevation (topography) is read by ``standard_name`` =
+   For example, the bed elevation (topography) is read by ``standard_name`` =
    ``bedrock_altitude`` and the ice thickness by ``standard_name`` =
    ``land_ice_thickness``.
 #. Any two-dimensional variable except bed topography and ice thickness may be missing.
    For missing variables some heuristic will be applied. See :numref:`tab-modelhierarchy`
-   for a sketch of the data necessary for bootstrapping; see ``src/base/iMbootstrap.cc``
-   for all further details.
+   for a sketch of the data necessary for bootstrapping.
 #. Surface elevation is ignored if present. Users with surface elevation and bed elevation
    data should compute the ice thickness variable, put it in the bootstrapping file, and
    set its ``standard_name`` to ``land_ice_thickness``.

@@ -5,6 +5,7 @@ Tests of PISM's ocean models and modifiers.
 
 import PISM
 from PISM.testing import *
+from PISM.testing import filename as tmp_name
 import os
 import numpy as np
 from unittest import TestCase
@@ -15,8 +16,6 @@ config = PISM.Context().config
 config.set_number("grid.Mx", 3)
 config.set_number("grid.My", 5)
 config.set_number("grid.Mz", 5)
-
-config.set_string("ocean.delta_sl_2d.file", "ocean_delta_SL_input.nc")
 
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
@@ -140,7 +139,7 @@ class GivenTest(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.filename = "ocean_given_input.nc"
+        self.filename = tmp_name("ocean_given_input")
 
         self.temperature = 263.0
         self.mass_flux = 3e-3
@@ -188,8 +187,8 @@ class GivenTHTest(TestCase):
         self.geometry.bed_elevation.set(-2 * ice_thickness)
         self.geometry.ensure_consistency(0.0)
 
-        filename = "ocean_given_th_input.nc"
-        self.filename = filename
+        self.filename = tmp_name("ocean_given_th_input")
+        filename = self.filename
 
         PISM.util.prepare_output(filename)
 
@@ -221,7 +220,7 @@ class GivenTHTest(TestCase):
 
 class DeltaT(TestCase):
     def setUp(self):
-        self.filename = "ocean_delta_T_input.nc"
+        self.filename = tmp_name("ocean_delta_T_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -249,7 +248,7 @@ class DeltaT(TestCase):
 
 class DeltaSMB(TestCase):
     def setUp(self):
-        self.filename = "ocean_delta_SMB_input.nc"
+        self.filename = tmp_name("ocean_delta_SMB_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -277,7 +276,7 @@ class DeltaSMB(TestCase):
 
 class AnomalyBMB(TestCase):
     def setUp(self):
-        self.filename = "ocean_delta_BMB_input.nc"
+        self.filename = tmp_name("ocean_delta_BMB_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -312,7 +311,7 @@ class AnomalyBMB(TestCase):
 
 class DeltaMBP(TestCase):
     def setUp(self):
-        self.filename = "ocean_delta_MBP_input.nc"
+        self.filename = tmp_name("ocean_delta_MBP_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = PISM.OceanConstant(self.grid)
@@ -345,7 +344,7 @@ class DeltaMBP(TestCase):
 
 class FracMBP(TestCase):
     def setUp(self):
-        self.filename = "ocean_frac_MBP_input.nc"
+        self.filename = tmp_name("ocean_frac_MBP_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = PISM.OceanConstant(self.grid)
@@ -399,7 +398,7 @@ class FracMBP(TestCase):
 
 class FracSMB(TestCase):
     def setUp(self):
-        self.filename = "ocean_frac_SMB_input.nc"
+        self.filename = tmp_name("ocean_frac_SMB_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -438,7 +437,7 @@ class FracSMB(TestCase):
 
 class Cache(TestCase):
     def setUp(self):
-        self.filename = "ocean_dT.nc"
+        self.filename = tmp_name("ocean_dT")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -488,7 +487,7 @@ class Cache(TestCase):
 
 class DeltaSL(TestCase):
     def setUp(self):
-        self.filename = "ocean_delta_SL_input.nc"
+        self.filename = tmp_name("ocean_delta_SL_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -528,7 +527,7 @@ class DeltaSL2D(TestCase):
             SL.write(output)
 
     def setUp(self):
-        self.filename = "ocean_delta_SL_input.nc"
+        self.filename = tmp_name("ocean_delta_SL_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -549,7 +548,6 @@ class DeltaSL2D(TestCase):
         # Use a one second time step to try to sample sea level forcing midway through the
         # interval from 0 to 1 year.
         modifier.update(self.geometry, 0.5 * seconds_per_year, 1)
-
         check_difference(modifier.elevation(),
                          self.model.elevation(),
                          self.dSL)

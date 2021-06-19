@@ -95,8 +95,6 @@ Elevation-dependent temperature and mass balance
 :|variables|: none
 :|implementation|: ``pism::surface::Elevation``
 
-.. include:: ../math-definitions.txt
-
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
 *piecewise-linear* functions of surface elevation `h`.
@@ -288,6 +286,13 @@ individual components:
 
    SMB = surface_accumulation_flux - surface_runoff_flux
 
+.. rubric:: Parameters
+
+Prefix: ``surface.pdd.``.
+
+.. pism-parameters::
+   :prefix: surface.pdd.
+
 .. _sec-surface-pik:
 
 PIK
@@ -377,24 +382,12 @@ Two methods of adjusting the SMB are available:
 
   To use this method, set :opt:`-smb_adjustment shift`.
 
-It uses the following options.
+.. rubric:: Parameters
 
-- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
-  use the following definition of the temperature lapse rate:
-- :opt:`-smb_adjustment` chooses SMB lapse rate (``shift``) or SMB scaling (``scale``).
-- :opt:`-smb_exp_factor` specifies the exponential factor used to scale the SMB
-- :opt:`-smb_lapse_rate` gives the surface mass balance lapse rate, in `m/year/km`.
-  Here, `\gamma_M=-\frac{dM}{dz}`.
-- :opt:`-surface_elevation_change_file` specifies the file containing the reference surface
-  elevation field (standard name: :var:`surface_altitude`). This file can contain several
-  surface elevation records to use lapse rate corrections relative to time-dependent
-  surface. If one record is provided, the reference surface elevation is assumed to be
-  time-independent.
-- :opt:`-surface_elevation_change_period` gives the period, in model years, to use when
-  interpreting data in the file given with ``-surface_given_file``,
-- :opt:`-surface_elevation_change_reference_year` takes the time `T` in model years. The
-  record for `t` years in ``-surface_given_file`` is interpreted as corresponding to
-  `t` years since `T`.
+Prefix: ``surface.elevation_change.``.
+
+.. pism-parameters::
+   :prefix: surface.elevation_change.
 
 .. _sec-surface-forcing:
 

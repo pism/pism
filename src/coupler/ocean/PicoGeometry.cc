@@ -18,7 +18,6 @@
  */
 
 #include <algorithm> // max_element
-
 #include "PicoGeometry.hh"
 #include "pism/util/connected_components.hh"
 #include "pism/util/IceModelVec2CellType.hh"
@@ -176,6 +175,7 @@ static void relabel(RelabelingType type,
   }
 
   std::vector<double> area(max_index + 1, 0.0);
+  std::vector<double> area1(max_index + 1, 0.0);
   {
 
     ParallelSection loop(grid->com);
@@ -198,9 +198,13 @@ static void relabel(RelabelingType type,
       loop.failed();
     }
     loop.check();
+    GlobalSum(grid->com, area.data(), area1.data(), area.size());
+
+    // copy data
+    area = area1;
 
     for (unsigned int k = 0; k < area.size(); ++k) {
-      area[k] = grid->cell_area() * GlobalSum(grid->com, area[k]);
+      area[k] = grid->cell_area() * area[k];
     }
   }
 
@@ -509,6 +513,9 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
                                        const IceModelVec2Int &basin_mask,
                                        std::vector<int> &result) {
 
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> result1(2*m_n_basins, 0);
+
   IceModelVec::AccessList list{ &cell_type, &basin_mask };
 
   for (Points p(*m_grid); p; p.next()) {
@@ -544,9 +551,12 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
       }
     }
   }
-  //GlobalSum(m_grid->com, result.data(), 2*m_n_basins);
+
+  GlobalSum(m_grid->com, result.data(), result1.data(), 2*m_n_basins);
+  // copy values
+  result       = result1;
+
   for (int b = 1; b < 2*m_n_basins; ++b) {
-    result[b] = GlobalSum(m_grid->com, result[b]);
     if (b%2==0)
       m_log->message(2, "PICO, get basin neighbors of b=%d: b1=%d and b2=%d \n",b/2,result[b],result[b+1]);
   }
@@ -563,6 +573,10 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
                                                      std::vector<int> &cfs_in_basins_per_shelf) {
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves*m_n_basins,0);
+  std::vector<int> most_shelf_cells_in_basinr(m_n_shelves, 0);
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask };
 
@@ -583,13 +597,15 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
       }
     }
 
-    //GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), m_n_shelves*m_n_basins);
-    //GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    // copy values
+    cfs_in_basins_per_shelf       = cfs_in_basins_per_shelfr;
+    n_shelf_cells_per_basin       = n_shelf_cells_per_basinr;
+
     for (int s = 0; s < m_n_shelves; s++) {
       int n_shelf_cells_per_basin_max = 0;
       for (int b = 0; b < m_n_basins; b++) {
-        cfs_in_basins_per_shelf[s*m_n_basins+b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s*m_n_basins+b]);
-        n_shelf_cells_per_basin[s*m_n_basins+b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s*m_n_basins+b]);
         if (n_shelf_cells_per_basin[s*m_n_basins+b] > n_shelf_cells_per_basin_max) {
           most_shelf_cells_in_basin[s] = b;
           n_shelf_cells_per_basin_max = n_shelf_cells_per_basin[s*m_n_basins+b];
@@ -612,10 +628,11 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   m_tmp.copy_from(shelf_mask);
 
+  std::vector<int> n_shelf_cells_to_split(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cells_to_splitr(m_n_shelves*m_n_basins,0);
+
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp};
 
-
-  std::vector<int> n_shelf_cells_to_split(m_n_shelves*m_n_basins,0);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
     if (cell_type.as_int(i, j) == MASK_FLOATING) {
@@ -628,13 +645,16 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
     }
   }
 
-  //GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), m_n_shelves*m_n_basins);
+  GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), n_shelf_cells_to_splitr.data(), m_n_shelves*m_n_basins);
+  // copy values
+  n_shelf_cells_to_split       = n_shelf_cells_to_splitr;
+
+  // no GlobalSum needed here, only local:
   std::vector<int> add_shelf_instance(m_n_shelves*m_n_basins,0);
   int m_shelf_numbers_to_add = 0;
   for (int s = 0; s < m_n_shelves; s++) {
     int b0 = most_shelf_cells_in_basin[s];
     for (int b = 0; b < m_n_basins; b++) {
-      n_shelf_cells_to_split[s*m_n_basins+b] = GlobalSum(m_grid->com, n_shelf_cells_to_split[s*m_n_basins+b]);
       if (n_shelf_cells_to_split[s*m_n_basins+b] > 0) {
         m_shelf_numbers_to_add += 1;
         add_shelf_instance[s*m_n_basins+b] = m_n_shelves + m_shelf_numbers_to_add;
@@ -826,7 +846,9 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   int n_shelves = shelf_mask.range().max + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
+  std::vector<double> GL_distance_max1(n_shelves, 0.0);
   std::vector<double> CF_distance_max(n_shelves, 0.0);
+  std::vector<double> CF_distance_max1(n_shelves, 0.0);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -850,10 +872,11 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   }
 
   // compute global maximums
-  for (int k = 0; k < n_shelves; ++k) {
-    GL_distance_max[k] = GlobalMax(m_grid->com, GL_distance_max[k]);
-    CF_distance_max[k] = GlobalMax(m_grid->com, CF_distance_max[k]);
-  }
+  GlobalMax(m_grid->com, GL_distance_max.data(), GL_distance_max1.data(), n_shelves);
+  GlobalMax(m_grid->com, CF_distance_max.data(), CF_distance_max1.data(), n_shelves);
+  // copy data
+  GL_distance_max = GL_distance_max1;
+  CF_distance_max = CF_distance_max1;
 
   double GL_distance_ref = *std::max_element(GL_distance_max.begin(), GL_distance_max.end());
 

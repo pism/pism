@@ -22,7 +22,6 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/stressbalance/blatter/util/DataAccess.hh"
 #include "manufactured_solutions.hh"
 
 namespace pism {
@@ -83,7 +82,7 @@ void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_source(x[q], z[q], m_L, m_rho_i, m_rho_w, m_g);
 
@@ -112,7 +111,7 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_surface(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
@@ -149,7 +148,7 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_cfbc_base(x[q], m_L, m_rho_i, m_rho_w, m_g);
 
@@ -185,17 +184,17 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
   const IceModelVec2S &b = inputs.geometry->bed_elevation;
 
   {
-    DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
-
-    IceModelVec::AccessList list{&b};
+    IceModelVec::AccessList list{&b, &m_parameters};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      P[j][i].bed        = b(i, j);
-      P[j][i].floatation = 0.0;
+      m_parameters(i, j).bed        = b(i, j);
+      m_parameters(i, j).floatation = 0.0;
      }
   }
+
+  m_parameters.update_ghosts();
 }
 
 } // end of namespace stressbalance

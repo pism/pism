@@ -1,5 +1,4 @@
 .. include:: ../../../global.txt
-.. include:: ../../../math-definitions.txt
 
 .. _sec-subhydro:
 
@@ -135,7 +134,7 @@ We solve
 .. math::
    :label: eq-steady-hydro-aux
 
-   \diff{u}{t} = -\div (\V u)
+   \diff{u}{t} = -\Div (\V u)
 
 on the grounded part of the domain with the initial state `u_0 = \tau M`, where `\tau` is
 the scaling of the input rate (:config:`hydrology.steady.input_rate_scaling`) and `M` is

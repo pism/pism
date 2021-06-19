@@ -1177,12 +1177,11 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   ierr = SNESGetIterationNumber(m_snes, &iter);
   PISM_CHK(ierr, "SNESGetIterationNumber");
 
-  char file_name[PETSC_MAX_PATH_LEN];
-  snprintf(file_name, PETSC_MAX_PATH_LEN, "PISM_SSAFEM_J%d.m", (int)iter);
+  auto file_name = pism::printf("PISM_SSAFEM_J%d.m", (int)iter);
 
   m_log->message(2,
                  "writing Matlab-readable file for SSAFEM system A xsoln = rhs to file `%s' ...\n",
-                 file_name);
+                 file_name.c_str());
 
   petsc::Viewer viewer(m_grid->com);
 
@@ -1192,7 +1191,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_ASCII_MATLAB);
   PISM_CHK(ierr, "PetscViewerPushFormat");
 
-  ierr = PetscViewerFileSetName(viewer, file_name);
+  ierr = PetscViewerFileSetName(viewer, file_name.c_str());
   PISM_CHK(ierr, "PetscViewerFileSetName");
 
   ierr = PetscObjectSetName((PetscObject) Jac, "A");

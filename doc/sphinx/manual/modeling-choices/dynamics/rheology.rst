@@ -23,9 +23,10 @@ is the ice temperature, `\omega` is the liquid water fraction, `P` is the pressu
 the grain size, and `\sigma^2 = \frac{1}{2} \|\sigma_{ij}'\|_F = \frac{1}{2} \sigma_{ij}'
 \sigma_{ij}'` defines the second invariant `\sigma` of the stress deviator tensor.
 
-Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity" form of
+Form :eq:`eq-constitutive` of the flow law is used in the SIA, but the "viscosity form" of
 a flow law, found by inverting the constitutive relation :eq:`eq-constitutive`, is needed
-for ice shelf and ice stream (SSA) flow :cite:`BBssasliding`:
+for ice shelf and ice stream (SSA) flow and the first-order stress balance approximation
+:cite:`BBssasliding`:
 
 .. math::
    :label: eq-viscosityform
@@ -64,128 +65,170 @@ which is a function `F(\sigma,T,\omega,P)`. This law is the only one in the lite
 where the ice softness depends on both the temperature and the liquid water fraction, so
 it parameterizes the (observed) softening of pressure-melting-temperature ice as its
 liquid fraction increases. One can use this default polythermal law or one may choose
-among a number of "cold ice" laws listed in :numref:`tab-flowlaw` which do not use the
-liquid water fraction.
+among a number of "cold ice" laws listed below which do not use the liquid water fraction.
 
-All flow law parameters can be changed using configuration parameters; see section
-:ref:`sec-pism-defaults` and the implementation of flow laws in the `Source Code Browser
-<pism-browser_>`_. Note that different flow laws have different numbers of parameters, but
-all have at least two parameters (e.g. `A_0` and `n` in ``isothermal_glen``). One can
-create a new, and reasonably arbitrarily, scalar function `F` by modifying source code;
-see source files in ``src/base/rheology/``.
+.. _sec-rheology-choices:
 
-Choosing the flow laws
-^^^^^^^^^^^^^^^^^^^^^^
+Flow law choices
+^^^^^^^^^^^^^^^^
 
-Configuration parameters :config:`stress_balance.sia.flow_law`,
-:config:`stress_balance.ssa.flow_law`, and :config:`stress_balance.blatter.flow_law`
+Configuration parameters
+
+- :config:`stress_balance.sia.flow_law`,
+- :config:`stress_balance.ssa.flow_law`, and
+- :config:`stress_balance.blatter.flow_law`
+
 choose which flow law is used by the SIA, SSA, and the Blatter stress balances models,
-respectively. Allowed arguments are listed in :numref:`tab-flowlaw` below.
+respectively. Allowed arguments are listed below.
 
-.. list-table:: Flow laws
-   :name: tab-flowlaw
-   :header-rows: 1
-   :widths: 1,3
+#. ``gpbld``: Glen-Paterson-Budd-Lliboutry-Duval law :cite:`LliboutryDuval1985`, the
+   enthalpy-based default in PISM :cite:`AschwandenBuelerKhroulevBlatter`. Extends the
+   Paterson-Budd law (below) to positive liquid water fraction. If `A_{c}(T)` is from
+   Paterson-Budd then this law returns
 
-   * - Name
-     - Comments and References
+   .. math::
 
-   * - ``gpbld``
-     - Glen-Paterson-Budd-Lliboutry-Duval law :cite:`LliboutryDuval1985`, the enthalpy-based
-       default in PISM :cite:`AschwandenBuelerKhroulevBlatter`. Extends the Paterson-Budd law
-       (below) to positive liquid water fraction. If `A_{c}(T)` is from Paterson-Budd then
-       this law returns
+      A(T,\omega) = A_{c}(T) (1 + C \omega),
 
-       .. math::
+   where `\omega` is the liquid water fraction, `C` is a configuration parameter
+   :config:`flow_law.gpbld.water_frac_coeff`, and `\omega` is capped at level
+   :config:`flow_law.gpbld.water_frac_observed_limit`.
 
-          A(T,\omega) = A_{c}(T) (1 + C \omega),
+   .. rubric:: Parameters
 
-       where `\omega` is the liquid water fraction, `C` is a configuration parameter
-       :config:`flow_law.gpbld.water_frac_coeff`, and `\omega` is capped at level
-       :config:`flow_law.gpbld.water_frac_observed_limit`.
+   This flow law uses all the parameters controlling the Paterson-Budd law, plus the ones
+   listed below.
 
-   * - ``pb``
-     - Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
-       "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where
+   .. pism-parameters::
+      :prefix: flow_law.gpbld.
 
-       .. math::
+#. ``pb``: Paterson-Budd law, the cold-mode default. Fixed Glen exponent `n=3`. Has a split
+   "Arrhenius" term `A(T) = A \exp(-Q/RT^*)` where
 
-          A &= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
+   .. math::
 
-          Q &= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
+      A &= 3.615 \times 10^{-13}\, \text{s}^{-1}\, \text{Pa}^{-3},
 
-       if `T^* < 263` K and
+      Q &= 6.0 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
-       .. math::
+   if `T^* < T_{\text{critical}}` and
 
-          A &= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
+   .. math::
 
-          Q &= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
+      A &= 1.733 \times 10^{3}\, \text{s}^{-1}\, \text{Pa}^{-3},
 
-       if `T^* > 263` K.
+      Q &= 13.9 \times 10^4\, \text{J}\, \text{mol}^{-1}
 
-       Here `T^*` is pressure-adjusted temperature :cite:`PatersonBudd`.
+   if `T^* > T_{\text{critical}}`. Here `T^*` is pressure-adjusted temperature
+   :cite:`PatersonBudd`.
 
-   * - ``arr``
-     - *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
-       `T^*<263` K in the Paterson-Budd law apply. This is the flow law used in the
-       thermomechanically-coupled exact solutions run by ``pismv -test F`` and
-       ``pismv -test G`` :cite:`BBL`, :cite:`BB`.
+   .. rubric:: Parameters
 
-   * - ``arrwarm``
-     - *Warm* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values for
-       `T^*>263` K in Paterson-Budd apply.
+   .. pism-parameters::
+      :prefix: flow_law.Paterson_Budd.
 
-   * - ``hooke``
-     - Hooke law with
+#. ``arr``: *Cold* part of Paterson-Budd. Regardless of temperature, the `A` and `Q` values
+   for `T^* < T_{\text{critical}}` in the Paterson-Budd law apply. This is the flow law
+   used in the thermomechanically-coupled exact solutions run by ``pismv -test F`` and
+   ``pismv -test G`` :cite:`BBL`, :cite:`BB`.
 
-       .. math::
+#. ``arrwarm``: *Warm* part of Paterson-Budd. Regardless of temperature, the `A` and `Q`
+   values for `T^* > T_{\text{critical}}` in Paterson-Budd apply.
 
-          A(T) = A \exp\left(-\frac{Q}{RT^*} + 3C (T_r - T^*)^\kappa\right).
+#. ``hooke``: Hooke law with
 
-       Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
+   .. math::
 
-   * - ``isothermal_glen``
-     - The isothermal Glen flow law. Here `F(\sigma) = A_0 \sigma^{n-1}` with inverse
-       `\nu(D) = \frac{1}{2} B_0 D^{(1-n)/(2n)}` where `A_0` is the ice softness and
-       `B_0=A_0^{-1/n}` is the ice hardness.
+      A(T) = A \exp\left(-\frac{Q}{RT^*} + 3C (T_r - T^*)^\kappa\right).
 
-   * - ``gk``
-     - The Goldsby-Kohlstedt flow law. This law has a combination of exponents from
-       `n=1.8` to `n=4` :cite:`GoldsbyKohlstedt`. Its viscosity form
-       :eq:`eq-viscosityform` is not known, so it can only be used by the SIA stress
-       balance. Because it has more than one power, option ``-sia_n`` has no effect,
-       though ``-sia_e`` works as expected. This law does not use the liquid water
-       fraction, but only the temperature.
+   Fixed Glen exponent `n=3` and constants as in :cite:`Hooke`, :cite:`PayneBaldwin`.
 
-Choose enhancement factor and exponent
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   .. rubric:: Parameters
 
-An enhancement factor can be added to any flow law through a runtime option. Single-power
-laws also permit control of the flow law exponent through a runtime option.
+   .. pism-parameters::
+      :prefix: flow_law.Hooke.
 
-Options :opt:`-sia_e` and :opt:`-ssa_e` set flow enhancement factors for the SIA and SSA
-respectively. Option ``-sia_e`` sets "`e`" in `D_{ij} = e\, F(\sigma,T,\omega,P,d)\,
-\sigma_{ij}',` in equation :eq:`eq-constitutive`. Option ``-ssa_e`` sets "`e`" in the
-viscosity form so that `\sigma_{ij}' = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij}.`
+#. ``isothermal_glen``: The isothermal Glen flow law.
 
-Options :opt:`-sia_n` and :opt:`-ssa_n` set the exponent when a single-power flow law is
-used (see :numref:`tab-flowlaw`). Simply changing to a different value from the default
-`n=3` is not recommended without a corresponding change to the enhancement factor,
-however. This is because the coefficient and the power are non-trivially linked when a
-power law is fit to experimental data :cite:`CuffeyPaterson`, :cite:`PatersonBudd`.
+   Here
+
+   .. math::
+      :label: eq-isothermal-glen
+
+      F(\sigma) &= A_0 \sigma^{n-1},
+
+      \nu(D) &= \frac{1}{2} B_0 D^{(1-n)/(2n)},
+
+   where `A_0` is the ice softness and `B_0=A_0^{-1/n}` is the ice hardness.
+
+   .. rubric:: Parameters
+
+   .. pism-parameters::
+      :prefix: flow_law.isothermal_Glen.
+
+#. ``gk``: The Goldsby-Kohlstedt flow law. This law has a combination of exponents from
+   `n=1.8` to `n=4` :cite:`GoldsbyKohlstedt`.
+
+   .. note::
+
+      The viscosity form :eq:`eq-viscosityform` of this flow law is not known, so it can
+      only be used by the SIA stress balance.
+
+   Because it has more than one power, :config:`stress_balance.sia.Glen_exponent` has no
+   effect, though :config:`stress_balance.sia.enhancement_factor` works as expected. This
+   law does not use the liquid water fraction, but only the temperature.
+
+   Constants defining this flow law are hard-wired in the implementation. Please see the
+   source code for details.
+
+.. _sec-rheology-enhancement:
+
+Enhancement factor and exponent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+An enhancement factor can be added to any flow law. Single-power laws also permit control
+of the flow law exponent.
+
+The parameter :config:`stress_balance.sia.enhancement_factor` sets `e` in
+
+.. math::
+   :label: eq-sia-enhancement
+
+   D_{ij} = e\, F(\sigma,T,\omega,P,d)\, \sigma_{ij}',
+
+see :eq:`eq-constitutive`.
+
+Parameters :config:`stress_balance.ssa.enhancement_factor` and
+:config:`stress_balance.blatter.enhancement_factor` set `e` in
+
+.. math::
+   :label: eq-ssa-bp-enhancement
+
+   \sigma_{ij}' = e^{-1/n}\, 2\, \nu(D,T,\omega,P,d)\, D_{ij},
+
+see :eq:`eq-viscosityform`.
+
+Parameters :config:`stress_balance.sia.Glen_exponent`,
+:config:`stress_balance.ssa.Glen_exponent`, :config:`stress_balance.blatter.Glen_exponent`
+set the exponent when a single-power flow law is used.
+
+Simply changing to a different value from the default `n=3` is not recommended without a
+corresponding change to the enhancement factor, however. This is because the coefficient
+and the power are non-trivially linked when a power law is fit to experimental data
+:cite:`CuffeyPaterson`, :cite:`PatersonBudd`.
 
 Here is a possible approach to adjusting both the enhancement factor and the exponent.
 Suppose `\sigma_0` is preferred as a scale (reference) for the driving stress that
 appears in both SIA and SSA models. Typically this is on the order of one bar or
 `10^5` Pa. Suppose one wants the same amount of deformation `D_0` at this
 reference driving stress as one changes from the old exponent `n_{old}` to the new
-exponent `n_{new}`. That is, suppose one wants both
+exponent `n_{new}`. That is, suppose one wants
 
 .. math::
 
-   D_0 = E_{old}\, A\, \sigma_0^{n_{old}} \qquad \text{and} \qquad D_0
-   = E_{new}\, A\, \sigma_0^{n_{new}}
+   D_0 &= E_{old}\, A\, \sigma_0^{n_{old}},
+
+   D_0 &= E_{new}\, A\, \sigma_0^{n_{new}}
 
 to be true with a new enhancement factor `E_{new}`. Eliminating `D_0` and
 solving for the new enhancement factor gives
@@ -211,35 +254,14 @@ driving stress of `10^5` Pa will use
 because `E_{new} = 3.0 \sigma_0^{3-6} = 3.0 \times (10^5)^{-3}` from equation
 :eq:`eq-renewexponent`.
 
-A corresponding formula applies to ``-ssa_e`` if the ``-ssa_n`` value changes.
+A corresponding formula applies to changing the enhancement factor for the SSA and Blatter
+stress balance models.
 
-.. list-table:: For all flow laws, an enhancement factor can be added by a runtime option.
-                For the single-power flow laws in :numref:`tab-flowlaw`, the (Glen)
-                exponent can be controlled by a runtime option.
-   :name: tab-enhancementandexponent
-   :header-rows: 1
-   :widths: 1,2,2
+.. note::
 
-   * - Option
-     - Configuration parameter
-     - Comments
+   #. :cite:`AschwandenAdalgeirsdottirKhroulev` used `e_{\text{SIA}} = 3.0` for Greenland
+      ice sheet simulations (see the supplement) while :cite:`Martinetal2011` used
+      `e_{\text{SIA}} = 4.5` for simulations of the Antarctic ice sheet with PISM-PIK.
 
-   * - :opt:`-sia_e` (1.0)
-     - ``stress_balance.sia.enhancement_factor``
-     - Note (see the supplement of :cite:`AschwandenAdalgeirsdottirKhroulev`) used `3.0`
-       for Greenland ice sheet simulations while :cite:`Martinetal2011` used `4.5` for
-       simulations of the Antarctic ice sheet with PISM-PIK.
-
-   * - :opt:`-sia_n` (3.0)
-     - ``stress_balance.sia.Glen_exponent``
-     - See text and eqn :eq:`eq-renewexponent` to also set ``-sia_e`` if ``-sia_n`` changes.
-
-   * - :opt:`-ssa_e` (1.0)
-     - ``stress_balance.ssa.enhancement_factor``
-     - Note :cite:`Martinetal2011` used `0.512` for simulations of the Antarctic ice sheet with
-       PISM-PIK.
-
-   * - :opt:`-ssa_n` (3.0)
-     - ``stress_balance.ssa.Glen_exponent``
-     - See text and eqn :eq:`eq-renewexponent` to also set ``-ssa_e`` if ``-ssa_n``
-       changes.
+   #. :cite:`Martinetal2011` used `e_{\text{SSA}} =0.512` for simulations of the Antarctic
+      ice sheet with PISM-PIK.

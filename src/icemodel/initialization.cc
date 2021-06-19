@@ -70,6 +70,7 @@
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/frontalmelt/Factory.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 
@@ -960,6 +961,19 @@ void IceModel::init_calving() {
   // allocate front retreat code if necessary
   if (not m_front_retreat and allocate_front_retreat) {
     m_front_retreat.reset(new FrontRetreat(m_grid));
+  }
+
+  {
+    auto filename = m_config->get_string("calving.rate_scaling.file");
+    if (not filename.empty()) {
+      m_calving_rate_factor.reset(new ScalarForcing(m_ctx,
+                                                    "calving.rate_scaling",
+                                                    "frac_calving_rate",
+                                                    "1",
+                                                    "1",
+                                                    "calving rate scaling factor"));
+      m_calving_rate_factor->init();
+    }
   }
 }
 

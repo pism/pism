@@ -60,5 +60,22 @@ double GPBLD::softness_impl(double enthalpy, double pressure) const {
   }
 }
 
+void GPBLD::flow_n_impl(const double *stress, const double *enthalpy,
+                        const double *pressure, const double *grainsize,
+                        unsigned int n, double *result) const {
+  // optimize the common case of Glen n=3
+  if (m_n == 3.0) {
+    for (unsigned int k = 0; k < n; ++k) {
+      result[k] = this->softness(enthalpy[k], pressure[k]) * (stress[k] * stress[k]);
+    }
+
+    return;
+  }
+
+  for (unsigned int k = 0; k < n; ++k) {
+    result[k] = this->flow(stress[k], enthalpy[k], pressure[k], grainsize[k]);
+  }
+}
+
 } // end of namespace rheology
 } // end of namespace pism

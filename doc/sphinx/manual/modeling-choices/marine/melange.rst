@@ -1,7 +1,5 @@
 .. include:: ../../../global.txt
 
-.. include:: ../../../math-definitions.txt
-
 .. _sec-model-melange-pressure:
 
 Modeling melange back-pressure

@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -111,7 +111,7 @@ void IceModel::write_snapshot() {
   // is only used if save_now == true, and in
   // this case saving_after is guaranteed to be
   // initialized. See the code below.
-  char filename[PETSC_MAX_PATH_LEN];
+  std::string filename;
 
   // determine if the user set the -save_times and -save_file options
   if (not m_save_snapshots) {
@@ -137,16 +137,17 @@ void IceModel::write_snapshot() {
 
   if (m_split_snapshots) {
     m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             m_snapshots_filename.c_str(), m_time->date(saving_after).c_str());
+    filename = pism::printf("%s_%s.nc",
+                            m_snapshots_filename.c_str(),
+                            m_time->date(saving_after).c_str());
   } else {
-    strncpy(filename, m_snapshots_filename.c_str(), PETSC_MAX_PATH_LEN);
+    filename = m_snapshots_filename.c_str();
   }
 
   m_log->message(2,
-             "saving snapshot to %s at %s, for time-step goal %s\n",
-             filename, m_time->date().c_str(),
-             m_time->date(saving_after).c_str());
+                 "saving snapshot to %s at %s, for time-step goal %s\n",
+                 filename.c_str(), m_time->date().c_str(),
+                 m_time->date(saving_after).c_str());
 
   const Profiling &profiling = m_ctx->profiling();
 

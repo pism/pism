@@ -48,6 +48,17 @@ Changes since v1.2
 - Adjust PICO ocean input average across covered basins, in which the ice shelf has 
   in fact a connection to the ocean. Large ice shelves, that cover across two basins, 
   that do not share an ocean boundary, are split into two separate ice shelf instances 
+- Implement scaling of calving rates using a time-dependent factor. Set
+  `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
+  (units: "1").
+- Add the new command-line option `-refinement_factor N`. Use this to select a regional
+  modeling domain using `-x_range ... -y_range ...`, with use a grid that is `N` times
+  finer.
+- Fix a bug in the code managing time step restrictions (this affected the last time step
+  of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
+- Adjust PICO ocean input average across covered basins, in which the ice shelf has
+  in fact a connection to the ocean. Large ice shelves, that cover across two basins,
+  that do not share an ocean boundary, are split into two separate ice shelf instances
   with individual ocean inputs.
 
 Changes from v1.1 to v1.2

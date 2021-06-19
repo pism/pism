@@ -1,5 +1,4 @@
 .. include:: ../global.txt
-.. include:: ../math-definitions.txt
 
 .. _sec-steady-hydro:
 
@@ -11,7 +10,7 @@ The "routing" subglacial hydrology model is described by equations
 .. math::
    :label: eq-hydrology-routing
 
-   \diff{W}{t} + \diff{\Wtill}{t} + \div \bq = \frac{m}{\rho_w}
+   \diff{W}{t} + \diff{\Wtill}{t} + \Div \bq = \frac{m}{\rho_w}
 
    \diff{\Wtill}{t} = \frac{m}{\rho_w} - C_d
 
@@ -67,7 +66,7 @@ Next, consider a related initial boundary value problem
 .. math::
    :label: eq-emptying-problem
 
-   \diff{u}{t} = -\div (\V u)
+   \diff{u}{t} = -\Div (\V u)
 
 on `B` with `u(x, y, 0) = u_0(x, y)` (`u_0 \ge 0`), `\V = -k(x, y) \nabla \psi`, zero flux
 on the inflow boundary, and no boundary condition on the outflow boundary.
@@ -87,19 +86,19 @@ Integrating over time from `0` to `T`, we get
 
 .. math::
 
-   \int_0^T \diff{u}{t}\, dt = - \int_0^T \div (\V u),\, \text{or}
+   \int_0^T \diff{u}{t}\, dt = - \int_0^T \Div (\V u),\, \text{or}
 
 .. math::
 
-   u_0 = u(T) + \int_0^T \div (\V u).
+   u_0 = u(T) + \int_0^T \Div (\V u).
 
 Integrating over `B` and using the divergence theorem gives
 
 .. math::
 
-   \int_B u_0 &= \int_B u(T) + \int_B \int_0^T \div (\V u)
+   \int_B u_0 &= \int_B u(T) + \int_B \int_0^T \Div (\V u)
 
-   &= \epsilon \int_B u_0 + \int_0^T \int_B \div (\V u)
+   &= \epsilon \int_B u_0 + \int_0^T \int_B \Div (\V u)
 
    &= \epsilon \int_B u_0 + \int_0^T \oint_{\partial B} (\V u) \cdot \n
 
@@ -174,17 +173,17 @@ Using an explicit time stepping approximation of :eq:`eq-emptying-problem` we ca
 
       Q &\leftarrow (0, 0).
 
-#. Compute the CFL time step `\Delta t` using `u` and `\V`.
+#. Compute the CFL time step `\dt` using `u` and `\V`.
 
-#. Perform an explicit step from `t` to `t + \Delta t`, updating `u`.
+#. Perform an explicit step from `t` to `t + \dt`, updating `u`.
 
 #. Accumulate this step's contribution to `Q`:
 
    .. math::
 
-      Q \leftarrow Q + \Delta t \cdot \V u.
+      Q \leftarrow Q + \dt \cdot \V u.
 
-#. Set `t \leftarrow t + \Delta t`
+#. Set `t \leftarrow t + \dt`
 
 #. If `\int_{\Omega} u\; dx\, dy > \epsilon`, go to 4.
 

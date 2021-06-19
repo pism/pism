@@ -1,20 +1,6 @@
 .. include:: ../global.txt
 
 .. math::
-   \newcommand{\E}{\dot{\boldsymbol{\epsilon}}}
-   \newcommand{\exponent}{\frac{1-n}{2n}}
-   \newcommand{\diff}[2]{\frac{\partial {#1}}{\partial {#2}}}
-   \newcommand{\p}[1]{\left(#1\right)}
-   \newcommand{\f}{\rho\, g\, \nabla s}
-   \newcommand{\Id}{\int_{\Omega}}
-   \newcommand{\Ib}{\int_{\partial\Omega}}
-   \newcommand{\Ibase}{\int_{\text{base}}}
-   \newcommand{\U}{\boldsymbol{u}}
-   \newcommand{\N}{\boldsymbol{n}}
-   \newcommand{\dphi}[2][i]{\diff{\varphi_{#1}}{#2}}
-   \newcommand{\dpsi}[2][i]{\diff{\psi_{#1}}{#2}}
-   \newcommand{\Hmin}{H_{\text{min}}}
-   \newcommand{\dbeta}{\diff{\beta}{\alpha}}
 
 .. _sec-blatter-details:
 
@@ -34,9 +20,9 @@ Notation
      - `x`-component of ice velocity
    * - `v`
      - `y`-component of ice velocity
-   * - `\U`
+   * - `\uu`
      - 2D vector `(u, v)`
-   * - `\N`
+   * - `\n`
      - outward-pointing normal vector at domain boundaries
    * - `\eta`
      - ice viscosity (see :eq:`eq-bp-viscosity`)
@@ -160,7 +146,7 @@ Weak form
    and the divergence theorem:
 
    .. math::
-      \int_{\Omega} \nabla\cdot (f X) = \int_{\partial \Omega} (f X)\cdot \N\, ds.
+      \int_{\Omega} \nabla\cdot (f X) = \int_{\partial \Omega} (f X)\cdot \n\, ds.
 
 .. Below
    \Id: integral over the domain
@@ -184,26 +170,26 @@ function `\psi` and integrate over the domain `\Omega`. For the first equation, 
 
    -\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &= 0,
 
-   {-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &= 0.
+   {-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &= 0.
 
 Similarly, multiplying the second equation by `\psi` and integrating by parts yields
 
 .. math::
    :label: eq-bp-weak-form-y
 
-   {-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.
+   {-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.
 
 We combine these and say that the weak form of :eq:`eq-bp` is
 
 .. math::
    :label: eq-bp-weak-form
 
-   {-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \N\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,
+   {-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,
 
 where `\nabla s = ( s_x, s_y )`.
 
 The first term corresponds to :ref:`Neumann and Robin boundary conditions <sec-bp-bc>`; it
-vanishes for "natural" BC `\left(2\, \eta\, \E \right) \cdot \N = 0`. In the basal and
+vanishes for "natural" BC `\left(2\, \eta\, \E \right) \cdot \n = 0`. In the basal and
 lateral cases this stress is nonzero. The third one corresponds to the gravitational
 driving stress and is replaced by a compensatory term in :ref:`verification tests
 <sec-bp-testing-verification>` that use manufactured solutions.
@@ -272,14 +258,14 @@ The boundary condition corresponding to basal sliding is
 .. math::
    :label: eq-bp-sliding
 
-   2\, \eta\, \E \cdot \N = - \beta \, \U.
+   2\, \eta\, \E \cdot \n = - \beta \, \uu.
 
 In the weak form :eq:`eq-bp-weak-form` this corresponds to replacing the first term:
 
 .. math::
    :label: eq-bp-sliding-weak-form
 
-   -\Ibase (\psi\, 2\, \eta\, \E) \cdot \N\, ds = \Ibase \beta\, \U\, ds.
+   -\Ibase (\psi\, 2\, \eta\, \E) \cdot \n\, ds = \Ibase \beta\, \uu\, ds.
 
 Here `\beta` has the same meaning as in :eq:`eq-sliding-linear`.
 
@@ -311,14 +297,14 @@ Marine margins
 ##############
 
 We assume that marine ice margins consist of *vertical* cliffs, i.e. the outward-pointing
-normal vector has the form `\N = (\cdot,\cdot,0)`.
+normal vector has the form `\n = (\cdot,\cdot,0)`.
 
 The Neumann boundary condition at marine margins is
 
 .. math::
    :label: eq-bp-lateral-bc
 
-   2\, \eta\, \E \cdot \N &= p_{\text{ice}} - p_{\text{water}},\;\text{where}
+   2\, \eta\, \E \cdot \n &= p_{\text{ice}} - p_{\text{water}},\;\text{where}
 
    p_{\text{ice}} &= \rho\, g\, (s - z),
 
@@ -367,7 +353,7 @@ To create a non-linear algebraic system of equations approximating :eq:`eq-bp-we
 we create a hexahedral mesh on the domain `\Omega` and use `Q_1` Galerkin finite elements.
 
 Let `\phi_j` be the scalar trial function associated with the node `j`, then the FE
-approximation of the solution `\U` has the form
+approximation of the solution `\uu` has the form
 
 .. math::
    :label: eq-bp-basis-expansion
@@ -382,7 +368,7 @@ Then the problem is
 
   .. math::
 
-     {-\Ib \left(\psi_i 2\, \eta\, \E\right) \cdot \N\, ds} +
+     {-\Ib \left(\psi_i 2\, \eta\, \E\right) \cdot \n\, ds} +
      {\Id \nabla \psi_i \cdot 2\, \eta\, \E} +
      {\Id \psi_i\, \rho\, g\, \nabla s} = 0
 
@@ -405,7 +391,7 @@ where
 
    F(U) &= F^1(U) + F^2(U) + F^3(U),
 
-   F^1 &= -\Ib (\psi\, 2\, \eta\, \E) \cdot \N\, ds,
+   F^1 &= -\Ib (\psi\, 2\, \eta\, \E) \cdot \n\, ds,
 
    F^2 &= \Id \nabla \psi \cdot 2\, \eta\, \E,
 
@@ -494,9 +480,9 @@ Marine boundary contribution
 .. math::
    :label: eq-bp-residual-i-margin
 
-   F^1_{i, u} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_x,
+   F^1_{i, u} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_x,
 
-   F^1_{i, v} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \N_y,
+   F^1_{i, v} &= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_y,
 
 where
 
@@ -535,8 +521,6 @@ only other non-trivial contribution comes from the basal boundary condition.
 This Jacobian contribution has four parts:
 
 .. math::
-   \newcommand{\K}[2]{K_{i,j,#1,#2}}
-
    \K uu &= \diff{F^2_{i, u}}{u_j},
 
    \K uv &= \diff{F^2_{i, u}}{v_j},
@@ -645,7 +629,7 @@ Basal contribution to the Jacobian
 
    \K vv &= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, v^2 \right).
 
-Here `\dbeta` is the derivative of `\beta` with respect to `\alpha = \frac12 |\U|^2 =
+Here `\dbeta` is the derivative of `\beta` with respect to `\alpha = \frac12 |\uu|^2 =
 \frac12 \left( u^2 + v^2 \right)` (one of the outputs of PISM's basal resistance parameterizations).
 
 Note that
@@ -852,7 +836,7 @@ to use PETSc's GAMG on the coarsest multigrid level.
 .. note::
 
    It would be interesting to compare different preconditioning options on the coarsest MG
-   level (GAMG, Hypre, BoomerAMG, ...).
+   level (GAMG, Hypre BoomerAMG, ...).
 
 .. _sec-bp-pc-implementation:
 
@@ -863,14 +847,14 @@ To support the multigrid preconditioner we need to be able re-discretize the sys
 mesh provided *by PETSc* in our to residual and Jacobian evaluators. In general, this
 requires
 
-* re-computing grid-related constants (`\Delta x`, etc) using the grid (avoid using
+* re-computing grid-related constants (`\dx`, etc) using the grid (avoid using
   hard-wired constants, e.g. computed using the fine grid), and
 
 * additional code to restrict gridded inputs from the fine grid mesh to coarser meshes.
 
 This solver does not support coarsening in horizontal directions, so gridded
-two-dimensional inputs can be used on all multigrid levels. The grid spacing (`\Delta x`,
-`\Delta y`) remains the same as well.
+two-dimensional inputs can be used on all multigrid levels. The grid spacing (`\dx`,
+`\dy`) remains the same as well.
 
 To transfer the one three-dimensional gridded input field (ice hardness), we create
 interpolation matrices mapping from a coarse level to the next (finer) level in the
@@ -915,14 +899,14 @@ Coordinates of the mesh nodes have the form
 .. math::
    :label: eq-bp-mesh-nodes
 
-   x_i &= x_{\text{min}} + i \cdot \Delta x,
+   x_i &= x_{\text{min}} + i \cdot \dx,
 
-   y_j &= y_{\text{min}} + j \cdot \Delta y,
+   y_j &= y_{\text{min}} + j \cdot \dy,
 
    z_k &= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.
 
-Each element's projection onto the plane `z = 0` is a rectangle with sides `\Delta x` and
-`\Delta y`, but the spacing between nodes in the vertical direction is *not* constant:
+Each element's projection onto the plane `z = 0` is a rectangle with sides `\dx` and
+`\dy`, but the spacing between nodes in the vertical direction is *not* constant:
 each vertical column of nodes contains `M_z` nodes with the spacing of `H / (M_z - 1)`.
 This mesh structure is *exactly the same* as the one used in :cite:`BrownSmithAhmadia2013`
 and CISM 2.1 :cite:`Lipscomb2019`.
@@ -994,50 +978,6 @@ Steps performed by the solver
 Integration with the rest of PISM
 #################################
 
-.. _sec-bp-pism-time-stepping:
-
-Time stepping
-%%%%%%%%%%%%%
-
-PISM's explicit in time mass continuity code is *conditionally stable*. When used with the
-SSA + SIA hybrid, the maximum allowed time step is computed using a combination of the CFL
-criterion :cite:`MortonMayers` and the maximum diffusivity of the SIA flow
-:cite:`BBssasliding`. This time step restriction does not disappear when the same mass
-continuity code is used with a different stress balance model like BP that does not
-explicitly compute "advective" and "diffusive" parts of the flow. We need a work-around.
-
-.. note::
-
-   Very little is known about stability of explicit time stepping methods of the mass
-   continuity equation coupled to a "generic" stress balance model.
-
-   We don't have a rigorous justification for the approach described below.
-
-When this BP solver is coupled to PISM, the vertically-averaged ice velocity is used in
-place of the "advective" ("sliding") velocity from the SSA. As a result, the CFL-based
-time step restriction is applied by existing PISM code.
-
-However, it is almost always the case that the diffusivity-driven time step restriction is
-more severe and so we need a replacement: CFL alone does not appear to be sufficient for
-stability.
-
-We compute an estimate of the "SIA-like" maximum diffusivity by observing that for the SIA
-the vertically-averaged ice flux `Q` satisfies
-
-.. math::
-
-   Q = -D \nabla s.
-
-We solve this for the diffusivity `D`:
-
-.. math::
-   :label: eq-bp-max-diffusivity
-
-   D = \frac{H\, |\bar{\U}|}{|\nabla s| + \epsilon}
-
-.. FIXME: talk about \epsilon.
-
-and use the maximum of this quantity for adaptive time stepping.
 
 .. _sec-bp-pism-energy-conservation:
 
@@ -1204,39 +1144,24 @@ and a stress BC at the right boundary:
 .. math::
    :label: eq-bp-van-der-Veen-right-BC
 
-   2\, \eta\, \E \cdot \N_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)
+   2\, \eta\, \E \cdot \n_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)
 
 The stress BC at the top surface is
 
 .. math::
    :label: eq-bp-van-der-Veen-top-BC
 
-   2\, \eta\, \E \cdot \N_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
+   2\, \eta\, \E \cdot \n_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
    {\sqrt{C^{2} \alpha^{2} H^{10}(x) + Q_{0}^{2}}},\, 0\right)
 
 The boundary condition at the bottom surface has the form
 
 .. math::
 
-   2\, \eta\, \E \cdot \N_{\text{bottom}} &= - \beta \, \U,
+   2\, \eta\, \E \cdot \n_{\text{bottom}} &= - \beta \, \uu,
 
    \beta &= \frac{2 B C^{\frac{4}{3}} \left(\alpha - 1\right) H^{7}(x)}
    {Q_{0} \sqrt{C^{2} \left(\alpha - 1\right)^{2} H^{10}(x) + Q_{0}^{2}}}
-
-.. _sec-bp-ismip-hom:
-
-ISMIP-HOM Experiments A-D
-#########################
-
-All four simplified geometry experiments are implemented and produce ice velocities
-similar to some of the results in :cite:`ISMIPHOM`. However, some published ISMIP-HOM
-results from BP models significantly differ from others, making more in-depth comparisons
-meaningless.
-
-It is worth noting, however, that (unlike some models in :cite:`ISMIPHOM`) this
-implementation does not appear to have any convergence issues.
-
-See scripts in ``test/ismip-hom`` for more.
 
 .. _sec-bp-known-issues:
 

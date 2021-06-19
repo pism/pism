@@ -63,32 +63,44 @@ public:
     // FIXME: Add Dirichlet BC at a map plane location.
   };
 
-  struct Ctx {
-    int mg_levels;
-  };
-
 protected:
-  // u and v components of ice velocity on the sigma grid
+  // u and v components of ice velocity on the fine sigma grid
   IceModelVec3::Ptr m_u_sigma, m_v_sigma;
 
-  // 3D dof=2 DM used by SNES
+  // 3D dof=2 DM used by m_snes
   petsc::DM m_da;
   // storage for the solution
   petsc::Vec m_x;
-
+  // storage for the old solution during parameter continuation
+  petsc::Vec m_x_old;
+  // solver
   petsc::SNES m_snes;
 
-  struct CallbackData {
-    DM da;
-    Blatter *solver;
-  };
+  IceModelVec2Struct<Parameters> m_parameters;
 
-  CallbackData m_callback_data;
+  // Scaling of quadrature weights (note: this does not seem to matter).
+  double m_scaling;
+
+  // Ice density times g
   double m_rho_ice_g;
+
+  // Water density times g
   double m_rho_ocean_g;
 
+  // The flow law Glen exponent
   double m_glen_exponent;
+
+  // Use the eta-transformation to compute surface gradient
   bool m_eta_transform;
+
+  // Viscosity regularization constant
+  double m_viscosity_eps;
+
+  // Enhancement factor for ice viscosity.
+  double m_E_viscosity;
+
+  // True if the Eisenstat-Walker method of adjusting linear solver tolerances is enabled.
+  bool m_ksp_use_ew;
 
   static const int m_Nq = 100;
   static const int m_n_work = 9;
@@ -111,6 +123,8 @@ protected:
   bool grounding_line(const double *F);
 
   bool partially_submerged_face(int face, const double *z, const double *sea_level);
+
+  void compute_node_type(double min_thickness);
 
   virtual void nodal_parameter_values(const fem::Q1Element3 &element,
                                       Parameters **P,
@@ -183,19 +197,20 @@ protected:
 
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
-                                          Mat A, Mat J, CallbackData *data);
+                                          Mat A, Mat J,
+                                          Blatter *data);
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2 ***x, Vector2 ***f,
-                                          CallbackData *data);
+  static PetscErrorCode function_callback(DMDALocalInfo *info,
+                                          const Vector2 ***x, Vector2 ***f,
+                                          Blatter *data);
 
   virtual void init_2d_parameters(const Inputs &inputs);
 
-  void init_ice_hardness(const Inputs &inputs);
+  void init_ice_hardness(const Inputs &inputs, const petsc::DM &da);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor);
-
-  PetscErrorCode setup_2d_storage(DM dm, int dof);
+  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor,
+                       const std::string &prefix);
 
   void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
 
@@ -205,7 +220,16 @@ protected:
 
   void get_basal_velocity(IceModelVec2V &result);
 
-  Ctx m_context;
+  void report_mesh_info();
+
+  struct SolutionInfo {
+    PetscInt snes_it, ksp_it, mg_coarse_ksp_it;
+    SNESConvergedReason snes_reason;
+    KSPConvergedReason ksp_reason;
+  };
+
+  SolutionInfo solve();
+  SolutionInfo parameter_continuation();
 };
 
 } // end of namespace stressbalance

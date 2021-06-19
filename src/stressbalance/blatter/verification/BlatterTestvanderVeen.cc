@@ -140,7 +140,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     // the normal direction (1, 0, 0) is hard-wired here
     auto F = blatter_xz_vanderveen_source_lateral(x[q], m_alpha, m_H0, Q0,
@@ -177,7 +177,7 @@ void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_vanderveen_source_surface(x[q], m_alpha, m_H0, Q0,
                                                   m_rho_ice, m_g, m_B);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -73,17 +73,6 @@ double GoldsbyKohlstedt::flow_impl(double stress, double E,
                                    double pressure, double grainsize) const {
   double temp = m_EC->temperature(E, pressure);
   return flow_from_temp(stress, temp, pressure, grainsize);
-}
-
-double GoldsbyKohlstedt::averaged_hardness_impl(double, int,
-                                                const double *,
-                                                const double *) const {
-
-  throw std::runtime_error("double GoldsbyKohlstedt::averaged_hardness is not implemented");
-
-#ifndef __GNUC__
-  return 0;
-#endif
 }
 
 double GoldsbyKohlstedt::hardness_impl(double enthalpy, double pressure) const {

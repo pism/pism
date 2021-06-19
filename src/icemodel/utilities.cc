@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,12 +59,10 @@ int IceModel::process_signals() {
   }
 
   if (pism_signal == SIGUSR1) {
-    char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
-             m_time->date().c_str());
+    auto file_name = pism::printf("pism-%s.nc", m_time->date().c_str());
     m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
-       file_name);
+                   file_name.c_str());
     pism_signal = 0;
 
     File file(m_grid->com,
