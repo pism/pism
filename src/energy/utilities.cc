@@ -336,13 +336,13 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
                                const IceModelVec2S &basal_heat_flux,
                                IceModelVec3 &result) {
 
-  IceGrid::ConstPtr      grid   = result.grid();
-  std::shared_ptr<const Context> ctx = grid->ctx();
-  Config::ConstPtr       config = ctx->config();
-  Logger::ConstPtr       log    = ctx->log();
-  EnthalpyConverter::Ptr EC     = ctx->enthalpy_converter();
+  auto grid   = result.grid();
+  auto ctx    = grid->ctx();
+  auto config = ctx->config();
+  auto log    = ctx->log();
+  auto EC     = ctx->enthalpy_converter();
 
-  const bool use_smb  = config->get_string("bootstrapping.temperature_heuristic") == "smb";
+  auto use_smb  = config->get_string("bootstrapping.temperature_heuristic") == "smb";
 
   if (use_smb) {
     log->message(2,
@@ -377,11 +377,19 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
         H         = ice_thickness(i, j),
         G         = basal_heat_flux(i, j);
 
-      if (G < 0.0) {
+      const unsigned int ks = grid->kBelowHeight(H);
+
+      if (G < 0.0 and ks > 0) {
+        auto units = basal_heat_flux.metadata().get_string("units");
+        int Mbz = config->get_number("grid.Mbz");
+        const char *quantity = (Mbz > 0 ?
+                                "temperature of the bedrock thermal layer" :
+                                "geothermal flux");
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "geothermal flux G(%d,%d) = %f < 0.0 %s",
-                                      i, j, G,
-                                      basal_heat_flux.metadata().get_string("units").c_str());
+                                      "Negative upward heat flux (%f %s) through the bottom of the ice column\n"
+                                      "is not allowed by PISM's ice temperature bootstrapping method.\n"
+                                      "Please check the %s at i=%d, j=%d.",
+                                      G, units.c_str(), quantity, i, j);
       }
 
       if (T_surface < T_min) {
@@ -389,8 +397,6 @@ void bootstrap_ice_temperature(const IceModelVec2S &ice_thickness,
                                       "T_surface(%d,%d) = %f < T_min = %f Kelvin",
                                       i, j, T_surface, T_min);
       }
-
-      const unsigned int ks = grid->kBelowHeight(H);
 
       double *T = result.get_column(i, j);
 

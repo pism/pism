@@ -1,5 +1,3 @@
-.. include:: ../math-definitions.txt
-
 =====================
 Inverse Code Overview
 =====================

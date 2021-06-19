@@ -35,7 +35,7 @@ namespace rheology {
 
 FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
                  EnthalpyConverter::Ptr ec)
-  : m_EC(ec), m_e(1) {
+  : m_EC(ec) {
 
   if (not m_EC) {
     throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
@@ -47,8 +47,6 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_rho                = config.get_number("constants.ice.density");
   m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho * m_standard_gravity;
   m_melting_point_temp = config.get_number("constants.fresh_water.melting_point_temperature");
-  m_e                  = config.get_number(prefix + "enhancement_factor");
-  m_e_interglacial     = config.get_number(prefix + "enhancement_factor_interglacial");
   m_n                  = config.get_number(prefix + "Glen_exponent");
   m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
   m_hardness_power     = -1.0 / m_n;
@@ -80,14 +78,6 @@ EnthalpyConverter::Ptr FlowLaw::EC() const {
 
 double FlowLaw::exponent() const {
   return m_n;
-}
-
-double FlowLaw::enhancement_factor() const {
-  return m_e;
-}
-
-double FlowLaw::enhancement_factor_interglacial() const {
-  return m_e_interglacial;
 }
 
 //! Return the softness parameter A(T) for a given temperature T.
@@ -176,15 +166,20 @@ double FlowLaw::hardness_impl(double E, double p) const {
  */
 void FlowLaw::effective_viscosity(double B, double gamma,
                                   double *nu, double *dnu) const {
+  effective_viscosity(B, gamma, m_schoofReg, nu, dnu);
+}
+
+void FlowLaw::effective_viscosity(double B, double gamma, double eps,
+                                  double *nu, double *dnu) const {
   const double
-    my_nu = 0.5 * B * pow(m_schoofReg + gamma, m_viscosity_power);
+    my_nu = 0.5 * B * pow(eps + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;
   }
 
   if (PetscLikely(dnu != NULL)) {
-    *dnu = m_viscosity_power * my_nu / (m_schoofReg + gamma);
+    *dnu = m_viscosity_power * my_nu / (eps + gamma);
   }
 }
 

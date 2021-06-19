@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -45,12 +45,6 @@ public:
                    const Config &config,
                    EnthalpyConverter::Ptr EC);
 protected:
-  // NB! not virtual
-  double averaged_hardness_impl(double thickness,
-                                   int kbelowH,
-                                   const double *zlevels,
-                                   const double *enthalpy) const __attribute__((noreturn));
-
   virtual double flow_impl(double stress, double E,
                            double pressure, double grainsize) const;
 

@@ -517,7 +517,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   const IceModelVec2CellType &mask = inputs.geometry->cell_type;
 
   double
-    enhancement_factor = flow_law.enhancement_factor(),
+    enhancement_factor = m_shallow_stress_balance->flow_enhancement_factor(),
     n = flow_law.exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);

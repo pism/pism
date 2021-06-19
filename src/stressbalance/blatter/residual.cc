@@ -54,7 +54,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     double
       ux = u_x[q].u,
@@ -68,7 +68,10 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
                     0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
 
     double eta;
-    m_flow_law->effective_viscosity(B[q], gamma, &eta, nullptr);
+    m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, nullptr);
+
+    // add the enhancement factor
+    eta *= m_E_viscosity;
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
@@ -139,7 +142,7 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     auto F = m_rho_ice_g * Vector2(s_x[q], s_y[q]);
 
@@ -175,7 +178,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
   face.evaluate(f_nodal, floatation);
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;
     double beta = grounded ? m_basal_sliding_law->drag(tauc[q], u[q].u, u[q].v) : 0.0;
@@ -184,8 +187,7 @@ void Blatter::residual_basal(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t].u += W * psi * beta * u[q].u;
-      residual[t].v += W * psi * beta * u[q].v;
+      residual[t] += W * psi * beta * u[q];
     }
   }
 }
@@ -230,7 +232,7 @@ void Blatter::residual_lateral(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 
@@ -339,13 +341,14 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // 2D vector quantities
   Vector2 velocity[Nk], R_nodal[Nk];
 
-  // FIXME: this communicates ghosts every time the residual is computed, which is excessive.
-  //
-  // note: we use m_da below because all multigrid levels use the same 2D grid
-  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
+  //
+  // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
+
+  IceModelVec::AccessList list(m_parameters);
+  auto P = m_parameters.array();
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
   residual_dirichlet(info, P, X, R);
@@ -454,13 +457,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::function_callback(DMDALocalInfo *info,
-                                           const Vector2 ***x, Vector2 ***f,
-                                           CallbackData *data) {
+                                          const Vector2 ***x, Vector2 ***f,
+                                          Blatter *solver) {
   try {
-    data->solver->compute_residual(info, x, f);
+    solver->compute_residual(info, x, f);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    MPI_Comm com = solver->grid()->com;
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }

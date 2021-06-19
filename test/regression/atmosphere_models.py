@@ -5,6 +5,7 @@ Tests of PISM's atmosphere models and modifiers.
 
 import PISM
 from PISM.testing import *
+from PISM.testing import filename as tmp_name
 import os
 import numpy as np
 from unittest import TestCase
@@ -26,8 +27,8 @@ PISM.Context().log.set_threshold(1)
 def write_state(model):
     "Test writing of the model state"
 
-    o_filename = "atmosphere_model_state.nc"
-    o_diagnostics = "atmosphere_diagnostics.nc"
+    o_filename = tmp_name("atmosphere_model_state")
+    o_diagnostics = tmp_name("atmosphere_diagnostics")
 
     try:
         output = PISM.util.prepare_output(o_filename)
@@ -113,7 +114,7 @@ def air_temperature(grid, value):
 
 class PIK(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_pik_input.nc"
+        self.filename = tmp_name("atmosphere_pik_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -160,7 +161,7 @@ class PIK(TestCase):
 
 class DeltaT(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_delta_T_input.nc"
+        self.filename = tmp_name("atmosphere_delta_T_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -186,7 +187,7 @@ class DeltaT(TestCase):
 
 class DeltaP(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_delta_P_input.nc"
+        self.filename = tmp_name("atmosphere_delta_P_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -212,7 +213,7 @@ class DeltaP(TestCase):
 
 class Given(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_given_input.nc"
+        self.filename = tmp_name("atmosphere_given_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -240,7 +241,7 @@ class Given(TestCase):
 
 class SeaRISE(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_searise_input.nc"
+        self.filename = tmp_name("atmosphere_searise_input")
         self.grid = shallow_grid()
 
         self.geometry = PISM.Geometry(self.grid)
@@ -272,7 +273,7 @@ class SeaRISE(TestCase):
 
 class YearlyCycle(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_yearly_cycle.nc"
+        self.filename = tmp_name("atmosphere_yearly_cycle")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -321,7 +322,7 @@ class YearlyCycle(TestCase):
 
 class OneStation(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_one_station.nc"
+        self.filename = tmp_name("atmosphere_one_station")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.T = 263.15
@@ -382,7 +383,7 @@ class Uniform(TestCase):
 
 class Anomaly(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_anomaly_input.nc"
+        self.filename = tmp_name("atmosphere_anomaly_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -421,7 +422,7 @@ class Anomaly(TestCase):
 
 class PrecipScaling(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_precip_scaling_input.nc"
+        self.filename = tmp_name("atmosphere_precip_scaling_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -449,7 +450,7 @@ class PrecipScaling(TestCase):
 
 class FracP1D(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_frac_P_input.nc"
+        self.filename = tmp_name("atmosphere_frac_P_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -480,7 +481,7 @@ class FracP1D(TestCase):
 
 class FracP2D(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_frac_P_input.nc"
+        self.filename = tmp_name("atmosphere_frac_P_input")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(1000.0)
@@ -520,7 +521,7 @@ class FracP2D(TestCase):
 
 class ElevationChange(TestCase):
     def setUp(self):
-        self.filename = "atmosphere_reference_surface.nc"
+        self.filename = tmp_name("atmosphere_reference_surface")
         self.grid = shallow_grid()
         self.dTdz = 1.0         # Kelvin per km
         self.dPdz = 1000.0      # (kg/m^2)/year per km

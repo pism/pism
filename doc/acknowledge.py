@@ -26,8 +26,8 @@ Citing
 To cite PISM please use at least one of Bueler and Brown (2009) or Winkelmann et al.
 (2011), below, as appropriate to the application.
 
-If your results came from source code modifications to PISM then we request that your
-publication say so explicitly.
+Do not forget to specify the PISM *version* you use. If your results came from source code
+modifications to PISM then we request that your publication say so explicitly.
 
 If your study relies heavily on certain PISM sub-models (such as hydrology, calving,
 fracture mechanics, thermodynamics) please contact the corresponding author/developer for

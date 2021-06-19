@@ -1,3 +1,3 @@
 update_funding:
-	python ./acknowledge.py > ../ACKNOWLEDGE.rst
-	python ./acknowledge.py --manual > sphinx/funding.txt
+	python3 ./acknowledge.py > ../ACKNOWLEDGE.rst
+	python3 ./acknowledge.py --manual > sphinx/funding.txt

@@ -67,16 +67,20 @@ class TestXY(TestCase):
         config.set_number("flow_law.isothermal_Glen.ice_softness",
                           PISM.util.convert(1e-4, "Pa-3 year-1", "Pa-3 s-1"))
 
-        # the default preconditioner is seems to be ineffective
-        opt.setValue("-bp_pc_type", "gamg")
-        opt.setValue("-bp_snes_monitor", "")
+        self.opts = {"-bp_snes_monitor_ratio": "",
+                     "-bp_ksp_type": "preonly",
+                     "-bp_pc_type": "lu",
+                     }
+
+        for k, v in self.opts.items():
+            self.opt.setValue(k, v)
 
     def tearDown(self):
         "Clear PETSc options"
         config.import_from(config_clean)
 
-        self.opt.delValue("-bp_pc_type")
-        self.opt.delValue("-bp_snes_monitor")
+        for k, v in self.opts.items():
+            self.opt.delValue(k)
 
     def inputs(self, N):
         "Allocate stress balance inputs for a given grid size"
@@ -253,9 +257,10 @@ class TestXZ(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor": "",
+        self.opts = {"-bp_snes_monitor_ratio": "",
                      "-bp_pc_type": "mg",
                      "-bp_pc_mg_levels": "1", # added here to make tearDown clean it up
+                     "-bp_snes_ksp_ew": "",
                      }
 
         for k, v in self.opts.items():
@@ -465,7 +470,8 @@ class TestCFBC(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor": ""}
+        self.opts = {"-bp_snes_monitor_ratio": "",
+                     "-bp_snes_ksp_ew": ""}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -640,9 +646,9 @@ class TestXZvanderVeen(TestCase):
     def setUp(self):
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor": "",
-                     "-bp_ksp_type": "cg",
-                     "-bp_pc_type": "gamg"}
+        self.opts = {"-bp_snes_monitor_ratio": "",
+                     "-bp_ksp_type": "preonly",
+                     "-bp_pc_type": "lu"}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -729,7 +735,7 @@ class TestXZvanderVeen(TestCase):
 
         return np.max(np.fabs(u_model - u_exact))
 
-    def test_vanderveen(self):
+    def test(self):
         "Check that the van der Veen flow line case converges"
         C = 10
         m = 2
@@ -771,10 +777,11 @@ class TestXZHalfar(TestCase):
 
         self.opt = PISM.PETSc.Options()
 
-        self.opts = {"-bp_snes_monitor": "",
+        self.opts = {"-bp_snes_monitor_ratio": "",
                      "-bp_ksp_type": "cg",
                      "-bp_pc_type": "mg",
-                     "-bp_pc_mg_levels": "1"}
+                     "-bp_pc_mg_levels": "1",
+                     "-bp_snes_ksp_ew": ""}
 
         for k, v in self.opts.items():
             self.opt.setValue(k, v)
@@ -887,7 +894,7 @@ class TestXZHalfar(TestCase):
 
         return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
 
-    def test_halfar(self):
+    def test(self):
         "Check that the Halfar test case converges with z refinement"
 
         F = 2

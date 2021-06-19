@@ -1,5 +1,3 @@
-.. include:: ../math-definitions.txt
-
 .. _SSAForward:
 
 SSA Forward Problems

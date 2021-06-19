@@ -69,8 +69,8 @@ shorter computation time (about 10 times shorter). We explain the small and almo
 negligible SIA velocities for the MISMIP(3D) experiments with the comparably small ice
 surface gradients in the MISMIP3d ice geometries. See :numref:`fig-compSIASSA` for a
 comparison of SSA and SIA velocities in the MISMIP3D geometry. Note that both Figures
-:numref:`fig-Subgl` and :numref:`fig-compSIASSA` were generated with resolution of `\Delta
-x = \Delta y = 1` km.
+:numref:`fig-Subgl` and :numref:`fig-compSIASSA` were generated with resolution of
+`\dx = \dy = 1\km`.
 
 .. figure:: figures/mismip3d-subgl.png
    :name: fig-Subgl

@@ -650,6 +650,20 @@ netcdf pism_config {
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 
+    pism_config:calving.rate_scaling.file = "";
+    pism_config:calving.rate_scaling.file_doc = "File containing the scaling factor applied to calving rates from ``eigen_calving``, ``vonmises_calving``, and ``hayhurst_calving`` (variable name: ``frac_calving_rate``)";
+    pism_config:calving.rate_scaling.file_type = "string";
+
+    pism_config:calving.rate_scaling.period = 0;
+    pism_config:calving.rate_scaling.period_doc = "Length of the period of the calving rate scaling. Set to zero to disable.";
+    pism_config:calving.rate_scaling.period_type = "integer";
+    pism_config:calving.rate_scaling.period_units = "years";
+
+    pism_config:calving.rate_scaling.reference_year = 0;
+    pism_config:calving.rate_scaling.reference_year_doc = "Reference year to use when :config:`calving.rate_scaling.period` is active.";
+    pism_config:calving.rate_scaling.reference_year_type = "integer";
+    pism_config:calving.rate_scaling.reference_year_units = "years";
+
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
@@ -667,16 +681,6 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.Glen_exponent_type = "number";
     pism_config:calving.vonmises_calving.Glen_exponent_units = "pure number";
 
-    pism_config:calving.vonmises_calving.enhancement_factor = 1.0;
-    pism_config:calving.vonmises_calving.enhancement_factor_doc = "Flow enhancement factor used by the flow law in the von Mises stress computation";
-    pism_config:calving.vonmises_calving.enhancement_factor_type = "number";
-    pism_config:calving.vonmises_calving.enhancement_factor_units = "1";
-
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial = 1.0;
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_doc = "Flow enhancement factor used by the flow law in the von Mises stress computation (for ice accumulated during interglacial periods).";
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_type = "number";
-    pism_config:calving.vonmises_calving.enhancement_factor_interglacial_units = "1";
-
     pism_config:calving.vonmises_calving.flow_law = "gpbld";
     pism_config:calving.vonmises_calving.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:calving.vonmises_calving.flow_law_doc = "The custom flow law for the von Mises stress computation";
@@ -689,7 +693,7 @@ netcdf pism_config {
     pism_config:calving.vonmises_calving.sigma_max_units = "Pa";
 
     pism_config:calving.vonmises_calving.threshold_file = "";
-    pism_config:calving.vonmises_calving.threshold_file_doc = "Name of the file containing the spatially-variable vonmises_calving calving threshold.";
+    pism_config:calving.vonmises_calving.threshold_file_doc = "Name of the file containing the spatially-variable :var:`vonmises_calving_threshold`.";
     pism_config:calving.vonmises_calving.threshold_file_option = "vonmises_calving_threshold_file";
     pism_config:calving.vonmises_calving.threshold_file_type = "string";
 
@@ -894,14 +898,14 @@ netcdf pism_config {
     pism_config:enthalpy_converter.relaxed_is_temperate_tolerance_units = "Kelvin";
 
     pism_config:flow_law.Hooke.A = 4.42165e-9;
-    pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and B_0 = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
+    pism_config:flow_law.Hooke.A_doc = "`A_{\\text{Hooke}} = (1/B_0)^n` where n=3 and `B_0` = 1.928 `a^{1/3}` Pa. See :cite:`Hooke`";
     pism_config:flow_law.Hooke.A_type = "number";
     pism_config:flow_law.Hooke.A_units = "Pascal-3 second-1";
 
     pism_config:flow_law.Hooke.C = 0.16612;
     pism_config:flow_law.Hooke.C_doc = "See :cite:`Hooke`";
     pism_config:flow_law.Hooke.C_type = "number";
-    pism_config:flow_law.Hooke.C_units = "Kelvin^{flow_law.Hooke.k}";
+    pism_config:flow_law.Hooke.C_units = "Kelvin^k";
 
     pism_config:flow_law.Hooke.Q = 7.88e4;
     pism_config:flow_law.Hooke.Q_doc = "Activation energy, see :cite:`Hooke`";
@@ -919,22 +923,22 @@ netcdf pism_config {
     pism_config:flow_law.Hooke.k_units = "pure number";
 
     pism_config:flow_law.Paterson_Budd.A_cold = 3.61e-13;
-    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd A_cold, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.A_cold_doc = "Paterson-Budd `A_\\text{cold}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_cold_type = "number";
     pism_config:flow_law.Paterson_Budd.A_cold_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.A_warm = 1.73e3;
-    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd A_warm, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.A_warm_doc = "Paterson-Budd `A_\\text{warm}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.A_warm_type = "number";
     pism_config:flow_law.Paterson_Budd.A_warm_units = "Pascal-3 / second";
 
     pism_config:flow_law.Paterson_Budd.Q_cold = 6.0e4;
-    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd Q_cold, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.Q_cold_doc = "Paterson-Budd `Q_\\text{cold}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_cold_type = "number";
     pism_config:flow_law.Paterson_Budd.Q_cold_units = "Joule / mol";
 
     pism_config:flow_law.Paterson_Budd.Q_warm = 13.9e4;
-    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd Q_warm, see :cite:`PatersonBudd`";
+    pism_config:flow_law.Paterson_Budd.Q_warm_doc = "Paterson-Budd `Q_\\text{warm}`, see :cite:`PatersonBudd`";
     pism_config:flow_law.Paterson_Budd.Q_warm_type = "number";
     pism_config:flow_law.Paterson_Budd.Q_warm_units = "Joule / mol";
 
@@ -964,7 +968,7 @@ netcdf pism_config {
     pism_config:flow_law.gpbld.water_frac_observed_limit_units = "1";
 
     pism_config:flow_law.isothermal_Glen.ice_softness = 3.1689e-24;
-    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by IsothermalGlenIce :cite:`EISMINT96`";
+    pism_config:flow_law.isothermal_Glen.ice_softness_doc = "ice softness used by the isothermal Glen flow law :cite:`EISMINT96`";
     pism_config:flow_law.isothermal_Glen.ice_softness_type = "number";
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
@@ -1107,7 +1111,7 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.reference_year_units = "years";
 
     pism_config:geometry.front_retreat.prescribed.file = "";
-    pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask `land_ice_area_fraction_retreat`";
+    pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask ``land_ice_area_fraction_retreat``";
     pism_config:geometry.front_retreat.prescribed.file_option = "front_retreat_file";
     pism_config:geometry.front_retreat.prescribed.file_type = "string";
 
@@ -1117,7 +1121,7 @@ netcdf pism_config {
     pism_config:geometry.front_retreat.prescribed.period_units = "years";
 
     pism_config:geometry.front_retreat.prescribed.reference_year = 0;
-    pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when `geometry.front_retreat.prescribed.period` is active.";
+    pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when :config:`geometry.front_retreat.prescribed.period` is active.";
     pism_config:geometry.front_retreat.prescribed.reference_year_type = "integer";
     pism_config:geometry.front_retreat.prescribed.reference_year_units = "years";
 
@@ -1903,12 +1907,12 @@ netcdf pism_config {
     pism_config:output.compression_level_units = "count";
 
     pism_config:output.extra.append = "no";
-    pism_config:output.extra.append_doc = "Append to an existing output file.";
+    pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
     pism_config:output.extra.append_option = "extra_append";
     pism_config:output.extra.append_type = "flag";
 
     pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the output file containing spatially-variable diagnostics.";
+    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file_name`.";
     pism_config:output.extra.file_option = "extra_file";
     pism_config:output.extra.file_type = "string";
 
@@ -2126,12 +2130,6 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.enhancement_factor = 1.0;
     pism_config:stress_balance.blatter.enhancement_factor_doc = "Flow enhancement factor for the Blatter stress balance flow law";
 
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_option = "blatter_e_interglacial";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_units = "1";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_type = "number";
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial = 1.0;
-    pism_config:stress_balance.blatter.enhancement_factor_interglacial_doc = "Flow enhancement factor for Blatter stress balance solver (*not implemented*)";
-
     pism_config:stress_balance.blatter.flow_law_type = "keyword";
     pism_config:stress_balance.blatter.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.blatter.flow_law = "gpbld";
@@ -2168,13 +2166,13 @@ netcdf pism_config {
     pism_config:stress_balance.sia.Glen_exponent_units = "pure number";
 
     pism_config:stress_balance.sia.bed_smoother.range = 5.0e3;
-    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain for stressbalance::BedSmoother, in implementing :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA; set value to zero to turn off mechanism";
+    pism_config:stress_balance.sia.bed_smoother.range_doc = "half-width of smoothing domain in the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`; set to zero to disable";
     pism_config:stress_balance.sia.bed_smoother.range_option = "bed_smoother_range";
     pism_config:stress_balance.sia.bed_smoother.range_type = "number";
     pism_config:stress_balance.sia.bed_smoother.range_units = "meters";
 
     pism_config:stress_balance.sia.bed_smoother.theta_min = 0.0;
-    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in :cite:`Schoofbasaltopg2003` bed roughness parameterization for SIA";
+    pism_config:stress_balance.sia.bed_smoother.theta_min_doc = "minimum value of `\\theta` in the bed roughness parameterization for SIA :cite:`Schoofbasaltopg2003`";
     pism_config:stress_balance.sia.bed_smoother.theta_min_type = "number";
     pism_config:stress_balance.sia.bed_smoother.theta_min_units = "1";
 
@@ -2243,12 +2241,6 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.enhancement_factor_type = "number";
     pism_config:stress_balance.ssa.enhancement_factor_units = "1";
 
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial = 1.0;
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_doc = "Flow enhancement factor for SSA; used for ice accumulated during interglacial periods.";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_option = "ssa_e_interglacial";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_type = "number";
-    pism_config:stress_balance.ssa.enhancement_factor_interglacial_units = "1";
-
     pism_config:stress_balance.ssa.epsilon = 1.0e13;
     pism_config:stress_balance.ssa.epsilon_doc = "Initial amount of regularization in computation of product of effective viscosity and thickness (`\\nu H`).  This default value for `\\nu H` comes e.g. from a hardness for the Ross ice shelf (`\\bar B`) = 1.9e8 Pa `s^{1/3}` :cite:`MacAyealetal` and a typical strain rate of 0.001 1/year for the Ross ice shelf, giving `\\nu = (\\bar B) / (2 \\cdot 0.001^{2/3})` = 9.49e+14 Pa s ~ 30 MPa year, the value in :cite:`Ritzetal2001`, but with a tiny thickness `H` of about 1 cm.";
     pism_config:stress_balance.ssa.epsilon_option = "ssa_eps";
@@ -2271,23 +2263,23 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.flow_line_mode_type = "flag";
 
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled = "false";
-    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
+    pism_config:stress_balance.ssa.fd.lateral_drag.enabled_doc = "Set viscosity at ice shelf margin next to ice free bedrock as friction parameterization";
     pism_config:stress_balance.ssa.fd.lateral_drag.enabled_type = "flag";
 
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity = 5.0e15;
-    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered Viscosity used as side friction parameterization.";
+    pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_doc = "Staggered viscosity used as side friction parameterization.";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_option = "nu_bedrock";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_type = "number";
     pism_config:stress_balance.ssa.fd.lateral_drag.viscosity_units = "Pascal second";
 
     pism_config:stress_balance.ssa.fd.max_iterations = 300;
-    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of Picard iterations for the ice viscosity computation, in the SSAFD object";
+    pism_config:stress_balance.ssa.fd.max_iterations_doc = "Maximum number of Picard iterations for the ice viscosity computation, in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.max_iterations_option = "ssafd_picard_maxi";
     pism_config:stress_balance.ssa.fd.max_iterations_type = "integer";
     pism_config:stress_balance.ssa.fd.max_iterations_units = "count";
 
     pism_config:stress_balance.ssa.fd.max_speed = 300000;
-    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
+    pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the ``SSAFD`` solver.";
     pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
     pism_config:stress_balance.ssa.fd.max_speed_type = "number";
     pism_config:stress_balance.ssa.fd.max_speed_units = "km s-1";
@@ -2299,13 +2291,13 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.nuH_iter_failure_underrelaxation_units = "pure number";
 
     pism_config:stress_balance.ssa.fd.relative_convergence = 1.0e-4;
-    pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the SSAFD object";
+    pism_config:stress_balance.ssa.fd.relative_convergence_doc = "Relative change tolerance for the effective viscosity in the ``SSAFD`` object";
     pism_config:stress_balance.ssa.fd.relative_convergence_option = "ssafd_picard_rtol";
     pism_config:stress_balance.ssa.fd.relative_convergence_type = "number";
     pism_config:stress_balance.ssa.fd.relative_convergence_units = "1";
 
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries = "yes";
-    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the SSAFD matrix with :config:'basal_resistance.beta_ice_free_bedrock' to avoid solver failures.";
+    pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_doc = "Replace zero diagonal entries in the ``SSAFD`` matrix with :config:'basal_resistance.beta_ice_free_bedrock' to avoid solver failures.";
     pism_config:stress_balance.ssa.fd.replace_zero_diagonal_entries_type = "flag";
 
     pism_config:stress_balance.ssa.flow_law = "gpbld";
@@ -2725,7 +2717,7 @@ netcdf pism_config {
     pism_config:time_stepping.hit_multiples = 0.0;
     pism_config:time_stepping.hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable.";
     pism_config:time_stepping.hit_multiples_option = "timestep_hit_multiples";
-    pism_config:time_stepping.hit_multiples_type = "number";
+    pism_config:time_stepping.hit_multiples_type = "integer";
     pism_config:time_stepping.hit_multiples_units = "years";
 
     pism_config:time_stepping.hit_save_times = "no";

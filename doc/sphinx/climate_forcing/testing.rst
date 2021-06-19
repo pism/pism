@@ -27,7 +27,7 @@ options as in an actual modeling run. Note that :opt:`-test_climate_models` does
 disable geometry updates, so one can check if surface elevation feedbacks modeled using
 lapse rates (and similar) work correctly. Please use the :opt:`-no_mass` command-line
 option to fix ice geometry. (This may be necessary if the mass balance rate data would
-result in extreme ice sheet growth that is not balanced by ice flow in this setup.
+result in extreme ice sheet growth that is not balanced by ice flow in this setup.)
 
 As an example, set up an ice sheet state file and check if climate data is read in
 correctly:
@@ -47,7 +47,7 @@ same values as from ``state.nc``, in variables :var:`climatic_mass_balance`,
 :var:`ice_surface_temp`, reported back to us as the time- and space-dependent climate at
 times ``ys:dt:ye``. It is a boring "movie."
 
-A more interesting example uses a :ref:`positive degree-day scheme <sec-surface-pdd>`).
+A more interesting example uses a :ref:`positive degree-day scheme <sec-surface-pdd>`.
 This scheme uses a variable called :var:`precipitation`, and a calculation of melting, to
 get the surface mass balance :var:`climatic_mass_balance`.
 

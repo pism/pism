@@ -51,7 +51,7 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     double
       ux = u_x[q].u,
@@ -65,7 +65,11 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
                     0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
 
     double eta, deta;
-    m_flow_law->effective_viscosity(B[q], gamma, &eta, &deta);
+    m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, &deta);
+
+    // add the enhancement factor
+    eta *= m_E_viscosity;
+    deta *= m_E_viscosity;
 
     // loop over test and trial functions, computing the upper-triangular part of
     // the element Jacobian
@@ -133,7 +137,7 @@ void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
   face.evaluate(f_nodal, floatation);
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     bool grounded = floatation[q] <= 0.0;
     double beta = 0.0, dbeta = 0.0;
@@ -200,6 +204,18 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   PetscErrorCode ierr = MatZeroEntries(J);
   PISM_CHK(ierr, "MatZeroEntries");
 
+  ierr = MatSetOption(A, MAT_SUBSET_OFF_PROC_ENTRIES, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
+  ierr = MatSetOption(J, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
+  ierr = MatSetOption(J, MAT_SYMMETRIC, PETSC_TRUE);
+  PISM_CHK(ierr, "MatSetOption");
+
+  ierr = PetscObjectSetName((PetscObject)J, "bp_jacobian");
+  PISM_CHK(ierr, "PetscObjectSetName");
+
   // Stencil width of 1 is not very important, but if info.sw > 1 will lead to more
   // redundant computation (we would be looping over elements that don't contribute to any
   // owned nodes).
@@ -230,13 +246,14 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // 2D vector quantities
   Vector2 velocity[Nk];
 
-  // FIXME: this communicates ghosts every time the Jacobian is computed, which is excessive.
-  //
-  // note: we use m_da below because all multigrid levels use the same 2D grid
-  DataAccess<Parameters**> P(m_da, 2, GHOSTED);
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
+  //
+  // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
+
+  IceModelVec::AccessList list(m_parameters);
+  auto P = m_parameters.array();
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -333,22 +350,16 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
     ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
   }
-
-  ierr = MatSetOption(J, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
-  PISM_CHK(ierr, "MatSetOption");
-
-  ierr = MatSetOption(J, MAT_SYMMETRIC, PETSC_TRUE);
-  PISM_CHK(ierr, "MatSetOption");
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
-                                          Mat A, Mat J, CallbackData *data) {
+                                          Mat A, Mat J,
+                                          Blatter *solver) {
   try {
-    data->solver->compute_jacobian(info, x, A, J);
+    solver->compute_jacobian(info, x, A, J);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)data->da, &com); CHKERRQ(ierr);
+    MPI_Comm com = solver->grid()->com;
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }

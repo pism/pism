@@ -18,9 +18,10 @@ def make_id(parameter):
 class config(nodes.literal):
     parameter = None
 
-    def __init__(self, parameter, text=None):
+    def __init__(self, parameter, **kwargs):
         self.parameter = parameter
-        nodes.literal.__init__(self, parameter, text or parameter)
+
+        nodes.literal.__init__(self, parameter, **kwargs)
 
 # this node makes it possible to add soft hyphens to wrap long parameter names
 class softhyphen(nodes.Element):
@@ -49,7 +50,9 @@ def config_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
         prb = inliner.problematic(rawtext, rawtext, msg)
         return [prb], [msg]
 
-    return [config(text)], []
+    name = text
+
+    return [config(name, text=text)], []
 
 class ParameterList(Directive):
     has_content = False
@@ -83,7 +86,7 @@ class ParameterList(Directive):
         if True:
             f = nodes.field()
             f += [nodes.field_name("", "Type"),
-                  nodes.field_body("", nodes.Text(data["type"]))]
+                  nodes.field_body("", nodes.Text(" " + data["type"]))]
             fl += f
 
             f = nodes.field()
@@ -120,7 +123,7 @@ class ParameterList(Directive):
         "Build an entry for the compact list of parameters."
 
         p1 = nodes.paragraph()
-        p1 += config(name, text)
+        p1 += config(name, text=text)
 
         if not (data["type"] == "string" and len(data["value"]) == 0):
             p1 += nodes.Text(" (")

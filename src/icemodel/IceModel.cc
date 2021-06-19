@@ -57,6 +57,7 @@
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 
@@ -439,7 +440,7 @@ void IceModel::step(bool do_mass_continuity,
     update_run_stats();
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"),
+    save_variables(file, INCLUDE_MODEL_STATE, output_variables("medium"),
                    m_time->current());
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
@@ -453,7 +454,10 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += (updateAtDepth ? "v" : "V");
 
   //! \li determine the time step according to a variety of stability criteria
-  max_timestep(m_dt, m_skip_countdown);
+  auto dt_info = max_timestep(m_skip_countdown);
+  m_dt                       = dt_info.dt;
+  m_adaptive_timestep_reason = dt_info.reason;
+  m_skip_countdown           = dt_info.skip_counter;
 
   //! \li update the yield stress for the plastic till model (if appropriate)
   if (m_basal_yield_stress_model) {
@@ -779,7 +783,6 @@ void IceModel::run() {
 
   m_stdout_flags.erase(); // clear it out
   print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
-  m_adaptive_timestep_reason = '$'; // no reason for no timestep
   print_summary(do_energy);  // report starting state
 
   t_TempAge = m_time->current();
@@ -801,7 +804,8 @@ void IceModel::run() {
     bool updateAtDepth = m_skip_countdown == 0;
     bool tempAgeStep   = updateAtDepth and (m_age_model or do_energy);
 
-    const bool show_step = tempAgeStep or m_adaptive_timestep_reason == "end of the run";
+    double one_second = 1.0;
+    const bool show_step = tempAgeStep or fabs(m_time->current() - m_time->end()) < one_second;
     print_summary(show_step);
 
     // update viewers before writing extras because writing extras resets diagnostics

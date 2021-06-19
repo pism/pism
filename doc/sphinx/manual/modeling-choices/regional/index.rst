@@ -38,6 +38,27 @@ Use
 
 to enable PISM's "regional mode."
 
+To run a regional mode simulation using a subset of the grid in an input file, use
+
+.. code-block:: bash
+
+   pismr -regional -bootstrap -i input.NYC \
+         -x_range x_min,x_max \
+         -y_range y_min,y_max
+
+where `x_{\text{min}}`, `x_{\text{max}}`, etc (in meters) define a bounding box for a
+sub-domain.
+
+To use the same subset of the domain, but at a higher resolution, add
+:opt:`-refinement_factor N` for a grid `N` times finer than the one in ``input.nc``:
+
+.. code-block:: bash
+
+   pismr -regional -bootstrap -i input.NYC \
+         -x_range x_min,x_max \
+         -y_range y_min,y_max \
+         -refinement_factor N
+
 Ideally, modeling a region containing an ice mass extending to the edge of the domain
 would use the following time-dependent lateral boundary conditions
 

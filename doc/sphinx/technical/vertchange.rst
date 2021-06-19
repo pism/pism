@@ -87,12 +87,6 @@ Recall that if `f=f(x,y,z,t)` is a function written in the old variables and if
 `\tilde f(x,y,s,t)=f(x,y,z(x,y,s,t),t)` is the "same" function written in the new
 variables, equivalently `f(x,y,z,t)=\tilde f(x,y,s(x,y,z,t),t)` , then
 
-.. only:: html
-
-   .. When building PDFs this will be included already.
-
-   .. include:: ../math-definitions.txt
-
 .. math::
 
     \diff{f}{x} = \diff{\tilde f}{x} + \diff{\tilde f}{s} \diff{s}{x} = \diff{\tilde f}{x}

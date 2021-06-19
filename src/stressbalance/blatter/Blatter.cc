@@ -18,7 +18,7 @@
  */
 
 #include <cassert>              // assert
-#include <cmath>                // std::pow, std::fabs
+#include <cmath>                // std::pow, std::fabs, std::log10
 #include <algorithm>            // std::max
 #include <cstring>              // memset
 
@@ -52,28 +52,21 @@ namespace stressbalance {
  *
  * A node that is neither interior nor exterior is a *boundary* node.
  */
-static void blatter_node_type(DM da, double min_thickness) {
-  typedef Blatter::Parameters Parameters;
+void Blatter::compute_node_type(double min_thickness) {
 
-  // Note that P provides access to a ghosted copy of 2D parameters, so changes to P have
-  // no lasting effect.
-  DataAccess<Parameters**> P(da, 2, GHOSTED);
+  IceModelVec2S node_type(m_grid, "node_type", WITH_GHOSTS);
+  node_type.set(0.0);
 
   DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
   info = grid_transpose(info);
-
-  // loop over all the owned nodes and reset node type
-  for (int j = info.ys; j < info.ys + info.ym; j++) {
-    for (int i = info.xs; i < info.xs + info.xm; i++) {
-      P[j][i].node_type = 0;
-    }
-  }
 
   // Note that dx, dy, and quadrature don't matter here.
   fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
   Parameters p[fem::q1::n_chi];
+
+  IceModelVec::AccessList l{&node_type, &m_parameters};
 
   // Loop over all the elements with at least one owned node and compute the number of icy
   // elements each node belongs to.
@@ -81,7 +74,7 @@ static void blatter_node_type(DM da, double min_thickness) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
       E.reset(i, j);
 
-      E.nodal_values((Parameters**)P, p);
+      E.nodal_values(m_parameters.array(), p);
 
       // An element is "interior" (contains ice) if all of its nodes have thickness above
       // the threshold
@@ -96,27 +89,27 @@ static void blatter_node_type(DM da, double min_thickness) {
       for (int k = 0; k < fem::q1::n_chi; ++k) {
         int ii, jj;
         E.local_to_global(k, ii, jj);
-        P[jj][ii].node_type += interior;
+        node_type(ii, jj) += interior;
       }
     }
   }
 
-  DataAccess<Parameters**> result(da, 2, NOT_GHOSTED);
+  node_type.update_ghosts();
 
   // Loop over all the owned nodes and turn the number of "icy" elements this node belongs
   // to into node type.
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
 
-      switch ((int)P[j][i].node_type) {
+      switch ((int)node_type(i, j)) {
       case 4:
-        result[j][i].node_type = NODE_INTERIOR;
+        m_parameters(i, j).node_type = NODE_INTERIOR;
         break;
       case 0:
-        result[j][i].node_type = NODE_EXTERIOR;
+        m_parameters(i, j).node_type = NODE_EXTERIOR;
         break;
       default:
-        result[j][i].node_type = NODE_BOUNDARY;
+        m_parameters(i, j).node_type = NODE_BOUNDARY;
       }
     }
   }
@@ -264,6 +257,7 @@ bool Blatter::marine_boundary(int face,
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
+    m_parameters(grid, "bp_input_parameters", WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
 {
@@ -273,7 +267,7 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
 
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor);
+  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor, "bp_");
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
@@ -314,6 +308,14 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   m_eta_transform = m_config->get_flag("stress_balance.blatter.use_eta_transform");
 
   m_glen_exponent = m_flow_law->exponent();
+
+  double E = m_config->get_number("stress_balance.blatter.enhancement_factor");
+  m_E_viscosity = std::pow(E, -1.0 / m_glen_exponent);
+
+  double softness = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+    hardness = std::pow(softness, -1.0 / m_glen_exponent);
+
+  m_scaling = m_rho_ice_g * hardness;
 }
 
 /*!
@@ -343,7 +345,15 @@ static PetscErrorCode blatter_restriction_hook(DM fine,
 static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ctx) {
   PetscErrorCode ierr;
 
-  ierr = setup_level(dm_coarse, ((Blatter::Ctx*)ctx)->mg_levels); CHKERRQ(ierr);
+  int mg_levels = 1;
+  {
+    const char *prefix;
+    ierr = DMGetOptionsPrefix(dm_fine, &prefix); CHKERRQ(ierr);
+    auto option = pism::printf("-%spc_mg_levels", prefix);
+    mg_levels = options::Integer(option, "", 1);
+  }
+
+  ierr = setup_level(dm_coarse, mg_levels); CHKERRQ(ierr);
 
   ierr = DMCoarsenHookAdd(dm_coarse, blatter_coarsening_hook, blatter_restriction_hook, ctx); CHKERRQ(ierr);
 
@@ -354,56 +364,23 @@ static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ct
 }
 
 /*!
- * Create a 2D DM and an associated 2D global Vec for storing input parameters.
+ * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
  */
-PetscErrorCode Blatter::setup_2d_storage(DM dm, int dof) {
-  PetscErrorCode ierr;
-
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
-
-  // Create a 2D DMDA and a global Vec, then stash them in dm.
-  DM  da;
-  Vec parameters;
-
-  // NB: we call transpose() here because the input dm is a transposed 3D DM
-  auto info = DMInfo(dm).transpose();
-
-  ierr = DMDACreate2d(comm,
-                      info.bx, info.by,
-                      info.stencil_type,
-                      info.Mx, info.My,
-                      info.mx, info.my,
-                      dof,
-                      info.stencil_width,
-                      info.lx, info.ly,
-                      &da); CHKERRQ(ierr);
-
-  ierr = DMSetUp(da); CHKERRQ(ierr);
-
-  ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
-
-  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM", (PetscObject)da); CHKERRQ(ierr);
-  ierr = PetscObjectCompose((PetscObject)dm, "2D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
-
-  ierr = DMDestroy(&da); CHKERRQ(ierr);
-
-  ierr = VecDestroy(&parameters); CHKERRQ(ierr);
-
-  return 0;
-}
-
 PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
-                              int coarsening_factor) {
+                              int coarsening_factor,
+                              const std::string &prefix) {
+  MPI_Comm comm;
+  PetscErrorCode ierr = PetscObjectGetComm((PetscObject)pism_da, &comm); CHKERRQ(ierr);
+
   // FIXME: add the ability to add a prefix to the option prefix. We need this to be able
   // to run more than one instance of PISM in parallel.
-  std::string prefix = "bp_";
-
   auto option = pism::printf("-%spc_mg_levels", prefix.c_str());
-  int mg_levels = options::Integer(option, "", 0);
+  int mg_levels = options::Integer(option, "", 1);
 
   // Check compatibility of Mz, mg_levels, and the coarsening_factor and stop if they are
   // not compatible.
+  //
+  // We assume that the user also set "-bp_pc_type mg".
   {
     int c = coarsening_factor;
     int M = mg_levels;
@@ -428,38 +405,49 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
     }
   }
 
-  // save the number of MG levels (for stdout reporting)
-  m_context.mg_levels = mg_levels;
-
-  PetscErrorCode ierr;
   // DM
   //
   // Note: in the PISM's DA pism_da PETSc's and PISM's meaning of x and y are the same.
   {
-    MPI_Comm comm;
-    ierr = PetscObjectGetComm((PetscObject)pism_da, &comm); CHKERRQ(ierr);
+    PetscInt Mx, My;
+    PetscInt mx, my;
+    PetscInt dims;
 
-    DMInfo info(pism_da);
-    assert(info.dims == 2);
+    ierr = DMDAGetInfo(pism_da,
+                       &dims,            // dimensions
+                       &Mx, &My, NULL,   // grid size
+                       &mx, &my, NULL,   // numbers of processors in each direction
+                       NULL,             // number of degrees of freedom
+                       NULL,             // stencil width
+                       NULL, NULL, NULL, // types of ghost nodes at the boundary
+                       NULL);            // stencil type
+    CHKERRQ(ierr);
 
-    // pad the vertical grid to allow for n_levels multigrid levels
-    info.Mz  = Mz;
-    info.mz  = 1;
-    info.dof = 2;
-    info.stencil_width = 1;
+    assert(dims == 2);
 
-    info.bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE;
-    info.bz = DM_BOUNDARY_NONE;
+    const PetscInt
+      *lx = NULL,
+      *ly = NULL;
+    ierr = DMDAGetOwnershipRanges(pism_da, &lx, &ly, NULL); CHKERRQ(ierr);
+
+    PetscInt
+      mz            = 1,
+      dof           = 2,
+      stencil_width = 1;
+
+    DMBoundaryType
+      bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(comm,
-                        info.bz, info.bx, info.by, // STORAGE_ORDER
+                        bz, bx, by,    // STORAGE_ORDER
                         DMDA_STENCIL_BOX,
-                        info.Mz, info.Mx, info.My, // STORAGE_ORDER
-                        info.mz, info.mx, info.my, // STORAGE_ORDER
-                        info.dof,                  // dof
-                        info.stencil_width,        // stencil width
-                        NULL, info.lx, info.ly,    // STORAGE_ORDER
+                        Mz, Mx, My,    // STORAGE_ORDER
+                        mz, mx, my,    // STORAGE_ORDER
+                        dof,
+                        stencil_width,
+                        NULL, lx, ly,  // STORAGE_ORDER
                         m_da.rawptr()); CHKERRQ(ierr);
 
     ierr = DMSetOptionsPrefix(m_da, prefix.c_str()); CHKERRQ(ierr);
@@ -471,12 +459,11 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
 
     ierr = DMSetUp(m_da); CHKERRQ(ierr);
 
-    // set up 2D and 3D parameter storage
-    ierr = setup_2d_storage(m_da, sizeof(Parameters)/sizeof(double)); CHKERRQ(ierr);
+    // set up 3D parameter storage
     ierr = setup_level(m_da, mg_levels); CHKERRQ(ierr);
 
     // tell PETSc how to coarsen this grid and how to restrict data to a coarser grid
-    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, &m_context);
+    ierr = DMCoarsenHookAdd(m_da, blatter_coarsening_hook, blatter_restriction_hook, NULL);
     CHKERRQ(ierr);
   }
 
@@ -487,28 +474,32 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
     ierr = VecSetOptionsPrefix(m_x, prefix.c_str()); CHKERRQ(ierr);
 
     ierr = VecSetFromOptions(m_x); CHKERRQ(ierr);
+
+    ierr = VecDuplicate(m_x, m_x_old.rawptr()); CHKERRQ(ierr);
   }
 
   // SNES
   {
-    ierr = SNESCreate(m_grid->com, m_snes.rawptr()); CHKERRQ(ierr);
+    ierr = SNESCreate(comm, m_snes.rawptr()); CHKERRQ(ierr);
 
     ierr = SNESSetOptionsPrefix(m_snes, prefix.c_str()); CHKERRQ(ierr);
 
     ierr = SNESSetDM(m_snes, m_da); CHKERRQ(ierr);
 
-    m_callback_data.da = m_da;
-    m_callback_data.solver = this;
-
     ierr = DMDASNESSetFunctionLocal(m_da, INSERT_VALUES,
                                     (DMDASNESFunction)function_callback,
-                                    &m_callback_data); CHKERRQ(ierr);
+                                    this); CHKERRQ(ierr);
 
     ierr = DMDASNESSetJacobianLocal(m_da,
                                     (DMDASNESJacobian)jacobian_callback,
-                                    &m_callback_data); CHKERRQ(ierr);
+                                    this); CHKERRQ(ierr);
 
     ierr = SNESSetFromOptions(m_snes); CHKERRQ(ierr);
+
+
+    PetscBool ksp_use_ew = PETSC_FALSE;
+    ierr = SNESKSPGetUseEW(m_snes, &ksp_use_ew); CHKERRQ(ierr);
+    m_ksp_use_ew = ksp_use_ew;
   }
 
   return 0;
@@ -531,9 +522,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     &sea_level = inputs.geometry->sea_level_elevation;
 
   {
-    DataAccess<Parameters**> P(m_da, 2, NOT_GHOSTED);
-
-    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level};
+    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level, &m_parameters};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -544,49 +533,59 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
         s_grounded = b(i, j) + H(i, j),
         s_floating = sea_level(i, j) + (1.0 - alpha) * H(i, j);
 
-      P[j][i].tauc       = tauc(i, j);
-      P[j][i].thickness  = H(i, j);
-      P[j][i].sea_level  = sea_level(i, j);
-      P[j][i].bed        = std::max(b_grounded, b_floating);
-      P[j][i].node_type  = NODE_EXTERIOR;
-      P[j][i].floatation = s_floating - s_grounded;
+      m_parameters(i, j).tauc       = tauc(i, j);
+      m_parameters(i, j).thickness  = H(i, j);
+      m_parameters(i, j).sea_level  = sea_level(i, j);
+      m_parameters(i, j).bed        = std::max(b_grounded, b_floating);
+      m_parameters(i, j).node_type  = NODE_EXTERIOR;
+      m_parameters(i, j).floatation = s_floating - s_grounded;
     }
   }
 
-  double min_thickness = m_config->get_number("stress_balance.ice_free_thickness_standard");
+  // update ghosts here: the call to compute_node_type() uses ghosts of ice thickness
+  m_parameters.update_ghosts();
 
-  blatter_node_type(m_da, min_thickness);
+  double H_min = m_config->get_number("stress_balance.ice_free_thickness_standard");
+  compute_node_type(H_min);
+
+  // update ghosts of node types stored in m_parameters
+  m_parameters.update_ghosts();
 }
 
 /*!
  * Set 3D parameters on the finest grid.
  */
-void Blatter::init_ice_hardness(const Inputs &inputs) {
+void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
   auto enthalpy = inputs.enthalpy;
-
-  DMDALocalInfo info;
-  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
-  info = grid_transpose(info);
-
+  // PISM's vertical grid:
   const auto &zlevels = enthalpy->levels();
   auto Mz = zlevels.size();
 
-  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
-  DataAccess<double***> P3(m_da, 3, NOT_GHOSTED);
+  // solver's vertical grid:
+  int Mz_sigma = 0;
+  {
+    DMDALocalInfo info;
+    int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+    info = grid_transpose(info);
+    Mz_sigma = info.mz;
+  }
 
-  IceModelVec::AccessList list{enthalpy};
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
+  DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
+
+  IceModelVec::AccessList list{enthalpy, &ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double H  = P2[j][i].thickness;
+    double H = ice_thickness(i, j);
 
     const double *E = enthalpy->get_column(i, j);
 
-    for (int k = 0; k < info.mz; ++k) {
+    for (int k = 0; k < Mz_sigma; ++k) {
       double
-        z        = grid_z(0.0, H, info.mz, k),
+        z        = grid_z(0.0, H, Mz_sigma, k),
         depth    = H - z,
         pressure = m_EC->pressure(depth),
         E_local  = 0.0;
@@ -601,9 +600,9 @@ void Blatter::init_ice_hardness(const Inputs &inputs) {
         E_local = E[Mz - 1];
       }
 
-      P3[j][i][k] = m_flow_law->hardness(E_local, pressure);
-    }
+      hardness[j][i][k] = m_flow_law->hardness(E_local, pressure); // STORAGE_ORDER
 
+    } // end of the loop over sigma levels
   } // end of the loop over grid points
 }
 
@@ -627,16 +626,16 @@ void Blatter::nodal_parameter_values(const fem::Q1Element3 &element,
 
     auto p = P[I.j][I.i];
 
-    node_type[n]         = p.node_type;
-    bottom_elevation[n]  = p.bed;
-    ice_thickness[n]     = p.thickness;
+    node_type[n]        = p.node_type;
+    bottom_elevation[n] = p.bed;
+    ice_thickness[n]    = p.thickness;
 
     if (surface_elevation) {
       surface_elevation[n] = p.bed + p.thickness;
     }
 
     if (sea_level) {
-      sea_level[n]         = p.sea_level;
+      sea_level[n] = p.sea_level;
     }
   }
 }
@@ -682,43 +681,398 @@ void Blatter::write_model_state_impl(const File &output) const {
   m_v_sigma->write(output);
 }
 
-void Blatter::update(const Inputs &inputs, bool full_update) {
-  (void) inputs;
-  (void) full_update;
+void Blatter::report_mesh_info() {
 
-  init_2d_parameters(inputs);
-  init_ice_hardness(inputs);
+  DMDALocalInfo info;
+  int ierr = DMDAGetLocalInfo(m_da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+  info = grid_transpose(info);
 
-  int ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+  fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
-  // report the number of iterations and the "reason"
-  SNESConvergedReason reason;
-  {
-    PetscInt            its, lits;
-    SNESGetIterationNumber(m_snes, &its);
-    SNESGetConvergedReason(m_snes, &reason);
-    SNESGetLinearSolveIterations(m_snes, &lits);
-    m_log->message(2, "Blatter solver %s: SNES: %d, KSP: %d\n",
-                   SNESConvergedReasons[reason], (int)its, (int)lits);
-    if (reason == SNES_DIVERGED_LINEAR_SOLVE) {
-      KSP ksp;
-      KSPConvergedReason ksp_reason;
-      ierr = SNESGetKSP(m_snes, &ksp); PISM_CHK(ierr, "SNESGetKSP");
-      ierr = KSPGetConvergedReason(ksp, &ksp_reason); PISM_CHK(ierr, "KSPGetConvergedReason");
-      m_log->message(2, "  Linear solver reports: %s\n",
-                     KSPConvergedReasons[ksp_reason]);
+  IceModelVec::AccessList l{&m_parameters};
+
+  double R_min = 1e16, R_max = 0.0, R_avg = 0.0;
+  double dxy = std::max(m_grid->dx(), m_grid->dy());
+  double n_cells = 0.0;
+
+  Parameters P[fem::q1::n_chi];
+  for (int j = info.ys; j < info.ys + info.ym - 1; j++) {
+    for (int i = info.xs; i < info.xs + info.xm - 1; i++) {
+
+      E.reset(i, j);
+
+      E.nodal_values(m_parameters.array(), P);
+
+      int node_type[4];
+      for (int k = 0; k < 4; ++k) {
+        node_type[k] = P[k].node_type;
+      }
+
+      if (exterior_element(node_type)) {
+        continue;
+      }
+
+      n_cells += 1.0;
+
+      double dz_max = 0.0;
+      for (int k = 0; k < 4; ++k) {
+        dz_max = std::max(P[k].thickness / (info.mz - 1), dz_max);
+      }
+      double R = dz_max / dxy;
+
+      R_min = std::min(R, R_min);
+      R_max = std::max(R, R_max);
+      R_avg += R;
     }
   }
 
-  // FIXME: try to recover
-  if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Solver failed. (reason: %s)",
-                                  SNESConvergedReasons[reason]);
+  n_cells = GlobalSum(m_grid->com, n_cells);
+  R_avg = GlobalSum(m_grid->com, R_avg);
+  R_avg /= std::max(n_cells, 1.0);
+
+  R_min = GlobalMin(m_grid->com, R_min);
+  R_max = GlobalMax(m_grid->com, R_max);
+
+  m_log->message(2,
+                 "Blatter solver: %d * (%d - 1) = %d active elements\n",
+                 (int)n_cells, (int)info.mz, (int)(n_cells * (info.mz - 1)));
+
+  if (n_cells > 0) {
+    m_log->message(2,
+                   "  Vertical spacing (m): min = %3.3f, max = %3.3f, avg = %3.3f\n",
+                   R_min * dxy, R_max * dxy, R_avg * dxy);
+    m_log->message(2,
+                   "  Aspect ratios:        min = %3.3f, max = %3.3f, avg = %3.3f, max/min = %3.3f\n",
+                   R_min, R_max, R_avg, R_max / R_min);
+  }
+}
+
+/*!
+ * Runs the solver and extracts iteration counts.
+ */
+Blatter::SolutionInfo Blatter::solve() {
+  PetscErrorCode ierr;
+  SolutionInfo result;
+
+  // Solve the system:
+  ierr = SNESSolve(m_snes, NULL, m_x); PISM_CHK(ierr, "SNESSolve");
+
+  ierr = SNESGetConvergedReason(m_snes, &result.snes_reason);
+  PISM_CHK(ierr, "SNESGetConvergedReason");
+
+  ierr = SNESGetIterationNumber(m_snes, &result.snes_it);
+  PISM_CHK(ierr, "SNESGetIterationNumber");
+
+  ierr = SNESGetLinearSolveIterations(m_snes, &result.ksp_it);
+  PISM_CHK(ierr, "SNESGetLinearSolveIterations");
+
+  KSP ksp;
+  ierr = SNESGetKSP(m_snes, &ksp);
+  PISM_CHK(ierr, "SNESGetKSP");
+
+  ierr = KSPGetConvergedReason(ksp, &result.ksp_reason);
+  PISM_CHK(ierr, "KSPGetConvergedReason");
+
+  PC pc;
+  ierr = KSPGetPC(ksp, &pc);
+  PISM_CHK(ierr, "KSPGetPC");
+
+  PCType pc_type;
+  ierr = PCGetType(pc, &pc_type);
+  PISM_CHK(ierr, "PCGetType");
+
+  if (std::string(pc_type) == PCMG) {
+    KSP coarse_ksp;
+    ierr = PCMGGetCoarseSolve(pc, &coarse_ksp);
+    PISM_CHK(ierr, "PCMGGetCoarseSolve");
+
+    ierr = KSPGetIterationNumber(coarse_ksp, &result.mg_coarse_ksp_it);
+    PISM_CHK(ierr, "KSPGetIterationNumber");
+  } else {
+    result.mg_coarse_ksp_it = 0;
+  }
+
+  return result;
+}
+
+Blatter::SolutionInfo Blatter::parameter_continuation() {
+  PetscErrorCode ierr;
+
+  SolutionInfo info;
+  // total number of SNES and KSP iterations
+  int snes_total_it = 0;
+  int ksp_total_it  = 0;
+
+  // maximum number of continuation steps (input)
+  int Nc = 50;
+
+  double
+    schoofLen = m_config->get_number("flow_law.Schoof_regularizing_length", "m"),
+    schoofVel = m_config->get_number("flow_law.Schoof_regularizing_velocity", "m second-1"),
+    // desired regularization parameter
+    eps       = pow(schoofVel / schoofLen, 2.0),
+    // gamma is a number such that 10^gamma <= eps. It is used to convert lambda in [0, 1] to eps_n
+    gamma     = std::floor(std::log10(eps)),
+    // starting value of lambda (input)
+    lambda_min = 0.0,
+    // Final value of lambda (fixed)
+    lambda_max = 1.0,
+    // Minimum step length (input)
+    delta_min = 0.01,
+    // Maximum step length (input)
+    delta_max = 0.2,
+    // Initial increment of lambda (input)
+    delta0    = 0.05,
+    // "Aggressiveness" of the step increase, a non-negative number (input). The effect of
+    // this parameter is linked to the choice of -bp_snes_max_it obtained below.
+    A         = 0.25;
+
+  PetscInt snes_max_it = 0;
+  ierr = SNESGetTolerances(m_snes, NULL, NULL, NULL, &snes_max_it, NULL);
+  PISM_CHK(ierr, "SNESGetTolerances");
+
+  double lambda = lambda_min;
+  double delta  = delta0;
+
+  // Use the zero initial guess to start
+  ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+  ierr = VecSet(m_x_old, 0.0); PISM_CHK(ierr, "VecSet");
+
+  m_log->message(2,
+                 "Blatter solver: Starting parameter continuation with lambda = %f\n",
+                 lambda);
+
+  for (int N = 0; N < Nc; ++N) {
+    // Set the regularization parameter:
+    m_viscosity_eps = std::max(std::pow(10.0, lambda * gamma), eps);
+
+    m_log->message(2, "Blatter solver: step %d with lambda = %f, eps = %e\n",
+                   N, lambda, m_viscosity_eps);
+
+    // Solve the system:
+
+    info = solve();
+    snes_total_it += info.snes_it;
+    ksp_total_it  += info.ksp_it;
+
+    // report number of iterations for this continuation step
+    m_log->message(2, "Blatter solver continuation step #%d: %s\n"
+                   "     lambda = %f, eps = %e\n"
+                   "     SNES: %d, KSP: %d\n",
+                   N, SNESConvergedReasons[info.snes_reason], lambda, m_viscosity_eps,
+                   (int)info.snes_it, (int)info.ksp_it);
+    if (info.mg_coarse_ksp_it > 0) {
+      m_log->message(2,
+                     "     Coarse MG level KSP (last iteration): %d\n",
+                     (int)info.mg_coarse_ksp_it);
+    }
+
+    if (info.snes_reason > 0) {
+      // converged
+
+      if (m_viscosity_eps <= eps) {
+        // ... while solving the desired (not overregularized) problem
+        info.snes_it = snes_total_it;
+        info.ksp_it = ksp_total_it;
+        return info;
+      }
+
+      // Store the solution as the "old" initial guess we may need to revert to
+      ierr = VecCopy(m_x, m_x_old); PISM_CHK(ierr, "VecCopy");
+
+      if (N > 0) {
+        // Adjust delta using the formula from LOCA (equation 2.8 in Salinger2002
+        // corrected using the code in Trilinos).
+        double F = (snes_max_it - info.snes_it) / (double)snes_max_it;
+        delta *= 1.0 + A * F * F;
+      }
+
+      delta = std::min(delta, delta_max);
+
+      // Ensure that delta does not take us past lambda_max
+      if (lambda + delta > lambda_max) {
+        delta = lambda_max - lambda;
+      }
+
+      m_log->message(2, "  Advancing lambda from %f to %f (delta = %f)\n",
+                     lambda, lambda + delta, delta);
+
+      lambda += delta;
+    } else if (info.snes_reason == SNES_DIVERGED_LINE_SEARCH or
+               info.snes_reason == SNES_DIVERGED_MAX_IT) {
+        // a continuation step failed
+
+        // restore the previous initial guess
+        ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
+
+        // revert lambda to the previous value
+        lambda -= delta;
+
+        if (lambda < lambda_min) {
+          m_log->message(2, "Blatter solver: Parameter continuation failed at step 1\n");
+          return info;
+        }
+
+        if (std::fabs(delta - delta_min) < 1e-6) {
+          m_log->message(2, "Blatter solver: cannot reduce the continuation step\n");
+          return info;
+        }
+
+        // reduce the step size
+        delta *= 0.5;
+
+        delta = pism::clip(delta, delta_min, delta_max);
+
+        lambda += delta;
+        // Note that this delta will not take us past lambda_max because the original
+        // delta satisfies lambda + delta <= lambda_max.
+
+        m_log->message(2, "  Back-tracking to lambda = %f using delta = %f\n",
+                       lambda, delta);
+    } else {
+      return info;
+    }
+  }
+
+  m_log->message(2, "Blatter solver failed after %d parameter continuation steps\n", Nc);
+
+  return info;
+}
+
+/*!
+ * Disable the Eisenstat-Walker method of setting KSP tolerances.
+ */
+static void disable_ew(::SNES snes, double rtol) {
+  PetscErrorCode ierr;
+
+  ierr = SNESKSPSetUseEW(snes, PETSC_FALSE);
+  PISM_CHK(ierr, "SNESKSPSetUseEW");
+
+  KSP ksp;
+  ierr = SNESGetKSP(snes, &ksp);
+  PISM_CHK(ierr, "SNESGetKSP");
+
+  ierr = KSPSetTolerances(ksp, rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  PISM_CHK(ierr, "KSPSetTolerances");
+}
+
+static void enable_ew(::SNES snes) {
+  PetscErrorCode ierr;
+  // restore the old EW setting
+  ierr = SNESKSPSetUseEW(snes, PETSC_TRUE); PISM_CHK(ierr, "SNESKSPSetUseEW");
+}
+
+void Blatter::update(const Inputs &inputs, bool full_update) {
+  PetscErrorCode ierr;
+  (void) full_update;
+
+  {
+    double
+      schoofLen = m_config->get_number("flow_law.Schoof_regularizing_length", "m"),
+      schoofVel = m_config->get_number("flow_law.Schoof_regularizing_velocity", "m second-1");
+
+    m_viscosity_eps = pow(schoofVel / schoofLen, 2.0);
+
+  }
+
+  init_2d_parameters(inputs);
+  init_ice_hardness(inputs, m_da);
+
+  report_mesh_info();
+
+  // Store the "old" initial guess: it may be needed to re-try.
+  ierr = VecCopy(m_x, m_x_old); PISM_CHK(ierr, "VecCopy");
+
+  SolutionInfo info;
+  int snes_total_it = 0;
+  int ksp_total_it = 0;
+
+  double ksp_rtol = 1e-5;
+
+  double norm = 0.0;
+  {
+    ierr = VecNorm(m_x, NORM_INFINITY, &norm); PISM_CHK(ierr, "VecNorm");
+  }
+
+  // First attempt
+  {
+    if (m_ksp_use_ew and norm == 0.0) {
+      m_log->message(2,
+                     "Blatter solver: zero initial guess\n"
+                     "  Disabling the Eisenstat-Walker method of adjusting solver tolerances\n");
+
+      disable_ew(m_snes, ksp_rtol);
+      info = solve();
+      enable_ew(m_snes);
+    } else {
+      info = solve();
+    }
+    snes_total_it += info.snes_it;
+    ksp_total_it += info.ksp_it;
+
+    if (info.snes_reason > 0) {
+      goto bp_done;
+    }
+    m_log->message(2, "Blatter solver: %s\n", SNESConvergedReasons[info.snes_reason]);
+  }
+
+  if (m_ksp_use_ew and norm > 0.0) {
+    m_log->message(2,"  Trying without the Eisenstat-Walker method of adjusting solver tolerances\n");
+
+    // restore the previous initial guess
+    if (not (info.snes_reason == SNES_DIVERGED_LINE_SEARCH or
+             info.snes_reason == SNES_DIVERGED_MAX_IT)) {
+      ierr = VecCopy(m_x_old, m_x); PISM_CHK(ierr, "VecCopy");
+    } else {
+      // We *keep* the current values in m_x if the line search failed after a few
+      // iterations or if the solver took too many iterations: no need to discard the
+      // progress it made before failing.
+    }
+
+    {
+      disable_ew(m_snes, ksp_rtol);
+      info = solve();
+      enable_ew(m_snes);
+    }
+
+    snes_total_it += info.snes_it;
+    ksp_total_it  += info.ksp_it;
+
+    if (info.snes_reason > 0) {
+      goto bp_done;
+    }
+    m_log->message(2, "Blatter solver: %s\n", SNESConvergedReasons[info.snes_reason]);
+  }
+
+  // try using parameter continuation
+  {
+    info = parameter_continuation();
+    snes_total_it += info.snes_it;
+    ksp_total_it  += info.ksp_it;
+    if (info.snes_reason > 0) {
+      goto bp_done;
+    }
+    m_log->message(2, "Blatter solver: %s\n", SNESConvergedReasons[info.snes_reason]);
+  }
+
+  throw RuntimeError(PISM_ERROR_LOCATION, "Blatter solver failed");
+
+ bp_done:
+  // report the total number of iterations
+  m_log->message(2,
+                 "Blatter solver: %s. Done.\n"
+                 "  SNES: %d, KSP: %d\n",
+                 SNESConvergedReasons[info.snes_reason],
+                 snes_total_it, ksp_total_it);
+  if (info.mg_coarse_ksp_it > 0) {
+    m_log->message(2,
+                   "  Level 0 KSP (last iteration): %d\n",
+                   (int)info.mg_coarse_ksp_it);
   }
 
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
+
   compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
                                    inputs.geometry->cell_type,
                                    m_basal_frictional_heating);
@@ -761,8 +1115,7 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j).u = x[j][i][0].u;      // STORAGE_ORDER
-    result(i, j).v = x[j][i][0].v;      // STORAGE_ORDER
+    result(i, j) = x[j][i][0];      // STORAGE_ORDER
   }
 
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
@@ -801,13 +1154,12 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&result};
-  DataAccess<Parameters**> P2(m_da, 2, NOT_GHOSTED);
+  IceModelVec::AccessList list{&result, &m_parameters};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double H = P2[j][i].thickness;
+    double H = m_parameters(i, j).thickness;
 
     Vector2 V(0.0, 0.0);
 

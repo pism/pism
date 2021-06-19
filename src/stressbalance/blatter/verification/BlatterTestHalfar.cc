@@ -104,7 +104,7 @@ void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
-    auto W = element.weight(q);
+    auto W = element.weight(q) / m_scaling;
 
     auto F = blatter_xz_halfar_source(x[q], z[q], m_H0, m_R0, m_rho, m_g, m_B);
 
@@ -144,7 +144,7 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
     auto N3 = face.normal(q);
     Vector2 N = {N3.x, N3.y};
 
@@ -184,7 +184,7 @@ void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_halfar_source_surface(x[q], m_H0, m_R0, m_rho, m_g, m_B);
 
@@ -223,7 +223,7 @@ void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
   }
 
   for (int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q);
+    auto W = face.weight(q) / m_scaling;
 
     auto F = blatter_xz_halfar_source_base(x[q], m_H0, m_R0, m_rho, m_g, m_B);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,6 +104,7 @@ class IceModelVec2T;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;
+class ScalarForcing;
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -269,6 +270,10 @@ protected:
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
+  // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
+  // calving, or Hayhurst calving
+  std::unique_ptr<ScalarForcing> m_calving_rate_factor;
+
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
   std::shared_ptr<surface::SurfaceModel>      m_surface;
@@ -315,8 +320,14 @@ protected:
   // see iceModel.cc
   virtual void allocate_storage();
 
+  struct TimesteppingInfo {
+    double dt;
+    std::string reason;
+    unsigned int skip_counter;
+  };
+  virtual TimesteppingInfo max_timestep(unsigned int counter);
+
   virtual MaxTimestep max_timestep_diffusivity();
-  virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see energy.cc

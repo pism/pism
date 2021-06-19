@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -236,7 +236,7 @@ void IceModel::write_extras() {
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  char filename[PETSC_MAX_PATH_LEN];
+  std::string filename;
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
   if (not m_save_extra) {
@@ -296,15 +296,16 @@ void IceModel::write_extras() {
 
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             m_extra_filename.c_str(), m_time->date().c_str());
+    filename = pism::printf("%s_%s.nc",
+                            m_extra_filename.c_str(),
+                            m_time->date().c_str());
   } else {
-    strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    filename = m_extra_filename;
   }
 
   m_log->message(3,
                  "saving spatial time-series to %s at %s\n",
-                 filename, m_time->date().c_str());
+                 filename.c_str(), m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = m_config->get_flag("output.extra.append");

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     std::string usage =
       "  pisms [-eisII x] [OTHER PISM & PETSc OPTIONS]\n"
       "where major option chooses type of simplified experiment:\n"
-      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|G|H|I|J|K|L)\n";
+      "  -eisII x    choose EISMINT II experiment (x = A|B|C|D|E|F|I|J|K|L)\n";
 
     bool done = show_usage_check_req_opts(*log, "PISMS (simplified geometry mode)",
                                           std::vector<std::string>(), // no required options
@@ -115,14 +115,9 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
+    // Note: experiments G and H are not supported.
     std::string experiment = options::Keyword("-eisII", "EISMINT II experiment name",
-                                              "A,B,C,D,E,F,G,H,I,J,K,L", "A");
-
-    // Stop if -eisII G or -eisII H was given.
-    if (experiment == "G" or experiment == "H") {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "EISMINT II experiment %s is not supported.",
-                                    experiment.c_str());
-    }
+                                              "A,B,C,D,E,F,I,J,K,L", "A");
 
     Config::Ptr config = ctx->config();
 
