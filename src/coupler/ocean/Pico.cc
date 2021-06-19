@@ -39,7 +39,6 @@
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
-
 #include "pism/coupler/util/options.hh"
 
 #include "Pico.hh"
@@ -331,8 +330,11 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
                                          const IceModelVec2Int &continental_shelf_mask,
                                          const IceModelVec2S &salinity_ocean, const IceModelVec2S &theta_ocean,
                                          std::vector<double> &temperature, std::vector<double> &salinity) {
-
   std::vector<int> count(m_n_basins, 0);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> countr(m_n_basins, 0);
+  std::vector<double> salinityr(m_n_basins);
+  std::vector<double> temperaturer(m_n_basins);
 
   temperature.resize(m_n_basins);
   salinity.resize(m_n_basins);
@@ -362,11 +364,16 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
   // ocean_contshelf_mask values intersect with the basin, count is zero. In such case,
   // use dummy temperature and salinity. This could happen, for example, if the ice shelf
   // front advances beyond the continental shelf break.
-  for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
+  GlobalSum(m_grid->com, count.data(), countr.data(), m_n_basins);
+  GlobalSum(m_grid->com, salinity.data(), salinityr.data(), m_n_basins);
+  GlobalSum(m_grid->com, temperature.data(), temperaturer.data(), m_n_basins);
 
-    count[basin_id]       = GlobalSum(m_grid->com, count[basin_id]);
-    salinity[basin_id]    = GlobalSum(m_grid->com, salinity[basin_id]);
-    temperature[basin_id] = GlobalSum(m_grid->com, temperature[basin_id]);
+  // copy values
+  count       = countr;
+  salinity    = salinityr;
+  temperature = temperaturer;
+
+  for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
 
     // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
     if (basin_id > 0 && count[basin_id] == 0) {
@@ -402,13 +409,16 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
                                   const IceModelVec2Int &shelf_mask, const std::vector<double> basin_temperature,
                                   const std::vector<double> basin_salinity, IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0) {
-
+  
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-  std::vector<std::vector<int> > n_shelf_cells_per_basin(m_n_shelves, std::vector<int>(m_n_basins, 0));
+  std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
-
-  std::vector<std::vector<int> > cfs_in_basins_per_shelf(m_n_shelves, std::vector<int>(m_n_basins, 0));
+  std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
+  // additional vectors to allreduce efficiently with IntelMPI
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves*m_n_basins,0);
 
 
   // 1) count the number of cells in each shelf
@@ -418,34 +428,34 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
-      n_shelf_cells_per_basin[s][b]++;
+      n_shelf_cells_per_basin[s*m_n_basins+b]++;
       n_shelf_cells[s]++;
 
       // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
       if (mask.as_int(i, j) == MASK_FLOATING) {
         auto M = mask.int_star(i, j);
         if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
-          if (cfs_in_basins_per_shelf[s][b] != b) {
-            cfs_in_basins_per_shelf[s][b] = b;
+          if (cfs_in_basins_per_shelf[s*m_n_basins+b] != b) {
+            cfs_in_basins_per_shelf[s*m_n_basins+b] = b;
           }
         }
       }
     }
+    
+    GlobalSum(m_grid->com, n_shelf_cells.data(), n_shelf_cellsr.data(), m_n_shelves);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
+    // copy data
+    n_shelf_cells = n_shelf_cellsr;
+    n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
+    cfs_in_basins_per_shelf = cfs_in_basins_per_shelfr;
 
     for (int s = 0; s < m_n_shelves; s++) {
-      n_shelf_cells[s] = GlobalSum(m_grid->com, n_shelf_cells[s]);
       for (int b = 0; b < m_n_basins; b++) {
-        n_shelf_cells_per_basin[s][b] = GlobalSum(m_grid->com, n_shelf_cells_per_basin[s][b]);
-
-        cfs_in_basins_per_shelf[s][b] = GlobalSum(m_grid->com, cfs_in_basins_per_shelf[s][b]);
-        //if (cfs_in_basins_per_shelf[s][b]>0) {
-        //  m_log->message(2, "PICO, ocean gateways results with s=%d, r=%d \n",s,cfs_in_basins_per_shelf[s][b]);
-        //}
-
         // remove ice shelf parts from the count that do not have a calving front in that basin
-        if (n_shelf_cells_per_basin[s][b] > 0 and cfs_in_basins_per_shelf[s][b] == 0) {
-          n_shelf_cells[s] -= n_shelf_cells_per_basin[s][b];
-          n_shelf_cells_per_basin[s][b] = 0;
+        if (n_shelf_cells_per_basin[s*m_n_basins+b] > 0 and cfs_in_basins_per_shelf[s*m_n_basins+b] == 0) {
+          n_shelf_cells[s] -= n_shelf_cells_per_basin[s*m_n_basins+b];
+          n_shelf_cells_per_basin[s*m_n_basins+b] = 0;
         }
       }
     }
@@ -468,9 +478,8 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
 
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
-
-        Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
-        Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s][b] / (double)n_shelf_cells[s];
+          Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
+          Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
       }
 
       double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
@@ -777,7 +786,7 @@ void Pico::compute_box_average(int box_id,
   IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
 
   std::vector<int> n_cells_per_box(m_n_shelves, 0);
-
+  std::vector<double> result1(m_n_shelves);
   // fill results with zeros
   result.resize(m_n_shelves);
   for (int s = 0; s < m_n_shelves; ++s) {
@@ -795,15 +804,17 @@ void Pico::compute_box_average(int box_id,
       result[shelf_id] += field(i, j);
     }
   }
-
   // compute the global sum and average
+  std::vector<int> n_cells(m_n_shelves);
+  GlobalSum(m_grid->com, n_cells_per_box.data(), n_cells.data(), m_n_shelves);
+  GlobalSum(m_grid->com, result.data(), result1.data(), m_n_shelves);
+
+  // copy data
+  result = result1;
+
   for (int s = 0; s < m_n_shelves; ++s) {
-    auto n_cells = GlobalSum(m_grid->com, n_cells_per_box[s]);
-
-    result[s] = GlobalSum(m_grid->com, result[s]);
-
-    if (n_cells > 0) {
-      result[s] /= (double)n_cells;
+    if (n_cells[s] > 0) {
+      result[s] /= (double)n_cells[s];
     }
   }
 }
@@ -821,7 +832,6 @@ void Pico::compute_box_area(int box_id,
                             const IceModelVec2Int &box_mask,
                             std::vector<double> &result) {
   result.resize(m_n_shelves);
-
   IceModelVec::AccessList list{ &shelf_mask, &box_mask };
 
   auto cell_area = m_grid->cell_area();
@@ -835,10 +845,13 @@ void Pico::compute_box_area(int box_id,
       result[shelf_id] += cell_area;
     }
   }
-
-  // compute global sums
-  for (int s = 1; s < m_n_shelves; ++s) {
-    result[s] = GlobalSum(m_grid->com, result[s]);
+  
+  // compute GlobalSum from index 1 to index m_n_shelves-1
+  std::vector<double> result1(m_n_shelves);
+  GlobalSum(m_grid->com, &result[1], &result1[1], m_n_shelves-1);
+  // copy data
+  for (int i = 1; i < m_n_shelves; i++) {
+    result[i] = result1[i];
   }
 }
 
