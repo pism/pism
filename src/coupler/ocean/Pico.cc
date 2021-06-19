@@ -151,16 +151,13 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
-  const IceModelVec2CellType &cell_type = geometry.cell_type;
-
-  // This inits basin_mask
-  m_geometry->init(cell_type);
+  // This initializes the basin_mask
+  m_geometry->init(geometry.cell_type);
 
   // FIXME: m_n_basins is a misnomer
   m_n_basins = m_geometry->basin_mask().max() + 1;
 
   m_log->message(4, "PICO basin min=%f,max=%f\n", m_geometry->basin_mask().min(), m_geometry->basin_mask().max());
-
 
   PicoPhysics physics(*m_config);
 
