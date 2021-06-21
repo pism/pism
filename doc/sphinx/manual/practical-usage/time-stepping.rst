@@ -103,6 +103,29 @@ step length.
    PISM will take a 9 model year long time step. This can be useful to enforce consistent
    sampling of periodic climate data.
 
+#. If the value `R` set using :config:`time_stepping.resolution` is positive PISM
+   reduces the time step length so that
+
+   .. math::
+      :label: eq-dt-rounding-down
+
+      \dt = N\cdot R
+
+   for some integer `N`.
+
+   The default `R` (`1` second) allows PISM to represent model time more accurately,
+   reducing the influence of rounding errors.
+
+   .. note::
+
+      This is an intermediate-term solution for an issue reported by Thomas Kleiner:
+      some simulations produced different results with identical inputs but *different*
+      start years.
+
+      We tracked it down to the fact that these simulations ended up using slightly
+      different time step lengths. This, in turn, was caused by differences in the
+      *absolute* precision of the C++ type ``double`` for numbers of different magnitudes.
+
 #. The time step length never exceeds the total length of the run.
 
 At each time step the PISM standard output includes "flags" and then a summary of the

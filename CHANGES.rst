@@ -45,9 +45,9 @@ Changes since v1.2
   Blatter (1995). This solver supports multigrid preconditioners (see Brown et al 2013)
   and includes 5 verification test based on manufactured solutions.
 - Implement experiments A,B,C,D,E from the ISMIP-HOM intercomparison.
-- Adjust PICO ocean input average across covered basins, in which the ice shelf has 
-  in fact a connection to the ocean. Large ice shelves, that cover across two basins, 
-  that do not share an ocean boundary, are split into two separate ice shelf instances 
+- Adjust PICO ocean input average across covered basins, in which the ice shelf has
+  in fact a connection to the ocean. Large ice shelves, that cover across two basins,
+  that do not share an ocean boundary, are split into two separate ice shelf instances
 - Implement scaling of calving rates using a time-dependent factor. Set
   `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
   (units: "1").
@@ -64,6 +64,9 @@ Changes since v1.2
   parameters use units of `365 days` instead of `years`. The latter has the meaning of the
   mean tropical year, i.e. the constant used to convert from `1/s` to `1/year`. Use `-y
   1000years`, etc to reproduce the old behavior.
+- Add a new parameter: `time_stepping.resolution`. PISM rounds time step lengths *down* to
+  a multiple of this number (default: 1 second). This reduces the influence of rounding
+  errors on time step lengths. See `issue 407`_.
 
 Changes from v1.1 to v1.2
 =========================
@@ -884,6 +887,7 @@ Miscellaneous
 .. _issue 405: https://github.com/pism/pism/issues/405
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
+.. _issue 407: https://github.com/pism/pism/issues/407
 .. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
 ..
    Local Variables:
