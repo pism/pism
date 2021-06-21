@@ -56,10 +56,6 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
 
-PicoGeometry::~PicoGeometry() {
-  // empty
-}
-
 const IceModelVec2Int &PicoGeometry::continental_shelf_mask() const {
   return m_continental_shelf;
 }
@@ -86,7 +82,7 @@ void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
-  m_n_basins = m_basin_mask.max() + 1;
+  m_n_basins = static_cast<int>(m_basin_mask.max()) + 1;
 
   m_n_basin_neighbors.resize(2*m_n_basins);
   get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
@@ -98,12 +94,10 @@ void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
  * After this call box_mask(), ice_shelf_mask(), and continental_shelf_mask() will be up
  * to date.
  */
-void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type) {
+void PicoGeometry::update(const IceModelVec2S &bed_elevation,
+                          const IceModelVec2CellType &cell_type) {
+
   bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
-
-  int n_boxes = m_config->get_number("ocean.pico.number_of_boxes");
-
-  double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
 
   // these three could be done at the same time
   {
@@ -128,16 +122,24 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation, const IceModelVec2
   // computing ice_shelf_mask and box_mask could be done at the same time
   {
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
-    m_n_shelves = m_ice_shelves.max() + 1;
+    auto n_shelves = static_cast<int>(m_ice_shelves.max()) + 1;
 
-    std::vector<int> cfs_in_basins_per_shelf(m_n_shelves*m_n_basins,0);
-    std::vector<int> most_shelf_cells_in_basin(m_n_shelves, 0);
-    identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
+    std::vector<int> cfs_in_basins_per_shelf(n_shelves*m_n_basins, 0);
+    std::vector<int> most_shelf_cells_in_basin(n_shelves, 0);
+    identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, n_shelves,
+                                      most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors, most_shelf_cells_in_basin, cfs_in_basins_per_shelf, m_ice_shelves);
+    split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors,
+                      most_shelf_cells_in_basin, cfs_in_basins_per_shelf, n_shelves,
+                      m_ice_shelves);
 
-    compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth, m_continental_shelf);
+    double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
+
+    compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth,
+                                   m_continental_shelf);
   }
+
+  int n_boxes = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
 
   compute_box_mask(m_distance_gl, m_distance_cf, m_ice_shelves, n_boxes, m_boxes);
 }
@@ -160,7 +162,7 @@ static void relabel(RelabelingType type,
 
   IceGrid::ConstPtr grid = mask.grid();
 
-  int max_index = mask.range().max;
+  int max_index = static_cast<int>(mask.range().max);
 
   if (max_index < 1) {
     // No components labeled. Fill the mask with zeros and quit.
@@ -177,7 +179,7 @@ static void relabel(RelabelingType type,
       for (Points p(*grid); p; p.next()) {
         const int i = p.i(), j = p.j();
 
-        int index = mask(i, j);
+        int index = mask.as_int(i, j);
 
         if (index > max_index or index < 0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid component index: %d", index);
@@ -207,7 +209,7 @@ static void relabel(RelabelingType type,
     int biggest_component = 0;
     for (unsigned int k = 0; k < area.size(); ++k) {
       if (area[k] > area[biggest_component]) {
-        biggest_component = k;
+        biggest_component = static_cast<int>(k);
       }
     }
 
@@ -252,7 +254,11 @@ void PicoGeometry::label_tmp() {
   try {
     if (m_grid->rank() == 0) {
       petsc::VecArray mask_p0(*m_tmp_p0);
-      label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), false, 0.0);
+      label_connected_components(mask_p0.get(),
+                                 static_cast<int>(m_grid->My()),
+                                 static_cast<int>(m_grid->Mx()),
+                                 false,
+                                 0.0);
     }
   } catch (...) {
     rank0.failed();
@@ -372,7 +378,8 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type, bool
  * 2 - ice-free areas with bed elevation > threshold, connected to the continental ice sheet
  */
 void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
-                                                  const IceModelVec2Int &ice_rise_mask, double bed_elevation_threshold,
+                                                  const IceModelVec2Int &ice_rise_mask,
+                                                  double bed_elevation_threshold,
                                                   IceModelVec2Int &result) {
   IceModelVec::AccessList list{ &bed_elevation, &ice_rise_mask, &m_tmp };
 
@@ -522,7 +529,7 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
       auto M = cell_type.int_star(i, j);
       int bn = 0; // neighbor basin id
 
-      if (cell_type.as_int(i, j) == MASK_ICE_FREE_OCEAN and
+      if (M.ij == MASK_ICE_FREE_OCEAN and
           ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
            (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
            (M.e == MASK_ICE_FREE_OCEAN and B.e != b) or
@@ -552,9 +559,10 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
   result = result1;
 
   for (int b = 1; b < 2 * m_n_basins; ++b) {
-    if (b % 2 == 0)
+    if (b % 2 == 0) {
       m_log->message(2, "PICO, get basin neighbors of b=%d: b1=%d and b2=%d \n",
                      b / 2, result[b], result[b + 1]);
+    }
   }
 }
 
@@ -565,14 +573,15 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
 void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType &cell_type,
                                                      const IceModelVec2Int &basin_mask,
                                                      const IceModelVec2Int &shelf_mask,
+                                                     int n_shelves,
                                                      std::vector<int> &most_shelf_cells_in_basin,
                                                      std::vector<int> &cfs_in_basins_per_shelf) {
 
-  std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basin(n_shelves * m_n_basins,0);
   // additional vectors to allreduce efficiently with IntelMPI
-  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves * m_n_basins,0);
-  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves * m_n_basins,0);
-  std::vector<int> most_shelf_cells_in_basinr(m_n_shelves, 0);
+  std::vector<int> n_shelf_cells_per_basinr(n_shelves * m_n_basins,0);
+  std::vector<int> cfs_in_basins_per_shelfr(n_shelves * m_n_basins,0);
+  std::vector<int> most_shelf_cells_in_basinr(n_shelves, 0);
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask };
 
@@ -598,14 +607,14 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
     }
 
     GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(),
-              cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
+              cfs_in_basins_per_shelfr.data(), n_shelves*m_n_basins);
     GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(),
-              n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+              n_shelf_cells_per_basinr.data(), n_shelves*m_n_basins);
     // copy values
     cfs_in_basins_per_shelf = cfs_in_basins_per_shelfr;
     n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
 
-    for (int s = 0; s < m_n_shelves; s++) {
+    for (int s = 0; s < n_shelves; s++) {
       int n_shelf_cells_per_basin_max = 0;
       for (int b = 0; b < m_n_basins; b++) {
         int sb = s * m_n_basins + b;
@@ -624,15 +633,16 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
  */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
-                                     const std::vector<int> n_basin_neighbors,
+                                     const std::vector<int> &n_basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
                                      const std::vector<int> &cfs_in_basins_per_shelf,
+                                     int n_shelves,
                                      IceModelVec2Int &shelf_mask) {
 
   m_tmp.copy_from(shelf_mask);
 
-  std::vector<int> n_shelf_cells_to_split(m_n_shelves * m_n_basins, 0);
-  std::vector<int> n_shelf_cells_to_splitr(m_n_shelves * m_n_basins, 0);
+  std::vector<int> n_shelf_cells_to_split(n_shelves * m_n_basins, 0);
+  std::vector<int> n_shelf_cells_to_splitr(n_shelves * m_n_basins, 0);
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp };
 
@@ -652,19 +662,19 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
   }
 
   GlobalSum(m_grid->com, n_shelf_cells_to_split.data(),
-            n_shelf_cells_to_splitr.data(), m_n_shelves * m_n_basins);
+            n_shelf_cells_to_splitr.data(), n_shelves * m_n_basins);
   // copy values
   n_shelf_cells_to_split = n_shelf_cells_to_splitr;
 
   // no GlobalSum needed here, only local:
-  std::vector<int> add_shelf_instance(m_n_shelves * m_n_basins, 0);
+  std::vector<int> add_shelf_instance(n_shelves * m_n_basins, 0);
   int m_shelf_numbers_to_add = 0;
-  for (int s = 0; s < m_n_shelves; s++) {
+  for (int s = 0; s < n_shelves; s++) {
     int b0 = most_shelf_cells_in_basin[s];
     for (int b = 0; b < m_n_basins; b++) {
       if (n_shelf_cells_to_split[s * m_n_basins + b] > 0) {
         m_shelf_numbers_to_add += 1;
-        add_shelf_instance[s * m_n_basins + b] = m_n_shelves + m_shelf_numbers_to_add;
+        add_shelf_instance[s * m_n_basins + b] = n_shelves + m_shelf_numbers_to_add;
         m_log->message(3, "\nPICO, split ice shelf s=%d with bmax=%d "
                        "and b=%d and n=%d and si=%d\n", s, b0, b,
                        n_shelf_cells_to_split[s * m_n_basins + b],
@@ -851,7 +861,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
 
   IceModelVec::AccessList list{ &D_gl, &D_cf, &shelf_mask, &result };
 
-  int n_shelves = shelf_mask.range().max + 1;
+  int n_shelves = static_cast<int>(shelf_mask.range().max) + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
   std::vector<double> GL_distance_max1(n_shelves, 0.0);
@@ -861,7 +871,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int shelf_id = shelf_mask(i, j);
+    int shelf_id = shelf_mask.as_int(i, j);
     assert(shelf_id >= 0);
     assert(shelf_id < n_shelves + 1);
 
@@ -891,8 +901,8 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
   // compute the number of boxes in each shelf
 
   std::vector<int> n_boxes(n_shelves, 0);
-  int n_min   = 1;
-  double zeta = 0.5;
+  const int n_min   = 1;
+  const double zeta = 0.5;
 
   for (int k = 0; k < n_shelves; ++k) {
     n_boxes[k] = n_min + round(pow((GL_distance_max[k] / GL_distance_ref), zeta) * (max_number_of_boxes - n_min));
@@ -909,7 +919,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
     int d_cf = D_cf.as_int(i, j);
 
     if (shelf_mask.as_int(i, j) > 0 and d_gl > 0.0 and d_cf > 0.0) {
-      int shelf_id = shelf_mask(i, j);
+      int shelf_id = shelf_mask.as_int(i, j);
       int n = n_boxes[shelf_id];
 
       // relative position on the shelf (ranges from 0 to 1), increasing towards the
