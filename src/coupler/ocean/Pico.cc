@@ -156,7 +156,7 @@ void Pico::init_impl(const Geometry &geometry) {
   // FIXME: m_n_basins is a misnomer
   m_n_basins = m_geometry->basin_mask().max() + 1;
 
-  m_log->message(4, "PICO basin min=%f,max=%f\n", m_geometry->basin_mask().min(), m_geometry->basin_mask().max());
+  m_log->message(4, "PICO basin min=%f, max=%f\n", m_geometry->basin_mask().min(), m_geometry->basin_mask().max());
 
   PicoPhysics physics(*m_config);
 
@@ -425,13 +425,13 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-  std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
-  std::vector<int> cfs_in_basins_per_shelf(m_n_shelves * m_n_basins,0);
+  std::vector<int> cfs_in_basins_per_shelf(m_n_shelves * m_n_basins, 0);
   // additional vectors to allreduce efficiently with IntelMPI
-  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves * m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
-  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves * m_n_basins,0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves * m_n_basins, 0);
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
