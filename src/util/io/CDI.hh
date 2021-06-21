@@ -30,7 +30,7 @@ namespace io {
 class CDI : public NCFile {
 public:
   CDI(MPI_Comm com);
-  virtual ~CDI();
+  virtual ~CDI() = default;
 
 protected:
   void open_impl(const std::string &filename, IO_Mode mode,
@@ -152,7 +152,6 @@ private:
 
   // calendar conversion
   double year_calendar(double time) const;
-  long int day_calendar(double nyearsf) const;
   void monthday_calendar(int year, int doy, int *month, int *day) const;
 
   // inquire attribute helper

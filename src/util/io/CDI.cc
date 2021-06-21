@@ -22,7 +22,7 @@
 #include <map>
 #include <memory>
 #include <mpi.h>
-#include <string.h>
+#include <cstring>
 
 #include "CDI.hh"
 
@@ -42,15 +42,21 @@ extern "C" {
 namespace pism {
 namespace io {
 
-CDI::CDI(MPI_Comm c) : NCFile(c) {
-  m_beforediag = true;
+CDI::CDI(MPI_Comm c)
+  : NCFile(c) {
+  m_gridID       = 0;
+  m_tID          = 0;
+  m_vlistID      = 0;
+  m_gridsID      = 0;
+  m_zsID         = 0;
+  m_gridgID      = 0;
+  m_year_length  = 0;
+  m_cdi_calendar = 0;
+  m_days_year    = 0;
+  m_beforediag   = true;
 }
 
-CDI::~CDI() {
-  // empty
-}
-
-void CDI::open_impl(const std::string &fname,
+void CDI::open_impl(const std::string &filename,
                     IO_Mode mode,
                     int FileID,
                     const std::map<std::string, AxisType> &dimsa) {
@@ -163,21 +169,21 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
   switch (dim) {
   case X_AXIS:
     {
-      gridDefXsize(m_gridID, (int)length);
+      gridDefXsize(m_gridID, static_cast<int>(length));
       gridDefXname(m_gridID, name.c_str());
       break;
     }
   case Y_AXIS:
     {
-      gridDefYsize(m_gridID, (int)length);
+      gridDefYsize(m_gridID, static_cast<int>(length));
       gridDefYname(m_gridID, name.c_str());
       break;
     }
   case Z_AXIS:
     {
       // define z axis only if it's new
-      if (!m_zID.count(name)) {
-        m_zID[name] = zaxisCreate(ZAXIS_GENERIC, (int)length);
+      if (m_zID.count(name) == 0U) {
+        m_zID[name] = zaxisCreate(ZAXIS_GENERIC, static_cast<int>(length));
         // FIXME: who's responsible for calling zaxisDestroy()?
         zaxisDefName(m_zID[name], name.c_str());
       }
@@ -247,7 +253,7 @@ void CDI::monthday_calendar(int year, int doy, int *month, int *day) const {
 }
 
 // evaluate hours, minutes and seconds
-long int CDI::day_calendar(double nyearsf) const {
+static long int day_calendar(double nyearsf) {
   long int seconds = round(nyearsf * 86400);
   long int minutes, hours;
   hours   = seconds / 3600;
@@ -310,7 +316,7 @@ void CDI::inq_unlimdim_impl(std::string &result) const {
 void CDI::def_var_impl(const std::string &name, IO_Type nctype,
                        const std::vector<std::string> &dims) const {
   // No need to define dimensions as variables (CDI does not support it)
-  if (m_dimsAxis.count(name)) {
+  if (m_dimsAxis.count(name) != 0U) {
     return;
   }
 
@@ -334,7 +340,7 @@ void CDI::def_var_impl(const std::string &name, IO_Type nctype,
  * Returns TIME_VARIABLE if `dims` contain the time dimension and TIME_CONSTANT otherwise.
  */
 int CDI::timestep_type(const std::vector<std::string> &dims) const {
-  for (auto d : dims) {
+  for (const auto &d : dims) {
     auto it = m_dimsAxis.find(d);
     if (it != m_dimsAxis.end() and it->second == T_AXIS) {
       return TIME_VARIABLE;
@@ -383,9 +389,9 @@ void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vect
   int tsteptype = timestep_type(dims);
 
   // get the associated Z axis
-  for (auto d : dims) {
+  for (const auto &d : dims) {
     if (m_dimsAxis[d] == Z_AXIS) {
-      if (m_zID.count(d)) {
+      if (m_zID.count(d) != 0U) {
         zaxisID = m_zID[d];
       }
     }
@@ -401,10 +407,14 @@ void CDI::def_var_multi(const std::string &name, IO_Type nctype, const std::vect
 }
 
 // write spatial dimensions and scalars
-void CDI::put_vara_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
-                               const std::vector<unsigned int> &count, const double *op) const {
+void CDI::put_vara_double_impl(const std::string &variable_name,
+                               const std::vector<unsigned int> &start,
+                               const std::vector<unsigned int> &count,
+                               const double *op) const {
+  (void) start;
+
   // write dimensions values if not done yet
-  if (m_dimsAxis.count(variable_name)) {
+  if (m_dimsAxis.count(variable_name) != 0U) {
     int dim = m_dimsAxis[variable_name];
     switch (dim) {
     case X_AXIS:
@@ -453,7 +463,7 @@ void CDI::inq_vardimid_impl(const std::string &variable_name,
 
     // insert time dim
     if (vlistInqVarTsteptype(m_vlistID, varid) == TIME_VARIABLE) {
-      result.push_back("time");
+      result.emplace_back("time");
     }
 
     // insert z dim
@@ -469,11 +479,11 @@ void CDI::inq_vardimid_impl(const std::string &variable_name,
 
     // insert y dim
     gridInqYname(m_gridID, name);
-    result.push_back(name);
+    result.emplace_back(name);
 
     // insert x dim
     gridInqXname(m_gridID, name);
-    result.push_back(name);
+    result.emplace_back(name);
   }
 }
 
@@ -481,9 +491,9 @@ void CDI::inq_vardimid_impl(const std::string &variable_name,
 int CDI::var_id(const std::string &name) const {
   if (name == "PISM_GLOBAL") {
     return CDI_GLOBAL;
-  } else {
-    return m_varsID[name];
   }
+
+  return m_varsID[name];
 }
 
 // inquire variable number of attributes
@@ -512,17 +522,17 @@ void CDI::del_att_impl(const std::string &variable_name, const std::string &att_
 }
 
 // write variable attribute (double)
-void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype,
+void CDI::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype,
                               const std::vector<double> &data) const {
   // if variable_name is a dimension, return
-  if (m_dimsAxis.count(variable_name)) {
+  if (m_dimsAxis.count(variable_name) != 0U) {
     return;
   }
 
   cdiDefAttFlt(m_vlistID,
                var_id(variable_name),
                att_name.c_str(),
-               pism_type_to_cdi_type(nctype),
+               pism_type_to_cdi_type(xtype),
                data.size(),
                &data[0]);
 }
@@ -608,11 +618,12 @@ void CDI::inq_atttype_impl(const std::string &variable_name, const std::string &
 // inquire attribute name
 void CDI::inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const {
   char name[CDI_MAX_NAME];
-  int atype, alen;
+  int atype = 0;
+  int alen = 0;
   // find variable ID
   int varID = var_id(variable_name);
   // find attribute name
-  inq_att_impl(varID, n, name, &atype, &alen);
+  inq_att_impl(varID, static_cast<int>(n), name, &atype, &alen);
   result = name;
 }
 
