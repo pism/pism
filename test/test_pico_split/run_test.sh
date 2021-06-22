@@ -70,14 +70,39 @@ for testcase in "test01" "test02" "test03"; do
   echo $T12f,$T13f,$T14f
   if [ ${testcase} == "test01" ] 
   then
-     [[ "$T12f" == "$Tc12a" ]] && echo basin 12 equal || echo basin 12 not-equal;
+     if [ "$T12f" == "$Tc12a" ] 
+     then 
+         echo basin 12 equal
+     else
+       echo basin 12 not-equal
+       exit 1
+     fi
   else
-     [[ "$T12f" == "$Tc12b" ]] && echo basin 12 equal || echo basin 12 not-equal;
+     if [ "$T12f" == "$Tc12b" ]
+     then
+         echo basin 12 equal
+     else
+       echo basin 12 not-equal
+       exit 1
+     fi
   fi
-  [[ "$T13f" == "$Tc13" ]] && echo basin 13 equal || echo basin 13 not-equal;
-  [[ "$T14f" == "$Tc14" ]] && echo basin 14 equal || echo basin 14 not-equal;
-
+  if [ "$T13f" == "$Tc13" ]
+     then
+         echo basin 13 equal
+  else
+       echo basin 13 not-equal
+       exit 1
+  fi
+  if [ "$T14f" == "$Tc14" ]
+     then
+         echo basin 14 equal
+  else
+       echo basin 14 not-equal
+       exit 1
+  fi
 done
 
+echo $?
+rm -f output_* test0* input_test0* ; exit 0
 
 
