@@ -32,14 +32,14 @@
 
 #include <gsl/gsl_math.h> // GSL_NAN
 
+#include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/Time.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/coupler/util/options.hh"
 
 #include "Pico.hh"
 #include "PicoGeometry.hh"
@@ -48,8 +48,8 @@
 namespace pism {
 namespace ocean {
 
-Pico::Pico(IceGrid::ConstPtr g)
-  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()),
+Pico::Pico(IceGrid::ConstPtr grid)
+  : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
     m_Soc(m_grid, "pico_salinity", WITHOUT_GHOSTS),
     m_Soc_box0(m_grid, "pico_salinity_box0", WITHOUT_GHOSTS),
     m_Toc(m_grid, "pico_temperature", WITHOUT_GHOSTS),
@@ -57,14 +57,16 @@ Pico::Pico(IceGrid::ConstPtr g)
     m_T_star(m_grid, "pico_T_star", WITHOUT_GHOSTS),
     m_overturning(m_grid, "pico_overturning", WITHOUT_GHOSTS),
     m_basal_melt_rate(m_grid, "pico_basal_melt_rate", WITH_GHOSTS),
-    m_basin_mask(m_grid, "basins", WITH_GHOSTS),
-    m_geometry(new PicoGeometry(g)) {
+    m_geometry(grid),
+    m_n_basins(0),
+    m_n_boxes(0),
+    m_n_shelves(0) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
   {
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
+    auto buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
+    auto evaluations_per_year = static_cast<int>(m_config->get_number("input.forcing.evaluations_per_year"));
     bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
@@ -95,9 +97,6 @@ Pico::Pico(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                               "salinity of the adjacent ocean",
                               "g/kg", "g/kg", "", 0);
-
-  m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
-                         "", "", "", 0);
 
   // computed salinity in ocean boxes
   m_Soc.set_attrs("model_state", "ocean salinity field",
@@ -133,16 +132,8 @@ Pico::Pico(IceGrid::ConstPtr g)
 
   m_shelf_base_temperature->metadata().set_number("_FillValue", 0.0);
 
-  m_n_basins = 0;
-
-  m_n_boxes  = m_config->get_number("ocean.pico.number_of_boxes");
+  m_n_boxes  = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
 }
-
-
-Pico::~Pico() {
-  // empty
-}
-
 
 void Pico::init_impl(const Geometry &geometry) {
   (void) geometry;
@@ -154,12 +145,13 @@ void Pico::init_impl(const Geometry &geometry) {
   m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
   m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
 
-  m_basin_mask.regrid(opt.filename, CRITICAL);
+  // This initializes the basin_mask
+  m_geometry.init(geometry.cell_type);
 
   // FIXME: m_n_basins is a misnomer
-  m_n_basins = m_basin_mask.max() + 1;
+  m_n_basins = static_cast<int>(m_geometry.basin_mask().max()) + 1;
 
-  m_log->message(4, "PICO basin min=%f,max=%f\n", m_basin_mask.min(), m_basin_mask.max());
+  m_log->message(4, "PICO basin min=%f, max=%f\n", m_geometry.basin_mask().min(), m_geometry.basin_mask().max());
 
   PicoPhysics physics(*m_config);
 
@@ -183,12 +175,12 @@ void Pico::init_impl(const Geometry &geometry) {
     g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                           *m_water_column_pressure);
+                                        *m_water_column_pressure);
 }
 
 void Pico::define_model_state_impl(const File &output) const {
 
-  m_basin_mask.define(output);
+  m_geometry.basin_mask().define(output);
   m_Soc_box0.define(output);
   m_Toc_box0.define(output);
   m_overturning.define(output);
@@ -198,12 +190,59 @@ void Pico::define_model_state_impl(const File &output) const {
 
 void Pico::write_model_state_impl(const File &output) const {
 
-  m_basin_mask.write(output);
+  m_geometry.basin_mask().write(output);
   m_Soc_box0.write(output);
   m_Toc_box0.write(output);
   m_overturning.write(output);
 
-  OceanModel::define_model_state_impl(output);
+  OceanModel::write_model_state_impl(output);
+}
+
+/*!
+* Extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
+* Note that melt rates are then simply interpolated into partially floating cells, they
+* are not included in the calculations of PICO.
+*/
+static void extend_basal_melt_rates(const IceModelVec2CellType &cell_type,
+                                    IceModelVec2S &basal_melt_rate) {
+
+  auto grid = basal_melt_rate.grid();
+
+  IceModelVec::AccessList list{&cell_type, &basal_melt_rate};
+
+  for (Points p(*grid); p; p.next()) {
+
+    const int i = p.i(), j = p.j();
+
+    auto M = cell_type.int_box(i, j);
+
+    bool potential_partially_filled_cell =
+      ((M.ij == MASK_GROUNDED or M.ij == MASK_ICE_FREE_OCEAN) and
+       (M.w  == MASK_FLOATING or M.e  == MASK_FLOATING or
+        M.s  == MASK_FLOATING or M.n  == MASK_FLOATING or
+        M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or
+        M.se == MASK_FLOATING or M.ne == MASK_FLOATING));
+
+    if (potential_partially_filled_cell) {
+      auto BMR = basal_melt_rate.box(i, j);
+
+      int N = 0;
+      double melt_sum = 0.0;
+
+      melt_sum += M.nw == MASK_FLOATING ? (++N, BMR.nw) : 0.0;
+      melt_sum += M.n  == MASK_FLOATING ? (++N, BMR.n)  : 0.0;
+      melt_sum += M.ne == MASK_FLOATING ? (++N, BMR.ne) : 0.0;
+      melt_sum += M.e  == MASK_FLOATING ? (++N, BMR.e)  : 0.0;
+      melt_sum += M.se == MASK_FLOATING ? (++N, BMR.se) : 0.0;
+      melt_sum += M.s  == MASK_FLOATING ? (++N, BMR.s)  : 0.0;
+      melt_sum += M.sw == MASK_FLOATING ? (++N, BMR.sw) : 0.0;
+      melt_sum += M.w  == MASK_FLOATING ? (++N, BMR.w)  : 0.0;
+
+      if (N != 0) { // If there are floating neigbors, return average melt rates
+        basal_melt_rate(i, j) = melt_sum / N;
+      }
+    }
+  } // end of the loop over grid points
 }
 
 void Pico::update_impl(const Geometry &geometry, double t, double dt) {
@@ -237,10 +276,10 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &bed_elevation    = geometry.bed_elevation;
 
   // Geometric part of PICO
-  m_geometry->update(bed_elevation, cell_type);
+  m_geometry.update(bed_elevation, cell_type);
 
   // FIXME: m_n_shelves is not really the number of shelves.
-  m_n_shelves = m_geometry->ice_shelf_mask().max() + 1;
+  m_n_shelves = static_cast<int>(m_geometry.ice_shelf_mask().max()) + 1;
 
   // Physical part of PICO
   {
@@ -250,18 +289,30 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
       std::vector<double> basin_temperature(m_n_basins);
       std::vector<double> basin_salinity(m_n_basins);
 
-      compute_ocean_input_per_basin(physics, m_basin_mask, m_geometry->continental_shelf_mask(), *m_salinity_ocean,
-                                    *m_theta_ocean, basin_temperature, basin_salinity); // per basin
+      compute_ocean_input_per_basin(physics,
+                                    m_geometry.basin_mask(),
+                                    m_geometry.continental_shelf_mask(),
+                                    *m_salinity_ocean,
+                                    *m_theta_ocean,
+                                    basin_temperature,
+                                    basin_salinity); // per basin
 
-      set_ocean_input_fields(physics, ice_thickness, cell_type, m_basin_mask, m_geometry->ice_shelf_mask(),
-                             basin_temperature, basin_salinity, m_Toc_box0, m_Soc_box0); // per shelf
+      set_ocean_input_fields(physics,
+                             ice_thickness,
+                             cell_type,
+                             m_geometry.basin_mask(),
+                             m_geometry.ice_shelf_mask(),
+                             basin_temperature,
+                             basin_salinity,
+                             m_Toc_box0,
+                             m_Soc_box0); // per shelf
     }
 
     // Use the Beckmann-Goosse parameterization to set reasonable values throughout the
     // domain.
     beckmann_goosse(physics,
                     ice_thickness,                // input
-                    m_geometry->ice_shelf_mask(), // input
+                    m_geometry.ice_shelf_mask(), // input
                     cell_type,                    // input
                     m_Toc_box0,                   // input
                     m_Soc_box0,                   // input
@@ -273,8 +324,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
     // In ice shelves, replace Beckmann-Goosse values using the Olbers and Hellmer model.
     process_box1(physics,
                  ice_thickness,                             // input
-                 m_geometry->ice_shelf_mask(),              // input
-                 m_geometry->box_mask(),                    // input
+                 m_geometry.ice_shelf_mask(),              // input
+                 m_geometry.box_mask(),                    // input
                  m_Toc_box0,                                // input
                  m_Soc_box0,                                // input
                  m_basal_melt_rate,
@@ -286,8 +337,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
     process_other_boxes(physics,
                         ice_thickness,                // input
-                        m_geometry->ice_shelf_mask(), // input
-                        m_geometry->box_mask(),       // input
+                        m_geometry.ice_shelf_mask(), // input
+                        m_geometry.box_mask(),       // input
                         m_basal_melt_rate,
                         *m_shelf_base_temperature,
                         m_T_star,
@@ -295,7 +346,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                         m_Soc);
   }
 
-  extend_basal_melt_rates(cell_type,m_basal_melt_rate);
+  extend_basal_melt_rates(cell_type, m_basal_melt_rate);
 
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
@@ -306,7 +357,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
     g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                           *m_water_column_pressure);
+                                        *m_water_column_pressure);
 }
 
 
@@ -323,10 +374,13 @@ MaxTimestep Pico::max_timestep_impl(double t) const {
 //! We use dummy ocean data if no such average can be calculated.
 
 
-void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceModelVec2Int &basin_mask,
+void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
+                                         const IceModelVec2Int &basin_mask,
                                          const IceModelVec2Int &continental_shelf_mask,
-                                         const IceModelVec2S &salinity_ocean, const IceModelVec2S &theta_ocean,
-                                         std::vector<double> &temperature, std::vector<double> &salinity) {
+                                         const IceModelVec2S &salinity_ocean,
+                                         const IceModelVec2S &theta_ocean,
+                                         std::vector<double> &temperature,
+                                         std::vector<double> &salinity) const {
   std::vector<int> count(m_n_basins, 0);
   // additional vectors to allreduce efficiently with IntelMPI
   std::vector<int> countr(m_n_basins, 0);
@@ -401,19 +455,25 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics, const IceMo
 //! box 1, which is the ocean box adjacent to the grounding line.
 //!
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
-void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2S &ice_thickness,
-                                  const IceModelVec2CellType &mask, const IceModelVec2Int &basin_mask,
-                                  const IceModelVec2Int &shelf_mask, const std::vector<double> basin_temperature,
-                                  const std::vector<double> basin_salinity, IceModelVec2S &Toc_box0,
-                                  IceModelVec2S &Soc_box0) {
+void Pico::set_ocean_input_fields(const PicoPhysics &physics,
+                                  const IceModelVec2S &ice_thickness,
+                                  const IceModelVec2CellType &mask,
+                                  const IceModelVec2Int &basin_mask,
+                                  const IceModelVec2Int &shelf_mask,
+                                  const std::vector<double> &basin_temperature,
+                                  const std::vector<double> &basin_salinity,
+                                  IceModelVec2S &Toc_box0,
+                                  IceModelVec2S &Soc_box0) const {
   
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
-  std::vector<int> n_shelf_cells_per_basin(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
+  std::vector<int> cfs_in_basins_per_shelf(m_n_shelves * m_n_basins, 0);
   // additional vectors to allreduce efficiently with IntelMPI
-  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves*m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basinr(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cellsr(m_n_shelves, 0);
+  std::vector<int> cfs_in_basins_per_shelfr(m_n_shelves * m_n_basins, 0);
 
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
@@ -424,13 +484,42 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
       int b = basin_mask.as_int(i, j);
       n_shelf_cells_per_basin[s*m_n_basins+b]++;
       n_shelf_cells[s]++;
+
+      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
+      if (mask.as_int(i, j) == MASK_FLOATING) {
+        auto M = mask.int_star(i, j);
+        if (M.n == MASK_ICE_FREE_OCEAN or
+            M.e == MASK_ICE_FREE_OCEAN or
+            M.s == MASK_ICE_FREE_OCEAN or
+            M.w == MASK_ICE_FREE_OCEAN) {
+          if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
+            cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
+          }
+        }
+      }
     }
     
-    GlobalSum(m_grid->com, n_shelf_cells.data(), n_shelf_cellsr.data(), m_n_shelves);
-    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, n_shelf_cells.data(),
+              n_shelf_cellsr.data(), m_n_shelves);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(),
+              n_shelf_cells_per_basinr.data(), m_n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(),
+              cfs_in_basins_per_shelfr.data(), m_n_shelves*m_n_basins);
     // copy data
     n_shelf_cells = n_shelf_cellsr;
     n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
+    cfs_in_basins_per_shelf = cfs_in_basins_per_shelfr;
+
+    for (int s = 0; s < m_n_shelves; s++) {
+      for (int b = 0; b < m_n_basins; b++) {
+        int sb = s * m_n_basins + b;
+        // remove ice shelf parts from the count that do not have a calving front in that basin
+        if (n_shelf_cells_per_basin[sb] > 0 and cfs_in_basins_per_shelf[sb] == 0) {
+          n_shelf_cells[s] -= n_shelf_cells_per_basin[sb];
+          n_shelf_cells_per_basin[sb] = 0;
+        }
+      }
+    }
   }
 
   // now set potential temperature and salinity box 0:
@@ -450,16 +539,21 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const IceModelVec2
 
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
-          Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
-          Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[s*m_n_basins+b] / (double)n_shelf_cells[s];
+        int sb = s * m_n_basins + b;
+        Toc_box0(i, j) += (basin_temperature[b] *
+                           n_shelf_cells_per_basin[sb] / (double)n_shelf_cells[s]);
+        Soc_box0(i, j) += (basin_salinity[b] *
+                           n_shelf_cells_per_basin[sb] / (double)n_shelf_cells[s]);
       }
 
       double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
 
       // temperature input for grounding line box should not be below pressure melting point
       if (Toc_box0(i, j) < theta_pm) {
-        // Setting Toc_box0 a little higher than theta_pm ensures that later equations are well solvable.
-        Toc_box0(i, j) = theta_pm + 0.001;
+        const double eps = 0.001;
+        // Setting Toc_box0 a little higher than theta_pm ensures that later equations are
+        // well solvable.
+        Toc_box0(i, j) = theta_pm + eps;
         low_temperature_counter += 1;
       }
     }
@@ -600,7 +694,7 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
                                IceModelVec2S &basal_temperature,
                                IceModelVec2S &T_star,
                                IceModelVec2S &Toc,
-                               IceModelVec2S &Soc) {
+                               IceModelVec2S &Soc) const {
 
   std::vector<double> overturning(m_n_shelves, 0.0);
   std::vector<double> salinity(m_n_shelves, 0.0);
@@ -623,11 +717,9 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
     // find all the shelves where we should fall back to the Beckmann-Goosse
     // parameterization
     for (int s = 1; s < m_n_shelves; ++s) {
-      if (salinity[s] == 0.0 or temperature[s] == 0.0 or overturning[s] == 0.0) {
-        use_beckmann_goosse[s] = true;
-      } else {
-        use_beckmann_goosse[s] = false;
-      }
+      use_beckmann_goosse[s] = (salinity[s] == 0.0 or
+                                temperature[s] == 0.0 or
+                                overturning[s] == 0.0);
     }
 
     std::vector<double> box_area;
@@ -678,63 +770,20 @@ void Pico::process_other_boxes(const PicoPhysics &physics,
   } // loop over boxes
 }
 
-/*!
-* Extend basal melt rates to grounded and ocean neighbors for consitency with subgl_melt.
-* Note that melt rates are then simply interpolated into partially floating cells, they
-* are not included in the calculations of PICO.
-*/
-void Pico::extend_basal_melt_rates(const IceModelVec2CellType &cell_type, IceModelVec2S &basal_melt_rate) {
-
-  IceModelVec::AccessList list{&cell_type, &basal_melt_rate};
-
-  for (Points p(*m_grid); p; p.next()) {
-
-    const int i = p.i(), j = p.j();
-
-    auto M = cell_type.int_box(i, j);
-
-    bool potential_partially_filled_cell =
-      ((M.ij == MASK_GROUNDED or M.ij == MASK_ICE_FREE_OCEAN) and
-       (M.w  == MASK_FLOATING or M.e == MASK_FLOATING or M.s == MASK_FLOATING or M.n == MASK_FLOATING or
-        M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or M.se == MASK_FLOATING or M.ne == MASK_FLOATING) );
-
-    if (potential_partially_filled_cell) {
-      auto BMR = basal_melt_rate.box(i, j);
-
-      int N = 0;
-      double melt_sum = 0.0;
-
-      melt_sum += M.nw == MASK_FLOATING ? (++N, BMR.nw) : 0.0;
-      melt_sum += M.n  == MASK_FLOATING ? (++N, BMR.n)  : 0.0;
-      melt_sum += M.ne == MASK_FLOATING ? (++N, BMR.ne) : 0.0;
-      melt_sum += M.e  == MASK_FLOATING ? (++N, BMR.e)  : 0.0;
-      melt_sum += M.se == MASK_FLOATING ? (++N, BMR.se) : 0.0;
-      melt_sum += M.s  == MASK_FLOATING ? (++N, BMR.s)  : 0.0;
-      melt_sum += M.sw == MASK_FLOATING ? (++N, BMR.sw) : 0.0;
-      melt_sum += M.w  == MASK_FLOATING ? (++N, BMR.w)  : 0.0;
-
-      if (N != 0) { // If there are floating neigbors, return average melt rates
-        basal_melt_rate(i, j) = melt_sum / N;
-      }
-    }
-  } // end of the loop over grid points
-}
-
-
 
 // Write diagnostic variables to extra files if requested
 DiagnosticList Pico::diagnostics_impl() const {
 
   DiagnosticList result = {
-    { "basins",                 Diagnostic::wrap(m_basin_mask) },
+    { "basins",                 Diagnostic::wrap(m_geometry.basin_mask()) },
     { "pico_overturning",       Diagnostic::wrap(m_overturning) },
     { "pico_salinity_box0",     Diagnostic::wrap(m_Soc_box0) },
     { "pico_temperature_box0",  Diagnostic::wrap(m_Toc_box0) },
-    { "pico_box_mask",          Diagnostic::wrap(m_geometry->box_mask()) },
-    { "pico_shelf_mask",        Diagnostic::wrap(m_geometry->ice_shelf_mask()) },
-    { "pico_ice_rise_mask",     Diagnostic::wrap(m_geometry->ice_rise_mask()) },
+    { "pico_box_mask",          Diagnostic::wrap(m_geometry.box_mask()) },
+    { "pico_shelf_mask",        Diagnostic::wrap(m_geometry.ice_shelf_mask()) },
+    { "pico_ice_rise_mask",     Diagnostic::wrap(m_geometry.ice_rise_mask()) },
     { "pico_basal_melt_rate",   Diagnostic::wrap(m_basal_melt_rate) },
-    { "pico_contshelf_mask",    Diagnostic::wrap(m_geometry->continental_shelf_mask()) },
+    { "pico_contshelf_mask",    Diagnostic::wrap(m_geometry.continental_shelf_mask()) },
     { "pico_salinity",          Diagnostic::wrap(m_Soc) },
     { "pico_temperature",       Diagnostic::wrap(m_Toc) },
     { "pico_T_star",            Diagnostic::wrap(m_T_star) },
@@ -753,7 +802,7 @@ void Pico::compute_box_average(int box_id,
                                const IceModelVec2S &field,
                                const IceModelVec2Int &shelf_mask,
                                const IceModelVec2Int &box_mask,
-                               std::vector<double> &result) {
+                               std::vector<double> &result) const {
 
   IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
 
@@ -786,7 +835,7 @@ void Pico::compute_box_average(int box_id,
 
   for (int s = 0; s < m_n_shelves; ++s) {
     if (n_cells[s] > 0) {
-      result[s] /= (double)n_cells[s];
+      result[s] /= static_cast<double>(n_cells[s]);
     }
   }
 }
@@ -802,7 +851,7 @@ void Pico::compute_box_average(int box_id,
 void Pico::compute_box_area(int box_id,
                             const IceModelVec2Int &shelf_mask,
                             const IceModelVec2Int &box_mask,
-                            std::vector<double> &result) {
+                            std::vector<double> &result) const {
   result.resize(m_n_shelves);
   IceModelVec::AccessList list{ &shelf_mask, &box_mask };
 

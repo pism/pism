@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -23,6 +23,7 @@
 #include "CompleteOceanModel.hh"
 
 #include "pism/util/iceModelVec2T.hh"
+#include "PicoGeometry.hh"
 
 namespace pism {
 
@@ -30,7 +31,6 @@ class IceModelVec2CellType;
 
 namespace ocean {
 
-class PicoGeometry;
 class PicoPhysics;
 
 //! Implements the PICO ocean model as submitted to The Cryosphere (March 2017).
@@ -41,7 +41,7 @@ class PicoPhysics;
 class Pico : public CompleteOceanModel {
 public:
   Pico(IceGrid::ConstPtr g);
-  virtual ~Pico();
+  virtual ~Pico() = default;
 
 protected:
   void init_impl(const Geometry &geometry);
@@ -59,9 +59,7 @@ private:
   IceModelVec2S m_overturning;
   IceModelVec2S m_basal_melt_rate;
 
-  IceModelVec2Int m_basin_mask;
-
-  std::unique_ptr<PicoGeometry> m_geometry;
+  PicoGeometry m_geometry;
 
   IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
 
@@ -71,17 +69,17 @@ private:
                                      const IceModelVec2S &salinity_ocean,
                                      const IceModelVec2S &theta_ocean,
                                      std::vector<double> &temperature,
-                                     std::vector<double> &salinity);
+                                     std::vector<double> &salinity) const;
 
   void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
                               const IceModelVec2Int &basin_mask,
                               const IceModelVec2Int &shelf_mask,
-                              const std::vector<double> basin_temperature,
-                              const std::vector<double> basin_salinity,
+                              const std::vector<double> &basin_temperature,
+                              const std::vector<double> &basin_salinity,
                               IceModelVec2S &Toc_box0,
-                              IceModelVec2S &Soc_box0);
+                              IceModelVec2S &Soc_box0) const;
 
   void process_box1(const PicoPhysics &physics,
                     const IceModelVec2S &ice_thickness,
@@ -96,7 +94,7 @@ private:
                     IceModelVec2S &Soc,
                     IceModelVec2S &overturning);
 
-  void process_other_boxes(const PicoPhysics &cc,
+  void process_other_boxes(const PicoPhysics &physics,
                            const IceModelVec2S &ice_thickness,
                            const IceModelVec2Int &shelf_mask,
                            const IceModelVec2Int &box_mask,
@@ -104,9 +102,7 @@ private:
                            IceModelVec2S &basal_temperature,
                            IceModelVec2S &T_star,
                            IceModelVec2S &Toc,
-                           IceModelVec2S &Soc);
-  void extend_basal_melt_rates(const IceModelVec2CellType &mask,
-                          IceModelVec2S &basal_melt_rate); 
+                           IceModelVec2S &Soc) const;
 
   void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,
@@ -115,7 +111,7 @@ private:
                        const IceModelVec2S &Toc_box0,
                        const IceModelVec2S &Soc_box0,
                        IceModelVec2S &basal_melt_rate,
-                       IceModelVec2S &T_pressure_melting,
+                       IceModelVec2S &basal_temperature,
                        IceModelVec2S &Toc,
                        IceModelVec2S &Soc);
 
@@ -123,13 +119,12 @@ private:
                            const IceModelVec2S &field,
                            const IceModelVec2Int &shelf_mask,
                            const IceModelVec2Int &box_mask,
-                           std::vector<double> &result);
+                           std::vector<double> &result) const;
 
   void compute_box_area(int box_id,
                         const IceModelVec2Int &shelf_mask,
                         const IceModelVec2Int &box_mask,
-                        std::vector<double> &result);
-
+                        std::vector<double> &result) const;
 
   int m_n_basins, m_n_boxes, m_n_shelves;
 };

@@ -45,6 +45,9 @@ Changes since v1.2
   Blatter (1995). This solver supports multigrid preconditioners (see Brown et al 2013)
   and includes 5 verification test based on manufactured solutions.
 - Implement experiments A,B,C,D,E from the ISMIP-HOM intercomparison.
+- Adjust PICO ocean input average across covered basins, in which the ice shelf has 
+  in fact a connection to the ocean. Large ice shelves, that cover across two basins, 
+  that do not share an ocean boundary, are split into two separate ice shelf instances 
 - Implement scaling of calving rates using a time-dependent factor. Set
   `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
   (units: "1").
