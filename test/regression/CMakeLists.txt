@@ -88,6 +88,8 @@ pism_test (vertical_grid_expansion vertical_grid_expansion.sh)
 
 pism_test (bed_deformation:LC:exact_restartability beddef_lc_restart.sh)
 
+pism_test (PICO:Split-and-merge pico_split/run_test.sh)
+
 if (Pism_USE_PROJ)
   pism_test (epsg_code_processing test_epsg_processing.py)
 endif()
