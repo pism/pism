@@ -594,7 +594,7 @@ netcdf pism_config {
     pism_config:bootstrapping.temperature_heuristic_option = "boot_temperature_heuristic";
     pism_config:bootstrapping.temperature_heuristic_type = "keyword";
 
-    pism_config:calving.eigen_calving.K = 0.0;
+    pism_config:calving.eigen_calving.K = 5.0e17;
     pism_config:calving.eigen_calving.K_doc = "Set proportionality constant to determine calving rate from strain rates.  Note references :cite:`Levermannetal2012`, :cite:`Martinetal2011` use K in range `10^{9}` to `3 \\times 10^{11}` m a, that is, `3 \\times 10^{16}` to `10^{19}` m s.";
     pism_config:calving.eigen_calving.K_option = "eigen_calving_K";
     pism_config:calving.eigen_calving.K_type = "number";
@@ -2177,7 +2177,7 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.max_iterations_type = "integer";
     pism_config:stress_balance.ssa.fd.max_iterations_units = "count";
 
-    pism_config:stress_balance.ssa.fd.max_speed = 500.0e3;
+    pism_config:stress_balance.ssa.fd.max_speed = 2.58e13;
     pism_config:stress_balance.ssa.fd.max_speed_doc = "Upper bound for the ice speed computed by the SSAFD solver.";
     pism_config:stress_balance.ssa.fd.max_speed_option = "ssafd_max_speed";
     pism_config:stress_balance.ssa.fd.max_speed_type = "number";
