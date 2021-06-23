@@ -10,8 +10,8 @@ output=`mktemp pism-test-C.XXXX` || exit 1
 
 # run test C
 OPTS="-test C -Mbz 1 -Mz 31 -y 5000years -o_size none -verbose 1 -max_dt 60years"
-$PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > ${output}
-$PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> ${output}
+$MPIEXEC -n 4 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > ${output}
+$MPIEXEC -n 4 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> ${output}
 
 # compare results
 diff ${output} -  <<END-OF-OUTPUT
