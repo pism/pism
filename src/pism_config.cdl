@@ -2691,12 +2691,12 @@ netcdf pism_config {
     pism_config:time.run_length = 1000;
     pism_config:time.run_length_doc = "Default run length";
     pism_config:time.run_length_type = "number";
-    pism_config:time.run_length_units = "years";
+    pism_config:time.run_length_units = "365day";
 
     pism_config:time.start_year = 0;
     pism_config:time.start_year_doc = "Start year.";
     pism_config:time.start_year_type = "number";
-    pism_config:time.start_year_units = "years";
+    pism_config:time.start_year_units = "365day";
 
     pism_config:time_stepping.adaptive_ratio = 0.12;
     pism_config:time_stepping.adaptive_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation; :cite:`BBL`, inequality (25)";
@@ -2733,7 +2733,7 @@ netcdf pism_config {
     pism_config:time_stepping.maximum_time_step_doc = "Maximum allowed time step length";
     pism_config:time_stepping.maximum_time_step_option = "max_dt";
     pism_config:time_stepping.maximum_time_step_type = "number";
-    pism_config:time_stepping.maximum_time_step_units = "years";
+    pism_config:time_stepping.maximum_time_step_units = "365day";
 
     pism_config:time_stepping.skip.enabled = "no";
     pism_config:time_stepping.skip.enabled_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
