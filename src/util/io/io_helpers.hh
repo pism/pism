@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 #include <string>
 #include <vector>
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 
 #include "IO_Flags.hh"
 #include "pism/util/Units.hh"
@@ -67,7 +67,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                             const double *input);
 
 void define_dimension(const File &nc, unsigned long int length,
-                      const VariableMetadata &metadata);
+                      const VariableMetadata &metadata, AxisType dim = UNKNOWN_AXIS);
 
 void define_time(const File &file, const Context &ctx);
 

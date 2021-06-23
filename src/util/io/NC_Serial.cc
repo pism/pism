@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 #include <netcdf.h>
 
 #include <cstdio>               // stderr, fprintf
+#include <map>
 
 #include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
@@ -72,7 +73,13 @@ void NC_Serial::set_compression_level_impl(int level) const {
 }
 
 // open/create/close
-void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
+void NC_Serial::open_impl(const std::string &fname,
+                        IO_Mode mode,
+                        int FileID,
+                        const std::map<std::string, AxisType> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   int stat = NC_NOERR;
 
   int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
@@ -89,7 +96,10 @@ void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
 }
 
 //! \brief Create a NetCDF file.
-void NC_Serial::create_impl(const std::string &fname) {
+void NC_Serial::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -166,7 +176,9 @@ void NC_Serial::redef_impl() const {
 
 
 //! \brief Define a dimension.
-void NC_Serial::def_dim_impl(const std::string &name, size_t length) const {
+void NC_Serial::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
+  (void) dim;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {

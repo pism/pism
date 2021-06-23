@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,13 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-void PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
+void PNCFile::open_impl(const std::string &fname,
+                        IO_Mode mode,
+                        int FileID,
+                        const std::map<std::string, AxisType> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   int stat;
 
   init_hints();
@@ -57,7 +63,10 @@ void PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
 }
 
 
-void PNCFile::create_impl(const std::string &fname) {
+void PNCFile::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat;
 
   init_hints();
@@ -91,7 +100,9 @@ void PNCFile::redef_impl() const {
 }
 
 
-void PNCFile::def_dim_impl(const std::string &name, size_t length) const {
+void PNCFile::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
+  (void) dim;
+
   int dimid = 0, stat;
 
   stat = ncmpi_def_dim(m_file_id, name.c_str(), length, &dimid); check(PISM_ERROR_LOCATION, stat);
@@ -452,11 +463,6 @@ void PNCFile::init_hints() {
       }
     }
   }
-}
-
-void PNCFile::set_compression_level_impl(int level) const {
-  (void) level;
-  // NetCDF-3 does not support compression.
 }
 
 } // end of namespace io

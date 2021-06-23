@@ -294,6 +294,7 @@ void IceModel::write_extras() {
     return;
   }
 
+  int fileID = -1;
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
     filename = pism::printf("%s_%s.nc",
@@ -301,6 +302,11 @@ void IceModel::write_extras() {
                             m_time->date().c_str());
   } else {
     filename = m_extra_filename;
+  }
+
+  if (m_streamIDs.count(filename) > 0) {
+    fileID = m_streamIDs[filename];
+    m_extra_file_is_ready = true;
   }
 
   m_log->message(3,
@@ -319,7 +325,9 @@ void IceModel::write_extras() {
                                   filename,
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
-                                  m_ctx->pio_iosys_id()));
+                                  m_ctx->pio_iosys_id(),
+                                  fileID,
+                                  m_DimExtraMap));
     }
 
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -338,7 +346,7 @@ void IceModel::write_extras() {
     }
 
     write_run_stats(*m_extra_file);
-
+    m_extra_file->set_calendar(m_time->year_length(), m_time->calendar());
     save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
@@ -354,6 +362,12 @@ void IceModel::write_extras() {
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file->sync();
+    if (m_extra_file->backend() == PISM_CDI) {
+      m_streamIDs[filename] = m_extra_file->get_streamID();
+    }
+  }
+  if (current_extra < m_extra_times.size() - 1) {
+    m_sthwritten = true;
   }
   profiling.end("io.extra_file");
 

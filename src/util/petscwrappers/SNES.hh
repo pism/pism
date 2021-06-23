@@ -22,11 +22,11 @@
 
 #include <petscsnes.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class SNES : public petsc::Wrapper< ::SNES > {
+class SNES : public Wrapper< ::SNES > {
 public:
   SNES();
   SNES(::SNES m);

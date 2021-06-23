@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@
 #include <string>
 #include <vector>
 
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 
 #include "Units.hh"
 

@@ -23,11 +23,11 @@
 #include <petscviewer.h>
 #include <string>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class Viewer : public petsc::Wrapper<PetscViewer> {
+class Viewer : public Wrapper<PetscViewer> {
 public:
   Viewer(MPI_Comm com, const std::string &name,
          unsigned int target_size, double Lx, double Ly);

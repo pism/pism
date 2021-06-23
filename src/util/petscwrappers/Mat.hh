@@ -22,11 +22,11 @@
 
 #include <petscmat.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class Mat : public petsc::Wrapper< ::Mat > {
+class Mat : public Wrapper< ::Mat > {
 public:
   Mat();
   Mat(::Mat m);

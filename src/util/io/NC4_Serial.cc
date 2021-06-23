@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,10 @@ NC4_Serial::~NC4_Serial() {
   // empty
 }
 
-void NC4_Serial::create_impl(const std::string &fname) {
+void NC4_Serial::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
+  (void) FileID;
+  (void) filetype;
+
   int stat = NC_NOERR;
 
   if (m_rank == 0) {

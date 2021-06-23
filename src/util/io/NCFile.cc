@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,14 +62,20 @@ void NCFile::def_var_chunking_impl(const std::string &name,
 }
 
 
-void NCFile::open(const std::string &filename, IO_Mode mode) {
-  this->open_impl(filename, mode);
+void NCFile::open(const std::string &filename,
+                  IO_Mode mode,
+                  int FileID,
+                  const std::map<std::string, AxisType> &dimsa) {
+  this->open_impl(filename,
+                  mode,
+                  FileID,
+                  dimsa);
   m_filename = filename;
   m_define_mode = false;
 }
 
-void NCFile::create(const std::string &filename) {
-  this->create_impl(filename);
+void NCFile::create(const std::string &filename, int FileID, const std::string &filetype) {
+  this->create_impl(filename, FileID, filetype);
   m_filename = filename;
   m_define_mode = true;
 }
@@ -99,9 +105,9 @@ void NCFile::redef() const {
   }
 }
 
-void NCFile::def_dim(const std::string &name, size_t length) const {
+void NCFile::def_dim(const std::string &name, size_t length, AxisType dim) const {
   redef();
-  this->def_dim_impl(name, length);
+  this->def_dim_impl(name, length, dim);
 }
 
 void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
@@ -290,6 +296,96 @@ void NCFile::set_fill(int fillmode, int &old_modep) const {
 
 void NCFile::del_att(const std::string &variable_name, const std::string &att_name) const {
   this->del_att_impl(variable_name, att_name);
+}
+
+// new functions because of CDI class
+void NCFile::create_grid(int lengthx, int lengthy) const {
+  this->create_grid_impl(lengthx, lengthy);
+}
+
+void NCFile::define_timestep(int tsID) const {
+  this->define_timestep_impl(tsID);
+}
+
+void NCFile::def_ref_date(double time) const {
+  this->def_ref_date_impl(time);
+}
+
+std::map<std::string, int> NCFile::get_var_map() {
+  return this->get_var_map_impl();
+}
+
+std::map<std::string, AxisType> NCFile::get_dim_map() {
+  return this->get_dim_map_impl();
+}
+
+std::map<std::string, int> NCFile::get_var_map_impl() {
+  return {};
+}
+
+std::map<std::string, AxisType> NCFile::get_dim_map_impl() {
+  return {};
+}
+
+void NCFile::def_vlist() const {
+  this->def_vlist_impl();
+}
+
+void NCFile::def_vlist_impl() const {
+}
+
+void NCFile::set_diagvars(const std::set<std::string> &variables) const {
+  this->set_diagvars_impl(variables);
+}
+
+void NCFile::set_diagvars_impl(const std::set<std::string> &variables) const {
+  (void) variables;
+}
+
+void NCFile::set_bdiag(bool value) const {
+  this->set_bdiag_impl(value);
+}
+
+void NCFile::set_bdiag_impl(bool value) const {
+  (void) value;
+}
+
+int NCFile::get_ncstreamID() const {
+  return this->get_ncstreamID_impl();
+}
+
+int NCFile::get_ncvlistID() const {
+  return this->get_ncvlistID_impl();
+}
+
+int NCFile::get_ncstreamID_impl() const {
+  return 0;
+}
+
+int NCFile::get_ncvlistID_impl() const {
+  return 0;
+}
+
+void NCFile::set_calendar(double year_length, const std::string &calendar_string) const {
+  this->set_calendar_impl(year_length, calendar_string);
+}
+
+void NCFile::set_calendar_impl(double year_length, const std::string &calendar_string) const {
+  (void) year_length;
+  (void) calendar_string;
+}
+
+void NCFile::create_grid_impl(int lengthx, int lengthy) const {
+  (void) lengthx;
+  (void) lengthy;
+}
+
+void NCFile::define_timestep_impl(int tsID) const {
+  (void) tsID;
+}
+
+void NCFile::def_ref_date_impl(double time) const {
+  (void) time;
 }
 
 } // end of namespace io

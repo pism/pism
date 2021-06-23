@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _PISMNC3FILE_H_
 
 #include "NCFile.hh"
+#include <map>
 
 namespace pism {
 namespace io {
@@ -35,9 +36,12 @@ public:
 protected:
   // implementations:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode);
+  void open_impl(const std::string &filename,
+                 IO_Mode mode,
+                 int FileID = -1,
+                 const std::map<std::string, AxisType> &dimsa = {});
 
-  virtual void create_impl(const std::string &filename);
+  virtual void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
 
   void sync_impl() const;
 
@@ -49,7 +53,7 @@ protected:
   void redef_impl() const;
 
   // dim
-  void def_dim_impl(const std::string &name, size_t length) const;
+  void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 
@@ -117,7 +121,7 @@ private:
                      const std::vector<unsigned int> &count,
                      const std::vector<unsigned int> &imap, double *ip,
                      bool transposed) const;
-  };
+};
 
 } // end of namespace io
 } // end of namespace pism

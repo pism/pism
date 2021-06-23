@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,40 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _WRAPPER_H_
-#define _WRAPPER_H_
+#ifndef CDIPIOINITIALIZER_H
+#define CDIPIOINITIALIZER_H
 
-#include <memory>
+#include <string>
+#include <mpi.h>
 
 namespace pism {
-namespace petsc {
+namespace cdipio {
 
-template<typename T>
-class Wrapper {
+class Initializer {
 public:
-  typedef std::shared_ptr<Wrapper> Ptr;
-  typedef std::weak_ptr<Wrapper> WeakPtr;
+  Initializer(unsigned int n_writers, const std::string &IOmode, MPI_Comm glob);
+  ~Initializer();
+  MPI_Comm comp_comm();
+  int pio_namespace();
+  void activate_namespace();
 
-  operator T() const {
-    return m_value;
-  }
-  T get() const {
-    return m_value;
-  }
-  T* rawptr() {
-    return &m_value;
-  }
-protected:
-  Wrapper() {
-    // empty
-  }
-  T m_value;
 private:
-  Wrapper(Wrapper const &);
-  Wrapper & operator=(Wrapper const &);
+  MPI_Comm m_comp_comm;
+  int m_pioNamespace;
+  bool m_initialized;
+  int define_mode(const std::string &IOmode);
 };
 
-} // end of namespace petsc
-} // end of namespace pism
+} // namespace cdipio
+} // namespace pism
 
-#endif /* _WRAPPER_H_ */
+#endif /* CDIPIOINITIALIZER_H */

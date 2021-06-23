@@ -20,7 +20,9 @@ This section describes the steps needed to build
   netcdf4_parallel`),
 - PNetCDF (needed to use PISM's option :opt:`-o_format pnetfdf`),
 - ParallelIO (needed to use options :opt:`-o_format pio_netcdf4p`,
-  :opt:`-o_format pio_netcdf4c`, :opt:`-o_format pio_pnetcdf`, :opt:`-o_format pio_netcdf`).
+  :opt:`-o_format pio_netcdf4c`, :opt:`-o_format pio_pnetcdf`, :opt:`-o_format
+  pio_netcdf`).
+- CDI-PIO_ (needed to use the option :opt:`-o_format cdi`)
 
 Scripts below install libraries in ``~/local/library_name``, using
 ``~/local/build/library_name`` to build them.
@@ -88,3 +90,80 @@ Installing NCAR ParallelIO
 Here we use CMake's variable ``CMAKE_FIND_ROOT_PATH`` to tell CMake to use libraries in
 ``~/local/netcdf`` and ``~/local/pnetcdf``, to install in ``~/local/parallelio``, and to
 disable ParallelIO features not used by PISM.
+
+.. _sec-install-cdi-pio:
+
+Installing CDI-PIO
+^^^^^^^^^^^^^^^^^^
+
+PISM's CDI-PIO support requires the following libraries
+
+- PnetCDF (see :ref:`sec-install-pnetcdf`)
+- HDF5 version 1.10.5
+- NetCDF-C version 4.4.0
+- NetCDF-Fortran version 4.4.3
+- YAXT_ version 0.9.0
+- PPM_ version 1.0.6
+- CDI-PIO_ version ``cdipio-dev-snapshot-20210223``
+
+CDI-PIO does not support the current version of NetCDF yet so it is recommended to install
+library versions listed above.
+
+.. note::
+
+   NetCDF's parallel I/O support improved since version 4.4.0. We recommend building PISM
+   with *either* Parallel NetCDF support (PISM's CMake option
+   ``-DPism_USE_PARALLEL_NETCDF4``) or CDI-PIO support (CMake option
+   ``-DPism_USE_CDIPIO``), but not both.
+
+HDF5
+~~~~
+
+.. literalinclude:: code/cdi/hdf5.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+NetCDF-C with PNetCDF support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. literalinclude:: code/cdi/netcdf-c.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+NetCDF-Fortran
+~~~~~~~~~~~~~~
+
+.. literalinclude:: code/cdi/netcdf-f.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+YAXT
+~~~~
+
+The configure script checks for an MPI implementation defect. Set
+``--without-regard-for-quality`` to ignore this test (not recommended).
+
+.. literalinclude:: code/cdi/yaxt.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+PPM
+~~~
+
+.. literalinclude:: code/cdi/ppm.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+
+CDI-PIO
+~~~~~~~
+
+.. literalinclude:: code/cdi/cdi.sh
+   :language: bash
+   :linenos:
+   :lines: 7-
+

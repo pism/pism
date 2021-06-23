@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,14 +21,14 @@
 
 #include <vector>
 #include <string>
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
+#include <map>
+#include <set>
 
 #include "pism/util/Units.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
-
-enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 
 class IceGrid;
 
@@ -50,13 +50,25 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-       int iosysid = -1);
+  File(MPI_Comm com,
+       const std::string &filename,
+       IO_Backend backend,
+       IO_Mode mode,
+       int iosysid = -1,
+       int FileID = -1,
+       const std::map<std::string, AxisType> &dimsa = {},
+       const std::string &filetype = std::string());
   ~File();
 
   IO_Backend backend() const;
 
   MPI_Comm com() const;
+
+  void reset_dimension_written() const;
+
+  bool get_dimension_written(const std::string &name) const;
+
+  void set_dimension_written(const std::string &name) const;
 
   void close();
 
@@ -79,7 +91,8 @@ public:
 
   // dimensions
 
-  void define_dimension(const std::string &name, size_t length) const;
+  void define_dimension(const std::string &name, size_t length,
+                        AxisType dim = UNKNOWN_AXIS) const;
 
   unsigned int dimension_length(const std::string &name) const;
 
@@ -145,11 +158,29 @@ public:
   std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
 
   void append_history(const std::string &history) const;
+
+  //new functions because of CDI class
+  void new_grid(int lengthx, int lengthy) const;
+  void new_timestep(int tsID) const;
+  void reference_date(double time) const;
+  std::map<std::string, int> get_variables_map() const;
+  std::map<std::string, AxisType> get_dimensions_map() const;
+  void define_vlist() const;
+  void send_diagnostics(const std::set<std::string> &variables) const;
+  void set_beforediag(bool value) const;
+  int get_streamID() const;
+  int get_vlistID() const;
+  void set_calendar(double year_length, const std::string &calendar_string) const;
+  bool is_var_written(const std::string &name) const;
+
 private:
   struct Impl;
   Impl *m_impl;
-
-  void open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename,
+            IO_Mode mode,
+            int FileID = -1,
+            const std::map<std::string, AxisType> &dimsa = {},
+	    const std::string& filetype = std::string());
 
   // disable copying and assignments
   File(const File &other);

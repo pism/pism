@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -94,6 +94,10 @@ public:
   //! \brief Returns the calendar string.
   std::string calendar() const;
 
+  double year_length() const;
+
+  double days_year() const;
+
   //! \brief Returns the length of the current run, in years.
   std::string run_length() const;
 
@@ -104,7 +108,9 @@ public:
 
   virtual void init_from_input_file(const File &nc,
                                     const std::string &time_name,
-                                    const Logger &log);
+                                    const Logger &log, bool CDI);
+
+  double cdi_to_seconds(double T);
 
   void init_calendar(const std::string &calendar);
 
@@ -219,7 +225,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
 
 //! Initialize time from command-line options or from and input file (set using the `-i` option).
 void initialize_time(MPI_Comm com, const std::string &dimension_name,
-                     const Logger &log, Time &time);
+                     const Logger &log, Time &time, bool CDI);
 
 } // end of namespace pism
 

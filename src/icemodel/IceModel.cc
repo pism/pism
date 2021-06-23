@@ -71,6 +71,8 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
+    m_opened(false),
+    m_sthwritten(false),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
     m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
@@ -813,9 +815,11 @@ void IceModel::run() {
 
     // writing these fields here ensures that we do it after the last time-step
     profiling.begin("io");
+    open_files();
     write_snapshot();
     write_extras();
     write_backup();
+    expose_windows();
     profiling.end("io");
 
     if (stepcount >= 0) {

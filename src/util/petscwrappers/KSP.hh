@@ -22,12 +22,12 @@
 
 #include <petscksp.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
 
-class KSP : public petsc::Wrapper< ::KSP > {
+class KSP : public Wrapper< ::KSP > {
 public:
   KSP();
   KSP(::KSP ksp);

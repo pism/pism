@@ -39,6 +39,12 @@
 #include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
 
+#if (Pism_USE_CDIPIO==1)
+extern "C" {
+#include <cdipio.h>             // pioWriteTimestep()
+#include <cdi.h>                // streamClose(), vlistDestroy()
+}
+#endif
 
 namespace pism {
 
@@ -126,22 +132,38 @@ void IceModel::save_results() {
   }
 
   const Profiling &profiling = m_ctx->profiling();
+  int fileID = -1;
+  IO_Mode mode = PISM_READWRITE_MOVE;
+  if (m_streamIDs.count(filename) > 0) {
+    fileID = m_streamIDs[filename];
+    mode = PISM_READWRITE;
+  }
 
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
+    profiling.begin("io.open");
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
+              mode,
+              m_ctx->pio_iosys_id(),
+              fileID,
+              m_DimOutMap);
+    profiling.end("io.open");
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
     write_run_stats(file);
 
+    file.set_calendar(m_time->year_length(), m_time->calendar());
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
+    m_sthwritten = true;
+    expose_windows();
+
+    if (file.backend() == PISM_CDI) {
+      m_streamIDs[filename] = file.get_streamID();
+    }
   }
   profiling.end("io.model_state");
 }
@@ -176,7 +198,8 @@ void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type) {
+                              IO_Type default_diagnostics_type,
+                              bool realsave) {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -189,8 +212,6 @@ void IceModel::save_variables(const File &file,
   io::define_timeseries(m_timestamp,
                         m_config->get_string("time.dimension_name"),
                         file, PISM_FLOAT);
-  // append to the time dimension
-  io::append_time(file, *m_config, time);
 
   // Write metadata *before* everything else:
   //
@@ -202,7 +223,6 @@ void IceModel::save_variables(const File &file,
     define_model_state(file);
   }
   define_diagnostics(file, variables, default_diagnostics_type);
-
   // Done defining variables
 
   {
@@ -213,7 +233,8 @@ void IceModel::save_variables(const File &file,
     std::set<std::string> var_names;
     unsigned int n_vars = file.nvariables();
     for (unsigned int k = 0; k < n_vars; ++k) {
-      var_names.insert(file.variable_name(k));
+      std::string vname = file.variable_name(k);
+      var_names.insert(vname);
     }
 
     // If this output file contains variables lat and lon...
@@ -240,12 +261,19 @@ void IceModel::save_variables(const File &file,
       }
     }
   }
+  file.define_vlist(); // vlist object is now immutable - call inquire_vlist to change it
+  if (not realsave) {
+    return;
+  }
 
+  io::append_time(file, *m_config, time);
+  file.reset_dimension_written();
+  file.send_diagnostics(variables);
   if (kind == INCLUDE_MODEL_STATE) {
     write_model_state(file);
   }
+  file.set_beforediag(false);
   write_diagnostics(file, variables);
-
   // find out how much time passed since the beginning of the run and save it to the output file
   {
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
@@ -253,6 +281,192 @@ void IceModel::save_variables(const File &file,
     io::write_timeseries(file, m_timestamp, start,
                          {wall_clock_hours(m_grid->com, m_start_time)});
   }
+}
+
+void IceModel::open_files() {
+#if (Pism_USE_CDIPIO==1)
+if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+  if (not m_opened) {
+    m_opened = true;
+    std::string filetype = m_config->get_string("output.cdi_pio.filetype");
+    // Open snap file/s
+    if (m_save_snapshots) {
+      std::string filename;
+      int nsnap;
+      if (not m_split_snapshots) {
+        nsnap = 1;
+      } else {
+        nsnap = m_snapshot_times.size();
+      }
+
+      for (int sn = 0; sn < nsnap; sn++) {
+        if (not m_split_snapshots) {
+          filename = m_snapshots_filename;
+        } else {
+	  filename = pism::printf("%s_%s.nc",
+                                  m_snapshots_filename.c_str(),
+                                  m_time->date(m_snapshot_times[sn]).c_str());
+        }
+
+        int fileID = -1;
+        IO_Mode mode = PISM_READWRITE_MOVE;
+        {
+          File file(m_grid->com,
+                    filename,
+                    string_to_backend(m_config->get_string("output.format")),
+                    mode,
+                    m_ctx->pio_iosys_id(),
+                    fileID,
+                    m_DimSnapMap,
+                    filetype);
+          m_streamIDs[filename] = file.get_streamID();
+
+          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          m_snapshots_file_is_ready = true;
+          write_run_stats(file);
+          file.set_calendar(-1.0, m_time->calendar());
+          save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
+          m_vlistIDs[filename] = file.get_vlistID();
+          m_DimSnapMap = file.get_dimensions_map();
+        }
+        m_snapshots_file_is_ready = false;
+      }
+      m_snapshots_file_is_ready = true;
+    }
+
+    // Open Extra file/s
+    if (m_save_extra) {
+      std::string filename;
+      int nsnap;
+      if (not m_split_extra) {
+        nsnap = 1;
+      } else {
+        if (not m_config->get_flag("output.ISMIP6")) {
+          nsnap = m_extra_times.size() - 1; // First one is never saved
+        } else {
+          nsnap = m_extra_times.size();
+        }
+      }
+
+      for (int sn = 0; sn < nsnap; sn++) {
+        if (not m_split_extra) {
+          filename = m_extra_filename;
+        } else {
+          double tt;
+          if (not m_config->get_flag("output.ISMIP6")) {
+            tt = m_extra_times[sn+1];
+          } else {
+            tt = m_extra_times[sn];
+          }
+          filename = pism::printf("%s_%s.nc",
+                                  m_extra_filename.c_str(),
+                                  m_time->date(tt).c_str());
+        }
+        int fileID = -1;
+        IO_Mode mode = PISM_READWRITE_MOVE;
+        {
+          File file(m_grid->com,
+                    filename,
+                    string_to_backend(m_config->get_string("output.format")),
+                    mode,
+                    m_ctx->pio_iosys_id(),
+                    fileID,
+                    m_DimExtraMap,
+                    filetype);
+          m_streamIDs[filename] = file.get_streamID();
+
+          std::string time_name = m_config->get_string("time.dimension_name");
+          io::define_time(file, *m_ctx);
+          file.write_attribute(time_name, "bounds", "time_bounds");
+          io::define_time_bounds(m_extra_bounds, "time", "nv", file);
+          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          m_extra_file_is_ready = true;
+          write_run_stats(file);
+          file.set_calendar(-1.0, m_time->calendar());
+          save_variables(file,
+                         m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
+                         m_extra_vars,
+                         0,
+                         PISM_FLOAT,
+                         false);
+
+          if (file.backend() == PISM_CDI) {
+            m_vlistIDs[filename] = file.get_vlistID();
+            m_DimExtraMap = file.get_dimensions_map();
+          }
+        }
+        m_extra_file_is_ready = false;
+      }
+      m_extra_file_is_ready = true;
+    }
+
+    // Open Output file
+    if (m_config->get_string("output.size") != "none")
+    {
+      std::string filename = m_config->get_string("output.file_name");
+      if (filename.empty()) {
+        m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+        filename = "unnamed.nc";
+      }
+      if (not ends_with(filename, ".nc")) {
+        m_log->message(2,
+                       "PISM WARNING: output file name does not have the '.nc' suffix!\n");
+      }
+      int fileID = -1;
+      IO_Mode mode = PISM_READWRITE_MOVE;
+      File file(m_grid->com,
+                filename,
+                string_to_backend(m_config->get_string("output.format")),
+                mode,
+                m_ctx->pio_iosys_id(),
+                fileID,
+                m_DimOutMap,
+                filetype);
+      m_streamIDs[filename] = file.get_streamID();
+
+      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
+      write_run_stats(file);
+      file.set_calendar(-1.0, m_time->calendar());
+      save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+                     0, PISM_FLOAT, false);
+      if (file.backend() == PISM_CDI) {
+        m_vlistIDs[filename] = file.get_vlistID();
+        m_DimOutMap = file.get_dimensions_map();
+      }
+    }
+  }
+}
+#endif
+}
+
+void IceModel::expose_windows() {
+#if (Pism_USE_CDIPIO==1)
+  if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+    if (m_sthwritten) {
+      pioWriteTimestep();
+      m_sthwritten = false;
+    }
+  }
+#endif
+}
+
+void IceModel::close_files() {
+#if (Pism_USE_CDIPIO==1)
+if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+  const Profiling &profiling = m_ctx->profiling();
+  profiling.begin("io.close_streams");
+  // Close all files
+  for (auto const& streamID : m_streamIDs) {
+    streamClose(streamID.second);
+  }
+  // Destroy all streams
+  for (auto const& vlistID : m_vlistIDs) {
+    vlistDestroy(vlistID.second);
+  }
+  profiling.end("io.close_streams");
+}
+#endif
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,

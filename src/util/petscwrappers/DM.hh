@@ -22,7 +22,7 @@
 
 #include <petscdmda.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 
@@ -34,7 +34,7 @@ namespace petsc {
  *
  * The destructor call DMDestroy().
  */
-class DM : public petsc::Wrapper< ::DM > {
+class DM : public Wrapper< ::DM > {
 public:
   DM(::DM dm);
   DM();

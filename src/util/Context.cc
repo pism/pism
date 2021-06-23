@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,7 +75,6 @@ Context::~Context() {
     m_impl->logger->message(1, "Error: failed to de-allocate a ParallelIO I/O system\n");
   }
 #endif
-
   delete m_impl;
 }
 
@@ -147,9 +146,9 @@ int Context::pio_iosys_id() const {
     }
 
     int
-      base      = config()->get_number("output.pio.base"),
-      stride    = config()->get_number("output.pio.stride"),
-      n_writers = config()->get_number("output.pio.n_writers");
+      base      = config()->get_number("output.parallelio.base"),
+      stride    = config()->get_number("output.parallelio.stride"),
+      n_writers = config()->get_number("output.parallelio.n_writers");
 
     if (n_writers > this->size()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -187,6 +186,5 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &p
 
   return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
-
 
 } // end of namespace pism

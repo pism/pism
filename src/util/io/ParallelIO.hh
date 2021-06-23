@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,8 +31,11 @@ public:
   static IO_Backend best_iotype(bool netcdf3);
 protected:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode);
-  void create_impl(const std::string &filename);
+  void open_impl(const std::string &filename,
+                 IO_Mode mode,
+                 int FileID = -1,
+                 const std::map<std::string, AxisType> &dimsa = {});
+  void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
   void sync_impl() const;
   void close_impl();
 
@@ -44,7 +47,7 @@ protected:
   void redef_impl() const;
 
   // dim
-  void def_dim_impl(const std::string &name, size_t length) const;
+  void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
 
@@ -108,6 +111,7 @@ protected:
   void set_fill_impl(int fillmode, int &old_modep) const;
 
   void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
 private:
   int m_iosysid;
   int m_iotype;

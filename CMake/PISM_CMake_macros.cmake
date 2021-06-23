@@ -185,6 +185,19 @@ macro(pism_find_prerequisites)
     find_package (ParallelIO REQUIRED)
   endif()
 
+  if (Pism_USE_CDIPIO)
+    find_package(PkgConfig REQUIRED)
+
+    pkg_search_module(YAXT yaxt REQUIRED)
+    message(STATUS "Found YAXT ${YAXT_VERSION} in ${YAXT_PREFIX}")
+
+    pkg_search_module(CDI cdi REQUIRED)
+    message(STATUS "Found CDI ${CDI_VERSION} in ${CDI_PREFIX}")
+
+    pkg_search_module(CDIPIO cdipio REQUIRED)
+    message(STATUS "Found CDI-PIO ${CDIPIO_VERSION} in ${CDIPIO_PREFIX}")
+  endif()
+
   if (Pism_USE_PARALLEL_NETCDF4)
     # Try to find netcdf_par.h. We assume that NetCDF was compiled with
     # parallel I/O if this header is present.
@@ -270,6 +283,15 @@ macro(pism_set_dependencies)
   if (Pism_USE_PNETCDF)
     include_directories (${PNETCDF_INCLUDES})
     list (APPEND Pism_EXTERNAL_LIBS ${PNETCDF_LIBRARIES})
+  endif()
+
+  if (Pism_USE_CDIPIO)
+    include_directories (${CDIPIO_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS ${CDIPIO_LINK_LIBRARIES})
+    include_directories (${CDI_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS ${CDI_LINK_LIBRARIES})
+    include_directories (${YAXT_INCLUDE_DIRS})
+    list (APPEND Pism_EXTERNAL_LIBS ${YAXT_LINK_LIBRARIES})
   endif()
 
   # Hide distracting CMake variables

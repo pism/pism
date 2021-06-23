@@ -140,7 +140,7 @@ bool Time_Calendar::process_ye(double &result) {
 
 void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
-                                         const Logger &log) {
+                                         const Logger &log, bool CDI) {
   try {
     // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
     // calendar.
@@ -165,10 +165,13 @@ void Time_Calendar::init_from_input_file(const File &nc,
 
       io::read_timeseries(nc, time_axis, *this, log, time);
     }
-
+    double T = time.front();
+    if (CDI) {
+      T = cdi_to_seconds(T);
+    }
     // Set time.
-    this->set_start(time.front());
-    this->set(time.front());
+    this->set_start(T);
+    this->set(T);
     log.message(2,
                 "* Time t = %s (calendar: %s) found in '%s'; setting current time\n",
                 this->date().c_str(),

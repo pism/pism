@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -71,7 +71,9 @@ void NC4File::redef_impl() const {
 }
 
 // dim
-void NC4File::def_dim_impl(const std::string &name, size_t length) const {
+void NC4File::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
+  (void) dim;
+
   int dimid = 0;
 
   int stat = nc_def_dim(m_file_id, name.c_str(), length, &dimid);

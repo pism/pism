@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -411,6 +411,41 @@ void TSDiagnostic::flush() {
     m_bounds.clear();
     m_values.clear();
   }
+}
+
+std::string TSDiagnostic::get_output_filename() {
+  return m_output_filename;
+}
+
+void TSDiagnostic::flush(File &file) {
+
+  if (m_time.empty()) {
+    return;
+  }
+
+  std::string dimension_name = m_dimension.get_name();
+
+  unsigned int len = file.dimension_length(dimension_name);
+
+  if (len > 0) {
+    double last_time = vector_max(file.read_dimension(dimension_name));
+
+    if (last_time < m_time.front()) {
+      m_start = len;
+    }
+  }
+
+  if (len == m_start) {
+    io::write_timeseries(file, m_dimension, m_start, m_time);
+    io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
+  }
+  io::write_timeseries(file, m_variable, m_start, m_values);
+
+  m_start += m_time.size();
+
+  m_time.clear();
+  m_bounds.clear();
+  m_values.clear();
 }
 
 void TSDiagnostic::init(const File &output_file,

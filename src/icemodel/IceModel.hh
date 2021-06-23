@@ -122,6 +122,9 @@ public:
 
   /** Run PISM in the "standalone" mode. */
   virtual void run();
+  virtual void close_files();
+  virtual void open_files();
+  virtual void expose_windows();
 
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
@@ -208,7 +211,8 @@ protected:
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type = PISM_FLOAT);
+                              IO_Type default_diagnostics_type = PISM_FLOAT,
+                              bool realsave = true);
 
   virtual void define_model_state(const File &file);
   virtual void write_model_state(const File &file);
@@ -248,6 +252,9 @@ protected:
 
   //! run statistics
   VariableMetadata m_run_stats;
+
+  bool m_opened;
+  bool m_sthwritten;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
@@ -415,7 +422,10 @@ protected:
   unsigned int m_current_snapshot;
   void init_snapshots();
   void write_snapshot();
+  std::map<std::string, AxisType> m_DimSnapMap;
+  std::map<std::string, AxisType> m_DimOutMap;
   MaxTimestep save_max_timestep(double my_t);
+  std::map<std::string, int> m_streamIDs, m_vlistIDs;
 
   //! file to write scalar time-series to
   std::string m_ts_filename;
@@ -437,6 +447,7 @@ protected:
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
+  std::map<std::string, AxisType> m_DimExtraMap;
   MaxTimestep extras_max_timestep(double my_t);
 
   // automatic backups

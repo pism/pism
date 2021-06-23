@@ -19,6 +19,7 @@
 #include <cassert>
 #include <cstdio>
 #include <memory>
+#include <map>
 using std::shared_ptr;
 
 #include <petscvec.h>
@@ -46,6 +47,10 @@ using std::shared_ptr;
 #include "ParallelIO.hh"
 #endif
 
+#if (Pism_USE_CDIPIO==1)
+#include "CDI.hh"
+#endif
+
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 
@@ -55,6 +60,8 @@ struct File::Impl {
   MPI_Comm com;
   IO_Backend backend;
   io::NCFile::Ptr nc;
+  std::map<std::string, bool> dim_written;
+  std::vector<std::string> ivars;
 };
 
 IO_Backend string_to_backend(const std::string &backend) {
@@ -68,6 +75,7 @@ IO_Backend string_to_backend(const std::string &backend) {
      {"pio_netcdf4p", PISM_PIO_NETCDF4P},
      {"pio_pnetcdf", PISM_PIO_PNETCDF},
      {"pnetcdf", PISM_PNETCDF},
+     {"cdi", PISM_CDI},
   };
 
   if (backends.find(backend) != backends.end()) {
@@ -90,7 +98,8 @@ static std::string backend_to_string(IO_Backend backend) {
      {PISM_PIO_NETCDF4C, "pio_netcdf4c"},
      {PISM_PIO_NETCDF4P, "pio_netcdf4p"},
      {PISM_PIO_PNETCDF, "pio_pnetcdf"},
-     {PISM_PNETCDF, "pnetcdf"}
+     {PISM_PNETCDF, "pnetcdf"},
+     {PISM_CDI, "cdi"}
   };
 
   return backends[backend];
@@ -165,11 +174,13 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
 #else
     break;
 #endif
-
+  case PISM_CDI:
+#if (Pism_USE_CDIPIO==1)
+    return io::NCFile::Ptr(new io::CDI(com));
+#endif
   case PISM_GUESS:
     break;
   } // end of switch (backend)
-
 
   auto backend_name = backend_to_string(backend);
 
@@ -178,8 +189,14 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
                                 backend_name.c_str());
 }
 
-File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
-           int iosysid)
+File::File(MPI_Comm com,
+           const std::string &filename,
+           IO_Backend backend,
+           IO_Mode mode,
+           int iosysid,
+           int FileID,
+           const std::map<std::string, AxisType> &dimsa,
+           const std::string &filetype)
   : m_impl(new Impl) {
 
   if (filename.empty()) {
@@ -195,8 +212,11 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
 
   m_impl->com = com;
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
-
-  this->open(filename, mode);
+  this->open(filename,
+             mode,
+             FileID,
+             dimsa,
+             filetype);
 }
 
 File::~File() {
@@ -212,6 +232,40 @@ File::~File() {
   delete m_impl;
 }
 
+int File::get_streamID() const {
+  return m_impl->nc->get_ncstreamID();
+}
+
+int File::get_vlistID() const {
+  return m_impl->nc->get_ncvlistID();
+}
+
+void File::reset_dimension_written() const {
+  m_impl->dim_written["x"]  = false;
+  m_impl->dim_written["y"]  = false;
+  m_impl->dim_written["zb"] = false;
+  m_impl->dim_written["z"]  = false;
+}
+
+bool File::get_dimension_written(const std::string &name) const {
+  return m_impl->dim_written[name];
+}
+
+void File::set_dimension_written(const std::string &name) const {
+  m_impl->dim_written[name] = true;
+}
+
+bool File::is_var_written(const std::string &name) const {
+  bool w;
+  if(std::find(m_impl->ivars.begin(), m_impl->ivars.end(), name) != m_impl->ivars.end()) {
+    w = true;
+  } else {
+    w = false;
+    m_impl->ivars.push_back(name);
+  }
+  return w;
+}
+
 MPI_Comm File::com() const {
   return m_impl->com;
 }
@@ -224,7 +278,11 @@ void File::set_compression_level(int level) const {
   m_impl->nc->set_compression_level(level);
 }
 
-void File::open(const std::string &filename, IO_Mode mode) {
+void File::open(const std::string &filename,
+                IO_Mode mode,
+                int FileID,
+                const std::map<std::string, AxisType> &dimsa,
+                const std::string &filetype) {
   try {
 
     // opening for reading
@@ -240,13 +298,16 @@ void File::open(const std::string &filename, IO_Mode mode) {
         io::remove_if_exists(m_impl->com, filename);
       }
 
-      m_impl->nc->create(filename);
+      m_impl->nc->create(filename, FileID,filetype);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
 
-      m_impl->nc->open(filename, mode);
+      m_impl->nc->open(filename,
+                       mode,
+                       FileID,
+                       dimsa);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);
@@ -540,9 +601,9 @@ AxisType File::dimension_type(const std::string &name,
   return UNKNOWN_AXIS;          // LCOV_EXCL_LINE
 }
 
-void File::define_dimension(const std::string &name, size_t length) const {
+void File::define_dimension(const std::string &name, size_t length, AxisType dim) const {
   try {
-    m_impl->nc->def_dim(name, length);
+    m_impl->nc->def_dim(name, length, dim);
   } catch (RuntimeError &e) {
     e.add_context("defining dimension '%s' in '%s'", name.c_str(), filename().c_str());
     throw;
@@ -804,5 +865,67 @@ std::string File::variable_name(unsigned int id) const {
   return result;
 }
 
+void File::new_grid(int lengthx, int lengthy) const {
+  try {
+    m_impl->nc->create_grid(lengthx, lengthy);
+  } catch (RuntimeError &e) {
+    e.add_context("setting a new grid in '%s'", filename().c_str());
+    throw;
+  }
+}
+
+void File::new_timestep(int tsID) const {
+  try {
+    m_impl->nc->define_timestep(tsID);
+  } catch (RuntimeError &e) {
+    e.add_context("setting a new timestep in '%s'", filename().c_str());
+    throw;
+  }
+}
+
+void File::reference_date(double time) const {
+  try {
+    m_impl->nc->def_ref_date(time);
+  } catch (RuntimeError &e) {
+    e.add_context("setting reference date in '%s'", filename().c_str());
+    throw;
+  }
+}
+
+std::map<std::string, int> File::get_variables_map() const {
+  return m_impl->nc->get_var_map();
+}
+
+std::map<std::string, AxisType> File::get_dimensions_map() const {
+  return m_impl->nc->get_dim_map();
+}
+
+void File::define_vlist() const {
+    try {
+    m_impl->nc->def_vlist();
+  } catch (RuntimeError &e) {
+    e.add_context("defining vlist in '%s'", filename().c_str());
+    throw;
+  }
+
+}
+
+void File::send_diagnostics(const std::set<std::string> &variables) const {
+  try {
+    m_impl->nc->set_diagvars(variables);
+  } catch (RuntimeError &e) {
+    e.add_context("setting diagvars in '%s'", filename().c_str());
+    throw;
+  }
+
+}
+
+void File::set_beforediag(bool value) const {
+  m_impl->nc->set_bdiag(value);
+}
+
+void File::set_calendar(double year_length, const std::string &calendar_string) const {
+ m_impl->nc->set_calendar(year_length, calendar_string);
+}
 
 } // end of namespace pism

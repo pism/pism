@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -90,14 +90,22 @@ void ParallelIO::set_compression_level_impl(int level) const {
   // FIXME: it may make sense to implement this for PIO IO types using HDF5.
 }
 
-void ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {
+void ParallelIO::open_impl(const std::string &filename,
+                           IO_Mode mode,
+                           int FileID,
+                           const std::map<std::string, AxisType> &dimsa) {
+  (void) FileID;
+  (void) dimsa;
+
   int open_mode = mode == PISM_READONLY ? PIO_NOWRITE : PIO_WRITE;
 
   int stat = PIOc_open(m_iosysid, filename.c_str(), open_mode, &m_file_id);
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void ParallelIO::create_impl(const std::string &filename) {
+void ParallelIO::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
+  (void) FileID;
+  (void) filetype;
 
   int mode = NC_CLOBBER;
   if (m_iotype == PIO_IOTYPE_PNETCDF) {
@@ -128,7 +136,8 @@ void ParallelIO::redef_impl() const {
 }
 
 // dim
-void ParallelIO::def_dim_impl(const std::string &name, size_t length) const {
+void ParallelIO::def_dim_impl(const std::string &name, size_t length, AxisType dim) const {
+  (void) dim;
   int dim_id = 0;
   int stat = PIOc_def_dim(m_file_id, name.c_str(), length, &dim_id);
   check(PISM_ERROR_LOCATION, stat);

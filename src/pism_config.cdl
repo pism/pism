@@ -1412,6 +1412,10 @@ netcdf pism_config {
     pism_config:input.bootstrap_option = "bootstrap";
     pism_config:input.bootstrap_type = "flag";
 
+    pism_config:input.cdi_pio = "no";
+    pism_config:input.cdi_pio_doc = "Specify whether the input file was written using CDI-PIO (used to convert the time stored in the file from ``YYMMDD.day_fraction`` to seconds)";
+    pism_config:input.cdi_pio_type = "flag";
+
     pism_config:input.file = "";
     pism_config:input.file_doc = "Input file name";
     pism_config:input.file_option = "i";
@@ -1901,6 +1905,21 @@ netcdf pism_config {
     pism_config:output.backup_size_option = "backup_size";
     pism_config:output.backup_size_type = "keyword";
 
+    pism_config:output.cdi_pio.filetype = "CDI_FILETYPE_NC2";
+    pism_config:output.cdi_pio.filetype_choices = "CDI_FILETYPE_NC,CDI_FILETYPE_NC2,CDI_FILETYPE_NC4,CDI_FILETYPE_NC4C";
+    pism_config:output.cdi_pio.filetype_doc = "Filetype to use for asynchronous I/O";
+    pism_config:output.cdi_pio.filetype_type = "keyword";
+
+    pism_config:output.cdi_pio.mode = "PIO_MPI_FW_AT_ALL";
+    pism_config:output.cdi_pio.mode_choices = "PIO_NONE,PIO_MPI,PIO_WRITER,PIO_ASYNCH,PIO_FPGUARD,PIO_MPI_FW_ORDERED,PIO_MPI_FW_AT_ALL,PIO_MPI_FW_AT_REBLOCK";
+    pism_config:output.cdi_pio.mode_doc = "Mode to use for asynchronous I/O";
+    pism_config:output.cdi_pio.mode_type = "keyword";
+
+    pism_config:output.cdi_pio.n_writers = 0;
+    pism_config:output.cdi_pio.n_writers_doc = "Number of I/O tasks to use for asynchronous writing";
+    pism_config:output.cdi_pio.n_writers_type = "integer";
+    pism_config:output.cdi_pio.n_writers_units = "count";
+
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
@@ -1947,7 +1966,7 @@ netcdf pism_config {
     pism_config:output.fill_value_units = "none";
 
     pism_config:output.format = "netcdf3";
-    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf,pio_pnetcdf,pio_netcdf4p,pio_netcdf4c,pio_netcdf";
+    pism_config:output.format_choices = "netcdf3,netcdf4_serial,netcdf4_parallel,pnetcdf,pio_pnetcdf,pio_netcdf4p,pio_netcdf4c,pio_netcdf,cdi";
     pism_config:output.format_doc = "The I/O format used for spatial fields; ``netcdf3`` is the default, ``netcd4_parallel`` is available if PISM was built with parallel NetCDF-4, and ``pnetcdf`` is available if PISM was built with PnetCDF.";
     pism_config:output.format_option = "o_format";
     pism_config:output.format_type = "keyword";
@@ -1957,20 +1976,20 @@ netcdf pism_config {
     pism_config:output.ice_free_thickness_standard_type = "number";
     pism_config:output.ice_free_thickness_standard_units = "meters";
 
-    pism_config:output.pio.base = 0;
-    pism_config:output.pio.base_doc = "Rank of the first I/O task";
-    pism_config:output.pio.base_type = "integer";
-    pism_config:output.pio.base_units = "count";
+    pism_config:output.parallelio.base = 0;
+    pism_config:output.parallelio.base_doc = "Rank of the first I/O task";
+    pism_config:output.parallelio.base_type = "integer";
+    pism_config:output.parallelio.base_units = "count";
 
-    pism_config:output.pio.n_writers = 1;
-    pism_config:output.pio.n_writers_doc = "Number of I/O tasks to use";
-    pism_config:output.pio.n_writers_type = "integer";
-    pism_config:output.pio.n_writers_units = "count";
+    pism_config:output.parallelio.n_writers = 1;
+    pism_config:output.parallelio.n_writers_doc = "Number of I/O tasks to use";
+    pism_config:output.parallelio.n_writers_type = "integer";
+    pism_config:output.parallelio.n_writers_units = "count";
 
-    pism_config:output.pio.stride = 1;
-    pism_config:output.pio.stride_doc = "Offset between I/O tasks";
-    pism_config:output.pio.stride_type = "integer";
-    pism_config:output.pio.stride_units = "count";
+    pism_config:output.parallelio.stride = 1;
+    pism_config:output.parallelio.stride_doc = "Offset between I/O tasks";
+    pism_config:output.parallelio.stride_type = "integer";
+    pism_config:output.parallelio.stride_units = "count";
 
     pism_config:output.runtime.area_scale_factor_log10 = 6;
     pism_config:output.runtime.area_scale_factor_log10_doc = "an integer; log base 10 of scale factor to use for area (in km^2) in summary line to stdout";

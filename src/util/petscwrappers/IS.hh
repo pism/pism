@@ -22,11 +22,11 @@
 
 #include <petscis.h>
 
-#include "Wrapper.hh"
+#include "pism/util/Wrapper.hh"
 
 namespace pism {
 namespace petsc {
-class IS : public petsc::Wrapper< ::IS > {
+class IS : public Wrapper< ::IS > {
 public:
   IS();
   IS(::IS m);

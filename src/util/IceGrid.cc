@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <mpi.h>
 #include <cassert>
-
 #include <map>
 #include <numeric>
 #include <petscsys.h>
@@ -42,6 +42,10 @@
 // Why do I need this???
 #define _NETCDF
 #include <pio.h>
+#endif
+
+#if (Pism_USE_CDIPIO==1)
+#include "pism/util/cdipio/Idxlist.hh"
 #endif
 
 namespace pism {
@@ -119,6 +123,10 @@ struct IceGrid::Impl {
 
   //! ParallelIO I/O decompositions.
   std::map<int, int> io_decompositions;
+#if (Pism_USE_CDIPIO==1)
+  // YAXT decompositions
+  std::map<int, std::shared_ptr<yaxt::Idxlist> > yaxt_decompositions;
+#endif
 };
 
 IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -1484,6 +1492,38 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   (void) output_datatype;
 #endif
   return result;
+}
+
+#if (Pism_USE_CDIPIO==1)
+std::shared_ptr<yaxt::Idxlist> IceGrid::yaxt_decomposition(int dof) const {
+  if (not m_impl->yaxt_decompositions[dof]) {
+
+    using yaxt::Idxlist;
+    std::shared_ptr<Idxlist> decomp(new Idxlist(Mx(), My(), xs(), ys(), xm(), ym(), dof));
+
+    m_impl->yaxt_decompositions[dof] = decomp;
+
+    return m_impl->yaxt_decompositions[dof];
+  } else {
+    return m_impl->yaxt_decompositions[dof];
+  }
+}
+#endif
+
+int IceGrid::local_length(int dof) const {
+  return xm() * ym() * dof;
+}
+
+void IceGrid::io_transpose(const double* input, double* output, int dof) const {
+  int countx = xm(), county = ym(), countz = dof;
+
+  for (int y = 0; y < county; y++) {
+    for (int x = 0; x < countx; x++) {
+      for (int z = 0; z < countz; z++) {
+        output[(z*county+y)*countx+x] = input[(y*countx+x)*countz+z];
+      }
+    }
+  }
 }
 
 } // end of namespace pism

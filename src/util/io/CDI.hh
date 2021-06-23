@@ -1,0 +1,170 @@
+// Copyright (C) 2021 PISM Authors
+//
+// This file is part of PISM.
+//
+// PISM is free software; you can redistribute it and/or modify it under the
+// terms of the GNU General Public License as published by the Free Software
+// Foundation; either version 3 of the License, or (at your option) any later
+// version.
+//
+// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PISM; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+#ifndef PISM_CDI_H
+#define PISM_CDI_H
+
+#include <map>
+#include <set>
+
+#include "NCFile.hh"
+
+namespace pism {
+namespace io {
+
+class CDI : public NCFile {
+public:
+  CDI(MPI_Comm com);
+  virtual ~CDI() = default;
+
+protected:
+  void open_impl(const std::string &filename, IO_Mode mode,
+                 int FileID = -1,
+                 const std::map<std::string, AxisType> &dimsa = {});
+
+  void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
+
+  void sync_impl() const;
+
+  void close_impl();
+
+  // redef/enddef
+  void enddef_impl() const;
+
+  void redef_impl() const;
+
+  // dim
+  void def_dim_impl(const std::string &name, size_t length, AxisType dim) const;
+
+  void inq_dimid_impl(const std::string &dimension_name, bool &exists) const;
+
+  void inq_dimlen_impl(const std::string &dimension_name, unsigned int &result) const;
+
+  void inq_unlimdim_impl(std::string &result) const;
+
+  // var
+  void def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+
+  void get_vara_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, double *ip) const;
+
+  void put_vara_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const double *op) const;
+
+  void get_varm_double_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const std::vector<unsigned int> &imap,
+                            double *ip) const;
+
+  void write_darray_impl(const std::string &variable_name, const IceGrid &grid, unsigned int z_count,
+                         unsigned int record, const double *input);
+
+  void inq_nvars_impl(int &result) const;
+
+  void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const;
+
+  void inq_varnatts_impl(const std::string &variable_name, int &result) const;
+
+  void inq_varid_impl(const std::string &variable_name, bool &exists) const;
+
+  void inq_varname_impl(unsigned int j, std::string &result) const;
+
+  // att
+  void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                           std::vector<double> &result) const;
+
+  void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
+
+  void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype,
+                           const std::vector<double> &data) const;
+
+  void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
+
+  void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const;
+
+  void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+
+  // misc
+  void set_fill_impl(int fillmode, int &old_modep) const;
+
+  void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
+  // new functions
+  void create_grid_impl(int lengthx, int lengthy) const;
+  void define_timestep_impl(int tsID) const;
+  void def_ref_date_impl(double time) const;
+  std::map<std::string, int> get_var_map_impl();
+  std::map<std::string, AxisType> get_dim_map_impl();
+  void def_vlist_impl() const;
+  void set_diagvars_impl(const std::set<std::string> &variables) const;
+  void set_bdiag_impl(bool value) const;
+  int get_ncstreamID_impl() const;
+  int get_ncvlistID_impl() const;
+  void set_calendar_impl(double year_length, const std::string &calendar_string) const;
+
+private:
+  // main
+  mutable int m_gridID;
+  mutable int m_tID;
+  mutable int m_vlistID;
+  mutable std::map<std::string, int> m_varsID;
+  mutable std::map<std::string, AxisType> m_dimsAxis;
+  mutable std::map<std::string, int> m_zID;
+  mutable std::set<std::string> m_diagvars;
+
+  // auxiliary
+  mutable int m_gridsID;
+  mutable int m_zsID;
+  mutable int m_gridgID;
+
+  //switch
+  mutable bool m_beforediag;
+
+  // calendar
+  mutable double m_year_length;
+  mutable std::string m_calendar_string;
+  mutable int m_cdi_calendar;
+  mutable double m_days_year;
+
+  // initialize class for opened file
+  void map_varsID() const;
+  void map_zaxisID() const;
+
+  // file definition helpers
+  void def_vlist() const;
+  void def_zs() const;
+
+  int var_id(const std::string &name) const;
+
+  // calendar conversion
+  double year_calendar(double time) const;
+  void monthday_calendar(int year, int doy, int *month, int *day) const;
+
+  // inquire attribute helper
+  void inq_att_impl(int varID, int attnum, char *attname, int *atttype, int *attlen) const;
+
+  // define variable wrappers
+  void def_var_scalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_var_mscalar(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+  void def_var_multi(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const;
+
+  int timestep_type(const std::vector<std::string> &dims) const;
+};
+} // namespace io
+} // namespace pism
+
+#endif /* PISM_CDI_H */

@@ -26,7 +26,13 @@
 
 #include <mpi.h>                // MPI_Comm
 
+#include "pism/pism_config.hh"
+
 namespace pism {
+
+namespace yaxt {
+class Idxlist;
+} // end of namespace yaxt
 
 class Context;
 class Config;
@@ -202,7 +208,7 @@ private:
   \endcode
 
   For finite difference (and some other) computations we often need to know
-  values at map-plane neighbors of a grid point. 
+  values at map-plane neighbors of a grid point.
 
   We say that a patch owned by a processor is surrounded by a strip of "ghost"
   grid points belonging to patches next to the one in question. This lets us to
@@ -314,6 +320,11 @@ public:
   const Vars& variables() const;
 
   int pio_io_decomposition(int dof, int output_datatype) const;
+#if (Pism_USE_CDIPIO==1)
+  std::shared_ptr<yaxt::Idxlist> yaxt_decomposition(int dof) const;
+#endif
+  int local_length(int dof) const;
+  void io_transpose(const double* input, double* inputIO, int dof) const;
 
   //! Maximum number of degrees of freedom supported by PISM.
   /*!

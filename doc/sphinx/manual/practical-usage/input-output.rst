@@ -146,13 +146,14 @@ building PISM.
    ``pio_netcdf4p``, parallel I/O using ParallelIO (HDF5-based NetCDF-4 file)
    ``pio_netcdf4c``, serial I/O using ParallelIO (*compressed* HDF5-based NetCDF-4 file)
    ``pio_netcdf``,   serial I/O using ParallelIO (using data aggregation in ParallelIO)
+   ``cdi``, asynchronous output using CDI-PIO
 
 The ParallelIO library can aggregate data in a subset of processes used by PISM. To choose
 a subset, set
 
-- :config:`output.pio.n_writers` number of "writers"
-- :config:`output.pio.base` the index of the first writer
-- :config:`output.pio.stride` interval between writers
+- :config:`output.parallelio.n_writers` number of "writers"
+- :config:`output.parallelio.base` the index of the first writer
+- :config:`output.parallelio.stride` interval between writers
 
 .. note::
 
@@ -164,7 +165,7 @@ We recommend performing a number of test runs to determine the best choice for y
 simulations.
 
 In our test runs on 120 cores (whole Greenland setup on a 900m grid) ``pio_pnetcdf`` with
-:config:`output.pio.n_writers` set to the number of cores used by PISM (120) gave the best
+:config:`output.parallelio.n_writers` set to the number of cores used by PISM (120) gave the best
 performance.
 
 .. note::
@@ -192,3 +193,58 @@ performance.
 
       Now all files in ``output_directory`` and all its sub-directories can use all
       available targets.
+
+CDI-PIO
+~~~~~~~
+
+The CDI-PIO library uses a subset of allocated MPI processes to aggregate data and write
+output files. To write output files asynchronously set :config:`output.cdi_pio.n_writers`
+to specify the number of "writers".
+
+CDI-PIO supports several NetCDF file formats. The default value (``NC2``) corresponds to
+the choice that gave the best performance in our experiments, but you may need to switch
+to a different format using :config:`output.cdi_pio.filetype` if grid dimensions are too
+large. See NetCDF documentation on Large-Files_ for details.
+
+CDI-PIO also supports different writing modes which can be set using
+:config:`output.cdi_pio.mode`.
+
+CDI is designed for climate data and is less flexible than the NetCDF library. The
+limitations and differences with standard output data in PISM are listed below.
+
+- Coordinate variables ``x`` and ``y`` are stored as ``float``.
+
+- Dimensions attributes are limited and can not be added freely.
+
+- Integer variables writing is not supported (``integer`` variables are written as
+  ``float``).
+
+- The ``time`` dimension is written in the format ``YYMMDD.%f``, where ``%f`` represents a
+  fraction of the day.
+
+- The ``julian`` calendar (see :config:`time.calendar`) is not supported.
+
+- CDI cannot write correct ``standard_name`` attributes for ``x`` and ``y`` coordinate
+  variables.
+
+Re-starting PISM from a file written using CDI
+==============================================
+
+Some metadata in files produced using CDI are incorrect, so we have to pre-process a file
+before re-starting PISM from it.
+
+#. Use ``ncatted`` from NCO_ to adjust metadata:
+
+   .. code-block:: bash
+
+      ncatted -a units,time,o,c,"seconds since 1-1-1" \
+              -a standard_name,x,o,c,"x" \
+              -a standard_name,y,o,c,"y" pism-output.nc input.nc
+
+#. Set :config:`input.cdi_pio` to re-start PISM from a file written using CDI-PIO:
+
+   .. code-block:: bash
+
+      pismr -i input.nc -input.cdi_pio ...
+
+   This tells PISM to convert time written by CDI-PIO to seconds since a reference date.

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,8 +22,9 @@
 #include <memory>
 #include <string>
 #include <vector>
-
-#include <mpi.h>
+#include <map>
+#include <set>
+#include <mpi.h>                // MPI_Comm
 
 #include "IO_Flags.hh"
 
@@ -62,9 +63,12 @@ public:
   virtual ~NCFile();
 
   // open/create/close
-  void open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename,
+            IO_Mode mode,
+            int FileID = -1,
+            const std::map<std::string, AxisType> &dimsa = {});
 
-  void create(const std::string &filename);
+  void create(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
 
   void sync() const;
 
@@ -76,7 +80,7 @@ public:
   void redef() const;
 
   // dim
-  void def_dim(const std::string &name, size_t length) const;
+  void def_dim(const std::string &name, size_t length, AxisType dim) const;
 
   void inq_dimid(const std::string &dimension_name, bool &exists) const;
 
@@ -148,12 +152,29 @@ public:
 
   void del_att(const std::string &variable_name, const std::string &att_name) const;
 
+  //new functions because of CDI class
+  void create_grid(int lengthx, int lengthy) const;
+  void define_timestep(int tsID) const;
+  void def_ref_date(double time) const;
+  std::map<std::string, int> get_var_map();
+  std::map<std::string, AxisType> get_dim_map();
+  void def_vlist() const;
+  void set_diagvars(const std::set<std::string> &variables) const;
+  void set_bdiag(bool value) const;
+  int get_ncstreamID() const;
+  int get_ncvlistID() const;
+  void set_calendar(double year_length, const std::string &calendar_string) const;
+
 protected:
   // implementations:
 
   // open/create/close
-  virtual void open_impl(const std::string &filename, IO_Mode mode) = 0;
-  virtual void create_impl(const std::string &filename) = 0;
+  virtual void open_impl(const std::string &filename,
+                         IO_Mode mode,
+                         int FileID = -1,
+                         const std::map<std::string, AxisType> &dimsa = {}) = 0;
+  virtual void create_impl(const std::string &filename, int FileID = -1,
+                           const std::string &filetype = std::string()) = 0;
   virtual void sync_impl() const = 0;
   virtual void close_impl() = 0;
 
@@ -163,7 +184,7 @@ protected:
   virtual void redef_impl() const = 0;
 
   // dim
-  virtual void def_dim_impl(const std::string &name, size_t length) const = 0;
+  virtual void def_dim_impl(const std::string &name, size_t length, AxisType dim) const = 0;
 
   virtual void inq_dimid_impl(const std::string &dimension_name, bool &exists) const = 0;
 
@@ -210,7 +231,7 @@ protected:
 
   virtual void inq_varname_impl(unsigned int j, std::string &result) const = 0;
 
-  virtual void set_compression_level_impl(int level) const = 0;
+  virtual void set_compression_level_impl(int level) const;
 
   // att
   virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;
@@ -229,6 +250,19 @@ protected:
   virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
 
   virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
+
+  //new functions because of CDI class
+  virtual void create_grid_impl(int lengthx, int lengthy) const;
+  virtual void define_timestep_impl(int tsID) const;
+  virtual void def_ref_date_impl(double time) const;
+  virtual std::map<std::string, int> get_var_map_impl();
+  virtual std::map<std::string, AxisType> get_dim_map_impl();
+  virtual void def_vlist_impl() const;
+  virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
+  virtual void set_bdiag_impl(bool value) const;
+  virtual int get_ncstreamID_impl() const;
+  virtual int get_ncvlistID_impl() const;
+  virtual void set_calendar_impl(double year_length, const std::string &calendar_string) const;
 
 protected:                      // data members
 

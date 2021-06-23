@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 #include <string>
 #include <memory>
 
-#include <mpi.h>
+#include <mpi.h>                // MPI_Comm
 
 namespace pism {
 

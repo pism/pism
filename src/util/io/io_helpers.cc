@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,6 +34,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace io {
@@ -199,10 +200,10 @@ static void compute_start_and_count(const File& file,
 
 //! \brief Define a dimension \b and the associated coordinate variable. Set attributes.
 void define_dimension(const File &file, unsigned long int length,
-                      const VariableMetadata &metadata) {
+                      const VariableMetadata &metadata, AxisType dim) {
   std::string name = metadata.get_name();
   try {
-    file.define_dimension(name, length);
+    file.define_dimension(name, length, dim);
 
     file.define_variable(name, PISM_DOUBLE, {name});
 
@@ -245,7 +246,7 @@ void define_time(const File &file, const std::string &name, const std::string &c
     time.set_string("units", units);
     time.set_string("axis", "T");
 
-    define_dimension(file, PISM_UNLIMITED, time);
+    define_dimension(file, PISM_UNLIMITED, time, T_AXIS);
   } catch (RuntimeError &e) {
     e.add_context("defining the time dimension in \"" + file.filename() + "\"");
     throw;
@@ -254,19 +255,23 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
 //! Prepare a file for output.
 void append_time(const File &file, const Config &config, double time_seconds) {
-  append_time(file, config.get_string("time.dimension_name"),
-              time_seconds);
+    append_time(file, config.get_string("time.dimension_name"),
+                time_seconds);
 }
 
 //! \brief Append to the time dimension.
 void append_time(const File &file, const std::string &name, double value) {
   try {
     unsigned int start = file.dimension_length(name);
-
-    file.write_variable(name, {start}, {1}, &value);
-
-    // PIO's I/O type PnetCDF requires this
-    file.sync();
+    IO_Backend backend = file.backend();
+    if (backend == PISM_CDI) {
+        file.reference_date(value);
+        file.new_timestep(start-1);
+    } else {
+        file.write_variable(name, {start}, {1}, &value);
+        // PIO's I/O type PnetCDF requires this
+        file.sync();
+    }
   } catch (RuntimeError &e) {
     e.add_context("appending to the time dimension in \"" + file.filename() + "\"");
     throw;
@@ -276,23 +281,18 @@ void append_time(const File &file, const std::string &name, double value) {
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
                               const IceGrid& grid, const File &file) {
-
-  // x
+  // x and y need to be defined together because of CDI
+  // x && y
   std::string x_name = var.get_x().get_name();
-  if (not file.find_dimension(x_name)) {
-    define_dimension(file, grid.Mx(), var.get_x());
+  std::string y_name = var.get_y().get_name();
+  if ( (not file.find_dimension(x_name)) && (not file.find_dimension(y_name)) ) {
+    file.new_grid(grid.Mx(), grid.My());
+    define_dimension(file, grid.Mx(), var.get_x(), X_AXIS);
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});
-    file.write_attribute(x_name, "not_written", PISM_INT, {1.0});
-  }
-
-  // y
-  std::string y_name = var.get_y().get_name();
-  if (not file.find_dimension(y_name)) {
-    define_dimension(file, grid.My(), var.get_y());
+    define_dimension(file, grid.My(), var.get_y(), Y_AXIS);
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
                          {grid.y(1) - grid.y(0)});
-    file.write_attribute(y_name, "not_written", PISM_INT, {1.0});
   }
 
   // z
@@ -302,9 +302,8 @@ static void define_dimensions(const SpatialVariableMetadata& var,
       const std::vector<double>& levels = var.get_levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(file, nlevels, var.get_z());
-      file.write_attribute(z_name, "not_written", PISM_INT, {1.0});
-
+      define_dimension(file, nlevels, var.get_z(), Z_AXIS);
+      
       bool spatial_dim = not var.get_z().get_string("axis").empty();
 
       if (nlevels > 1 and spatial_dim) {
@@ -328,11 +327,9 @@ static void define_dimensions(const SpatialVariableMetadata& var,
 
 static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
-  bool written = file.attribute_type(name, "not_written") == PISM_NAT;
-  if (not written) {
+  if (not file.get_dimension_written(name)) {
     file.write_variable(name, {0}, {(unsigned int)data.size()}, data.data());
-    file.redef();
-    file.remove_attribute(name, "not_written");
+    file.set_dimension_written(name);
   }
 }
 
@@ -603,11 +600,11 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
                          mapping.get_name());
   }
 
-  if (var.get_time_independent()) {
-    // mark this variable as "not written" so that write_spatial_variable can avoid
-    // writing it more than once.
-    file.write_attribute(var.get_name(), "not_written", PISM_INT, {1.0});
+  // CDI needs to write dimensions before vlist definition
+  if (file.backend() == PISM_CDI) {
+    write_dimensions(var, grid, file);
   }
+
 }
 
 //! Read a variable from a file into an array `output`.
@@ -728,19 +725,13 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                                   name.c_str(),
                                   file.filename().c_str());
   }
-
   write_dimensions(var, grid, file);
 
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
   if (var.get_time_independent()) {
-    bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
-    if (written) {
-      return;
-    } else {
-      file.redef();
-      file.remove_attribute(var.get_name(), "not_written");
-    }
+    bool written = file.is_var_written(name);
+    if (written) return;
   }
 
   // make sure we have at least one level
