@@ -9,7 +9,7 @@ echo "Test #17: verif test G regression: thermo SIA w. time-dependent SMB."
 output=`mktemp pism-test-G.XXXX` || exit 1
 
 # run test G
-OPTS="-test G -Mbz 1 -Mz 31 -y 1000 -o_size none -verbose 1"
+OPTS="-test G -Mbz 1 -Mz 31 -y 1000years -max_dt 60years -o_size none -verbose 1"
 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS   > ${output}
 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS  >> ${output}
 

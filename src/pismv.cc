@@ -48,7 +48,6 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("time.calendar", "none");
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
 

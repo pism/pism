@@ -9,7 +9,7 @@ echo "Test #15: verif test C regression: isothermal SIA w. time-dependent SMB."
 output=`mktemp pism-test-C.XXXX` || exit 1
 
 # run test C
-OPTS="-test C -Mbz 1 -Mz 31 -y 5000 -o_size none -verbose 1"
+OPTS="-test C -Mbz 1 -Mz 31 -y 5000years -o_size none -verbose 1 -max_dt 60years"
 $PISM_PATH/pismv -Mx 31 -My 31 $OPTS  > ${output}
 $PISM_PATH/pismv -Mx 41 -My 41 $OPTS >> ${output}
 
