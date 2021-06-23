@@ -56,6 +56,14 @@ Changes since v1.2
   finer.
 - Fix a bug in the code managing time step restrictions (this affected the last time step
   of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
+- Add support for automatic unit conversion in command-line options. If an option argument
+  is a number PISM assumes that it uses PISM's internal units. If it is a number followed
+  by a units string recognized by UDUNITS it is automatically converter to PISM's internal
+  units. For example, the following are equivalent: `-Lz 1000`, `-Lz 1000m`, `-Lz 1km`.
+- Command-line options `-y`, `-ys`, `-ye`, `-max_dt` and corresponding configuration
+  parameters use units of `365 days` instead of `years`. The latter has the meaning of the
+  mean tropical year, i.e. the constant used to convert from `1/s` to `1/year`. Use `-y
+  1000years`, etc to reproduce the old behavior.
 
 Changes from v1.1 to v1.2
 =========================
