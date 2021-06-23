@@ -493,8 +493,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Real option("-" + name, config.doc(parameter),
+void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name, const std::string &parameter) {
+  options::Real option(unit_system,
+                       "-" + name,
+                       config.doc(parameter),
+                       config.units(parameter),
                        config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_number(parameter, option, CONFIG_USER);
@@ -596,7 +599,8 @@ void set_keyword_from_option(Config &config, const std::string &name,
   }
 }
 
-void set_parameter_from_options(Config &config, const std::string &name) {
+void set_parameter_from_options(units::System::Ptr unit_system,
+                                Config &config, const std::string &name) {
 
   // skip special parameters ("attributes" of parameters)
   if (special_parameter(name)) {
@@ -632,7 +636,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   } else if (type == "flag") {
     set_flag_from_option(config, option, name);
   } else if (type == "number") {
-    set_number_from_option(config, option, name);
+    set_number_from_option(unit_system, config, option, name);
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
@@ -642,17 +646,18 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   }
 }
 
-void set_config_from_options(Config &config) {
-  for (auto d : config.all_doubles()) {
-    set_parameter_from_options(config, d.first);
+void set_config_from_options(units::System::Ptr unit_system,
+                             Config &config) {
+  for (const auto &d : config.all_doubles()) {
+    set_parameter_from_options(unit_system, config, d.first);
   }
 
-  for (auto s : config.all_strings()) {
-    set_parameter_from_options(config, s.first);
+  for (const auto &s : config.all_strings()) {
+    set_parameter_from_options(unit_system, config, s.first);
   }
 
-  for (auto b : config.all_flags()) {
-    set_parameter_from_options(config, b.first);
+  for (const auto &b : config.all_flags()) {
+    set_parameter_from_options(unit_system, config, b.first);
   }
 
   // Energy modeling
@@ -784,7 +789,7 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
   overrides->init(log);
   config->init_with_default(log);
   config->import_from(*overrides);
-  set_config_from_options(*config);
+  set_config_from_options(sys, *config);
 
   return config;
 }

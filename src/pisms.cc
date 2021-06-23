@@ -54,7 +54,7 @@ std::shared_ptr<Context> pisms_context(MPI_Comm com) {
   config->set_string("grid.registration", "corner");
   config->set_string("stress_balance.sia.flow_law", "pb");
 
-  set_config_from_options(*config);
+  set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
@@ -83,7 +83,7 @@ IceGrid::Ptr pisms_grid(std::shared_ptr<Context> ctx) {
     // use defaults from the configuration database
     GridParameters P(ctx->config());
     P.horizontal_size_from_options();
-    P.horizontal_extent_from_options();
+    P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
     P.ownership_ranges_from_options(ctx->size());
 

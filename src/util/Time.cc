@@ -242,20 +242,25 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
 }
 
 bool Time::process_ys(double &result) {
-  options::Real ys("-ys", "Start year", m_config->get_number("time.start_year"));
+  options::Real ys(m_unit_system,
+                   "-ys", "Start year", "years",
+                   m_config->get_number("time.start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
 }
 
 bool Time::process_y(double &result) {
-  options::Real y("-y", "Run length, in years", m_config->get_number("time.run_length"));
+  options::Real y(m_unit_system,
+                  "-y", "Run length, in years", "years",
+                  m_config->get_number("time.run_length"));
   result = years_to_seconds(y);
   return y.is_set();
 }
 
 bool Time::process_ye(double &result) {
-  options::Real ye("-ye", "End year",
-                      m_config->get_number("time.start_year") + m_config->get_number("time.run_length"));
+  options::Real ye(m_unit_system,
+                   "-ye", "End year", "years",
+                   m_config->get_number("time.start_year") + m_config->get_number("time.run_length"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }

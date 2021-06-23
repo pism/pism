@@ -138,8 +138,9 @@ void SSAFEM::init_impl() {
   // process command-line options
   {
     m_dirichletScale = 1.0e9;
-    m_dirichletScale = options::Real("-ssa_fe_dirichlet_scale",
+    m_dirichletScale = options::Real(m_sys, "-ssa_fe_dirichlet_scale",
                                      "Enforce Dirichlet conditions with this additional scaling",
+                                     "1",
                                      m_dirichletScale);
 
   }

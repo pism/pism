@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2019, 2020, 2021 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -91,16 +91,22 @@ if __name__ == '__main__':
     config.set_string("output.file_name", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
     output_file_name = config.get_string("output.file_name")
 
-    design_prior_scale = PISM.OptionReal("-design_prior_scale",
-                                          "initial guess for design variable to be this factor of the true value",
-                                          design_prior_scale)
+    sys = context.unit_system
+    design_prior_scale = PISM.OptionReal(sys, "-design_prior_scale",
+                                         "initial guess for design variable to be this factor of the true value",
+                                         "1",
+                                         design_prior_scale)
 
-    design_prior_const = PISM.OptionReal("-design_prior_const",
-                                          "initial guess for design variable to be this constant",
-                                          0.0)
+    design_prior_const = PISM.OptionReal(sys, "-design_prior_const",
+                                         "initial guess for design variable to be this constant",
+                                         "m / s",
+                                         0.0)
     design_prior_const = design_prior_const.value() if design_prior_const.is_set() else None
 
-    noise = PISM.OptionReal("-rms_noise", "pointwise rms noise to add (in m/a)", 0.0)
+    noise = PISM.OptionReal(sys, "-rms_noise",
+                            "pointwise rms noise to add (in m/a)",
+                            "m / year",
+                            0.0)
     noise = noise.value() if noise.is_set() else None
 
     misfit_weight_type = PISM.OptionKeyword("-misfit_type",
@@ -108,8 +114,9 @@ if __name__ == '__main__':
                                             "grounded,fast",
                                             "grounded").value()
 
-    fast_ice_speed = PISM.OptionReal("-fast_ice_speed",
+    fast_ice_speed = PISM.OptionReal(sys, "-fast_ice_speed",
                                       "Threshold in m/a for determining if ice is fast",
+                                     "m/year",
                                       500.0)
 
     generate_ssa_observed = PISM.OptionBool("-generate_ssa_observed",

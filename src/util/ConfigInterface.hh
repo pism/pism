@@ -169,17 +169,17 @@ private:
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system);
 
 //! Set configuration parameters using command-line options.
-void set_config_from_options(Config &config);
+void set_config_from_options(units::System::Ptr unit_system, Config &config);
 
 //! Set one parameter using command-line options.
-void set_parameter_from_options(Config &config, const std::string &name);
+void set_parameter_from_options(units::System::Ptr unit_system, Config &config, const std::string &name);
 
 //! Set one flag parameter using command-line options.
 void set_flag_from_option(Config &config,
                              const std::string &option,const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.
-void set_number_from_option(Config &config,
+void set_number_from_option(units::System::Ptr unit_system, Config &config,
                             const std::string &option, const std::string &parameter);
 
 //! Set one free-form string parameter using command-line options.

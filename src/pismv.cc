@@ -52,7 +52,7 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
 
-  set_config_from_options(*config);
+  set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
@@ -151,7 +151,7 @@ IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);
     P.horizontal_size_from_options();
-    P.horizontal_extent_from_options();
+    P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
     P.ownership_ranges_from_options(ctx->size());
 

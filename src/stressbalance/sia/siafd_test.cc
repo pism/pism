@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     config->set_flag("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
-    set_config_from_options(*config);
+    set_config_from_options(ctx->unit_system(), *config);
 
     std::string usage = "\n"
       "usage of SIAFD_TEST:\n"

@@ -19,9 +19,8 @@ def grid():
     P = PISM.GridParameters(config)
 
     P.horizontal_size_from_options()
-    P.horizontal_extent_from_options()
+    P.horizontal_extent_from_options(ctx.unit_system)
     P.vertical_grid_from_options(config)
-    P.horizontal_extent_from_options()
     P.ownership_ranges_from_options(ctx.size)
 
     return PISM.IceGrid(ctx.ctx, P)

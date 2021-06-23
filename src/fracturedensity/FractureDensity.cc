@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -172,7 +172,8 @@ void FractureDensity::update(double dt,
 
   //options
   /////////////////////////////////////////////////////////
-  double soft_residual = options::Real("-fracture_softening", "soft_residual", 1.0);
+  double soft_residual = options::Real(m_sys, "-fracture_softening",
+                                       "soft_residual", "1", 1.0);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // more: T. Albrecht, A. Levermann; Fracture-induced softening for

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -128,7 +128,7 @@ public:
   //! Process -Mx and -My; set Mx and My.
   void horizontal_size_from_options();
   //! Process -Lx, -Ly, -x0, -y0, -x_range, -y_range; set Lx, Ly, x0, y0.
-  void horizontal_extent_from_options();
+  void horizontal_extent_from_options(std::shared_ptr<units::System> unit_system);
   //! Process -Mz and -Lz; set z;
   void vertical_grid_from_options(std::shared_ptr<const Config> config);
   //! Re-compute ownership ranges. Uses current values of Mx and My.

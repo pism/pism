@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -1262,13 +1262,14 @@ void GridParameters::horizontal_size_from_options() {
   My = options::Integer("-My", "grid size in Y direction", My);
 }
 
-void GridParameters::horizontal_extent_from_options() {
+void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
   // Domain size
   {
-    Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
-                                Lx / 1000.0);
-    Ly = 1000.0 * options::Real("-Ly", "Half of the grid extent in the X direction, in km",
-                                Ly / 1000.0);
+    Lx = 1000.0 * options::Real(unit_system,
+                                "-Lx", "Half of the grid extent in the Y direction, in km",
+                                "km", Lx / 1000.0);
+    Ly = 1000.0 * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
+                                "km", Ly / 1000.0);
   }
 
   // Alternatively: domain size and extent
@@ -1396,7 +1397,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     // process all possible options controlling grid parameters, overriding values read from a file
     input_grid.horizontal_size_from_options();
-    input_grid.horizontal_extent_from_options();
+    input_grid.horizontal_extent_from_options(ctx->unit_system());
     input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 

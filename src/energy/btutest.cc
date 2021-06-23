@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("time.start_year", 0.0);
   config->set_number("time.run_length", 1.0);
 
-  set_config_from_options(*config);
+  set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
@@ -126,7 +126,8 @@ int main(int argc, char *argv[]) {
 
     auto outname = config->get_string("output.file_name");
 
-    options::Real dt_years("-dt", "Time-step, in years", 1.0);
+    options::Real dt_years(ctx->unit_system(),
+                           "-dt", "Time-step, in years", "years", 1.0);
 
     // allocate tools and IceModelVecs
     IceModelVec2S bedtoptemp(grid, "bedtoptemp", WITHOUT_GHOSTS);

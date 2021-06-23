@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,15 +19,20 @@
 #ifndef _PISM_OPTIONS_H_
 #define _PISM_OPTIONS_H_
 
+#include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "pism_utilities.hh"
 
 #include "options.hh"
 
 namespace pism {
+
+namespace units {
+class System;
+} // end of namespace units
 
 class Config;
 class Logger;
@@ -107,8 +112,10 @@ public:
 
 class Real : public Option<double> {
 public:
-  Real(const std::string& option,
+  Real(std::shared_ptr<units::System> system,
+       const std::string& option,
        const std::string& description,
+       const std::string& units,
        double default_value);
 };
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,27 +75,31 @@ void EISMINTII::init_impl(const Geometry &geometry) {
   }
 
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
-  m_T_min = options::Real("-Tmin", "T min, Kelvin", m_T_min);
+  m_T_min = options::Real(m_sys, "-Tmin", "T min, Kelvin", "Kelvin", m_T_min);
 
-  options::Real Mmax("-Mmax", "Maximum accumulation, m year-1",
+  options::Real Mmax(m_sys, "-Mmax", "Maximum accumulation, m year-1",
+                     "m year-1",
                      convert(m_sys, m_M_max, "m second-1", "m year-1"));
   if (Mmax.is_set()) {
     m_M_max = convert(m_sys, Mmax, "m year-1", "m second-1");
   }
 
-  options::Real Sb("-Sb", "radial gradient of accumulation rate, (m year-1)/km",
+  options::Real Sb(m_sys, "-Sb", "radial gradient of accumulation rate, (m year-1)/km",
+                   "m year-1/km",
                    convert(m_sys, m_S_b,   "m second-1/m", "m year-1/km"));
   if (Sb.is_set()) {
     m_S_b = convert(m_sys, Sb, "m year-1/km", "m second-1/m");
   }
 
-  options::Real ST("-ST", "radial gradient of surface temperature, K/km",
+  options::Real ST(m_sys, "-ST", "radial gradient of surface temperature, K/km",
+                   "K/km",
                    convert(m_sys, m_S_T, "K/m", "K/km"));
   if (ST.is_set()) {
     m_S_T = convert(m_sys, ST, "K/km", "K/m");
   }
 
-  options::Real Rel("-Rel", "radial distance to equilibrium line, km",
+  options::Real Rel(m_sys, "-Rel", "radial distance to equilibrium line, km",
+                    "km",
                     convert(m_sys, m_R_el, "m", "km"));
   if (Rel.is_set()) {
     m_R_el = convert(m_sys, Rel, "km", "m");

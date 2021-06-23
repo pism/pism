@@ -17,15 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <sstream>
-#include <cstring>              // memset
+#include <cstring> // memset
+#include <sstream> // istringstream, getline()
 
 #include <petscsys.h>
 
-#include "pism_options.hh"
 #include "error_handling.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Units.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism_options.hh"
 
 namespace pism {
 namespace options {
@@ -167,15 +168,25 @@ Keyword::Keyword(const std::string& option,
 }
 
 Integer::Integer(const std::string& option,
-                const std::string& description,
-                int default_value) {
-  Real input(option, description, default_value);
-  double result = input;
-  if (fabs(result - floor(result)) > 1e-6) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't process '%s': (%f is not an integer).",
-                                  option.c_str(), result);
+                 const std::string& description,
+                 int default_value) {
+
+  String input(option, description,
+               pism::printf("%d", default_value),
+               DONT_ALLOW_EMPTY);
+
+  if (input.is_set()) {
+    char *endptr = NULL;
+    long int result = strtol(input->c_str(), &endptr, 10);
+    if (*endptr != '\0') {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't parse '%s %s': (%s is not an integer).",
+                                    option.c_str(), input->c_str(), input->c_str());
+    }
+    this->set(static_cast<int>(result), true);
+  } else {
+    this->set(static_cast<int>(default_value), false);
   }
-  this->set(static_cast<int>(result), input.is_set());
 }
 
 
@@ -207,8 +218,10 @@ const int& IntegerList::operator[](size_t index) const {
   return m_value[index];
 }
 
-Real::Real(const std::string& option,
+Real::Real(std::shared_ptr<units::System> system,
+           const std::string& option,
            const std::string& description,
+           const std::string& units,
            double default_value) {
 
   std::string buffer = pism::printf("%f", default_value);
@@ -219,8 +232,16 @@ Real::Real(const std::string& option,
     char *endptr = NULL;
     double result = strtod(input->c_str(), &endptr);
     if (*endptr != '\0') {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse '%s %s': (%s is not a number).",
-                                    option.c_str(), input->c_str(), input->c_str());
+      // assume that "input" contains units and try converting to "units":
+      try {
+        result = units::convert(system, 1.0, input.value(), units);
+      } catch (RuntimeError &e) {
+        e.add_context("trying to convert '%s' to '%s'",
+                      input->c_str(), units.c_str());
+        e.add_context("processing the command-line option %s",
+                      option.c_str());
+        throw;
+      }
     }
     this->set(result, true);
   } else {
