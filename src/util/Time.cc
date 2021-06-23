@@ -63,10 +63,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
   try {
     std::string calendar = calendar_from_options(com, *config);
 
-    if (calendar == "360_day" or
-        calendar == "365_day" or
-        calendar == "noleap" or
-        calendar == "none") {
+    if (member(calendar, {"360_day", "365_day", "noleap", "none"})) {
       return Time::Ptr(new Time(config, calendar, system));
     } else {
       return Time::Ptr(new Time_Calendar(com, config, calendar, system));
@@ -160,7 +157,7 @@ void Time::init_calendar(const std::string &calendar_string) {
   double seconds_per_day = convert(m_unit_system, 1.0, "day", "seconds");
   if (calendar_string == "360_day") {
     m_year_length = 360 * seconds_per_day;
-  } else if (calendar_string == "365_day" || calendar_string == "noleap") {
+  } else if (member(calendar_string, {"365_day", "noleap"})) {
     m_year_length = 365 * seconds_per_day;
   } else {
     // use the ~365.2524-day year
@@ -243,7 +240,8 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
 
 bool Time::process_ys(double &result) {
   options::Real ys(m_unit_system,
-                   "-ys", "Start year", "years",
+                   "-ys", "Start year",
+                   m_config->units("time.start_year"),
                    m_config->get_number("time.start_year"));
   result = years_to_seconds(ys);
   return ys.is_set();
@@ -251,7 +249,8 @@ bool Time::process_ys(double &result) {
 
 bool Time::process_y(double &result) {
   options::Real y(m_unit_system,
-                  "-y", "Run length, in years", "years",
+                  "-y", "Run length, in years",
+                  m_config->units("time.run_length"),
                   m_config->get_number("time.run_length"));
   result = years_to_seconds(y);
   return y.is_set();
@@ -259,8 +258,10 @@ bool Time::process_y(double &result) {
 
 bool Time::process_ye(double &result) {
   options::Real ye(m_unit_system,
-                   "-ye", "End year", "years",
-                   m_config->get_number("time.start_year") + m_config->get_number("time.run_length"));
+                   "-ye", "End year",
+                   "365days",
+                   m_config->get_number("time.start_year", "365days") +
+                   m_config->get_number("time.run_length", "365days"));
   result = years_to_seconds(ye);
   return ye.is_set();
 }
