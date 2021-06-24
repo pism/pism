@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
-#include <sstream> // std::istringstream
 
 #include "Time.hh"
 
@@ -399,20 +398,17 @@ std::vector<double> Time::parse_times(const std::string &spec) const {
 }
 
 std::vector<double> Time::parse_list(const std::string &spec) const {
-  std::istringstream arg(spec);
-  std::string tmp;
   std::vector<double> result;
 
-  while(getline(arg, tmp, ',')) {
-    try {
-      double d;
-      parse_date(tmp, &d);
-      result.push_back(d);
-    } catch (RuntimeError &e) {
+  try {
+    for (const auto &s : split(spec, ',')) {
+      result.emplace_back(parse_date(s));
+    }
+  } catch (RuntimeError &e) {
       e.add_context("parsing a list of dates %s", spec.c_str());
       throw;
-    }
   }
+
   return result;
 }
 
@@ -420,117 +416,97 @@ std::vector<double> Time::parse_list(const std::string &spec) const {
  * Parses an interval specification string.
  *
  * @param[in] spec specification string
- * @param[out] keyword interval type keyword, one of "hourly",
- *                     "daily", "monthly", "yearly", "equal"
- * @param[out] result if `keyword` == "equal", `result` is set to
- *                    the interval length in seconds
  *
- * @return 0 on success, 1 otherwise
  */
-void Time::parse_interval_length(const std::string &spec, std::string &keyword, double *result) const {
+auto Time::parse_interval_length(const std::string &spec) const -> Interval {
 
   // check if it is a keyword
   if (spec == "hourly") {
-    keyword = "simple";
-    if (result) {
-      *result = 3600;
-    }
-    return;
+    return {3600.0, SIMPLE};
   }
 
   if (spec == "daily") {
-    keyword = "simple";
-    if (result) {
-      *result = 86400;
-    }
-    return;
+    return {86400.0, SIMPLE};
   }
 
-  if (spec == "monthly" || spec == "yearly") {
-    keyword = spec;
-    if (result) {
-      *result = 0;
-    }
-    return;
+  if (spec == "monthly") {
+    return {0.0, MONTHLY};
   }
 
-  units::Unit seconds(m_time_units.system(), "seconds"),
-    one(m_time_units.system(), "1"),
-    tmp = one;
+  if (spec == "yearly") {
+    return {0.0, YEARLY};
+  }
 
   try {
-    tmp = units::Unit(m_time_units.system(), spec);
+    units::Unit seconds(m_unit_system, "seconds"),
+      one(m_unit_system, "1"),
+      tmp(m_unit_system, spec);
+
+    // Check if these units are compatible with "seconds" or "1". The
+    // latter allows intervals of the form "0.5", which stands for "half
+    // of a model year". This also discards interval specs such as "days
+    // since 1-1-1", even though "days" is compatible with "seconds".
+    if (units::are_convertible(tmp, seconds)) {
+      units::Converter c(tmp, seconds);
+
+      return {c(1.0), SIMPLE};
+    } else if (units::are_convertible(tmp, one)) {
+      units::Converter c(tmp, one);
+
+      // convert from years to seconds without using UDUNITS-2 (this
+      // way we handle 360-day and 365-day years correctly)
+      return {years_to_seconds(c(1.0)), SIMPLE};
+    }
   } catch (RuntimeError &e) {
     e.add_context("processing interval length " + spec);
     throw;
   }
 
-  // Check if these units are compatible with "seconds" or "1". The
-  // latter allows intervals of the form "0.5", which stands for "half
-  // of a model year". This also discards interval specs such as "days
-  // since 1-1-1", even though "days" is compatible with "seconds".
-  if (units::are_convertible(tmp, seconds)) {
-    units::Converter c(tmp, seconds);
-
-    if (result) {
-      *result = c(1.0);
-    }
-
-  } else if (units::are_convertible(tmp, one)) {
-    units::Converter c(tmp, one);
-
-    if (result) {
-      // this is a rather convoluted way of turning a string into a
-      // floating point number:
-      *result = c(1.0);
-      // convert from years to seconds without using UDUNITS-2 (this
-      // way we handle 360-day and 365-day years correctly)
-      *result = years_to_seconds(*result);
-    }
-
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "interval length '%s' is invalid", spec.c_str());
-  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "interval length '%s' is invalid", spec.c_str());
 }
 
 
 std::vector<double> Time::parse_range(const std::string &spec) const {
   double
     time_start   = m_run_start,
-    time_end     = m_run_end,
-    delta        = 0;
-  std::string keyword = "simple";
+    time_end     = m_run_end;
+
+  Interval I{0.0, SIMPLE};
 
   if (spec == "hourly") {
-    delta = 3600;
+    I = {3600.0, SIMPLE};
   } else if (spec == "daily") {
-    delta = 86400;
-  } else if (spec == "monthly" || spec == "yearly") {
-    keyword = spec;
-    delta   = 0;
+    I = {86400.0, SIMPLE};
+  } else if (spec == "monthly") {
+    I = {0.0, MONTHLY};
+  } else if (spec == "yearly") {
+    I = {0.0, YEARLY};
   } else {
 
-    std::vector<std::string> parts = pism::split(spec, ':');
+    auto parts = pism::split(spec, ':');
 
     if (parts.size() == 1) {
-      parse_interval_length(parts[0], keyword, &delta);
+      I = parse_interval_length(parts[0]);
+
     } else if (parts.size() == 3) {
-      parse_date(parts[0], &time_start);
-      parse_interval_length(parts[1], keyword, &delta);
-      parse_date(parts[2], &time_end);
+      time_start = parse_date(parts[0]);
+      I          = parse_interval_length(parts[1]);
+      time_end   = parse_date(parts[2]);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "a time range must consist of exactly 3 parts separated by colons (got '%s').",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "a time range must consist of exactly 3 parts separated by colons (got '%s').",
                                     spec.c_str());
     }
   }
 
   std::vector<double> result;
-  compute_times(time_start, delta, time_end, keyword, result);
+  compute_times(time_start, time_end, I, result);
   return result;
 }
 
 
-void Time::parse_date(const std::string &spec, double *result) const {
+double Time::parse_date(const std::string &spec) const {
 
   if (spec.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "got an empty date specification");
@@ -543,9 +519,7 @@ void Time::parse_date(const std::string &spec, double *result) const {
                                   spec.c_str(), spec.c_str());
   }
 
-  if (result) {
-    *result = years_to_seconds(d);
-  }
+  return years_to_seconds(d);
 }
 
 
@@ -584,23 +558,30 @@ void Time::compute_times_simple(double time_start, double delta, double time_end
   } while (t <= time_end);
 }
 
-void Time::compute_times(double time_start, double delta, double time_end,
-                         const std::string &keyword,
+void Time::compute_times(double time_start, double time_end,
+                         const Interval &interval,
                          std::vector<double> &result) const {
-  if (keyword == "yearly") {
+  double delta = interval.dt;
+  switch (interval.type) {
+  case YEARLY:
     delta = years_to_seconds(1.0);
-  } else if (keyword == "monthly") {
+    break;
+  case MONTHLY:
     delta = years_to_seconds(1.0/12.0);
-  } else if (keyword != "simple") {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown time range keyword: %s",
-                                  keyword.c_str());
+    break;
+  case SIMPLE:
+    break;
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "unknown time range type: %d",
+                                  interval.type);
   }
 
   compute_times_simple(time_start, delta, time_end, result);
 }
 
 double Time::convert_time_interval(double T, const std::string &units) const {
-  if (units == "year" || units == "years" || units == "yr" || units == "a") {
+  if (member(units, {"year", "years", "yr", "a"})) {
     return this->seconds_to_years(T); // uses year length here
   }
   return convert(m_unit_system, T, "seconds", units);

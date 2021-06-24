@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -69,18 +69,17 @@ public:
   virtual double increment_date(double T, int years) const;
 
 protected:
-  virtual void compute_times(double time_start, double delta, double time_end,
-                             const std::string &keyword,
+  virtual void compute_times(double time_start, double time_end,
+                             const Interval &interval,
                              std::vector<double> &result) const;
 
   virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
   virtual bool process_ye(double &result);
 
-  virtual void parse_date(const std::string &spec, double *result) const;
+  virtual double parse_date(const std::string &spec) const;
 
-  virtual void parse_interval_length(const std::string &spec,
-                                     std::string &keyword, double *result) const;
+  virtual Interval parse_interval_length(const std::string &spec) const;
 
   void compute_times_monthly(std::vector<double> &result) const;
 

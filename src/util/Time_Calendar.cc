@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
-#include <sstream>
 #include <cstdlib>
 #include <petscsys.h>
 
@@ -64,7 +63,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   std::string ref_date = m_config->get_string("time.reference_date");
 
   try {
-    parse_date(ref_date, NULL);
+    // parse ref_date to validate it, discarding the return value
+    parse_date(ref_date);
   } catch (RuntimeError &e) {
     e.add_context("validating the reference date");
     throw;
@@ -92,7 +92,7 @@ bool Time_Calendar::process_ys(double &result) {
 
   if (ys.is_set()) {
     try {
-      parse_date(ys, &result);
+      result = parse_date(ys);
     } catch (RuntimeError &e) {
       e.add_context("processing the -ys option");
       throw;
@@ -126,7 +126,7 @@ bool Time_Calendar::process_ye(double &result) {
 
   if (ye.is_set()) {
     try {
-      parse_date(ye, &result);
+      result = parse_date(ye);
     } catch (RuntimeError &e) {
       e.add_context("processing the -ye option");
       throw;
@@ -333,104 +333,88 @@ double Time_Calendar::increment_date(double T, int years) const {
  * it possible to validate the reference date itself.
  *
  */
-void Time_Calendar::parse_date(const std::string &input, double *result) const {
-  std::vector<int> numbers;
-  bool year_is_negative = false;
-  std::string tmp, spec = input;
+double Time_Calendar::parse_date(const std::string &input) const {
 
-  spec = string_strip(spec);
+  std::string spec = string_strip(input);
 
-  std::istringstream arg(spec);
-
-  if (spec.empty() == true) {
+  if (spec.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "got an empty date specification");
   }
 
   // If the string starts with "-" then the year is negative. This
   // would confuse the code below, which treats "-" as a separator, so
   // we remember that the year is negative and remove "-".
+  bool year_is_negative = false;
   if (spec[0] == '-') {
     year_is_negative = true;
     spec.substr(1);
   }
 
-  while(getline(arg, tmp, '-')) {
+  auto parts = split(spec, '-');
 
-    // an empty part in the date specification (corresponds to "--")
-    if (tmp.empty() == true) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "date specification '%s' is invalid (can't have two '-' in a row)",
-                                    spec.c_str());
-    }
+  if (parts.size() != 3) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
+                                  spec.c_str(), (int)parts.size());
+  }
 
+  std::vector<int> numbers;
+  for (const auto &p : parts) {
     // check if strtol can parse it:
     char *endptr = NULL;
-    long int n = strtol(tmp.c_str(), &endptr, 10);
+    long int n = strtol(p.c_str(), &endptr, 10);
     if (*endptr != '\0') {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "date specification '%s' is invalid ('%s' is not an integer)",
-                                    spec.c_str(), tmp.c_str());
+                                    spec.c_str(), p.c_str());
     }
 
     // FIXME: this may overflow!
     numbers.push_back((int)n);
   }
 
-  // wrong number of parts in the YYYY-MM-DD date:
-  if (numbers.size() != 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
-                                  spec.c_str(), (int)numbers.size());
-  }
-
   if (year_is_negative) {
     numbers[0] *= -1;
   }
 
-  calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
-  if (cal == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "calendar string '%s' is invalid",
-                                  m_calendar_string.c_str());
+  // Validate the calendar string and the date in this calendar:
+  {
+    calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
+    if (cal == NULL) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "calendar string '%s' is invalid",
+                                    m_calendar_string.c_str());
+    }
+
+    int dummy = 0;
+    int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
+    if (errcode != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "date %s is invalid in the %s calendar",
+                                    spec.c_str(), m_calendar_string.c_str());
+    }
+    ccs_free_calendar(cal);
   }
 
-  int dummy = 0;
-  int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
-  ccs_free_calendar(cal);
-  if (errcode != 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "date %s is invalid in the %s calendar",
-                                  spec.c_str(), m_calendar_string.c_str());
-  }
+  units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
 
-  // result is the *output* argument. If it is not NULL, then the user
-  // asked us to convert a date to seconds since the reference time.
-  if (result != NULL) {
-
-    units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
-
-    auto time = m_time_units.time(d, m_calendar_string);
-
-    *result = time;
-  }
+  return m_time_units.time(d, m_calendar_string);
 }
 
-void Time_Calendar::parse_interval_length(const std::string &spec,
-                                          std::string &keyword, double *result) const {
-
-  Time::parse_interval_length(spec, keyword, result);
+auto Time_Calendar::parse_interval_length(const std::string &spec) const -> Interval {
+  // do not allow intervals specified in terms of "fuzzy" units
 
   // This is called *only* if the 'spec' is *not* one of "monthly",
   // "yearly", "daily", "hourly", so we don't need to worry about
   // spec.find("...") finding "year" in "yearly".
-
-  // do not allow intervals specified in terms of "fuzzy" units
-  if (spec.find("year") != std::string::npos || spec.find("month") != std::string::npos) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "interval length '%s' with the calendar '%s' is not supported",
+  if (spec.find("year") != std::string::npos or spec.find("month") != std::string::npos) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "interval length '%s' with the calendar '%s' is not supported",
                                   spec.c_str(), m_calendar_string.c_str());
   }
-}
 
+  return Time::parse_interval_length(spec);
+}
 
 void Time_Calendar::compute_times_monthly(std::vector<double> &result) const {
 
@@ -489,17 +473,19 @@ void Time_Calendar::compute_times_yearly(std::vector<double> &result) const {
   }
 }
 
-void Time_Calendar::compute_times(double time_start, double delta, double time_end,
-                                  const std::string &keyword,
+void Time_Calendar::compute_times(double time_start, double time_end,
+                                  const Interval &interval,
                                   std::vector<double> &result) const {
-  if (keyword == "simple") {
-    compute_times_simple(time_start, delta, time_end, result);
-  } else if (keyword == "monthly") {
+  switch (interval.type) {
+  case SIMPLE:
+    compute_times_simple(time_start, interval.dt, time_end, result);
+    break;
+  case MONTHLY:
     compute_times_monthly(result);
-  } else if (keyword == "yearly") {
+    break;
+  case YEARLY:
     compute_times_yearly(result);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' reporting is not implemented", keyword.c_str());
+    break;
   }
 }
 
