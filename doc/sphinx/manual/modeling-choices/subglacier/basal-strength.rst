@@ -291,10 +291,13 @@ It is worth noting that an earth deformation model (see section :ref:`sec-beddef
 `b(x,y)` (NetCDF variable :var:`topg`) used in :eq:`eq-phipiecewise`, so that a sequence
 of runs such as
 
-.. code-block:: none
+.. code-block:: bash
 
-   pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
-   pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
+   pismr -i foo.nc -bed_def lc -stress_balance ssa+sia \
+         -topg_to_phi 10,30,-50,0 ... -o bar.nc
+
+   pismr -i bar.nc -bed_def lc -stress_balance ssa+sia \
+         -topg_to_phi 10,30,-50,0 ... -o baz.nc
 
 will use *different* :var:`tillphi` fields in the first and second runs. PISM will print a
 warning during initialization of the second run:
