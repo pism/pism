@@ -460,7 +460,9 @@ private:
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 
-MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+MaxTimestep reporting_max_timestep(const std::vector<double> &times,
+                                   double t,
+                                   double eps,
                                    const std::string &description);
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);

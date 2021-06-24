@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,7 +85,7 @@ void IceModel::init_timeseries() {
     // as the end of a reporting time step
     if (append and file.dimension_length("time") > 0) {
       double
-        epsilon = 1.0,          // one second
+        epsilon = m_config->get_number("time_stepping.resolution"), // usually one second
         t       = vector_max(file.read_dimension("time"));
 
       // add this time only if it is strictly before the first requested one
@@ -112,7 +112,10 @@ MaxTimestep IceModel::ts_max_timestep(double my_t) {
     return MaxTimestep("reporting (-ts_times)");
   }
 
-  return reporting_max_timestep(*m_ts_times, my_t, "reporting (-ts_times)");
+  double eps = m_config->get_number("time_stepping.resolution");
+
+  return reporting_max_timestep(*m_ts_times, my_t, eps,
+                                "reporting (-ts_times)");
 }
 
 //! Flush scalar time-series.

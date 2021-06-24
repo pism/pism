@@ -43,6 +43,7 @@
 namespace pism {
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                   double resolution,
                                    const std::string &description) {
 
   const size_t N = times.size();
@@ -60,9 +61,9 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 
   dt = times[j + 1] - t;
 
-  // now make sure that we don't end up taking a time-step of less than 1
+  // now make sure that we don't end up taking a time-step of less than "resolution"
   // second long
-  if (dt < 1.0) {
+  if (dt < resolution) {
     if (j + 2 < N) {
       return MaxTimestep(times[j + 2] - t, description);
     } else {

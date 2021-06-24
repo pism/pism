@@ -804,8 +804,8 @@ void IceModel::run() {
     bool updateAtDepth = m_skip_countdown == 0;
     bool tempAgeStep   = updateAtDepth and (m_age_model or do_energy);
 
-    double one_second = 1.0;
-    const bool show_step = tempAgeStep or fabs(m_time->current() - m_time->end()) < one_second;
+    double time_resolution = m_config->get_number("time_stepping.resolution");
+    const bool show_step = tempAgeStep or fabs(m_time->current() - m_time->end()) < time_resolution;
     print_summary(show_step);
 
     // update viewers before writing extras because writing extras resets diagnostics

@@ -32,7 +32,10 @@ MaxTimestep IceModel::save_max_timestep(double my_t) {
     return MaxTimestep("reporting (-save_times)");
   }
 
-  return reporting_max_timestep(m_snapshot_times, my_t, "reporting (-save_times)");
+  double eps = m_config->get_number("time_stepping.resolution");
+
+  return reporting_max_timestep(m_snapshot_times, my_t, eps,
+                                "reporting (-save_times)");
 }
 
 //! Initializes the snapshot-saving mechanism.

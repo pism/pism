@@ -38,7 +38,10 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
-  return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
+  double eps = m_config->get_number("time_stepping.resolution");
+
+  return reporting_max_timestep(m_extra_times, my_t, eps,
+                                "reporting (-extra_times)");
 }
 
 static std::set<std::string> process_extra_shortcuts(const Config &config,
@@ -243,21 +246,22 @@ void IceModel::write_extras() {
     return;
   }
 
+  const double time_resolution = m_config->get_number("time_stepping.resolution");
   double current_time = m_time->current();
 
   // do we need to save *now*?
   if (m_next_extra < m_extra_times.size() and
       (current_time >= m_extra_times[m_next_extra] or
-       fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
+       fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
     // the condition above is "true" if we passed a requested time or got to
-    // within 1 second from it
+    // within time_resolution seconds from it
 
     current_extra = m_next_extra;
 
     // update next_extra
     while (m_next_extra < m_extra_times.size() and
            (m_extra_times[m_next_extra] <= current_time or
-            fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
+            fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
       m_next_extra++;
     }
 
