@@ -93,7 +93,7 @@ std::vector<std::string> split(const std::string &input, char separator) {
 
   while (getline(input_list, token, separator)) {
     if (not token.empty()) {
-      result.push_back(token);
+      result.emplace_back(token);
     }
   }
   return result;
