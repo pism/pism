@@ -25,15 +25,16 @@ climate="-surface given -surface_given_file $initfile -surface.given.smb_max 1e1
 
 physics="-config_override gumparams.nc -energy none -sia_flow_law isothermal_glen -sia_e 1.0 -gradient mahaffy"
 
-endtime=2.36555048199e-5   # = 746 / (365*24*60*60); = 746 s in years;
-                           # Sayag personal communication
+endtime=746s                    # Sayag personal communication
 
-ts_dt=3.1689e-09     # = 0.1 / 31556926 = 0.1 s
-timediag="-ts_file ts_$oname -ts_times $ts_dt:$ts_dt:$endtime"
+ts_dt=0.1s
+timediag="-ts_file ts_$oname -ts_times $ts_dt"
 
-ex_dt=3.1689e-07     # = 10 / 31556926 = 10 s
+ex_dt=10s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
-exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times 0:$ex_dt:$endtime"
+exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times $ex_dt"
+
+dt="-time_stepping.resolution 1e-6 -max_dt $ts_dt"
 
 mpiexec -n $NN $pismexec -i $initfile -bootstrap $grid $climate $physics \
-    $timediag $exdiag -ys 0.0 -y $endtime -max_dt $ts_dt -o $oname
+    $timediag $exdiag -ys 0.0 -y $endtime $dt -o $oname
