@@ -125,7 +125,7 @@
 <td><p>outward-pointing normal vector at domain boundaries</p></td>
 </tr>
 <tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\eta\)</span></p></td>
-<td><p>ice viscosity (see <a class="reference internal" href="#equation-eq-bp-viscosity">(69)</a>)</p></td>
+<td><p>ice viscosity (see <a class="reference internal" href="#equation-eq-bp-viscosity">(70)</a>)</p></td>
 </tr>
 <tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\rho\)</span></p></td>
 <td><p>ice density</p></td>
@@ -173,15 +173,15 @@
 \[ \begin{align}\begin{aligned}\E_1 &amp;= \left( 2 u_x + v_y, \quad \frac12 (u_y + v_x), \quad \frac12 u_z \right),\\\E_2 &amp;= \left( \frac12 (u_y + v_x), \quad u_x + 2 v_y, \quad \frac12 v_z \right),\\\E &amp;= (\E_1, \E_2).\end{aligned}\end{align} \]</div>
 <p>Using this notation, the Blatter-Pattyn (BP) stress balance equations are</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp">
-<span class="eqno">(68)<a class="headerlink" href="#equation-eq-bp" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}- \nabla \cdot (2\, \eta\, \E_1) + \rho\, g\, s_x &amp;= 0,\\- \nabla \cdot (2\, \eta\, \E_2) + \rho\, g\, s_y &amp;= 0.\end{aligned}\end{align} \]</div>
+<span class="eqno">(69)<a class="headerlink" href="#equation-eq-bp" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}- \nabla \cdot (2\, \eta\, \E_1) + \rho\, g\, s_x &amp;= 0,\\- \nabla \cdot (2\, \eta\, \E_2) + \rho\, g\, s_y &amp;= 0.\end{aligned}\end{align} \]</div>
 <p>Here “<span class="math notranslate nohighlight">\(\nabla\cdot\)</span>” is the three-dimensional divergence operator and the regularized ice
 viscosity <span class="math notranslate nohighlight">\(\eta\)</span> is defined by</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-viscosity">
-<span class="eqno">(69)<a class="headerlink" href="#equation-eq-bp-viscosity" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\eta &amp;= \frac{B}{2} \p{\gamma_{\text{BP}} + \frac{\varepsilon_{0}}{2}}^{\exponent},\\\gamma_{\text{BP}} &amp;= u_x^{2} + v_y^{2} + u_x v_y + \frac14 (u_y + v_x)^{2} + \frac14 u_z^{2} + \frac14 v_z^{2},\end{aligned}\end{align} \]</div>
+<span class="eqno">(70)<a class="headerlink" href="#equation-eq-bp-viscosity" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\eta &amp;= \frac{B}{2} \p{\gamma_{\text{BP}} + \frac{\varepsilon_{0}}{2}}^{\exponent},\\\gamma_{\text{BP}} &amp;= u_x^{2} + v_y^{2} + u_x v_y + \frac14 (u_y + v_x)^{2} + \frac14 u_z^{2} + \frac14 v_z^{2},\end{aligned}\end{align} \]</div>
 <p>where <span class="math notranslate nohighlight">\(\gamma_{\text{BP}}\)</span> is the Blatter-Pattyn approximation of the second invariant of
 the strain rate tensor:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-strain-rate-tensor">
-<span class="eqno">(70)<a class="headerlink" href="#equation-eq-bp-strain-rate-tensor" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\dot\epsilon_{ij} &amp;= \frac12\left( \diff{u_i}{x_j} + \diff{u_j}{x_i} \right)\\\gamma &amp;= \frac12 \left( \mathop{trace}(\dot\epsilon^2) - \mathop{trace}(\dot \epsilon)^2 \right).\end{aligned}\end{align} \]</div>
+<span class="eqno">(71)<a class="headerlink" href="#equation-eq-bp-strain-rate-tensor" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\dot\epsilon_{ij} &amp;= \frac12\left( \diff{u_i}{x_j} + \diff{u_j}{x_i} \right)\\\gamma &amp;= \frac12 \left( \mathop{trace}(\dot\epsilon^2) - \mathop{trace}(\dot \epsilon)^2 \right).\end{aligned}\end{align} \]</div>
 <p>It is also assumed that</p>
 <ul class="simple">
 <li><p>ice is incompressible and <span class="math notranslate nohighlight">\(\mathop{trace}(\dot \epsilon) = 0\)</span>, and</p></li>
@@ -192,7 +192,7 @@ the strain rate tensor:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>There are at least three equivalent expressions for ice viscosity in the literature:
-the form in <a class="reference internal" href="#equation-eq-bp-viscosity">(69)</a> appears in <span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span> while
+the form in <a class="reference internal" href="#equation-eq-bp-viscosity">(70)</a> appears in <span id="id7">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span> while
 <span id="id8">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>157</span></a>]</span> and <span id="id9">[<a class="reference internal" href="../zzz_references_html.html#id10"><span>72</span></a>]</span> define the effective strain rate
 <span class="math notranslate nohighlight">\(\dot\epsilon_e\)</span>:</p>
 <div class="math notranslate nohighlight">
@@ -222,16 +222,16 @@ the form in <a class="reference internal" href="#equation-eq-bp-viscosity">(69)<
 </div>
 <p>We omit discussions of function spaces; see <span id="id11">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>157</span></a>]</span>, <span id="id12">[<a class="reference internal" href="../zzz_references_html.html#id5"><span>158</span></a>]</span> and
 other references mentioned above for details.</p>
-<p>To obtain the weak form, we multiply both equations in <a class="reference internal" href="#equation-eq-bp">(68)</a> by a <em>scalar</em> test
+<p>To obtain the weak form, we multiply both equations in <a class="reference internal" href="#equation-eq-bp">(69)</a> by a <em>scalar</em> test
 function <span class="math notranslate nohighlight">\(\psi\)</span> and integrate over the domain <span class="math notranslate nohighlight">\(\Omega\)</span>. For the first equation, we get</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form-x">
-<span class="eqno">(71)<a class="headerlink" href="#equation-eq-bp-weak-form-x" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Id \psi \left( - \nabla\cdot (2\, \eta\, \E_1) + \rho\, g\, s_x \right) &amp;= 0,\\-\Id \psi \nabla\cdot\left( 2\, \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \left( \nabla \cdot \left( \psi\, 2\, \eta\, \E_1 \right) - \nabla \psi \cdot 2\, \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\{-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &amp;= 0.\end{aligned}\end{align} \]</div>
+<span class="eqno">(72)<a class="headerlink" href="#equation-eq-bp-weak-form-x" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\Id \psi \left( - \nabla\cdot (2\, \eta\, \E_1) + \rho\, g\, s_x \right) &amp;= 0,\\-\Id \psi \nabla\cdot\left( 2\, \eta\, \E_1 \right) +  \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \left( \nabla \cdot \left( \psi\, 2\, \eta\, \E_1 \right) - \nabla \psi \cdot 2\, \eta\, \E_1 \right) + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\-\Id \nabla \cdot \left(\psi\, 2\, \eta\, \E_1\right) + \Id \nabla \psi \cdot 2\, \eta\, \E_1 + \Id \psi\, \rho\, g\, s_x &amp;= 0,\\{-\Ib \left(\psi\, 2\, \eta\, \E_1\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_1} + {\Id \psi\, \rho\, g\, s_x} &amp;= 0.\end{aligned}\end{align} \]</div>
 <p>Similarly, multiplying the second equation by <span class="math notranslate nohighlight">\(\psi\)</span> and integrating by parts yields</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form-y">
-<span class="eqno">(72)<a class="headerlink" href="#equation-eq-bp-weak-form-y" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.\]</div>
-<p>We combine these and say that the weak form of <a class="reference internal" href="#equation-eq-bp">(68)</a> is</p>
+<span class="eqno">(73)<a class="headerlink" href="#equation-eq-bp-weak-form-y" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E_2\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E_2} + {\Id \psi\, \rho\, g\, s_y} = 0.\]</div>
+<p>We combine these and say that the weak form of <a class="reference internal" href="#equation-eq-bp">(69)</a> is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-weak-form">
-<span class="eqno">(73)<a class="headerlink" href="#equation-eq-bp-weak-form" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,\]</div>
+<span class="eqno">(74)<a class="headerlink" href="#equation-eq-bp-weak-form" title="Permalink to this equation">¶</a></span>\[{-\Ib \left(\psi\, 2\, \eta\, \E\right) \cdot \n\, ds} + {\Id \nabla \psi \cdot 2\, \eta\, \E} + {\Id \psi\, \rho\, g\, \nabla s} = 0,\]</div>
 <p>where <span class="math notranslate nohighlight">\(\nabla s = ( s_x, s_y )\)</span>.</p>
 <p>The first term corresponds to <a class="reference internal" href="#sec-bp-bc"><span class="std std-ref">Neumann and Robin boundary conditions</span></a>; it
 vanishes for “natural” BC <span class="math notranslate nohighlight">\(\left(2\, \eta\, \E \right) \cdot \n = 0\)</span>. In the basal and
@@ -280,10 +280,10 @@ substituted into equations that depend on them (see section 3.2 of
 <span id="sec-bp-bc-basal"></span><h3><a class="toc-backref" href="#id43">Basal boundary</a><a class="headerlink" href="#basal-boundary" title="Permalink to this headline">¶</a></h3>
 <p>The boundary condition corresponding to basal sliding is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-sliding">
-<span class="eqno">(74)<a class="headerlink" href="#equation-eq-bp-sliding" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n = - \beta \, \uu.\]</div>
-<p>In the weak form <a class="reference internal" href="#equation-eq-bp-weak-form">(73)</a> this corresponds to replacing the first term:</p>
+<span class="eqno">(75)<a class="headerlink" href="#equation-eq-bp-sliding" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n = - \beta \, \uu.\]</div>
+<p>In the weak form <a class="reference internal" href="#equation-eq-bp-weak-form">(74)</a> this corresponds to replacing the first term:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-sliding-weak-form">
-<span class="eqno">(75)<a class="headerlink" href="#equation-eq-bp-sliding-weak-form" title="Permalink to this equation">¶</a></span>\[-\Ibase (\psi\, 2\, \eta\, \E) \cdot \n\, ds = \Ibase \beta\, \uu\, ds.\]</div>
+<span class="eqno">(76)<a class="headerlink" href="#equation-eq-bp-sliding-weak-form" title="Permalink to this equation">¶</a></span>\[-\Ibase (\psi\, 2\, \eta\, \E) \cdot \n\, ds = \Ibase \beta\, \uu\, ds.\]</div>
 <p>Here <span class="math notranslate nohighlight">\(\beta\)</span> has the same meaning as in <a class="reference internal" href="../manual/modeling-choices/subglacier/basal-strength.html#equation-eq-sliding-linear">(17)</a>.</p>
 <p>Where ice is grounded <span class="math notranslate nohighlight">\(\beta\)</span> is determined as described in <a class="reference internal" href="../manual/modeling-choices/subglacier/basal-strength.html#sec-basestrength"><span class="std std-ref">Controlling basal strength</span></a>. It is
 assumed to be zero (corresponding to no drag) elsewhere.</p>
@@ -313,16 +313,16 @@ using parameterizations of element faces (i.e. as surface integrals) and <em>not
 normal vector has the form <span class="math notranslate nohighlight">\(\n = (\cdot,\cdot,0)\)</span>.</p>
 <p>The Neumann boundary condition at marine margins is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-lateral-bc">
-<span class="eqno">(76)<a class="headerlink" href="#equation-eq-bp-lateral-bc" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \n &amp;= p_{\text{ice}} - p_{\text{water}},\;\text{where}\\p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
+<span class="eqno">(77)<a class="headerlink" href="#equation-eq-bp-lateral-bc" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}2\, \eta\, \E \cdot \n &amp;= p_{\text{ice}} - p_{\text{water}},\;\text{where}\\p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
 <p>In other words, this boundary condition corresponds to the difference between the
 cryostatic pressure of the ice on one side of the interface and the hydrostatic pressure
 of water on the other. The atmospheric pressure is ignored. Equation
-<a class="reference internal" href="#equation-eq-bp-lateral-bc">(76)</a> is a generalization of equation 18 in <span id="id18">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>157</span></a>]</span>.</p>
+<a class="reference internal" href="#equation-eq-bp-lateral-bc">(77)</a> is a generalization of equation 18 in <span id="id18">[<a class="reference internal" href="../zzz_references_html.html#id11"><span>157</span></a>]</span>.</p>
 <p>Just like in the implementation of the basal boundary condition near grounding lines, we
 use a low order quadrature with many equally-spaced points to approximate integrals over
 element faces intersected by the sea level. This <em>should</em> improve the quality of the
 approximation of this boundary condition (note that the right hand side of
-<a class="reference internal" href="#equation-eq-bp-lateral-bc">(76)</a> is continuous but not continuously differentiable).</p>
+<a class="reference internal" href="#equation-eq-bp-lateral-bc">(77)</a> is continuous but not continuously differentiable).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>We need to evaluate the importance of the quadrature choice described above. Does using
@@ -345,12 +345,12 @@ margins. Our experiments show the same behavior.</p>
 <span id="sec-bp-solver"></span><h2><a class="toc-backref" href="#id45">Solver implementation</a><a class="headerlink" href="#solver-implementation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="discretization">
 <span id="sec-bp-discretization"></span><h3><a class="toc-backref" href="#id46">Discretization</a><a class="headerlink" href="#discretization" title="Permalink to this headline">¶</a></h3>
-<p>To create a non-linear algebraic system of equations approximating <a class="reference internal" href="#equation-eq-bp-weak-form">(73)</a>,
+<p>To create a non-linear algebraic system of equations approximating <a class="reference internal" href="#equation-eq-bp-weak-form">(74)</a>,
 we create a hexahedral mesh on the domain <span class="math notranslate nohighlight">\(\Omega\)</span> and use <span class="math notranslate nohighlight">\(Q_1\)</span> Galerkin finite elements.</p>
 <p>Let <span class="math notranslate nohighlight">\(\phi_j\)</span> be the scalar trial function associated with the node <span class="math notranslate nohighlight">\(j\)</span>, then the FE
 approximation of the solution <span class="math notranslate nohighlight">\(\uu\)</span> has the form</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-basis-expansion">
-<span class="eqno">(77)<a class="headerlink" href="#equation-eq-bp-basis-expansion" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}u &amp;= \sum_j \phi_j u_j,\\v &amp;= \sum_j \phi_j v_j.\end{aligned}\end{align} \]</div>
+<span class="eqno">(78)<a class="headerlink" href="#equation-eq-bp-basis-expansion" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}u &amp;= \sum_j \phi_j u_j,\\v &amp;= \sum_j \phi_j v_j.\end{aligned}\end{align} \]</div>
 <p>Then the problem is</p>
 <blockquote>
 <div><p>Find <span class="math notranslate nohighlight">\(u_j\)</span>, <span class="math notranslate nohighlight">\(v_j\)</span> (<span class="math notranslate nohighlight">\(j = 1,\dots,N\)</span>) so that</p>
@@ -362,14 +362,14 @@ approximation of the solution <span class="math notranslate nohighlight">\(\uu\)
 <p>holds for all <span class="math notranslate nohighlight">\(i = 1,\dots,N\)</span>, where <span class="math notranslate nohighlight">\(N\)</span> is the number of nodes in the mesh, subject to
 the <a class="reference internal" href="#sec-bp-bc"><span class="std std-ref">boundary conditions</span></a>.</p>
 <p>As in section 3 of <span id="id21">[<a class="reference internal" href="../zzz_references_html.html#id68"><span>55</span></a>]</span>, we write the discretization of
-<a class="reference internal" href="#equation-eq-bp-weak-form">(73)</a> as an algebraic system <span class="math notranslate nohighlight">\(F(U) = 0\)</span> with Jacobian <span class="math notranslate nohighlight">\(J(U)\)</span> and solve
+<a class="reference internal" href="#equation-eq-bp-weak-form">(74)</a> as an algebraic system <span class="math notranslate nohighlight">\(F(U) = 0\)</span> with Jacobian <span class="math notranslate nohighlight">\(J(U)\)</span> and solve
 this nonlinear system using Newton iterations requiring approximations of <span class="math notranslate nohighlight">\(\delta U\)</span> in</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-newton-step">
-<span class="eqno">(78)<a class="headerlink" href="#equation-eq-bp-newton-step" title="Permalink to this equation">¶</a></span>\[J(U)\, \delta U = -F(U),\]</div>
+<span class="eqno">(79)<a class="headerlink" href="#equation-eq-bp-newton-step" title="Permalink to this equation">¶</a></span>\[J(U)\, \delta U = -F(U),\]</div>
 <p>where</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual">
-<span class="eqno">(79)<a class="headerlink" href="#equation-eq-bp-residual" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F(U) &amp;= F^1(U) + F^2(U) + F^3(U),\\F^1 &amp;= -\Ib (\psi\, 2\, \eta\, \E) \cdot \n\, ds,\\F^2 &amp;= \Id \nabla \psi \cdot 2\, \eta\, \E,\\F^3 &amp;= \Id \psi\, \f.\end{aligned}\end{align} \]</div>
-<p>(compare to <a class="reference internal" href="#equation-eq-bp-weak-form">(73)</a>) and <span class="math notranslate nohighlight">\(J(U)\)</span> is a square sparse matrix containing one row
+<span class="eqno">(80)<a class="headerlink" href="#equation-eq-bp-residual" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F(U) &amp;= F^1(U) + F^2(U) + F^3(U),\\F^1 &amp;= -\Ib (\psi\, 2\, \eta\, \E) \cdot \n\, ds,\\F^2 &amp;= \Id \nabla \psi \cdot 2\, \eta\, \E,\\F^3 &amp;= \Id \psi\, \f.\end{aligned}\end{align} \]</div>
+<p>(compare to <a class="reference internal" href="#equation-eq-bp-weak-form">(74)</a>) and <span class="math notranslate nohighlight">\(J(U)\)</span> is a square sparse matrix containing one row
 per node in the mesh and at most 54 non-zero entries per row (there are <span class="math notranslate nohighlight">\(2\)</span> unknowns per
 node and each node belongs to at most 8 elements forming a <span class="math notranslate nohighlight">\(3\cdot3\cdot3 = 27\)</span> node
 “neighborhood”).</p>
@@ -393,30 +393,30 @@ boundary; can be non-zero in verification tests, part of <span class="math notra
 manufactured solution while keeping (and testing) the rest of the code.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>We integrate over the whole domain (<span class="math notranslate nohighlight">\(\Omega\)</span>) below (see <a class="reference internal" href="#equation-eq-bp-residual-ii">(80)</a>) for
+<p>We integrate over the whole domain (<span class="math notranslate nohighlight">\(\Omega\)</span>) below (see <a class="reference internal" href="#equation-eq-bp-residual-ii">(81)</a>) for
 simplicity. In actuality each integral is over the <em>intersection of supports of test
 and trial functions</em> appearing in the integrand.</p>
 </div>
 <div class="section" id="main-residual-contribution">
 <span id="sec-bp-residual-main"></span><h4><a class="toc-backref" href="#id48">Main residual contribution</a><a class="headerlink" href="#main-residual-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-ii">
-<span class="eqno">(80)<a class="headerlink" href="#equation-eq-bp-residual-ii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^2_{i,u} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_1\\&amp;= \Id \eta\, \left(\dpsi{x}\, \p{4u_x + 2v_y} + \dpsi{y}\,\p{u_y + v_x} + \dpsi{z}\, u_z \right),\\F^2_{i,v} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_2\\&amp;= \Id \eta\, \left(\dpsi{y}\, \p{2u_x + 4v_y} + \dpsi{x}\,\p{u_y + v_x} + \dpsi{z}\, v_z \right).\end{aligned}\end{align} \]</div>
+<span class="eqno">(81)<a class="headerlink" href="#equation-eq-bp-residual-ii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^2_{i,u} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_1\\&amp;= \Id \eta\, \left(\dpsi{x}\, \p{4u_x + 2v_y} + \dpsi{y}\,\p{u_y + v_x} + \dpsi{z}\, u_z \right),\\F^2_{i,v} &amp;= \Id \nabla \psi_i \cdot 2\, \eta\,  \E_2\\&amp;= \Id \eta\, \left(\dpsi{y}\, \p{2u_x + 4v_y} + \dpsi{x}\,\p{u_y + v_x} + \dpsi{z}\, v_z \right).\end{aligned}\end{align} \]</div>
 <p>Here <span class="math notranslate nohighlight">\(F_{i, u}\)</span> if the contribution to the <span class="math notranslate nohighlight">\(u\)</span>-component of the residual at the <span class="math notranslate nohighlight">\(i\)</span>-th node, etc.</p>
 </div>
 <div class="section" id="driving-stress-contribution">
 <span id="sec-bp-residual-driving-stress"></span><h4><a class="toc-backref" href="#id49">Driving stress contribution</a><a class="headerlink" href="#driving-stress-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-iii">
-<span class="eqno">(81)<a class="headerlink" href="#equation-eq-bp-residual-iii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^3_{i, u} &amp;= \Id \psi_i\, \rho\, g\, s_x,\\F^3_{i, v} &amp;= \Id \psi_i\, \rho\, g\, s_y.\end{aligned}\end{align} \]</div>
+<span class="eqno">(82)<a class="headerlink" href="#equation-eq-bp-residual-iii" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^3_{i, u} &amp;= \Id \psi_i\, \rho\, g\, s_x,\\F^3_{i, v} &amp;= \Id \psi_i\, \rho\, g\, s_y.\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="basal-contribution">
 <span id="sec-bp-residual-basal"></span><h4><a class="toc-backref" href="#id50">Basal contribution</a><a class="headerlink" href="#basal-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-i-base">
-<span class="eqno">(82)<a class="headerlink" href="#equation-eq-bp-residual-i-base" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= \Ibase \psi_i\, \beta\, u,\\F^1_{i, v} &amp;= \Ibase \psi_i\, \beta\, v.\end{aligned}\end{align} \]</div>
+<span class="eqno">(83)<a class="headerlink" href="#equation-eq-bp-residual-i-base" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= \Ibase \psi_i\, \beta\, u,\\F^1_{i, v} &amp;= \Ibase \psi_i\, \beta\, v.\end{aligned}\end{align} \]</div>
 </div>
 <div class="section" id="marine-boundary-contribution">
 <span id="sec-bp-residual-marine"></span><h4><a class="toc-backref" href="#id51">Marine boundary contribution</a><a class="headerlink" href="#marine-boundary-contribution" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-i-margin">
-<span class="eqno">(83)<a class="headerlink" href="#equation-eq-bp-residual-i-margin" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_x,\\F^1_{i, v} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_y,\end{aligned}\end{align} \]</div>
+<span class="eqno">(84)<a class="headerlink" href="#equation-eq-bp-residual-i-margin" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F^1_{i, u} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_x,\\F^1_{i, v} &amp;= - \Ib \psi_i (p_{\text{ice}} - p_{\text{water}})\, \n_y,\end{aligned}\end{align} \]</div>
 <p>where</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}p_{\text{ice}} &amp;= \rho\, g\, (s - z),\\p_{\text{water}} &amp;= \rho_w\, g\, \max(z_{\text{sea level}} - z, 0).\end{aligned}\end{align} \]</div>
@@ -424,7 +424,7 @@ and trial functions</em> appearing in the integrand.</p>
 <div class="section" id="residual-at-dirichlet-bc-locations">
 <span id="sec-bp-residual-dirichlet"></span><h4><a class="toc-backref" href="#id52">Residual at Dirichlet BC locations</a><a class="headerlink" href="#residual-at-dirichlet-bc-locations" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-residual-dirichlet">
-<span class="eqno">(84)<a class="headerlink" href="#equation-eq-bp-residual-dirichlet" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F_{i, u} &amp;= u - u_0,\\F_{i, v} &amp;= v - v_0,\end{aligned}\end{align} \]</div>
+<span class="eqno">(85)<a class="headerlink" href="#equation-eq-bp-residual-dirichlet" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}F_{i, u} &amp;= u - u_0,\\F_{i, v} &amp;= v - v_0,\end{aligned}\end{align} \]</div>
 <p>where <span class="math notranslate nohighlight">\((u_0, v_0)\)</span> is the prescribed velocity.</p>
 </div>
 </div>
@@ -433,50 +433,50 @@ and trial functions</em> appearing in the integrand.</p>
 <p>We use an analytical (as opposed to approximated using finite differences or automatic
 differentiation) Jacobian computed using formulas listed below.</p>
 <p>Here we focus on the derivation of the Jacobian contribution corresponding to the “main”
-part of the residual (<span class="math notranslate nohighlight">\(F^2\)</span>, see <a class="reference internal" href="#equation-eq-bp-residual">(79)</a> and <a class="reference internal" href="#equation-eq-bp-residual-ii">(80)</a>). The
+part of the residual (<span class="math notranslate nohighlight">\(F^2\)</span>, see <a class="reference internal" href="#equation-eq-bp-residual">(80)</a> and <a class="reference internal" href="#equation-eq-bp-residual-ii">(81)</a>). The
 only other non-trivial contribution comes from the basal boundary condition.</p>
 <p>This Jacobian contribution has four parts:</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\K uu &amp;= \diff{F^2_{i, u}}{u_j},\\\K uv &amp;= \diff{F^2_{i, u}}{v_j},\\\K vu &amp;= \diff{F^2_{i, v}}{u_j},\\\K vv &amp;= \diff{F^2_{i, v}}{v_j},\end{aligned}\end{align} \]</div>
-<p>with <span class="math notranslate nohighlight">\(F^2_{\cdot, \cdot}\)</span> defined by <a class="reference internal" href="#equation-eq-bp-residual-ii">(80)</a>.</p>
+<p>with <span class="math notranslate nohighlight">\(F^2_{\cdot, \cdot}\)</span> defined by <a class="reference internal" href="#equation-eq-bp-residual-ii">(81)</a>.</p>
 <p>Let <span class="math notranslate nohighlight">\(G_{i, k} = \nabla\psi_i \cdot 2\, \E_{k}\)</span>, then</p>
 <div class="math notranslate nohighlight">
 \[F^2_{i, u} = \Id \eta\, G_{i, 1}\]</div>
 <p>and (using the product rule) we get</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-jacobian-useful">
-<span class="eqno">(85)<a class="headerlink" href="#equation-eq-bp-jacobian-useful" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\K uu &amp;= \Id \eta \diff{G_{i, 1}}{u_j} + \diff{\eta}{u_j} G_{i, 1},\\\K uv &amp;= \Id \eta \diff{G_{i, 1}}{v_j} + \diff{\eta}{v_j} G_{i, 1},\\\K vu &amp;= \Id \eta \diff{G_{i, 2}}{u_j} + \diff{\eta}{u_j} G_{i, 2},\\\K vv &amp;= \Id \eta \diff{G_{i, 2}}{v_j} + \diff{\eta}{v_j} G_{i, 2}.\end{aligned}\end{align} \]</div>
+<span class="eqno">(86)<a class="headerlink" href="#equation-eq-bp-jacobian-useful" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\K uu &amp;= \Id \eta \diff{G_{i, 1}}{u_j} + \diff{\eta}{u_j} G_{i, 1},\\\K uv &amp;= \Id \eta \diff{G_{i, 1}}{v_j} + \diff{\eta}{v_j} G_{i, 1},\\\K vu &amp;= \Id \eta \diff{G_{i, 2}}{u_j} + \diff{\eta}{u_j} G_{i, 2},\\\K vv &amp;= \Id \eta \diff{G_{i, 2}}{v_j} + \diff{\eta}{v_j} G_{i, 2}.\end{aligned}\end{align} \]</div>
 <p>The derivatives of <span class="math notranslate nohighlight">\(\eta\)</span> are computed using the chain rule:</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\diff{\eta}{u_j} &amp;= \diff{\eta}{\gamma}\, \diff{\gamma}{u_j},\\\diff{\eta}{v_j} &amp;= \diff{\eta}{\gamma}\, \diff{\gamma}{v_j}.\end{aligned}\end{align} \]</div>
-<p>Taking derivatives of <span class="math notranslate nohighlight">\(\eta\)</span> and <span class="math notranslate nohighlight">\(\gamma\)</span> <a class="reference internal" href="#equation-eq-bp-viscosity">(69)</a> gives</p>
+<p>Taking derivatives of <span class="math notranslate nohighlight">\(\eta\)</span> and <span class="math notranslate nohighlight">\(\gamma\)</span> <a class="reference internal" href="#equation-eq-bp-viscosity">(70)</a> gives</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-deta-dgamma">
-<span class="eqno">(86)<a class="headerlink" href="#equation-eq-bp-deta-dgamma" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{\eta}{\gamma} &amp;= \frac{B}{2} \cdot \exponent \cdot \p{\gamma + \frac{\varepsilon_{0}}{2} }^{\exponent-1}\\&amp;= \eta \cdot \exponent \cdot \p{\gamma + \frac{\varepsilon_{0}}{2} }^{-1}.\end{aligned}\end{align} \]</div>
+<span class="eqno">(87)<a class="headerlink" href="#equation-eq-bp-deta-dgamma" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{\eta}{\gamma} &amp;= \frac{B}{2} \cdot \exponent \cdot \p{\gamma + \frac{\varepsilon_{0}}{2} }^{\exponent-1}\\&amp;= \eta \cdot \exponent \cdot \p{\gamma + \frac{\varepsilon_{0}}{2} }^{-1}.\end{aligned}\end{align} \]</div>
 <p>and</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-dgamma-duj">
-<span class="eqno">(87)<a class="headerlink" href="#equation-eq-bp-dgamma-duj" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{\gamma}{u_j} &amp;=
+<span class="eqno">(88)<a class="headerlink" href="#equation-eq-bp-dgamma-duj" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{\gamma}{u_j} &amp;=
 2u_x \diff{u_x}{u_j} + 2v_y \diff{v_y}{u_j} + \diff{u_x}{u_j}v_y + u_x\diff{v_y}{u_j}
 +\frac 14 \cdot 2 \p{u_y + v_x}\p{\diff{u_y}{u_j} + \diff{v_x}{u_j} }\\&amp;+ \frac 14 \cdot 2 u_z \diff{u_z}{u_j} + \frac 14 \cdot 2 v_z \diff{v_z}{u_j}\\&amp;= 2u_x\dphi[j]{x} + v_y\dphi[j]{x} + \frac 12 \dphi[j]{y}\p{u_y + v_x} + \frac 12 u_z \dphi[j]{z},\\\diff{\gamma}{v_j} &amp;=
 2u_x \diff{u_x}{v_j} + 2v_y \diff{v_y}{v_j} + \diff{u_x}{v_j}v_y + u_x\diff{v_y}{v_j}
 +\frac 14 \cdot 2 \p{u_y + v_x}\p{\diff{u_y}{v_j} + \diff{v_x}{v_j} }\\&amp;+ \frac 14 \cdot 2 u_z \diff{u_z}{v_j} + \frac 14 \cdot 2 v_z \diff{v_z}{v_j}\\&amp;= 2v_y\dphi[j]{y} + u_x\dphi[j]{y} + \frac 12 \dphi[j]{x}\p{u_y + v_x} + \frac 12 v_z \dphi[j]{z}.\end{aligned}\end{align} \]</div>
 <p>The derivatives of <span class="math notranslate nohighlight">\(G_{\cdot, \cdot}\)</span> are</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-dg-duj">
-<span class="eqno">(88)<a class="headerlink" href="#equation-eq-bp-dg-duj" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{G_{i, 1}}{u_j} &amp;= 4\dpsi{x}\dphi[j]{x} + \dpsi{y}\dphi[j]{y} + \dpsi{z}\dphi[j]{z},\\\diff{G_{i, 1}}{v_j} &amp;= 2\dpsi{x}\dphi[j]{y} + \dpsi{y}\dphi[j]{x},\\\diff{G_{i, 2}}{u_j} &amp;= 2\dpsi{y}\dphi[j]{x} + \dpsi{x}\dphi[j]{y},\\\diff{G_{i, 2}}{v_j} &amp;= 4\dpsi{y}\dphi[j]{y} + \dpsi{x}\dphi[j]{x} + \dpsi{z}\dphi[j]{z}.\end{aligned}\end{align} \]</div>
-<p>To compute <span class="math notranslate nohighlight">\(\diff{\gamma}{u_j}\)</span> <a class="reference internal" href="#equation-eq-bp-dgamma-duj">(87)</a> and <span class="math notranslate nohighlight">\(\diff{G_{\cdot,
-\cdot}}{\cdot}\)</span> <a class="reference internal" href="#equation-eq-bp-dg-duj">(88)</a> we use FE basis expansions of <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span>
-<a class="reference internal" href="#equation-eq-bp-basis-expansion">(77)</a>, which imply:</p>
+<span class="eqno">(89)<a class="headerlink" href="#equation-eq-bp-dg-duj" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\diff{G_{i, 1}}{u_j} &amp;= 4\dpsi{x}\dphi[j]{x} + \dpsi{y}\dphi[j]{y} + \dpsi{z}\dphi[j]{z},\\\diff{G_{i, 1}}{v_j} &amp;= 2\dpsi{x}\dphi[j]{y} + \dpsi{y}\dphi[j]{x},\\\diff{G_{i, 2}}{u_j} &amp;= 2\dpsi{y}\dphi[j]{x} + \dpsi{x}\dphi[j]{y},\\\diff{G_{i, 2}}{v_j} &amp;= 4\dpsi{y}\dphi[j]{y} + \dpsi{x}\dphi[j]{x} + \dpsi{z}\dphi[j]{z}.\end{aligned}\end{align} \]</div>
+<p>To compute <span class="math notranslate nohighlight">\(\diff{\gamma}{u_j}\)</span> <a class="reference internal" href="#equation-eq-bp-dgamma-duj">(88)</a> and <span class="math notranslate nohighlight">\(\diff{G_{\cdot,
+\cdot}}{\cdot}\)</span> <a class="reference internal" href="#equation-eq-bp-dg-duj">(89)</a> we use FE basis expansions of <span class="math notranslate nohighlight">\(u\)</span> and <span class="math notranslate nohighlight">\(v\)</span>
+<a class="reference internal" href="#equation-eq-bp-basis-expansion">(78)</a>, which imply:</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\diff{u}{u_j} &amp;= \phi_j,\\\diff{u_x}{u_j} &amp;= \diff{\phi_j}{x},\end{aligned}\end{align} \]</div>
 <p>and so on.</p>
 <div class="section" id="basal-contribution-to-the-jacobian">
 <span id="sec-bp-jacobian-basal"></span><h4><a class="toc-backref" href="#id54">Basal contribution to the Jacobian</a><a class="headerlink" href="#basal-contribution-to-the-jacobian" title="Permalink to this headline">¶</a></h4>
 <div class="math notranslate nohighlight" id="equation-eq-bp-jacobian-basal">
-<span class="eqno">(89)<a class="headerlink" href="#equation-eq-bp-jacobian-basal" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\K uu &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, u^2 \right),\\\K uv &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, u\, v,\\\K vu &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, v\, u,\\\K vv &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, v^2 \right).\end{aligned}\end{align} \]</div>
+<span class="eqno">(90)<a class="headerlink" href="#equation-eq-bp-jacobian-basal" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}\K uu &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, u^2 \right),\\\K uv &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, u\, v,\\\K vu &amp;= \Ibase \psi_i\, \phi_j\, \dbeta\, v\, u,\\\K vv &amp;= \Ibase \psi_i\, \phi_j\, \left( \beta + \dbeta\, v^2 \right).\end{aligned}\end{align} \]</div>
 <p>Here <span class="math notranslate nohighlight">\(\dbeta\)</span> is the derivative of <span class="math notranslate nohighlight">\(\beta\)</span> with respect to <span class="math notranslate nohighlight">\(\alpha = \frac12 |\uu|^2 =
 \frac12 \left( u^2 + v^2 \right)\)</span> (one of the outputs of PISM’s basal resistance parameterizations).</p>
 <p>Note that</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}\diff{\alpha}{u_j} &amp;= \frac 12 \cdot (2u) \cdot \diff{u}{u_j}\\&amp;= u\, \phi_j,\\\diff{\alpha}{v_j} &amp;= v\, \phi_j.\end{aligned}\end{align} \]</div>
-<p>Recall (see <a class="reference internal" href="#equation-eq-bp-residual-i-base">(82)</a>) that the basal sliding contribution to the
+<p>Recall (see <a class="reference internal" href="#equation-eq-bp-residual-i-base">(83)</a>) that the basal sliding contribution to the
 residual is equal to</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}F^1_u &amp;= \Ibase \psi_i\, \beta\, u,\\F^1_v &amp;= \Ibase \psi_i\, \beta\, v,\end{aligned}\end{align} \]</div>
@@ -510,7 +510,7 @@ in the code and set</p>
 <span id="sec-bc-iceberg-elimination"></span><h3><a class="toc-backref" href="#id56">Iceberg elimination</a><a class="headerlink" href="#iceberg-elimination" title="Permalink to this headline">¶</a></h3>
 <p>As described in <span id="id22">[<a class="reference internal" href="../zzz_references_html.html#id9"><span>71</span></a>]</span>, isolated patches of ice with low basal resistance
 <em>and</em> patches connected only via a single node (a “hinge”) are problematic because the
-system <a class="reference internal" href="#equation-eq-bp">(68)</a> determines ice velocity up to rigid rotations and translations.</p>
+system <a class="reference internal" href="#equation-eq-bp">(69)</a> determines ice velocity up to rigid rotations and translations.</p>
 <p>This is not a new issue: both FD and FEM solvers of the SSA stress balance require some
 form of iceberg elimination. We use a connected component labeling algorithm to identify
 patches of <em>floating</em> ice. In the FEM context this requires inspecting <em>elements</em>: two
@@ -568,7 +568,7 @@ compute a good approximation of ice velocities in areas where SIA applicable.</p
 be <em>one element thick</em>. If <span class="math notranslate nohighlight">\(N\)</span> is the coarsening factor, the total number of vertical
 levels (<span class="math notranslate nohighlight">\(M_z\)</span>) has to have the form</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-mz">
-<span class="eqno">(90)<a class="headerlink" href="#equation-eq-bp-mz" title="Permalink to this equation">¶</a></span>\[M_z = A\cdot N^k + 1\]</div>
+<span class="eqno">(91)<a class="headerlink" href="#equation-eq-bp-mz" title="Permalink to this equation">¶</a></span>\[M_z = A\cdot N^k + 1\]</div>
 <p>for some positive integer <span class="math notranslate nohighlight">\(A\)</span> (ideally <span class="math notranslate nohighlight">\(A=1\)</span>), so that the mesh hierarchy containing <span class="math notranslate nohighlight">\(k\)</span>
 levels will include levels with</p>
 <div class="math notranslate nohighlight">
@@ -650,7 +650,7 @@ sea level, ice thickness, and the floatation criterion where floating) and <span
 thickness.</p>
 <p>Coordinates of the mesh nodes have the form</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-mesh-nodes">
-<span class="eqno">(91)<a class="headerlink" href="#equation-eq-bp-mesh-nodes" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}x_i &amp;= x_{\text{min}} + i \cdot \dx,\\y_j &amp;= y_{\text{min}} + j \cdot \dy,\\z_k &amp;= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.\end{aligned}\end{align} \]</div>
+<span class="eqno">(92)<a class="headerlink" href="#equation-eq-bp-mesh-nodes" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}x_i &amp;= x_{\text{min}} + i \cdot \dx,\\y_j &amp;= y_{\text{min}} + j \cdot \dy,\\z_k &amp;= z_{\text{min}}(x_i, y_j) + k \cdot \frac{H(x_i, y_j)}{M_z - 1}.\end{aligned}\end{align} \]</div>
 <p>Each element’s projection onto the plane <span class="math notranslate nohighlight">\(z = 0\)</span> is a rectangle with sides <span class="math notranslate nohighlight">\(\dx\)</span> and
 <span class="math notranslate nohighlight">\(\dy\)</span>, but the spacing between nodes in the vertical direction is <em>not</em> constant:
 each vertical column of nodes contains <span class="math notranslate nohighlight">\(M_z\)</span> nodes with the spacing of <span class="math notranslate nohighlight">\(H / (M_z - 1)\)</span>.
@@ -821,7 +821,7 @@ the ice is submerged.</p>
 <p>This setup tests the implementation of the basal sliding boundary condition (see
 <a class="reference internal" href="#sec-bp-bc-basal"><span class="std std-ref">Basal boundary</span></a>) using the van der Veen shelf profile <span id="id36">[<a class="reference internal" href="../zzz_references_html.html#id482"><span>162</span></a>]</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen">
-<span class="eqno">(92)<a class="headerlink" href="#equation-eq-bp-van-der-veen" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}H(x) &amp;= \left[ \frac{4 C x}{Q_0} + H_0^{-4} \right]^{-\frac14},\\u(x) &amp;= \frac{Q_0}{H(x)},\\v(x) &amp;= 0,\\C &amp;= \left( \frac{\alpha g \rho_i}{2 B} \right)^3,\end{aligned}\end{align} \]</div>
+<span class="eqno">(93)<a class="headerlink" href="#equation-eq-bp-van-der-veen" title="Permalink to this equation">¶</a></span>\[ \begin{align}\begin{aligned}H(x) &amp;= \left[ \frac{4 C x}{Q_0} + H_0^{-4} \right]^{-\frac14},\\u(x) &amp;= \frac{Q_0}{H(x)},\\v(x) &amp;= 0,\\C &amp;= \left( \frac{\alpha g \rho_i}{2 B} \right)^3,\end{aligned}\end{align} \]</div>
 <p>where <span class="math notranslate nohighlight">\(Q_0\)</span> is the flux at the left boundary and <span class="math notranslate nohighlight">\(H_0\)</span> is the corresponding ice thickness.</p>
 <p>The surface elevation <span class="math notranslate nohighlight">\(s\)</span> and bed elevation <span class="math notranslate nohighlight">\(b\)</span> are defined by</p>
 <div class="math notranslate nohighlight">
@@ -830,7 +830,7 @@ the ice is submerged.</p>
 \rho_i / \rho_w\)</span>).</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Functions <span class="math notranslate nohighlight">\((u, v)\)</span> in <a class="reference internal" href="#equation-eq-bp-van-der-veen">(92)</a> solve <a class="reference internal" href="#equation-eq-bp">(68)</a> <em>exactly</em> in the
+<p>Functions <span class="math notranslate nohighlight">\((u, v)\)</span> in <a class="reference internal" href="#equation-eq-bp-van-der-veen">(93)</a> solve <a class="reference internal" href="#equation-eq-bp">(69)</a> <em>exactly</em> in the
 interior of the domain</p>
 <div class="math notranslate nohighlight">
 \[ \begin{align}\begin{aligned}0 \le x_{\text{min}} &amp;\le x \le x_{\text{max}},\\b(x) &amp;\le z \le s(x)\end{aligned}\end{align} \]</div>
@@ -841,10 +841,10 @@ interior of the domain</p>
 \[ \begin{align}\begin{aligned}u(x_{\text{min}}) &amp;= \frac{Q_0}{H_0},\\v(x_{\text{min}}) &amp;= 0\end{aligned}\end{align} \]</div>
 <p>and a stress BC at the right boundary:</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen-right-bc">
-<span class="eqno">(93)<a class="headerlink" href="#equation-eq-bp-van-der-veen-right-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)\]</div>
+<span class="eqno">(94)<a class="headerlink" href="#equation-eq-bp-van-der-veen-right-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{right}} = \left(\alpha g \rho_i H(x) ,\, 0\right)\]</div>
 <p>The stress BC at the top surface is</p>
 <div class="math notranslate nohighlight" id="equation-eq-bp-van-der-veen-top-bc">
-<span class="eqno">(94)<a class="headerlink" href="#equation-eq-bp-van-der-veen-top-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
+<span class="eqno">(95)<a class="headerlink" href="#equation-eq-bp-van-der-veen-top-bc" title="Permalink to this equation">¶</a></span>\[2\, \eta\, \E \cdot \n_{\text{top}} = \left( \frac{2 B C^{\frac{4}{3}} \alpha H^{6}(x)}
 {\sqrt{C^{2} \alpha^{2} H^{10}(x) + Q_{0}^{2}}},\, 0\right)\]</div>
 <p>The boundary condition at the bottom surface has the form</p>
 <div class="math notranslate nohighlight">
@@ -958,9 +958,9 @@ one to use “geometric” coarsening.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2476-g7da6867f6
+      Git revision v1.0-2486-g1278a5ef0
       committed by Constantine Khrulev
-      on 2021-06-23 15:07:40 -0800 |
+      on 2021-06-24 13:46:12 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -112,7 +112,7 @@ with zero basal sliding, the horizontal mass flux is</p>
 diffusivity <span class="math notranslate nohighlight">\(D_{SIA}\)</span> is a function of the ice geometry and the ice flow law. In the
 isothermal Glen power law (power <span class="math notranslate nohighlight">\(= n\)</span>) case we recall</p>
 <div class="math notranslate nohighlight" id="equation-eq-siadiffusivity">
-<span class="eqno">(41)<a class="headerlink" href="#equation-eq-siadiffusivity" title="Permalink to this equation">¶</a></span>\[D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}\]</div>
+<span class="eqno">(42)<a class="headerlink" href="#equation-eq-siadiffusivity" title="Permalink to this equation">¶</a></span>\[D_{SIA} = \Gamma H^{n+2} |\nabla h|^{n-1}\]</div>
 <p>where <span class="math notranslate nohighlight">\(\Gamma = 2 A (\rho g)^n / (n+2)\)</span> (c.f. details in <span id="id2">[<a class="reference internal" href="../zzz_references_html.html#id37"><span>57</span></a>]</span>).</p>
 <p>Consider now the “original” bed topography <span class="math notranslate nohighlight">\(b_0(x_1,x_2)\)</span>, which we assume for the moment
 is independent of time. (Time-independence is not actually critical, and such a
@@ -139,9 +139,9 @@ Note that the average of the local bed topgraphy is zero by definition:</p>
 modify the diffusivity by multiplying by a factor <span class="math notranslate nohighlight">\(0 \le \theta \le 1\)</span>:</p>
 <div class="math notranslate nohighlight">
 \[D = \theta(h(x_1,x_2),x_1,x_2) \, D_{SIA}.\]</div>
-<p>where <span class="math notranslate nohighlight">\(D_{SIA}\)</span> is defined by <a class="reference internal" href="#equation-eq-siadiffusivity">(41)</a> earlier, and</p>
+<p>where <span class="math notranslate nohighlight">\(D_{SIA}\)</span> is defined by <a class="reference internal" href="#equation-eq-siadiffusivity">(42)</a> earlier, and</p>
 <div class="math notranslate nohighlight" id="equation-eq-thetadefn">
-<span class="eqno">(42)<a class="headerlink" href="#equation-eq-thetadefn" title="Permalink to this equation">¶</a></span>\[ \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}\]</div>
+<span class="eqno">(43)<a class="headerlink" href="#equation-eq-thetadefn" title="Permalink to this equation">¶</a></span>\[ \theta(h,x_1,x_2) = \left[ \fint \left(1 - \frac{\tilde b(x_1,x_2,\xi_1,\xi_2)}{H}\right)^{-(n+2)/n}\,d\xi_1\,d\xi_2 \right]^{-n}\]</div>
 <p>Here the ice thickness and ice surface elevation are related to the <em>smoothed</em> bed
 topography, so that in PISM notation</p>
 <div class="math notranslate nohighlight">
@@ -180,7 +180,7 @@ many other modeled physical processes like ice thermal state, basal lubrication,
 on. The desirable properties of the Schoof scheme are accepted not because the resulting
 model is perfect, but because we gain both a physical modeling improvement <em>and</em> a
 computational performance improvement from its use.</p>
-<p>How do we actually compute expression <a class="reference internal" href="#equation-eq-thetadefn">(42)</a> quickly? Schoof has this suggestion,
+<p>How do we actually compute expression <a class="reference internal" href="#equation-eq-thetadefn">(43)</a> quickly? Schoof has this suggestion,
 which we follow: “To find <span class="math notranslate nohighlight">\(\theta\)</span> for values of [surface elevation for which <span class="math notranslate nohighlight">\(\theta\)</span> has
 not already been computed], some interpolation scheme should then be used. <span class="math notranslate nohighlight">\(\theta\)</span> is
 then represented at each grid point by some locally-defined interpolating function [of the
@@ -195,7 +195,7 @@ the same convexity as the rational function it approximates; this is proven belo
 but it has been demonstrated to be reasonably accurate by trying beds of various
 roughnesses in Matlab/Octave scripts. The derivation of the Taylor polynomial is most
 easily understood by starting with an abstract rational function like the one which
-appears in <a class="reference internal" href="#equation-eq-thetadefn">(42)</a>, as follows.</p>
+appears in <a class="reference internal" href="#equation-eq-thetadefn">(43)</a>, as follows.</p>
 <p>The fourth-order Taylor polynomial of the function <span class="math notranslate nohighlight">\(F(s)=(1-s)^{-k}\)</span> around <span class="math notranslate nohighlight">\(s=0\)</span> is</p>
 <div class="math notranslate nohighlight">
 \[P_4(s) = 1 + k s + \frac{k(k+1)}{2} s^2 + \dots + \frac{k(k+1)(k+2)(k+3)}{4!} s^4,\]</div>
@@ -216,14 +216,14 @@ b(x_1,x_2,\xi_1,\xi_2)\)</span> for fixed <span class="math notranslate nohighli
 this <span class="math notranslate nohighlight">\(f(\xi)\)</span> is zero, so that the first-order term drops out in the above expansion of
 <span class="math notranslate nohighlight">\(\omega\)</span>. We have the following approximation of <span class="math notranslate nohighlight">\(\theta\)</span>:</p>
 <div class="math notranslate nohighlight" id="equation-eq-thetaapprox">
-<span class="eqno">(43)<a class="headerlink" href="#equation-eq-thetaapprox" title="Permalink to this equation">¶</a></span>\[ \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n}\]</div>
+<span class="eqno">(44)<a class="headerlink" href="#equation-eq-thetaapprox" title="Permalink to this equation">¶</a></span>\[ \theta(h,x_1,x_2) \approx \left[ 1 + C_2(x_1,x_2) H^{-2} + C_3(x_1,x_2) H^{-3} + C_4(x_1,x_2) H^{-4} \right]^{-n}\]</div>
 <p>where</p>
 <div class="math notranslate nohighlight">
 \[C_q(x_1,x_2) = \frac{k(k+1)\dots(k+q-1)}{q!} \fint \tilde b(x_1,x_2,\xi_1,\xi_2)^q\,d\xi_1\,d\xi_2\]</div>
 <p>for <span class="math notranslate nohighlight">\(q=2,3,4\)</span> and <span class="math notranslate nohighlight">\(k = (n+2)/n\)</span>.</p>
 <p>Note that the coefficients <span class="math notranslate nohighlight">\(C_q\)</span> depend only on the bed topography, and not on the ice
 geometry. Thus we will pre-process the original bed elevations <span class="math notranslate nohighlight">\(b_0\)</span> to compute and store
-the fields <span class="math notranslate nohighlight">\(b_s,C_2,C_3,C_4\)</span>. The computation of equation <a class="reference internal" href="#equation-eq-thetaapprox">(43)</a> is fast and
+the fields <span class="math notranslate nohighlight">\(b_s,C_2,C_3,C_4\)</span>. The computation of equation <a class="reference internal" href="#equation-eq-thetaapprox">(44)</a> is fast and
 easily-parallelized if these fields are pre-stored. The computation of the coefficients
 <span class="math notranslate nohighlight">\(C_q\)</span> and the smoothed bed <span class="math notranslate nohighlight">\(b_s\)</span> at the pre-processing stage is more involved, especially
 when done in parallel.</p>
@@ -236,7 +236,7 @@ topography to processor zero and do the smoothing and the coefficient-computing 
 class <code class="docutils literal notranslate"><span class="pre">stressbalance::BedSmoother</span></code> implements these details.</p>
 <div class="section" id="convexity-of-p-4">
 <h3><a class="toc-backref" href="#id11">Convexity of <span class="math notranslate nohighlight">\(P_4\)</span></a><a class="headerlink" href="#convexity-of-p-4" title="Permalink to this headline">¶</a></h3>
-<p>The approximation <a class="reference internal" href="#equation-eq-thetaapprox">(43)</a> given above relates to the Jensen’s inequality argument
+<p>The approximation <a class="reference internal" href="#equation-eq-thetaapprox">(44)</a> given above relates to the Jensen’s inequality argument
 used by Schoof in Appendix A of <span id="id6">[<a class="reference internal" href="../zzz_references_html.html#id398"><span>65</span></a>]</span>. For the nonsliding case, his
 argument shows that because <span class="math notranslate nohighlight">\(F(s)=(1-s)^{-k}\)</span> is convex on <span class="math notranslate nohighlight">\([-1,1]\)</span> for <span class="math notranslate nohighlight">\(k&gt;0\)</span>, therefore
 <span class="math notranslate nohighlight">\(0 \le \theta \le 1\)</span>.</p>
@@ -332,9 +332,9 @@ constant. And</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2476-g7da6867f6
+      Git revision v1.0-2486-g1278a5ef0
       committed by Constantine Khrulev
-      on 2021-06-23 15:07:40 -0800 |
+      on 2021-06-24 13:46:12 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

@@ -163,12 +163,10 @@ for example).) If you want such a linear sliding law, and you have a value
 combination:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-pseudo_plastic \
 -pseudo_plastic_q 1.0 \
--pseudo_plastic_uthreshold 3.1556926e7 \
+-pseudo_plastic_uthreshold 1m/s \
 -yield_stress constant -tauc beta
 </pre></div>
 </div>
-<p>This sets <span class="math notranslate nohighlight">\(u_{\text{threshold}}\)</span> to 1 <span class="math notranslate nohighlight">\(\text{m}\,\text{s}^{-1}\)</span> but using units
-<span class="math notranslate nohighlight">\(\text{m}\,\text{a}^{-1}\)</span>.</p>
 <p>More generally, it is common in the literature to see power-law sliding relations in the
 form</p>
 <div class="math notranslate nohighlight">
@@ -177,7 +175,7 @@ form</p>
 <a class="reference internal" href="../../simplified-geometry/mismip3d.html#sec-mismip3d"><span class="std std-ref">MISMIP3d</span></a>. In that case, use this option combination:</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>-pseudo_plastic \
 -pseudo_plastic_q m \
--pseudo_plastic_uthreshold 3.1556926e7 \
+-pseudo_plastic_uthreshold 1m/s \
 -yield_stress constant \
 -tauc C
 </pre></div>
@@ -306,8 +304,11 @@ stands for the bed elevation. To explain these, we define <span class="math notr
 <p>It is worth noting that an earth deformation model (see section <a class="reference internal" href="bed-deformation.html#sec-beddef"><span class="std std-ref">Earth deformation models</span></a>) changes
 <span class="math notranslate nohighlight">\(b(x,y)\)</span> (NetCDF variable <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>) used in <a class="reference internal" href="#equation-eq-phipiecewise">(20)</a>, so that a sequence
 of runs such as</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o bar.nc
-pismr -i bar.nc -bed_def lc -stress_balance ssa+sia -topg_to_phi 10,30,-50,0 ... -o baz.nc
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -bed_def lc -stress_balance ssa+sia <span class="se">\</span>
+      -topg_to_phi <span class="m">10</span>,30,-50,0 ... -o bar.nc
+
+pismr -i bar.nc -bed_def lc -stress_balance ssa+sia <span class="se">\</span>
+      -topg_to_phi <span class="m">10</span>,30,-50,0 ... -o baz.nc
 </pre></div>
 </div>
 <p>will use <em>different</em> <code class="variable docutils literal notranslate"><span class="pre">tillphi</span></code> fields in the first and second runs. PISM will print a
@@ -475,9 +476,9 @@ one month.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2476-g7da6867f6
+      Git revision v1.0-2486-g1278a5ef0
       committed by Constantine Khrulev
-      on 2021-06-23 15:07:40 -0800 |
+      on 2021-06-24 13:46:12 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

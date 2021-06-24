@@ -115,6 +115,23 @@ multiples of the number of model years specified. For example, if stability crit
 require a time-step of 11 years and the <code class="docutils literal notranslate"><span class="pre">-timestep_hit_multiples</span> <span class="pre">3</span></code> option is set,
 PISM will take a 9 model year long time step. This can be useful to enforce consistent
 sampling of periodic climate data.</p></li>
+<li><p>If the value <span class="math notranslate nohighlight">\(R\)</span> set using <a class="reference internal" href="../parameters/index.html#config-time_stepping.resolution"><code class="docutils literal notranslate"><span class="pre">time_stepping</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.resolution</span></code></a> is positive PISM
+reduces the time step length so that</p>
+<div class="math notranslate nohighlight" id="equation-eq-dt-rounding-down">
+<span class="eqno">(38)<a class="headerlink" href="#equation-eq-dt-rounding-down" title="Permalink to this equation">¶</a></span>\[\dt = N\cdot R\]</div>
+<p>for some integer <span class="math notranslate nohighlight">\(N\)</span>.</p>
+<p>The default <span class="math notranslate nohighlight">\(R\)</span> (<span class="math notranslate nohighlight">\(1\)</span> second) allows PISM to represent model time more accurately,
+reducing the influence of rounding errors.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is an intermediate-term solution for an issue reported by Thomas Kleiner:
+some simulations produced different results with identical inputs but <em>different</em>
+start years.</p>
+<p>We tracked it down to the fact that these simulations ended up using slightly
+different time step lengths. This, in turn, was caused by differences in the
+<em>absolute</em> precision of the C++ type <code class="docutils literal notranslate"><span class="pre">double</span></code> for numbers of different magnitudes.</p>
+</div>
+</li>
 <li><p>The time step length never exceeds the total length of the run.</p></li>
 </ol>
 <p>At each time step the PISM standard output includes “flags” and then a summary of the
@@ -230,6 +247,7 @@ see section <a class="reference internal" href="../modeling-choices/marine/calvi
 <li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_save_times"><code class="docutils literal notranslate"><span class="pre">hit_save_times</span></code></a> (no) Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="../parameters/index.html#config-output.snapshot.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.snapshot</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.</p></li>
 <li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.hit_ts_times"><code class="docutils literal notranslate"><span class="pre">hit_ts_times</span></code></a> (no) Modify the time-stepping mechanism to hit times requested using <a class="reference internal" href="../parameters/index.html#config-output.timeseries.times"><code class="docutils literal notranslate"><span class="pre">output</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.timeseries</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.times</span></code></a>.</p></li>
 <li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.maximum_time_step"><code class="docutils literal notranslate"><span class="pre">maximum_time_step</span></code></a> (60<em> 365day</em>) Maximum allowed time step length</p></li>
+<li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.resolution"><code class="docutils literal notranslate"><span class="pre">resolution</span></code></a> (1<em> seconds</em>) Time steps are rounded down to be a multiple of this number (set to zero to allow arbitrary time step lengths)</p></li>
 <li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.enabled"><code class="docutils literal notranslate"><span class="pre">skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.enabled</span></code></a> (no) Use the temperature, age, and SSA stress balance computation skipping mechanism.</p></li>
 <li><p><a class="reference internal" href="../parameters/index.html#config-time_stepping.skip.max"><code class="docutils literal notranslate"><span class="pre">skip</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.max</span></code></a> (10) Number of mass-balance steps, including SIA diffusivity updates, to perform before a the temperature, age, and SSA stress balance computations are done</p></li>
 </ol>
@@ -329,9 +347,9 @@ see section <a class="reference internal" href="../modeling-choices/marine/calvi
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2476-g7da6867f6
+      Git revision v1.0-2486-g1278a5ef0
       committed by Constantine Khrulev
-      on 2021-06-23 15:07:40 -0800 |
+      on 2021-06-24 13:46:12 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
