@@ -129,11 +129,8 @@ combination:
 
    -pseudo_plastic \
    -pseudo_plastic_q 1.0 \
-   -pseudo_plastic_uthreshold 3.1556926e7 \
+   -pseudo_plastic_uthreshold 1m/s \
    -yield_stress constant -tauc beta
-
-This sets `u_{\text{threshold}}` to 1 `\text{m}\,\text{s}^{-1}` but using units
-`\text{m}\,\text{a}^{-1}`.
 
 More generally, it is common in the literature to see power-law sliding relations in the
 form
@@ -149,7 +146,7 @@ where `C` is a constant, as for example in sections :ref:`sec-MISMIP` and
 
    -pseudo_plastic \
    -pseudo_plastic_q m \
-   -pseudo_plastic_uthreshold 3.1556926e7 \
+   -pseudo_plastic_uthreshold 1m/s \
    -yield_stress constant \
    -tauc C
 
