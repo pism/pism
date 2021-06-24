@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm>            // std::sort
+#include <cmath>                // std::floor
 
 #include "IceModel.hh"
 #include "pism/util/IceGrid.hh"
@@ -150,16 +151,19 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
                                                          retreat_rate));
   }
 
+  const char* end = "end of the run";
+  const char* max = "max";
+
   // Always consider the maximum allowed time-step length.
   double max_timestep = m_config->get_number("time_stepping.maximum_time_step", "seconds");
   if (max_timestep > 0.0) {
-    restrictions.push_back(MaxTimestep(max_timestep, "max"));
+    restrictions.push_back(MaxTimestep(max_timestep, max));
   }
 
   // Never go past the end of a run.
   const double time_to_end = m_time->end() - current_time;
   if (time_to_end > 0.0) {
-    restrictions.push_back(MaxTimestep(time_to_end, "end of the run"));
+    restrictions.push_back(MaxTimestep(time_to_end, end));
   }
 
   // reporting
@@ -221,8 +225,20 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
     // "max" and "end of the run" limit the "big" time-step (in
     // the context of the "skipping" mechanism), so we might need to
     // reset the skip_counter_result to 1.
-    if (member(dt_max.description(), {"max", "end of the run"}) and counter > 1) {
+    if (member(dt_max.description(), {max, end}) and counter > 1) {
       result.skip_counter = 1;
+    }
+  }
+
+  double resolution = m_config->get_number("time_stepping.resolution");
+
+  if (resolution > 0.0) {
+    double dt = std::floor(result.dt * resolution) / resolution;
+
+    // Ensure that the resulting time step is never zero. This may happen if the length of
+    // the run is not an integer multiple of "resolution".
+    if (dt >= resolution) {
+      result.dt = dt;
     }
   }
 

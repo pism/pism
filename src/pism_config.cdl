@@ -2735,6 +2735,11 @@ netcdf pism_config {
     pism_config:time_stepping.maximum_time_step_type = "number";
     pism_config:time_stepping.maximum_time_step_units = "365day";
 
+    pism_config:time_stepping.resolution = 1.0;
+    pism_config:time_stepping.resolution_doc = "Time steps are rounded down to be a multiple of this number (set to zero to allow arbitrary time step lengths)";
+    pism_config:time_stepping.resolution_type = "number";
+    pism_config:time_stepping.resolution_units = "seconds";
+
     pism_config:time_stepping.skip.enabled = "no";
     pism_config:time_stepping.skip.enabled_doc = "Use the temperature, age, and SSA stress balance computation skipping mechanism.";
     pism_config:time_stepping.skip.enabled_option = "skip";
