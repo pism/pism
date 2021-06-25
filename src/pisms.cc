@@ -37,31 +37,12 @@ static char help[] =
 
 using namespace pism;
 
-std::shared_ptr<Context> pisms_context(MPI_Comm com) {
-  // unit system
-  units::System::Ptr sys(new units::System);
-
-  // logger
-  Logger::Ptr logger = logger_from_options(com);
-
-  // configuration parameters
-  Config::Ptr config = config_from_options(com, *logger, sys);
-
-  config->set_number("grid.Lx", 750e3);
-  config->set_number("grid.Ly", 750e3);
-  config->set_string("grid.periodicity", "none");
-  config->set_string("grid.registration", "corner");
-  config->set_string("stress_balance.sia.flow_law", "pb");
-
-  set_config_from_options(sys, *config);
-
-  print_config(*logger, 3, *config);
-
-  Time::Ptr time = time_from_options(com, config, sys);
-
-  EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
-
-  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, "pisms"));
+static void pisms_config_defaults(Config &config) {
+  config.set_number("grid.Lx", 750e3);
+  config.set_number("grid.Ly", 750e3);
+  config.set_string("grid.periodicity", "none");
+  config.set_string("grid.registration", "corner");
+  config.set_string("stress_balance.sia.flow_law", "pb");
 }
 
 int main(int argc, char *argv[]) {
@@ -72,7 +53,8 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    std::shared_ptr<Context> ctx = pisms_context(com);
+    std::shared_ptr<Context> ctx = context_from_options(com, "");
+    pisms_config_defaults(*ctx->config());
     Logger::Ptr log = ctx->log();
 
     std::string usage =
