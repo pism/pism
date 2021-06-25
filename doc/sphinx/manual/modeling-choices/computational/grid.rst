@@ -112,7 +112,7 @@ For example:
 
 .. code-block:: bash
 
-   > pisms -grid.registration center \
+   > pismr -eisII A -grid.registration center \
            -Lx 10 -Mx 4 \
            -y 0 -verbose 1 \
            -o grid-test.nc
@@ -148,7 +148,7 @@ Compare this to
 
 .. code-block:: bash
 
-   > pisms -grid.registration corner \
+   > pismr -eisII A -grid.registration corner \
            -Lx 10 -Mx 5 \
            -y 0 -verbose 1 \
            -o grid-test.nc
@@ -268,7 +268,7 @@ For example,
 
 .. code-block:: none
 
-   mpiexec -n 3 pisms -Mx 101 -My 101 \
+   mpiexec -n 3 pismr -eisII A -Mx 101 -My 101 \
                       -Nx 1 -procs_x 101 \
                       -Ny 3 -procs_y 20,61,20
 

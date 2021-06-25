@@ -11,7 +11,7 @@ OPTS="-i foo-05.nc -bootstrap -Mx 41 -My 61 -Mz 21 -Lz 5000 -y 0 -o_size small"
 set -e -x
 
 # Create a file to bootstrap from (with a non-trivial bed topography):
-$PISM_PATH/pisms -eisII I -Mx 121 -My 61 -Mz 21 -y 0 -o foo-05.nc 
+$PISM_PATH/pismr -eisII I -Mx 121 -My 61 -Mz 21 -y 0 -o foo-05.nc
 
 # Bootstrap from this file and run for 0 years:
 $MPIEXEC -n 2 $PISM_PATH/pismr $OPTS -o bar-05.nc 

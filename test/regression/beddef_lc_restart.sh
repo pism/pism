@@ -14,7 +14,7 @@ rm -f $files
 set -e
 
 mpi="$MPIEXEC -n 3"
-pisms="$PISM_PATH/pisms"
+pisms="$PISM_PATH/pismr -eisII A"
 pismr="$PISM_PATH/pismr"
 
 # time step length

@@ -10,7 +10,7 @@ OPTS="-max_dt 1 -o_size small -energy enthalpy"
 set -e -x
 
 # generate an interesting file
-$PISM_PATH/pisms -energy enthalpy -Mx 6 -My 6 -Mz 5 -y 5000 -max_dt 500.0 -o baz-01.nc
+$PISM_PATH/pismr -eisII A -energy enthalpy -Mx 6 -My 6 -Mz 5 -y 5000 -max_dt 500.0 -o baz-01.nc
 
 # run for ten years, fixed time step
 $PISM_PATH/pismr -i baz-01.nc $OPTS -ys 0 -y 10 -o foo-01.nc

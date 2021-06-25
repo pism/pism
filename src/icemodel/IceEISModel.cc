@@ -170,6 +170,7 @@ void IceEISModel::initialize_2d() {
 }
 
 void IceEISModel::bootstrap_2d(const File &input_file) {
+  (void) input_file;
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "EISMINT II mode does not support bootstrapping");
 }

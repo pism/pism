@@ -9,7 +9,7 @@ INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 dummy.nc:
 	# use a thermal bedrock layer model and run for 1 year to complete the
 	# bootstrapping
-	pisms -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
+	pismr -eisII A -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
 
 	# rename climatic_mass_balance: we need precipitation for an atmosphere model
 	ncrename -v climatic_mass_balance,precipitation -O $@ $@

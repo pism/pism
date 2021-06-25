@@ -198,7 +198,7 @@ As an example, consider these two runs:
 
 .. code-block:: none
 
-   pisms -y 6000 -o foo.nc
+   pismr -eisII A -y 6000 -o foo.nc
    pismr -i foo.nc -y 0.001 -o bar.nc -o_size big
 
 The result of the second (short) run is a NetCDF file ``bar.nc`` which contains the full

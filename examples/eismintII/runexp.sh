@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2013--2016 The PISM Authors
+# Copyright (C) 2013--2016, 2021 The PISM Authors
 
 # This is just a helper script to make running EISMINT II experiments easier.
 # It adds suggested diagnostics which help compare to the published experiments.
@@ -57,7 +57,7 @@ fi
 SKIP=5         # adjust upward for high res
 ROOT=eisII$EXP$MHOR
 echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
-cmd="$PISM_MPIDO $NN pisms -eisII $EXP $GRIDORINPUT -ys 0 -y $DUR \
+cmd="$PISM_MPIDO $NN pismr -eisII $EXP $GRIDORINPUT -ys 0 -y $DUR \
  -skip -skip_max $SKIP -o $ROOT.nc -extra_file ex_$ROOT.nc \
  -extra_vars thk,temppabase,velsurf_mag,velbar_mag,flux_mag,diffusivity,bmelt,taud_mag \
  -extra_times 1000:1000:$DUR -ts_file ts_$ROOT.nc \

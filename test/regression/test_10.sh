@@ -14,7 +14,7 @@ set -e -x
 NRANGE="1 2 3 4 5"
 
 # Create a file to bootstrap from:
-$MPIEXEC -n 1 $PISM_PATH/pisms -eisII I -Mx 51 -My 101 -y 0 -o foo0-10.nc
+$MPIEXEC -n 1 $PISM_PATH/pismr -eisII A -eisII I -Mx 51 -My 101 -y 0 -o foo0-10.nc
 
 # Bootstrap:
 for NN in $NRANGE;

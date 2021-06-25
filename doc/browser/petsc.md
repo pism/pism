@@ -241,6 +241,6 @@ multiprocessor jobs, the display may have to be set on the command
 line, for instance as `-display :0` or similar; this must be given as
 the final option. For example,
 
-    mpiexec -n 2 pisms -view thk -display :0
+    mpiexec -n 2 pismr -eisII A -view thk -display :0
 
 allows a two processor run to view the ice thickness.
