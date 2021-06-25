@@ -168,7 +168,9 @@ int Context::pio_iosys_id() const {
   return m_impl->pio_iosys_id;
 }
 
-std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<Context> context_from_options(MPI_Comm com,
+                                              const std::string &prefix,
+                                              bool print) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -177,7 +179,10 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &p
 
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
-  print_config(*logger, 3, *config);
+
+  if (print) {
+    print_config(*logger, 3, *config);
+  }
 
   // time manager
   Time::Ptr time = time_from_options(com, config, sys);
