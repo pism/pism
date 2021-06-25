@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,20 +23,29 @@ static char help[] =
 #include <memory>
 #include <petscsys.h>           // PETSC_COMM_WORLD
 
-#include "pism/util/IceGrid.hh"
 #include "pism/icemodel/IceModel.hh"
+#include "pism/icemodel/IceEISModel.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/IceGrid.hh"
 
-#include "pism/util/pism_options.hh"
-#include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
+#include "pism/util/pism_options.hh"
 
 #include "pism/regional/IceGrid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
 using namespace pism;
+
+static void set_pisms_config_defaults(Config &config) {
+  config.set_number("grid.Lx", 750e3);
+  config.set_number("grid.Ly", 750e3);
+  config.set_string("grid.periodicity", "none");
+  config.set_string("grid.registration", "corner");
+  config.set_string("stress_balance.sia.flow_law", "pb");
+}
 
 int main(int argc, char *argv[]) {
 
@@ -46,23 +55,49 @@ int main(int argc, char *argv[]) {
   com = PETSC_COMM_WORLD;
 
   try {
-    std::shared_ptr<Context> ctx = context_from_options(com, "pismr");
+    // Note: EISMINT II experiments G and H are not supported.
+    auto eisII = options::Keyword("-eisII",
+                                  "EISMINT II experiment name",
+                                  "A,B,C,D,E,F,I,J,K,L", "A");
+
+    std::shared_ptr<Context> ctx = context_from_options(com, "pismr", false);
+
     Logger::Ptr log = ctx->log();
+    Config::Ptr config = ctx->config();
+
+    std::vector<std::string> required_options{};
+    if (eisII.is_set()) {
+      // set defaults:
+      set_pisms_config_defaults(*config);
+
+      // process -config_override
+      DefaultConfig::Ptr overrides(new DefaultConfig(com,
+                                                     "pism_overrides",
+                                                     "-config_override",
+                                                     ctx->unit_system()));
+      overrides->init(*ctx->log());
+      config->import_from(*overrides);
+      // process command-line options
+      set_config_from_options(ctx->unit_system(), *config);
+    } else {
+      required_options.emplace_back("-i");
+    }
+
+    print_config(*ctx->log(), 3, *config);
 
     std::string usage =
       "  pismr -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
-      "  -i          IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -bootstrap  enable heuristics to produce an initial state from an incomplete input\n"
-      "  -regional   enable \"regional mode\"\n"
+      "  -i                   IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+      "  -bootstrap           enable heuristics to produce an initial state from an incomplete input\n"
+      "  -regional            enable \"regional mode\"\n"
+      "  -eisII [experiment]  enable EISMINT II mode\n"
       "notes:\n"
       "  * option -i is required\n"
       "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     {
-      std::vector<std::string> required(1, "-i");
-
       bool done = show_usage_check_req_opts(*log, "PISMR (basic evolution run mode)" ,
-                                            required, usage);
+                                            required_options, usage);
       if (done) {
         return 0;
       }
@@ -70,8 +105,6 @@ int main(int argc, char *argv[]) {
 
     options::String profiling_log = options::String("-profile",
                                                     "Save detailed profiling data to a file.");
-
-    Config::Ptr config = ctx->config();
 
     if (profiling_log.is_set()) {
       ctx->profiling().start();
@@ -85,7 +118,13 @@ int main(int argc, char *argv[]) {
       model.reset(new IceRegionalModel(grid, ctx));
     } else {
       grid = IceGrid::FromOptions(ctx);
-      model.reset(new IceModel(grid, ctx));
+
+      if (eisII.is_set()) {
+        char experiment = eisII.value()[0];
+        model.reset(new IceEISModel(grid, ctx, experiment));
+      } else {
+        model.reset(new IceModel(grid, ctx));
+      }
     }
 
     model->init();
