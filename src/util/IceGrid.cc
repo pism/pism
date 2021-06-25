@@ -1395,7 +1395,8 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
                                     input_file.c_str());
     }
 
-    // process all possible options controlling grid parameters, overriding values read from a file
+    // process all possible options controlling grid parameters, overriding values read
+    // from a file
     input_grid.horizontal_size_from_options();
     input_grid.horizontal_extent_from_options(ctx->unit_system());
     input_grid.vertical_grid_from_options(config);
@@ -1419,10 +1420,17 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     return result;
   } else {
-    // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
-    // -bootstrap is not set either".
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Please set the input file using the \"-i\" command-line option.");
+    // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is
+    // not set, -bootstrap is not set either".
+
+    // Use defaults from the configuration database
+    GridParameters P(ctx->config());
+    P.horizontal_size_from_options();
+    P.horizontal_extent_from_options(ctx->unit_system());
+    P.vertical_grid_from_options(ctx->config());
+    P.ownership_ranges_from_options(ctx->size());
+
+    return IceGrid::Ptr(new IceGrid(ctx, P));
   }
 }
 

@@ -169,4 +169,10 @@ void IceEISModel::initialize_2d() {
                       m_geometry.sea_level_elevation);
 }
 
+void IceEISModel::bootstrap_2d(const File &input_file) {
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "EISMINT II mode does not support bootstrapping");
+}
+
+
 } // end of namespace pism

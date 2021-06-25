@@ -64,33 +64,6 @@ std::shared_ptr<Context> pisms_context(MPI_Comm com) {
   return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, "pisms"));
 }
 
-IceGrid::Ptr pisms_grid(std::shared_ptr<Context> ctx) {
-  auto config = ctx->config();
-
-  auto input_file = config->get_string("input.file");
-
-  if (config->get_flag("input.bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
-  }
-
-  if (not input_file.empty()) {
-    GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
-
-    // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
-  } else {
-    // use defaults from the configuration database
-    GridParameters P(ctx->config());
-    P.horizontal_size_from_options();
-    P.horizontal_extent_from_options(ctx->unit_system());
-    P.vertical_grid_from_options(ctx->config());
-    P.ownership_ranges_from_options(ctx->size());
-
-    return IceGrid::Ptr(new IceGrid(ctx, P));
-  }
-}
-
-
 int main(int argc, char *argv[]) {
 
   MPI_Comm com = MPI_COMM_WORLD;
@@ -120,7 +93,7 @@ int main(int argc, char *argv[]) {
 
     Config::Ptr config = ctx->config();
 
-    IceGrid::Ptr g = pisms_grid(ctx);
+    IceGrid::Ptr g = IceGrid::FromOptions(ctx);
     IceEISModel m(g, ctx, experiment[0]);
 
     m.init();

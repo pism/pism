@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,6 +34,7 @@ public:
 
 protected:
   virtual void initialize_2d();
+  virtual void bootstrap_2d(const File &input_file);
 
   virtual void allocate_couplers();
 
