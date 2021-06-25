@@ -138,7 +138,7 @@ IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   auto input_file = config->get_string("input.file");
 
   if (config->get_flag("input.bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+    throw RuntimeError(PISM_ERROR_LOCATION, "pismv does not support bootstrapping");
   }
 
   if (not input_file.empty()) {
