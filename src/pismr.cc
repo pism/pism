@@ -45,6 +45,34 @@ static void set_eismint2_config_defaults(Config &config) {
   config.set_string("grid.periodicity", "none");
   config.set_string("grid.registration", "corner");
   config.set_string("stress_balance.sia.flow_law", "pb");
+
+  config.set_flag("energy.temperature_based", true);
+
+  // Set sea level elevation to -1e4 meters to remove ocean interaction
+  config.set_number("sea_level.constant.value", -1e4);
+
+  // purely SIA, and E=1
+  config.set_number("stress_balance.sia.enhancement_factor", 1.0);
+
+  // none use bed smoothing & bed roughness parameterization
+  config.set_number("stress_balance.sia.bed_smoother.range", 0.0);
+
+  // basal melt does not change computation of mass continuity or vertical velocity:
+  config.set_flag("geometry.update.use_basal_melt_rate", false);
+
+  // Make bedrock thermal material properties into ice properties.  Note that
+  // zero thickness bedrock layer is the default, but we want the ice/rock
+  // interface segment to have geothermal flux applied directly to ice without
+  // jump in material properties at base.
+  config.set_number("energy.bedrock_thermal.density",
+                    config.get_number("constants.ice.density"));
+  config.set_number("energy.bedrock_thermal.conductivity",
+                    config.get_number("constants.ice.thermal_conductivity"));
+  config.set_number("energy.bedrock_thermal.specific_heat_capacity",
+                    config.get_number("constants.ice.specific_heat_capacity"));
+
+  // no sliding + SIA
+  config.set_string("stress_balance.model", "sia");
 }
 
 int main(int argc, char *argv[]) {

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceEISModel_hh
-#define __iceEISModel_hh
+#ifndef PISM_EISMINTII
+#define PISM_EISMINTII
 
 #include "pism/icemodel/IceModel.hh"
 
@@ -26,17 +26,17 @@ namespace pism {
 //! Derived class for doing EISMINT II simplified geometry experiments.  
 /*!
   These experiments use the thermomechanically-coupled, non-polythermal shallow
-  ice approximation. See \ref EISMINT00 and Appendix B of \ref BBssasliding.
+  ice approximation. See @ref EISMINT00 and Appendix B of @ref BBssasliding.
 */
 class IceEISModel : public IceModel {
 public:
   IceEISModel(IceGrid::Ptr g, std::shared_ptr<Context> ctx, char experiment);
 
 protected:
-  virtual void initialize_2d();
-  virtual void bootstrap_2d(const File &input_file);
+  void initialize_2d();
+  void bootstrap_2d(const File &input_file);
 
-  virtual void allocate_couplers();
+  void allocate_couplers();
 
   char m_experiment;
 };
@@ -46,5 +46,4 @@ void generate_mound_topography(IceModelVec2S &result);   // for experiments K,L
 
 } // end of namespace pism
 
-#endif /* __iceEISModel_hh */
-
+#endif /* PISM_EISMINTII */

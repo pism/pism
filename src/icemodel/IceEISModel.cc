@@ -37,61 +37,30 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g, std::shared_ptr<Context> context, char experiment)
+IceEISModel::IceEISModel(IceGrid::Ptr g,
+                         std::shared_ptr<Context> context,
+                         char experiment)
   : IceModel(g, context), m_experiment(experiment) {
-
-  // the following flag must be here in constructor because
-  // IceModel::createVecs() uses it non-polythermal methods; can be
-  // overridden by the command-line option "-energy enthalpy"
-  m_config->set_flag("energy.temperature_based", true);
-
-  // see EISMINT II description; set sea level elevation to -1e4 meters to remove ocean
-  // interaction
-  m_config->set_number("sea_level.constant.value", -1e4);
-
-  // purely SIA, and E=1
-  m_config->set_number("stress_balance.sia.enhancement_factor", 1.0);
-
-  // none use bed smoothing & bed roughness parameterization
-  m_config->set_number("stress_balance.sia.bed_smoother.range", 0.0);
-
-  // basal melt does not change computation of mass continuity or vertical velocity:
-  m_config->set_flag("geometry.update.use_basal_melt_rate", false);
-
-  // Make bedrock thermal material properties into ice properties.  Note that
-  // zero thickness bedrock layer is the default, but we want the ice/rock
-  // interface segment to have geothermal flux applied directly to ice without
-  // jump in material properties at base.
-  m_config->set_number("energy.bedrock_thermal.density",
-                       m_config->get_number("constants.ice.density"));
-  m_config->set_number("energy.bedrock_thermal.conductivity",
-                       m_config->get_number("constants.ice.thermal_conductivity"));
-  m_config->set_number("energy.bedrock_thermal.specific_heat_capacity",
-                       m_config->get_number("constants.ice.specific_heat_capacity"));
-
-  // no sliding + SIA
-  m_config->set_string("stress_balance.model", "sia");
 }
 
 void IceEISModel::allocate_couplers() {
 
   // Climate will always come from intercomparison formulas.
   if (not m_surface) {
-    std::shared_ptr<surface::SurfaceModel> surface(new surface::EISMINTII(m_grid, m_experiment));
+    auto surface = std::make_shared<surface::EISMINTII>(m_grid, m_experiment);
     m_surface.reset(new surface::InitializationHelper(m_grid, surface));
     m_submodels["surface process model"] = m_surface.get();
   }
 
   if (not m_ocean) {
-    std::shared_ptr<ocean::OceanModel> ocean(new ocean::Constant(m_grid));
+    auto ocean = std::make_shared<ocean::Constant>(m_grid);
     m_ocean.reset(new ocean::InitializationHelper(m_grid, ocean));
     m_submodels["ocean model"] = m_ocean.get();
   }
 
   if (not m_sea_level) {
-    using namespace ocean::sea_level;
-    std::shared_ptr<SeaLevel> sea_level(new SeaLevel(m_grid));
-    m_sea_level.reset(new InitializationHelper(m_grid, sea_level));
+    auto sea_level = std::make_shared<ocean::sea_level::SeaLevel>(m_grid);
+    m_sea_level.reset(new ocean::sea_level::InitializationHelper(m_grid, sea_level));
     m_submodels["sea level forcing"] = m_sea_level.get();
   }
 }
@@ -148,12 +117,18 @@ void IceEISModel::initialize_2d() {
                  m_experiment);
 
   // set bed topography
-  if (m_experiment == 'I' or m_experiment == 'J') {
+  switch (m_experiment) {
+  case 'I':
+  case 'J':
     generate_trough_topography(m_geometry.bed_elevation);
-  } else if (m_experiment == 'K' or m_experiment == 'L') {
+    break;
+  case 'K':
+  case 'L':
     generate_mound_topography(m_geometry.bed_elevation);
-  } else {
+    break;
+  default:
     m_geometry.bed_elevation.set(0.0);
+    break;
   }
 
   m_geometry.sea_level_elevation.set(0.0);
