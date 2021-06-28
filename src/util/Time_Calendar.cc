@@ -50,7 +50,7 @@ static inline std::string string_strip(std::string input) {
 /*!
 
   See http://meteora.ucsd.edu/~pierce/calcalcs/index.html and
-  http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.6/cf-conventions.html#calendar
+  http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#calendar
 
   for more details about supported calendars.
  */
@@ -59,6 +59,14 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                              units::System::Ptr units_system)
   : Time(conf, calendar_string, units_system),
     m_com(c) {
+
+  // CF Conventions use "noleap", CalCalcs uses "no_leap"...
+  std::string calendar = calendar_string;
+  if (calendar_string == "noleap") {
+    calendar = "no_leap";
+  }
+
+  m_simple_calendar = member(calendar, {"360_day", "365_day", "no_leap"});
 
   std::string ref_date = m_config->get_string("time.reference_date");
 
@@ -81,9 +89,6 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
-}
-
-Time_Calendar::~Time_Calendar() {
 }
 
 bool Time_Calendar::process_ys(double &result) {
@@ -256,8 +261,26 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
   }
 }
 
-double Time_Calendar::mod(double time, unsigned int) const {
-  // This class does not support the "mod" operation.
+double Time_Calendar::mod(double time, unsigned int period_years) const {
+
+  if (m_simple_calendar) {
+    if (period_years == 0) {
+      return time;
+    }
+
+    double period_seconds = years_to_seconds(period_years);
+
+    double tmp = time - floor(time / period_seconds) * period_seconds;
+
+    if (fabs(tmp - period_seconds) < 1) {
+      tmp = 0;
+    }
+
+    return tmp;
+  }
+
+  // Other calendars don't have a consistent year length and do not support this
+  // operation.
   return time;
 }
 

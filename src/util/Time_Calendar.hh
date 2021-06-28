@@ -30,7 +30,7 @@ public:
   Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
                 const std::string &calendar,
                 units::System::Ptr units_system);
-  virtual ~Time_Calendar();
+  virtual ~Time_Calendar() = default;
 
   virtual void init(const Logger &log);
 
@@ -86,6 +86,7 @@ protected:
   void compute_times_yearly(std::vector<double> &result) const;
 private:
   MPI_Comm m_com;
+  bool m_simple_calendar;
   // Hide copy constructor / assignment operator.
   Time_Calendar(Time_Calendar const &);
   Time_Calendar & operator=(Time_Calendar const &);
