@@ -39,7 +39,7 @@ static char help[] =
 
 using namespace pism;
 
-static void set_pisms_config_defaults(Config &config) {
+static void set_eismint2_config_defaults(Config &config) {
   config.set_number("grid.Lx", 750e3);
   config.set_number("grid.Ly", 750e3);
   config.set_string("grid.periodicity", "none");
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> required_options{};
     if (eisII.is_set()) {
       // set defaults:
-      set_pisms_config_defaults(*config);
+      set_eismint2_config_defaults(*config);
 
       // process -config_override
       DefaultConfig::Ptr overrides(new DefaultConfig(com,

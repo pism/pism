@@ -14,7 +14,6 @@ rm -f $files
 set -e
 
 mpi="$MPIEXEC -n 3"
-pisms="$PISM_PATH/pismr -eisII A"
 pismr="$PISM_PATH/pismr"
 
 # time step length
@@ -27,7 +26,7 @@ options="-bed_def lc -extra_times 0,100,200,300 -extra_vars dbdt,topg,thk -stres
 grid="-Lz 5000 -Mz 3 -Mx ${Mx} -My ${My}"
 
 # create the input file
-${mpi} ${pisms} ${grid} -y 1000 -o out0.nc -verbose 1
+${mpi} ${pismr} -eisII A ${grid} -y 1000 -o out0.nc -verbose 1
 
 # Run with re-starting
 #
