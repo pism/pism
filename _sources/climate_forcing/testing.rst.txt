@@ -34,18 +34,18 @@ correctly:
 
 .. code-block:: none
 
-   mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
+   mpiexec -n 2 pismr -eisII A -y 1000 -o state.nc
    pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
          -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
          -ys 0 -ye 2.5
 
-Using ``pisms`` merely generates demonstration climate data, using EISMINT II choices
-:cite:`EISMINT00`. The next run extracts the surface mass balance :var:`climatic_mass_balance`
-and surface temperature :var:`ice_surface_temp` from ``state.nc``. It then does nothing
-interesting, exactly because a constant climate is used. Viewing ``movie.nc`` we see these
-same values as from ``state.nc``, in variables :var:`climatic_mass_balance`,
-:var:`ice_surface_temp`, reported back to us as the time- and space-dependent climate at
-times ``ys:dt:ye``. It is a boring "movie."
+Using ``pismr -eisII A`` merely generates demonstration climate data, using EISMINT II
+choices :cite:`EISMINT00`. The next run extracts the surface mass balance
+:var:`climatic_mass_balance` and surface temperature :var:`ice_surface_temp` from
+``state.nc``. It then does nothing interesting, exactly because a constant climate is
+used. Viewing ``movie.nc`` we see these same values as from ``state.nc``, in variables
+:var:`climatic_mass_balance`, :var:`ice_surface_temp`, reported back to us as the time-
+and space-dependent climate at times ``ys:dt:ye``. It is a boring "movie."
 
 A more interesting example uses a :ref:`positive degree-day scheme <sec-surface-pdd>`.
 This scheme uses a variable called :var:`precipitation`, and a calculation of melting, to

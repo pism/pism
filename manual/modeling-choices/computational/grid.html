@@ -117,7 +117,7 @@ as follows:</p>
 <p>This is not an issue when re-starting from a PISM output file but can cause confusion when
 specifying grid parameters at bootstrapping and reading in fields using “regridding.”</p>
 <p>For example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pisms -grid.registration center <span class="se">\</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pismr -eisII A -grid.registration center <span class="se">\</span>
         -Lx <span class="m">10</span> -Mx <span class="m">4</span> <span class="se">\</span>
         -y <span class="m">0</span> -verbose <span class="m">1</span> <span class="se">\</span>
         -o grid-test.nc
@@ -141,7 +141,7 @@ surface mass balance fields for the domain that use different resolutions but <e
 same total SMB</em>.</p>
 </div>
 <p>Compare this to</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pisms -grid.registration corner <span class="se">\</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt; pismr -eisII A -grid.registration corner <span class="se">\</span>
         -Lx <span class="m">10</span> -Mx <span class="m">5</span> <span class="se">\</span>
         -y <span class="m">0</span> -verbose <span class="m">1</span> <span class="se">\</span>
         -o grid-test.nc
@@ -231,7 +231,7 @@ and <code class="option docutils literal notranslate"><span class="pre">-Ny</spa
 To specify strip widths <span class="math notranslate nohighlight">\(M_{x,i}\)</span> and <span class="math notranslate nohighlight">\(M_{y,i}\)</span>, use command-line options <code class="option docutils literal notranslate"><span class="pre">-procs_x</span></code>
 and <code class="option docutils literal notranslate"><span class="pre">-procs_y</span></code>. Each option takes a comma-separated list of numbers as its argument.
 For example,</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 3 pisms -Mx 101 -My 101 \
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 3 pismr -eisII A -Mx 101 -My 101 \
                    -Nx 1 -procs_x 101 \
                    -Ny 3 -procs_y 20,61,20
 </pre></div>
@@ -339,9 +339,9 @@ standard.”</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

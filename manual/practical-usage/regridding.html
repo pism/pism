@@ -47,7 +47,7 @@ vice versa in each dimension <span class="math notranslate nohighlight">\(x,y,z\
 produce a PISM error.)</p>
 <p>Such “regridding” is done using the <code class="option docutils literal notranslate"><span class="pre">-regrid_file</span></code> and <code class="option docutils literal notranslate"><span class="pre">-regrid_vars</span></code> commands
 as in this example: }</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
       -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
 </pre></div>
 </div>
@@ -235,9 +235,9 @@ simulation like this one — just follow the instructions provided in the error 
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

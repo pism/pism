@@ -38,8 +38,8 @@
 used. If a previous PISM run has saved a NetCDF file using “<code class="option docutils literal notranslate"><span class="pre">-o</span></code>” then that file will
 contain complete initial conditions for continuing the run. The output file from the last
 run can be loaded with “<code class="option docutils literal notranslate"><span class="pre">-i</span></code>”:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pisms -eisII A -y 100 -o foo.nc
-pisms -eisII A -i foo.nc -y 100 -o bar.nc
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -eisII A -y 100 -o foo.nc
+pismr -eisII A -i foo.nc -y 100 -o bar.nc
 </pre></div>
 </div>
 <p>As noted, verification tests (section <a class="reference internal" href="../verification/index.html#sec-verif"><span class="std std-ref">Verification</span></a>) and simplified-geometry experiments
@@ -47,7 +47,7 @@ pisms -eisII A -i foo.nc -y 100 -o bar.nc
 formulas in the source code. They can, however, be continued from saved model states using
 <code class="option docutils literal notranslate"><span class="pre">-i</span></code>. Specifying the simplified geometry experiment or verification test <em>is</em>,
 however, necessary if the run is to continue with the climate inputs for that experiment
-or test. For example, based on the above <code class="docutils literal notranslate"><span class="pre">pisms</span></code> runs, it is valid to do</p>
+or test. For example, based on the above <code class="docutils literal notranslate"><span class="pre">pismr</span> <span class="pre">-eisII</span> <span class="pre">A</span></code> runs, it is valid to do</p>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -i foo.nc -y 100 -o bar.nc
 </pre></div>
 </div>
@@ -58,7 +58,7 @@ or test. For example, based on the above <code class="docutils literal notransla
 <p>PISM produces CF-1.5 compliant NetCDF files. The easiest way to learn the output format
 <em>and</em> the <code class="option docutils literal notranslate"><span class="pre">-i</span></code> format is to do a simple run and then look at the metadata in the
 resulting file, like this:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pisms -eisII A -y 10 -o foo.nc
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -eisII A -y 10 -o foo.nc
 ncdump -h foo.nc | less
 </pre></div>
 </div>
@@ -152,9 +152,9 @@ based on a calendar (see below).</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

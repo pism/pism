@@ -76,9 +76,9 @@ model are listed below (they all have the prefix <code class="docutils literal n
 <li><p><a class="reference internal" href="../../parameters/index.html#config-bed_deformation.mantle_viscosity"><code class="docutils literal notranslate"><span class="pre">mantle_viscosity</span></code></a> (1e+21<em> Pascal second</em>) half-space (mantle) viscosity used by the bed deformation model. See <span id="id11">[<a class="reference internal" href="../../../zzz_references_html.html#id266"><span>88</span></a>]</span>, <span id="id12">[<a class="reference internal" href="../../../zzz_references_html.html#id38"><span>31</span></a>]</span></p></li>
 </ol>
 <p>Here are minimal example runs to compare these models:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 4 pisms -eisII A -y 8000 -o eisIIA_nobd.nc
-mpiexec -n 4 pisms -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
-mpiexec -n 4 pisms -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 4 pismr -eisII A -y 8000 -o eisIIA_nobd.nc
+mpiexec -n 4 pismr -eisII A -bed_def iso -y 8000 -o eisIIA_bdiso.nc
+mpiexec -n 4 pismr -eisII A -bed_def lc -y 8000 -o eisIIA_bdlc.nc
 </pre></div>
 </div>
 <p>Compare the <code class="variable docutils literal notranslate"><span class="pre">topg</span></code>, <code class="variable docutils literal notranslate"><span class="pre">usurf</span></code>, and <code class="variable docutils literal notranslate"><span class="pre">dbdt</span></code> variables in the resulting output
@@ -232,9 +232,9 @@ projection and cover the modeling domain but they <strong>do not</strong> have t
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

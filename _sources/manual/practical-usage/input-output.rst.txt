@@ -61,7 +61,7 @@ Note the ``-help`` and ``-usage`` options for getting help at the command line.
      - Brief descriptions of the many PISM and PETSc options. The run occurs as usual
        according to the other options. (The option documentation does not get listed if
        the run didn't get started properly.) Use with a pipe into ``grep`` to get
-       usefully-filtered information on options, for example ``pisms -help | grep cold``.
+       usefully-filtered information on options, for example ``pismr -help | grep cold``.
 
    * - :opt:`-info`
      - Gives information about PETSc operations during the run.

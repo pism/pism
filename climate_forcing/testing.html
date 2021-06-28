@@ -56,19 +56,19 @@ option to fix ice geometry. (This may be necessary if the mass balance rate data
 result in extreme ice sheet growth that is not balanced by ice flow in this setup.)</p>
 <p>As an example, set up an ice sheet state file and check if climate data is read in
 correctly:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 2 pisms -eisII A -y 1000 -o state.nc
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 2 pismr -eisII A -y 1000 -o state.nc
 pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
       -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
       -ys 0 -ye 2.5
 </pre></div>
 </div>
-<p>Using <code class="docutils literal notranslate"><span class="pre">pisms</span></code> merely generates demonstration climate data, using EISMINT II choices
-<span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id105"><span>11</span></a>]</span>. The next run extracts the surface mass balance <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>
-and surface temperature <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code> from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>. It then does nothing
-interesting, exactly because a constant climate is used. Viewing <code class="docutils literal notranslate"><span class="pre">movie.nc</span></code> we see these
-same values as from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>, in variables <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>,
-<code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code>, reported back to us as the time- and space-dependent climate at
-times <code class="docutils literal notranslate"><span class="pre">ys:dt:ye</span></code>. It is a boring “movie.”</p>
+<p>Using <code class="docutils literal notranslate"><span class="pre">pismr</span> <span class="pre">-eisII</span> <span class="pre">A</span></code> merely generates demonstration climate data, using EISMINT II
+choices <span id="id1">[<a class="reference internal" href="../zzz_references_html.html#id105"><span>11</span></a>]</span>. The next run extracts the surface mass balance
+<code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code> and surface temperature <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code> from
+<code class="docutils literal notranslate"><span class="pre">state.nc</span></code>. It then does nothing interesting, exactly because a constant climate is
+used. Viewing <code class="docutils literal notranslate"><span class="pre">movie.nc</span></code> we see these same values as from <code class="docutils literal notranslate"><span class="pre">state.nc</span></code>, in variables
+<code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>, <code class="variable docutils literal notranslate"><span class="pre">ice_surface_temp</span></code>, reported back to us as the time-
+and space-dependent climate at times <code class="docutils literal notranslate"><span class="pre">ys:dt:ye</span></code>. It is a boring “movie.”</p>
 <p>A more interesting example uses a <a class="reference internal" href="surface.html#sec-surface-pdd"><span class="std std-ref">positive degree-day scheme</span></a>.
 This scheme uses a variable called <code class="variable docutils literal notranslate"><span class="pre">precipitation</span></code>, and a calculation of melting, to
 get the surface mass balance <code class="variable docutils literal notranslate"><span class="pre">climatic_mass_balance</span></code>.</p>
@@ -244,9 +244,9 @@ temperature offsets are used correctly.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

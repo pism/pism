@@ -51,12 +51,12 @@ processor.) This run will also produce a NetCDF output file <code class="docutil
 be read and viewed by NetCDF tools.</p>
 </li>
 <li><p>Try an EISMINT II run using the PETSc viewers (under the X window system):</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pisms -y 5000 -view thk,temppabase,velsurf_mag
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag
 </pre></div>
 </div>
 <p>When using such viewers and <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> the additional final option <code class="docutils literal notranslate"><span class="pre">-display</span> <span class="pre">:0</span></code> is
 sometimes required to enable MPI to use X, like this:</p>
-<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 2 pisms -y 5000 -view thk,temppabase,velsurf_mag -display :0
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span>mpiexec -n 2 pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag -display :0
 </pre></div>
 </div>
 <p>Also <code class="docutils literal notranslate"><span class="pre">-drawpause</span> <span class="pre">0.1</span></code> or similar may be needed if the figures are refreshing too fast.</p>
@@ -163,9 +163,9 @@ in your build directory.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2487-g7888f3630
+      Git revision v1.0-2494-g124e6d84d
       committed by Constantine Khrulev
-      on 2021-06-24 14:54:03 -0800 |
+      on 2021-06-28 08:51:02 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>

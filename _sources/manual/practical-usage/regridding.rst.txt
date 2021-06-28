@@ -26,7 +26,7 @@ as in this example: }
 
 .. code-block:: none
 
-    pisms -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
+    pismr -eisII A -Mx 101 -My 101 -Mz 201 -y 1000 \
           -regrid_file foo.nc -regrid_vars thk,temp -o bar.nc
 
 By specifying regridded variables "``thk,temp``", the ice thickness and temperature values
