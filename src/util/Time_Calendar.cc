@@ -60,14 +60,6 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   : Time(conf, calendar_string, units_system),
     m_com(c) {
 
-  // CF Conventions use "noleap", CalCalcs uses "no_leap"...
-  std::string calendar = calendar_string;
-  if (calendar_string == "noleap") {
-    calendar = "no_leap";
-  }
-
-  m_simple_calendar = member(calendar, {"360_day", "365_day", "no_leap"});
-
   std::string ref_date = m_config->get_string("time.reference_date");
 
   try {

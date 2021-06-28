@@ -134,7 +134,15 @@ Time::Time(Config::ConstPtr conf,
     m_unit_system(unit_system),
     m_time_units(m_unit_system, "seconds") {
 
-  init_calendar(calendar_string);
+  // CF Conventions use "noleap", CalCalcs uses "no_leap"...
+  std::string calendar = calendar_string;
+  if (calendar_string == "noleap") {
+    calendar = "no_leap";
+  }
+
+  m_simple_calendar = member(calendar, {"360_day", "365_day", "no_leap"});
+
+  init_calendar(calendar);
 
   m_run_start = years_to_seconds(m_config->get_number("time.start_year"));
   m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));

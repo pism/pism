@@ -215,6 +215,8 @@ protected:
 
   //! CF calendar string
   std::string m_calendar_string;
+  // True if the calendar has constant year lengths (360_day, 365_day)
+  bool m_simple_calendar;
 };
 
 std::string reference_date_from_file(const File &nc,

@@ -86,7 +86,6 @@ protected:
   void compute_times_yearly(std::vector<double> &result) const;
 private:
   MPI_Comm m_com;
-  bool m_simple_calendar;
   // Hide copy constructor / assignment operator.
   Time_Calendar(Time_Calendar const &);
   Time_Calendar & operator=(Time_Calendar const &);
