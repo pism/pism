@@ -278,7 +278,10 @@ double Time_Calendar::year_fraction(double T) const {
 std::string Time_Calendar::date(double T) const {
   auto date = m_time_units.date(T, m_calendar_string);
 
-  return pism::printf("%04d-%02d-%02d", date.year, date.month, date.day);
+  double hour = date.hour + date.minute / 60.0 + date.second / 3600.0;
+
+  return pism::printf("%04d-%02d-%02d %04.1fh",
+                      date.year, date.month, date.day, hour);
 }
 
 double Time_Calendar::calendar_year_start(double T) const {
