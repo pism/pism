@@ -59,7 +59,6 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("grid.Mbz", 11);
   config->set_number("grid.Lbz", 1000);
 
-  config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
   config->set_number("time.start_year", 0.0);
   config->set_number("time.run_length", 1.0);

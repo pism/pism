@@ -21,7 +21,7 @@ dt=100
 # use a non-square grid
 Mx=41
 My=61
-options="-bed_def lc -extra_times 0,100,200,300 -extra_vars dbdt,topg,thk -stress_balance none -energy none -calendar none -bed_deformation.lc.update_interval ${dt} -max_dt ${dt}"
+options="-bed_def lc -extra_times 0,100,200,300 -extra_vars dbdt,topg,thk -stress_balance none -energy none -bed_deformation.lc.update_interval ${dt} -max_dt ${dt}"
 
 grid="-Lz 5000 -Mz 3 -Mx ${Mx} -My ${My}"
 

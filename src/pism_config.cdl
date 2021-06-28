@@ -2670,7 +2670,7 @@ netcdf pism_config {
     pism_config:surface.temp_to_runoff_a_units = "K-1";
 
     pism_config:time.calendar = "365_day";
-    pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian,none";
+    pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian";
     pism_config:time.calendar_doc = "The calendar to use.";
     pism_config:time.calendar_option = "calendar";
     pism_config:time.calendar_type = "keyword";

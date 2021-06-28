@@ -22,11 +22,11 @@ set +e
 diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:
 bheatflx0  :       max    prcntmax          av
-             0.0034644   11.2927879    0.0034644
+             0.0034644   11.2928460    0.0034644
 NUM ERRORS DONE
 NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:
 bheatflx0  :       max    prcntmax          av
-             0.0113218   36.9052106    0.0113218
+             0.0113218   36.9052047    0.0113218
 NUM ERRORS DONE
 END-OF-OUTPUT
 

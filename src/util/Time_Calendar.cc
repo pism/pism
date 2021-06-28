@@ -139,11 +139,9 @@ void Time_Calendar::init_from_input_file(const File &nc,
                                          const std::string &time_name,
                                          const Logger &log) {
   try {
-    // Set the calendar name from file, unless we are re-starting from a PISM run using the "none"
-    // calendar.
+    // Set the calendar name from file.
     std::string new_calendar = nc.read_text_attribute(time_name, "calendar");
-    if (not new_calendar.empty() and
-        not (new_calendar == "none")) {
+    if (not new_calendar.empty()) {
       init_calendar(new_calendar);
     }
 
