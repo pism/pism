@@ -150,7 +150,8 @@ Time::~Time() {
 void Time::init_calendar(const std::string &calendar_string) {
 
   if (not pism_is_valid_calendar_name(calendar_string)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unsupported calendar: %s", calendar_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "unsupported calendar: %s", calendar_string.c_str());
   }
 
   m_calendar_string = calendar_string;
