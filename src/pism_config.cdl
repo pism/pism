@@ -2689,6 +2689,11 @@ netcdf pism_config {
     pism_config:time.eemian_start_type = "number";
     pism_config:time.eemian_start_units = "years";
 
+    pism_config:time.end = "";
+    pism_config:time.end_doc = "End time, interpreted relative to :config:`time.reference_date`.";
+    pism_config:time.end_option = "ye";
+    pism_config:time.end_type = "string";
+
     pism_config:time.holocene_start = -11000.0;
     pism_config:time.holocene_start_doc = "Start of the Holocene interglacial period. See :cite:`Greve97Greenland`.";
     pism_config:time.holocene_start_type = "number";
@@ -2699,14 +2704,14 @@ netcdf pism_config {
     pism_config:time.reference_date_type = "string";
 
     pism_config:time.run_length = 1000;
-    pism_config:time.run_length_doc = "Default run length";
+    pism_config:time.run_length_doc = "Run length";
     pism_config:time.run_length_type = "number";
     pism_config:time.run_length_units = "365day";
 
-    pism_config:time.start_year = 0;
-    pism_config:time.start_year_doc = "Start year.";
-    pism_config:time.start_year_type = "number";
-    pism_config:time.start_year_units = "365day";
+    pism_config:time.start = "0 days";
+    pism_config:time.start_doc = "Start time, interpreted relative to :config:`time.reference_date`.";
+    pism_config:time.start_option = "ys";
+    pism_config:time.start_type = "string";
 
     pism_config:time_stepping.adaptive_ratio = 0.12;
     pism_config:time_stepping.adaptive_ratio_doc = "Adaptive time stepping ratio for the explicit scheme for the mass balance equation; :cite:`BBL`, inequality (25)";
