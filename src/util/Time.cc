@@ -62,11 +62,7 @@ Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System
   try {
     std::string calendar = calendar_from_options(com, *config);
 
-    if (member(calendar, {"360_day", "365_day", "noleap", "none"})) {
-      return Time::Ptr(new Time(config, calendar, system));
-    } else {
-      return Time::Ptr(new Time_Calendar(com, config, calendar, system));
-    }
+    return Time::Ptr(new Time_Calendar(com, config, calendar, system));
 
   } catch (RuntimeError &e) {
     e.add_context("initializing Time from options");
