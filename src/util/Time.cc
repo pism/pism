@@ -144,9 +144,6 @@ Time::Time(Config::ConstPtr conf,
   m_time_in_seconds = m_run_start;
 }
 
-Time::~Time() {
-}
-
 void Time::init_calendar(const std::string &calendar_string) {
 
   if (not pism_is_valid_calendar_name(calendar_string)) {

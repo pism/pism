@@ -59,7 +59,7 @@ public:
   Time(Config::ConstPtr conf,
        const std::string &calendar,
        units::System::Ptr units_system);
-  virtual ~Time();
+  virtual ~Time() = default;
 
   typedef std::shared_ptr<Time> Ptr;
   typedef std::shared_ptr<const Time> ConstPtr;
