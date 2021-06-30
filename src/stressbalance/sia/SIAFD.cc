@@ -31,6 +31,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/fem/FEM.hh"   // for mstar stuff below
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
@@ -138,10 +139,15 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   }
 
   profiling.begin("sia.gradient");
+  // FIXME if stress_balance.sia.surface_gradient_method == mstar then the
+  //   following returns the mahaffy version, thus in conflict with result
+  //   of compute_diffusive_flux_mstar() below
   compute_surface_gradient(inputs, m_h_x, m_h_y);
   profiling.end("sia.gradient");
 
   profiling.begin("sia.flux");
+  // FIXME if stress_balance.sia.surface_gradient_method == mstar then the
+  //   following generates an m_D which is ignored by compute_diffusive_flux_mstar() below
   compute_diffusivity(full_update,
                       *inputs.geometry,
                       inputs.enthalpy,
@@ -804,61 +810,77 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   } // o-loop
 }
 
-double SIAFD::q_mstar(const double H, const double slope, const double gradscomponent) {
+double SIAFD::q_mstar(const double H, const double slopemag, const double ds) {
   const double n   = m_flow_law->exponent(), // presumably 3.0
                g   = m_config->get_number("constants.standard_gravity"),
                rho = m_config->get_number("constants.ice.density"),
                A   = m_config->get_number("flow_law.Paterson_Budd.A_cold"),
                Gamma = 2.0 * A * pow(rho * g, n) / (n + 2.0);
 
-  return - Gamma * pow(H, n + 2.0) * pow(slope, n - 1.0) * gradscomponent;
+  return - Gamma * pow(H, n + 2.0) * pow(slopemag, n - 1.0) * ds;
 }
 
+// FIXME test of this new code:
+//    pismv -test B -ys 422.45 -y 1 -gradient mstar
+// compare
+//    pismv -test B -ys 422.45 -y 1 -gradient mahaffy
 void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
                                          IceModelVec2Stag &result) {
 
-  const double dx  = m_grid->dx(), dy  = m_grid->dy();
-
+  using fem::QuadPoint;
+  using fem::Germ;
+  using fem::q1::n_chi;
+  using fem::q1::chi;
+  const double dx = m_grid->dx(), dy = m_grid->dy();
   const IceModelVec2S &s = geometry.ice_surface_elevation,
                       &H = geometry.ice_thickness;
-
   IceModelVec::AccessList list{&s, &H, &result};
+  /* offset of element vertex from lower-left corner
+       3 o-----o 2
+         |     |
+         |     |
+       0 o-----o 1    */
+  const unsigned int voff[n_chi][2] = {{0, 0},
+                                       {1, 0},
+                                       {1, 1},
+                                       {0, 1}};
+  // we use quadrature points from Bueler 2016 Figure 3, which have the
+  // following locations in the [-1,1]x[-1,1] reference element
+  const QuadPoint qp[4] = {{ 0.0, -0.5, 0.0},  // point 0 in Figure 3; up pt on right face of control
+                           { 0.0,  0.5, 0.0},  // point 7; down pt on right face of control
+                           {-0.5,  0.0, 0.0},  // point 1; right pt on top face of control
+                           { 0.5,  0.0, 0.0}}; // point 2; left pt on top face of control
 
   ParallelSection loop(m_grid->com);
   try {
     for (PointsWithGhosts p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      for (int o = 0; o < 2; o++) {
-        // apply equation (25) in Bueler 2016, or similar, to each face of the
-        //   control rectangle; in fact we only do top and right faces
-        // note _up,_down are quadrature points 0,7 in Bueler 2016 Figure 3,
-        //   while _left,_right are 2,1
-        double qint = 0.0; // estimate of integral of flux along face
-        if (o == 0) {
-          // next lines use equation (18) in Bueler 2016
-          double sx_up = ((s(i + 1, j) - s(i, j)) * 0.75 + (s(i + 1, j + 1) - s(i, j + 1)) * 0.25) / dx,
-                 sy_up = ((s(i, j + 1) - s(i, j)) * 0.5  + (s(i + 1, j + 1) - s(i + 1, j)) * 0.5 ) / dy,
-                 slope_up = sqrt(PetscSqr(sx_up) + PetscSqr(sy_up));
-          double H_up = 0.0; // FIXME
-          double q_up = q_mstar(H_up, slope_up, sx_up),
-                 q_down = 0.0; // FIXME
-          qint = (dy / 2.0) * (q_up + q_down);
-        } else {
-          double q_left = 0.0, // FIXME
-                 q_right = 0.0; // FIXME
-          qint = (dx / 2.0) * (q_left + q_right);
+      const int i = p.i(), j = p.j();  // regular grid point at (i,j)
+      // apply equation (25) in Bueler 2016, or similar, to top and right
+      //   faces of the control rectangle centered at regular point (i,j)
+      for (int o = 0; o < 2; o++) { // o==0 is right face, o==1 is top face
+        double q[2]; // value of flux at each quadrature point
+        // next lines use equation (18) in Bueler 2016
+        for (unsigned int l = 0; l < 2; l++) { // two quadrature points per face
+          double HH, sx, sy = 0.0;
+          for (unsigned int k = 0; k < n_chi; k++) { // four vertices of Q1 element
+            const int ei = i - l * o, ej = j - l * (1-o);  // which element
+            const Germ &psi = chi(k, qp[l]); // germ of shape function at quad point
+            HH += psi.val * H(ei + voff[k][0], ej + voff[k][1]);
+            const double sk = s(ei + voff[k][0], ej + voff[k][1]);
+            sx += psi.dx * sk / dx;
+            sy += psi.dy * sk / dy;
+          }
+          const double slopemag = sqrt(PetscSqr(sx) + PetscSqr(sy));
+          q[l] = q_mstar(HH, slopemag, (o == 0) ? sx : sy);
         }
         // result is average flux over the face of the control rectangle
-        result(i, j, o) = qint / ((o == 0) ? dy : dx);
+        result(i, j, o) = 0.5 * (q[0] + q[1]);
       } // o-loop
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "compute_diffusive_flux_mstar() is not implemented");
 }
 
 //! \brief Compute I.
