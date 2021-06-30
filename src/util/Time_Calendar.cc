@@ -30,22 +30,9 @@
 #include "VariableMetadata.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
-
-static inline std::string string_strip(std::string input) {
-  if (input.empty() == true) {
-    return input;
-  }
-
-  // strip leading spaces
-  input.erase(0, input.find_first_not_of(" \t"));
-
-  // strip trailing spaces
-  input.substr(input.find_last_not_of(" \t"));
-
-  return input;
-}
 
 /*!
 

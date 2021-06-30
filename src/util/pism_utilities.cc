@@ -51,6 +51,22 @@
 
 namespace pism {
 
+std::string string_strip(const std::string &input) {
+  if (input.empty()) {
+    return "";
+  }
+
+  std::string tmp = input;
+
+  // strip leading spaces
+  tmp.erase(0, tmp.find_first_not_of(" \t"));
+
+  // strip trailing spaces
+  tmp.substr(tmp.find_last_not_of(" \t"));
+
+  return tmp;
+}
+
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
   if (suffix.size() > str.size()) {

@@ -61,6 +61,9 @@ bool is_increasing(const std::vector<double> &a);
 // string
 bool ends_with(const std::string &str, const std::string &suffix);
 
+// remove leading and trailing whitespace
+std::string string_strip(const std::string &input);
+
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
 
 std::vector<std::string> split(const std::string &input, char separator);
