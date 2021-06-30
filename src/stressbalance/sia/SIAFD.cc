@@ -159,6 +159,8 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
     compute_diffusive_flux(m_h_x, m_h_y, m_D, m_diffusive_flux);
   }
   profiling.end("sia.flux");
+  // DEBUG
+  m_diffusive_flux.dump("diffusive_flux.nc");
 
   if (full_update) {
     profiling.begin("sia.3d_velocity");
@@ -810,7 +812,8 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   } // o-loop
 }
 
-double SIAFD::q_mstar(const double H, const double slopemag, const double ds) {
+// compute formula (2) in Bueler 2016
+double SIAFD::q_mstar(double H, double slopemag, double ds) {
   const double n   = m_flow_law->exponent(), // presumably 3.0
                g   = m_config->get_number("constants.standard_gravity"),
                rho = m_config->get_number("constants.ice.density"),
@@ -857,14 +860,16 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
       const int i = p.i(), j = p.j();  // regular grid point at (i,j)
       // apply equation (25) in Bueler 2016, or similar, to top and right
       //   faces of the control rectangle centered at regular point (i,j)
-      for (int o = 0; o < 2; o++) { // o==0 is right face, o==1 is top face
+      for (unsigned int o = 0; o < 2; o++) { // o==0 is right face, o==1 is top face
         double q[2]; // value of flux at each quadrature point
-        // next lines use equation (18) in Bueler 2016
         for (unsigned int l = 0; l < 2; l++) { // two quadrature points per face
-          double HH, sx, sy = 0.0;
-          for (unsigned int k = 0; k < n_chi; k++) { // four vertices of Q1 element
-            const int ei = i - l * o, ej = j - l * (1-o);  // which element
-            const Germ &psi = chi(k, qp[l]); // germ of shape function at quad point
+          // next line gets the element which contains the quad point
+          const int ei = i - l * o,
+                    ej = j - l * (1 - o);
+          // loop over vertices of Q1 element and accumulate H, ds/dx, ds/dy
+          double HH = 0.0, sx = 0.0, sy = 0.0;
+          for (unsigned int k = 0; k < n_chi; k++) {
+            const Germ &psi = chi(k, qp[2 * o + l]); // germ of shape function at quad point
             HH += psi.val * H(ei + voff[k][0], ej + voff[k][1]);
             const double sk = s(ei + voff[k][0], ej + voff[k][1]);
             sx += psi.dx * sk / dx;
