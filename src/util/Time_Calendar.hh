@@ -66,7 +66,7 @@ public:
 
   virtual double calendar_year_start(double T) const;
 
-  virtual double increment_date(double T, int years) const;
+  virtual double increment_date(double T, double years) const;
 
 protected:
   virtual void compute_times(double time_start, double time_end,

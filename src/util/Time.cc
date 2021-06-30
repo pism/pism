@@ -378,7 +378,7 @@ double Time::calendar_year_start(double T) const {
   return T - this->mod(T, 1);
 }
 
-double Time::increment_date(double T, int years) const {
+double Time::increment_date(double T, double years) const {
   return T + years_to_seconds(years);
 }
 

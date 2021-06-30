@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cassert>
-#include <cstdlib>
+#include <cassert>              // assert()
+#include <cstdlib>              // strtol()
 #include <petscsys.h>
 
 #include "error_handling.hh"
@@ -50,15 +50,8 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
   std::string ref_date = m_config->get_string("time.reference_date");
 
   try {
-    // parse ref_date to validate it, discarding the return value
-    parse_date(ref_date);
-  } catch (RuntimeError &e) {
-    e.add_context("validating the reference date");
-    throw;
-  }
-
-  try {
-    m_time_units = units::Unit(m_time_units.system(), "seconds since " + ref_date);
+    // this will validate the reference date
+    m_time_units = units::Unit(m_unit_system, "seconds since " + ref_date);
   } catch (RuntimeError &e) {
     e.add_context("setting time units");
     throw;
@@ -293,35 +286,45 @@ double Time_Calendar::calendar_year_start(double T) const {
 }
 
 
-double Time_Calendar::increment_date(double T, int years) const {
+double Time_Calendar::increment_date(double T, double years) const {
+  assert(years >= 0.0);
+
+  int whole_years = static_cast<int>(std::floor(years));
+  double year_fraction = years - whole_years;
+  const double day_length = 86400.0;
 
   // Get the date corresponding to time T:
   auto date = m_time_units.date(T, m_calendar_string);
 
-  calcalcs_cal *cal = NULL;
-  int errcode, leap = 0;
-  cal = ccs_init_calendar(m_calendar_string.c_str());
-  assert(cal != NULL);
-  errcode = ccs_isleap(cal, date.year + years, &leap);
-  assert(errcode == 0);
-  ccs_free_calendar(cal);
+  // shift the date by the number of whole years requested
+  date.year += whole_years;
 
-  if (leap == 0 and date.month == 2 and date.day == 29) {
-    PetscErrorCode ierr = PetscPrintf(m_com,
-                                      "PISM WARNING: date %d year(s) since %d-%d-%d does not exist."
-                                      " Using %d-%d-%d instead of %d-%d-%d.\n",
-                                      years,
-                                      date.year, date.month, date.day,
-                                      date.year + years, date.month, date.day-1,
-                                      date.year + years, date.month, date.day);
-    PISM_CHK(ierr, "PetscPrintf");
-    date.day -= 1;
+  // check if the resulting year is a leap year:
+  int leap = 0;
+  {
+    calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
+    assert(cal != NULL);
+    int errcode = ccs_isleap(cal, date.year, &leap);
+    assert(errcode == 0);
+    ccs_free_calendar(cal);
   }
 
-  date.year += years;
+  double result = 0.0;
+  if (leap == 0 and date.month == 2 and date.day == 29) {
+    // avoid passing an impossible date to UDUNITS:
+    date.day -= 1;
+    result = m_time_units.time(date, m_calendar_string);
+    // add back the day we substracted above
+    result += day_length;
+  } else {
+    result = m_time_units.time(date, m_calendar_string);
+  }
 
-  // Return the time in seconds corresponding to the new date.
-  return m_time_units.time(date, m_calendar_string);
+  int year_length = (leap == 1) ? 366 : 365;
+
+  result += year_fraction * (year_length * day_length);
+
+  return result;
 }
 
 /**

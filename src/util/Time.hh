@@ -132,7 +132,7 @@ public:
 
   //! Increment time `T` by a given amount and return resulting model
   //! time in seconds.
-  virtual double increment_date(double T, int years) const;
+  virtual double increment_date(double T, double years) const;
 
   //! \brief Returns the date corresponding to time T.
   virtual std::string date(double T) const;
