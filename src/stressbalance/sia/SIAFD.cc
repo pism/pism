@@ -159,8 +159,6 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
     compute_diffusive_flux(m_h_x, m_h_y, m_D, m_diffusive_flux);
   }
   profiling.end("sia.flux");
-  // DEBUG
-  m_diffusive_flux.dump("diffusive_flux.nc");
 
   if (full_update) {
     profiling.begin("sia.3d_velocity");
