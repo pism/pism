@@ -160,6 +160,8 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   }
   profiling.end("sia.flux");
 
+  m_diffusive_flux.dump("diffusive_flux.nc");  // DEBUG
+
   if (full_update) {
     profiling.begin("sia.3d_velocity");
     compute_3d_horizontal_velocity(*inputs.geometry, m_h_x, m_h_y, sliding_velocity,
@@ -923,12 +925,12 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
       // NW element
       double q2{0.0};
       {
-        NE.reset(i - 1, j);
-        NE.nodal_values(ice_thickness, H);
-        NE.nodal_values(ice_surface, S);
+        NW.reset(i - 1, j);
+        NW.nodal_values(ice_thickness, H);
+        NW.nodal_values(ice_surface, S);
 
-        NE.evaluate(H, Hq);
-        NE.evaluate(S, s, sx, sy);
+        NW.evaluate(H, Hq);
+        NW.evaluate(S, s, sx, sy);
 
         q2 = q_mstar(Hq[0], sx[0], sy[0]).v;
       }
