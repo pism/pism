@@ -57,8 +57,11 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
     throw;
   }
 
-  m_run_start = increment_date(0, (int)m_config->get_number("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
+  auto start = m_config->get_string("time.start");
+  double start_time = parse_date(start);
+
+  m_run_start = increment_date(0, start_time);
+  m_run_end   = increment_date(m_run_start, m_config->get_number("time.run_length"));
 
   m_time_in_seconds = m_run_start;
 }
@@ -340,6 +343,9 @@ double Time_Calendar::increment_date(double T, double years) const {
  *
  */
 double Time_Calendar::parse_date(const std::string &input) const {
+  using units::Converter;
+  using units::DateTime;
+  using units::Unit;
 
   std::string spec = string_strip(input);
 
@@ -358,53 +364,74 @@ double Time_Calendar::parse_date(const std::string &input) const {
 
   auto parts = split(spec, '-');
 
-  if (parts.size() != 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "date specification '%s' is invalid (should have 3 parts: YYYY-MM-DD, got %d)",
-                                  spec.c_str(), (int)parts.size());
-  }
+  if (parts.size() == 3) {
 
-  std::vector<int> numbers;
-  for (const auto &p : parts) {
-    // check if strtol can parse it:
-    char *endptr = NULL;
-    long int n = strtol(p.c_str(), &endptr, 10);
-    if (*endptr != '\0') {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "date specification '%s' is invalid ('%s' is not an integer)",
-                                    spec.c_str(), p.c_str());
+    std::vector<int> numbers;
+    for (const auto &p : parts) {
+      // check if strtol can parse it:
+      char *endptr = NULL;
+      long int n = strtol(p.c_str(), &endptr, 10);
+      if (*endptr != '\0') {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "date specification '%s' is invalid ('%s' is not an integer)",
+                                      spec.c_str(), p.c_str());
+      }
+
+      // FIXME: this may overflow!
+      numbers.push_back((int)n);
     }
 
-    // FIXME: this may overflow!
-    numbers.push_back((int)n);
-  }
-
-  if (year_is_negative) {
-    numbers[0] *= -1;
-  }
-
-  // Validate the calendar string and the date in this calendar:
-  {
-    calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
-    if (cal == NULL) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "calendar string '%s' is invalid",
-                                    m_calendar_string.c_str());
+    if (year_is_negative) {
+      numbers[0] *= -1;
     }
 
-    int dummy = 0;
-    int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
-    if (errcode != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "date %s is invalid in the %s calendar",
-                                    spec.c_str(), m_calendar_string.c_str());
+    // Validate the calendar string and the date in this calendar:
+    {
+      calcalcs_cal *cal = ccs_init_calendar(m_calendar_string.c_str());
+      if (cal == NULL) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "calendar string '%s' is invalid",
+                                      m_calendar_string.c_str());
+      }
+
+      int dummy = 0;
+      int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
+      if (errcode != 0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "date %s is invalid in the %s calendar",
+                                      spec.c_str(), m_calendar_string.c_str());
+      }
+      ccs_free_calendar(cal);
     }
-    ccs_free_calendar(cal);
+
+    DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
+
+    return m_time_units.time(d, m_calendar_string);
+  } else {
+    // "spec" must be a number or a number with units attached to it
+    try {
+      Unit
+        s(m_unit_system, "s"),
+        one(m_unit_system, "1"),
+        input_units(m_unit_system, spec);
+
+      double t = 0.0;
+
+      // Check if these units are compatible with "s" or "1". The
+      // latter allows intervals of the form "0.5", which stands for "half
+      // of a model year". This also discards interval specs such as "days
+      // since 1-1-1", even though "days" is compatible with "s".
+      if (units::are_convertible(input_units, s)) {
+        t = Converter(input_units, s)(1.0);
+      } else {
+        t = Converter(input_units, one)(1.0);
+      }
+      return increment_date(0, t);
+    } catch (RuntimeError &e) {
+      e.add_context("parsing the date " + spec);
+      throw;
+    }
   }
-
-  units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
-
-  return m_time_units.time(d, m_calendar_string);
 }
 
 auto Time_Calendar::parse_interval_length(const std::string &spec) const -> Interval {

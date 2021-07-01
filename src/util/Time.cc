@@ -426,11 +426,11 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
   }
 
   if (spec == "monthly") {
-    return {0.0, MONTHLY};
+    return {1.0, MONTHLY};
   }
 
   if (spec == "yearly") {
-    return {0.0, YEARLY};
+    return {1.0, YEARLY};
   }
 
   try {
@@ -475,9 +475,9 @@ std::vector<double> Time::parse_range(const std::string &spec) const {
   } else if (spec == "daily") {
     I = {86400.0, SIMPLE};
   } else if (spec == "monthly") {
-    I = {0.0, MONTHLY};
+    I = {1.0, MONTHLY};
   } else if (spec == "yearly") {
-    I = {0.0, YEARLY};
+    I = {1.0, YEARLY};
   } else {
 
     auto parts = pism::split(spec, ':');
