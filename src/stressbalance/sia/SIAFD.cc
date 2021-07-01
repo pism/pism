@@ -814,11 +814,14 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 
 // compute formula (2) in Bueler 2016
 Vector2 SIAFD::q_mstar(double H, double sx, double sy) {
+  // See FIXME comments below: this will break for flow laws other than isothermal_glen.
   const double
     n        = m_flow_law->exponent(), // presumably 3.0
     g        = m_config->get_number("constants.standard_gravity"),
     rho      = m_config->get_number("constants.ice.density"),
-    A        = m_config->get_number("flow_law.Paterson_Budd.A_cold"),
+    E        = 0.0,             // FIXME
+    p        = 0.0,             // FIXME
+    A        = m_flow_law->softness(E, p),
     Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
     slopemag = sqrt(sx * sx + sy * sy);
 
