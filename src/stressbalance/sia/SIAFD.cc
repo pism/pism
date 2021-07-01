@@ -813,74 +813,130 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
 }
 
 // compute formula (2) in Bueler 2016
-double SIAFD::q_mstar(double H, double slopemag, double ds) {
-  const double n   = m_flow_law->exponent(), // presumably 3.0
-               g   = m_config->get_number("constants.standard_gravity"),
-               rho = m_config->get_number("constants.ice.density"),
-               A   = m_config->get_number("flow_law.Paterson_Budd.A_cold"),
-               Gamma = 2.0 * A * pow(rho * g, n) / (n + 2.0);
+Vector2 SIAFD::q_mstar(double H, double sx, double sy) {
+  const double
+    n        = m_flow_law->exponent(), // presumably 3.0
+    g        = m_config->get_number("constants.standard_gravity"),
+    rho      = m_config->get_number("constants.ice.density"),
+    A        = m_config->get_number("flow_law.Paterson_Budd.A_cold"),
+    Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
+    slopemag = sqrt(sx * sx + sy * sy);
 
-  return - Gamma * pow(H, n + 2.0) * pow(slopemag, n - 1.0) * ds;
+  return - Gamma * pow(H, n + 2.0) * pow(slopemag, n - 1.0) * Vector2(sx, sy);
 }
+
+// A helper struct for defining quadrature point locations
+struct Quad : public fem::Quadrature {
+  Quad(std::initializer_list<fem::QuadPoint> pts) {
+    m_points  = pts;
+    m_weights = std::vector<double>(m_points.size(), 0.0);
+  }
+};
 
 // FIXME test of this new code:
 //    pismv -test B -ys 422.45 -y 1 -gradient mstar
 // compare
 //    pismv -test B -ys 422.45 -y 1 -gradient mahaffy
+//
+//    +-----------------+-----------------+
+//    | i-1,j (NW)      |        (NE) i,j |
+//    |                 |                 |
+//    |       C----2----+----1----B       |
+//    |       |         |         |       |
+//    |       3         |         0       |
+//    |       |         |         |       |
+//    +-------+---------+---------+-------+
+//    |       |         |         |       |
+//    |       4         |         7       |
+//    |       |         |         |       |
+//    |       +----5----+----6----A       |
+//    |                 |                 |
+//    |                 |      (SE) i,j-1 |
+//    +-----------------+-----------------+
+//
+//    Figure 3 from Bueler (2016)
+//
+// At each map-plane location i,j this function computes SIA fluxes through control volume
+// faces A-B and B-C.
+//
+// Each face is split into two sub-intervals; we use the midpoint rule for each.
 void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
                                          IceModelVec2Stag &result) {
-
-  using fem::QuadPoint;
-  using fem::Germ;
   using fem::q1::n_chi;
-  using fem::q1::chi;
-  const double dx = m_grid->dx(), dy = m_grid->dy();
-  const IceModelVec2S &s = geometry.ice_surface_elevation,
-                      &H = geometry.ice_thickness;
-  IceModelVec::AccessList list{&s, &H, &result};
-  /* offset of element vertex from lower-left corner
-       3 o-----o 2
-         |     |
-         |     |
-       0 o-----o 1    */
-  const unsigned int voff[n_chi][2] = {{0, 0},
-                                       {1, 0},
-                                       {1, 1},
-                                       {0, 1}};
-  // we use quadrature points from Bueler 2016 Figure 3, which have the
-  // following locations in the [-1,1]x[-1,1] reference element
-  const QuadPoint qp[4] = {{ 0.0, -0.5, 0.0},  // point 0 in Figure 3; up pt on right face of control
-                           { 0.0,  0.5, 0.0},  // point 7; down pt on right face of control
-                           {-0.5,  0.0, 0.0},  // point 1; right pt on top face of control
-                           { 0.5,  0.0, 0.0}}; // point 2; left pt on top face of control
+  using fem::Q1Element2;
+
+  IceModelVec::AccessList list{&geometry.ice_thickness,
+                               &geometry.ice_surface_elevation, &result};
+
+  auto ice_thickness = geometry.ice_thickness.array();
+  auto ice_surface   = geometry.ice_surface_elevation.array();
+
+  // NE (i, j) element (uses points 0, 1)
+  Q1Element2 NE(*m_grid, Quad{{0.0, -0.5, 0.0}, {-0.5, 0.0, 0.0}});
+  // NW (i-1, j) element (uses point 2)
+  Q1Element2 NW(*m_grid, Quad{{0.5, 0.0, 0.0}});
+  // SE (i, j-1) element (uses point 7)
+  Q1Element2 SE(*m_grid, Quad{{0.0, 0.5, 0.0}});
 
   ParallelSection loop(m_grid->com);
   try {
     for (PointsWithGhosts p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();  // regular grid point at (i,j)
-      // apply equation (25) in Bueler 2016, or similar, to top and right
-      //   faces of the control rectangle centered at regular point (i,j)
-      for (unsigned int o = 0; o < 2; o++) { // o==0 is right face, o==1 is top face
-        double q[2]; // value of flux at each quadrature point
-        for (unsigned int l = 0; l < 2; l++) { // two quadrature points per face
-          // next line gets the element which contains the quad point
-          const int ei = i - l * o,
-                    ej = j - l * (1 - o);
-          // loop over vertices of Q1 element and accumulate H, ds/dx, ds/dy
-          double HH = 0.0, sx = 0.0, sy = 0.0;
-          for (unsigned int k = 0; k < n_chi; k++) {
-            const Germ &psi = chi(k, qp[2 * o + l]); // germ of shape function at quad point
-            HH += psi.val * H(ei + voff[k][0], ej + voff[k][1]);
-            const double sk = s(ei + voff[k][0], ej + voff[k][1]);
-            sx += psi.dx * sk / dx;
-            sy += psi.dy * sk / dy;
-          }
-          const double slopemag = sqrt(PetscSqr(sx) + PetscSqr(sy));
-          q[l] = q_mstar(HH, slopemag, (o == 0) ? sx : sy);
-        }
-        // result is average flux over the face of the control rectangle
-        result(i, j, o) = 0.5 * (q[0] + q[1]);
-      } // o-loop
+
+      // Ice thickness and surface elevation at element nodes
+      double H[n_chi], S[n_chi];
+
+      // Ice thickness and surface elevation (and its gradient) at quadrature points
+      //
+      // Note that we use at most 2 quadrature points
+      double Hq[2], s[2], sx[2], sy[2];
+
+      // SE element
+      double q7{0.0};
+      {
+        SE.reset(i, j - 1);
+        SE.nodal_values(ice_thickness, H);
+        SE.nodal_values(ice_surface, S);
+
+        SE.evaluate(H, Hq);
+        SE.evaluate(S, s, sx, sy);
+
+        q7 = q_mstar(Hq[0], sx[0], sy[0]).u;
+      }
+
+      // NE element
+      double q0{0.0}, q1{0.0};
+      {
+        NE.reset(i, j);
+        NE.nodal_values(ice_thickness, H);
+        NE.nodal_values(ice_surface, S);
+
+        NE.evaluate(H, Hq);
+        NE.evaluate(S, s, sx, sy);
+
+        q0 = q_mstar(Hq[0], sx[0], sy[0]).u;
+        q1 = q_mstar(Hq[1], sx[1], sy[1]).v;
+      }
+
+      // NW element
+      double q2{0.0};
+      {
+        NE.reset(i - 1, j);
+        NE.nodal_values(ice_thickness, H);
+        NE.nodal_values(ice_surface, S);
+
+        NE.evaluate(H, Hq);
+        NE.evaluate(S, s, sx, sy);
+
+        q2 = q_mstar(Hq[0], sx[0], sy[0]).v;
+      }
+
+      // Apply equations similar to (25) in Bueler 2016, but divided by dx and dy to top
+      // and right faces of the control rectangle centered at regular point (i,j)
+      //
+      // result is average flux over the face of the control rectangle
+      result(i, j, 0) = 0.5 * (q7 + q0);
+      result(i, j, 1) = 0.5 * (q1 + q2);
     }
   } catch (...) {
     loop.failed();
