@@ -817,6 +817,7 @@ Vector2 SIAFD::q_mstar(double H, double sx, double sy) {
   // See FIXME comments below: this will break for flow laws other than isothermal_glen.
   const double
     n        = m_flow_law->exponent(), // presumably 3.0
+    // FIXME: m_config->get_...() should not be used here (it is slow)
     g        = m_config->get_number("constants.standard_gravity"),
     rho      = m_config->get_number("constants.ice.density"),
     E        = 0.0,             // FIXME
