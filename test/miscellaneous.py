@@ -604,7 +604,7 @@ def pism_context_test():
 
     EC = PISM.EnthalpyConverter(config)
 
-    time = PISM.Time(config, "360_day", system)
+    time = PISM.Time(config, system)
 
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 

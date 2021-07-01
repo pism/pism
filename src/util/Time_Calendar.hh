@@ -27,8 +27,9 @@ namespace pism {
 class Time_Calendar : public Time
 {
 public:
-  Time_Calendar(MPI_Comm c, Config::ConstPtr conf,
-                const std::string &calendar,
+  Time_Calendar(MPI_Comm c,
+                Config::ConstPtr config,
+                const Logger &log,
                 units::System::Ptr units_system);
   virtual ~Time_Calendar() = default;
 
@@ -73,11 +74,8 @@ protected:
                              const Interval &interval,
                              std::vector<double> &result) const;
 
-  virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
   virtual bool process_ye(double &result);
-
-  virtual double parse_date(const std::string &spec) const;
 
   virtual Interval parse_interval_length(const std::string &spec) const;
 

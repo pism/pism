@@ -28,8 +28,6 @@
 
 namespace pism {
 
-std::string calendar_from_options(MPI_Comm com, const Config& config);
-
 /**
  * Returns 0 if `name` is a name of a supported calendar, 1 otherwise.
  */
@@ -56,9 +54,7 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 class Time
 {
 public:
-  Time(Config::ConstPtr conf,
-       const std::string &calendar,
-       units::System::Ptr units_system);
+  Time(Config::ConstPtr config, units::System::Ptr units_system);
   virtual ~Time() = default;
 
   typedef std::shared_ptr<Time> Ptr;
@@ -168,7 +164,6 @@ protected:
   void compute_times_simple(double time_start, double delta, double time_end,
                             std::vector<double> &result) const;
 
-  virtual bool process_ys(double &result);
   virtual bool process_y(double &result);
   virtual bool process_ye(double &result);
 
@@ -208,12 +203,6 @@ protected:
   // True if the calendar has constant year lengths (360_day, 365_day)
   bool m_simple_calendar;
 };
-
-std::string reference_date_from_file(const File &nc,
-                                     const std::string &time_name);
-
-//! Create a Time instance by processing command-line options.
-Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system);
 
 //! Initialize time from command-line options or from and input file (set using the `-i` option).
 void initialize_time(MPI_Comm com, const std::string &dimension_name,

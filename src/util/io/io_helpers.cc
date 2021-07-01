@@ -1047,7 +1047,7 @@ void define_timeseries(const VariableMetadata& var,
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 void read_timeseries(const File &file, const VariableMetadata &metadata,
-                     const Time &time, const Logger &log, std::vector<double> &data) {
+                     const Logger &log, std::vector<double> &data) {
 
   std::string name = metadata.get_name();
 
@@ -1080,19 +1080,15 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
     file.read_variable(var.name, {0}, {length}, data.data());
 
     units::System::Ptr system = metadata.unit_system();
-    bool input_has_units = false;
     units::Unit internal_units(system, metadata.get_string("units")),
       input_units(system, "1");
 
     std::string input_units_string = file.read_text_attribute(var.name, "units");
 
-    if (input_units_string.empty()) {
-      input_has_units = false;
-    } else {
-      input_units_string = time.CF_units_to_PISM_units(input_units_string);
+    bool input_has_units = not input_units_string.empty();
 
+    if (input_has_units) {
       input_units = units::Unit(system, input_units_string);
-      input_has_units = true;
     }
 
     if (metadata.has_attribute("units") && not input_has_units) {

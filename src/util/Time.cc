@@ -30,46 +30,6 @@
 
 namespace pism {
 
-/**
- * Select a calendar using the "time.calendar" configuration parameter, the
- * "-calendar" command-line option, or the "calendar" attribute of the
- * "time" variable in the file specified using "-time_file".
- *
- */
-std::string calendar_from_options(MPI_Comm com, const Config &config) {
-  // Set the default calendar using the config. parameter or the
-  // "-calendar" option:
-  std::string result = config.get_string("time.calendar");
-
-  // Check if -time_file was set and override the setting above if the
-  // "calendar" attribute is found.
-  options::String time_file("-time_file", "name of the file specifying the run duration");
-  if (time_file.is_set()) {
-    File file(com, time_file, PISM_NETCDF3, PISM_READONLY);    // OK to use netcdf3
-
-    std::string time_name = config.get_string("time.dimension_name");
-    if (file.find_variable(time_name)) {
-      std::string tmp = file.read_text_attribute(time_name, "calendar");
-      if (not tmp.empty()) {
-        result = tmp;
-      }
-    }
-  }
-  return result;
-}
-
-Time::Ptr time_from_options(MPI_Comm com, Config::ConstPtr config, units::System::Ptr system) {
-  try {
-    std::string calendar = calendar_from_options(com, *config);
-
-    return Time::Ptr(new Time_Calendar(com, config, calendar, system));
-
-  } catch (RuntimeError &e) {
-    e.add_context("initializing Time from options");
-    throw;
-  }
-}
-
 //! Initialize model time using command-line options and (possibly) files.
 void initialize_time(MPI_Comm com, const std::string &dimension_name,
                      const Logger &log, Time &time) {
@@ -83,26 +43,6 @@ void initialize_time(MPI_Comm com, const std::string &dimension_name,
   }
 
   time.init(log);
-}
-
-//! Get the reference date from a file.
-std::string reference_date_from_file(const File &file,
-                                     const std::string &time_name) {
-
-  if (not file.find_variable(time_name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' variable is not present in '%s'.",
-                                  time_name.c_str(), file.filename().c_str());
-  }
-  std::string time_units = file.read_text_attribute(time_name, "units");
-
-  // Check if the time_units includes a reference date.
-  size_t position = time_units.find("since");
-  if (position == std::string::npos) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time units string '%s' does not contain a reference date",
-                                  time_units.c_str());
-  }
-
-  return time_units.substr(position);
 }
 
 
@@ -124,20 +64,10 @@ double Time::seconds_to_years(double input) const {
 
 
 Time::Time(Config::ConstPtr conf,
-           const std::string &calendar_string,
            units::System::Ptr unit_system)
   : m_config(conf),
     m_unit_system(unit_system),
     m_time_units(m_unit_system, "seconds") {
-
-  m_simple_calendar = member(calendar_string, {"360_day", "365_day", "no_leap"});
-
-  init_calendar(calendar_string);
-
-  m_run_start = years_to_seconds(m_config->get_number("time.start_year"));
-  m_run_end   = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
-
-  m_time_in_seconds = m_run_start;
 }
 
 void Time::init_calendar(const std::string &calendar_string) {
@@ -233,15 +163,6 @@ std::string Time::CF_units_to_PISM_units(const std::string &input) const {
   return units;
 }
 
-bool Time::process_ys(double &result) {
-  options::Real ys(m_unit_system,
-                   "-ys", "Start year",
-                   m_config->units("time.start_year"),
-                   m_config->get_number("time.start_year"));
-  result = years_to_seconds(ys);
-  return ys.is_set();
-}
-
 bool Time::process_y(double &result) {
   options::Real y(m_unit_system,
                   "-y", "Run length, in years",
@@ -283,49 +204,13 @@ void Time::init_from_input_file(const File &file,
   }
 }
 
-
-void Time::init(const Logger &log) {
-
-  (void) log;
-
-  double y_seconds, ys_seconds, ye_seconds;
-
-  // At this point the calendar and the year length are set (in the
-  // constructor). The Time_Calendar class will (potentially)
-  // override all this by using settings from -time_file, so that is
-  // fine, too.
-
-  bool y_set  = process_y(y_seconds);
-  bool ys_set = process_ys(ys_seconds);
-  bool ye_set = process_ye(ye_seconds);
-
-  if (ys_set and ye_set and y_set) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "all of -y, -ys, -ye are set.");
-  }
-
-  if (y_set and ye_set) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "using -y and -ye together is not allowed.");
-  }
-
-  // Set the start year if -ys is set, use the default otherwise.
-  if (ys_set) {
-    m_run_start = ys_seconds;
-  }
-
-  m_time_in_seconds = m_run_start;
-
-  if (ye_set) {
-    if (ye_seconds < m_time_in_seconds) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-ye (%s) is less than -ys (%s) (or input file year or default).\n"
-                                    "PISM cannot run backward in time.",
-                                    date(ye_seconds).c_str(), date(m_run_start).c_str());
-    }
-    m_run_end = ye_seconds;
-  } else if (y_set) {
-    m_run_end = m_run_start + y_seconds;
-  } else {
-    m_run_end = increment_date(m_run_start, (int)m_config->get_number("time.run_length"));
-  }
+/*!
+ *
+ * If -i is set, the start time and the calendar are taken from this file.
+ * If -time_file is set, use that
+ */
+void Time::init(const Logger &) {
+  // FIXME: remove
 }
 
 std::string Time::date(double T) const {

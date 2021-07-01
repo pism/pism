@@ -244,7 +244,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     time_dimension.set_string("units", time_units);
 
     io::read_timeseries(file, time_dimension,
-                        *ctx->time(), log, m_data->time);
+                        log, m_data->time);
 
     std::string bounds_name = file.read_text_attribute(time_name, "bounds");
 

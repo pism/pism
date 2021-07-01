@@ -27,7 +27,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
-#include "pism/util/Time.hh"
+#include "pism/util/Time_Calendar.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 
@@ -60,14 +60,14 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("grid.Lbz", 1000);
 
   // when IceGrid constructor is called, these settings are used
-  config->set_number("time.start_year", 0.0);
+  config->set_string("time.start", "0s");
   config->set_number("time.run_length", 1.0);
 
   set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time_Calendar>(com, config, *logger, sys);
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 

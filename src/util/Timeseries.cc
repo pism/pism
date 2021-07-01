@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Constantine Khroulev
+// Copyright (C) 2009--2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
   VariableMetadata time_dimension(time_name, m_unit_system);
   time_dimension.set_string("units", time_manager.units_string());
 
-  io::read_timeseries(file, time_dimension, time_manager, log, m_time);
+  io::read_timeseries(file, time_dimension, log, m_time);
 
   if (not is_increasing(m_time)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -111,7 +111,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
     m_use_bounds = false;
   }
 
-  io::read_timeseries(file, m_variable, time_manager, log, m_values);
+  io::read_timeseries(file, m_variable, log, m_values);
 
   if (m_time.size() != m_values.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variables %s and %s in %s have different numbers of values.",

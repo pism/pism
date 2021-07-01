@@ -28,6 +28,8 @@ grid="-Lz 5000 -Mz 3 -Mx ${Mx} -My ${My}"
 # create the input file
 ${mpi} ${pismr} -eisII A ${grid} -y 1000 -o out0.nc -verbose 1
 
+set -x
+
 # Run with re-starting
 #
 # Note that this first run stops after 1.5 update intervals, so it runs the bed
@@ -37,13 +39,15 @@ ${mpi} ${pismr} ${options} -i out0.nc -o out1.nc -extra_file ex1.nc -ys 0 -ye 15
 # bed at years 200 and 300.
 ${mpi} ${pismr} ${options} -i out1.nc -o out2.nc -extra_file ex2.nc -ye 300
 
-# combine output files
-ncrcat -O ex1.nc ex2.nc ex-restart.nc
-
 # run straight
 #
 # This run updates bed elevation at years 100, 200, and 300.
 ${mpi} ${pismr} ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -extra_file ex.nc -ys 0 -ye 300
+
+set +x
+
+# combine output files
+ncrcat -O ex1.nc ex2.nc ex-restart.nc
 
 set +e
 

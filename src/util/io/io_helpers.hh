@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -91,7 +91,7 @@ void define_time_bounds(const VariableMetadata& var,
                         const File &nc, IO_Type nctype = PISM_DOUBLE);
 
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
-                     const Time &time, const Logger &log, std::vector<double> &data);
+                     const Logger &log, std::vector<double> &data);
 
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
