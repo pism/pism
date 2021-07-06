@@ -43,7 +43,7 @@ protected:
 
   IceModelVec2S m_topg_reference;
 
-  IceModelVec2T::Ptr m_topg_delta;
+  std::shared_ptr<IceModelVec2T> m_topg_delta;
 };
 
 } // end of namespace bed

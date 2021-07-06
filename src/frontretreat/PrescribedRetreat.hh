@@ -53,7 +53,7 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2T::Ptr m_retreat_mask;
+  std::shared_ptr<IceModelVec2T> m_retreat_mask;
 };
 
 } // end of namespace pism

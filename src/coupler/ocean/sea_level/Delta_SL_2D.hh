@@ -42,7 +42,7 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  IceModelVec2T::Ptr m_forcing;
+  std::shared_ptr<IceModelVec2T> m_forcing;
 };
 
 } // end of namespace sea_level

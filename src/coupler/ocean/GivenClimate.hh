@@ -40,8 +40,8 @@ private:
   const IceModelVec2S& shelf_base_temperature_impl() const;
   const IceModelVec2S& shelf_base_mass_flux_impl() const;
 
-  IceModelVec2T::Ptr m_shelfbtemp;
-  IceModelVec2T::Ptr m_shelfbmassflux;
+  std::shared_ptr<IceModelVec2T> m_shelfbtemp;
+  std::shared_ptr<IceModelVec2T> m_shelfbmassflux;
 
   IceModelVec2S::Ptr m_shelf_base_temperature;
   IceModelVec2S::Ptr m_shelf_base_mass_flux;

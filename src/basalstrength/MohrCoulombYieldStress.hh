@@ -62,7 +62,7 @@ private:
 
   IceModelVec2S m_till_phi;
 
-  IceModelVec2T::Ptr m_delta;
+  std::shared_ptr<IceModelVec2T> m_delta;
 };
 
 } // end of namespace pism

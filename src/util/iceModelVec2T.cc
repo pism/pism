@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Constantine Khroulev
+// Copyright (C) 2009--2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -101,7 +101,7 @@ struct IceModelVec2T::Data {
  * @param[in] evaluations_per_year number of evaluations per year to use when averaging
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
-IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
+std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
                                                const File &file,
                                                const std::string &short_name,
                                                const std::string &standard_name,
@@ -137,8 +137,8 @@ IceModelVec2T::Ptr IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
     interpolation_type = LINEAR_PERIODIC;
   }
 
-  return IceModelVec2T::Ptr(new IceModelVec2T(grid, short_name, n_records,
-                                              evaluations_per_year, interpolation_type));
+  return std::make_shared<IceModelVec2T>(grid, short_name, n_records,
+                                         evaluations_per_year, interpolation_type);
 }
 
 

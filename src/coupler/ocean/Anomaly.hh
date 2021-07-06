@@ -40,7 +40,7 @@ protected:
 protected:
   IceModelVec2S::Ptr m_shelf_base_mass_flux;
 
-  IceModelVec2T::Ptr m_shelf_base_mass_flux_anomaly;
+  std::shared_ptr<IceModelVec2T> m_shelf_base_mass_flux_anomaly;
 
 };
 

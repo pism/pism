@@ -49,7 +49,7 @@ private:
 
   std::unique_ptr<ScalarForcing> m_1d_scaling;
 
-  IceModelVec2T::Ptr m_2d_scaling;
+  std::shared_ptr<IceModelVec2T> m_2d_scaling;
 
   IceModelVec2S::Ptr m_precipitation;
 };

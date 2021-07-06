@@ -61,7 +61,7 @@ private:
 
   PicoGeometry m_geometry;
 
-  IceModelVec2T::Ptr m_theta_ocean, m_salinity_ocean;
+  std::shared_ptr<IceModelVec2T> m_theta_ocean, m_salinity_ocean;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
                                      const IceModelVec2Int &basin_mask,

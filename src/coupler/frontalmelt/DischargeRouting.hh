@@ -43,7 +43,7 @@ private:
   MaxTimestep max_timestep_impl(double t) const;
 
   // input
-  IceModelVec2T::Ptr m_theta_ocean;
+  std::shared_ptr<IceModelVec2T> m_theta_ocean;
 
   // output
   IceModelVec2S::Ptr m_frontal_melt_rate;

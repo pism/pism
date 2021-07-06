@@ -41,7 +41,7 @@ private:
 
   const IceModelVec2S& frontal_melt_rate_impl() const;
 
-  IceModelVec2T::Ptr m_frontal_melt_rate;
+  std::shared_ptr<IceModelVec2T> m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

@@ -54,7 +54,7 @@ protected:
   double m_precip_exp_factor;
   double m_temp_lapse_rate;
 
-  IceModelVec2T::Ptr m_reference_surface;
+  std::shared_ptr<IceModelVec2T> m_reference_surface;
 
   IceModelVec2S::Ptr m_precipitation;
   IceModelVec2S::Ptr m_temperature;

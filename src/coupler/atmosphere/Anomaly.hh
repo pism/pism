@@ -47,8 +47,8 @@ protected:
 protected:
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 
-  IceModelVec2T::Ptr m_air_temp_anomaly;
-  IceModelVec2T::Ptr m_precipitation_anomaly;
+  std::shared_ptr<IceModelVec2T> m_air_temp_anomaly;
+  std::shared_ptr<IceModelVec2T> m_precipitation_anomaly;
 
   IceModelVec2S::Ptr m_precipitation;
   IceModelVec2S::Ptr m_temperature;

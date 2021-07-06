@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Constantine Khroulev
+// Copyright (C) 2009--2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,16 +42,15 @@ namespace pism {
 */
 class IceModelVec2T : public IceModelVec2S {
 public:
-  typedef std::shared_ptr<IceModelVec2T> Ptr;
-
-  static Ptr ForcingField(IceGrid::ConstPtr grid,
-                          const File &file,
-                          const std::string &short_name,
-                          const std::string &standard_name,
-                          int max_buffer_size,
-                          int evaluations_per_year,
-                          bool periodic,
-                          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
+  static std::shared_ptr<IceModelVec2T>
+  ForcingField(IceGrid::ConstPtr grid,
+               const File &file,
+               const std::string &short_name,
+               const std::string &standard_name,
+               int max_buffer_size,
+               int evaluations_per_year,
+               bool periodic,
+               InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
   IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
                 unsigned int n_evaluations_per_year,

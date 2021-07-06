@@ -45,8 +45,8 @@ protected:
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;
 
-  IceModelVec2T::Ptr m_climatic_mass_balance_anomaly;
-  IceModelVec2T::Ptr m_ice_surface_temp_anomaly;
+  std::shared_ptr<IceModelVec2T> m_climatic_mass_balance_anomaly;
+  std::shared_ptr<IceModelVec2T> m_ice_surface_temp_anomaly;
 };
 
 } // end of namespace surface
