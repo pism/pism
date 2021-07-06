@@ -169,9 +169,9 @@ is removed along the front, at a rate at most one grid cell per time step. The v
 `H_{\mathrm{cr}}` can be set using the configuration parameter
 :config:`calving.thickness_calving.threshold`.
 
-To set a spatially-variable ice thickness threshold, set the parameter
+To set a time-and-space dependent ice thickness threshold, set the parameter
 :config:`calving.thickness_calving.file`. This file should contain the variable
-:var:`calving_threshold` in meters.
+:var:`thickness_calving_threshold` in meters.
 
 Configuration parameters:
 
