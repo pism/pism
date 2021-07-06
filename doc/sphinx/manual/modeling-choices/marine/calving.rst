@@ -170,7 +170,7 @@ is removed along the front, at a rate at most one grid cell per time step. The v
 :config:`calving.thickness_calving.threshold`.
 
 To set a spatially-variable ice thickness threshold, set the parameter
-:config:`calving.thickness_calving.threshold_file`. This file should contain the variable
+:config:`calving.thickness_calving.file`. This file should contain the variable
 :var:`calving_threshold` in meters.
 
 Configuration parameters:
