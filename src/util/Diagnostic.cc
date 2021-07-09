@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -191,7 +191,7 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
   m_dimension.set_string("calendar", m_grid->ctx()->time()->calendar());
   m_dimension.set_string("long_name", "time");
   m_dimension.set_string("axis", "T");
-  m_dimension.set_string("units", m_grid->ctx()->time()->CF_units_string());
+  m_dimension.set_string("units", m_grid->ctx()->time()->units_string());
 }
 
 TSDiagnostic::~TSDiagnostic() {

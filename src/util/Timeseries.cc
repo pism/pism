@@ -99,7 +99,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
     time_bounds.set_string("units", time_dimension.get_string("units"));
     time_bounds.set_string("glaciological_units", time_dimension.get_string("glaciological_units"));
 
-    io::read_time_bounds(file, time_bounds, time_manager, log, m_time_bounds);
+    io::read_time_bounds(file, time_bounds, log, m_time_bounds);
 
     // Time bounds override the time dimension read from the input file.
     //

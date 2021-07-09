@@ -27,7 +27,7 @@ void VecBundleWriter::init() {
   io::define_time(file,
                   m_grid->ctx()->config()->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(),
+                  m_grid->ctx()->time()->units_string(),
                   m_grid->ctx()->unit_system());
 
   for (pism::IceModelVec const *vec : vecs) {

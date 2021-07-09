@@ -265,7 +265,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
         VariableMetadata tb(bounds_name, ctx->unit_system());
         tb.set_string("units", time_units);
 
-        io::read_time_bounds(file, tb, *ctx->time(), log, m_data->time_bounds);
+        io::read_time_bounds(file, tb, log, m_data->time_bounds);
 
         // time bounds data overrides the time variable: we make t[j] be the
         // left end-point of the j-th interval

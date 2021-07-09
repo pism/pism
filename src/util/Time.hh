@@ -88,20 +88,9 @@ public:
   //! \brief Intialize using command-line options.
   virtual void init(const Logger &log);
 
-  virtual void init_from_input_file(const File &nc,
-                                    const std::string &time_name,
-                                    const Logger &log);
-
   void init_calendar(const std::string &calendar);
 
   std::vector<double> parse_times(const std::string &spec) const;
-
-  //! \brief Returns the CF- (and UDUNITS) compliant units string.
-  /*!
-   * This units string is saved in the output file. Always contains a reference
-   * date, even if it is not used by PISM.
-   */
-  virtual std::string CF_units_string() const;
 
   //! \brief Internal time units.
   /*!
@@ -109,8 +98,6 @@ public:
    * use the reference date, while Time_Calendar does.)
    */
   virtual std::string units_string() const;
-
-  virtual std::string CF_units_to_PISM_units(const std::string &input) const;
 
   //! \brief Returns time since the origin modulo period.
   virtual double mod(double time, unsigned int period_years) const;
@@ -203,10 +190,6 @@ protected:
   // True if the calendar has constant year lengths (360_day, 365_day)
   bool m_simple_calendar;
 };
-
-//! Initialize time from command-line options or from and input file (set using the `-i` option).
-void initialize_time(MPI_Comm com, const std::string &dimension_name,
-                     const Logger &log, Time &time);
 
 } // end of namespace pism
 

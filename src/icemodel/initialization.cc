@@ -76,9 +76,6 @@ namespace pism {
 
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
-  initialize_time(m_grid->com,
-                  m_config->get_string("time.dimension_name"),
-                  *m_log, *m_time);
 
   bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 

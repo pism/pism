@@ -468,15 +468,6 @@ bool Time_Calendar::process_ye(double &result) {
   return ye.is_set();
 }
 
-/*!
- * Set the calendar, reference date, the start time, and the current time from a file.
- */
-void Time_Calendar::init_from_input_file(const File &,
-                                         const std::string &,
-                                         const Logger &) {
-  // FIXME: remove
-}
-
 void Time_Calendar::init(const Logger &log) {
 
   // process command-line options -y, -ys, -ye
@@ -541,7 +532,7 @@ void Time_Calendar::init_from_file(const std::string &filename, const Logger &lo
       VariableMetadata bounds(time_bounds_name, m_unit_system);
       bounds.set_string("units", m_time_units.format());
 
-      io::read_time_bounds(file, bounds, *this, log, time);
+      io::read_time_bounds(file, bounds, log, time);
     } else {
       // use the time axis
       VariableMetadata time_axis(time_name, m_unit_system);

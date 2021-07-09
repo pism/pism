@@ -38,32 +38,12 @@ public:
   virtual void init_from_file(const std::string &filename, const Logger &log,
                               bool set_start_time);
 
-  virtual void init_from_input_file(const File &nc,
-                                    const std::string &time_name,
-                                    const Logger &log);
-
   virtual double mod(double time, unsigned int) const;
 
   virtual double year_fraction(double T) const;
 
   using Time::date;
   virtual std::string date(double T) const;
-
-  virtual std::string units_string() const {
-    return CF_units_string();
-  }
-
-  virtual std::string CF_units_string() const {
-    return m_time_units.format();
-  }
-
-  virtual std::string CF_units_to_PISM_units(const std::string &input) const {
-    return input;               // return unchanged CF units
-  }
-
-  virtual bool use_reference_date() {
-    return true;
-  }
 
   virtual double calendar_year_start(double T) const;
 

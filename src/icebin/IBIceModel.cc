@@ -250,7 +250,7 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc)
                     m_grid->ctx()->pio_iosys_id()));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
+                  m_grid->ctx()->time()->units_string(), m_grid->ctx()->unit_system());
 
   // These are in iMtimseries, but not listed as required in iceModelVec.hh
   //    nc->write_attribute(m_config.get_string("time.dimension_name"),

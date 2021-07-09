@@ -223,7 +223,7 @@ void define_time(const File &file, const Context &ctx) {
   define_time(file,
               config.get_string("time.dimension_name"),
               time.calendar(),
-              time.CF_units_string(),
+              time.units_string(),
               ctx.unit_system());
 }
 
@@ -1167,7 +1167,7 @@ void define_time_bounds(const VariableMetadata& var,
 
 void read_time_bounds(const File &file,
                       const VariableMetadata &metadata,
-                      const Time &time, const Logger &log,
+                      const Logger &log,
                       std::vector<double> &data) {
 
   std::string name = metadata.get_name();
@@ -1220,9 +1220,7 @@ void read_time_bounds(const File &file,
     units::Unit input_units(internal_units.system(), "1");
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
-    input_units_string = time.CF_units_to_PISM_units(input_units_string);
-
-    if (input_units_string.empty() == true) {
+    if (input_units_string.empty()) {
       input_has_units = false;
     } else {
       input_units = units::Unit(internal_units.system(), input_units_string);

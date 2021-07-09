@@ -30,22 +30,6 @@
 
 namespace pism {
 
-//! Initialize model time using command-line options and (possibly) files.
-void initialize_time(MPI_Comm com, const std::string &dimension_name,
-                     const Logger &log, Time &time) {
-
-  // Check if we are initializing from a PISM output file:
-  options::String input_file("-i", "Specifies a PISM input file");
-
-  if (input_file.is_set()) {
-    File file(com, input_file, PISM_NETCDF3, PISM_READONLY);     // OK to use netcdf3
-    time.init_from_input_file(file, dimension_name, log);
-  }
-
-  time.init(log);
-}
-
-
 //! Convert model years into seconds using the year length
 //! corresponding to the current calendar.
 /*! Do not use this to convert quantities other than time intervals!
@@ -116,8 +100,8 @@ double Time::end() const {
   return m_run_end;
 }
 
-std::string Time::CF_units_string() const {
-  return "seconds since " + m_config->get_string("time.reference_date");
+std::string Time::units_string() const {
+  return m_time_units.format();
 }
 
 //! \brief Returns the calendar string.
@@ -134,33 +118,6 @@ void Time::step(double delta_t) {
       m_run_end - m_time_in_seconds < 1e-3) {
     m_time_in_seconds = m_run_end;
   }
-}
-
-std::string Time::units_string() const {
-  return "seconds";
-}
-
-
-std::string Time::CF_units_to_PISM_units(const std::string &input) const {
-  std::string units = input;
-  size_t n = units.find("since");
-
-  /*!
-    \note This code finds the string "since" in the units_string and
-    terminates it on the first 's' of "since", if this sub-string was found.
-    This is done to ignore the reference date in the time units string (the
-    reference date specification always starts with this word).
-  */
-  if (n != std::string::npos) {
-    units.resize(n);
-  }
-
-  // strip trailing spaces
-  while (ends_with(units, " ") && not units.empty()) {
-    units.resize(units.size() - 1);  // this would fail on empty strings
-  }
-
-  return units;
 }
 
 bool Time::process_y(double &result) {
@@ -180,28 +137,6 @@ bool Time::process_ye(double &result) {
                    m_config->get_number("time.run_length", "365days"));
   result = years_to_seconds(ye);
   return ye.is_set();
-}
-
-
-//! Set start time from a PISM input file.
-/**
- * FIXME: This crude implementation does not use reference dates and does not convert units.
- */
-void Time::init_from_input_file(const File &file,
-                                const std::string &time_name,
-                                const Logger &log) {
-  unsigned int time_length = file.dimension_length(time_name);
-
-  bool ys = options::Bool("-ys", "starting time");
-  if (not ys and time_length > 0) {
-    // Set the default starting time to be equal to the last time saved in the input file
-    double T = vector_max(file.read_dimension(time_name));
-    this->set_start(T);
-    this->set(T);
-    log.message(2,
-                "* Time t = %s found in '%s'; setting current time\n",
-                this->date().c_str(), file.filename().c_str());
-  }
 }
 
 /*!
