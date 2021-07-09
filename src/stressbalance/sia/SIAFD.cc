@@ -810,8 +810,15 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   } // o-loop
 }
 
-// compute formula (2) in Bueler 2016
-Vector2 SIAFD::q_mstar(double H, double sx, double sy) {
+// FIXME THIS WILL NEED TO BE REFACTORED FOR UPWINDING.  FOR EACH QUADRATURE
+// POINT (I.E. 0,1,2,7) WE NEED TO COMPUTE W FIRST, THEN DECIDE ON THE
+// QUADRATURE POINT WHERE H WILL BE EVALUATED; THEN ALL THIS GOES INTO q
+// from Bueler 2016, compute formula (3) for D, then (6) for W, then return
+//   q = -D grad H + W H^{n+2},
+// as in formula (6)
+Vector2 SIAFD::q_mstar(double H, double Hx, double Hy,
+                       double sx, double sy,
+                       double bx, double by) {
   // See FIXME comments below: this will break for flow laws other than isothermal_glen.
   const double
     n        = m_flow_law->exponent(), // presumably 3.0
@@ -822,9 +829,15 @@ Vector2 SIAFD::q_mstar(double H, double sx, double sy) {
     p        = 0.0,             // FIXME
     A        = m_flow_law->softness(E, p),
     Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
-    slopemag = sqrt(sx * sx + sy * sy);
+    slopemag = sqrt(sx * sx + sy * sy),
+    Z        = Gamma * pow(slopemag, n - 1.0);
 
-  return - Gamma * pow(H, n + 2.0) * pow(slopemag, n - 1.0) * Vector2(sx, sy);
+  const double D = Z * pow(H, n + 2.0);
+  const Vector2 W = - Z * Vector2(bx, by);
+
+  // FIXME need upwinding; the H^{n+2} part of the second term is not to be
+  // evaluated at the same point as everything else
+  return - D * Vector2(Hx, Hy) + W * pow(H, n + 2.0);
 }
 
 // A helper struct for defining quadrature point locations
@@ -868,10 +881,13 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
   using fem::Q1Element2;
 
   IceModelVec::AccessList list{&geometry.ice_thickness,
-                               &geometry.ice_surface_elevation, &result};
+                               &geometry.ice_surface_elevation,
+                               &geometry.bed_elevation,
+                               &result};
 
   auto ice_thickness = geometry.ice_thickness.array();
   auto ice_surface   = geometry.ice_surface_elevation.array();
+  auto bed           = geometry.bed_elevation.array();
 
   // NE (i, j) element (uses points 0, 1)
   Q1Element2 NE(*m_grid, Quad{{0.0, -0.5, 0.0}, {-0.5, 0.0, 0.0}});
@@ -886,12 +902,11 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
       const int i = p.i(), j = p.j();  // regular grid point at (i,j)
 
       // Ice thickness and surface elevation at element nodes
-      double H[n_chi], S[n_chi];
+      double H[n_chi], S[n_chi], B[n_chi];
 
-      // Ice thickness and surface elevation (and its gradient) at quadrature points
-      //
-      // Note that we use at most 2 quadrature points
-      double Hq[2], s[2], sx[2], sy[2];
+      // Ice thickness and surface elevation (and its gradient) at quadrature
+      // points.  Note that we use at most 2 quadrature points
+      double Hq[2], Hx[2], Hy[2], sq[2], sx[2], sy[2], bq[2], bx[2], by[2];
 
       // SE element
       double q7{0.0};
@@ -899,11 +914,11 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         SE.reset(i, j - 1);
         SE.nodal_values(ice_thickness, H);
         SE.nodal_values(ice_surface, S);
-
-        SE.evaluate(H, Hq);
-        SE.evaluate(S, s, sx, sy);
-
-        q7 = q_mstar(Hq[0], sx[0], sy[0]).u;
+        SE.nodal_values(bed, B);
+        SE.evaluate(H, Hq, Hx, Hy);
+        SE.evaluate(S, sq, sx, sy);
+        SE.evaluate(B, bq, bx, by);
+        q7 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).u;
       }
 
       // NE element
@@ -912,12 +927,12 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         NE.reset(i, j);
         NE.nodal_values(ice_thickness, H);
         NE.nodal_values(ice_surface, S);
-
-        NE.evaluate(H, Hq);
-        NE.evaluate(S, s, sx, sy);
-
-        q0 = q_mstar(Hq[0], sx[0], sy[0]).u;
-        q1 = q_mstar(Hq[1], sx[1], sy[1]).v;
+        NE.nodal_values(bed, B);
+        NE.evaluate(H, Hq, Hx, Hy);
+        NE.evaluate(S, sq, sx, sy);
+        NE.evaluate(B, bq, bx, by);
+        q0 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).u;
+        q1 = q_mstar(Hq[1], Hx[1], Hy[1], sx[1], sy[1], bx[1], by[1]).v;
       }
 
       // NW element
@@ -926,11 +941,11 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         NW.reset(i - 1, j);
         NW.nodal_values(ice_thickness, H);
         NW.nodal_values(ice_surface, S);
-
-        NW.evaluate(H, Hq);
-        NW.evaluate(S, s, sx, sy);
-
-        q2 = q_mstar(Hq[0], sx[0], sy[0]).v;
+        NW.nodal_values(bed, B);
+        NW.evaluate(H, Hq, Hx, Hy);
+        NW.evaluate(S, sq, sx, sy);
+        NW.evaluate(B, bq, bx, by);
+        q2 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).v;
       }
 
       // Apply equations similar to (25) in Bueler 2016, but divided by dx and dy to top
