@@ -121,8 +121,6 @@ int main(int argc, char *argv[]) {
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));
 
-    ctx->time()->init(*log);
-
     auto outname = config->get_string("output.file_name");
 
     options::Real dt_years(ctx->unit_system(),

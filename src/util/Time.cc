@@ -139,15 +139,6 @@ bool Time::process_ye(double &result) {
   return ye.is_set();
 }
 
-/*!
- *
- * If -i is set, the start time and the calendar are taken from this file.
- * If -time_file is set, use that
- */
-void Time::init(const Logger &) {
-  // FIXME: remove
-}
-
 std::string Time::date(double T) const {
   return pism::printf("%.3f", seconds_to_years(T));
 }

@@ -33,8 +33,6 @@ public:
                 units::System::Ptr units_system);
   virtual ~Time_Calendar() = default;
 
-  virtual void init(const Logger &log);
-
   virtual void init_from_file(const std::string &filename, const Logger &log,
                               bool set_start_time);
 

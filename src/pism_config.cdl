@@ -2694,6 +2694,14 @@ netcdf pism_config {
     pism_config:time.end_option = "ye";
     pism_config:time.end_type = "string";
 
+    pism_config:time.file = "";
+    pism_config:time.file_doc = "Name of the file used to set :config:`time.start`, :config:`time.end`, :config:`time.calendar`, and :config:`time.reference_date`";
+    pism_config:time.file_type = "string";
+
+    pism_config:time.file.continue = "false";
+    pism_config:time.file.continue_doc = "If true, don't set :config:`time.start` using :config:`time.file` (helpful when continuing an interrupted simulation)";
+    pism_config:time.file.continue_type = "flag";
+
     pism_config:time.holocene_start = -11000.0;
     pism_config:time.holocene_start_doc = "Start of the Holocene interglacial period. See :cite:`Greve97Greenland`.";
     pism_config:time.holocene_start_type = "number";

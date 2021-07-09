@@ -85,9 +85,6 @@ public:
 
   // Virtual methods:
 
-  //! \brief Intialize using command-line options.
-  virtual void init(const Logger &log);
-
   void init_calendar(const std::string &calendar);
 
   std::vector<double> parse_times(const std::string &spec) const;

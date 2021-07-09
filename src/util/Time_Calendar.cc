@@ -391,10 +391,8 @@ static double end_time(const Config &config,
 Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr config,
                              const Logger &log,
                              units::System::Ptr unit_system)
-  : Time(config, unit_system), // FIXME calendar
+  : Time(config, unit_system),
     m_com(c) {
-
-  // FIXME: implement -time_file
 
   auto input_file = config->get_string("input.file");
 
@@ -431,6 +429,16 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr config,
                        m_time_units);
 
   m_time_in_seconds = m_run_start;
+
+  auto time_file = config->get_string("time.file");
+  bool continue_run = config->get_flag("time.file.continue");
+
+  if (not time_file.empty()) {
+    log.message(2,
+                "* Setting time from '%s'...\n",
+                time_file.c_str());
+    init_from_file(time_file, log, not continue_run);
+  }
 }
 
 bool Time_Calendar::process_y(double &result) {
@@ -466,28 +474,6 @@ bool Time_Calendar::process_ye(double &result) {
               m_config->get_number("time.run_length", "seconds"));
   }
   return ye.is_set();
-}
-
-void Time_Calendar::init(const Logger &log) {
-
-  // process command-line options -y, -ys, -ye
-  Time::init(log);
-
-  options::String time_file("-time_file", "Reads time information from a file");
-
-  if (time_file.is_set()) {
-    log.message(2, 
-                "* Setting time from '%s'...\n",
-                time_file->c_str());
-
-    options::ignored(log, "-y");
-    options::ignored(log, "-ys");
-    options::ignored(log, "-ye");
-
-    bool continue_run = options::Bool("-time_file_continue_run",
-                                      "continue a run using start time in the -i file");
-    init_from_file(time_file, log, not continue_run);
-  }
 }
 
 //! \brief Sets the time from a NetCDF file with a time dimension (`-time_file`).
