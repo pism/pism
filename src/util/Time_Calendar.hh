@@ -52,9 +52,6 @@ protected:
                              const Interval &interval,
                              std::vector<double> &result) const;
 
-  virtual bool process_y(double &result);
-  virtual bool process_ye(double &result);
-
   virtual Interval parse_interval_length(const std::string &spec) const;
 
   void compute_times_monthly(std::vector<double> &result) const;
@@ -66,7 +63,6 @@ private:
   Time_Calendar(Time_Calendar const &);
   Time_Calendar & operator=(Time_Calendar const &);
 };
-
 
 } // end of namespace pism
 

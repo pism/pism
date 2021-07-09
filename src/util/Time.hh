@@ -148,9 +148,6 @@ protected:
   void compute_times_simple(double time_start, double delta, double time_end,
                             std::vector<double> &result) const;
 
-  virtual bool process_y(double &result);
-  virtual bool process_ye(double &result);
-
   enum IntervalType {YEARLY, MONTHLY, SIMPLE};
 
   struct Interval {

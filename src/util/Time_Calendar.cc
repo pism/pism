@@ -441,41 +441,6 @@ Time_Calendar::Time_Calendar(MPI_Comm c, Config::ConstPtr config,
   }
 }
 
-bool Time_Calendar::process_y(double &result) {
-
-  options::Integer y("-y", "Run length, in years (integer)", 0);
-
-  if (y.is_set()) {
-    if (y < 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-y %d is not allowed (run length can't be negative)",
-                                    y.value());
-    }
-    result = years_to_seconds(y);
-  } else {
-    result = m_config->get_number("time.run_length", "seconds");
-  }
-  return y.is_set();
-}
-
-
-bool Time_Calendar::process_ye(double &result) {
-
-  options::String ye("-ye", "Start date");
-
-  if (ye.is_set()) {
-    try {
-      result = parse_date(ye);
-    } catch (RuntimeError &e) {
-      e.add_context("processing the -ye option");
-      throw;
-    }
-  } else {
-    result = (m_config->get_number("time.start_year", "seconds") +
-              m_config->get_number("time.run_length", "seconds"));
-  }
-  return ye.is_set();
-}
-
 //! \brief Sets the time from a NetCDF file with a time dimension (`-time_file`).
 /*!
  * Sets

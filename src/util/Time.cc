@@ -120,25 +120,6 @@ void Time::step(double delta_t) {
   }
 }
 
-bool Time::process_y(double &result) {
-  options::Real y(m_unit_system,
-                  "-y", "Run length, in years",
-                  m_config->units("time.run_length"),
-                  m_config->get_number("time.run_length"));
-  result = years_to_seconds(y);
-  return y.is_set();
-}
-
-bool Time::process_ye(double &result) {
-  options::Real ye(m_unit_system,
-                   "-ye", "End year",
-                   "365days",
-                   m_config->get_number("time.start_year", "365days") +
-                   m_config->get_number("time.run_length", "365days"));
-  result = years_to_seconds(ye);
-  return ye.is_set();
-}
-
 std::string Time::date(double T) const {
   return pism::printf("%.3f", seconds_to_years(T));
 }
