@@ -810,16 +810,34 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
   } // o-loop
 }
 
-// FIXME THIS WILL NEED TO BE REFACTORED FOR UPWINDING.  FOR EACH QUADRATURE
-// POINT (I.E. 0,1,2,7) WE NEED TO COMPUTE W FIRST, THEN DECIDE ON THE
-// QUADRATURE POINT WHERE H WILL BE EVALUATED; THEN ALL THIS GOES INTO q
-// from Bueler 2016, compute formula (3) for D, then (6) for W, then return
-//   q = -D grad H + W H^{n+2},
-// as in formula (6)
+// FIXME obvious code duplication in next two functions should be removed
+
+// Compute formula (6) for W from Bueler (2016).  Returns
+//   W = - Gamma |grad s|^{n-1} grad b
+Vector2 SIAFD::W_mstar(double sx, double sy,
+                       double bx, double by) {
+  // FIXME: will break for flow laws other than isothermal_glen
+  const double
+    n        = m_flow_law->exponent(), // presumably 3.0
+    // FIXME: m_config->get_...() should not be used here (it is slow)
+    g        = m_config->get_number("constants.standard_gravity"),
+    rho      = m_config->get_number("constants.ice.density"),
+    E        = 0.0,             // FIXME
+    p        = 0.0,             // FIXME
+    A        = m_flow_law->softness(E, p),
+    Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
+    slopemag = sqrt(sx * sx + sy * sy);
+
+  return - Gamma * pow(slopemag, n - 1.0) * Vector2(bx, by);
+}
+
+// Compute the flux as in formulas (6), (29), and (30) from Bueler 2016:
+//   q = -D grad H + W Hup^{n+2}
+// where Hup is the value of H computed at an upwind point.
 Vector2 SIAFD::q_mstar(double H, double Hx, double Hy,
                        double sx, double sy,
-                       double bx, double by) {
-  // See FIXME comments below: this will break for flow laws other than isothermal_glen.
+                       Vector2 W, double Hup) {
+  // FIXME: will break for flow laws other than isothermal_glen
   const double
     n        = m_flow_law->exponent(), // presumably 3.0
     // FIXME: m_config->get_...() should not be used here (it is slow)
@@ -830,14 +848,9 @@ Vector2 SIAFD::q_mstar(double H, double Hx, double Hy,
     A        = m_flow_law->softness(E, p),
     Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
     slopemag = sqrt(sx * sx + sy * sy),
-    Z        = Gamma * pow(slopemag, n - 1.0);
+    D = Gamma * pow(slopemag, n - 1.0) * pow(H, n + 2.0);
 
-  const double D = Z * pow(H, n + 2.0);
-  const Vector2 W = - Z * Vector2(bx, by);
-
-  // FIXME need upwinding; the H^{n+2} part of the second term is not to be
-  // evaluated at the same point as everything else
-  return - D * Vector2(Hx, Hy) + W * pow(H, n + 2.0);
+  return - D * Vector2(Hx, Hy) + W * pow(Hup, n + 2.0);
 }
 
 // A helper struct for defining quadrature point locations
@@ -852,29 +865,33 @@ struct Quad : public fem::Quadrature {
 //    pismv -test B -ys 422.45 -y 1 -gradient mstar
 // compare
 //    pismv -test B -ys 422.45 -y 1 -gradient mahaffy
-//
-//    +-----------------+-----------------+
-//    | i-1,j (NW)      |        (NE) i,j |
-//    |                 |                 |
-//    |       C----2----+----1----B       |
-//    |       |         |         |       |
-//    |       3         |         0       |
-//    |       |         |         |       |
-//    +-------+---------+---------+-------+
-//    |       |         |         |       |
-//    |       4         |         7       |
-//    |       |         |         |       |
-//    |       +----5----+----6----A       |
-//    |                 |                 |
-//    |                 |      (SE) i,j-1 |
-//    +-----------------+-----------------+
-//
-//    Figure 3 from Bueler (2016)
-//
-// At each map-plane location i,j this function computes SIA fluxes through control volume
-// faces A-B and B-C.
-//
+
+// Figures 3 and 4 from Bueler (2016), combined:
+//    +------------------+------------------+
+//    | i-1,j (NW)       |         (NE) i,j |
+//    |                  |                  |
+//    |             +    |    +             |
+//    |        C----2----+----1----B        |
+//    |        |    +    |    +    |        |
+//    |        3         |       + 0 +      |
+//    |        |         |         |        |
+//    +--------+---------+---------+--------+
+//    |        |         |         |        |
+//    |        4         |       + 7 +      |
+//    |        |         |         |        |
+//    |        +----5----+----6----A        |
+//    |                  |                  |
+//    |                  |                  |
+//    |                  |       (SE) i,j-1 |
+//    +------------------+------------------+
+
+// At each map-plane location i,j, compute_diffusive_flux_mstar() below
+// computes SIA fluxes through control volume faces A-B and B-C in the figure.
 // Each face is split into two sub-intervals; we use the midpoint rule for each.
+// Only upper and right faces are evaluated, so only quadrature points 0,1,2,7
+// are used.  However, upwinding goes 1/4 of the way from these quadrature
+// points to the element boundary; the resulting evaluation points for H are
+// marked with "+".  Note lambda=1/4 (from Bueler 2016) is fixed.
 void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
                                          IceModelVec2Stag &result) {
   using fem::q1::n_chi;
@@ -885,16 +902,21 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
                                &geometry.bed_elevation,
                                &result};
 
-  auto ice_thickness = geometry.ice_thickness.array();
-  auto ice_surface   = geometry.ice_surface_elevation.array();
-  auto bed           = geometry.bed_elevation.array();
+  auto ice_thickness = geometry.ice_thickness.array(),
+       ice_surface   = geometry.ice_surface_elevation.array(),
+       bed           = geometry.bed_elevation.array();
 
-  // NE (i, j) element (uses points 0, 1)
-  Q1Element2 NE(*m_grid, Quad{{0.0, -0.5, 0.0}, {-0.5, 0.0, 0.0}});
-  // NW (i-1, j) element (uses point 2)
-  Q1Element2 NW(*m_grid, Quad{{0.5, 0.0, 0.0}});
-  // SE (i, j-1) element (uses point 7)
-  Q1Element2 SE(*m_grid, Quad{{0.0, 0.5, 0.0}});
+  Q1Element2 NE(*m_grid, Quad{{0.0, -0.5, 0.0}, {-0.5, 0.0, 0.0}}), // pts 0,1
+             NE0plus(*m_grid, Quad{{0.25, -0.5, 0.0}}),
+             NE0minus(*m_grid, Quad{{-0.25, -0.5, 0.0}}),
+             NE1plus(*m_grid, Quad{{-0.5, 0.25, 0.0}}),
+             NE1minus(*m_grid, Quad{{-0.5, -0.25, 0.0}}),
+             NW(*m_grid, Quad{{0.5, 0.0, 0.0}}), // point 2
+             NW2plus(*m_grid, Quad{{0.5, 0.25, 0.0}}),
+             NW2minus(*m_grid, Quad{{0.5, -0.25, 0.0}}),
+             SE(*m_grid, Quad{{0.0, 0.5, 0.0}}), // point 7
+             SE7plus(*m_grid, Quad{{0.25, 0.5, 0.0}}),
+             SE7minus(*m_grid, Quad{{-0.25, 0.5, 0.0}});
 
   ParallelSection loop(m_grid->com);
   try {
@@ -902,14 +924,16 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
       const int i = p.i(), j = p.j();  // regular grid point at (i,j)
 
       // Ice thickness and surface elevation at element nodes
-      double H[n_chi], S[n_chi], B[n_chi];
+      double H[n_chi], S[n_chi], B[n_chi], Hup[n_chi];
 
       // Ice thickness and surface elevation (and its gradient) at quadrature
       // points.  Note that we use at most 2 quadrature points
-      double Hq[2], Hx[2], Hy[2], sq[2], sx[2], sy[2], bq[2], bx[2], by[2];
+      double Hq[2], Hx[2], Hy[2], sq[2], sx[2], sy[2], bq[2], bx[2], by[2],
+             Hupq;
 
       // SE element
       double q7{0.0};
+      Vector2 W7;
       {
         SE.reset(i, j - 1);
         SE.nodal_values(ice_thickness, H);
@@ -918,11 +942,22 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         SE.evaluate(H, Hq, Hx, Hy);
         SE.evaluate(S, sq, sx, sy);
         SE.evaluate(B, bq, bx, by);
-        q7 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).u;
+        W7 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W7.u >= 0.0) {
+          SE7minus.reset(i, j - 1);
+          SE7minus.nodal_values(ice_thickness, Hup);
+          SE7minus.evaluate(Hup, &Hupq);
+        } else {
+          SE7plus.reset(i, j - 1);
+          SE7plus.nodal_values(ice_thickness, Hup);
+          SE7plus.evaluate(Hup, &Hupq);
+        }
+        q7 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W7, Hupq).u;
       }
 
       // NE element
       double q0{0.0}, q1{0.0};
+      Vector2 W0, W1;
       {
         NE.reset(i, j);
         NE.nodal_values(ice_thickness, H);
@@ -931,12 +966,33 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         NE.evaluate(H, Hq, Hx, Hy);
         NE.evaluate(S, sq, sx, sy);
         NE.evaluate(B, bq, bx, by);
-        q0 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).u;
-        q1 = q_mstar(Hq[1], Hx[1], Hy[1], sx[1], sy[1], bx[1], by[1]).v;
+        W0 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W0.u >= 0.0) {
+          NE0minus.reset(i, j);
+          NE0minus.nodal_values(ice_thickness, Hup);
+          NE0minus.evaluate(Hup, &Hupq);
+        } else {
+          NE0plus.reset(i, j);
+          NE0plus.nodal_values(ice_thickness, Hup);
+          NE0plus.evaluate(Hup, &Hupq);
+        }
+        q0 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W0, Hupq).u;
+        W1 = W_mstar(sx[1], sy[1], bx[1], by[1]);
+        if (W1.v >= 0.0) {
+          NE1minus.reset(i, j);
+          NE1minus.nodal_values(ice_thickness, Hup);
+          NE1minus.evaluate(Hup, &Hupq);
+        } else {
+          NE1plus.reset(i, j);
+          NE1plus.nodal_values(ice_thickness, Hup);
+          NE1plus.evaluate(Hup, &Hupq);
+        }
+        q1 = q_mstar(Hq[1], Hx[1], Hy[1], sx[1], sy[1], W1, Hupq).v;
       }
 
       // NW element
       double q2{0.0};
+      Vector2 W2;
       {
         NW.reset(i - 1, j);
         NW.nodal_values(ice_thickness, H);
@@ -945,13 +1001,23 @@ void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
         NW.evaluate(H, Hq, Hx, Hy);
         NW.evaluate(S, sq, sx, sy);
         NW.evaluate(B, bq, bx, by);
-        q2 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], bx[0], by[0]).v;
+        W2 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W2.v >= 0.0) {
+          NW2minus.reset(i - 1, j);
+          NW2minus.nodal_values(ice_thickness, Hup);
+          NW2minus.evaluate(Hup, &Hupq);
+        } else {
+          NW2plus.reset(i - 1, j);
+          NW2plus.nodal_values(ice_thickness, Hup);
+          NW2plus.evaluate(Hup, &Hupq);
+        }
+        q2 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W2, Hupq).v;
       }
 
-      // Apply equations similar to (25) in Bueler 2016, but divided by dx and dy to top
-      // and right faces of the control rectangle centered at regular point (i,j)
-      //
-      // result is average flux over the face of the control rectangle
+      // Apply equations similar to (25) in Bueler 2016, but divided by dx and
+      // dy as appropriate, to top and right faces of the control rectangle
+      // centered at regular point (i,j).  result(i,j,.) is the average flux
+      // over the face.
       result(i, j, 0) = 0.5 * (q7 + q0);
       result(i, j, 1) = 0.5 * (q1 + q2);
     }

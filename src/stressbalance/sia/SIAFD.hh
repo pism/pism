@@ -93,9 +93,12 @@ protected:
                                       const IceModelVec2Stag &diffusivity,
                                       IceModelVec2Stag &result);
 
+  virtual Vector2 W_mstar(double sx, double sy,
+                          double bx, double by);
+
   virtual Vector2 q_mstar(double H, double Hx, double Hy,
                           double sx, double sy,
-                          double bx, double by);
+                          Vector2 W, double Hup);
 
   virtual void compute_diffusive_flux_mstar(const Geometry &geometry,
                                             IceModelVec2Stag &result);
