@@ -17,7 +17,6 @@ set(PISMUTIL_SRC
   ConfigInterface.cc
   Diagnostic.cc
   Time.cc
-  Time_Calendar.cc
   Units.cc
   Vars.cc
   Profiling.cc

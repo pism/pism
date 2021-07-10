@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2020 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2021 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,6 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
-#include "util/Time_Calendar.hh"
 #include "util/Poisson.hh"
 #include "util/label_components.hh"
 %}
@@ -236,8 +235,6 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
-%shared_ptr(pism::Time_Calendar);
-%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);

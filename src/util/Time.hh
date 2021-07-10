@@ -54,7 +54,9 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
 class Time
 {
 public:
-  Time(Config::ConstPtr config, units::System::Ptr units_system);
+  Time(MPI_Comm com, Config::ConstPtr config,
+       const Logger &log,
+       units::System::Ptr unit_system);
   virtual ~Time() = default;
 
   typedef std::shared_ptr<Time> Ptr;
@@ -120,9 +122,6 @@ public:
   //! \brief Returns current time, in years. Only for reporting.
   virtual std::string date() const;
 
-  //! \brief Returns current time, in years. Only for debugging.
-  double current_years() const;
-
   //! Date corresponding to the beginning of the run.
   virtual std::string start_date() const;
 
@@ -159,9 +158,7 @@ protected:
                              const Interval &interval,
                              std::vector<double> &result) const;
 
-  virtual double parse_date(const std::string &spec) const;
-
-  virtual Interval parse_interval_length(const std::string &spec) const;
+  Interval parse_interval_length(const std::string &spec) const;
 
 protected:
   const Config::ConstPtr m_config;
@@ -183,6 +180,13 @@ protected:
   std::string m_calendar_string;
   // True if the calendar has constant year lengths (360_day, 365_day)
   bool m_simple_calendar;
+
+  void init_from_file(MPI_Comm com, const std::string &filename, const Logger &log,
+                      bool set_start_time);
+
+  void compute_times_monthly(std::vector<double> &result) const;
+
+  void compute_times_yearly(std::vector<double> &result) const;
 };
 
 } // end of namespace pism

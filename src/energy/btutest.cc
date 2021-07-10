@@ -27,7 +27,7 @@ static char help[] =
 #include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
-#include "pism/util/Time_Calendar.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 
@@ -67,7 +67,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = std::make_shared<Time_Calendar>(com, config, *logger, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
