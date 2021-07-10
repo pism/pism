@@ -298,15 +298,18 @@ static double parse_date(const std::string &input,
       // check if strtod() can parse it:
       char *endptr = NULL;
       t = strtod(spec.c_str(), &endptr);
-      if (*endptr != '\0') {
+      if (*endptr == '\0') {
+        // strtod() parsed it successfully: assume that it is in years. This will return
+        // time in seconds.
+        return increment_date(time_units, calendar, 0, t);
+      } else {
         // strtod() failed -- assume that this is a number followed by units compatible
         // with seconds
         auto system = time_units.system();
 
-        t = units::convert(system, 1.0, spec, "seconds");
+        // Convert to seconds:
+        return units::convert(system, 1.0, spec, "seconds");
       }
-
-      return increment_date(time_units, calendar, 0, t);
     } catch (RuntimeError &e) {
       e.add_context("parsing the date " + spec);
       throw;
