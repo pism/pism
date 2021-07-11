@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2011-2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cassert>              // assert
 #include <cstdlib>              // strtol(), strtod()
+#include <cstring>              // strlen()
 
 #include "Time.hh"
 
@@ -49,8 +50,7 @@ static std::string reference_date_from_file(const File &file,
 
       if (position != std::string::npos) {
 
-        std::string since = "since";
-        return string_strip(time_units.substr(position + since.size()));
+        return string_strip(time_units.substr(position + strlen("since")));
 
       } else if (stop_on_error) {
 
@@ -124,7 +124,7 @@ static std::string reference_date(const File *input_file,
     if (ref_date != default_reference_date) {
       log.message(2,
                   "WARNING: Using reference date %s\n"
-                  "         instead of the one present in the input file '%s' (%s)",
+                  "         instead of the one present in the input file '%s' (%s)\n",
                   default_reference_date.c_str(), input_file->filename().c_str(), ref_date.c_str());
     }
 
@@ -157,7 +157,7 @@ static std::string calendar(const File *input_file,
     if (calendar != default_calendar) {
       log.message(2,
                   "WARNING: Using calendar %s\n"
-                  "         instead of the one present in the input file '%s' (%s)",
+                  "         instead of the one present in the input file '%s' (%s)\n",
                   default_calendar.c_str(), input_file->filename().c_str(), calendar.c_str());
     }
 
@@ -167,6 +167,9 @@ static std::string calendar(const File *input_file,
   return default_calendar;
 }
 
+/*!
+ * Increment the date corresponding to `T` by `years` years.
+ */
 static double increment_date(const units::Unit &time_units,
                              const std::string &calendar,
                              double T, double years) {
@@ -194,7 +197,7 @@ static double increment_date(const units::Unit &time_units,
 
   double result = 0.0;
   if (leap == 0 and date.month == 2 and date.day == 29) {
-    // avoid passing an impossible date to UDUNITS:
+    // avoid passing an impossible date to UDUNITS (no February 29 in non-leap years):
     date.day -= 1;
     result = time_units.time(date, calendar);
     // add back the day we substracted above
@@ -226,9 +229,6 @@ static double increment_date(const units::Unit &time_units,
 static double parse_date(const std::string &input,
                          const units::Unit &time_units,
                          const std::string &calendar) {
-  using units::Converter;
-  using units::DateTime;
-  using units::Unit;
 
   std::string spec = string_strip(input);
 
@@ -288,7 +288,7 @@ static double parse_date(const std::string &input,
       ccs_free_calendar(cal);
     }
 
-    DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
+    units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
 
     return time_units.time(d, calendar);
   } else {
@@ -317,6 +317,9 @@ static double parse_date(const std::string &input,
   }
 }
 
+/*!
+ * Return the start time.
+ */
 static double start_time(const Config &config,
                          const Logger &log,
                          const File *file,
