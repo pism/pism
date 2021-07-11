@@ -67,6 +67,9 @@ Changes since v1.2
 - Add a new parameter: `time_stepping.resolution`. PISM rounds time step lengths *down* to
   a multiple of this number (default: 1 second). This reduces the influence of rounding
   errors on time step lengths. See `issue 407`_.
+- Remove the `pisms` executable. Run `pismr -eisII X` to run EISMINT-II test `X`.
+- Ice thickness threshold read in from :config:`calving.thickness_calving.file` can be
+  both space- and time-dependent.
 
 Changes from v1.1 to v1.2
 =========================
