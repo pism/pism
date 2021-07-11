@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2021 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -159,7 +159,9 @@ void IceModel::front_retreat_step() {
     }
 
     if (m_thickness_threshold_calving) {
-      m_thickness_threshold_calving->update(m_geometry.cell_type, m_geometry.ice_thickness);
+      m_thickness_threshold_calving->update(m_time->current(), m_dt,
+                                            m_geometry.cell_type,
+                                            m_geometry.ice_thickness);
     }
 
     bool add_values = false;

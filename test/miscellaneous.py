@@ -1279,3 +1279,84 @@ def test_bq2():
         for s in [0, 1, 2, 3]:
             psi = [Q.germ(s, q, k).val for k in [0, 1]]
             assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
+
+def thickness_calving_test():
+    "Test the time-dependent thickness calving threshold"
+
+    grid = PISM.testing.shallow_grid(Mx=5, My=5)
+
+    geometry = PISM.Geometry(grid)
+
+    # set ice thickness
+    H = geometry.ice_thickness
+    with PISM.vec.Access(H):
+        for i,j in grid.points():
+            if i >= 3 and j >= 3:
+                H[i, j] = 0
+            elif i > 2 and j == 2:
+                H[i, j] = 100
+            elif i >= 1 and j >= 1:
+                H[i, j] = 150
+            else:
+                H[i, j] = 200
+
+    # set bed elevation low enough to ensure that all ice is floating
+    geometry.bed_elevation.set(-1000)
+
+    geometry.ensure_consistency(0.0)
+
+    config = PISM.Context().config
+    N = config.get_number("input.forcing.evaluations_per_year")
+
+    filename = PISM.testing.filename("threshold_thickness_")
+    day = 86400.0
+    times = [0, 30, 60]
+    time_units = "days since 1-1-1"
+    values = [100, 150, 200]
+    try:
+        # create the time-dependent thickness threshold
+        PISM.testing.create_forcing(grid,
+                                    filename,
+                                    "thickness_calving_threshold",
+                                    "m",
+                                    values,
+                                    time_units,
+                                    times=times)
+
+        # we need to use enough quadrature points to get an accurate
+        # estimate of the calving threshold within the interval passed
+        # to update()
+        config.set_number("input.forcing.evaluations_per_year", 365)
+
+        config.set_string("calving.thickness_calving.file", filename)
+        calving = PISM.CalvingAtThickness(grid)
+        calving.init()
+
+        # run the calving model
+        calving.update(0*day, 30*day, geometry.cell_type, geometry.ice_thickness)
+
+        ref1 = np.array([[200., 200., 200., 200., 200.],
+                         [200., 150., 150., 150., 150.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150., 150.,   0.,   0.]])
+
+        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref1)
+
+        calving.update(30*day, 60*day, geometry.cell_type, geometry.ice_thickness)
+
+        ref2 = np.array([[200., 200., 200., 200., 200.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.]])
+
+        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref2)
+
+    finally:
+        # clean up
+        os.remove(filename)
+
+        # restore default values
+        config.set_string("calving.thickness_calving.file", "")
+        config.set_number("input.forcing.evaluations_per_year", N)

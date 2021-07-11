@@ -25,6 +25,9 @@
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
+
+class IceModelVec2T;
+
 namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
@@ -35,13 +38,17 @@ public:
   CalvingAtThickness(IceGrid::ConstPtr g);
   virtual ~CalvingAtThickness();
 
-  virtual void init();
-  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  void init();
+  void update(double t,
+              double dt,
+              IceModelVec2CellType &pism_mask,
+              IceModelVec2S &ice_thickness);
+
   const IceModelVec2S& threshold() const;
 
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
-  IceModelVec2S m_calving_threshold;
+  DiagnosticList diagnostics_impl() const;
+  std::shared_ptr<IceModelVec2T> m_calving_threshold;
   IceModelVec2CellType m_old_mask;
 };
 

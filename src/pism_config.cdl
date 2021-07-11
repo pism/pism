@@ -664,16 +664,26 @@ netcdf pism_config {
     pism_config:calving.rate_scaling.reference_year_type = "integer";
     pism_config:calving.rate_scaling.reference_year_units = "years";
 
+    pism_config:calving.thickness_calving.file = "";
+    pism_config:calving.thickness_calving.file_doc = "Name of the file containing the spatially-variable thickness calving threshold.";
+    pism_config:calving.thickness_calving.file_option = "thickness_calving_file";
+    pism_config:calving.thickness_calving.file_type = "string";
+
+    pism_config:calving.thickness_calving.period = 0;
+    pism_config:calving.thickness_calving.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:calving.thickness_calving.period_type = "integer";
+    pism_config:calving.thickness_calving.period_units = "years";
+
+    pism_config:calving.thickness_calving.reference_year = 0;
+    pism_config:calving.thickness_calving.reference_year_doc = "Reference year to use when :config:`calving.thickness_calving.period` is active.";
+    pism_config:calving.thickness_calving.reference_year_type = "integer";
+    pism_config:calving.thickness_calving.reference_year_units = "years";
+
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
     pism_config:calving.thickness_calving.threshold_type = "number";
     pism_config:calving.thickness_calving.threshold_units = "meters";
-
-    pism_config:calving.thickness_calving.threshold_file = "";
-    pism_config:calving.thickness_calving.threshold_file_doc = "Name of the file containing the spatially-variable thickness calving threshold.";
-    pism_config:calving.thickness_calving.threshold_file_option = "thickness_calving_threshold_file";
-    pism_config:calving.thickness_calving.threshold_file_type = "string";
 
     pism_config:calving.vonmises_calving.Glen_exponent = 3.0;
     pism_config:calving.vonmises_calving.Glen_exponent_doc = "Glen exponent in ice flow law for von Mises calving";
