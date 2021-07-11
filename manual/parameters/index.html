@@ -1551,6 +1551,39 @@ removed in a later PISM version.</p>
 </dl>
 </p>
 </li>
+<li><p><span class="target" id="config-calving.thickness_calving.file"></span><code class="docutils literal notranslate"><span class="pre">calving.thickness_calving.file</span></code></p>
+<p>Name of the file containing the spatially-variable thickness calving threshold.<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"> string</dd>
+<dt class="field-even">Default value</dt>
+<dd class="field-even"><p><em>empty</em></p>
+</dd>
+<dt class="field-odd">Option</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-thickness_calving_file</span></code></p>
+</dd>
+</dl>
+</p>
+</li>
+<li><p><span class="target" id="config-calving.thickness_calving.period"></span><code class="docutils literal notranslate"><span class="pre">calving.thickness_calving.period</span></code></p>
+<p>Length of the period of the climate forcing data. Set to zero to disable.<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"> integer</dd>
+<dt class="field-even">Default value</dt>
+<dd class="field-even"><p>0<em> (years)</em></p>
+</dd>
+</dl>
+</p>
+</li>
+<li><p><span class="target" id="config-calving.thickness_calving.reference_year"></span><code class="docutils literal notranslate"><span class="pre">calving.thickness_calving.reference_year</span></code></p>
+<p>Reference year to use when <a class="reference internal" href="#config-calving.thickness_calving.period"><code class="docutils literal notranslate"><span class="pre">calving</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.thickness_calving</span></code>&shy;<code class="docutils literal notranslate"><span class="pre">.period</span></code></a> is active.<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"> integer</dd>
+<dt class="field-even">Default value</dt>
+<dd class="field-even"><p>0<em> (years)</em></p>
+</dd>
+</dl>
+</p>
+</li>
 <li><p><span class="target" id="config-calving.thickness_calving.threshold"></span><code class="docutils literal notranslate"><span class="pre">calving.thickness_calving.threshold</span></code></p>
 <p>When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.<dl class="field-list simple">
 <dt class="field-odd">Type</dt>
@@ -1560,19 +1593,6 @@ removed in a later PISM version.</p>
 </dd>
 <dt class="field-odd">Option</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-thickness_calving_threshold</span></code></p>
-</dd>
-</dl>
-</p>
-</li>
-<li><p><span class="target" id="config-calving.thickness_calving.threshold_file"></span><code class="docutils literal notranslate"><span class="pre">calving.thickness_calving.threshold_file</span></code></p>
-<p>Name of the file containing the spatially-variable thickness calving threshold.<dl class="field-list simple">
-<dt class="field-odd">Type</dt>
-<dd class="field-odd"> string</dd>
-<dt class="field-even">Default value</dt>
-<dd class="field-even"><p><em>empty</em></p>
-</dd>
-<dt class="field-odd">Option</dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">-thickness_calving_threshold_file</span></code></p>
 </dd>
 </dl>
 </p>
@@ -6342,9 +6362,9 @@ removed in a later PISM version.</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      Git revision v1.0-2496-gf9325fe9b
+      Git revision v1.0-2502-gdc87a59cc
       committed by Constantine Khrulev
-      on 2021-07-06 12:55:06 -0800 |
+      on 2021-07-11 11:42:15 -0800 |
       &copy; 2004--2021, the PISM authors.
       
     </div>
