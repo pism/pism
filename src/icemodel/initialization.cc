@@ -392,12 +392,12 @@ void IceModel::bootstrap_2d(const File &input_file) {
                                   m_config->get_number("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
-    Range thk_range = m_geometry.ice_thickness.range();
+    auto thk_range = m_geometry.ice_thickness.range();
 
-    if (thk_range.max >= m_grid->Lz() + 1e-6) {
+    if (thk_range[1] >= m_grid->Lz() + 1e-6) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
-                                    thk_range.max, m_grid->Lz());
+                                    thk_range[1], m_grid->Lz());
     }
   }
 
@@ -425,12 +425,12 @@ void IceModel::bootstrap_2d(const File &input_file) {
   }
 
   // check if Lz is valid
-  Range thk_range = m_geometry.ice_thickness.range();
+  auto thk_range = m_geometry.ice_thickness.range();
 
-  if (thk_range.max > m_grid->Lz()) {
+  if (thk_range[1] > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_range.max, m_grid->Lz());
+                                  thk_range[1], m_grid->Lz());
   }
 }
 
@@ -464,7 +464,7 @@ void IceModel::regrid() {
     // Check the range of the ice thickness.
     {
       double
-        max_thickness = m_geometry.ice_thickness.range().max,
+        max_thickness = m_geometry.ice_thickness.range()[1],
         Lz            = m_grid->Lz();
 
       if (max_thickness >= Lz + 1e-6) {

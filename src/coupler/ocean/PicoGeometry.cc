@@ -162,7 +162,7 @@ static void relabel(RelabelingType type,
 
   IceGrid::ConstPtr grid = mask.grid();
 
-  int max_index = static_cast<int>(mask.range().max);
+  int max_index = static_cast<int>(mask.range()[1]);
 
   if (max_index < 1) {
     // No components labeled. Fill the mask with zeros and quit.
@@ -861,7 +861,7 @@ void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelV
 
   IceModelVec::AccessList list{ &D_gl, &D_cf, &shelf_mask, &result };
 
-  int n_shelves = static_cast<int>(shelf_mask.range().max) + 1;
+  int n_shelves = static_cast<int>(shelf_mask.range()[1]) + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
   std::vector<double> GL_distance_max1(n_shelves, 0.0);

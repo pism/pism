@@ -85,6 +85,7 @@
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
 // Conversions between python lists and certain STL vectors
+%include std_array.i
 %include std_vector.i
 %include std_set.i
 %include std_map.i
@@ -100,6 +101,7 @@
 %include header
 %enddef
 
+%template(RangeArray) std::array<double, 2>;
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;

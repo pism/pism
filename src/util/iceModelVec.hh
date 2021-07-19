@@ -24,6 +24,7 @@
 #include <cstdint>              // uint64_t
 #include <set>
 #include <map>
+#include <array>
 
 #include "Vector2.hh"
 #include "StarStencil.hh"
@@ -46,10 +47,6 @@ class Viewer;
 
 //! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
-
-struct Range {
-  double min, max;
-};
 
 // NB: Do not change the order of elements in this struct. IceModelVec2S::box() and
 // IceModelVec2Int::int_box() depend on it.
@@ -224,7 +221,7 @@ public:
   unsigned int stencil_width() const;
   std::vector<double> levels() const;
 
-  virtual Range range() const;
+  virtual std::array<double, 2> range() const;
   double norm(int n) const;
   std::vector<double> norm_all(int n) const;
 
