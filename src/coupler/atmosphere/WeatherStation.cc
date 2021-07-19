@@ -34,8 +34,8 @@ namespace atmosphere {
 
 WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
   : AtmosphereModel(grid),
-    m_precipitation_timeseries(*grid, "precipitation"),
-    m_air_temp_timeseries(*grid, "air_temp")
+    m_precipitation_timeseries(grid->ctx()->unit_system(), "precipitation"),
+    m_air_temp_timeseries(grid->ctx()->unit_system(), "air_temp")
 {
   m_precipitation_timeseries.variable().set_string("units", "kg m-2 second-1");
   m_precipitation_timeseries.variable().set_string("long_name",

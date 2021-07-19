@@ -31,21 +31,9 @@
 
 namespace pism {
 
-Timeseries::Timeseries(const IceGrid &grid,
+Timeseries::Timeseries(units::System::Ptr unit_system,
                        const std::string &name)
-  : m_com(grid.ctx()->com()),
-    m_use_bounds(true),
-    m_unit_system(grid.ctx()->unit_system()),
-    m_variable(name, m_unit_system)
-{
-  // empty
-}
-
-Timeseries::Timeseries(MPI_Comm com,
-                       units::System::Ptr unit_system,
-                       const std::string &name)
-  : m_com(com),
-    m_use_bounds(true),
+  : m_use_bounds(true),
     m_unit_system(unit_system),
     m_variable(name, m_unit_system)
 {

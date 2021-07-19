@@ -26,61 +26,36 @@
 
 namespace pism {
 
-class IceGrid;
 class File;
 class Logger;
 
 //! \brief A general class for reading and accessing time-series.
-/*!
-  \section timeseries_overview Scalar time-series
-
-  This class provides random access to time-series values. It is used to
-  implement forcing with scalar time-dependent parameters (such as
-  paleo-climate forcing).
-
-  \subsection timeseries_example An example
-
-  The following snippet from PAForcing::init() illustrates creating a Timeseries
-  object and reading data from a file.
-
-  \code
-  Timeseries delta_T(grid, "delta_T", "time");
-  delta_T.variable().set_string("units", "Kelvin");
-
-  delta_T->read(dT_file);
-  \endcode
-
-  Call
-  \code
-  double offset = delta_T(time);
-  \endcode
-  to get the value corresponding to the time "time", in this case in years. The
-  value returned will be computed using linear interpolation.
-
-  It is also possible to get an n-th value from a time-series: just use square brackets:
-  \code
-  double offset = delta_T[10];
-  \endcode
-*/
 class Timeseries {
 public:
-  Timeseries(const IceGrid &g, const std::string &name);
-  Timeseries(MPI_Comm com, units::System::Ptr units_system,
-             const std::string &name);
+  Timeseries(units::System::Ptr units_system, const std::string &name);
 
   std::string name() const;
   
   void read(const File &nc, const std::string &time_units, const Logger &log);
 
+  /*!
+   * Return the value at time `time`, using linear interpolation
+   */
   double operator()(double time) const;
+  /*!
+   * Return `j`-th value.
+   */
   double operator[](unsigned int j) const;
+
+  /*!
+   * Return the average over the time interval `[t, t + dt]` estimated using `N`
+   * sub-intervals.
+   */
   double average(double t, double dt, unsigned int N) const;
 
   VariableMetadata& variable();
 
 private:
-  MPI_Comm m_com;
-
   bool m_use_bounds;
 
   const units::System::Ptr m_unit_system;
