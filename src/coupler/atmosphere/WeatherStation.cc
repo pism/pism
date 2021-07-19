@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -74,8 +74,9 @@ void WeatherStation::init_impl(const Geometry &geometry) {
 
   File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
   {
-    m_precipitation_timeseries.read(file, *m_grid->ctx()->time(), *m_grid->ctx()->log());
-    m_air_temp_timeseries.read(file, *m_grid->ctx()->time(), *m_grid->ctx()->log());
+    auto time_units = m_grid->ctx()->time()->units_string();
+    m_precipitation_timeseries.read(file, time_units, *m_grid->ctx()->log());
+    m_air_temp_timeseries.read(file, time_units, *m_grid->ctx()->log());
   }
 }
 

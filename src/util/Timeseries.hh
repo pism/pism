@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2020 Constantine Khroulev
+// Copyright (C) 2009, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,6 @@ namespace pism {
 
 class IceGrid;
 class File;
-class Time;
 class Logger;
 
 //! \brief A general class for reading and accessing time-series.
@@ -71,7 +70,7 @@ public:
 
   std::string name() const;
   
-  void read(const File &nc, const Time &time_manager, const Logger &log);
+  void read(const File &nc, const std::string &time_units, const Logger &log);
 
   double operator()(double time) const;
   double operator[](unsigned int j) const;

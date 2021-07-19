@@ -23,7 +23,6 @@
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
 #include "pism/util/io/File.hh"
-#include "Time.hh"
 
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
@@ -54,7 +53,8 @@ Timeseries::Timeseries(MPI_Comm com,
 }
 
 //! Read timeseries data from a NetCDF file `filename`.
-void Timeseries::read(const File &file, const Time &time_manager, const Logger &log) {
+void Timeseries::read(const File &file, const std::string &time_units,
+                      const Logger &log) {
 
   std::string standard_name = m_variable.get_string("standard_name");
 
@@ -80,7 +80,7 @@ void Timeseries::read(const File &file, const Time &time_manager, const Logger &
   auto time_name = dims[0];
 
   VariableMetadata time_dimension(time_name, m_unit_system);
-  time_dimension.set_string("units", time_manager.units_string());
+  time_dimension.set_string("units", time_units);
 
   io::read_timeseries(file, time_dimension, log, m_time);
 

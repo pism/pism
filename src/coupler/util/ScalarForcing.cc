@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -80,7 +80,8 @@ void ScalarForcing::init() {
 
   File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   {
-    m_data->read(file, *m_ctx->time(), *m_ctx->log());
+    auto time_units = m_ctx->time()->units_string();
+    m_data->read(file, time_units, *m_ctx->log());
   }
 }
 
