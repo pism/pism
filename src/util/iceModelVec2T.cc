@@ -603,7 +603,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   std::vector<double> times_requested(ts.size());
   if (m_data->period != 0) {
     for (unsigned int k = 0; k < ts.size(); ++k) {
-      times_requested[k] = time->mod(ts[k] - m_data->reference_time, m_data->period);
+      times_requested[k] = time->modulo(ts[k] - m_data->reference_time, m_data->period);
     }
   } else {
     times_requested = ts;

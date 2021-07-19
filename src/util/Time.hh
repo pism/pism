@@ -99,7 +99,7 @@ public:
   virtual std::string units_string() const;
 
   //! \brief Returns time since the origin modulo period.
-  virtual double mod(double time, unsigned int period_years) const;
+  virtual double modulo(double time, unsigned int period_years) const;
 
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).

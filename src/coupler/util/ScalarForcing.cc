@@ -93,7 +93,7 @@ double ScalarForcing::value() const {
 }
 
 double ScalarForcing::value(double t) const {
-  t = m_ctx->time()->mod(t - m_reference_time, m_period);
+  t = m_ctx->time()->modulo(t - m_reference_time, m_period);
 
   return (*m_data)(t);
 }

@@ -787,7 +787,7 @@ void Time::init_from_file(MPI_Comm com,
   }
 }
 
-double Time::mod(double time, unsigned int period_years) const {
+double Time::modulo(double time, unsigned int period_years) const {
 
   if (m_simple_calendar) {
     if (period_years == 0) {
