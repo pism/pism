@@ -168,16 +168,16 @@ std::array<double, 2> IceModelVec::range() const {
  * @return norm type as PETSc's `NormType`.
  */
 static NormType int_to_normtype(int input) {
-  assert(input == NORM_1 || input == NORM_2 || input == NORM_INFINITY);
-
   switch (input) {
   case NORM_1:
     return NORM_1;
   case NORM_2:
     return NORM_2;
-  default:
   case NORM_INFINITY:
     return NORM_INFINITY;
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d",
+                                  input);
   }
 }
 
