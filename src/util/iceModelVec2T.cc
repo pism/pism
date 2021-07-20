@@ -83,6 +83,9 @@ struct IceModelVec2T::Data {
 
   // reference time, in seconds
   double reference_time;
+
+  // minimum time step length in max_timestep()
+  double dt_min;
 };
 
 /*!
@@ -154,6 +157,10 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   m_data->interp_type = interpolation_type;
   m_data->n_records = n_records;
   m_data->n_evaluations_per_year = n_evaluations_per_year;
+
+  auto config = m_impl->grid->ctx()->config();
+
+  m_data->dt_min = config->get_number("time_stepping.resolution");
 
   if (not (m_data->interp_type == PIECEWISE_CONSTANT or
            m_data->interp_type == LINEAR or
@@ -519,7 +526,7 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
     t_next = m_data->time_bounds[2 * k + 1],
     dt     = std::max(t_next - t, 0.0);
 
-  if (dt > 1.0) {               // never take time-steps shorter than 1 second
+  if (dt > m_data->dt_min) {    // never take time-steps shorter than this
     return MaxTimestep(dt);
   } else if (k + 1 < m_data->time.size()) {
     dt = m_data->time_bounds[2 * (k + 1) + 1] - m_data->time_bounds[2 * (k + 1)];
