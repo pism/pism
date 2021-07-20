@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,8 +52,6 @@ void Runoff_SMB::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
                  "*   derived from delta_T air temperature modifier\n");
-
-  m_forcing->init();
 }
 
 void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {

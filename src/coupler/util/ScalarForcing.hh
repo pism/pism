@@ -44,7 +44,6 @@ public:
                 const std::string &long_name);
   ~ScalarForcing();
 
-  void init();
   void update(double t, double dt);
 
   double value() const;
@@ -53,8 +52,6 @@ protected:
   std::shared_ptr<const Context> m_ctx;
 
   std::unique_ptr<Timeseries> m_data;
-
-  std::string m_prefix;
 
   // period, in seconds (zero if not periodic)
   double m_period;

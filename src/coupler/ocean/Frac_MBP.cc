@@ -45,9 +45,8 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing melange back pressure fraction forcing...\n");
 }
 
 

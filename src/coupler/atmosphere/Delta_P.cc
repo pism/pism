@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -44,9 +44,8 @@ Delta_P::~Delta_P() {
 void Delta_P::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing precipitation forcing using scalar offsets...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing precipitation forcing using scalar offsets...\n");
 }
 
 void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {

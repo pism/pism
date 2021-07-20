@@ -41,54 +41,50 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
 
   Config::ConstPtr config = ctx->config();
 
-  m_prefix = prefix;
-
   m_data.reset(new Timeseries(ctx->unit_system(), variable_name));
   m_data->variable().set_string("units", units);
   m_data->variable().set_string("glaciological_units", glaciological_units);
   m_data->variable().set_string("long_name", long_name);
+
+  // Read data from a NetCDF file
+  {
+    auto filename = config->get_string(prefix + ".file");
+
+    if (filename.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "%s.file is required", prefix.c_str());
+    }
+
+    m_ctx->log()->message(2,
+                          "  reading %s data from forcing file %s...\n",
+                          m_data->name().c_str(), filename.c_str());
+
+    File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+    {
+      auto time_units = m_ctx->time()->units_string();
+      m_data->read(file, time_units, *m_ctx->log());
+    }
+
+    // FIXME: this should be a flag
+    int period = config->get_number(prefix + ".period");
+
+    if (period > 0.0) {
+      auto T = m_data->time_interval();
+
+      m_period = T[1] - T[0];
+      assert(m_period > 0.0);
+
+      m_period_start = T[0];
+    } else {
+      m_period = 0.0;
+      m_period_start = 0.0;
+    }
+
+  }
 }
 
 ScalarForcing::~ScalarForcing() {
   // empty
-}
-
-void ScalarForcing::init() {
-
-  Config::ConstPtr config = m_ctx->config();
-
-  auto filename = config->get_string(m_prefix + ".file");
-
-  if (filename.empty()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "%s.file is required", m_prefix.c_str());
-  }
-
-  m_ctx->log()->message(2,
-                        "  reading %s data from forcing file %s...\n",
-                        m_data->name().c_str(), filename.c_str());
-
-  File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
-  {
-    auto time_units = m_ctx->time()->units_string();
-    m_data->read(file, time_units, *m_ctx->log());
-  }
-
-  // FIXME: this should be a flag
-  int period = config->get_number(m_prefix + ".period");
-
-  if (period > 0.0) {
-    auto T = m_data->time_interval();
-
-    m_period = T[1] - T[0];
-    assert(m_period > 0.0);
-
-    m_period_start = T[0];
-  } else {
-    m_period = 0.0;
-    m_period_start = 0.0;
-  }
-
 }
 
 void ScalarForcing::update(double t, double dt) {
@@ -101,8 +97,11 @@ double ScalarForcing::value() const {
 
 double ScalarForcing::value(double t) const {
   if (m_period > 0.0) {
+    // number of periods since m_period_start
     double F = (t - m_period_start) / m_period;
+    // fractional part of a period
     double L = F - std::floor(F);
+
     return (*m_data)(m_period_start + L * m_period);
   }
 

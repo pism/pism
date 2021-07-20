@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,9 +42,8 @@ Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
 void Delta_T::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing near-surface air temperature forcing using scalar offsets...\n");
 }
 
 void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {

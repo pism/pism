@@ -44,9 +44,8 @@ void Delta_MBP::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing melange back pressure forcing using scalar offsets...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing melange back pressure forcing using scalar offsets...\n");
 }
 
 void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {

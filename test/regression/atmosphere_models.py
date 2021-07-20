@@ -176,9 +176,9 @@ class DeltaT(TestCase):
     def test_atmosphere_delta_t(self):
         "Modifier Delta_T"
 
-        modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
-
         config.set_string("atmosphere.delta_T.file", self.filename)
+
+        modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)

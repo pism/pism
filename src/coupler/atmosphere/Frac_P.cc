@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,10 +78,6 @@ void Frac_P::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing precipitation forcing using scalar multipliers...\n");
-
-  if (m_1d_scaling) {
-    m_1d_scaling->init();
-  }
 
   if (m_2d_scaling) {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.frac_P");

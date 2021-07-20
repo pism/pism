@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,10 +70,6 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
   m_air_temp_mean_summer.regrid(input_file, CRITICAL);
   m_precipitation.regrid(input_file, CRITICAL);
-
-  if (m_A) {
-    m_A->init();
-  }
 }
 
 MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {

@@ -173,9 +173,9 @@ class DeltaT(TestCase):
     def test_surface_delta_t(self):
         "Modifier 'delta_T'"
 
-        modifier = PISM.SurfaceDeltaT(self.grid, self.model)
-
         config.set_string("surface.delta_T.file", self.filename)
+
+        modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -539,13 +539,14 @@ class Cache(TestCase):
         self.geometry = PISM.Geometry(self.grid)
 
         self.simple = surface_simple(self.grid)
-        self.delta_T = PISM.SurfaceDeltaT(self.grid, self.simple)
 
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
 
         config.set_string("surface.delta_T.file", self.filename)
+
+        self.delta_T = PISM.SurfaceDeltaT(self.grid, self.simple)
 
         config.set_number("surface.cache.update_interval", 2.0)
 

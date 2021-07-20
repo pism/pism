@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -50,8 +50,6 @@ void PrecipitationScaling::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing precipitation scaling"
                  " using temperature offsets...\n");
-
-  m_forcing->init();
 }
 
 void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) const {

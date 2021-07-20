@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -41,8 +41,6 @@ void Delta_SL::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
   m_log->message(2, "* Initializing scalar sea level forcing...\n");
-
-  m_forcing->init();
 }
 
 void Delta_SL::update_impl(const Geometry &geometry, double t, double dt) {

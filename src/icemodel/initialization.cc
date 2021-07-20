@@ -969,7 +969,6 @@ void IceModel::init_calving() {
                                                     "1",
                                                     "1",
                                                     "calving rate scaling factor"));
-      m_calving_rate_factor->init();
     }
   }
 }
