@@ -174,6 +174,8 @@ double Timeseries::operator()(double t) const {
     }
 
     double alpha = (t - m_time[k]) / (m_time[k + 1] - m_time[k]);
+    assert(0.0 <= alpha);
+    assert(alpha <= 1.0);
 
     return m_values[k] * (1.0 - alpha) + m_values[k + 1] * alpha;
   }
@@ -217,6 +219,14 @@ std::string Timeseries::name() const {
 
 VariableMetadata& Timeseries::variable() {
   return m_variable;
+}
+
+std::array<double, 2> Timeseries::time_interval() const {
+  if (m_use_bounds) {
+    return {m_time_bounds.front(), m_time_bounds.back()};
+  } else {
+    return {m_time.front(), m_time.back()};
+  }
 }
 
 } // end of namespace pism

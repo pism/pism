@@ -19,8 +19,9 @@
 #ifndef __Timeseries_hh
 #define __Timeseries_hh
 
-#include <deque>
 #include <mpi.h>
+
+#include <array>
 
 #include "VariableMetadata.hh"
 
@@ -54,6 +55,13 @@ public:
   double average(double t, double dt, unsigned int N) const;
 
   VariableMetadata& variable();
+
+  /*!
+   * Return the time interval covered by data stored in a Timeseries instance.
+   *
+   * Uses time bounds.
+   */
+  std::array<double, 2> time_interval() const;
 
 private:
   bool m_use_bounds;
