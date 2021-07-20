@@ -19,6 +19,9 @@
 
 #include "ScalarForcing.hh"
 
+#include <cassert>              // assert()
+#include <cmath>                // std::floor()
+
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Timeseries.hh"
 #include "pism/util/Time.hh"
@@ -34,7 +37,7 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
-  : m_ctx(ctx), m_period(0), m_reference_time(0.0), m_current(0.0) {
+  : m_ctx(ctx), m_period(0), m_period_start(0.0), m_current(0.0) {
 
   Config::ConstPtr config = ctx->config();
 
@@ -54,25 +57,12 @@ void ScalarForcing::init() {
 
   Config::ConstPtr config = m_ctx->config();
 
-  auto   filename       = config->get_string(m_prefix + ".file");
-  int    period         = config->get_number(m_prefix + ".period");
-  double reference_year = config->get_number(m_prefix + ".reference_year");
+  auto filename = config->get_string(m_prefix + ".file");
 
   if (filename.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "%s.file is required", m_prefix.c_str());
   }
-
-  if (period < 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid %s.period %d (period length cannot be negative)",
-                                  m_prefix.c_str(), period);
-  }
-
-  m_period = (unsigned int)period;
-
-  m_reference_time = units::convert(m_ctx->unit_system(),
-                                    reference_year, "years", "seconds");
 
   m_ctx->log()->message(2,
                         "  reading %s data from forcing file %s...\n",
@@ -83,6 +73,22 @@ void ScalarForcing::init() {
     auto time_units = m_ctx->time()->units_string();
     m_data->read(file, time_units, *m_ctx->log());
   }
+
+  // FIXME: this should be a flag
+  int period = config->get_number(m_prefix + ".period");
+
+  if (period > 0.0) {
+    auto T = m_data->time_interval();
+
+    m_period = T[1] - T[0];
+    assert(m_period > 0.0);
+
+    m_period_start = T[0];
+  } else {
+    m_period = 0.0;
+    m_period_start = 0.0;
+  }
+
 }
 
 void ScalarForcing::update(double t, double dt) {
@@ -94,7 +100,11 @@ double ScalarForcing::value() const {
 }
 
 double ScalarForcing::value(double t) const {
-  t = m_ctx->time()->modulo(t - m_reference_time, m_period);
+  if (m_period > 0.0) {
+    double F = (t - m_period_start) / m_period;
+    double L = F - std::floor(F);
+    return (*m_data)(m_period_start + L * m_period);
+  }
 
   return (*m_data)(t);
 }

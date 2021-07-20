@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,10 +56,11 @@ protected:
 
   std::string m_prefix;
 
-  // in years
-  unsigned int m_period;
-  // in seconds
-  double m_reference_time;
+  // period, in seconds (zero if not periodic)
+  double m_period;
+
+  // start of the period, in seconds (not used if not periodic)
+  double m_period_start;
 
   double m_current;
 };
