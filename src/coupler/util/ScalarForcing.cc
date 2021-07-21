@@ -65,10 +65,9 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
       m_data->read(file, time_units, *m_ctx->log());
     }
 
-    // FIXME: this should be a flag
-    int period = config->get_number(prefix + ".period");
+    bool periodic = config->get_flag(prefix + ".periodic");
 
-    if (period > 0.0) {
+    if (periodic) {
       auto T = m_data->time_interval();
 
       m_period = T[1] - T[0];
