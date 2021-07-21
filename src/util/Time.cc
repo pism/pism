@@ -787,29 +787,6 @@ void Time::init_from_file(MPI_Comm com,
   }
 }
 
-double Time::modulo(double time, unsigned int period_years) const {
-
-  if (m_simple_calendar) {
-    if (period_years == 0) {
-      return time;
-    }
-
-    double period_seconds = years_to_seconds(period_years);
-
-    double tmp = time - floor(time / period_seconds) * period_seconds;
-
-    if (fabs(tmp - period_seconds) < 1) {
-      tmp = 0;
-    }
-
-    return tmp;
-  }
-
-  // Other calendars don't have a consistent year length and do not support this
-  // operation.
-  return time;
-}
-
 double Time::year_fraction(double T) const {
 
   auto D = m_time_units.date(T, m_calendar_string);
