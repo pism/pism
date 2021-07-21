@@ -96,12 +96,11 @@ double ScalarForcing::value() const {
 
 double ScalarForcing::value(double t) const {
   if (m_period > 0.0) {
-    // number of periods since m_period_start
-    double F = (t - m_period_start) / m_period;
-    // fractional part of a period
-    double L = F - std::floor(F);
+    double T = t - m_period_start;
 
-    return (*m_data)(m_period_start + L * m_period);
+    T -= std::floor(T / m_period) * m_period;
+
+    return (*m_data)(m_period_start + T);
   }
 
   return (*m_data)(t);

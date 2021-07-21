@@ -18,6 +18,7 @@
 
 #include <petsc.h>
 #include <cassert>
+#include <cmath>                // std::floor
 
 #include "iceModelVec2T.hh"
 #include "pism/util/io/File.hh"
@@ -225,15 +226,6 @@ void IceModelVec2T::init(const std::string &fname, bool periodic) {
 
   m_data->filename = fname;
 
-  if (periodic) {
-    // FIXME
-    m_data->period         = -1.0;
-    m_data->reference_time = -1.0;
-  } else {
-    m_data->period         = 0.0;
-    m_data->reference_time = 0.0;
-  }
-
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
 
@@ -286,6 +278,13 @@ void IceModelVec2T::init(const std::string &fname, bool periodic) {
         for (unsigned int k = 0; k < m_data->time.size(); ++k) {
           m_data->time[k] = m_data->time_bounds[2*k + 0];
         }
+
+        if (periodic) {
+          // use time bounds to determine period length and the reference time
+          double t0 = m_data->time_bounds.front();
+          m_data->reference_time = t0;
+          m_data->period = m_data->time_bounds.back() - t0;
+        }
       } else {
         // fake time step length used to generate the right end point of the last interval
         // TODO: figure out if there is a better way to do this.
@@ -296,11 +295,19 @@ void IceModelVec2T::init(const std::string &fname, bool periodic) {
           m_data->time_bounds[2 * k + 0] = m_data->time[k];
           m_data->time_bounds[2 * k + 1] = k + 1 < N ? m_data->time[k + 1] : m_data->time[k] + dt;
         }
+
+        if (periodic) {
+          // use time to determine period length and reference time
+          double t0 = m_data->time.front();
+          m_data->reference_time = t0;
+          m_data->period = m_data->time.back() - t0;
+        }
       }
 
     } else {
       // only one time record; set fake time bounds:
       m_data->time_bounds = {m_data->time[0] - 1.0, m_data->time[0] + 1};
+      // ignore "periodic" and keep m_data->period at zero
     }
 
   } else {
@@ -615,9 +622,16 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts.size());
-  if (m_data->period != 0) {
+  if (m_data->period > 0.0) {
+    double P  = m_data->period;
+    double T0 = m_data->reference_time;
+
     for (unsigned int k = 0; k < ts.size(); ++k) {
-      times_requested[k] = time->modulo(ts[k] - m_data->reference_time, m_data->period);
+      double t = ts[k] - T0;
+
+      t -= std::floor(t / P) * P;
+
+      times_requested[k] = T0 + t;
     }
   } else {
     times_requested = ts;

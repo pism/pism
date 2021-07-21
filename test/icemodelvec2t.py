@@ -4,10 +4,12 @@ import unittest
 import numpy
 import os
 import PISM
+from PISM.testing import filename
 
 ctx = PISM.Context()
 
 # use the 360-day calendar so that the period of 1 year has a clear meaning
+ctx.config.set_string("time.calendar", "360_day")
 ctx.ctx.time().init_calendar("360_day")
 
 # suppress all output
@@ -21,12 +23,12 @@ class ForcingInput(unittest.TestCase):
 
     def setUp(self):
         "Prepare an input file with an interesting time-dependent field."
-        self.filename = "input.nc"
-        self.empty = "empty.nc"
-        self.one_record = "one_record.nc"
-        self.no_time = "no_time.nc"
-        self.no_bounds = "no_time_bounds.nc"
-        self.time_order = "time_order.nc"
+        self.filename = filename("input_")
+        self.empty = filename("empty_")
+        self.one_record = filename("one_record_")
+        self.no_time = filename("no_time_")
+        self.no_bounds = filename("no_time_bounds_")
+        self.time_order = filename("time_order_")
 
         M = 3
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
@@ -132,7 +134,6 @@ class ForcingInput(unittest.TestCase):
 
         compare(forcing, self.f[N])
 
-
         # average() with only one record
         forcing = self.forcing(self.filename, buffer_size=1)
         forcing.update(0, 1)
@@ -229,7 +230,7 @@ class ForcingInput(unittest.TestCase):
         # that the buffer is big enough.
         forcing = self.forcing(self.filename, buffer_size=2, periodic=False)
         try:
-            forcing.init(self.filename, self.period, 0)
+            forcing.init(self.filename, periodic=True)
             assert False, "Failed to stop because the buffer size is too small"
         except RuntimeError:
             pass
@@ -309,5 +310,7 @@ class ForcingInput(unittest.TestCase):
         forcing.init_interpolation(t)
 
         with PISM.vec.Access(nocomm=forcing):
-            numpy.testing.assert_almost_equal(forcing.interp(0, 0),
-                                              numpy.r_[self.f, self.f[0:(6 + 1)]])
+            a = numpy.array(forcing.interp(0, 0))
+        b = numpy.r_[self.f, self.f[0:(6 + 1)]]
+
+        numpy.testing.assert_almost_equal(a, b)
