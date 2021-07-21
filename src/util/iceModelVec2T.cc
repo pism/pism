@@ -41,7 +41,7 @@ struct IceModelVec2T::Data {
     : array(nullptr),
       N(0),
       first(-1),
-      period(0),
+      period(0.0),
       reference_time(0.0) {
     // empty
   }
@@ -79,7 +79,7 @@ struct IceModelVec2T::Data {
   std::shared_ptr<Interpolation> interp;
 
   // forcing period, in years
-  unsigned int period;
+  double period;
 
   // reference time, in seconds
   double reference_time;
@@ -218,14 +218,21 @@ void IceModelVec2T::end_access() const {
   }
 }
 
-void IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
+void IceModelVec2T::init(const std::string &fname, bool periodic) {
 
   auto ctx = m_impl->grid->ctx();
   const Logger &log = *ctx->log();
 
-  m_data->filename       = fname;
-  m_data->period         = period;
-  m_data->reference_time = reference_time;
+  m_data->filename = fname;
+
+  if (periodic) {
+    // FIXME
+    m_data->period         = -1.0;
+    m_data->reference_time = -1.0;
+  } else {
+    m_data->period         = 0.0;
+    m_data->reference_time = 0.0;
+  }
 
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
@@ -311,7 +318,7 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
                                   m_data->filename.c_str());
   }
 
-  if (m_data->period != 0) {
+  if (m_data->period > 0.0) {
     if ((size_t)m_data->n_records < m_data->time.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "buffer has to be big enough to hold all records of periodic data");

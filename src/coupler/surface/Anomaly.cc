@@ -32,7 +32,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -42,7 +41,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                              "", // no standard name
                                                              buffer_size,
                                                              evaluations_per_year,
-                                                             periodic,
+                                                             opt.periodic,
                                                              LINEAR);
 
     m_climatic_mass_balance_anomaly = IceModelVec2T::ForcingField(m_grid,
@@ -51,7 +50,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                                   "", // no standard name
                                                                   buffer_size,
                                                                   evaluations_per_year,
-                                                                  periodic);
+                                                                  opt.periodic);
   }
 
   m_ice_surface_temp_anomaly->set_attrs("climate_forcing",
@@ -88,8 +87,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "    reading anomalies from %s ...\n", opt.filename.c_str());
 
-  m_ice_surface_temp_anomaly->init(opt.filename, opt.period, opt.reference_time);
-  m_climatic_mass_balance_anomaly->init(opt.filename, opt.period, opt.reference_time);
+  m_ice_surface_temp_anomaly->init(opt.filename, opt.periodic);
+  m_climatic_mass_balance_anomaly->init(opt.filename, opt.periodic);
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {

@@ -66,7 +66,6 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -76,7 +75,7 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic);
+                                                opt.periodic);
 
     m_subglacial_discharge = IceModelVec2T::ForcingField(m_grid,
                                                 file,
@@ -84,20 +83,20 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic);
+                                                opt.periodic);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",
                            "potential temperature of the adjacent ocean",
                            "Celsius", "Celsius", "", 0);
 
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_theta_ocean->init(opt.filename, opt.periodic);
 
   m_subglacial_discharge->set_attrs("climate_forcing",
                                     "subglacial discharge",
                                     "kg m-2 s-1", "kg m-2 year-1", "", 0);
 
-  m_subglacial_discharge->init(opt.filename, opt.period, opt.reference_time);
+  m_subglacial_discharge->init(opt.filename, opt.periodic);
 }
 
 /*!

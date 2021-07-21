@@ -1231,8 +1231,7 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_with_file(self):
         "ForcingOptions: xxx.file is set"
@@ -1241,25 +1240,13 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_without_file_and_without_input_file(self):
         "ForcingOptions: xxx.file is not set and -i is not set"
         try:
             opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
             assert False, "failed to stop with an error message"
-        except RuntimeError:
-            pass
-
-    def test_negative_period(self):
-        "ForcingOptions: negative period"
-        ctx.config.set_string("input.file", self.filename)
-        ctx.config.set_number("surface.given.period", -1)
-
-        try:
-            opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
-            assert False, "failed to catch negative xxx.period"
         except RuntimeError:
             pass
 

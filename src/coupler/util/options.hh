@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,8 +31,7 @@ class Logger;
 struct ForcingOptions {
   ForcingOptions(const Context &ctx, const std::string &option_prefix);
   std::string filename;
-  unsigned int period;
-  double reference_time;
+  bool periodic;
 };
 
 } // end of namespace pism

@@ -17,62 +17,36 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.file_option = "atmosphere_anomaly_file";
     pism_config:atmosphere.anomaly.file_type = "string";
 
-    pism_config:atmosphere.anomaly.period = 0;
-    pism_config:atmosphere.anomaly.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.anomaly.period_option = "atmosphere_anomaly_period";
-    pism_config:atmosphere.anomaly.period_type = "integer";
-    pism_config:atmosphere.anomaly.period_units = "years";
-
-    pism_config:atmosphere.anomaly.reference_year = 0;
-    pism_config:atmosphere.anomaly.reference_year_doc = "Reference year to use when :config:`atmosphere.anomaly.period` is active.";
-    pism_config:atmosphere.anomaly.reference_year_option = "atmosphere_anomaly_reference_year";
-    pism_config:atmosphere.anomaly.reference_year_type = "integer";
-    pism_config:atmosphere.anomaly.reference_year_units = "years";
+    pism_config:atmosphere.anomaly.periodic = "no";
+    pism_config:atmosphere.anomaly.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.anomaly.periodic_type = "flag";
 
     pism_config:atmosphere.delta_P.file = "";
     pism_config:atmosphere.delta_P.file_doc = "Name of the file containing scalar precipitation offsets.";
     pism_config:atmosphere.delta_P.file_option = "atmosphere_delta_P_file";
     pism_config:atmosphere.delta_P.file_type = "string";
 
-    pism_config:atmosphere.delta_P.period = 0;
-    pism_config:atmosphere.delta_P.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.delta_P.period_option = "atmosphere_delta_P_period";
-    pism_config:atmosphere.delta_P.period_type = "integer";
-    pism_config:atmosphere.delta_P.period_units = "years";
-
-    pism_config:atmosphere.delta_P.reference_year = 0;
-    pism_config:atmosphere.delta_P.reference_year_doc = "Reference year to use when :config:`atmosphere.delta_P.period` is active.";
-    pism_config:atmosphere.delta_P.reference_year_option = "atmosphere_delta_P_reference_year";
-    pism_config:atmosphere.delta_P.reference_year_type = "integer";
-    pism_config:atmosphere.delta_P.reference_year_units = "years";
+    pism_config:atmosphere.delta_P.periodic = "no";
+    pism_config:atmosphere.delta_P.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.delta_P.periodic_type = "flag";
 
     pism_config:atmosphere.delta_T.file = "";
     pism_config:atmosphere.delta_T.file_doc = "Name of the file containing temperature offsets.";
     pism_config:atmosphere.delta_T.file_option = "atmosphere_delta_T_file";
     pism_config:atmosphere.delta_T.file_type = "string";
 
-    pism_config:atmosphere.delta_T.period = 0;
-    pism_config:atmosphere.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.delta_T.period_option = "atmosphere_delta_T_period";
-    pism_config:atmosphere.delta_T.period_type = "integer";
-    pism_config:atmosphere.delta_T.period_units = "years";
-
-    pism_config:atmosphere.delta_T.reference_year = 0;
-    pism_config:atmosphere.delta_T.reference_year_doc = "Reference year to use when :config:`atmosphere.delta_T.period` is active.";
-    pism_config:atmosphere.delta_T.reference_year_option = "atmosphere_delta_T_reference_year";
-    pism_config:atmosphere.delta_T.reference_year_type = "integer";
-    pism_config:atmosphere.delta_T.reference_year_units = "years";
+    pism_config:atmosphere.delta_T.periodic = "no";
+    pism_config:atmosphere.delta_T.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.delta_T.periodic_type = "flag";
 
     pism_config:atmosphere.elevation_change.file = "";
     pism_config:atmosphere.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
     pism_config:atmosphere.elevation_change.file_option = "atmosphere_lapse_rate_file";
     pism_config:atmosphere.elevation_change.file_type = "string";
 
-    pism_config:atmosphere.elevation_change.period = 0;
-    pism_config:atmosphere.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.elevation_change.period_option = "atmosphere_lapse_rate_period";
-    pism_config:atmosphere.elevation_change.period_type = "integer";
-    pism_config:atmosphere.elevation_change.period_units = "years";
+    pism_config:atmosphere.elevation_change.periodic = "no";
+    pism_config:atmosphere.elevation_change.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.elevation_change.periodic_type = "flag";
 
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate = 0.0;
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
@@ -85,12 +59,6 @@ netcdf pism_config {
     pism_config:atmosphere.elevation_change.precipitation.method_doc = "Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.";
     pism_config:atmosphere.elevation_change.precipitation.method_option = "precip_adjustment";
     pism_config:atmosphere.elevation_change.precipitation.method_type = "keyword";
-
-    pism_config:atmosphere.elevation_change.reference_year = 0;
-    pism_config:atmosphere.elevation_change.reference_year_doc = "Reference year to use when :config:`atmosphere.elevation_change.period` is active.";
-    pism_config:atmosphere.elevation_change.reference_year_option = "atmosphere_lapse_rate_reference_year";
-    pism_config:atmosphere.elevation_change.reference_year_type = "integer";
-    pism_config:atmosphere.elevation_change.reference_year_units = "years";
 
     pism_config:atmosphere.elevation_change.temperature_lapse_rate = 0.0;
     pism_config:atmosphere.elevation_change.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";
@@ -148,34 +116,18 @@ netcdf pism_config {
     pism_config:atmosphere.frac_P.file_option = "atmosphere_frac_P_file";
     pism_config:atmosphere.frac_P.file_type = "string";
 
-    pism_config:atmosphere.frac_P.period = 0;
-    pism_config:atmosphere.frac_P.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.frac_P.period_option = "atmosphere_frac_P_period";
-    pism_config:atmosphere.frac_P.period_type = "integer";
-    pism_config:atmosphere.frac_P.period_units = "years";
-
-    pism_config:atmosphere.frac_P.reference_year = 0;
-    pism_config:atmosphere.frac_P.reference_year_doc = "Reference year to use when :config:`atmosphere.frac_P.period` is active.";
-    pism_config:atmosphere.frac_P.reference_year_option = "atmosphere_frac_P_reference_year";
-    pism_config:atmosphere.frac_P.reference_year_type = "integer";
-    pism_config:atmosphere.frac_P.reference_year_units = "years";
+    pism_config:atmosphere.frac_P.periodic = "no";
+    pism_config:atmosphere.frac_P.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.frac_P.periodic_type = "flag";
 
     pism_config:atmosphere.given.file = "";
     pism_config:atmosphere.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:atmosphere.given.file_option = "atmosphere_given_file";
     pism_config:atmosphere.given.file_type = "string";
 
-    pism_config:atmosphere.given.period = 0;
-    pism_config:atmosphere.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.given.period_option = "atmosphere_given_period";
-    pism_config:atmosphere.given.period_type = "integer";
-    pism_config:atmosphere.given.period_units = "years";
-
-    pism_config:atmosphere.given.reference_year = 0;
-    pism_config:atmosphere.given.reference_year_doc = "Reference year to use when :config:`atmosphere.given.period` is active.";
-    pism_config:atmosphere.given.reference_year_option = "atmosphere_given_reference_year";
-    pism_config:atmosphere.given.reference_year_type = "integer";
-    pism_config:atmosphere.given.reference_year_units = "years";
+    pism_config:atmosphere.given.periodic = "no";
+    pism_config:atmosphere.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.given.periodic_type = "flag";
 
     pism_config:atmosphere.models = "given";
     pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
@@ -301,17 +253,9 @@ netcdf pism_config {
     pism_config:atmosphere.precip_scaling.file_option = "atmosphere_precip_scaling_file";
     pism_config:atmosphere.precip_scaling.file_type = "string";
 
-    pism_config:atmosphere.precip_scaling.period = 0;
-    pism_config:atmosphere.precip_scaling.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.precip_scaling.period_option = "atmosphere_precip_scaling_period";
-    pism_config:atmosphere.precip_scaling.period_type = "integer";
-    pism_config:atmosphere.precip_scaling.period_units = "years";
-
-    pism_config:atmosphere.precip_scaling.reference_year = 0;
-    pism_config:atmosphere.precip_scaling.reference_year_doc = "Reference year to use when :config:`atmosphere.precip_scaling.period` is active.";
-    pism_config:atmosphere.precip_scaling.reference_year_option = "atmosphere_precip_scaling_reference_year";
-    pism_config:atmosphere.precip_scaling.reference_year_type = "integer";
-    pism_config:atmosphere.precip_scaling.reference_year_units = "years";
+    pism_config:atmosphere.precip_scaling.periodic = "no";
+    pism_config:atmosphere.precip_scaling.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.precip_scaling.periodic_type = "flag";
 
     pism_config:atmosphere.searise_greenland.file = "";
     pism_config:atmosphere.searise_greenland.file_doc = "Name of the file containing a precipitation field.";
@@ -338,15 +282,9 @@ netcdf pism_config {
     pism_config:atmosphere.yearly_cycle.scaling.file_option = "atmosphere_yearly_cycle_scaling_file";
     pism_config:atmosphere.yearly_cycle.scaling.file_type = "string";
 
-    pism_config:atmosphere.yearly_cycle.scaling.period = 0;
-    pism_config:atmosphere.yearly_cycle.scaling.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:atmosphere.yearly_cycle.scaling.period_type = "integer";
-    pism_config:atmosphere.yearly_cycle.scaling.period_units = "years";
-
-    pism_config:atmosphere.yearly_cycle.scaling.reference_year = 0;
-    pism_config:atmosphere.yearly_cycle.scaling.reference_year_doc = "Reference year to use when :config:`atmosphere.yearly_cycle.scaling.period` is active.";
-    pism_config:atmosphere.yearly_cycle.scaling.reference_year_type = "integer";
-    pism_config:atmosphere.yearly_cycle.scaling.reference_year_units = "years";
+    pism_config:atmosphere.yearly_cycle.scaling.periodic = "no";
+    pism_config:atmosphere.yearly_cycle.scaling.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:atmosphere.yearly_cycle.scaling.periodic_type = "flag";
 
     pism_config:basal_resistance.beta_ice_free_bedrock = 1.8e9;
     pism_config:basal_resistance.beta_ice_free_bedrock_doc = "value is for ice stream E from :cite:`HulbeMacAyeal`; thus sliding velocity, but we hope it doesn't matter much; at 100 m/year the linear sliding law gives 57040 Pa basal shear stress";
@@ -420,17 +358,9 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_option = "mohr_coulomb_delta_file";
     pism_config:basal_yield_stress.mohr_coulomb.delta.file_type = "string";
 
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period = 0;
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period_doc = "Length of the period. Set to zero to disable.";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period_option = "mohr_coulomb_delta_period";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period_type = "integer";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.period_units = "years";
-
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year = 0;
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_doc = "Reference year to use when :config:`basal_yield_stress.mohr_coulomb.delta.period` is active.";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_option = "mohr_coulomb_delta_reference_year";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_type = "integer";
-    pism_config:basal_yield_stress.mohr_coulomb.delta.reference_year_units = "years";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.periodic = "no";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:basal_yield_stress.mohr_coulomb.delta.periodic_type = "flag";
 
     pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file = "";
     pism_config:basal_yield_stress.mohr_coulomb.tauc_to_phi.file_doc = "File containing the basal yield stress field that should be used to recover the till friction angle distribution.";
@@ -654,15 +584,9 @@ netcdf pism_config {
     pism_config:calving.rate_scaling.file_doc = "File containing the scaling factor applied to calving rates from ``eigen_calving``, ``vonmises_calving``, and ``hayhurst_calving`` (variable name: ``frac_calving_rate``)";
     pism_config:calving.rate_scaling.file_type = "string";
 
-    pism_config:calving.rate_scaling.period = 0;
-    pism_config:calving.rate_scaling.period_doc = "Length of the period of the calving rate scaling. Set to zero to disable.";
-    pism_config:calving.rate_scaling.period_type = "integer";
-    pism_config:calving.rate_scaling.period_units = "years";
-
-    pism_config:calving.rate_scaling.reference_year = 0;
-    pism_config:calving.rate_scaling.reference_year_doc = "Reference year to use when :config:`calving.rate_scaling.period` is active.";
-    pism_config:calving.rate_scaling.reference_year_type = "integer";
-    pism_config:calving.rate_scaling.reference_year_units = "years";
+    pism_config:calving.rate_scaling.periodic = "no";
+    pism_config:calving.rate_scaling.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:calving.rate_scaling.periodic_type = "flag";
 
     pism_config:calving.thickness_calving.file = "";
     pism_config:calving.thickness_calving.file_doc = "Name of the file containing the spatially-variable thickness calving threshold.";
@@ -1045,34 +969,18 @@ netcdf pism_config {
     pism_config:frontal_melt.discharge_given.file_option = "frontal_melt_discharge_given_file";
     pism_config:frontal_melt.discharge_given.file_type = "string";
 
-    pism_config:frontal_melt.discharge_given.period = 0;
-    pism_config:frontal_melt.discharge_given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.discharge_given.period_option = "frontal_melt_discharge_given_period";
-    pism_config:frontal_melt.discharge_given.period_type = "integer";
-    pism_config:frontal_melt.discharge_given.period_units = "years";
-
-    pism_config:frontal_melt.discharge_given.reference_year = 0;
-    pism_config:frontal_melt.discharge_given.reference_year_doc = "Reference year to use when :config:`frontal_melt.discharge_given.period` is active.";
-    pism_config:frontal_melt.discharge_given.reference_year_option = "frontal_melt_discharge_given_reference_year";
-    pism_config:frontal_melt.discharge_given.reference_year_type = "integer";
-    pism_config:frontal_melt.discharge_given.reference_year_units = "years";
+    pism_config:frontal_melt.discharge_given.periodic = "no";
+    pism_config:frontal_melt.discharge_given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:frontal_melt.discharge_given.periodic_type = "flag";
 
     pism_config:frontal_melt.given.file = "";
     pism_config:frontal_melt.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:frontal_melt.given.file_option = "frontal_melt_given_file";
     pism_config:frontal_melt.given.file_type = "string";
 
-    pism_config:frontal_melt.given.period = 0;
-    pism_config:frontal_melt.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.given.period_option = "frontal_melt_given_period";
-    pism_config:frontal_melt.given.period_type = "integer";
-    pism_config:frontal_melt.given.period_units = "years";
-
-    pism_config:frontal_melt.given.reference_year = 0;
-    pism_config:frontal_melt.given.reference_year_doc = "Reference year to use when :config:`frontal_melt.given.period` is active.";
-    pism_config:frontal_melt.given.reference_year_option = "frontal_melt_given_reference_year";
-    pism_config:frontal_melt.given.reference_year_type = "integer";
-    pism_config:frontal_melt.given.reference_year_units = "years";
+    pism_config:frontal_melt.given.periodic = "no";
+    pism_config:frontal_melt.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:frontal_melt.given.periodic_type = "flag";
 
     pism_config:frontal_melt.include_floating_ice = "no";
     pism_config:frontal_melt.include_floating_ice_doc = "Apply frontal melt to all grid icy cells next to ocean cells";
@@ -1098,11 +1006,9 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.parameter_b_type = "number";
     pism_config:frontal_melt.routing.parameter_b_units = "m day^(alpha-1) Celsius-beta";
 
-    pism_config:frontal_melt.routing.period = 0;
-    pism_config:frontal_melt.routing.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:frontal_melt.routing.period_option = "frontal_melt_routing_period";
-    pism_config:frontal_melt.routing.period_type = "integer";
-    pism_config:frontal_melt.routing.period_units = "years";
+    pism_config:frontal_melt.routing.periodic = "no";
+    pism_config:frontal_melt.routing.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:frontal_melt.routing.periodic_type = "flag";
 
     pism_config:frontal_melt.routing.power_alpha = 0.39;
     pism_config:frontal_melt.routing.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
@@ -1114,26 +1020,14 @@ netcdf pism_config {
     pism_config:frontal_melt.routing.power_beta_type = "number";
     pism_config:frontal_melt.routing.power_beta_units = "1";
 
-    pism_config:frontal_melt.routing.reference_year = 0;
-    pism_config:frontal_melt.routing.reference_year_doc = "Reference year to use when :config:`frontal_melt.routing.period` is active.";
-    pism_config:frontal_melt.routing.reference_year_option = "frontal_melt_routing_reference_year";
-    pism_config:frontal_melt.routing.reference_year_type = "integer";
-    pism_config:frontal_melt.routing.reference_year_units = "years";
-
     pism_config:geometry.front_retreat.prescribed.file = "";
     pism_config:geometry.front_retreat.prescribed.file_doc = "Name of the file containing the maximum ice extent mask ``land_ice_area_fraction_retreat``";
     pism_config:geometry.front_retreat.prescribed.file_option = "front_retreat_file";
     pism_config:geometry.front_retreat.prescribed.file_type = "string";
 
-    pism_config:geometry.front_retreat.prescribed.period = 0;
-    pism_config:geometry.front_retreat.prescribed.period_doc = "Length of the period of the front retreat data. Set to zero to disable.";
-    pism_config:geometry.front_retreat.prescribed.period_type = "integer";
-    pism_config:geometry.front_retreat.prescribed.period_units = "years";
-
-    pism_config:geometry.front_retreat.prescribed.reference_year = 0;
-    pism_config:geometry.front_retreat.prescribed.reference_year_doc = "Reference year to use when :config:`geometry.front_retreat.prescribed.period` is active.";
-    pism_config:geometry.front_retreat.prescribed.reference_year_type = "integer";
-    pism_config:geometry.front_retreat.prescribed.reference_year_units = "years";
+    pism_config:geometry.front_retreat.prescribed.periodic = "no";
+    pism_config:geometry.front_retreat.prescribed.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:geometry.front_retreat.prescribed.periodic_type = "flag";
 
     pism_config:geometry.front_retreat.use_cfl = "false";
     pism_config:geometry.front_retreat.use_cfl_doc = "apply CFL criterion for eigen-calving rate front retreat";
@@ -1380,15 +1274,9 @@ netcdf pism_config {
     pism_config:hydrology.surface_input.file_doc = "Name of the file containing :var:`water_input_rate`, the rate at which water from the ice surface is added to the subglacial hydrology system";
     pism_config:hydrology.surface_input.file_type = "string";
 
-    pism_config:hydrology.surface_input.period = 0;
-    pism_config:hydrology.surface_input.period_doc = "Length of the period of the water input rate. Set to zero to disable.";
-    pism_config:hydrology.surface_input.period_type = "integer";
-    pism_config:hydrology.surface_input.period_units = "years";
-
-    pism_config:hydrology.surface_input.reference_year = 0;
-    pism_config:hydrology.surface_input.reference_year_doc = "Reference year to use when :config:`hydrology.surface_input.period` is active.";
-    pism_config:hydrology.surface_input.reference_year_type = "integer";
-    pism_config:hydrology.surface_input.reference_year_units = "years";
+    pism_config:hydrology.surface_input.periodic = "no";
+    pism_config:hydrology.surface_input.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:hydrology.surface_input.periodic_type = "flag";
 
     pism_config:hydrology.surface_input_from_runoff = "no";
     pism_config:hydrology.surface_input_from_runoff_doc = "Use surface runoff as surface input.";
@@ -1611,17 +1499,9 @@ netcdf pism_config {
     pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";
     pism_config:ocean.anomaly.file_type = "string";
 
-    pism_config:ocean.anomaly.period = 0;
-    pism_config:ocean.anomaly.period_doc = "Length of the period of the ocean forcing data. Set to zero to disable.";
-    pism_config:ocean.anomaly.period_option = "ocean_anomaly_period";
-    pism_config:ocean.anomaly.period_type = "integer";
-    pism_config:ocean.anomaly.period_units = "years";
-
-    pism_config:ocean.anomaly.reference_year = 0;
-    pism_config:ocean.anomaly.reference_year_doc = "Reference year to use when :config:`ocean.anomaly.period` is active.";
-    pism_config:ocean.anomaly.reference_year_option = "ocean_anomaly_reference_year";
-    pism_config:ocean.anomaly.reference_year_type = "integer";
-    pism_config:ocean.anomaly.reference_year_units = "years";
+    pism_config:ocean.anomaly.periodic = "no";
+    pism_config:ocean.anomaly.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.anomaly.periodic_type = "flag";
 
     pism_config:ocean.cache.update_interval = 10;
     pism_config:ocean.cache.update_interval_doc = "update interval of the ``cache`` ocean modifier";
@@ -1645,131 +1525,71 @@ netcdf pism_config {
     pism_config:ocean.delta_MBP.melange_thickness_type = "number";
     pism_config:ocean.delta_MBP.melange_thickness_units = "meters";
 
-    pism_config:ocean.delta_MBP.period = 0;
-    pism_config:ocean.delta_MBP.period_doc = "Length of the period of the climate forcing data (set to zero to disable)";
-    pism_config:ocean.delta_MBP.period_type = "integer";
-    pism_config:ocean.delta_MBP.period_units = "years";
-
-    pism_config:ocean.delta_MBP.reference_year = 0;
-    pism_config:ocean.delta_MBP.reference_year_doc = "Reference year to use when :config:`ocean.delta_MBP.period` is active";
-    pism_config:ocean.delta_MBP.reference_year_type = "integer";
-    pism_config:ocean.delta_MBP.reference_year_units = "years";
+    pism_config:ocean.delta_MBP.periodic = "no";
+    pism_config:ocean.delta_MBP.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.delta_MBP.periodic_type = "flag";
 
     pism_config:ocean.delta_T.file = "";
     pism_config:ocean.delta_T.file_doc = "Name of the file containing temperature offsets.";
     pism_config:ocean.delta_T.file_option = "ocean_delta_T_file";
     pism_config:ocean.delta_T.file_type = "string";
 
-    pism_config:ocean.delta_T.period = 0;
-    pism_config:ocean.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.delta_T.period_option = "ocean_delta_T_period";
-    pism_config:ocean.delta_T.period_type = "integer";
-    pism_config:ocean.delta_T.period_units = "years";
-
-    pism_config:ocean.delta_T.reference_year = 0;
-    pism_config:ocean.delta_T.reference_year_doc = "Reference year to use when :config:`ocean.delta_T.period` is active.";
-    pism_config:ocean.delta_T.reference_year_option = "ocean_delta_T_reference_year";
-    pism_config:ocean.delta_T.reference_year_type = "integer";
-    pism_config:ocean.delta_T.reference_year_units = "years";
+    pism_config:ocean.delta_T.periodic = "no";
+    pism_config:ocean.delta_T.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.delta_T.periodic_type = "flag";
 
     pism_config:ocean.delta_mass_flux.file = "";
     pism_config:ocean.delta_mass_flux.file_doc = "Name of the file containing sub-shelf mass flux offsets.";
     pism_config:ocean.delta_mass_flux.file_option = "ocean_delta_mass_flux_file";
     pism_config:ocean.delta_mass_flux.file_type = "string";
 
-    pism_config:ocean.delta_mass_flux.period = 0;
-    pism_config:ocean.delta_mass_flux.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.delta_mass_flux.period_option = "ocean_delta_mass_flux_period";
-    pism_config:ocean.delta_mass_flux.period_type = "integer";
-    pism_config:ocean.delta_mass_flux.period_units = "years";
-
-    pism_config:ocean.delta_mass_flux.reference_year = 0;
-    pism_config:ocean.delta_mass_flux.reference_year_doc = "Reference year to use when :config:`ocean.delta_mass_flux.period` is active.";
-    pism_config:ocean.delta_mass_flux.reference_year_option = "ocean_delta_mass_flux_reference_year";
-    pism_config:ocean.delta_mass_flux.reference_year_type = "integer";
-    pism_config:ocean.delta_mass_flux.reference_year_units = "years";
+    pism_config:ocean.delta_mass_flux.periodic = "no";
+    pism_config:ocean.delta_mass_flux.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.delta_mass_flux.periodic_type = "flag";
 
     pism_config:ocean.delta_sl.file = "";
     pism_config:ocean.delta_sl.file_doc = "Name of the file containing sea level offsets.";
     pism_config:ocean.delta_sl.file_option = "ocean_delta_sl_file";
     pism_config:ocean.delta_sl.file_type = "string";
 
-    pism_config:ocean.delta_sl.period = 0;
-    pism_config:ocean.delta_sl.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.delta_sl.period_option = "ocean_delta_sl_period";
-    pism_config:ocean.delta_sl.period_type = "integer";
-    pism_config:ocean.delta_sl.period_units = "years";
-
-    pism_config:ocean.delta_sl.reference_year = 0;
-    pism_config:ocean.delta_sl.reference_year_doc = "Reference year to use when :config:`ocean.delta_sl.period` is active.";
-    pism_config:ocean.delta_sl.reference_year_option = "ocean_delta_sl_reference_year";
-    pism_config:ocean.delta_sl.reference_year_type = "integer";
-    pism_config:ocean.delta_sl.reference_year_units = "years";
+    pism_config:ocean.delta_sl.periodic = "no";
+    pism_config:ocean.delta_sl.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.delta_sl.periodic_type = "flag";
 
     pism_config:ocean.delta_sl_2d.file = "";
     pism_config:ocean.delta_sl_2d.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.delta_sl_2d.file_type = "string";
 
-    pism_config:ocean.delta_sl_2d.period = 0;
-    pism_config:ocean.delta_sl_2d.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.delta_sl_2d.period_type = "integer";
-    pism_config:ocean.delta_sl_2d.period_units = "years";
-
-    pism_config:ocean.delta_sl_2d.reference_year = 0;
-    pism_config:ocean.delta_sl_2d.reference_year_doc = "Reference year to use when :config:`ocean.delta_sl_2d.period` is active.";
-    pism_config:ocean.delta_sl_2d.reference_year_type = "integer";
-    pism_config:ocean.delta_sl_2d.reference_year_units = "years";
+    pism_config:ocean.delta_sl_2d.periodic = "no";
+    pism_config:ocean.delta_sl_2d.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.delta_sl_2d.periodic_type = "flag";
 
     pism_config:ocean.frac_MBP.file = "";
     pism_config:ocean.frac_MBP.file_doc = "Name of the file containing melange back-pressure scaling.";
     pism_config:ocean.frac_MBP.file_option = "ocean_frac_MBP_file";
     pism_config:ocean.frac_MBP.file_type = "string";
 
-    pism_config:ocean.frac_MBP.period = 0;
-    pism_config:ocean.frac_MBP.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.frac_MBP.period_option = "ocean_frac_MBP_period";
-    pism_config:ocean.frac_MBP.period_type = "integer";
-    pism_config:ocean.frac_MBP.period_units = "years";
-
-    pism_config:ocean.frac_MBP.reference_year = 0;
-    pism_config:ocean.frac_MBP.reference_year_doc = "Reference year to use when :config:`ocean.frac_MBP.period` is active.";
-    pism_config:ocean.frac_MBP.reference_year_option = "ocean_frac_MBP_reference_year";
-    pism_config:ocean.frac_MBP.reference_year_type = "integer";
-    pism_config:ocean.frac_MBP.reference_year_units = "years";
+    pism_config:ocean.frac_MBP.periodic = "no";
+    pism_config:ocean.frac_MBP.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.frac_MBP.periodic_type = "flag";
 
     pism_config:ocean.frac_mass_flux.file = "";
     pism_config:ocean.frac_mass_flux.file_doc = "Name of the file containing sub-shelf mass flux scaling.";
     pism_config:ocean.frac_mass_flux.file_option = "ocean_frac_mass_flux_file";
     pism_config:ocean.frac_mass_flux.file_type = "string";
 
-    pism_config:ocean.frac_mass_flux.period = 0;
-    pism_config:ocean.frac_mass_flux.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.frac_mass_flux.period_option = "ocean_frac_mass_flux_period";
-    pism_config:ocean.frac_mass_flux.period_type = "integer";
-    pism_config:ocean.frac_mass_flux.period_units = "years";
-
-    pism_config:ocean.frac_mass_flux.reference_year = 0;
-    pism_config:ocean.frac_mass_flux.reference_year_doc = "Reference year to use when :config:`ocean.frac_mass_flux.period` is active.";
-    pism_config:ocean.frac_mass_flux.reference_year_option = "ocean_frac_mass_flux_reference_year";
-    pism_config:ocean.frac_mass_flux.reference_year_type = "integer";
-    pism_config:ocean.frac_mass_flux.reference_year_units = "years";
+    pism_config:ocean.frac_mass_flux.periodic = "no";
+    pism_config:ocean.frac_mass_flux.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.frac_mass_flux.periodic_type = "flag";
 
     pism_config:ocean.given.file = "";
     pism_config:ocean.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:ocean.given.file_option = "ocean_given_file";
     pism_config:ocean.given.file_type = "string";
 
-    pism_config:ocean.given.period = 0;
-    pism_config:ocean.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.given.period_option = "ocean_given_period";
-    pism_config:ocean.given.period_type = "integer";
-    pism_config:ocean.given.period_units = "years";
-
-    pism_config:ocean.given.reference_year = 0;
-    pism_config:ocean.given.reference_year_doc = "Reference year to use when :config:`ocean.given.period` is active.";
-    pism_config:ocean.given.reference_year_option = "ocean_given_reference_year";
-    pism_config:ocean.given.reference_year_type = "integer";
-    pism_config:ocean.given.reference_year_units = "years";
+    pism_config:ocean.given.periodic = "no";
+    pism_config:ocean.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.given.periodic_type = "flag";
 
     pism_config:ocean.models = "constant";
     pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
@@ -1815,17 +1635,9 @@ netcdf pism_config {
     pism_config:ocean.pico.overturning_coefficent_type = "number";
     pism_config:ocean.pico.overturning_coefficent_units = "meters6 seconds-1 kg-1";
 
-    pism_config:ocean.pico.period = 0;
-    pism_config:ocean.pico.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.pico.period_option = "ocean_pico_period";
-    pism_config:ocean.pico.period_type = "integer";
-    pism_config:ocean.pico.period_units = "years";
-
-    pism_config:ocean.pico.reference_year = 0;
-    pism_config:ocean.pico.reference_year_doc = "Reference year to use when :config:`ocean.pico.period` is active.";
-    pism_config:ocean.pico.reference_year_option = "ocean_pico_reference_year";
-    pism_config:ocean.pico.reference_year_type = "integer";
-    pism_config:ocean.pico.reference_year_units = "years";
+    pism_config:ocean.pico.periodic = "no";
+    pism_config:ocean.pico.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.pico.periodic_type = "flag";
 
     pism_config:ocean.pik_melt_factor = 5e-3;
     pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the ``-ocean pik`` ocean heat flux parameterization; see :cite:`Martinetal2011`";
@@ -1833,20 +1645,25 @@ netcdf pism_config {
     pism_config:ocean.pik_melt_factor_type = "number";
     pism_config:ocean.pik_melt_factor_units = "1";
 
-    pism_config:ocean.runoff_to_ocean_melt_b = 0.15;
-    pism_config:ocean.runoff_to_ocean_melt_b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden2019`";
-    pism_config:ocean.runoff_to_ocean_melt_b_type = "number";
-    pism_config:ocean.runoff_to_ocean_melt_b_units = "1";
+    pism_config:ocean.runoff_to_ocean_melt.b = 0.15;
+    pism_config:ocean.runoff_to_ocean_melt.b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden2019`";
+    pism_config:ocean.runoff_to_ocean_melt.b_type = "number";
+    pism_config:ocean.runoff_to_ocean_melt.b_units = "1";
 
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha = 0.54;
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_type = "number";
-    pism_config:ocean.runoff_to_ocean_melt_power_alpha_units = "1";
+    pism_config:ocean.runoff_to_ocean_melt.file = "";
+    pism_config:ocean.runoff_to_ocean_melt.file_doc = "Name of the file containing the ``delta_T`` variable used to scale ocean melt";
+    pism_config:ocean.runoff_to_ocean_melt.file_option = "ocean_runoff_smb";
+    pism_config:ocean.runoff_to_ocean_melt.file_type = "string";
 
-    pism_config:ocean.runoff_to_ocean_melt_power_beta = 1.17;
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_type = "number";
-    pism_config:ocean.runoff_to_ocean_melt_power_beta_units = "1";
+    pism_config:ocean.runoff_to_ocean_melt.power_alpha = 0.54;
+    pism_config:ocean.runoff_to_ocean_melt.power_alpha_doc = "exponent `\\alpha` in eqn. 1 in :cite:`Xu2013`";
+    pism_config:ocean.runoff_to_ocean_melt.power_alpha_type = "number";
+    pism_config:ocean.runoff_to_ocean_melt.power_alpha_units = "1";
+
+    pism_config:ocean.runoff_to_ocean_melt.power_beta = 1.17;
+    pism_config:ocean.runoff_to_ocean_melt.power_beta_doc = "exponent `\\beta` in eqn. 1 in :cite:`Xu2013`";
+    pism_config:ocean.runoff_to_ocean_melt.power_beta_type = "number";
+    pism_config:ocean.runoff_to_ocean_melt.power_beta_units = "1";
 
     pism_config:ocean.sub_shelf_heat_flux_into_ice = 0.5;
     pism_config:ocean.sub_shelf_heat_flux_into_ice_doc = "= J meter-2 second-1; naively chosen default value for heat from ocean; see comments in pism::ocean::Constant::shelf_base_mass_flux().";
@@ -1875,17 +1692,9 @@ netcdf pism_config {
     pism_config:ocean.th.gamma_T_type = "number";
     pism_config:ocean.th.gamma_T_units = "m s-1";
 
-    pism_config:ocean.th.period = 0;
-    pism_config:ocean.th.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:ocean.th.period_option = "ocean_th_period";
-    pism_config:ocean.th.period_type = "integer";
-    pism_config:ocean.th.period_units = "years";
-
-    pism_config:ocean.th.reference_year = 0;
-    pism_config:ocean.th.reference_year_doc = "Reference year to use when :config:`ocean.th.period` is active.";
-    pism_config:ocean.th.reference_year_option = "ocean_th_reference_year";
-    pism_config:ocean.th.reference_year_type = "integer";
-    pism_config:ocean.th.reference_year_units = "years";
+    pism_config:ocean.th.periodic = "no";
+    pism_config:ocean.th.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.th.periodic_type = "flag";
 
     pism_config:output.ISMIP6 = "false";
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
@@ -2358,17 +2167,9 @@ netcdf pism_config {
     pism_config:surface.anomaly.file_option = "surface_anomaly_file";
     pism_config:surface.anomaly.file_type = "string";
 
-    pism_config:surface.anomaly.period = 0;
-    pism_config:surface.anomaly.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.anomaly.period_option = "surface_anomaly_period";
-    pism_config:surface.anomaly.period_type = "integer";
-    pism_config:surface.anomaly.period_units = "years";
-
-    pism_config:surface.anomaly.reference_year = 0;
-    pism_config:surface.anomaly.reference_year_doc = "Reference year to use when :config:`surface.anomaly.period` is active.";
-    pism_config:surface.anomaly.reference_year_option = "surface_anomaly_reference_year";
-    pism_config:surface.anomaly.reference_year_type = "integer";
-    pism_config:surface.anomaly.reference_year_units = "years";
+    pism_config:surface.anomaly.periodic = "no";
+    pism_config:surface.anomaly.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.anomaly.periodic_type = "flag";
 
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
@@ -2380,34 +2181,18 @@ netcdf pism_config {
     pism_config:surface.delta_T.file_option = "surface_delta_T_file";
     pism_config:surface.delta_T.file_type = "string";
 
-    pism_config:surface.delta_T.period = 0;
-    pism_config:surface.delta_T.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.delta_T.period_option = "surface_delta_T_period";
-    pism_config:surface.delta_T.period_type = "integer";
-    pism_config:surface.delta_T.period_units = "years";
-
-    pism_config:surface.delta_T.reference_year = 0;
-    pism_config:surface.delta_T.reference_year_doc = "Reference year to use when :config:`surface.delta_T.period` is active.";
-    pism_config:surface.delta_T.reference_year_option = "surface_delta_T_reference_year";
-    pism_config:surface.delta_T.reference_year_type = "integer";
-    pism_config:surface.delta_T.reference_year_units = "years";
+    pism_config:surface.delta_T.periodic = "no";
+    pism_config:surface.delta_T.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.delta_T.periodic_type = "flag";
 
     pism_config:surface.elevation_change.file = "";
     pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
     pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
     pism_config:surface.elevation_change.file_type = "string";
 
-    pism_config:surface.elevation_change.period = 0;
-    pism_config:surface.elevation_change.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.elevation_change.period_option = "surface_elevation_change_period";
-    pism_config:surface.elevation_change.period_type = "integer";
-    pism_config:surface.elevation_change.period_units = "years";
-
-    pism_config:surface.elevation_change.reference_year = 0;
-    pism_config:surface.elevation_change.reference_year_doc = "Reference year to use when :config:`surface.elevation_change.period` is active.";
-    pism_config:surface.elevation_change.reference_year_option = "surface_elevation_change_reference_year";
-    pism_config:surface.elevation_change.reference_year_type = "integer";
-    pism_config:surface.elevation_change.reference_year_units = "years";
+    pism_config:surface.elevation_change.periodic = "no";
+    pism_config:surface.elevation_change.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.elevation_change.periodic_type = "flag";
 
     pism_config:surface.elevation_change.smb.exp_factor = 0;
     pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
@@ -2466,17 +2251,9 @@ netcdf pism_config {
     pism_config:surface.given.file_option = "surface_given_file";
     pism_config:surface.given.file_type = "string";
 
-    pism_config:surface.given.period = 0;
-    pism_config:surface.given.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.given.period_option = "surface_given_period";
-    pism_config:surface.given.period_type = "integer";
-    pism_config:surface.given.period_units = "years";
-
-    pism_config:surface.given.reference_year = 0;
-    pism_config:surface.given.reference_year_doc = "Reference year to use when :config:`surface.given.period` is active.";
-    pism_config:surface.given.reference_year_option = "surface_given_reference_year";
-    pism_config:surface.given.reference_year_type = "integer";
-    pism_config:surface.given.reference_year_units = "years";
+    pism_config:surface.given.periodic = "no";
+    pism_config:surface.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.given.periodic_type = "flag";
 
     pism_config:surface.given.smb_max = 91000;
     pism_config:surface.given.smb_max_doc = "Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.";
@@ -2488,21 +2265,14 @@ netcdf pism_config {
     pism_config:surface.ismip6.file_option = "surface_ismip6_file";
     pism_config:surface.ismip6.file_type = "string";
 
-    pism_config:surface.ismip6.period = 0;
-    pism_config:surface.ismip6.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.ismip6.period_option = "surface_ismip6_period";
-    pism_config:surface.ismip6.period_type = "integer";
-    pism_config:surface.ismip6.period_units = "years";
+    pism_config:surface.ismip6.periodic = "no";
+    pism_config:surface.ismip6.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip6.periodic_type = "flag";
 
     pism_config:surface.ismip6.reference_file = "";
     pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
-
-    pism_config:surface.ismip6.reference_year = 0;
-    pism_config:surface.ismip6.reference_year_doc = "Reference year to use when :config:`surface.ismip6.period` is active.";
-    pism_config:surface.ismip6.reference_year_type = "integer";
-    pism_config:surface.ismip6.reference_year_units = "years";
 
     pism_config:surface.models = "given";
     pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
@@ -2623,17 +2393,9 @@ netcdf pism_config {
     pism_config:surface.pdd.std_dev.file_option = "pdd_sd_file";
     pism_config:surface.pdd.std_dev.file_type = "string";
 
-    pism_config:surface.pdd.std_dev.period = 0;
-    pism_config:surface.pdd.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.pdd.std_dev.period_option = "pdd_sd_period";
-    pism_config:surface.pdd.std_dev.period_type = "integer";
-    pism_config:surface.pdd.std_dev.period_units = "years";
-
-    pism_config:surface.pdd.std_dev.reference_year = 0;
-    pism_config:surface.pdd.std_dev.reference_year_doc = "Reference year to use when :config:`surface.pdd.std_dev.period` is active.";
-    pism_config:surface.pdd.std_dev.reference_year_option = "pdd_sd_reference_year";
-    pism_config:surface.pdd.std_dev.reference_year_type = "integer";
-    pism_config:surface.pdd.std_dev.reference_year_units = "years";
+    pism_config:surface.pdd.std_dev.periodic = "no";
+    pism_config:surface.pdd.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.pdd.std_dev.periodic_type = "flag";
 
     pism_config:surface.pdd.std_dev_lapse_lat_base = 72.0;
     pism_config:surface.pdd.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value :config:`surface.pdd.std_dev` at this latitude; this value only active if :config:`surface.pdd.std_dev_lapse_lat_rate` is nonzero";

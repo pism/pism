@@ -825,8 +825,7 @@ void IceModel::misc_setup() {
   if (m_surface_input_for_hydrology) {
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     m_surface_input_for_hydrology->init(surface_input.filename,
-                                        surface_input.period,
-                                        surface_input.reference_time);
+                                        surface_input.periodic);
   }
 
   if (m_fracture) {

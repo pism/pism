@@ -79,7 +79,7 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
 
   {
     auto filename = m_config->get_string("bed_deformation.given.file");
-    m_topg_delta->init(filename, 0.0, 0.0);
+    m_topg_delta->init(filename, false);
   }
 }
 

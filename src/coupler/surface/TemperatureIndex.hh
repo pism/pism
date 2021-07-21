@@ -107,7 +107,6 @@ protected:
   IceModelVec2S::Ptr m_runoff;
 
   bool m_sd_use_param, m_sd_file_set;
-  int m_sd_period;
   double m_sd_param_a, m_sd_param_b;
 };
 

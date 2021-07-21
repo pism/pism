@@ -28,7 +28,6 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -38,7 +37,7 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
                                                  "", // no standard name
                                                  buffer_size,
                                                  evaluations_per_year,
-                                                 periodic);
+                                                 opt.periodic);
     m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
                               "1", "1", "", 0);
   }
@@ -58,7 +57,7 @@ void PrescribedRetreat::init() {
                  m_retreat_mask->get_name().c_str(),
                  opt.filename.c_str());
 
-  m_retreat_mask->init(opt.filename, opt.period, opt.reference_time);
+  m_retreat_mask->init(opt.filename, opt.periodic);
 }
 
 void PrescribedRetreat::update(double t,

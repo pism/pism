@@ -47,7 +47,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
     m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS) {
 
-  m_sd_period                  = m_config->get_number("surface.pdd.std_dev.period");
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
@@ -76,6 +75,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
+    bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
     int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
@@ -84,7 +84,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
                                                 evaluations_per_year,
-                                                m_sd_period > 0,
+                                                sd_periodic,
                                                 LINEAR);
     m_sd_file_set = true;
   } else {
@@ -163,9 +163,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
-      auto sd_ref_time = m_config->get_number("surface.pdd.std_dev.reference_year", "seconds");
-
-      m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
+      bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
+      m_air_temp_sd->init(sd_file, sd_periodic);
     }
   }
 

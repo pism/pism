@@ -143,7 +143,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
                                                                 "", // no standard name
                                                                 buffer_size,
                                                                 evaluations_per_year,
-                                                                surface_input.period);
+                                                                surface_input.periodic);
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
                                              "kg m-2 s-1", "kg m-2 year-1", "", 0);

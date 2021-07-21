@@ -37,7 +37,6 @@ Given::Given(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -47,7 +46,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                "", // no standard name
                                                buffer_size,
                                                evaluations_per_year,
-                                               periodic,
+                                               opt.periodic,
                                                LINEAR);
 
     m_shelfbmassflux = IceModelVec2T::ForcingField(m_grid,
@@ -56,7 +55,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                    "", // no standard name
                                                    buffer_size,
                                                    evaluations_per_year,
-                                                   periodic);
+                                                   opt.periodic);
   }
 
   m_shelfbtemp->set_attrs("climate_forcing",
@@ -79,8 +78,8 @@ void Given::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.given");
 
-  m_shelfbtemp->init(opt.filename, opt.period, opt.reference_time);
-  m_shelfbmassflux->init(opt.filename, opt.period, opt.reference_time);
+  m_shelfbtemp->init(opt.filename, opt.periodic);
+  m_shelfbmassflux->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
   if (m_shelfbtemp->n_records() == 1 && m_shelfbmassflux->n_records() == 1) {

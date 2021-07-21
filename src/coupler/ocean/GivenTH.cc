@@ -65,7 +65,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -75,7 +74,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
@@ -84,7 +83,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    "", // no standard name
                                                    buffer_size,
                                                    evaluations_per_year,
-                                                   periodic,
+                                                   opt.periodic,
                                                    LINEAR);
   }
 
@@ -110,7 +109,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   // potential temperature is required
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_theta_ocean->init(opt.filename, opt.periodic);
 
   // read ocean salinity from a file if present, otherwise use a constant
   {
@@ -119,7 +118,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
     auto variable_name = m_salinity_ocean->metadata().get_name();
 
     if (input.find_variable(variable_name)) {
-      m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+      m_salinity_ocean->init(opt.filename, opt.periodic);
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
 

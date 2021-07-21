@@ -59,7 +59,7 @@ public:
 
   unsigned int n_records();
 
-  void init(const std::string &filename, unsigned int period, double reference_time);
+  void init(const std::string &filename, bool periodic);
   void init_constant(double value);
 
   void update(double t, double dt);

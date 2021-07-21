@@ -28,8 +28,6 @@ class ForcingInput(unittest.TestCase):
         self.no_bounds = "no_time_bounds.nc"
         self.time_order = "time_order.nc"
 
-        self.period = 1
-
         M = 3
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
                                          PISM.NOT_PERIODIC)
@@ -104,10 +102,7 @@ class ForcingInput(unittest.TestCase):
                                                   buffer_size, 52, periodic)
         forcing.metadata().set_string("long_name", "test field")
 
-        if periodic:
-            forcing.init(filename, self.period, 0)
-        else:
-            forcing.init(filename, 0, 0)
+        forcing.init(filename, periodic)
 
         return forcing
 

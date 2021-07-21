@@ -52,7 +52,6 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -62,7 +61,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
                                                       "", // no standard name
                                                       buffer_size,
                                                       evaluations_per_year,
-                                                      periodic,
+                                                      opt.periodic,
                                                       LINEAR);
     m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
                                    "m", "m", "surface_altitude", 0);
@@ -100,7 +99,7 @@ void ElevationChange::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
-  m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
+  m_reference_surface->init(opt.filename, opt.periodic);
 }
 
 void ElevationChange::update_impl(const Geometry &geometry, double t, double dt) {

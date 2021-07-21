@@ -58,7 +58,6 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
     unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -68,7 +67,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                                                 "", // no standard name
                                                 buffer_size,
                                                 evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
   }
 
@@ -76,7 +75,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                            "potential temperature of the adjacent ocean",
                            "Celsius", "Celsius", "", 0);
 
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_theta_ocean->init(opt.filename, opt.periodic);
 }
 
 /*!
