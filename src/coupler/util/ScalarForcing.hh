@@ -21,10 +21,9 @@
 
 #include <memory>               // std::unique_ptr
 
-#include "pism/util/Context.hh"
-
 namespace pism {
 
+class Context;
 class Timeseries;
 
 /*!
@@ -38,18 +37,16 @@ class ScalarForcing {
 public:
   ScalarForcing(std::shared_ptr<const Context> ctx,
                 const std::string &option_prefix,
-                const std::string &offset_name,
+                const std::string &variable_name,
                 const std::string &units,
                 const std::string &glaciological_units,
                 const std::string &long_name);
-  ~ScalarForcing();
 
   void update(double t, double dt);
 
   double value() const;
   double value(double t) const;
 protected:
-  std::shared_ptr<const Context> m_ctx;
 
   std::unique_ptr<Timeseries> m_data;
 
@@ -59,6 +56,7 @@ protected:
   // start of the period, in seconds (not used if not periodic)
   double m_period_start;
 
+  // current value (set by update(), returned by value())
   double m_current;
 };
 

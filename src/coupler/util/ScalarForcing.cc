@@ -23,6 +23,7 @@
 #include <cmath>                // std::floor()
 
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Timeseries.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -37,7 +38,7 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
-  : m_ctx(ctx), m_period(0), m_period_start(0.0), m_current(0.0) {
+  : m_period(0.0), m_period_start(0.0), m_current(0.0) {
 
   Config::ConstPtr config = ctx->config();
 
@@ -55,14 +56,14 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                                     "%s.file is required", prefix.c_str());
     }
 
-    m_ctx->log()->message(2,
-                          "  reading %s data from forcing file %s...\n",
-                          m_data->name().c_str(), filename.c_str());
+    ctx->log()->message(2,
+                        "  reading %s data from forcing file %s...\n",
+                        m_data->name().c_str(), filename.c_str());
 
-    File file(m_ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+    File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
     {
-      auto time_units = m_ctx->time()->units_string();
-      m_data->read(file, time_units, *m_ctx->log());
+      auto time_units = ctx->time()->units_string();
+      m_data->read(file, time_units, *ctx->log());
     }
 
     bool periodic = config->get_flag(prefix + ".periodic");
@@ -80,10 +81,6 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
     }
 
   }
-}
-
-ScalarForcing::~ScalarForcing() {
-  // empty
 }
 
 void ScalarForcing::update(double t, double dt) {
