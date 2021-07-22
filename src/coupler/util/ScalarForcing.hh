@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SCALARFORCING_H_
-#define _SCALARFORCING_H_
+#ifndef PISM_SCALARFORCING_H
+#define PISM_SCALARFORCING_H
 
 #include <memory>               // std::unique_ptr
 
@@ -63,4 +63,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _SCALARFORCING_H_ */
+#endif /* PISM_SCALARFORCING_H */
