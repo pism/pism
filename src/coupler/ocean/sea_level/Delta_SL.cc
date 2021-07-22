@@ -26,7 +26,7 @@ namespace sea_level {
 Delta_SL::Delta_SL(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(grid->ctx(),
+  m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "ocean.delta_sl", "delta_SL",
                                     "m", "m",
                                     "sea level elevation offsets"));

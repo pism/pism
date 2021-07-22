@@ -962,7 +962,7 @@ void IceModel::init_calving() {
   {
     auto filename = m_config->get_string("calving.rate_scaling.file");
     if (not filename.empty()) {
-      m_calving_rate_factor.reset(new ScalarForcing(m_ctx,
+      m_calving_rate_factor.reset(new ScalarForcing(*m_ctx,
                                                     "calving.rate_scaling",
                                                     "frac_calving_rate",
                                                     "1",

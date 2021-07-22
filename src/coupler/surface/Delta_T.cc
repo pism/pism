@@ -27,7 +27,7 @@ namespace surface {
 Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(g->ctx(),
+  m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "surface.delta_T",
                                     "delta_T",
                                     "Kelvin",

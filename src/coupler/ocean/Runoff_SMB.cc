@@ -25,7 +25,7 @@ namespace ocean {
 Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(g->ctx(),
+  m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "-ocean_runoff_smb",
                                     "delta_T",
                                     "Kelvin",

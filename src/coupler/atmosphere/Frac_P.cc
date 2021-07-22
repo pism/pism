@@ -45,7 +45,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   bool scalar = input.dimensions(variable_name).size() == 1;
 
   if (scalar) {
-    m_1d_scaling.reset(new ScalarForcing(grid->ctx(),
+    m_1d_scaling.reset(new ScalarForcing(*grid->ctx(),
                                          prefix,
                                          variable_name,
                                          units, units,

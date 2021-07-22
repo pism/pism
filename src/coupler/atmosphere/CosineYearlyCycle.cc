@@ -37,7 +37,7 @@ CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");
 
   if (not scaling_file.empty()) {
-    m_A.reset(new ScalarForcing(grid->ctx(),
+    m_A.reset(new ScalarForcing(*grid->ctx(),
                                 "atmosphere.yearly_cycle.scaling",
                                 "amplitude_scaling",
                                 "1", "1",

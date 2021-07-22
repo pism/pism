@@ -32,7 +32,7 @@
 
 namespace pism {
 
-ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
+ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &prefix,
                              const std::string &variable_name,
                              const std::string &units,
@@ -40,9 +40,9 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                              const std::string &long_name)
   : m_period(0.0), m_period_start(0.0), m_current(0.0) {
 
-  Config::ConstPtr config = ctx->config();
+  Config::ConstPtr config = ctx.config();
 
-  m_data.reset(new Timeseries(ctx->unit_system(), variable_name));
+  m_data.reset(new Timeseries(ctx.unit_system(), variable_name));
   m_data->variable().set_string("units", units);
   m_data->variable().set_string("glaciological_units", glaciological_units);
   m_data->variable().set_string("long_name", long_name);
@@ -56,14 +56,14 @@ ScalarForcing::ScalarForcing(std::shared_ptr<const Context> ctx,
                                     "%s.file is required", prefix.c_str());
     }
 
-    ctx->log()->message(2,
-                        "  reading %s data from forcing file %s...\n",
-                        m_data->name().c_str(), filename.c_str());
+    ctx.log()->message(2,
+                       "  reading %s data from forcing file %s...\n",
+                       m_data->name().c_str(), filename.c_str());
 
-    File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+    File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
     {
-      auto time_units = ctx->time()->units_string();
-      m_data->read(file, time_units, *ctx->log());
+      auto time_units = ctx.time()->units_string();
+      m_data->read(file, time_units, *ctx.log());
     }
 
     bool periodic = config->get_flag(prefix + ".periodic");

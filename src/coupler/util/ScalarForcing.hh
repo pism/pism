@@ -35,7 +35,7 @@ class Timeseries;
  */
 class ScalarForcing {
 public:
-  ScalarForcing(std::shared_ptr<const Context> ctx,
+  ScalarForcing(const Context &ctx,
                 const std::string &option_prefix,
                 const std::string &variable_name,
                 const std::string &units,

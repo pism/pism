@@ -29,7 +29,7 @@ namespace atmosphere {
 Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(grid->ctx(),
+  m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "atmosphere.delta_T",
                                     "delta_T",
                                     "Kelvin",

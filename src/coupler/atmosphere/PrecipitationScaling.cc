@@ -28,7 +28,7 @@ PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
                                            std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(grid->ctx(),
+  m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "atmosphere.precip_scaling",
                                     "delta_T",
                                     "Kelvin",
