@@ -194,8 +194,18 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
   }
 
   if (not is_increasing(m_time)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing (read from '%s').",
-                                  m_filename.c_str());
+    std::vector<std::string> numbers{};
+    char buffer[100];
+
+    for (double t : m_time) {
+      snprintf(buffer, sizeof(buffer), "%f", t);
+      numbers.emplace_back(buffer);
+    }
+
+    auto list = join(numbers, ", ");
+
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times (%s) have to be strictly increasing (read from '%s').",
+                                  list.c_str(), m_filename.c_str());
   }
 
   if (m_period != 0) {
