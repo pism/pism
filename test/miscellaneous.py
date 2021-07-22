@@ -1267,6 +1267,29 @@ def test_bq2():
             psi = [Q.germ(s, q, k).val for k in [0, 1]]
             assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
 
+class ScalarForcing(TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_file_not_set(self):
+        try:
+            ctx.config.set_string("surface.delta_T.file", "")
+            PISM.ScalarForcing(ctx.ctx,
+                               "surface.delta_T",
+                               "delta_T",
+                               "K",
+                               "K",
+                               "temperature offsets")
+            assert False, "failed to stop if prefix.file is empty"
+        except RuntimeError:
+            pass
+
+    def test_periodic_forcing(self):
+        raise SkipTest("not implemented yet")
+
 def thickness_calving_test():
     "Test the time-dependent thickness calving threshold"
 
