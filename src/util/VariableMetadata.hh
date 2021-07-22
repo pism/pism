@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2017, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -135,7 +135,7 @@ public:
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name);
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                           const std::vector<double> &zlevels);
-  SpatialVariableMetadata(const SpatialVariableMetadata &other);
+
   virtual ~SpatialVariableMetadata();
 
   void set_levels(const std::vector<double> &levels);

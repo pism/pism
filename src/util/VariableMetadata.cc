@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -174,11 +174,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
     get_z().set_name("");
     m_n_spatial_dims = 2;
   }
-}
-
-SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
-  : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
-  m_zlevels             = other.m_zlevels;
 }
 
 SpatialVariableMetadata::~SpatialVariableMetadata() {
