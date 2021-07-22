@@ -219,12 +219,12 @@ void IceModelVec2T::end_access() const {
   }
 }
 
-void IceModelVec2T::init(const std::string &fname, bool periodic) {
+void IceModelVec2T::init(const std::string &filename, bool periodic) {
 
   auto ctx = m_impl->grid->ctx();
   const Logger &log = *ctx->log();
 
-  m_data->filename = fname;
+  m_data->filename = filename;
 
   // We find the variable in the input file and
   // try to find the corresponding time dimension.
@@ -360,7 +360,7 @@ void IceModelVec2T::update(double t, double dt) {
     return;
   }
 
-  if (m_data->time_bounds.size() == 0) {
+  if (m_data->time_bounds.empty()) {
     update(0);
     return;
   }
@@ -374,9 +374,8 @@ void IceModelVec2T::update(double t, double dt) {
     unsigned int last = m_data->first + (m_data->N - 1);
 
     // find the interval covered by data held in memory:
-    double
-      t0 = m_data->time_bounds[m_data->first * 2],
-      t1 = m_data->time_bounds[last * 2 + 1];
+    double t0 = m_data->time_bounds[m_data->first * 2];
+    double t1 = m_data->time_bounds[last * 2 + 1];
 
     // just return if we have all the data we need:
     if (t >= t0 and t + dt <= t1) {
@@ -542,12 +541,14 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
 
   if (dt > m_data->dt_min) {    // never take time-steps shorter than this
     return MaxTimestep(dt);
-  } else if (k + 1 < m_data->time.size()) {
+  }
+
+  if (k + 1 < m_data->time.size()) {
     dt = m_data->time_bounds[2 * (k + 1) + 1] - m_data->time_bounds[2 * (k + 1)];
     return MaxTimestep(dt);
-  } else {
-    return MaxTimestep();
   }
+
+  return MaxTimestep();
 }
 
 /*
