@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,14 +38,6 @@ public:
   //! Magnitude.
   inline double magnitude() const {
     return sqrt(magnitude_squared());
-  }
-
-  inline Vector2& operator=(const Vector2 &other) {
-    // NOTE: we don't check for self-assignment because there is no memory
-    // (de-)allocation here.
-    u = other.u;
-    v = other.v;
-    return *this;
   }
 
   //! Set both components to the same number.
