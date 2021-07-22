@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -111,6 +111,7 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
     result.val = pt.eta;
     result.dx  = 0.0;
     result.dy  = 1.0;
+    break;
   default:                      // the fourth (dummy) basis function
     result.val = 0.0;
     result.dx  = 0.0;

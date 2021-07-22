@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -236,15 +236,15 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const {
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
                                                 "diagnostic", WITHOUT_GHOSTS));
-    result->metadata(0) = Diagnostic::m_vars[0];
+    result->metadata(0) = Diagnostic::m_vars.at(0);
 
     if (m_interval_length > 0.0) {
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
       std::string
-        out = Diagnostic::m_vars[0].get_string("glaciological_units"),
-        in  = Diagnostic::m_vars[0].get_string("units");
+        out = Diagnostic::m_vars.at(0).get_string("glaciological_units"),
+        in  = Diagnostic::m_vars.at(0).get_string("units");
       const double
         fill = convert(Diagnostic::m_sys, Diagnostic::m_fill_value, out, in);
       result->set(fill);
