@@ -104,6 +104,25 @@ void IceModelVec2T::end_access() const {
   }
 }
 
+void ensure_increasing(const std::vector<double> &data,
+                       const std::string &name,
+                       const std::string &filename) {
+  if (not is_increasing(data)) {
+    std::vector<std::string> numbers{};
+    char buffer[100];
+
+    for (double d : data) {
+      snprintf(buffer, sizeof(buffer), "%f", d);
+      numbers.emplace_back(buffer);
+    }
+
+    auto list = join(numbers, ", ");
+
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s (%s) have to be strictly increasing (read from '%s').",
+                                  list.c_str(), name.c_str(), filename.c_str());
+  }
+}
+
 void IceModelVec2T::init(const std::string &fname, unsigned int period, double reference_time) {
 
   const Logger &log = *m_grid->ctx()->log();
@@ -197,16 +216,17 @@ void IceModelVec2T::init(const std::string &fname, unsigned int period, double r
     std::vector<std::string> numbers{};
     char buffer[100];
 
-    for (double t : m_time) {
-      snprintf(buffer, sizeof(buffer), "%f", t);
+    for (double d : m_time_bounds) {
+      snprintf(buffer, sizeof(buffer), "%f", d);
       numbers.emplace_back(buffer);
     }
 
     auto list = join(numbers, ", ");
 
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times (%s) have to be strictly increasing (read from '%s').",
-                                  list.c_str(), m_filename.c_str());
+    log.message(2, "time bounds in %s: %s\n", m_filename.c_str(), list.c_str());
   }
+
+  ensure_increasing(m_time, "times", m_filename);
 
   if (m_period != 0) {
     if ((size_t)m_n_records < m_time.size()) {
