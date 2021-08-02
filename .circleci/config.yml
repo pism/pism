@@ -227,11 +227,13 @@ jobs:
             git config user.name "CI Builder (PISM manual)"
       - add_ssh_keys:
           fingerprints:
-            - "15:22:79:ff:0a:1d:aa:5a:8e:bb:e1:94:51:2e:67:2f"
+            - "0a:88:9e:95:a9:35:1b:54:f6:0e:4a:f8:3d:34:ef:30"
       - run:
           name: Deploy the manual to GitHub Pages
           command: >-
-            gh-pages --dotfiles
+            gh-pages
+            --repo git@github.com:pism/docs.git
+            --dotfiles
             --message "[skip ci] Update the manual"
             --dist manual/html
 
