@@ -25,6 +25,7 @@ RUN set -eux; \
 # - doxygen and graphviz are needed to build the source code browser
 RUN set -eux; \
         apt-get update && apt-get install -y \
+        apt-utils \
         ccache \
         clang \
         cython3 \
@@ -44,6 +45,8 @@ RUN set -eux; \
         wget \
         doxygen \
         graphviz \
+        latexmk \
+        texlive-latex-recommended \
         ; \
         rm -rf /var/lib/apt/lists/*
 

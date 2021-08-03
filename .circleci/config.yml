@@ -6,7 +6,7 @@ version: 2
 jobs:
   build-gcc:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.2
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CC: ccache mpicc
@@ -68,7 +68,7 @@ jobs:
 
   build-gcc-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.2
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CC: ccache mpicc
@@ -101,7 +101,7 @@ jobs:
 
   build-clang:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.2
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CCACHE_COMPRESS: 1
@@ -157,7 +157,7 @@ jobs:
 
   build-clang-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.2
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CCACHE_COMPRESS: 1
@@ -197,7 +197,7 @@ jobs:
 
   build-manual:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.2
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     steps:
       - checkout
@@ -210,6 +210,41 @@ jobs:
       - persist_to_workspace:
           root: /tmp/pism/manual
           paths: html
+
+
+  build-manual-pdf:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.3
+
+    steps:
+      - checkout
+      - run:
+          name: Build the manual
+          command: |
+            mkdir -p build
+            cmake -B build -S doc/
+            make -C build manual_pdf
+      - persist_to_workspace:
+          root: build/doc/sphinx/
+          paths: pism_manual.pdf
+
+  build-source-browser:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.3
+
+    steps:
+      - checkout
+      - run:
+          name: Build the manual
+          command: |
+            mkdir -p build
+            cmake -B build -S doc/
+            make -C build browser
+            cp -r build/browser/html /tmp/pism-browser
+            du -sh /tmp/pism-browser
+      - persist_to_workspace:
+          root: /tmp/
+          paths: pism-browser
 
   deploy-manual:
     docker:

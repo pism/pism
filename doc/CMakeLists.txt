@@ -2,7 +2,7 @@
 project(PISM_Documentation "NONE")
 cmake_minimum_required (VERSION 2.8.0)
 
-find_package(LATEX)
+find_package(LATEX COMPONENTS PDFLATEX)
 find_package(Doxygen)
 
 if (NOT Pism_SOURCE_DIR)

@@ -3,6 +3,7 @@ find_package(Doxygen)
 
 # PISM Source Code Browsers
 if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
+  find_package(PythonInterp REQUIRED)
 
   option(Pism_DOXYGEN_DOCUMENT_ALL "Extract all (even undocumented) entities." ON)
 
