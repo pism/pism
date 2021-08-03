@@ -20,7 +20,11 @@ prefix=$HOME/local/parallelio
 rm -rf ${build}
 mkdir -p ${build}/build ${build}/sources
 
-git clone --depth=1 -b ${branch} ${url} ${build}/sources
+git clone ${url} ${build}/sources
+
+pushd ${build}/sources
+git checkout -b 2_5_4 pio2_5_4
+popd
 
 pushd ${build}/build
 

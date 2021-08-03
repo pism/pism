@@ -47,6 +47,7 @@ RUN set -eux; \
         graphviz \
         latexmk \
         texlive-latex-recommended \
+        texlive-latex-extra \
         ; \
         rm -rf /var/lib/apt/lists/*
 
