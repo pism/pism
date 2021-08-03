@@ -556,7 +556,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT = mainpage.md references.md howto.md petsc.md \
+INPUT = mainpage.md references.md \
         ${Pism_SOURCE_DIR}/src/
 
 USE_MDFILE_AS_MAINPAGE = mainpage.md
