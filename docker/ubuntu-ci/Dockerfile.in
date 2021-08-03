@@ -1,13 +1,16 @@
-FROM ubuntu:20.04
+FROM ubuntu:21.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages listed in the manual. This is done separately so that we can
 # re-use this fs layer.
-RUN apt-get update && apt-get install -y ${PISM_DEBIAN_PACKAGE_LIST}
+RUN set -eux; \
+        apt-get update && apt-get install -y \
+        ${PISM_DEBIAN_PACKAGE_LIST} \
+        ; \
+        rm -rf /var/lib/apt/lists/*
 
 # Install tools:
 # - ccache and lld to speed up builds,
-# - PIP to install Sphinx
 # - Cython to build PETSc
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
@@ -18,30 +21,28 @@ RUN apt-get update && apt-get install -y ${PISM_DEBIAN_PACKAGE_LIST}
 # - python3-dev is needed to build Python bindings
 # - python3-nose is used to run some regression tests
 # - SWIG is needed to build Python bindings
-RUN apt-get update && apt-get install -y \
-        m4 \
+# - MPICH is needed to build PETSc and PISM
+RUN set -eux; \
+        apt-get update && apt-get install -y \
         ccache \
         clang \
         cython3 \
+        libmpich-dev \
         libproj-dev \
         lld \
+        m4 \
         nco \
         python3-dev \
-        python3-pip \
         python3-netcdf4 \
         python3-nose \
         python3-numpy \
         python3-scipy \
+        python3-sphinx \
+        python3-sphinxcontrib.bibtex \
         swig \
-        wget
-
-# Ubuntu 20.04 provides a very old Sphinx version (v1.8.5) so we have to install a newer
-# one using PIP.
-RUN pip3 install -U sphinx sphinxcontrib-bibtex
-
-# Install MPICH
-RUN apt-get update && apt-get install -y \
-        libmpich-dev
+        wget \
+        ; \
+        rm -rf /var/lib/apt/lists/*
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
@@ -58,7 +59,8 @@ COPY netcdf.sh /tmp/
 COPY pnetcdf.sh /tmp/
 COPY parallelio.sh /tmp/
 
-RUN cd /tmp && \
+RUN set -eux; \
+        cd /tmp && \
         ./hdf5.sh && \
         ./netcdf.sh && \
         ./pnetcdf.sh && \
@@ -67,7 +69,8 @@ RUN cd /tmp && \
 
 # Build PETSc last to make it easier to update this Docker image.
 COPY petsc.sh /tmp/
-RUN cd /tmp && \
+RUN set -eux;\
+        cd /tmp && \
         ./petsc.sh && \
         rm -rf ~/local/build
 
