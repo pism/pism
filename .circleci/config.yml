@@ -211,6 +211,32 @@ jobs:
           root: build/sphinx
           paths: html
 
+  deploy-manual-html:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: manual
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "0a:88:9e:95:a9:35:1b:54:f6:0e:4a:f8:3d:34:ef:30"
+      - run:
+          name: Deploy the HTML version of the manual to GitHub Pages
+          command: >-
+            gh-pages
+            --repo git@github.com:pism/docs.git
+            --dotfiles
+            --message "Update the manual"
+            --dist manual/html
+
   build-manual-pdf:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.3
@@ -226,9 +252,6 @@ jobs:
       - persist_to_workspace:
           root: build/sphinx/
           paths: pism_manual.pdf
-      - store_artifacts:
-          path: build/sphinx/pism_manual.pdf
-          destination: pdf
 
   deploy-manual-pdf:
     docker:
@@ -253,7 +276,7 @@ jobs:
             gh-pages
             --repo git@github.com:pism/docs-pdf.git
             --branch main
-            --message "[skip ci] Update the manual"
+            --message "Update the manual"
             --dist manual/
 
   build-source-browser:
@@ -268,20 +291,21 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build browser
-            cp -r build/browser/html /tmp/pism-browser
-            du -sh /tmp/pism-browser
+            rm -f build/browser/html/*.md5
+            touch build/browser/html/.nojekyll
+            du -sh build/browser/html/
       - persist_to_workspace:
-          root: /tmp/
-          paths: pism-browser
+          root: build/browser/
+          paths: html
 
-  deploy-manual-html:
+  deploy-source-browser:
     docker:
       - image: node:8.10.0
 
     steps:
       - checkout
       - attach_workspace:
-          at: manual
+          at: browser
       - run:
           name: Install and configure dependencies
           command: |
@@ -290,15 +314,15 @@ jobs:
             git config user.name "CI Builder (PISM manual)"
       - add_ssh_keys:
           fingerprints:
-            - "0a:88:9e:95:a9:35:1b:54:f6:0e:4a:f8:3d:34:ef:30"
+            - "fd:20:f4:23:95:b7:99:85:e9:e2:d9:78:75:22:fb:6c"
       - run:
-          name: Deploy the HTML version of the manual to GitHub Pages
+          name: Deploy the source code browser to GitHub Pages
           command: >-
             gh-pages
-            --repo git@github.com:pism/docs.git
+            --repo git@github.com:pism/doxygen.git
             --dotfiles
-            --message "[skip ci] Update the manual"
-            --dist manual/html
+            --message "Update the source code browser"
+            --dist browser
 
 workflows:
   version: 2
@@ -331,9 +355,13 @@ workflows:
             branches:
               only: dev
       - build-source-browser
-      # - deploy-source-browser:
-      #     requires:
-      #       - build-source-browser
-      #     filters:
-      #       branches:
-      #         only: dev
+      - deploy-source-browser:
+          requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
+            - build-source-browser
+          filters:
+            branches:
+              only: dev
