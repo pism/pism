@@ -230,6 +230,32 @@ jobs:
           path: build/sphinx/pism_manual.pdf
           destination: pdf
 
+  deploy-manual-pdf:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: manual
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "84:ac:e8:7c:d0:24:f7:51:dd:e6:89:dc:59:bc:9a:b7"
+      - run:
+          name: Deploy the PDF version of the manual to GitHub
+          command: >-
+            gh-pages
+            --repo git@github.com:pism/docs-pdf.git
+            --branch main
+            --message "[skip ci] Update the manual"
+            --dist manual/
+
   build-source-browser:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.3
@@ -293,19 +319,14 @@ workflows:
           filters:
             branches:
               only: dev
-      - build-manual-pdf:
+      - build-manual-pdf
+      - deploy-manual-pdf:
           requires:
-            - build-manual-html
-      # - deploy-manual-pdf:
-      #     requires:
-      #       - build-manual-pdf
-      #     filters:
-      #       branches:
-      #         only: dev
-      - build-source-browser:
-          requires:
-            - build-gcc
-            - build-clang
+            - build-manual-pdf
+          filters:
+            branches:
+              only: dev
+      - build-source-browser
       # - deploy-source-browser:
       #     requires:
       #       - build-source-browser
