@@ -322,7 +322,7 @@ jobs:
             --repo git@github.com:pism/doxygen.git
             --dotfiles
             --message "Update the source code browser"
-            --dist browser
+            --dist browser/html
 
 workflows:
   version: 2
