@@ -322,6 +322,10 @@ workflows:
       - build-manual-pdf
       - deploy-manual-pdf:
           requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
             - build-manual-pdf
           filters:
             branches:
