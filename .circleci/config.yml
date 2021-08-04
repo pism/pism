@@ -195,20 +195,20 @@ jobs:
           paths:
             - ~/.ccache
 
-  build-manual:
+  build-manual-html:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.3
 
     steps:
       - checkout
       - run:
-          name: Build the manual
+          name: Build the HTML version of the manual
           command: |
             mkdir -p build
-            cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=/tmp/pism -DPism_DOC_DIR="manual"
-            make -C build install
+            cmake -B build -S doc/
+            make -C build manual_html
       - persist_to_workspace:
-          root: /tmp/pism/manual
+          root: build/sphinx
           paths: html
 
   build-manual-pdf:
@@ -226,7 +226,7 @@ jobs:
       - persist_to_workspace:
           root: build/sphinx/
           paths: pism_manual.pdf
-      - save_artifacts:
+      - store_artifacts:
           path: build/sphinx/pism_manual.pdf
           destination: pdf
 
@@ -248,7 +248,7 @@ jobs:
           root: /tmp/
           paths: pism-browser
 
-  deploy-manual:
+  deploy-manual-html:
     docker:
       - image: node:8.10.0
 
@@ -282,20 +282,20 @@ workflows:
       - build-gcc-minimal
       - build-clang
       - build-clang-minimal
-      - build-manual
-      - deploy-manual:
+      - build-manual-html
+      - deploy-manual-html:
           requires:
             - build-gcc
             - build-gcc-minimal
             - build-clang
             - build-clang-minimal
-            - build-manual
+            - build-manual-html
           filters:
             branches:
               only: dev
       - build-manual-pdf:
           requires:
-            - build-manual
+            - build-manual-html
       # - deploy-manual-pdf:
       #     requires:
       #       - build-manual-pdf
