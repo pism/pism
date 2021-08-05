@@ -118,7 +118,7 @@ expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
 
 echo
 echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
-cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP -i $INNAME \
+cmd="$PISM_MPIDO $NN $PISM_EXEC -bootstrap -Lz 5000 -skip -skip_max $SKIP -i $INNAME \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
