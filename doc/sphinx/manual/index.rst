@@ -7,7 +7,7 @@ PISM User's Manual
 
 Welcome!  All information about PISM is online at the home page
 
-    |pism-docs|
+    |pism-website|
 
 Please see the extensive lists of PISM publications and applications at that page.
 

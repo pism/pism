@@ -24,7 +24,7 @@
 .. |petsc-min-version| replace:: 3.5
 
 .. |pism-email| replace:: uaf-pism@alaska.edu
-.. |pism-docs| replace:: https://pism-docs.org
+.. |pism-website| replace:: https://pism.github.io
 .. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
 
 .. |efischer-email| replace:: eafischer2@alaska.edu
@@ -59,10 +59,10 @@
 .. _cf-names-for-glaciology: http://websrv.cs.umt.edu/isis/index.php/CF_standard_names_for_Glaciology_and_Ice-Sheet_Modeling
 .. _cf-names-proposed: http://cfeditor.ceda.ac.uk/proposals/1
 .. _CMake: https://cmake.org/
-.. _CMake-cross-compiling: https://cmake.org/Wiki/CMake_Cross_Compiling
+.. _CMake-cross-compiling: https://cmake.org/rdrctcm.php?old_link=CMake_Cross_Compiling
 .. _Enthought: https://www.enthought.com/
 .. _FFTW: http://www.fftw.org/
-.. _Fink: http://www.finkproject.org/
+.. _Fink: https://www.finkproject.org/
 .. _GSL: http://www.gnu.org/software/gsl/
 .. _Git: https://git-scm.com/
 .. _Git documentation: https://git-scm.com/doc
@@ -78,44 +78,44 @@
 .. _NCO: http://nco.sourceforge.net/
 .. _NetCDF: https://www.unidata.ucar.edu/software/netcdf/
 .. _netcdf-classic-format: https://www.unidata.ucar.edu/software/netcdf/docs/file_structure_and_performance.html#classic_file_parts
-.. _NumPy: https://www.numpy.org/
+.. _NumPy: https://numpy.org/
 .. _SymPy: https://www.sympy.org
 .. _Open MPI: https://www.open-mpi.org
 .. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
 .. _PETSc: https://www.mcs.anl.gov/petsc/
-.. _hypre: https://hypre.readthedocs.io/
+.. _hypre: https://hypre.readthedocs.io/en/latest/
 .. _MUMPS: http://mumps.enseeiht.fr/
 .. _PROJ: https://proj.org/
 .. _PnetCDF: https://parallel-netcdf.github.io/
 .. _Python: https://www.python.org
-.. _Sphinx: http://www.sphinx-doc.org/en/master/usage/installation.html
+.. _Sphinx: https://www.sphinx-doc.org/en/master/usage/installation.html
 .. _sphinxcontrib.bibtex: https://sphinxcontrib-bibtex.readthedocs.io/en/latest/
 .. _UDUNITS: https://www.unidata.ucar.edu/software/udunits/
 .. _Ubuntu: https://ubuntu.com/desktop
 .. _X: https://www.x.org/wiki/
 .. _XCode: https://developer.apple.com/xcode/
 .. _XQuartz: https://www.xquartz.org/
-.. _doxygen: http://www.doxygen.nl
+.. _doxygen: https://www.doxygen.nl/index.html
 .. _graphviz: http://www.graphviz.org/
 .. _matplotlib: https://matplotlib.org/
-.. _ncview: http://meteora.ucsd.edu/~pierce/ncview_home_page.html
+.. _ncview: http://cirrus.ucsd.edu/ncview/
 .. _netcdf4-python: https://pypi.org/project/netCDF4
 .. _pyngl: http://www.pyngl.ucar.edu
 .. _SeaRISE-Greenland: http://websrv.cs.umt.edu/isis/index.php/Model_Initialization#Greenland
 .. _searise-greenland-data: http://websrv.cs.umt.edu/isis/index.php/Present_Day_Greenland
 .. _searise: http://websrv.cs.umt.edu/isis/index.php/SeaRISE_Assessment
 .. _mismip-code: http://homepages.ulb.ac.be/~fpattyn/mismip/MISMIP_distribution.tar
-.. _reStructuredText: https://docutils.readthedocs.io/en/sphinx-docs/user/rst/quickstart.html
+.. _reStructuredText: https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html
 .. _Emacs: https://www.gnu.org/software/emacs/
 .. _GDB: https://www.gnu.org/software/gdb/
 .. _LLDB: https://lldb.llvm.org/
 .. _LLD: https://lld.llvm.org/
-.. _Valgrind: http://www.valgrind.org/
+.. _Valgrind: https://www.valgrind.org/
 .. _ccache: https://ccache.dev/
 
-.. _github-help-fork: https://help.github.com/en/articles/fork-a-repo
-.. _github-pull-request-create: https://help.github.com/en/articles/creating-a-pull-request
-.. _github-pull-request-allow-edits: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
+.. _github-help-fork: https://docs.github.com/en/get-started/quickstart/fork-a-repo
+.. _github-pull-request-create: https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
+.. _github-pull-request-allow-edits: https://docs.github.com/en/github/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork
 
 .. _git-branching-model: https://nvie.com/posts/a-successful-git-branching-model/
 .. _git-fun-with-merges: https://gitster.livejournal.com/42247.html
@@ -132,18 +132,18 @@
 .. _KDevelop: https://www.kdevelop.org/
 .. _Kaye and Laby: https://web.archive.org/web/20190506031327/http://www.kayelaby.npl.co.uk/
 
-.. _Ismip6-greenland: http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
+.. _Ismip6-greenland: https://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland
 .. _ParallelIO: https://ncar.github.io/ParallelIO/
 
 .. _HDF5: https://portal.hdfgroup.org/display/HDF5/HDF5
-.. _Lustre: http://lustre.org/
+.. _Lustre: https://www.lustre.org/
 
 .. PISM-related external links
 
 .. _pism-github: https://github.com/pism/pism
 .. _pism-builds: https://github.com/pism/pism-builds
-.. _PISM: https://pism-docs.org/wiki/doku.php
-.. _pism-browser: https://pism-docs.org/doxy/html/index.html
+.. _PISM: https://pism.github.io
+.. _pism-browser: https://pism.github.io/doxygen
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pypismtools: https://github.com/pism/pypismtools
 .. _regional-tools: https://github.com/pism/regional-tools

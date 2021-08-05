@@ -369,7 +369,7 @@ For this example ``PyPISMTools/colormaps/Full_saturation_spectrum_CCW.cpt`` was 
 .. rubric:: Footnotes
 
 .. [#] PISM can also do 1 km runs for the whole Greenland ice sheet; see this `news item
-       <https://pism-docs.org/wiki/doku.php?id=news:first1km>`_.
+       <https://pism.github.io/news/2012/04/12/first1km/>`_.
 
 .. [#] If this file is already present then no actual download occurs, and preprocessing
        proceeds. Thus: Do not worry about download time if you need to preprocess again.

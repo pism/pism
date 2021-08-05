@@ -10,7 +10,7 @@ in the `Arch Linux User Repository <https://aur.archlinux.org>`_ (AUR). This pac
 PISM release and its dependencies. PISM is linked to `Open MPI`_ and is
 installed under ``/usr``.
 
-Installation from the AUR requires an `AUR helper <https://wiki.archlinux.org/index.php/AUR_helpers>`_
+Installation from the AUR requires an `AUR helper <https://wiki.archlinux.org/title/AUR_helpers>`_
 such as `yay <https://aur.archlinux.org/packages/yay/>`_. If you do not already
 have an AUR helper installed, install ``yay`` with the following commands:
 
