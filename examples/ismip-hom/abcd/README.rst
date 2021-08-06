@@ -1,3 +1,14 @@
+To run ISMIP-HOM experiments A, B, C, and D using PISM, install PISM with Python bindings
+and run
+
+.. code::
+
+   make
+
+This will download submitted model results from the ISMIP-HOM_ paper supplement, run all
+the experiments, and plot results. See the `ISMIP-HOM section of the manual
+<ISMIP-HOM-PISM_>`_ for results.
+
 The script `run-ismiphom.py` uses PISM's Python bindings to run the Blatter solver in
 PISM. See the top of this script for details.
 
@@ -10,3 +21,4 @@ The script `plot-ismiphom.py` uses Matplotlib and data processed by `convert-ism
 It produces figures used in the Manual.
 
 .. _ISMIP-HOM: https://tc.copernicus.org/articles/2/95/2008/
+.. _ISMIP-HOM-PISM: https://pism.github.io/docs/manual/simplified-geometry/ismip-hom.html
