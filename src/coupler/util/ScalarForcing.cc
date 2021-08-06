@@ -60,10 +60,16 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                        "  reading %s data from forcing file %s...\n",
                        m_data->name().c_str(), filename.c_str());
 
-    File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
-    {
-      auto time_units = ctx.time()->units_string();
-      m_data->read(file, time_units, *ctx.log());
+    try {
+      File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
+      {
+        auto time_units = ctx.time()->units_string();
+        m_data->read(file, time_units, *ctx.log());
+      }
+    } catch (RuntimeError &e) {
+      e.add_context("while reading %s (%s) from '%s'",
+                    long_name.c_str(), variable_name.c_str(), filename.c_str());
+      throw;
     }
 
     bool periodic = config->get_flag(prefix + ".periodic");
