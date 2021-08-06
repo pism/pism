@@ -593,10 +593,9 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.file_option = "thickness_calving_file";
     pism_config:calving.thickness_calving.file_type = "string";
 
-    pism_config:calving.thickness_calving.period = 0;
-    pism_config:calving.thickness_calving.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:calving.thickness_calving.period_type = "integer";
-    pism_config:calving.thickness_calving.period_units = "years";
+    pism_config:calving.thickness_calving.periodic = "no";
+    pism_config:calving.thickness_calving.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:calving.thickness_calving.periodic_type = "flag";
 
     pism_config:calving.thickness_calving.reference_year = 0;
     pism_config:calving.thickness_calving.reference_year_doc = "Reference year to use when :config:`calving.thickness_calving.period` is active.";
