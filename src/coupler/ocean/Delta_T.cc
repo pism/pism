@@ -50,10 +50,8 @@ void Delta_T::init_impl(const Geometry &geometry) {
 void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
-  m_shelf_base_temperature->shift(m_forcing->value());
+  m_shelf_base_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
 const IceModelVec2S& Delta_T::shelf_base_temperature_impl() const {

@@ -79,9 +79,7 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
 
 void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
-  if (m_A) {
-    m_A->update(t, dt);
-  }
+  // an implementation is necessary because the base class does not define this
 }
 
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {

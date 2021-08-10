@@ -57,9 +57,7 @@ void Runoff_SMB::init_impl(const Geometry &geometry) {
 void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
-  mass_flux(m_forcing->value(), *m_shelf_base_mass_flux);
+  mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }
 
 void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {

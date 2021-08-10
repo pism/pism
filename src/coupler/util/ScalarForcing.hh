@@ -20,11 +20,15 @@
 #define PISM_SCALARFORCING_H
 
 #include <memory>               // std::unique_ptr
+#include <vector>               // std::vector
+
+#include <gsl/gsl_spline.h>
 
 namespace pism {
 
 class Context;
-class Timeseries;
+class File;
+class Logger;
 
 /*!
  * This class helps with loading and using scalar forcings such as scalar temperature
@@ -41,14 +45,15 @@ public:
                 const std::string &units,
                 const std::string &glaciological_units,
                 const std::string &long_name);
+  ~ScalarForcing();
 
-  void update(double t, double dt);
-
-  double value() const;
   double value(double t) const;
-protected:
 
-  std::unique_ptr<Timeseries> m_data;
+  // FIXME: implement average(t, dt)
+private:
+  // disable copy constructor and the assignment operator:
+  ScalarForcing(const ScalarForcing &other);
+  ScalarForcing& operator=(const ScalarForcing&);
 
   // period, in seconds (zero if not periodic)
   double m_period;
@@ -56,10 +61,15 @@ protected:
   // start of the period, in seconds (not used if not periodic)
   double m_period_start;
 
-  // current value (set by update(), returned by value())
-  double m_current;
-};
+  // Times associated with corresponding values (used for linear interpolation)
+  std::vector<double> m_times;
 
+  // Forcing values
+  std::vector<double> m_values;
+
+  gsl_interp_accel* m_acc;
+  gsl_spline*       m_spline;
+};
 
 } // end of namespace pism
 

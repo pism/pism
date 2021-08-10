@@ -36,12 +36,18 @@ namespace ocean {
 Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = m_config->get_number("ocean.cache.update_interval");
+  auto time = m_grid->ctx()->time();
 
-  if (m_update_interval_years < 1) {
+  m_next_update_time = time->current();
+  m_update_interval_years = m_config->get_number("ocean.cache.update_interval", "seconds");
+
+  // use the current year length (according to the selected calendar) to convert update
+  // interval length into years
+  m_update_interval_years = time->convert_time_interval(m_update_interval_years, "years");
+
+  if (m_update_interval_years <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "ocean.cache.update_interval has to be strictly positive (got %d)",
+                                  "ocean.cache.update_interval has to be strictly positive (got %f)",
                                   m_update_interval_years);
   }
 
@@ -50,10 +56,6 @@ Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
     m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
     m_water_column_pressure  = allocate_water_column_pressure(g);
   }
-}
-
-Cache::~Cache() {
-  // empty
 }
 
 void Cache::init_impl(const Geometry &geometry) {
@@ -70,8 +72,10 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   // an input model
   (void) dt;
 
+  double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
+
   if (t >= m_next_update_time or
-      fabs(t - m_next_update_time) < 1.0) {
+      fabs(t - m_next_update_time) < time_resolution) {
 
     double
       one_year_from_now = m_grid->ctx()->time()->increment_date(t, 1.0),
@@ -95,9 +99,11 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
 MaxTimestep Cache::max_timestep_impl(double t) const {
   double dt = m_next_update_time - t;
 
+  double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
+
   // if we got very close to the next update time, set time step
   // length to the interval between updates
-  if (dt < 1.0) {
+  if (dt < time_resolution) {
     double update_time_after_next = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                 m_update_interval_years);
 

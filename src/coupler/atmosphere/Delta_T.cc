@@ -57,10 +57,9 @@ void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
 
 void Delta_T::update_impl(const Geometry& geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_forcing->update(t, dt);
 
   m_temperature->copy_from(m_input_model->mean_annual_temp());
-  m_temperature->shift(m_forcing->value());
+  m_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
 const IceModelVec2S& Delta_T::mean_annual_temp_impl() const {

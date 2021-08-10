@@ -51,11 +51,9 @@ void Delta_MBP::init_impl(const Geometry &geometry) {
 void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
   double
     melange_thickness = m_config->get_number("ocean.delta_MBP.melange_thickness"),
-    dP_melange        = m_forcing->value();
+    dP_melange        = m_forcing->value(t + 0.5 * dt);
 
   const auto &P = m_input_model->average_water_column_pressure();
   const auto &H = geometry.ice_thickness;

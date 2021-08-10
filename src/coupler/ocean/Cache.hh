@@ -28,7 +28,7 @@ namespace ocean {
 class Cache : public OceanModel {
 public:
   Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
-  virtual ~Cache();
+  virtual ~Cache() = default;
 
 protected:
   MaxTimestep max_timestep_impl(double t) const;
@@ -41,7 +41,7 @@ protected:
   const IceModelVec2S& average_water_column_pressure_impl() const;
 private:
   double m_next_update_time;
-  unsigned int m_update_interval_years;
+  double m_update_interval_years;
 
   // storage for melange_back_pressure_fraction is inherited from OceanModel
   IceModelVec2S::Ptr m_shelf_base_temperature;

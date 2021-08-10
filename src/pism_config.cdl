@@ -597,11 +597,6 @@ netcdf pism_config {
     pism_config:calving.thickness_calving.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:calving.thickness_calving.periodic_type = "flag";
 
-    pism_config:calving.thickness_calving.reference_year = 0;
-    pism_config:calving.thickness_calving.reference_year_doc = "Reference year to use when :config:`calving.thickness_calving.period` is active.";
-    pism_config:calving.thickness_calving.reference_year_type = "integer";
-    pism_config:calving.thickness_calving.reference_year_units = "years";
-
     pism_config:calving.thickness_calving.threshold = 50.0;
     pism_config:calving.thickness_calving.threshold_doc = "When terminal ice thickness of floating ice shelf is less than this threshold, it will be calved off.";
     pism_config:calving.thickness_calving.threshold_option = "thickness_calving_threshold";
@@ -1196,7 +1191,7 @@ netcdf pism_config {
     pism_config:hydrology.maximum_time_step = 1.0;
     pism_config:hydrology.maximum_time_step_doc = "maximum allowed time step length used by hydrology::Routing and hydrology::Distributed";
     pism_config:hydrology.maximum_time_step_type = "number";
-    pism_config:hydrology.maximum_time_step_units = "years";
+    pism_config:hydrology.maximum_time_step_units = "365days";
 
     pism_config:hydrology.model = "null";
     pism_config:hydrology.model_choices = "null,routing,steady,distributed";
@@ -1216,7 +1211,7 @@ netcdf pism_config {
     pism_config:hydrology.null_diffusion_time = 1000.0;
     pism_config:hydrology.null_diffusion_time_doc = "diffusion time for till water thickness; see equation (11) in :cite:`BBssasliding`; only active if hydrology.null_diffuse_till_water is set";
     pism_config:hydrology.null_diffusion_time_type = "number";
-    pism_config:hydrology.null_diffusion_time_units = "years";
+    pism_config:hydrology.null_diffusion_time_units = "365days";
 
     pism_config:hydrology.null_strip_width = -1.0;
     pism_config:hydrology.null_strip_width_doc = "if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by hydrology::Routing and hydrology::Distributed";
@@ -1242,7 +1237,7 @@ netcdf pism_config {
     pism_config:hydrology.steady.flux_update_interval = 1.0;
     pism_config:hydrology.steady.flux_update_interval_doc = "interval between updates of the steady state flux";
     pism_config:hydrology.steady.flux_update_interval_type = "number";
-    pism_config:hydrology.steady.flux_update_interval_units = "years";
+    pism_config:hydrology.steady.flux_update_interval_units = "365days";
 
     pism_config:hydrology.steady.input_rate_scaling = 1e7;
     pism_config:hydrology.steady.input_rate_scaling_doc = "input rate scaling";
@@ -1506,7 +1501,7 @@ netcdf pism_config {
     pism_config:ocean.cache.update_interval_doc = "update interval of the ``cache`` ocean modifier";
     pism_config:ocean.cache.update_interval_option = "ocean_cache_update_interval";
     pism_config:ocean.cache.update_interval_type = "integer";
-    pism_config:ocean.cache.update_interval_units = "years";
+    pism_config:ocean.cache.update_interval_units = "365days";
 
     pism_config:ocean.constant.melt_rate = 0.05191419359084029;
     pism_config:ocean.constant.melt_rate_doc = "default melt rate used by the ``constant`` ocean model (computed as `Q / (L \\rho_i)`)";
@@ -2173,7 +2168,7 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval = 10;
     pism_config:surface.cache.update_interval_doc = "Update interval (in years) for the `-surface cache` modifier.";
     pism_config:surface.cache.update_interval_type = "integer";
-    pism_config:surface.cache.update_interval_units = "year";
+    pism_config:surface.cache.update_interval_units = "365days";
 
     pism_config:surface.delta_T.file = "";
     pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";

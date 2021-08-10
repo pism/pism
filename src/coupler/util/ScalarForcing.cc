@@ -19,18 +19,48 @@
 
 #include "ScalarForcing.hh"
 
+#include <algorithm>            // std::min_element(), std::max_element()
 #include <cassert>              // assert()
 #include <cmath>                // std::floor()
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/Timeseries.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
+
+//! \brief Report the range of a time-series stored in `data`.
+static void report_range(const std::vector<double> &data,
+                         const units::System::Ptr unit_system,
+                         const VariableMetadata &metadata,
+                         const Logger &log) {
+  double min, max;
+
+  // min_element and max_element return iterators; "*" is used to get
+  // the value corresponding to this iterator
+  min = *std::min_element(data.begin(), data.end());
+  max = *std::max_element(data.begin(), data.end());
+
+  units::Converter c(unit_system,
+                     metadata.get_string("units"),
+                     metadata.get_string("glaciological_units"));
+  min = c(min);
+  max = c(max);
+
+  std::string spacer(metadata.get_name().size(), ' ');
+
+  log.message(2,
+              "  FOUND  %s / %-60s\n"
+              "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
+              metadata.get_name().c_str(),
+              metadata.get_string("long_name").c_str(), spacer.c_str(), min, max,
+              metadata.get_string("glaciological_units").c_str());
+}
 
 ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &prefix,
@@ -38,14 +68,17 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
-  : m_period(0.0), m_period_start(0.0), m_current(0.0) {
+  : m_period(0.0), m_period_start(0.0) {
 
   Config::ConstPtr config = ctx.config();
 
-  m_data.reset(new Timeseries(ctx.unit_system(), variable_name));
-  m_data->variable().set_string("units", units);
-  m_data->variable().set_string("glaciological_units", glaciological_units);
-  m_data->variable().set_string("long_name", long_name);
+  auto unit_system = ctx.unit_system();
+
+  VariableMetadata variable(variable_name, unit_system);
+
+  variable.set_string("units", units);
+  variable.set_string("glaciological_units", glaciological_units);
+  variable.set_string("long_name", long_name);
 
   // Read data from a NetCDF file
   {
@@ -58,55 +91,163 @@ ScalarForcing::ScalarForcing(const Context &ctx,
 
     ctx.log()->message(2,
                        "  reading %s data from forcing file %s...\n",
-                       m_data->name().c_str(), filename.c_str());
+                       variable_name.c_str(), filename.c_str());
 
     try {
+      bool periodic = config->get_flag(prefix + ".periodic");
+      auto time_units = ctx.time()->units_string();
+
       File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
+
+      io::read_timeseries(file, variable, *ctx.log(), m_values);
+
+      std::string time_name{};
       {
-        auto time_units = ctx.time()->units_string();
-        m_data->read(file, time_units, *ctx.log());
+        auto dims = file.dimensions(variable_name);
+
+        if (dims.size() != 1) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "Variable '%s' in '%s' depends on %d dimensions,\n"
+                                        "but a time-series variable can only depend on 1 dimension.",
+                                        variable_name.c_str(),
+                                        file.filename().c_str(),
+                                        (int)dims.size());
+        }
+
+        time_name = dims[0];
+      }
+
+      if (periodic) {
+        // require time bounds and override times using time bounds
+
+        std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
+
+        if (time_bounds_name.empty()) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "missing '%s:bounds' attribute",
+                                        time_name.c_str());
+        }
+
+        VariableMetadata time_bounds(time_bounds_name, unit_system);
+        time_bounds.set_string("units", time_units);
+
+        std::vector<double> bounds{};
+        io::read_time_bounds(file, time_bounds, *ctx.log(), bounds);
+
+        auto N = m_values.size();
+
+        if (2 * N != bounds.size()) {
+          throw RuntimeError(PISM_ERROR_LOCATION, "expected two bounds per value");
+        }
+
+        // Add points to data stored in RAM: at the very beginning and the very end of the
+        // period. This will simplify interpolation.
+        std::vector<double> t(N + 2);
+        std::vector<double> v(N + 2);
+
+        // compute the value at the beginning and end of the period:
+        double v0 = 0.0;
+        {
+          // interval lengths at the beginning and the end of the period
+          double dt_f = bounds[2 * 0 + 1] - bounds[0 + 0];
+          double dt_l = bounds[2 * (N - 1) + 1] - bounds[2 * (N - 1) + 0];
+
+          // interpolation factor
+          double alpha = dt_l + dt_f > 0 ? dt_l / (dt_l + dt_f) : 0.0;
+
+          v0 = (1.0 - alpha) * m_values.back() + alpha * m_values.front();
+        }
+
+        t.front() = bounds.front();
+        v.front() = v0;
+
+        for (size_t k = 0; k < N; ++k) {
+          t[k + 1] = 0.5 * (bounds[2 * k + 0] + bounds[2 * k + 1]);
+          v[k + 1] = m_values[k];
+        }
+
+        t.back() = bounds.back();
+        v.back() = v0;          // note: v.front() == v.back()
+
+
+        m_times  = t;
+        m_values = v;
+        {
+          m_period       = m_times.back() - m_times.front();
+          m_period_start = m_times.front();
+
+          assert(m_period > 0.0);
+        }
+      } else {
+        // ignore time bounds and use times
+
+        VariableMetadata time_dimension(time_name, unit_system);
+        time_dimension.set_string("units", time_units);
+
+        io::read_timeseries(file, time_dimension, *ctx.log(), m_times);
+
+        if (not is_increasing(m_times)) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "dimension '%s' has to be strictly increasing (read from '%s').",
+                                        time_name.c_str(), file.filename().c_str());
+
+        }
+
+        {
+          m_period = 0.0;
+          m_period_start = 0.0;
+        }
       }
     } catch (RuntimeError &e) {
       e.add_context("while reading %s (%s) from '%s'",
                     long_name.c_str(), variable_name.c_str(), filename.c_str());
       throw;
     }
+  } // end of the block reading data
 
-    bool periodic = config->get_flag(prefix + ".periodic");
+  report_range(m_values, unit_system, variable, *ctx.log());
 
-    if (periodic) {
-      auto T = m_data->time_interval();
-
-      m_period = T[1] - T[0];
-      assert(m_period > 0.0);
-
-      m_period_start = T[0];
-    } else {
-      m_period = 0.0;
-      m_period_start = 0.0;
-    }
-
+  // set up interpolation
+  if (m_times.size() > 1) {
+    m_acc = gsl_interp_accel_alloc();
+    m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
+    gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
   }
 }
 
-void ScalarForcing::update(double t, double dt) {
-  m_current = value(t + 0.5 * dt);
-}
-
-double ScalarForcing::value() const {
-  return m_current;
+ScalarForcing::~ScalarForcing() {
+  if (m_times.size() > 1) {
+    gsl_spline_free(m_spline);
+    gsl_interp_accel_free(m_acc);
+  }
 }
 
 double ScalarForcing::value(double t) const {
-  if (m_period > 0.0) {
-    double T = t - m_period_start;
+  double T = t;
 
-    T -= std::floor(T / m_period) * m_period;
-
-    return (*m_data)(m_period_start + T);
+  if (m_times.size() == 1) {
+    return m_values[0];
   }
 
-  return (*m_data)(t);
+  if (m_period > 0.0) {
+    // compute time since the period start
+    T -= m_period_start;
+
+    // remove an integer number of periods
+    T -= std::floor(T / m_period) * m_period;
+
+    // add the period start back
+    T += m_period_start;
+  }
+
+  if (T > m_times.back()) {
+    return m_values.back();
+  }
+
+  if (T < m_times.front()) {
+    return m_values.front();
+  }
+
+  return gsl_spline_eval(m_spline, T, m_acc);
 }
 
 } // end of namespace pism

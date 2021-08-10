@@ -46,10 +46,8 @@ void Delta_SL::init_impl(const Geometry &geometry) {
 void Delta_SL::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
   m_sea_level.copy_from(m_input_model->elevation());
-  m_sea_level.shift(m_forcing->value());
+  m_sea_level.shift(m_forcing->value(t + 0.5 * dt));
 }
 
 } // end of namespace sea_level

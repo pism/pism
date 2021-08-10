@@ -63,10 +63,9 @@ void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) c
 
 void PrecipitationScaling::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_forcing->update(t, dt);
 
   m_precipitation->copy_from(m_input_model->mean_precipitation());
-  m_precipitation->scale(exp(m_exp_factor * m_forcing->value()));
+  m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
 const IceModelVec2S& PrecipitationScaling::mean_precipitation_impl() const {

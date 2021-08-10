@@ -121,8 +121,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_precipitation->copy_from(m_input_model->mean_precipitation());
 
   if (m_1d_scaling) {
-    m_1d_scaling->update(t, dt);
-    m_precipitation->scale(m_1d_scaling->value());
+    m_precipitation->scale(m_1d_scaling->value(t + 0.5 * dt));
   }
 
   if (m_2d_scaling) {

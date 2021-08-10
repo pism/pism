@@ -568,12 +568,28 @@ class Cache(TestCase):
             original = sample(self.simple.temperature())
             cached = sample(modifier.temperature())
 
+            # the "cache" modifier will (note: times in years)
+            # - timestep [0, 1]: call update(0, 1), which evaluates forcing at 0.5.
+            #
+            #   Since we assume that times are at midpoints of intervals indicated using
+            #   bounds, this will return 1.
+            #
+            # - timestep [1, 2]: re-use cached values, i.e. return 1
+            #
+            # - timestep [2, 3]: call update(2, 1), which evaluates forcing at 2.5
+            #
+            #   Since we assume that times are at midpoints of intervals indicated using
+            #   bounds, this will return 3.
+            #
+            # - timestep [3, 4]: re-use cached values, i.e. return 3.
+
             diff.append(cached - original)
 
-        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
-
         write_state(modifier, self.output_filename)
+
         probe_interface(modifier)
+
+        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
 
     def tearDown(self):
         os.remove(self.filename)

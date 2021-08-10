@@ -24,7 +24,6 @@
 #include <string>
 
 #include "VariableMetadata.hh"
-#include "Timeseries.hh"        // inline code and a member of TSDiagnostic
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
 #include "iceModelVec.hh"
