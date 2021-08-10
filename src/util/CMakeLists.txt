@@ -56,6 +56,7 @@ set(PISMUTIL_SRC
   Poisson.cc
   label_components.cc
   connected_components.cc
+  ScalarForcing.cc
   )
 
 if(Pism_USE_JANSSON)

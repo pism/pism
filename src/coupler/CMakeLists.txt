@@ -1,6 +1,5 @@
 # Boundary models (surface, atmosphere, ocean, frontalmelt).
 add_library (boundary OBJECT
-  ./util/ScalarForcing.cc
   ./util/options.cc
   ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc

@@ -19,7 +19,7 @@
 #include "Frac_P.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/options.hh"
 

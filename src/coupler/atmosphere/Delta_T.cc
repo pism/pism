@@ -19,7 +19,7 @@
 #include "Delta_T.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {

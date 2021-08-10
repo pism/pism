@@ -18,7 +18,7 @@
 
 #include "PrecipitationScaling.hh"
 
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {

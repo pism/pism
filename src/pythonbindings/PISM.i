@@ -351,7 +351,7 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 pism_class(pism::ForcingOptions, "pism/coupler/util/options.hh")
 
-pism_class(pism::ScalarForcing, "pism/coupler/util/ScalarForcing.hh")
+pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
 %template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;

@@ -26,7 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {

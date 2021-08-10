@@ -18,7 +18,7 @@
  */
 
 #include "Delta_MBP.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

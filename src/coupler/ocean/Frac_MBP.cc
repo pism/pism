@@ -18,7 +18,7 @@
  */
 
 #include "Frac_MBP.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"
 
