@@ -16,13 +16,10 @@ import sys
 import os
 import numpy as np
 from unittest import TestCase, SkipTest
-import uuid
+from PISM.testing import filename
 
 ctx = PISM.Context()
 ctx.log.set_threshold(0)
-
-def filename(prefix):
-    return prefix + str(uuid.uuid4()) + ".nc"
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -1269,10 +1266,30 @@ def test_bq2():
 
 class ScalarForcing(TestCase):
     def setUp(self):
-        pass
+        self.filename = filename("scalar-forcing-input")
+
+        def f(x):
+            return np.sin(2 * np.pi / 12 * x)
+
+        dt = 1.0
+        times = (0.5 + np.arange(12)) * dt
+        values = f(times)
+
+        self.times_long = (0.5 + np.arange(24)) * dt
+        self.values_long = f(self.times_long)
+
+        self.ts = np.linspace(0 + dt, 24 - dt, 1001)
+
+        time_bounds = np.vstack((times - 0.5 * dt, times + 0.5 * dt)).T.flatten()
+        PISM.testing.create_scalar_forcing(self.filename,
+                                           "delta_T", "Kelvin",
+                                           values, times, time_bounds)
 
     def tearDown(self):
-        pass
+        try:
+            os.remove(self.filename)
+        except:
+            pass
 
     def test_file_not_set(self):
         try:
@@ -1288,7 +1305,19 @@ class ScalarForcing(TestCase):
             pass
 
     def test_periodic_forcing(self):
-        raise SkipTest("not implemented yet")
+        ctx.config.set_string("surface.delta_T.file", self.filename)
+        ctx.config.set_flag("surface.delta_T.periodic", True)
+        F = PISM.ScalarForcing(ctx.ctx,
+                               "surface.delta_T",
+                               "delta_T",
+                               "K",
+                               "K",
+                               "temperature offsets")
+
+        Y_numpy = np.interp(self.ts, self.times_long, self.values_long)
+        Y = [F.value(t) for t in self.ts]
+
+        np.testing.assert_almost_equal(Y, Y_numpy)
 
 def thickness_calving_test():
     "Test the time-dependent thickness calving threshold"
