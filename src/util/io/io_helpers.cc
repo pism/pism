@@ -1065,7 +1065,9 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
 
     std::vector<std::string> dims = file.dimensions(var.name);
     if (dims.size() != 1) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "a time-series variable has to be one-dimensional");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' in '%s' should to have 1 dimension (got %d)",
+                                    name.c_str(), file.filename().c_str(), (int)dims.size());
     }
 
     auto dimension_name = dims[0];
