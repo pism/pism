@@ -24,6 +24,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/iceModelVec2T.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
@@ -70,7 +71,9 @@ void CalvingAtThickness::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
 
-  if (not opt.filename.empty()) {
+  File file(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+  auto variable_exists = file.find_variable(m_calving_threshold->get_name());
+  if (variable_exists) {
     m_log->message(2,
                    "  Reading thickness calving threshold from file '%s'...\n",
                    opt.filename.c_str());
