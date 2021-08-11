@@ -104,16 +104,7 @@ ScalarForcing::ScalarForcing(const Context &ctx,
       std::string time_name{};
       {
         auto dims = file.dimensions(variable_name);
-
-        if (dims.size() != 1) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "Variable '%s' in '%s' depends on %d dimensions,\n"
-                                        "but a time-series variable can only depend on 1 dimension.",
-                                        variable_name.c_str(),
-                                        file.filename().c_str(),
-                                        (int)dims.size());
-        }
-
+        // io::read_timeseries() already ensured that dims.size() == 1
         time_name = dims[0];
       }
 
@@ -198,11 +189,13 @@ ScalarForcing::ScalarForcing(const Context &ctx,
           m_period_start = 0.0;
         }
       }
+      // LCOV_EXCL_START
     } catch (RuntimeError &e) {
       e.add_context("while reading %s (%s) from '%s'",
                     long_name.c_str(), variable_name.c_str(), filename.c_str());
       throw;
     }
+    // LCOV_EXCL_STOP
   } // end of the block reading data
 
   report_range(m_values, unit_system, variable, *ctx.log());
