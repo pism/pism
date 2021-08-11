@@ -68,7 +68,7 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &units,
                              const std::string &glaciological_units,
                              const std::string &long_name)
-  : m_period(0.0), m_period_start(0.0) {
+  : m_period(0.0), m_period_start(0.0), m_acc(nullptr), m_spline(nullptr) {
 
   Config::ConstPtr config = ctx.config();
 
@@ -123,8 +123,9 @@ ScalarForcing::ScalarForcing(const Context &ctx,
         std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
 
         if (time_bounds_name.empty()) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "missing '%s:bounds' attribute",
-                                        time_name.c_str());
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "please provide time bounds for '%s' in '%s'",
+                                        variable_name.c_str(), file.filename().c_str());
         }
 
         VariableMetadata time_bounds(time_bounds_name, unit_system);
@@ -215,8 +216,10 @@ ScalarForcing::ScalarForcing(const Context &ctx,
 }
 
 ScalarForcing::~ScalarForcing() {
-  if (m_times.size() > 1) {
+  if (m_spline != nullptr) {
     gsl_spline_free(m_spline);
+  }
+  if (m_acc != nullptr) {
     gsl_interp_accel_free(m_acc);
   }
 }
