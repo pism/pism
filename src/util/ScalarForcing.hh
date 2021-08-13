@@ -49,11 +49,14 @@ public:
 
   double value(double t) const;
 
-  // FIXME: implement average(t, dt)
+  double average(double t, double dt) const;
+
 private:
   // disable copy constructor and the assignment operator:
   ScalarForcing(const ScalarForcing &other);
   ScalarForcing& operator=(const ScalarForcing&);
+
+  double integral(double a, double b) const;
 
   // period, in seconds (zero if not periodic)
   double m_period;

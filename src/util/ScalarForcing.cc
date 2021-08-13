@@ -246,4 +246,100 @@ double ScalarForcing::value(double t) const {
   return gsl_spline_eval(m_spline, T, m_acc);
 }
 
+// Integrate from a to b, interpreting data as *not* periodic
+double ScalarForcing::integral(double a, double b) const {
+  assert(b >= a);
+
+  double dt = b - a;
+
+  double t0 = m_times.front();
+  double t1 = m_times.back();
+  double v0 = m_values[0];
+  double v1 = m_values.back();
+
+  // both points are to the left of [t0, t1]
+  if (b <= t0) {
+    return v0 * (b - a);
+  }
+
+  // both points are to the right of [t0, t1]
+  if (a >= t1) {
+    return v1 * (b - a);
+  }
+
+  // a is to the left of [t0, t1]
+  if (a < t0) {
+    return v0 * (t0 - a) + integral(t0, b);
+  }
+
+  // b is to the right of [t0, t1]
+  if (b > t1) {
+    return integral(a, t1) + v1 * (b - t1);
+  }
+
+  // both points are inside [t0, t1]
+  size_t ai = gsl_interp_bsearch(m_times.data(), a, 0, m_times.size() - 1);
+  size_t bi = gsl_interp_bsearch(m_times.data(), b, 0, m_times.size() - 1);
+
+  // gsl_interp_bsearch() above returns the index i of the array ‘m_times’ such that
+  // ‘m_times[i] <= t < m_times[i+1]’.  The index is searched for in the
+  // range [0, m_times.size() - 1]
+
+  double v_a = gsl_spline_eval(m_spline, a, m_acc);
+  double v_b = gsl_spline_eval(m_spline, b, m_acc);
+
+  if (ai == bi) {
+    return 0.5 * (v_a + v_b) * dt;
+  }
+
+  double result = 0.0;
+  // integrate from a to the data point just to its right
+  result += 0.5 * (v_a + m_values[ai + 1]) * (m_times[ai + 1] - a);
+
+  // integrate over (possibly zero) intervals between a and b
+  for (size_t k = ai + 1; k < bi; ++k) {
+    result += 0.5 * (m_values[k] + m_values[k + 1]) * (m_times[k + 1] - m_times[k]);
+  }
+
+  result += 0.5 * (m_values[bi] + v_b) * (b - m_times[bi]);
+
+  return result;
+}
+
+double ScalarForcing::average(double t, double dt) const {
+  if (dt == 0.0) {
+    return value(t);
+  }
+
+  if (dt < 0.0) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "negative interval length");
+  }
+
+  if (m_period > 0.0) {
+    double a = t;
+    double b = t + dt;
+    double t0 = m_period_start;
+    double P = m_period;
+
+    double N = std::floor((a - t0) / P);
+    double M = std::floor((b - t0) / P);
+    double delta = a - t0 - P * N;
+    double gamma = b - t0 - P * M;
+
+    double N_periods = M - (N + 1);
+
+    if (N_periods >= 0.0) {
+      return (integral(t0 + delta, t0 + P) +
+              N_periods * integral(t0, t0 + P) +
+              integral(t0, t0 + gamma)) / dt;
+    }
+
+    return integral(t0 + delta, t0 + gamma) / dt;
+
+  } else {
+    return integral(t, t + dt) / dt;
+  }
+}
+
+
 } // end of namespace pism
