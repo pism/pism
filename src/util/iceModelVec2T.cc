@@ -145,6 +145,25 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
                                          evaluations_per_year, interpolation_type);
 }
 
+std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
+                                                       const std::string &short_name,
+                                                       double value) {
+  auto result = std::make_shared<IceModelVec2T>(grid, short_name, 1, 1, PIECEWISE_CONSTANT);
+
+  // set constant value everywhere
+  result->set(value);
+  result->set_record(0);
+
+  // set the time to zero
+  result->m_data->time = {0.0};
+  result->m_data->N = 1;
+  result->m_data->first = 0;
+
+  // set fake time bounds:
+  result->m_data->time_bounds = {-1.0, 1.0};
+
+  return result;
+}
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int n_records,
@@ -334,22 +353,6 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
     // read periodic data right away (we need to hold it all in memory anyway)
     update(0);
   }
-}
-
-//! Initialize as constant in time and space
-void IceModelVec2T::init_constant(double value) {
-
-  // set constant value everywhere
-  set(value);
-  set_record(0);
-
-  // set the time to zero
-  m_data->time = {0.0};
-  m_data->N = 1;
-  m_data->first = 0;
-
-  // set fake time bounds:
-  m_data->time_bounds = {-1.0, 1.0};
 }
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.

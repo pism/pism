@@ -81,7 +81,9 @@ void CalvingAtThickness::init() {
   } else {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
-    m_calving_threshold->init_constant(calving_threshold);
+    m_calving_threshold = IceModelVec2T::Constant(m_grid,
+                                                  "thickness_calving_threshold",
+                                                  calving_threshold);
 
     m_log->message(2,
                    "  Thickness threshold: %3.3f meters.\n", calving_threshold);

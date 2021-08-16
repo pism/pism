@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,23 +35,9 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
                  "* Initializing the frontal melt model\n"
                  "  UAF-UT\n");
 
-  unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
+  m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
 
-  m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year));
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Celsius", "Celsius", "", 0);
-
-  m_theta_ocean->init_constant(0.0);
-
-  m_subglacial_discharge.reset(new IceModelVec2T(grid,
-                                                 "subglacial_discharge", 1,
-                                                 evaluations_per_year));
-  m_subglacial_discharge->set_attrs("climate_forcing",
-                                    "subglacial discharge",
-                                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
-
-  m_subglacial_discharge->init_constant(0.0);
+  m_subglacial_discharge = IceModelVec2T::Constant(grid, "subglacial_discharge", 0.0);
 }
 
 DischargeGiven::~DischargeGiven() {

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -36,14 +36,7 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
                  "  using the Rignot/Xu parameterization\n"
                  "  and routing of subglacial discharge\n");
 
-  unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-
-  m_theta_ocean.reset(new IceModelVec2T(grid, "theta_ocean", 1, evaluations_per_year, LINEAR));
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Celsius", "Celsius", "", 0);
-
-  m_theta_ocean->init_constant(0.0);
+  m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
 }
 
 DischargeRouting::~DischargeRouting() {

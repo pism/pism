@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -157,7 +157,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
-      m_air_temp_sd->init_constant(m_base_pddStdDev);
+
+      m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
     } else {
       m_log->message(2,
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",

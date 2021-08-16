@@ -200,10 +200,9 @@ class ForcingInput(unittest.TestCase):
         self.check_forcing(forcing, self.f[-1], 0, 1)
 
     def test_constant_field(self):
-        "Field initialized using init_constant()"
+        "Field allocatted using IceModelVec2T::Constant()"
         f = 100.0
-        forcing = PISM.IceModelVec2T(self.grid, "v", 1, 1)
-        forcing.init_constant(f)
+        forcing = PISM.IceModelVec2T.Constant(self.grid, "v", f)
 
         self.check_forcing(forcing, f, 0, 1)
 

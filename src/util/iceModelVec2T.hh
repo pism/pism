@@ -52,6 +52,10 @@ public:
                bool periodic,
                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
+  static std::shared_ptr<IceModelVec2T> Constant(IceGrid::ConstPtr grid,
+                                                 const std::string &short_name,
+                                                 double value);
+
   IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
                 unsigned int n_evaluations_per_year,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
@@ -60,7 +64,6 @@ public:
   unsigned int n_records();
 
   void init(const std::string &filename, bool periodic);
-  void init_constant(double value);
 
   void update(double t, double dt);
   MaxTimestep max_timestep(double t) const;
