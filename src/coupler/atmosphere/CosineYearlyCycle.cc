@@ -79,6 +79,8 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
 
 void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
+  (void) t;
+  (void) dt;
   // an implementation is necessary because the base class does not define this
 }
 
