@@ -1405,7 +1405,6 @@ class ScalarForcing(TestCase):
 
         np.testing.assert_almost_equal(Y, Y_numpy)
 
-
     def test_one_value(self):
         ctx.config.set_string("surface.delta_T.file", self.filename_1)
         ctx.config.set_flag("surface.delta_T.periodic", False)
@@ -1424,6 +1423,65 @@ class ScalarForcing(TestCase):
 
         np.testing.assert_almost_equal(Y, Y_ref)
 
+    def test_average_scalar_forcing(self):
+        """Test ScalarForcing::average(t, dt)"""
+
+        def compute_average(times, time_bounds, values, t, dt, periodic=False):
+            filename = PISM.testing.filename("forcing-")
+            try:
+                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
+                                                   values, times, time_bounds)
+
+                ctx.config.set_flag("surface.delta_T.periodic", periodic)
+
+                ctx.config.set_string("surface.delta_T.file", filename)
+
+                F = PISM.ScalarForcing(ctx.ctx, "surface.delta_T", "delta_T",
+                                       "Kelvin", "Kelvin", "temperature offsets")
+
+                return F.average(t, dt)
+            finally:
+                os.remove(filename)
+
+        times       = [0.5, 1.5, 2.5, 3.5]
+        time_bounds = [0, 1, 1, 2, 2, 3, 3, 4]
+        values      = [1, 1, -1, -1]
+
+        def f(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=True)
+
+        def g(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=False)
+
+        # both points are outside on the left
+        np.testing.assert_equal(g(-2, -1), 1.0)
+        # both are outside on the right
+        np.testing.assert_equal(g(4.5, 5.5), -1.0)
+        # one too far left, one too far right
+        np.testing.assert_equal(g(-0.5, 4.5), 0.0)
+        # same sub-interval
+        np.testing.assert_equal(g(0, 1), 1.0)
+        # dt == 0.0
+        np.testing.assert_equal(g(0, 0), 1.0)
+
+        try:
+            np.testing.assert_equal(g(1, 0), 1.0)
+            assert False, "failed to catch negative dt"
+        except RuntimeError:
+            pass
+
+        # one full period
+        np.testing.assert_equal(f(0, 4), 0.0)
+        # two periods
+        np.testing.assert_equal(f(0, 8), 0.0)
+        # one period, but starting from 4
+        np.testing.assert_equal(f(4, 8), 0.0)
+        # part of a period
+        np.testing.assert_equal(f(4, 6), 0.75)
+        # part of a period (check if shifting affects results)
+        np.testing.assert_equal(f(4, 6), f(0, 2))
 
 def thickness_calving_test():
     "Test the time-dependent thickness calving threshold"
