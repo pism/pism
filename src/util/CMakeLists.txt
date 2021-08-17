@@ -21,7 +21,6 @@ set(PISMUTIL_SRC
   Vars.cc
   Profiling.cc
   TerminationReason.cc
-  Timeseries.cc
   VariableMetadata.cc
   error_handling.cc
   iceModelVec.cc

@@ -1021,90 +1021,6 @@ class PrincipalStrainRates(TestCase):
     def tearDown(self):
         pass
 
-class Timeseries(TestCase):
-
-    def setUp(self):
-        self.filename = filename("timeseries-")
-
-        self.times_constant = [1, 2, 3]
-        self.values_constant = [2, 3, 1]
-        PISM.testing.create_scalar_forcing(self.filename,
-                                           "v1", "1",
-                                           self.values_constant,
-                                           times=None,
-                                           time_bounds=[0, 1, 1, 2, 2, 3],
-                                           time_name="time")
-
-        N = 4
-        self.times_linear = np.arange(N + 1, dtype=np.float64)
-        PISM.testing.create_scalar_forcing(self.filename,
-                                           "v2", "1",
-                                           self.f(self.times_linear),
-                                           times=self.times_linear,
-                                           time_name="time2")
-
-    def f(self, x):
-        "a linear function that can be reproduced exactly"
-        return 2.0 * x - 3.0
-
-    def tearDown(self):
-        os.remove(self.filename)
-
-    def test_constant_interpolation(self):
-        "Piecewise-constant interpolation in Timeseries"
-
-        ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.unit_system, "v1")
-
-        try:
-            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            ts.read(f, ctx.time.units_string(), ctx.log)
-        finally:
-            f.close()
-
-        t = self.times_constant
-        y = self.values_constant
-        N = len(y)
-
-        # extrapolation on the left
-        assert ts(t[0] - 1) == y[0]
-        # extrapolation on the right
-        assert ts(t[-1] + 1) == y[-1]
-        # interior intervals
-        for k in range(1, N):
-            dt = t[k] - t[k - 1]
-            T = t[k - 1] + 0.25 * dt    # *not* the midpoint of the interval
-
-            assert ts(T) == y[k], (k, T, ts(T), y[k])
-
-    def test_timeseries_linear_interpolation(self):
-        "Linear interpolation in Timeseries"
-
-        ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.unit_system, "v2")
-
-        try:
-            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            ts.read(f, ctx.time.units_string(), ctx.log)
-        finally:
-            f.close()
-
-        t = self.times_linear
-        N = len(t) - 1
-
-        # extrapolation on the left (note that t[0] is not used)
-        assert ts(t[0] - 1) == self.f(t[0]), "left extrapolation failed"
-
-        # extrapolation on the right
-        assert ts(t[-1] + 1) == self.f(t[-1]), "right extrapolation failed"
-
-        # interior intervals
-        for k in range(1, N):
-            dt = t[k + 1] - t[k]
-            T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
-
-            assert ts(T) == self.f(T), (T, ts(T), self.f(T))
-
 def test_trapezoid_integral():
     "Linear integration weights"
     x = [0.0, 0.5, 1.0, 2.0]
@@ -1398,7 +1314,7 @@ class ScalarForcing(TestCase):
                                "temperature offsets")
 
         # two outside and one inside
-        T = [-1, 13, 5]
+        T = [-1, 13, 5.123]
 
         Y_numpy = np.interp(T, self.times, self.values)
         Y = [F.value(t) for t in T]

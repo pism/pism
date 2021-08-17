@@ -44,7 +44,7 @@ these classes*. (This is a summary.)
 - pism::IceGrid (computational grid)
 - pism::Component and pism::Component_TS (interface shared by most sub-models)
 - pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
-- pism::Timeseries (scalar forcing)
+- pism::ScalarForcing (scalar time-dependent forcing)
 - pism::IceModelVec2T (2D time-dependent forcing)
 - pism::VariableMetadata (variable metadata such as physical units)
 - pism::Config (configuration parameter database)
@@ -56,7 +56,6 @@ these classes*. (This is a summary.)
 - [Organization of PISM's computational grid](@ref computational_grid)
 - [pism::IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
 - [PISM's model components and their interface](@ref pism_components)
-- [Reading scalar time-series (Timeseries)](@ref timeseries_overview)
 
 ### Other PISM documentation
 

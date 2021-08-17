@@ -250,9 +250,6 @@
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
-/* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
-%include pism_Timeseries.i
-
 /* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
 %include pism_IceModelVec.i
 
