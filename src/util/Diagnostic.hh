@@ -131,7 +131,7 @@ public:
       m_input(input)
   {
     for (unsigned int j = 0; j < input.ndof(); ++j) {
-      m_vars.push_back(input.metadata(j));
+      m_vars.emplace_back(input.metadata(j));
     }
   }
 protected:
