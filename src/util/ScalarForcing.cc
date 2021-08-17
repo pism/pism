@@ -62,15 +62,13 @@ static void report_range(const std::vector<double> &data,
               metadata.get_string("glaciological_units").c_str());
 }
 
-ScalarForcing::ScalarForcing(const Context &ctx,
-                             const std::string &prefix,
-                             const std::string &variable_name,
-                             const std::string &units,
-                             const std::string &glaciological_units,
-                             const std::string &long_name)
-  : m_period(0.0), m_period_start(0.0), m_acc(nullptr), m_spline(nullptr) {
-
-  Config::ConstPtr config = ctx.config();
+void ScalarForcing::initialize(const Context &ctx,
+                               const std::string &filename,
+                               const std::string &variable_name,
+                               const std::string &units,
+                               const std::string &glaciological_units,
+                               const std::string &long_name,
+                               bool periodic) {
 
   auto unit_system = ctx.unit_system();
 
@@ -82,19 +80,12 @@ ScalarForcing::ScalarForcing(const Context &ctx,
 
   // Read data from a NetCDF file
   {
-    auto filename = config->get_string(prefix + ".file");
-
-    if (filename.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "%s.file is required", prefix.c_str());
-    }
 
     ctx.log()->message(2,
                        "  reading %s data from forcing file %s...\n",
                        variable_name.c_str(), filename.c_str());
 
     try {
-      bool periodic = config->get_flag(prefix + ".periodic");
       auto time_units = ctx.time()->units_string();
 
       File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
@@ -206,6 +197,47 @@ ScalarForcing::ScalarForcing(const Context &ctx,
     m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
     gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
   }
+}
+
+ScalarForcing::ScalarForcing(const Context &ctx,
+                             const std::string &prefix,
+                             const std::string &variable_name,
+                             const std::string &units,
+                             const std::string &glaciological_units,
+                             const std::string &long_name)
+  : m_period(0.0),
+    m_period_start(0.0),
+    m_acc(nullptr),
+    m_spline(nullptr) {
+
+  Config::ConstPtr config = ctx.config();
+
+  auto filename = config->get_string(prefix + ".file");
+  bool periodic = config->get_flag(prefix + ".periodic");
+
+  if (filename.empty()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "%s.file is required", prefix.c_str());
+  }
+
+  initialize(ctx, filename, variable_name, units, glaciological_units,
+             long_name, periodic);
+}
+
+ScalarForcing::ScalarForcing(const Context &ctx,
+                             const std::string &filename,
+                             const std::string &variable_name,
+                             const std::string &units,
+                             const std::string &glaciological_units,
+                             const std::string &long_name,
+                             bool periodic)
+  : m_period(0.0),
+    m_period_start(0.0),
+    m_acc(nullptr),
+    m_spline(nullptr) {
+
+  initialize(ctx, filename, variable_name, units, glaciological_units,
+             long_name, periodic);
 }
 
 ScalarForcing::~ScalarForcing() {

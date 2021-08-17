@@ -45,6 +45,15 @@ public:
                 const std::string &units,
                 const std::string &glaciological_units,
                 const std::string &long_name);
+
+  ScalarForcing(const Context &ctx,
+                const std::string &filename,
+                const std::string &variable_name,
+                const std::string &units,
+                const std::string &glaciological_units,
+                const std::string &long_name,
+                bool periodic);
+
   ~ScalarForcing();
 
   double value(double t) const;
@@ -55,6 +64,14 @@ private:
   // disable copy constructor and the assignment operator:
   ScalarForcing(const ScalarForcing &other);
   ScalarForcing& operator=(const ScalarForcing&);
+
+  void initialize(const Context &ctx,
+                  const std::string &filename,
+                  const std::string &variable_name,
+                  const std::string &units,
+                  const std::string &glaciological_units,
+                  const std::string &long_name,
+                  bool periodic);
 
   double integral(double a, double b) const;
 
