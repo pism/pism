@@ -491,6 +491,8 @@ public:
   void extract_surface(const IceModelVec2S &z, IceModelVec2S &output) const;
 
   void sum_columns(double A, double B, IceModelVec2S &output) const;
+
+  void copy_from(const IceModelVec3 &input);
 protected:
   bool legal_level(double z) const;
 };

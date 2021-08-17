@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -282,5 +282,28 @@ void IceModelVec3::sum_columns(double A, double B, IceModelVec2S &output) const 
     output(i,j) = A * output(i,j) + B * scalar_sum;
   }
 }
+
+void IceModelVec3::copy_from(const IceModelVec3 &input) {
+  IceModelVec::AccessList list {this, &input};
+
+  assert(levels().size() == input.levels().size());
+
+  ParallelSection loop(m_impl->grid->com);
+  try {
+    for (Points p(*m_impl->grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      this->set_column(i, j, input.get_column(i, j));
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  update_ghosts();
+
+  inc_state_counter();
+}
+
 
 } // end of namespace pism
