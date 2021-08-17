@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2020 PISM Authors
+// Copyright (C) 2010--2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -134,8 +134,10 @@ public:
     }
   }
 protected:
+
   IceModelVec::Ptr compute_impl() const {
-    typename T::Ptr result(new T(m_input.grid(), "unnamed", WITHOUT_GHOSTS));
+    auto result = m_input.allocate_copy();
+
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_vars.size(); ++k) {
       result->metadata(k) = m_vars[k];
@@ -145,6 +147,7 @@ protected:
 
     return result;
   }
+
   const T &m_input;
 };
 
