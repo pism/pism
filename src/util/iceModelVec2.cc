@@ -72,6 +72,10 @@ IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
   m_impl->begin_access_use_dof = false;
 }
 
+std::shared_ptr<IceModelVec2S> IceModelVec2S::allocate_copy() const {
+  return std::make_shared<IceModelVec2S>(this->grid(), this->get_name(), WITHOUT_GHOSTS, 1);
+}
+
 double** IceModelVec2S::array() {
   return static_cast<double**>(m_array);
 }

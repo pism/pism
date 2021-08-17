@@ -72,4 +72,8 @@ void IceModelVec2V::copy_from(const IceModelVec2V &source) {
   return copy_2d<IceModelVec2V>(&source, this);
 }
 
+std::shared_ptr<IceModelVec2V> IceModelVec2V::allocate_copy() const {
+  return std::make_shared<IceModelVec2V>(this->grid(), this->get_name(), WITHOUT_GHOSTS, 1);
+}
+
 } // end of namespace pism

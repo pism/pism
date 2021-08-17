@@ -46,6 +46,8 @@ public:
   Vector2 interpolate(double x, double y) const {
     return pism::interpolate<IceModelVec2V, Vector2>(*this, x, y);
   }
+
+  std::shared_ptr<IceModelVec2V> allocate_copy() const;
 };
 
 } // end of namespace pism

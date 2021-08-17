@@ -409,6 +409,8 @@ public:
   inline const double& operator()(int i, int j) const;
   inline StarStencil<double> star(int i, int j) const;
   inline BoxStencil<double> box(int i, int j) const;
+
+  std::shared_ptr<IceModelVec2S> allocate_copy() const;
 };
 
 
