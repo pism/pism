@@ -64,8 +64,9 @@ public:
 
   typedef std::shared_ptr<Diagnostic> Ptr;
 
-  static Ptr wrap(const IceModelVec2S &input);
-  static Ptr wrap(const IceModelVec2V &input);
+  // defined below
+  template<typename T>
+  static Ptr wrap(const T &input);
 
   void update(double dt);
   void reset();
@@ -150,6 +151,11 @@ protected:
 
   const T &m_input;
 };
+
+template<typename T>
+Diagnostic::Ptr Diagnostic::wrap(const T &input) {
+  return Ptr(new DiagWithDedicatedStorage<T>(input));
+}
 
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>
