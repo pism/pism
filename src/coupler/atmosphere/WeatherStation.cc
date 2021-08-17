@@ -21,43 +21,19 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
 WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
-  : AtmosphereModel(grid),
-    m_precipitation_timeseries(grid->ctx()->unit_system(), "precipitation"),
-    m_air_temp_timeseries(grid->ctx()->unit_system(), "air_temp")
-{
-  m_precipitation_timeseries.variable().set_string("units", "kg m-2 second-1");
-  m_precipitation_timeseries.variable().set_string("long_name",
-                                                   "ice-equivalent precipitation rate");
-
-  m_air_temp_timeseries.variable().set_string("units", "Kelvin");
-  m_air_temp_timeseries.variable().set_string("long_name",
-                                              "near-surface air temperature");
-
-  m_precipitation = allocate_precipitation(grid);
-  m_temperature   = allocate_temperature(grid);
-}
-
-WeatherStation::~WeatherStation() {
-  // empty
-}
-
-void WeatherStation::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  : AtmosphereModel(grid) {
 
   m_log->message(2,
-                 "* Initializing the constant-in-space atmosphere model\n"
+                 "* Using the constant-in-space atmosphere model\n"
                  "  for use with scalar data from one weather station\n"
                  "  combined with lapse rate corrections...\n");
 
@@ -72,12 +48,36 @@ void WeatherStation::init_impl(const Geometry &geometry) {
                  "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
-  File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
-  {
-    auto time_units = m_grid->ctx()->time()->units_string();
-    m_precipitation_timeseries.read(file, time_units, *m_grid->ctx()->log());
-    m_air_temp_timeseries.read(file, time_units, *m_grid->ctx()->log());
-  }
+  auto &ctx = *grid->ctx();
+
+  bool periodic = false;
+
+  m_precipitation_timeseries = std::make_shared<ScalarForcing>(ctx,
+                                                               filename,
+                                                               "precipitation",
+                                                               "kg m-2 second-1",
+                                                               "kg m-2 year-1",
+                                                               "ice-equivalent precipitation rate",
+                                                               periodic);
+
+  m_air_temp_timeseries = std::make_shared<ScalarForcing>(ctx,
+                                                          filename,
+                                                          "air_temp",
+                                                          "Kelvin",
+                                                          "Kelvin",
+                                                          "near-surface air temperature",
+                                                          periodic);
+
+  m_precipitation = allocate_precipitation(grid);
+  m_temperature   = allocate_temperature(grid);
+}
+
+WeatherStation::~WeatherStation() {
+  // empty
+}
+
+void WeatherStation::init_impl(const Geometry &geometry) {
+  (void) geometry;
 }
 
 MaxTimestep WeatherStation::max_timestep_impl(double t) const {
@@ -88,12 +88,9 @@ MaxTimestep WeatherStation::max_timestep_impl(double t) const {
 void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
 
-  double one_week = 7 * 24 * 60 * 60;
-  unsigned int N = (unsigned int)(ceil(dt / one_week)); // one point per week
+  m_precipitation->set(m_precipitation_timeseries->average(t, dt));
 
-  m_precipitation->set(m_precipitation_timeseries.average(t, dt, N));
-
-  m_temperature->set(m_air_temp_timeseries.average(t, dt, N));
+  m_temperature->set(m_air_temp_timeseries->average(t, dt));
 }
 
 const IceModelVec2S& WeatherStation::mean_precipitation_impl() const {
@@ -119,8 +116,8 @@ void WeatherStation::init_timeseries_impl(const std::vector<double> &ts) const {
   m_air_temp_values.resize(N);
 
   for (unsigned int k = 0; k < N; ++k) {
-    m_precip_values[k]   = m_precipitation_timeseries(ts[k]);
-    m_air_temp_values[k] = m_air_temp_timeseries(ts[k]);
+    m_precip_values[k]   = m_precipitation_timeseries->value(ts[k]);
+    m_air_temp_values[k] = m_air_temp_timeseries->value(ts[k]);
   }
 }
 
