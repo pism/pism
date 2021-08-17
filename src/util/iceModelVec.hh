@@ -495,6 +495,9 @@ public:
   void sum_columns(double A, double B, IceModelVec2S &output) const;
 
   void copy_from(const IceModelVec3 &input);
+
+  std::shared_ptr<IceModelVec3> allocate_copy() const;
+
 protected:
   bool legal_level(double z) const;
 };

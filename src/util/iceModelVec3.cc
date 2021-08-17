@@ -305,5 +305,13 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
   inc_state_counter();
 }
 
+std::shared_ptr<IceModelVec3> IceModelVec3::allocate_copy() const {
+  auto name = get_name();
+  auto z_name = metadata().get_z().get_name();
+  auto z_attrs = metadata().get_z().get_all_strings();
+
+  return std::make_shared<IceModelVec3>(grid(), name, z_name, levels(), z_attrs);
+}
+
 
 } // end of namespace pism
