@@ -355,50 +355,10 @@ protected:
   }
 };
 
-namespace diagnostics {
-/*! @brief Report ice enthalpy. */
-class Enthalpy : public Diag<EnergyModel>
-{
-public:
-  Enthalpy(const EnergyModel *m)
-    : Diag<EnergyModel>(m) {
-    m_vars = {model->enthalpy().metadata()};
-  }
-
-protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS, m_grid->z()));
-    result->metadata(0) = m_vars[0];
-
-    const IceModelVec3 &input = model->enthalpy();
-
-    // FIXME: implement IceModelVec3::copy_from()
-
-    IceModelVec::AccessList list {result.get(), &input};
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        result->set_column(i, j, input.get_column(i, j));
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-
-
-    return result;
-  }
-};
-
-} // end of namespace diagnostics
-
 DiagnosticList EnergyModel::diagnostics_impl() const {
   DiagnosticList result;
   result = {
-    {"enthalpy",                 Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
+    {"enthalpy",                 Diagnostic::wrap(m_ice_enthalpy)},
     {"basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate)}
   };
   return result;
