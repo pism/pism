@@ -27,10 +27,10 @@
 
 namespace pism {
 
-Diagnostic::Diagnostic(IceGrid::ConstPtr g)
-  : m_grid(g),
-    m_sys(g->ctx()->unit_system()),
-    m_config(g->ctx()->config()),
+Diagnostic::Diagnostic(IceGrid::ConstPtr grid)
+  : m_grid(grid),
+    m_sys(grid->ctx()->unit_system()),
+    m_config(grid->ctx()->config()),
     m_fill_value(m_config->get_number("output.fill_value")) {
   // empty
 }
@@ -61,7 +61,8 @@ void Diagnostic::reset_impl() {
  */
 double Diagnostic::to_internal(double x) const {
   std::string
-    out = m_vars.at(0).get_string("glaciological_units"),
+    out = m_vars.at(0).get_string("glaciological_units");
+  std::string
     in  = m_vars.at(0).get_string("units");
   return convert(m_sys, x, out, in);
 }
@@ -126,7 +127,7 @@ void Diagnostic::define(const File &file, IO_Type default_type) const {
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
 void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
-  for (auto &v : m_vars) {
+  for (const auto &v : m_vars) {
     io::define_spatial_variable(v, *m_grid, file, default_type);
   }
 }
@@ -139,7 +140,8 @@ void Diagnostic::set_attrs(const std::string &long_name,
                            unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "N (%d) >= m_dof (%d)", N, (int)m_vars.size());
+                                  "N (%d) >= m_dof (%d)", N,
+                                  static_cast<int>(m_vars.size()));
   }
 
   m_vars[N].set_string("pism_intent", "diagnostic");
@@ -158,7 +160,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
 IceModelVec::Ptr Diagnostic::compute() const {
   // use the name of the first variable
   std::vector<std::string> names;
-  for (auto &v : m_vars) {
+  for (const auto &v : m_vars) {
     names.push_back(v.get_name());
   }
   std::string all_names = join(names, ",");
@@ -170,11 +172,11 @@ IceModelVec::Ptr Diagnostic::compute() const {
   return result;
 }
 
-TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
-  : m_grid(g),
-    m_config(g->ctx()->config()),
-    m_sys(g->ctx()->unit_system()),
-    m_time_name(g->ctx()->config()->get_string("time.dimension_name")),
+TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
+  : m_grid(grid),
+    m_config(grid->ctx()->config()),
+    m_sys(grid->ctx()->unit_system()),
+    m_time_name(grid->ctx()->config()->get_string("time.dimension_name")),
     m_variable(name, m_sys),
     m_dimension(m_time_name, m_sys),
     m_time_bounds(m_time_name + "_bounds", m_sys) {
@@ -182,7 +184,7 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr g, const std::string &name)
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = (size_t)m_config->get_number("output.timeseries.buffer_size");
+  m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
   m_variable.set_string("ancillary_variables", name + "_aux");
 
@@ -205,18 +207,18 @@ void TSDiagnostic::set_units(const std::string &units,
   }
 }
 
-TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name)
-  : TSDiagnostic(g, name) {
+TSSnapshotDiagnostic::TSSnapshotDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
+  : TSDiagnostic(grid, name) {
   // empty
 }
 
-TSRateDiagnostic::TSRateDiagnostic(IceGrid::ConstPtr g, const std::string &name)
-  : TSDiagnostic(g, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
+TSRateDiagnostic::TSRateDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
+  : TSDiagnostic(grid, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
   // empty
 }
 
-TSFluxDiagnostic::TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name)
-  : TSRateDiagnostic(g, name) {
+TSFluxDiagnostic::TSFluxDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
+  : TSRateDiagnostic(grid, name) {
   // empty
 }
 
@@ -236,9 +238,8 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
       continue;
     }
 
-    const double
-      t_s = (*m_requested_times)[k - 1],
-      t_e = (*m_requested_times)[k];
+    const double t_s = (*m_requested_times)[k - 1];
+    const double t_e = (*m_requested_times)[k];
 
     // store computed data in the buffer
     {
@@ -274,17 +275,16 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
       continue;
     }
 
-    const double
-      t_s = (*m_requested_times)[k - 1],
-      t_e = (*m_requested_times)[k];
+    const double t_s = (*m_requested_times)[k - 1];
+    const double t_e = (*m_requested_times)[k];
 
     double rate = 0.0;
     if (N == 1) {
       // it is the right end-point of the first reporting interval in this time step: count the
       // contribution from the last time step plus the one from the beginning of this time step
       const double
-        total_change = m_accumulator + change * (t_e - t0) / (t1 - t0),
-        dt           = t_e - t_s;
+        total_change  = m_accumulator + change * (t_e - t0) / (t1 - t0);
+      const double dt = t_e - t_s;
 
       rate = total_change / dt;
 
@@ -324,10 +324,14 @@ void TSDiagnostic::update(double t0, double t1) {
 }
 
 void TSSnapshotDiagnostic::update_impl(double t0, double t1) {
-  if (fabs(t1 - t0) < 1e-2) {
+  static const double epsilon = 1e-4; // seconds
+
+  if (fabs(t1 - t0) < epsilon) {
     return;
   }
+
   assert(t1 > t0);
+
   evaluate(t0, t1, this->compute());
 }
 
@@ -344,10 +348,14 @@ void TSRateDiagnostic::update_impl(double t0, double t1) {
 }
 
 void TSFluxDiagnostic::update_impl(double t0, double t1) {
-  if (fabs(t1 - t0) < 1e-2) {
+  static const double epsilon = 1e-4; // seconds
+
+  if (fabs(t1 - t0) < epsilon) {
     return;
   }
+
   assert(t1 > t0);
+
   evaluate(t0, t1, this->compute());
 }
 
@@ -409,7 +417,7 @@ void TSDiagnostic::init(const File &output_file,
                         std::shared_ptr<std::vector<double>> requested_times) {
   m_output_filename = output_file.filename();
 
-  m_requested_times = requested_times;
+  m_requested_times = std::move(requested_times);
 
   // Get the number of records in the file (for appending):
   m_start = output_file.dimension_length(m_dimension.get_name());

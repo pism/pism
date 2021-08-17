@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __Diagnostic_hh
-#define __Diagnostic_hh
+#ifndef PISM_DIAGNOSTIC_HH
+#define PISM_DIAGNOSTIC_HH
 
 #include <memory>
 #include <map>
@@ -225,9 +225,8 @@ protected:
 
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
 
-    const unsigned int
-      time_length = output.dimension_length(time_name),
-      t_start = time_length > 0 ? time_length - 1 : 0;
+    unsigned int time_length = output.dimension_length(time_name);
+    unsigned int t_start = time_length > 0 ? time_length - 1 : 0;
     io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length});
   }
 
@@ -261,7 +260,7 @@ protected:
 
     return result;
   }
-protected:
+
   // constants initialized in the constructor
   double m_factor;
   InputKind m_input_kind;
@@ -414,4 +413,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* __Diagnostic_hh */
+#endif /* PISM_DIAGNOSTIC_HH */
