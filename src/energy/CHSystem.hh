@@ -49,6 +49,8 @@ protected:
 
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
+
+  DiagnosticList diagnostics_impl() const;
 };
 
 void cryo_hydrologic_warming_flux(double k,
