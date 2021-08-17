@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -464,15 +464,15 @@ void IceModelVec2::set_component(unsigned int n, const IceModelVec2S &source) {
   set_dof(source.dm(), source.m_impl->v, n);
 }
 
-void IceModelVec2S::add(double alpha, const IceModelVec &x) {
+void IceModelVec2S::add(double alpha, const IceModelVec2S &x) {
   add_2d<IceModelVec2S>(this, alpha, &x, this);
 }
 
-void IceModelVec2S::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
+void IceModelVec2S::add(double alpha, const IceModelVec2S &x, IceModelVec2S &result) const {
   add_2d<IceModelVec2S>(this, alpha, &x, &result);
 }
 
-void IceModelVec2S::copy_from(const IceModelVec &source) {
+void IceModelVec2S::copy_from(const IceModelVec2S &source) {
   copy_2d<IceModelVec2S>(&source, this);
 }
 

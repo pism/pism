@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2020 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -228,12 +228,12 @@ public:
   double norm(int n) const;
   std::vector<double> norm_all(int n) const;
 
-  virtual void add(double alpha, const IceModelVec &x);
+  void add(double alpha, const IceModelVec &x);
   virtual void shift(double alpha);
   virtual void scale(double alpha);
 
   void copy_from_vec(petsc::Vec &source);
-  virtual void copy_from(const IceModelVec &source);
+  void copy_from(const IceModelVec &source);
   petsc::Vec& vec();
   std::shared_ptr<petsc::DM> dm() const;
 
@@ -384,14 +384,14 @@ public:
   }
 
   // does not need a copy constructor, because it does not add any new data members
-  virtual void copy_from(const IceModelVec &source);
+  void copy_from(const IceModelVec2S &source);
   double** array();
   double const* const* array() const;
   virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
   virtual void set_to_magnitude(const IceModelVec2V &input);
   virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
-  virtual void add(double alpha, const IceModelVec &x);
-  virtual void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
+  void add(double alpha, const IceModelVec2S &x);
+  void add(double alpha, const IceModelVec2S &x, IceModelVec2S &result) const;
   virtual double sum() const;
   virtual double min() const;
   virtual double max() const;

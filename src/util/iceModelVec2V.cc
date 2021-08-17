@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020 Constantine Khroulev
+// Copyright (C) 2009--2017, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -60,15 +60,15 @@ IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
   return result;
 }
 
-void IceModelVec2V::add(double alpha, const IceModelVec &x) {
+void IceModelVec2V::add(double alpha, const IceModelVec2V &x) {
   return add_2d<IceModelVec2V>(this, alpha, &x, this);
 }
 
-void IceModelVec2V::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
+void IceModelVec2V::add(double alpha, const IceModelVec2V &x, IceModelVec2V &result) const {
   return add_2d<IceModelVec2V>(this, alpha, &x, &result);
 }
 
-void IceModelVec2V::copy_from(const IceModelVec &source) {
+void IceModelVec2V::copy_from(const IceModelVec2V &source) {
   return copy_2d<IceModelVec2V>(&source, this);
 }
 

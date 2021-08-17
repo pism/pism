@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,9 +36,9 @@ public:
 
   static Ptr ToVector(IceModelVec::Ptr input);
 
-  void copy_from(const IceModelVec &source);
-  void add(double alpha, const IceModelVec &x);
-  void add(double alpha, const IceModelVec &x, IceModelVec &result) const;
+  void copy_from(const IceModelVec2V &source);
+  void add(double alpha, const IceModelVec2V &x);
+  void add(double alpha, const IceModelVec2V &x, IceModelVec2V &result) const;
 
   /*!
    * Interpolation helper. See the pism::interpolate() for details.
