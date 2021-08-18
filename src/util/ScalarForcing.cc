@@ -69,64 +69,74 @@ void ScalarForcing::initialize(const Context &ctx,
                                const std::string &glaciological_units,
                                const std::string &long_name,
                                bool periodic) {
+  try {
+    auto unit_system = ctx.unit_system();
 
-  auto unit_system = ctx.unit_system();
+    VariableMetadata variable(variable_name, unit_system);
 
-  VariableMetadata variable(variable_name, unit_system);
+    variable.set_string("units", units);
+    variable.set_string("glaciological_units", glaciological_units);
+    variable.set_string("long_name", long_name);
 
-  variable.set_string("units", units);
-  variable.set_string("glaciological_units", glaciological_units);
-  variable.set_string("long_name", long_name);
+    double forcing_t0{};
+    double forcing_t1{};
 
-  // Read data from a NetCDF file
-  {
-
-    ctx.log()->message(2,
-                       "  reading %s data from forcing file %s...\n",
-                       variable_name.c_str(), filename.c_str());
-
-    try {
-      auto time_units = ctx.time()->units_string();
+    // Read data from a NetCDF file
+    {
+      ctx.log()->message(2,
+                         "  reading %s (%s) from file '%s'...\n",
+                         long_name.c_str(), variable_name.c_str(), filename.c_str());
 
       File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
 
       io::read_timeseries(file, variable, *ctx.log(), m_values);
 
-      std::string time_name{};
+      // read_timeseries() ensured that variable_name is a scalar variable
+      std::string time_name = file.dimensions(variable_name)[0];
+
+      std::vector<double> bounds{};
       {
-        auto dims = file.dimensions(variable_name);
-        // io::read_timeseries() already ensured that dims.size() == 1
-        time_name = dims[0];
-      }
-
-      if (periodic) {
-        // require time bounds and override times using time bounds
-
+        // read time bounds
         std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
 
         if (time_bounds_name.empty()) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "please provide time bounds for '%s' in '%s'",
-                                        variable_name.c_str(), file.filename().c_str());
+                                        "please provide time bounds for '%s'",
+                                        variable_name.c_str());
         }
 
         VariableMetadata time_bounds(time_bounds_name, unit_system);
-        time_bounds.set_string("units", time_units);
+        time_bounds.set_string("units", ctx.time()->units_string());
 
-        std::vector<double> bounds{};
         io::read_time_bounds(file, time_bounds, *ctx.log(), bounds);
 
-        auto N = m_values.size();
+        assert(bounds.size() % 2 == 0);
+      }
 
-        if (2 * N != bounds.size()) {
-          throw RuntimeError(PISM_ERROR_LOCATION, "expected two bounds per value");
+      auto N = bounds.size() / 2;
+
+      // Override times using time bounds
+      {
+        m_times.resize(N + 2);
+        m_times.front() = bounds.front();
+        for (size_t k = 0; k < N; ++k) {
+          m_times[k + 1] = 0.5 * (bounds[2 * k + 0] + bounds[2 * k + 1]);
         }
+        m_times.back() = bounds.back();
+      }
 
-        // Add points to data stored in RAM: at the very beginning and the very end of the
-        // period. This will simplify interpolation.
-        std::vector<double> t(N + 2);
-        std::vector<double> v(N + 2);
+      // Add points to data stored in RAM: at the very beginning and the very end of the
+      // period. This will simplify interpolation.
+      std::vector<double> v(N + 2);
+      {
+        v.front() = 0.0;          // will be replaced later
+        for (size_t k = 0; k < N; ++k) {
+          v[k + 1] = m_values[k];
+        }
+        v.back() = 0.0;           // will be replaced later
+      }
 
+      if (periodic) {
         // compute the value at the beginning and end of the period:
         double v0 = 0.0;
         {
@@ -140,20 +150,10 @@ void ScalarForcing::initialize(const Context &ctx,
           v0 = (1.0 - alpha) * m_values.back() + alpha * m_values.front();
         }
 
-        t.front() = bounds.front();
+        // note: v.front() == v.back() because periodic == true
         v.front() = v0;
+        v.back() = v0;
 
-        for (size_t k = 0; k < N; ++k) {
-          t[k + 1] = 0.5 * (bounds[2 * k + 0] + bounds[2 * k + 1]);
-          v[k + 1] = m_values[k];
-        }
-
-        t.back() = bounds.back();
-        v.back() = v0;          // note: v.front() == v.back()
-
-
-        m_times  = t;
-        m_values = v;
         {
           m_period       = m_times.back() - m_times.front();
           m_period_start = m_times.front();
@@ -161,52 +161,59 @@ void ScalarForcing::initialize(const Context &ctx,
           assert(m_period > 0.0);
         }
       } else {
-        // ignore time bounds and use times
-
-        VariableMetadata time_dimension(time_name, unit_system);
-        time_dimension.set_string("units", time_units);
-
-        io::read_timeseries(file, time_dimension, *ctx.log(), m_times);
-
-        if (not is_increasing(m_times)) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "dimension '%s' has to be strictly increasing (read from '%s').",
-                                        time_name.c_str(), file.filename().c_str());
-
-        }
+        // constant extrapolation on the left
+        v.front() = m_values.front();
+        // constant extrapolation on the right
+        v.back() = m_values.back();
 
         {
           m_period = 0.0;
           m_period_start = 0.0;
         }
       }
-      // LCOV_EXCL_START
-    } catch (RuntimeError &e) {
-      e.add_context("while reading %s (%s) from '%s'",
-                    long_name.c_str(), variable_name.c_str(), filename.c_str());
-      throw;
+      m_values = v;
+
+      forcing_t0 = bounds.front();
+      forcing_t1 = bounds.back();
+    } // end of the block initializing data
+
+    if (not is_increasing(m_times)) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "times computed using time bounds are not increasing");
+
     }
-    // LCOV_EXCL_STOP
-  } // end of the block reading data
 
-  report_range(m_values, unit_system, variable, *ctx.log());
+    report_range(m_values, unit_system, variable, *ctx.log());
 
-  // set up interpolation
-  if (m_times.size() > 1) {
-    m_acc = gsl_interp_accel_alloc();
-    m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
-    gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
-  }
+    // set up interpolation
+    {
+      m_acc = gsl_interp_accel_alloc();
+      m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
+      gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
+    }
 
-  bool extrapolate = ctx.config()->get_flag("input.forcing.time_extrapolation");
+    bool extrapolate = ctx.config()->get_flag("input.forcing.time_extrapolation");
 
-  if (not (extrapolate or periodic)) {
-    auto time = ctx.time();
+    if (not (extrapolate or periodic)) {
+      auto time = ctx.time();
 
-    double run_t0 = time.start();
-    double run_t1 = time.end();
+      double run_t0 = time->start();
+      double run_t1 = time->end();
 
-    double forcing_t0 =
+      if (not (run_t0 >= forcing_t0 and
+               run_t1 <= forcing_t1)) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "A time-dependent forcing has to span the whole length of the simulation\n"
+                                      "  Run time:     [%s, %s]\n"
+                                      "  Forcing data: [%s, %s]",
+                                      time->date(run_t0).c_str(), time->date(run_t1).c_str(),
+                                      time->date(forcing_t0).c_str(), time->date(forcing_t1).c_str());
+      }
+    }
+  } catch (RuntimeError &e) {
+    e.add_context("while reading %s (%s) from '%s'",
+                  long_name.c_str(), variable_name.c_str(), filename.c_str());
+    throw;
   }
 }
 
@@ -262,10 +269,6 @@ ScalarForcing::~ScalarForcing() {
 
 double ScalarForcing::value(double t) const {
   double T = t;
-
-  if (m_times.size() == 1) {
-    return m_values[0];
-  }
 
   if (m_period > 0.0) {
     // compute time since the period start

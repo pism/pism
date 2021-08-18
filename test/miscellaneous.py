@@ -1182,10 +1182,11 @@ def test_bq2():
 
 class ScalarForcing(TestCase):
     def setUp(self):
-        self.filename = filename("scalar-forcing-input")
-        self.filename_decreasing = filename("scalar-forcing-decreasing")
-        self.filename_2d = filename("scalar-forcing-2d")
-        self.filename_1 = filename("scalar-forcing-one-value")
+        self.filename = filename("scalar-forcing-input-")
+        self.filename_decreasing = filename("scalar-forcing-decreasing-")
+        self.filename_2d = filename("scalar-forcing-2d-")
+        self.filename_1 = filename("scalar-forcing-one-value-")
+        self.filename_no_bounds = filename("scalar-forcing-no-bounds-")
 
         def f(x):
             return np.sin(2 * np.pi / 12 * x)
@@ -1199,16 +1200,20 @@ class ScalarForcing(TestCase):
 
         self.ts = np.linspace(0 + dt, 24 - dt, 1001)
 
-        # good input
         time_bounds = np.vstack((self.times - 0.5 * dt, self.times + 0.5 * dt)).T.flatten()
+
+        ctx.time.set_start(0)
+        ctx.time.set_end(4)
+
+        # good input
         PISM.testing.create_scalar_forcing(self.filename,
                                            "delta_T", "Kelvin",
                                            self.values, self.times, time_bounds)
 
-        # non-increasing times
+        # non-increasing times deduced from time bounds
         PISM.testing.create_scalar_forcing(self.filename_decreasing,
                                            "delta_T", "Kelvin",
-                                           [0, 1], [1, 0], time_bounds=None)
+                                           [0, 1], [0, 1], time_bounds=[1, 2, 0, 1])
         # invalid number of dimensions
         grid = create_dummy_grid()
         PISM.testing.create_forcing(grid,
@@ -1222,6 +1227,11 @@ class ScalarForcing(TestCase):
         # only one value
         PISM.testing.create_scalar_forcing(self.filename_1,
                                            "delta_T", "Kelvin",
+                                           [1], [0], time_bounds=[0, 4])
+
+        # no time bounds
+        PISM.testing.create_scalar_forcing(self.filename_no_bounds,
+                                           "delta_T", "Kelvin",
                                            [1], [0], time_bounds=None)
 
     def tearDown(self):
@@ -1230,6 +1240,7 @@ class ScalarForcing(TestCase):
             os.remove(self.filename_decreasing)
             os.remove(self.filename_2d)
             os.remove(self.filename_1)
+            os.remove(self.filename_no_bounds)
         except:
             pass
 
@@ -1248,16 +1259,16 @@ class ScalarForcing(TestCase):
 
     def test_decreasing_time(self):
         try:
-            ctx.config.set_string("surface.delta_T.file", self.filename_decreasing)
-            ctx.config.set_flag("surface.delta_T.periodic", False)
             PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
+                               self.filename_decreasing,
                                "delta_T",
                                "K",
                                "K",
-                               "temperature offsets")
+                               "temperature offsets",
+                               False)
             assert False, "failed to stop if times are non-increasing"
-        except RuntimeError:
+        except RuntimeError as e:
+            print(e)
             pass
 
     def test_invalid_dimensions(self):
@@ -1272,21 +1283,40 @@ class ScalarForcing(TestCase):
                                "temperature offsets")
             assert False, "failed to stop if the variable is not scalar"
         except RuntimeError as e:
+            print(e)
             pass
 
-    def test_periodic_no_time_bounds(self):
+    def test_no_time_bounds(self):
         try:
-            ctx.config.set_string("surface.delta_T.file", self.filename_decreasing)
-            ctx.config.set_flag("surface.delta_T.periodic", True)
+            ctx.config.set_string("surface.delta_T.file", self.filename_no_bounds)
             PISM.ScalarForcing(ctx.ctx,
                                "surface.delta_T",
                                "delta_T",
                                "K",
                                "K",
                                "temperature offsets")
-            assert False, "failed to stop if periodic and time bounds are missing"
+            assert False, "failed to stop if time bounds are missing"
         except RuntimeError:
             pass
+
+    def test_run_duration(self):
+        end = ctx.time.end()
+        try:
+            ctx.time.set_end(100)
+
+            PISM.ScalarForcing(ctx.ctx,
+                               self.filename,
+                               "delta_T",
+                               "K",
+                               "K",
+                               "temperature offsets",
+                               False)
+            assert False, "failed to stop because forcing does not span model time"
+        except RuntimeError as e:
+            print(e)
+            pass
+        finally:
+            ctx.time.set_end(end)
 
     def test_periodic_interpolation(self):
         ctx.config.set_string("surface.delta_T.file", self.filename)
@@ -1322,16 +1352,14 @@ class ScalarForcing(TestCase):
         np.testing.assert_almost_equal(Y, Y_numpy)
 
     def test_one_value(self):
-        ctx.config.set_string("surface.delta_T.file", self.filename_1)
-        ctx.config.set_flag("surface.delta_T.periodic", False)
         F = PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
+                               self.filename_1,
                                "delta_T",
                                "K",
                                "K",
-                               "temperature offsets")
+                               "temperature offsets",
+                               False)
 
-        # two outside and one inside
         T = [1, 2]
 
         Y_ref = [1, 1]
@@ -1378,7 +1406,7 @@ class ScalarForcing(TestCase):
         # one too far left, one too far right
         np.testing.assert_equal(g(-0.5, 4.5), 0.0)
         # same sub-interval
-        np.testing.assert_equal(g(0, 1), 1.0)
+        np.testing.assert_equal(g(0, 0.25), 1.0)
         # dt == 0.0
         np.testing.assert_equal(g(0, 0), 1.0)
 
