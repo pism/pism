@@ -1319,6 +1319,10 @@ netcdf pism_config {
     pism_config:input.forcing.evaluations_per_year_type = "integer";
     pism_config:input.forcing.evaluations_per_year_units = "count";
 
+    pism_config:input.forcing.time_extrapolation = "false";
+    pism_config:input.forcing.time_extrapolation_doc = "If 'true', time-dependent forcing inputs are extrapolated in time";
+    pism_config:input.forcing.time_extrapolation_type = "flag";
+
     pism_config:input.regrid.file = "";
     pism_config:input.regrid.file_doc = "Regridding (input) file name";
     pism_config:input.regrid.file_option = "regrid_file";

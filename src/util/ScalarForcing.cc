@@ -197,6 +197,17 @@ void ScalarForcing::initialize(const Context &ctx,
     m_spline = gsl_spline_alloc(gsl_interp_linear, m_times.size());
     gsl_spline_init(m_spline, m_times.data(), m_values.data(), m_times.size());
   }
+
+  bool extrapolate = ctx.config()->get_flag("input.forcing.time_extrapolation");
+
+  if (not (extrapolate or periodic)) {
+    auto time = ctx.time();
+
+    double run_t0 = time.start();
+    double run_t1 = time.end();
+
+    double forcing_t0 =
+  }
 }
 
 ScalarForcing::ScalarForcing(const Context &ctx,
