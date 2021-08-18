@@ -302,14 +302,14 @@ void IceModel::write_extras() {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
     filename = pism::printf("%s_%s.nc",
                             m_extra_filename.c_str(),
-                            m_time->date().c_str());
+                            m_time->date(m_time->current()).c_str());
   } else {
     filename = m_extra_filename;
   }
 
   m_log->message(3,
                  "saving spatial time-series to %s at %s\n",
-                 filename.c_str(), m_time->date().c_str());
+                 filename.c_str(), m_time->date(m_time->current()).c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = m_config->get_flag("output.extra.append");

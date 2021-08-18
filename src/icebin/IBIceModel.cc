@@ -385,8 +385,8 @@ void IBIceModel::time_setup() {
   m_time->set_start(params.time_start_s);
   m_time->set(params.time_start_s);
 
-  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n", m_time->start_date().c_str(),
-                 m_time->end_date().c_str(), m_time->run_length().c_str(), m_time->calendar().c_str());
+  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n", m_time->date(m_time->start()).c_str(),
+                 m_time->date(m_time->end()).c_str(), m_time->run_length().c_str(), m_time->calendar().c_str());
 }
 
 

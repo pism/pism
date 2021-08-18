@@ -52,14 +52,14 @@ int IceModel::process_signals() {
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
 
     prepend_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
-                                 m_time->date().c_str()));
+                                 m_time->date(m_time->current()).c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
     return 1;
   }
 
   if (pism_signal == SIGUSR1) {
-    auto file_name = pism::printf("pism-%s.nc", m_time->date().c_str());
+    auto file_name = pism::printf("pism-%s.nc", m_time->date(m_time->current()).c_str());
     m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
                    file_name.c_str());

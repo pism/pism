@@ -469,18 +469,6 @@ void Time::step(double delta_t) {
   }
 }
 
-std::string Time::date() const {
-  return date(current());
-}
-
-std::string Time::start_date() const {
-  return date(m_run_start);
-}
-
-std::string Time::end_date() const {
-  return date(m_run_end);
-}
-
 std::string Time::run_length() const {
   return pism::printf("%3.3f", seconds_to_years(m_run_end - m_run_start));
 }
