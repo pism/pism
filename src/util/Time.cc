@@ -794,7 +794,7 @@ std::string Time::date(double T) const {
 
   double hour = date.hour + date.minute / 60.0 + date.second / 3600.0;
 
-  return pism::printf("%04d-%02d-%02d %04.1fh",
+  return pism::printf("%04d-%02d-%02d %06.3fh",
                       date.year, date.month, date.day, hour);
 }
 
