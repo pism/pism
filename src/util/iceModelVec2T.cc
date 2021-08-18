@@ -316,6 +316,8 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
         }
 
         if (periodic) {
+          // FIXME: require time bounds and use them to determine the period length
+
           // use time to determine period length and reference time
           double t0 = m_data->time.front();
           m_data->reference_time = t0;
@@ -336,6 +338,8 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
 
     // set fake time bounds:
     m_data->time_bounds = {-1.0, 1.0};
+
+    // note that in this case all data is periodic and constant in time
   }
 
   if (not is_increasing(m_data->time)) {
