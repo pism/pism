@@ -218,13 +218,8 @@ spatially-variable offsets.
 
 It uses the following configuration parameters:
 
-- :config:`ocean.delta_sl_2d.file`: specifies the name of the file containing forcing
-  data. This file has to contain the :var:`delta_SL` variable using units "meters" or
-  equivalent.
-- :config:`ocean.delta_sl_2d.period` specifies the length of the period of the forcing
-  data, in model years; see section :ref:`sec-periodic-forcing`.
-- :config:`ocean.delta_sl_2d.reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.delta_sl_2d
 
 .. _sec-ocean-delta-t:
 
