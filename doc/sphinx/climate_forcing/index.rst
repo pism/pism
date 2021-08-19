@@ -17,13 +17,13 @@ code.
 To get started with climate forcing usage we need to introduce some language to describe
 parts of PISM. In this manual a *component* is a piece of PISM code, usually a C++ class.
 A combination of components (or, in some cases, one component) makes up a "model" --- an
-implementation of a physical/mathematical description of a system.
+implementation of a physical or mathematical description of a system.
 
 PISM's climate forcing code has two kinds of components.
 
 - Ones that can be used as "stand-alone" models, such as the implementation of the PDD
   scheme (section :ref:`sec-surface-pdd`). These are *model components*.
-- Ones implementing "corrections" of various kinds, such as lapse rate corrections
+- Ones implementing "adjustments" of various kinds, such as lapse rate corrections
   (sections :ref:`sec-surface-elevation-change` and :ref:`sec-atmosphere-elevation-change`) or
   ice-core derived offsets (sections :ref:`sec-surface-delta-t` and
   :ref:`sec-ocean-delta-sl`, for example). These are called *modifier components* or
@@ -41,8 +41,8 @@ conditions with a modifier that applies scalar temperature offsets. This combina
 one of the many ocean models that can be chosen using components as building blocks.
 
 Section :ref:`sec-forcing-examples` gives examples of combining components to choose
-models. Before that we address how PISM handles model time (Section
-:ref:`sec-model-time`).
+models. Before that we address how PISM interprets time-dependent inputs (Section
+:ref:`sec-forcing-time-dependent`).
 
 .. admonition:: Summary of the main idea in using this manual
 
@@ -53,12 +53,14 @@ models. Before that we address how PISM handles model time (Section
    argument; the first keyword *has* to correspond to a model component, the rest can be
    "modifier" components. Any of these options can be omitted to use the default
    atmosphere, surface or ocean model components, but one has to explicitly choose a model
-   component to use a modifier. Model components and modifiers are chained as in
-   :numref:`fig-climate-input-data-flow`.
+   component to use a modifier.
+
+   Model components and modifiers are chained as in :numref:`fig-climate-input-data-flow`;
+   arrows in this figure indicate the data flow.
 
 .. toctree::
 
-   time.rst
+   time-dependent.rst
 
    examples.rst
 

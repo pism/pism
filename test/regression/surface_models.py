@@ -395,7 +395,7 @@ class TemperatureIndex2(TestCase):
 
         config.set_number("atmosphere.uniform.temperature", self.T)
         # disable daily variability so that we can compute the number of PDDs exactly
-        config.set_number("surface.pdd.std_dev", 0.0)
+        config.set_number("surface.pdd.std_dev.value", 0.0)
         # no precipitation
         config.set_number("atmosphere.uniform.precipitation", 0)
 

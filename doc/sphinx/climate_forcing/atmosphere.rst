@@ -91,10 +91,12 @@ file. To read time-independent precipitation from a different file, use the opti
 :opt:`-atmosphere_searise_greenland_file`.
 
 The air temperature parameterization is controlled by configuration parameters with the
-``snow_temp_fausto`` prefix.
+prefix ``atmosphere.fausto_air_temp``:
 
-See also the ``-atmosphere ...,precip_scaling`` modifier, section
-:ref:`sec-atmosphere-precip-scaling`, for an implementation of the SeaRISE-Greenland
+.. pism-parameters::
+   :prefix: atmosphere.fausto_air_temp.
+
+See :ref:`sec-atmosphere-precip-scaling` for an implementation of the SeaRISE-Greenland
 formula for precipitation adjustment using air temperature offsets relative to present; a
 7.3\% change of precipitation rate for every one degree Celsius of temperature change
 :cite:`Huybrechts02`.
@@ -166,7 +168,7 @@ One weather station
 :|implementation|: ``pism::atmosphere::WeatherStation``
 
 This model component reads scalar time-series of the near-surface air temperature and
-precipitation from a file specified using the :opt:`-atmosphere_one_station_file` option
+precipitation from a file specified using :config:`atmosphere.one_station.file`
 and uses them at *all* grid points in the domain. In other words, resulting climate fields
 are constant in space but not necessarily in time.
 
@@ -184,14 +186,10 @@ Scalar temperature offsets
 :|implementation|: ``pism::atmosphere::Delta_T``
 
 This modifier applies scalar time-dependent air temperature offsets to the output of an
-atmosphere model. It takes the following command-line options.
+atmosphere model. It uses the following parameters:
 
-- :opt:`-atmosphere_delta_T_file` sets the name of the file PISM will read :var:`delta_T`
-  from.
-- :opt:`-atmosphere_delta_T_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_delta_T_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+.. pism-parameters::
+   :prefix: atmosphere.delta_T.
 
 Please make sure that :var:`delta_T` has the units of "``Kelvin``".
 
@@ -205,14 +203,10 @@ Scalar precipitation offsets
 :|implementation|: ``pism::atmosphere::Delta_P``
 
 This modifier applies scalar time-dependent precipitation offsets to the output of an
-atmosphere model. It takes the following command-line options.
+atmosphere model. It uses the following parameters:
 
-- :opt:`-atmosphere_delta_P_file` sets the name of the file PISM will read :var:`delta_P`
-  from.
-- :opt:`-atmosphere_delta_P_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_delta_P_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+.. pism-parameters::
+   :prefix: atmosphere.delta_P.
 
 .. _sec-atmosphere-frac-p:
 
@@ -258,14 +252,10 @@ temperature increase, where
 
 `C =` :config:`atmosphere.precip_exponential_factor_for_temperature`.
 
-It takes the following command-line options.
+It uses the following parameters:
 
-- :opt:`-atmosphere_precip_scaling_file` sets the name of the file PISM will read
-  :var:`delta_T` from.
-- :opt:`-atmosphere_precip_scaling_period` (*years*) sets the period of the forcing data
-  (section :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_precip_scaling_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+.. pism-parameters::
+   :prefix: atmosphere.precip_scaling.
 
 .. _sec-atmosphere-elevation-change:
 
@@ -313,23 +303,15 @@ Two methods of adjusting precipitation are available:
 
   To use this method, set :opt:`-smb_adjustment shift`.
 
-It uses the following options.
+It uses the following parameters:
 
-- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
-  use the following definition of the temperature lapse rate:
-- :opt:`-precip_adjustment` chooses the precipitation lapse rate (``shift``) or scaling
-  precipitation with an exponential factor (``scale``).
-- :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in :math:`(kg / (m^{2} year)) / km`.
-  Here `\gamma_P = -\frac{dP}{dz}`.
-- :opt:`-atmosphere_elevation_change_file` specifies a file containing the reference surface
-  elevation field (standard name: :var:`surface_altitude`). This file may contain several
-  surface elevation records to use lapse rate corrections relative to a time-dependent
-  surface. If one record is provided, the reference surface elevation is assumed to be
-  time-independent.
-- :opt:`-atmosphere_elevation_change_period` gives the period, in model years; see section
-  :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_elevation_change_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: atmosphere.elevation_change.
+
+The file specified using :config:`atmosphere.elevation_change.file` may contain several
+surface elevation records to use lapse rate corrections relative to a time-dependent
+surface. If one record is provided, the reference surface elevation is assumed to be
+time-independent.
 
 .. _sec-atmosphere-anomaly:
 
@@ -344,17 +326,13 @@ Using climate data anomalies
 This modifier implements a spatially-variable version of ``-atmosphere
 ...,delta_T,delta_P``.
 
-It takes the following options:
+It uses the following parameters:
 
-- :opt:`-atmosphere_anomaly_file` specifies a file containing variables
-  :var:`air_temp_anomaly` and :var:`precipitation_anomaly`.
-- :opt:`-atmosphere_anomaly_period` (years) specifies the period of the forcing data, in
-  model years; section :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_anomaly_reference_year` specifies the reference year; section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: atmosphere.anomaly.
 
 See also to ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`), which is
-similar, but applies anomalies at the surface level.
+similar but applies anomalies at the surface level.
 
 .. _sec-orographic-precipitation:
 

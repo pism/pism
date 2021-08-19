@@ -2357,7 +2357,7 @@ netcdf pism_config {
     pism_config:surface.pdd.interpret_precip_as_snow_type = "flag";
 
     pism_config:surface.pdd.max_evals_per_year = 52;
-    pism_config:surface.pdd.max_evals_per_year_doc = "maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also :config:`surface.pdd.std_dev`";
+    pism_config:surface.pdd.max_evals_per_year_doc = "maximum number of times the PDD scheme will ask for air temperature and precipitation to build location-dependent time series for computing (expected) number of positive degree days and snow accumulation; the default means the PDD uses weekly samples of the annual cycle; see also :config:`surface.pdd.std_dev.value`";
     pism_config:surface.pdd.max_evals_per_year_type = "integer";
     pism_config:surface.pdd.max_evals_per_year_units = "count";
 
@@ -2381,43 +2381,43 @@ netcdf pism_config {
     pism_config:surface.pdd.refreeze_ice_melt_doc = "If set to \"yes\", refreeze :config:`surface.pdd.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.pdd.refreeze_ice_melt_type = "flag";
 
-    pism_config:surface.pdd.std_dev = 5.0;
-    pism_config:surface.pdd.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
-    pism_config:surface.pdd.std_dev_type = "number";
-    pism_config:surface.pdd.std_dev_units = "Kelvin";
-
     pism_config:surface.pdd.std_dev.file = "";
     pism_config:surface.pdd.std_dev.file_doc = "The name of the file to read ``air_temp_sd`` (standard deviation of air temperature) from.";
     pism_config:surface.pdd.std_dev.file_option = "pdd_sd_file";
     pism_config:surface.pdd.std_dev.file_type = "string";
 
+    pism_config:surface.pdd.std_dev.lapse_lat_base = 72.0;
+    pism_config:surface.pdd.std_dev.lapse_lat_base_doc = "standard deviationis is a function of latitude, with value :config:`surface.pdd.std_dev.value` at this latitude; this value is only active if :config:`surface.pdd.std_dev.lapse_lat_rate` is nonzero";
+    pism_config:surface.pdd.std_dev.lapse_lat_base_type = "number";
+    pism_config:surface.pdd.std_dev.lapse_lat_base_units = "degree_north";
+
+    pism_config:surface.pdd.std_dev.lapse_lat_rate = 0.0;
+    pism_config:surface.pdd.std_dev.lapse_lat_rate_doc = "standard deviation is a function of latitude, with rate of change with respect to latitude given by this constant";
+    pism_config:surface.pdd.std_dev.lapse_lat_rate_type = "number";
+    pism_config:surface.pdd.std_dev.lapse_lat_rate_units = "Kelvin / degree_north";
+
+    pism_config:surface.pdd.std_dev.param_a = -0.15;
+    pism_config:surface.pdd.std_dev.param_a_doc = "Parameter `a` in `\\Sigma = aT + b`, with `T` in degrees C. Used only if :config:`surface.pdd.std_dev.use_param` is set to yes.";
+    pism_config:surface.pdd.std_dev.param_a_type = "number";
+    pism_config:surface.pdd.std_dev.param_a_units = "pure number";
+
+    pism_config:surface.pdd.std_dev.param_b = 0.66;
+    pism_config:surface.pdd.std_dev.param_b_doc = "Parameter `b` in `\\Sigma = aT + b`, with `T` in degrees C. Used only if :config:`surface.pdd.std_dev.use_param` is set to yes.";
+    pism_config:surface.pdd.std_dev.param_b_type = "number";
+    pism_config:surface.pdd.std_dev.param_b_units = "Kelvin";
+
     pism_config:surface.pdd.std_dev.periodic = "no";
-    pism_config:surface.pdd.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.pdd.std_dev.periodic_doc = "If true, interpret ``air_temp_sd`` read from :config:`surface.pdd.std_dev.file` as periodic in time";
     pism_config:surface.pdd.std_dev.periodic_type = "flag";
 
-    pism_config:surface.pdd.std_dev_lapse_lat_base = 72.0;
-    pism_config:surface.pdd.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value :config:`surface.pdd.std_dev` at this latitude; this value only active if :config:`surface.pdd.std_dev_lapse_lat_rate` is nonzero";
-    pism_config:surface.pdd.std_dev_lapse_lat_base_type = "number";
-    pism_config:surface.pdd.std_dev_lapse_lat_base_units = "degree_north";
+    pism_config:surface.pdd.std_dev.use_param = "no";
+    pism_config:surface.pdd.std_dev.use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
+    pism_config:surface.pdd.std_dev.use_param_type = "flag";
 
-    pism_config:surface.pdd.std_dev_lapse_lat_rate = 0.0;
-    pism_config:surface.pdd.std_dev_lapse_lat_rate_doc = "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant";
-    pism_config:surface.pdd.std_dev_lapse_lat_rate_type = "number";
-    pism_config:surface.pdd.std_dev_lapse_lat_rate_units = "Kelvin / degree_north";
-
-    pism_config:surface.pdd.std_dev_param_a = -0.15;
-    pism_config:surface.pdd.std_dev_param_a_doc = "Parameter `a` in `\\Sigma = aT + b`, with `T` in degrees C. Used only if :config:`surface.pdd.std_dev_use_param` is set to yes.";
-    pism_config:surface.pdd.std_dev_param_a_type = "number";
-    pism_config:surface.pdd.std_dev_param_a_units = "pure number";
-
-    pism_config:surface.pdd.std_dev_param_b = 0.66;
-    pism_config:surface.pdd.std_dev_param_b_doc = "Parameter `b` in `\\Sigma = aT + b`, with `T` in degrees C. Used only if :config:`surface.pdd.std_dev_use_param` is set to yes.";
-    pism_config:surface.pdd.std_dev_param_b_type = "number";
-    pism_config:surface.pdd.std_dev_param_b_units = "Kelvin";
-
-    pism_config:surface.pdd.std_dev_use_param = "no";
-    pism_config:surface.pdd.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
-    pism_config:surface.pdd.std_dev_use_param_type = "flag";
+    pism_config:surface.pdd.std_dev.value = 5.0;
+    pism_config:surface.pdd.std_dev.value_doc = "standard deviation of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
+    pism_config:surface.pdd.std_dev.value_type = "number";
+    pism_config:surface.pdd.std_dev.value_units = "Kelvin";
 
     pism_config:surface.pressure = 0.0;
     pism_config:surface.pressure_doc = "atmospheric pressure; = pressure at ice surface";

@@ -50,10 +50,10 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
-  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
-  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev_use_param");
-  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
-  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev_param_b");
+  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev.value");
+  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev.use_param");
+  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev.param_a");
+  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev.param_b");
 
   bool use_fausto_params     = m_config->get_flag("surface.pdd.fausto.enabled");
 
@@ -270,8 +270,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
                                m_accumulation.get(), m_melt.get(), m_runoff.get()};
 
   const double
-    sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
+    sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   const IceModelVec2S *latitude = nullptr;
   if (fausto_greve or sigmalapserate != 0.0) {
