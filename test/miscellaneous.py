@@ -1184,6 +1184,7 @@ class ScalarForcing(TestCase):
     def setUp(self):
         self.filename = filename("scalar-forcing-input-")
         self.filename_decreasing = filename("scalar-forcing-decreasing-")
+        self.filename_wrong_bounds = filename("scalar-forcing-wrong-bounds-")
         self.filename_2d = filename("scalar-forcing-2d-")
         self.filename_1 = filename("scalar-forcing-one-value-")
         self.filename_no_bounds = filename("scalar-forcing-no-bounds-")
@@ -1210,10 +1211,15 @@ class ScalarForcing(TestCase):
                                            "delta_T", "Kelvin",
                                            self.values, self.times, time_bounds)
 
-        # non-increasing times deduced from time bounds
+        # non-increasing times
         PISM.testing.create_scalar_forcing(self.filename_decreasing,
                                            "delta_T", "Kelvin",
-                                           [0, 1], [0, 1], time_bounds=[1, 2, 0, 1])
+                                           [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
+
+        # wrong time bounds
+        PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
+                                           "delta_T", "Kelvin",
+                                           [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
         # invalid number of dimensions
         grid = create_dummy_grid()
         PISM.testing.create_forcing(grid,
@@ -1238,6 +1244,7 @@ class ScalarForcing(TestCase):
         try:
             os.remove(self.filename)
             os.remove(self.filename_decreasing)
+            os.remove(self.filename_wrong_bounds)
             os.remove(self.filename_2d)
             os.remove(self.filename_1)
             os.remove(self.filename_no_bounds)
@@ -1267,6 +1274,20 @@ class ScalarForcing(TestCase):
                                "temperature offsets",
                                False)
             assert False, "failed to stop if times are non-increasing"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_wrong_bounds(self):
+        try:
+            PISM.ScalarForcing(ctx.ctx,
+                               self.filename_wrong_bounds,
+                               "delta_T",
+                               "K",
+                               "K",
+                               "temperature offsets",
+                               False)
+            assert False, "failed to stop if time bounds are wrong"
         except RuntimeError as e:
             print(e)
             pass

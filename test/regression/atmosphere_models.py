@@ -10,6 +10,11 @@ import os
 import numpy as np
 from unittest import TestCase
 
+# set run duration to 1 second so that all forcing used here spans the duration of the run
+time = PISM.Context().time
+time.set_start(0)
+time.set_end(1)
+
 config = PISM.Context().config
 
 # reduce the grid size to speed this up
@@ -168,7 +173,8 @@ class DeltaT(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = -5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
+        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+                              [self.dT], [0], time_bounds=[0, 1])
 
     def tearDown(self):
         os.remove(self.filename)
@@ -194,7 +200,8 @@ class DeltaP(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dP = 5.0
 
-        create_scalar_forcing(self.filename, "delta_P", "kg m-2 s-1", [self.dP], [0])
+        create_scalar_forcing(self.filename, "delta_P", "kg m-2 s-1",
+                              [self.dP], [0], time_bounds=[0, 1])
 
         config.set_string("atmosphere.delta_P.file", self.filename)
 
@@ -333,6 +340,11 @@ class OneStation(TestCase):
         output = PISM.util.prepare_output(self.filename, append_time=True)
 
         output.redef()
+
+        output.define_dimension("nv", 2)
+        output.define_variable("time_bounds", PISM.PISM_DOUBLE, [time_name, "nv"])
+        output.write_attribute(time_name, "bounds", "time_bounds")
+
         output.define_variable("precipitation", PISM.PISM_DOUBLE, [time_name])
         output.write_attribute("precipitation", "units", "kg m-2 s-1")
 
@@ -341,6 +353,7 @@ class OneStation(TestCase):
 
         output.write_variable("precipitation", [0], [1], [self.P])
         output.write_variable("air_temp", [0], [1], [self.T])
+        output.write_variable("time_bounds", [0, 0], [1, 2], [0, 1])
 
         output.close()
 
@@ -429,7 +442,8 @@ class PrecipScaling(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.dT = 5.0
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
+        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+                              [self.dT], [0], time_bounds=[0, 1])
 
         config.set_string("atmosphere.precip_scaling.file", self.filename)
 
@@ -457,7 +471,8 @@ class FracP1D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.P_ratio = 5.0
 
-        create_scalar_forcing(self.filename, "frac_P", "1", [self.P_ratio], [0])
+        create_scalar_forcing(self.filename, "frac_P", "1",
+                              [self.P_ratio], [0], time_bounds=[0, 1])
 
         config.set_string("atmosphere.frac_P.file", self.filename)
 

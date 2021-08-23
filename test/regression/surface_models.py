@@ -12,6 +12,11 @@ from unittest import TestCase, SkipTest
 
 from PISM.util import convert
 
+# set run duration to 1 second so that all forcing used here spans the duration of the run
+time = PISM.Context().time
+time.set_start(0)
+time.set_end(1)
+
 config = PISM.Context().config
 
 seconds_per_year = 365 * 86400
@@ -168,7 +173,8 @@ class DeltaT(TestCase):
         self.dT = -5.0
         self.geometry = PISM.Geometry(self.grid)
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
+        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+                              [self.dT], [0], time_bounds=[0, 1])
 
     def test_surface_delta_t(self):
         "Modifier 'delta_T'"
