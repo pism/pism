@@ -124,13 +124,13 @@ balance using the 5 parameters `\m{min}`, `\m{max}`, `\h{min}`,
 
 .. math::
 
-   \diff{\m{abl}}{h} = -\m{min} / (\h{max} - \h{min})
+   \diff{\m{abl}}{h} = -\m{min} / (\ELA - \h{min})
 
 and
 
 .. math::
 
-   \diff{\m{acl}}{h} = \m{max} / (\h{max} - \h{min})
+   \diff{\m{acl}}{h} = \m{max} / (\h{max} - \ELA)
 
 be the mass balance gradient in the ablation and in the accumulation area, respectively.
 Then
@@ -140,9 +140,9 @@ Then
    m(x,y) =
    \begin{cases}
     \m{min}, & h(x,y) \le \h{min}, \\
-    \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), &  \h{min} < h(x,y) < \h{max}, \\
-    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
-    \m{max}, & \h{max} \le h(x,y).
+    \diff{\m{abl}}{h} \, (h(x,y) - \ELA), & \h{min} < h(x,y) \le \ELA, \\
+    \diff{\m{acl}}{h} \, (h(x,y) - \ELA), & \ELA < h(x,y) \le \h{max}, \\
+    \m{max}, & \h{max} < h(x,y).
    \end{cases}
 
 The option :opt:`-climatic_mass_balance_limits` (*list of 2 numbers*) limits the mass
@@ -154,9 +154,9 @@ balance below `\h{min}` to `\ms{min}` and above `\h{max}` to
    m(x,y) =
    \begin{cases}
     m^{*}_{\text{min}}, & h(x,y) \le \h{min}, \\
-    \diff{\m{abl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
-    \diff{\m{acl}}{h} \, (h(x,y) - h_{\text{ELA}}), & \h{min} < h(x,y) < \h{max}, \\
-    m^{*}_{\text{max}}, & \h{max} \le h(x,y).
+    \diff{\m{abl}}{h} \, (h(x,y) - \ELA), & \h{min} < h(x,y) \le \ELA, \\
+    \diff{\m{acl}}{h} \, (h(x,y) - \ELA), & \ELA < h(x,y) \le \h{max}, \\
+    m^{*}_{\text{max}}, & \h{max} < h(x,y).
    \end{cases}
 
 Note: this surface model *ignores* the atmosphere model selection made using the
