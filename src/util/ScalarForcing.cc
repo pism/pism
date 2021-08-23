@@ -97,51 +97,12 @@ void ScalarForcing::initialize(const Context &ctx,
       // The following line relies on the fact that this is a scalar variable.
       std::string time_name = file.dimensions(variable_name)[0];
 
-      // Read times
       std::vector<double> times{};
-      size_t N = 0;
-      {
-        VariableMetadata time_variable(time_name, unit_system);
-        time_variable.set_string("units", ctx.time()->units_string());
-
-        io::read_timeseries(file, time_variable, *ctx.log(), times);
-
-        if (not is_increasing(times)) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "times have to be strictly increasing");
-        }
-        N = times.size();
-      }
-
-      // Read time bounds
       std::vector<double> bounds{};
-      {
-        std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
-
-        if (time_bounds_name.empty()) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "please provide time bounds for '%s'",
-                                        variable_name.c_str());
-        }
-
-        VariableMetadata time_bounds(time_bounds_name, unit_system);
-        time_bounds.set_string("units", ctx.time()->units_string());
-
-        io::read_time_bounds(file, time_bounds, *ctx.log(), bounds);
-
-        if (2 * N != bounds.size()) {
-          throw RuntimeError(PISM_ERROR_LOCATION,
-                             "each time record has to have 2 bounds");
-        }
-
-        for (size_t k = 0; k < N; ++k) {
-          if (not (times[k] >= bounds[2 * k + 0] and
-                   times[k] <= bounds[2 * k + 1])) {
-            throw RuntimeError(PISM_ERROR_LOCATION,
-                               "each time has to be contained in its time interval");
-          }
-        }
-      } // end of the block reading time bounds
+      io::read_time_info(*ctx.log(), unit_system,
+                         file, time_name, ctx.time()->units_string(),
+                         times, bounds);
+      size_t N = times.size();
 
       // Compute values used to extend data read from file
       //

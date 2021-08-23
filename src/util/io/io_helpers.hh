@@ -103,6 +103,14 @@ void read_time_bounds(const File &nc,
 void write_time_bounds(const File &nc, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
 
+void read_time_info(const Logger &log,
+                    std::shared_ptr<units::System> unit_system,
+                    const File &file,
+                    const std::string &time_name,
+                    const std::string &time_units,
+                    std::vector<double> &times,
+                    std::vector<double> &bounds);
+
 std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,
                            const std::string &variable_name);

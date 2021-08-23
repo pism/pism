@@ -1280,6 +1280,61 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
   }
 }
 
+/*!
+ * Reads and validates times and time bounds.
+ */
+void read_time_info(const Logger &log,
+                    std::shared_ptr<units::System> unit_system,
+                    const File &file,
+                    const std::string &time_name,
+                    const std::string &time_units,
+                    std::vector<double> &times,
+                    std::vector<double> &bounds) {
+
+  size_t N = 0;
+  {
+    VariableMetadata time_variable(time_name, unit_system);
+    time_variable.set_string("units", time_units);
+
+    io::read_timeseries(file, time_variable, log, times);
+
+    if (not is_increasing(times)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "times have to be strictly increasing");
+    }
+    N = times.size();
+  }
+
+  // Read time bounds
+  {
+    std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
+
+    if (time_bounds_name.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "please provide cell bounds for '%s'",
+                                    time_name.c_str());
+    }
+
+    VariableMetadata bounds_variable(time_bounds_name, unit_system);
+    bounds_variable.set_string("units", time_units);
+
+    io::read_time_bounds(file, bounds_variable, log, bounds);
+
+    if (2 * N != bounds.size()) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "each time record has to have 2 bounds");
+    }
+
+    for (size_t k = 0; k < N; ++k) {
+      if (not (times[k] >= bounds[2 * k + 0] and
+               times[k] <= bounds[2 * k + 1])) {
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "each time has to be contained in its time interval");
+      }
+    }
+  } // end of the block reading time bounds
+}
+
 bool file_exists(MPI_Comm com, const std::string &filename) {
   int file_exists_flag = 0, rank = 0;
   MPI_Comm_rank(com, &rank);
