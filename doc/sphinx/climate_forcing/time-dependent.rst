@@ -81,8 +81,19 @@ the length of the period is the difference of the right end point of the last in
 the left end point of the first interval.
 
 When used as periodic forcing, :ref:`src-forcing-time-dependent` would be interpreted as
-having the period of one thousand `360`\-day years, with the period starting on January
+having the period of one thousand `365`\-day years, with the period starting on January
 `1` of year `1`.
+
+.. note::
+
+   - A real life (Gregorian, Julian, etc) calendar does not usually make sense in
+     simulations using periodic forcing.
+
+   - It is usually a good idea to use time units that are an integer multiple of one
+     second, for example "day" or "365 days" as in the example above. This makes forcing
+     files easier to interpret. (The units "years" corresponds to the mean tropical year.
+     This is appropriate when converting from ``m/s`` to ``m/year``, for example, but
+     not for keeping track of time.)
 
 .. _sec-adding-time-bounds:
 
