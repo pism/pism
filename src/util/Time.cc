@@ -161,7 +161,7 @@ static std::string calendar(const File *input_file,
                   default_calendar.c_str(), input_file->filename().c_str(), calendar.c_str());
     }
 
-    return calendar;
+    return default_calendar;
   }
 
   return default_calendar;
