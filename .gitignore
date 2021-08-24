@@ -18,7 +18,6 @@ examples/**/*.png
 examples/**/*.zip
 TAGS
 .DS_Store
-CmakePismOnLogin.sh
 bin/*
 include/*
 lib/*
