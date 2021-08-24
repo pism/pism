@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2020 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -465,16 +465,6 @@ void IceModelVec::define(const File &file, IO_Type default_type) const {
     io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
   }
 }
-
-//! \brief Read attributes from the corresponding variable in `filename`.
-/*! Note that unlike read() and regrid(), this method does not use the standard
-  name to find the variable to read attributes from.
- */
-void IceModelVec::read_attributes(const std::string &filename, int N) {
-  File file(m_impl->grid->com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
-  io::read_attributes(file, metadata(N).get_name(), metadata(N));
-}
-
 
 //! @brief Returns a reference to the SpatialVariableMetadata object
 //! containing metadata for the compoment N.

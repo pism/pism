@@ -247,7 +247,6 @@ public:
                  const std::string &standard_name,
                  unsigned int component);
 
-  virtual void read_attributes(const std::string &filename, int component = 0);
   virtual void define(const File &nc, IO_Type default_type = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);

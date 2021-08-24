@@ -462,7 +462,11 @@ def run():
     if PISM.util.fileHasVariable(inv_data_filename, "%s_true" % design_var):
         design_true = createDesignVec(grid, design_var, '%s_true' % design_var)
         design_true.regrid(inv_data_filename, True)
-        design_true.read_attributes(inv_data_filename)
+        try:
+            f = PISM.File(com, inv_data_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+            PISM.read_attributes(f, design_true.get_name(), design_true.metadata())
+        finally:
+            f.close()
         vecs.add(design_true, writing=saving_inv_data)
 
     # Establish a logger which will save logging messages to the output file.
