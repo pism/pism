@@ -2479,6 +2479,16 @@ netcdf pism_config {
     pism_config:surface.itm.solar_constant_type = "number";
     pism_config:surface.itm.solar_constant_units = "W m-2";
 
+    pism_config:surface.itm.tau_a_intercept = 0.65;  // the best fit is 0.57;
+    pism_config:surface.itm.tau_a_intercept_doc = "intercept in transmissivity parametrization";
+    pism_config:surface.itm.tau_a_intercept_type = "number";
+    pism_config:surface.itm.tau_a_intercept_units = "";
+
+    pism_config:surface.itm.tau_a_slope = 0.000032;// the best fit is 0.000037;
+    pism_config:surface.itm.tau_a_slope_doc = "slope in transmissivity parametrization";
+    pism_config:surface.itm.tau_a_slope_type = "number";
+    pism_config:surface.itm.tau_a_slope_units = "m-1";
+
     pism_config:surface.models = "given";
     pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
     pism_config:surface.models_option = "surface";

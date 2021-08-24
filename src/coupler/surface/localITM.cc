@@ -163,7 +163,9 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series,
   const double rho_w = 1e3;    // mass density of water //FIXME in config
   const double L_m = 3.34e5;      // latent heat of ice melting //FIXME in config
   const double z = surface_elevation;               // surface elevation 
-  const double tau_a = 0.65 +  0.000032 * z;  // transmissivity of the atmosphere, linear fit, plug in values //FIXME parameters in config
+  const double tau_a_slope = m_config->get_number("surface.itm.tau_a_slope");
+  const double tau_a_intercept = m_config->get_number("surface.itm.tau_a_intercept");
+  const double tau_a = tau_a_intercept +  tau_a_slope * z;  // transmissivity of the atmosphere, linear fit, plug in values 
   const double itm_c = m_config->get_number("surface.itm.itm_c");
   const double itm_lambda = m_config->get_number("surface.itm.itm_lambda");
   const double bm_temp    = m_config->get_number("surface.itm.background_melting_temp");
