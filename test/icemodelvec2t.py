@@ -15,6 +15,10 @@ ctx.ctx.time().init_calendar("360_day")
 # suppress all output
 ctx.log.set_threshold(1)
 
+def seconds(t):
+    """Convert from '30 days' to 'seconds'"""
+    return t * 86400.0 * 30.0
+
 def compare(v, value):
     with PISM.vec.Access(nocomm=v):
         numpy.testing.assert_almost_equal(v[0, 0], value)
@@ -23,12 +27,13 @@ class ForcingInput(unittest.TestCase):
 
     def setUp(self):
         "Prepare an input file with an interesting time-dependent field."
-        self.filename = filename("input_")
-        self.empty = filename("empty_")
-        self.one_record = filename("one_record_")
-        self.no_time = filename("no_time_")
-        self.no_bounds = filename("no_time_bounds_")
-        self.time_order = filename("time_order_")
+        suffix          = filename("")
+        self.filename   = "input_" + suffix
+        self.empty      = "empty_" + suffix
+        self.one_record = "one_record_" + suffix
+        self.no_time    = "no_time_" + suffix
+        self.no_bounds  = "no_time_bounds_" + suffix
+        self.time_order = "time_order_" + suffix
 
         M = 3
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
@@ -36,12 +41,11 @@ class ForcingInput(unittest.TestCase):
 
         v = PISM.IceModelVec2S(self.grid, "v", PISM.WITHOUT_GHOSTS)
 
-        units = "days since 1-1-1"
+        units = "30 days since 1-1-1"
         N = 12
-        dt = 30.0                 # days (floating point)
-        t = numpy.r_[0:N] * dt
-        self.tb = numpy.r_[0:N + 1] * dt
-        self.f = numpy.sin(2.0 * numpy.pi * t / (N * dt))
+        self.t = numpy.arange(N, dtype=float) + 0.5
+        self.tb = numpy.arange(N + 1, dtype=float)
+        self.f = 2 * (self.t > 6) - 1
 
         def write_data(filename, use_bounds=True, forward=True):
             bounds = PISM.VariableMetadata("time_bounds", ctx.unit_system)
@@ -60,12 +64,12 @@ class ForcingInput(unittest.TestCase):
                 order = range(N - 1, -1, -1)
 
             for k in order:
-                PISM.append_time(output, "time", self.tb[k+1])
+                PISM.append_time(output, "time", self.t[k])
 
                 if use_bounds:
                     PISM.write_time_bounds(output, bounds, k, (self.tb[k], self.tb[k + 1]))
 
-                v.set(self.f[k])
+                v.set(float(self.f[k]))
                 v.write(output)
 
         # regular forcing file
@@ -82,11 +86,11 @@ class ForcingInput(unittest.TestCase):
 
         # file with one record
         output = PISM.util.prepare_output(self.one_record)
-        v.set(self.f[-1])
+        v.set(float(self.f[-1]))
         v.write(output)
 
         # file without a time dimension
-        v.set(self.f[-1])
+        v.set(float(self.f[-1]))
         v.set_time_independent(True)
         v.dump(self.no_time)
 
@@ -122,7 +126,7 @@ class ForcingInput(unittest.TestCase):
 
         # second month
         N = 1
-        t = self.tb[N] * 86400 + 1
+        t = seconds(self.tb[N]) + 1
         dt = forcing.max_timestep(t).value()
         forcing.update(t, dt)
         forcing.average(t, dt)
@@ -145,8 +149,8 @@ class ForcingInput(unittest.TestCase):
         "Extrapolation on the left"
         forcing = self.forcing(self.filename)
 
-        t = self.tb[0] * 86400 - 1
-        dt = self.tb[1] * 86400 + 1
+        t = seconds(self.tb[0]) - 1
+        dt = seconds(self.tb[1])
         forcing.update(0, dt)
         forcing.interp(t)
 
@@ -156,7 +160,7 @@ class ForcingInput(unittest.TestCase):
         "Extrapolation on the right"
         forcing = self.forcing(self.filename)
 
-        t = self.tb[-1] * 86400
+        t = seconds(self.tb[-1])
         forcing.update(0, t)
         forcing.interp(t + 1)
 
@@ -167,7 +171,7 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename)
 
         N = 1
-        t = self.tb[N] * 86400 + 1
+        t = seconds(self.tb[N]) + 1
         forcing.update(0, t)
         forcing.interp(t)
 
@@ -178,7 +182,7 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename)
         N = 12
         dt = 30.0                 # days (floating point)
-        ts = numpy.r_[0:N] * dt + 0.5 * dt
+        ts = (numpy.arange(N) + 0.5) * dt
         ts = [PISM.util.convert(T, "days", "seconds") for T in ts]
 
         forcing.update(0, self.tb[-1])
@@ -241,7 +245,7 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename, buffer_size=N)
 
         try:
-            dt = (N + 1) * 30 * 86400
+            dt = seconds(N + 1)
             forcing.update(0, dt)
             assert False, "Failed to catch a time step that is too long"
         except RuntimeError:
@@ -273,8 +277,8 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename, buffer_size=3)
 
         def check(month):
-            t = self.tb[month] * 86400 + 1
-            dt = 2 * 30 * 86400     # long-ish time step (2 months)
+            t = seconds(self.tb[month]) + 1
+            dt = seconds(2)     # long-ish time step (2 months)
             forcing.update(t, dt)
             forcing.interp(t)
 
@@ -290,11 +294,14 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename, buffer_size=1)
 
         # time bounds in seconds
-        tb = self.tb * 86400
+        tb = seconds(self.tb)
 
-        assert forcing.max_timestep(0).value() == tb[1] - tb[0]
+        numpy.testing.assert_almost_equal(forcing.max_timestep(0).value(),
+                                          tb[1] - tb[0])
+        numpy.testing.assert_almost_equal(forcing.max_timestep(tb[1] - 0.5).value(),
+                                          tb[2] - tb[1])
+
         assert forcing.max_timestep(tb[-1]).infinite()
-        assert forcing.max_timestep(tb[1] - 0.5).value() == tb[2] - tb[1]
         assert forcing.max_timestep(tb[-1] - 0.5).infinite()
 
     def test_periodic(self):
@@ -302,7 +309,7 @@ class ForcingInput(unittest.TestCase):
         forcing = self.forcing(self.filename, periodic=True)
 
         # a year and a half
-        t = numpy.arange(18 + 1) * 30 * 86400.0
+        t = seconds(numpy.arange(18 + 1))
 
         forcing.update(0, t[-1])
 
