@@ -22,7 +22,8 @@ class BeddefGiven(TestCase):
 
         # Create time-dependent topography changes
         create_forcing(self.grid, self.filename, "topg_delta", "meters",
-                       values=[2, -4, 3], times=[1, 2, 3])
+                       values=[2, -4, 3], times=[1, 2, 3],
+                       time_bounds=[0.5, 1.5, 2.5, 3.5])
 
         # Create the reference topography
         topg_ref = PISM.IceModelVec2S(self.grid, "topg", PISM.WITHOUT_GHOSTS)
