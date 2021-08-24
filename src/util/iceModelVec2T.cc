@@ -599,9 +599,12 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
     times_requested = ts;
   }
 
-  m_data->interp.reset(new Interpolation(m_data->interp_type, &m_data->time[m_data->first], m_data->N,
-                                   times_requested.data(), times_requested.size(),
-                                   time->years_to_seconds(m_data->period)));
+  m_data->interp.reset(new Interpolation(m_data->interp_type,
+                                         &m_data->time[m_data->first],
+                                         m_data->N,
+                                         times_requested.data(),
+                                         times_requested.size(),
+                                         m_data->period));
 }
 
 /**
