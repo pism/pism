@@ -60,7 +60,7 @@ struct BoxStencil {
 
 class PetscAccessible {
 public:
-  virtual ~PetscAccessible() {}
+  virtual ~PetscAccessible() = default;
   virtual void begin_access() const = 0;
   virtual void end_access() const = 0;
 };

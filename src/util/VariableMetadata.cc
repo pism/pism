@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -140,8 +140,7 @@ SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, cons
     m_y("y", system),
     m_z("z", system) {
 
-  std::vector<double> z(1, 0.0);
-  init_internal(name, z);
+  init_internal(name, {0.0});
 }
 
 void SpatialVariableMetadata::init_internal(const std::string &name,
