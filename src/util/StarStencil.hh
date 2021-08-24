@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,9 +28,7 @@ template <typename T>
 struct StarStencil {
   T ij, e, w, n, s;
 
-  StarStencil() {
-    // empty
-  }
+  StarStencil() = default;
 
   StarStencil(T value) {
     set(value);
