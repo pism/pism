@@ -241,12 +241,8 @@ void IceModelVec2T::end_access() const {
 void IceModelVec2T::init(const std::string &filename, bool periodic) {
 
   auto ctx = m_impl->grid->ctx();
-  const Logger &log = *ctx->log();
 
   m_data->filename = filename;
-
-  // We find the variable in the input file and
-  // try to find the corresponding time dimension.
 
   File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
   auto var = file.find_variable(m_impl->metadata[0].get_name(),
@@ -258,78 +254,39 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
                                   m_data->filename.c_str());
   }
 
-  auto time_name = io::time_dimension(ctx->unit_system(),
-                                      file, var.name);
+  auto time_name = io::time_dimension(ctx->unit_system(), file, var.name);
 
   if (not time_name.empty()) {
-    // we're found the time dimension
-    VariableMetadata time_dimension(time_name, ctx->unit_system());
+    std::vector<double> times{};
+    std::vector<double> bounds{};
+    io::read_time_info(*ctx->log(), ctx->unit_system(),
+                       file, time_name, ctx->time()->units_string(),
+                       times, bounds);
+    size_t N = times.size();
 
-    auto time_units = ctx->time()->units_string();
-    time_dimension.set_string("units", time_units);
+    if (periodic) {
+      m_data->reference_time = bounds.front();
+      m_data->period = bounds.back() - bounds.front();
+    }
 
-    io::read_timeseries(file, time_dimension,
-                        log, m_data->time);
-
-    std::string bounds_name = file.read_text_attribute(time_name, "bounds");
-
-    if (m_data->time.size() > 1) {
+    if (times.size() > 1) {
 
       if (m_data->interp_type == PIECEWISE_CONSTANT) {
-        if (bounds_name.empty()) {
-          // no time bounds attribute
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "Variable '%s' does not have the time_bounds attribute.\n"
-                                        "Cannot use time-dependent forcing data '%s' (%s) without time bounds.",
-                                        time_name.c_str(),
-                                        m_impl->metadata[0].get_string("long_name").c_str(),
-                                        m_impl->metadata[0].get_name().c_str());
-        }
-
-        // read time bounds data from a file
-        VariableMetadata tb(bounds_name, ctx->unit_system());
-        tb.set_string("units", time_units);
-
-        io::read_time_bounds(file, tb, log, m_data->time_bounds);
-
         // time bounds data overrides the time variable: we make t[j] be the
         // left end-point of the j-th interval
-        for (unsigned int k = 0; k < m_data->time.size(); ++k) {
-          m_data->time[k] = m_data->time_bounds[2*k + 0];
-        }
-
-        if (periodic) {
-          // use time bounds to determine period length and the reference time
-          double t0 = m_data->time_bounds.front();
-          m_data->reference_time = t0;
-          m_data->period = m_data->time_bounds.back() - t0;
-        }
-      } else {
-        // fake time step length used to generate the right end point of the last interval
-        // TODO: figure out if there is a better way to do this.
-        double dt = 1.0;
-        size_t N = m_data->time.size();
-        m_data->time_bounds.resize(2 * N);
-        for (size_t k = 0; k < N; ++k) {
-          m_data->time_bounds[2 * k + 0] = m_data->time[k];
-          m_data->time_bounds[2 * k + 1] = k + 1 < N ? m_data->time[k + 1] : m_data->time[k] + dt;
-        }
-
-        if (periodic) {
-          // FIXME: require time bounds and use them to determine the period length
-
-          // use time to determine period length and reference time
-          double t0 = m_data->time.front();
-          m_data->reference_time = t0;
-          m_data->period = m_data->time.back() - t0;
+        for (unsigned int k = 0; k < N; ++k) {
+          times[k] = bounds[2*k + 0];
         }
       }
 
     } else {
       // only one time record; set fake time bounds:
-      m_data->time_bounds = {m_data->time[0] - 1.0, m_data->time[0] + 1};
+      bounds = {times[0] - 1.0, times[0] + 1.0};
       // ignore "periodic" and keep m_data->period at zero
     }
+
+    m_data->time        = times;
+    m_data->time_bounds = bounds;
 
   } else {
     // no time dimension; assume that we have only one record and set the time
@@ -340,12 +297,6 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
     m_data->time_bounds = {-1.0, 1.0};
 
     // note that in this case all data is periodic and constant in time
-  }
-
-  if (not is_increasing(m_data->time)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "times have to be strictly increasing (read from '%s').",
-                                  m_data->filename.c_str());
   }
 
   if (m_data->period > 0.0) {
