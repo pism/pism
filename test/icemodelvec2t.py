@@ -34,6 +34,7 @@ class ForcingInput(unittest.TestCase):
         self.no_time    = "no_time_" + suffix
         self.no_bounds  = "no_time_bounds_" + suffix
         self.time_order = "time_order_" + suffix
+        self.interp_linear = "interp_linear_" + suffix
 
         M = 3
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
@@ -94,10 +95,18 @@ class ForcingInput(unittest.TestCase):
         v.set_time_independent(True)
         v.dump(self.no_time)
 
+        self.times_linear = [1, 2, 3]
+        self.values_linear = [2, -4, 3]
+        self.bounds_linear = [0.5, 1.5, 2.5, 3.5]
+        PISM.testing.create_forcing(self.grid, self.interp_linear, "v", "",
+                                    values=self.values_linear,
+                                    times=self.times_linear,
+                                    time_bounds=self.bounds_linear)
+
     def tearDown(self):
         "Remove files created by setUp()"
         files = [self.filename, self.empty, self.one_record,
-                 self.no_time, self.no_bounds, self.time_order]
+                 self.no_time, self.no_bounds, self.time_order, self.interp_linear]
         for f in files:
             os.remove(f)
 
@@ -111,6 +120,26 @@ class ForcingInput(unittest.TestCase):
         forcing.init(filename, periodic)
 
         return forcing
+
+    def test_interp_linear(self):
+        try:
+            input_file = PISM.File(ctx.com,
+                                   self.interp_linear,
+                                   PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+
+            F = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
+                                                20, 52, False, PISM.LINEAR)
+            F.init(self.interp_linear, False)
+            F.update(0, 4)
+
+            for t, v in zip(self.times_linear, self.values_linear):
+                F.interp(t)
+
+                V = F.numpy()[0, 0]
+                print(t, v, V)
+                numpy.testing.assert_almost_equal(V, v)
+        finally:
+            input_file.close()
 
     def test_missing_file(self):
         "Missing input file"
