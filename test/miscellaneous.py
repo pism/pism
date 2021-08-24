@@ -1479,6 +1479,7 @@ def thickness_calving_test():
     filename = PISM.testing.filename("threshold_thickness_")
     day = 86400.0
     times = [0, 30, 60]
+    time_bounds = [-15, 15, 45, 75]
     time_units = "days since 1-1-1"
     values = [100, 150, 200]
     try:
@@ -1489,7 +1490,8 @@ def thickness_calving_test():
                                     "m",
                                     values,
                                     time_units,
-                                    times=times)
+                                    times=times,
+                                    time_bounds=time_bounds)
 
         # we need to use enough quadrature points to get an accurate
         # estimate of the calving threshold within the interval passed
