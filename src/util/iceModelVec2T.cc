@@ -256,7 +256,10 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
 
   auto time_name = io::time_dimension(ctx->unit_system(), file, var.name);
 
-  if (not time_name.empty()) {
+  // dimension_length() will return 0 if a dimension is missing
+  bool one_record = file.dimension_length(time_name) < 2;
+
+  if (not one_record) {
     std::vector<double> times{};
     std::vector<double> bounds{};
     io::read_time_info(*ctx->log(), ctx->unit_system(),
