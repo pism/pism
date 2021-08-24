@@ -527,17 +527,6 @@ class DeltaSL(TestCase):
         os.remove(self.filename)
 
 class DeltaSL2D(TestCase):
-    def create_delta_SL_file(self, filename, times, sea_level_offsets):
-        output = PISM.util.prepare_output(filename, append_time=False)
-
-        SL = PISM.IceModelVec2S(self.grid, "delta_SL", PISM.WITHOUT_GHOSTS)
-        SL.set_attrs("forcing", "sea level forcing", "meters", "meters", "", 0)
-
-        for k in range(len(times)):
-            PISM.append_time(output, config, times[k])
-            SL.set(sea_level_offsets[k])
-            SL.write(output)
-
     def setUp(self):
         self.filename = tmp_name("ocean_delta_SL_input")
         self.grid = shallow_grid()
@@ -547,7 +536,12 @@ class DeltaSL2D(TestCase):
         self.model = PISM.SeaLevel(self.grid)
         self.dSL = -5.0
 
-        self.create_delta_SL_file(self.filename, [0, seconds_per_year], [0, 2 * self.dSL])
+        bounds = [0, 0.5*seconds_per_year, 1.5*seconds_per_year]
+        PISM.testing.create_forcing(self.grid, self.filename,
+                                    "delta_SL", "meters",
+                                    values=[0, 2 * self.dSL],
+                                    times=[0, seconds_per_year],
+                                    time_bounds=bounds)
 
         config.set_string("ocean.delta_sl_2d.file", self.filename)
 
