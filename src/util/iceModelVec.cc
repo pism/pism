@@ -1202,7 +1202,7 @@ void IceModelVec::get_from_proc0(petsc::Vec &onp0) {
  * We assume that sizeof(double) == 2 * sizeof(uint32_t), i.e. double uses 64 bits.
  */
 uint64_t IceModelVec::fletcher64() const {
-  assert(sizeof(double) == 2 * sizeof(uint32_t));
+  static_assert(sizeof(double) == 2 * sizeof(uint32_t), "Cannot compile IceModelVec::fletcher64() (sizeof(double) != 2 * sizeof(uint32_t))");
 
   MPI_Status mpi_stat;
   const int checksum_tag = 42;
