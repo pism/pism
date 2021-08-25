@@ -40,7 +40,7 @@ namespace pism {
 struct IceModelVec2T::Data {
   Data()
     : array(nullptr),
-      N(0),
+      n_records(0),
       first(-1),
       period(0.0),
       reference_time(0.0) {
@@ -55,7 +55,7 @@ struct IceModelVec2T::Data {
   //! file to read (regrid) from
   std::string filename;
 
-  // DM with dof equal to the number of records kept in memory
+  // DM with dof equal to buffer_size
   std::shared_ptr<petsc::DM> da;
 
   //! a 3D Vec used to store records
@@ -63,11 +63,11 @@ struct IceModelVec2T::Data {
 
   double ***array;
 
-  //! maximum number of records to store in memory
+  //! maximum number of records stored in memory
   unsigned int buffer_size;
 
-  //! number of records kept in memory
-  unsigned int N;
+  //! number of records currently kept in memory
+  unsigned int n_records;
 
   //! number of evaluations per year used to compute temporal averages
   unsigned int n_evaluations_per_year;
@@ -79,7 +79,7 @@ struct IceModelVec2T::Data {
   InterpolationType interp_type;
   std::shared_ptr<Interpolation> interp;
 
-  // forcing period, in years
+  // forcing period, in seconds
   double period;
 
   // reference time, in seconds
@@ -146,7 +146,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 
   // set the time to zero
   result->m_data->time = {0.0};
-  result->m_data->N = 1;
+  result->m_data->n_records = 1;
   result->m_data->first = 0;
 
   // set fake time bounds:
@@ -321,8 +321,8 @@ void IceModelVec2T::update(double t, double dt) {
     return;
   }
 
-  if (m_data->N > 0) {
-    unsigned int last = m_data->first + (m_data->N - 1);
+  if (m_data->n_records > 0) {
+    unsigned int last = m_data->first + (m_data->n_records - 1);
 
     // find the interval covered by data held in memory:
     double t0 = m_data->time_bounds[m_data->first * 2];
@@ -371,8 +371,8 @@ void IceModelVec2T::update(unsigned int start) {
 
   int kept = 0;
   if (m_data->first >= 0) {
-    unsigned int last = m_data->first + (m_data->N - 1);
-    if ((m_data->N > 0) && (start >= (unsigned int)m_data->first) && (start <= last)) {
+    unsigned int last = m_data->first + (m_data->n_records - 1);
+    if ((m_data->n_records > 0) && (start >= (unsigned int)m_data->first) && (start <= last)) {
       int discarded = start - m_data->first;
       kept = last - start + 1;
       discard(discarded);
@@ -390,7 +390,7 @@ void IceModelVec2T::update(unsigned int start) {
     return;
   }
 
-  m_data->N = kept + missing;
+  m_data->n_records = kept + missing;
 
   auto t = m_impl->grid->ctx()->time();
 
@@ -437,7 +437,7 @@ void IceModelVec2T::discard(int number) {
     return;
   }
 
-  m_data->N -= number;
+  m_data->n_records -= number;
 
   AccessList l{this};
 
@@ -445,7 +445,7 @@ void IceModelVec2T::discard(int number) {
   for (Points p(*m_impl->grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    for (unsigned int k = 0; k < m_data->N; ++k) {
+    for (unsigned int k = 0; k < m_data->n_records; ++k) {
       a3[j][i][k] = a3[j][i][k + number];
     }
   }
@@ -605,7 +605,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   m_data->interp.reset(new Interpolation(m_data->interp_type,
                                          &m_data->time[m_data->first],
-                                         m_data->N,
+                                         m_data->n_records,
                                          times_requested.data(),
                                          times_requested.size(),
                                          m_data->period));
@@ -636,7 +636,7 @@ double IceModelVec2T::average(int i, int j) {
   unsigned int M = m_data->interp->alpha().size();
   double result = 0.0;
 
-  if (m_data->N == 1) {
+  if (m_data->n_records == 1) {
     double ***a3 = array3();
     result = a3[j][i][0];
   } else {
