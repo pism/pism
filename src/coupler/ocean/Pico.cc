@@ -163,7 +163,7 @@ void Pico::init_impl(const Geometry &geometry) {
                  physics.continental_shelf_depth());
 
   // read time-independent data right away:
-  if (m_theta_ocean->n_records() == 1 and m_salinity_ocean->n_records() == 1) {
+  if (m_theta_ocean->buffer_size() == 1 and m_salinity_ocean->buffer_size() == 1) {
     m_theta_ocean->update(m_grid->ctx()->time()->current(), 0.0);
     m_salinity_ocean->update(m_grid->ctx()->time()->current(), 0.0);
   }

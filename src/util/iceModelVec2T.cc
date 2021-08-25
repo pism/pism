@@ -64,7 +64,7 @@ struct IceModelVec2T::Data {
   double ***array;
 
   //! maximum number of records to store in memory
-  unsigned int n_records;
+  unsigned int buffer_size;
 
   //! number of records kept in memory
   unsigned int N;
@@ -114,24 +114,24 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
                                                bool periodic,
                                                InterpolationType interpolation_type) {
 
-  int n_records = file.nrecords(short_name, standard_name,
+  int buffer_size = file.nrecords(short_name, standard_name,
                                     grid->ctx()->unit_system());
 
   if (not periodic) {
-    n_records = std::min(n_records, max_buffer_size);
+    buffer_size = std::min(buffer_size, max_buffer_size);
   }
   // In the periodic case we try to keep all the records in RAM.
 
   // Allocate storage for one record if the variable was not found. This is needed to be
   // able to cheaply allocate and then discard an "-atmosphere given" model
   // (atmosphere::Given) when "-surface given" (Given) is selected.
-  n_records = std::max(n_records, 1);
+  buffer_size = std::max(buffer_size, 1);
 
   if (periodic and interpolation_type == LINEAR) {
     interpolation_type = LINEAR_PERIODIC;
   }
 
-  return std::make_shared<IceModelVec2T>(grid, short_name, n_records,
+  return std::make_shared<IceModelVec2T>(grid, short_name, buffer_size,
                                          evaluations_per_year, interpolation_type);
 }
 
@@ -156,7 +156,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 }
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
-                             unsigned int n_records,
+                             unsigned int buffer_size,
                              unsigned int n_evaluations_per_year,
                              InterpolationType interpolation_type)
   : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
@@ -165,7 +165,7 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   m_impl->report_range = false;
 
   m_data->interp_type            = interpolation_type;
-  m_data->n_records              = n_records;
+  m_data->buffer_size            = buffer_size;
   m_data->n_evaluations_per_year = n_evaluations_per_year;
 
   auto config = m_impl->grid->ctx()->config();
@@ -179,16 +179,16 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   }
 
   // LCOV_EXCL_START
-  if (n_records > IceGrid::max_dm_dof) {
+  if (buffer_size > IceGrid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot allocate storage for %d records of %s"
                                   " (exceeds the maximum of %d)",
-                                  n_records, short_name.c_str(), IceGrid::max_dm_dof);
+                                  buffer_size, short_name.c_str(), IceGrid::max_dm_dof);
   }
   // LCOV_EXCL_STOP
 
   // initialize the m_data->da member:
-  m_data->da = m_impl->grid->get_dm(n_records, this->m_impl->da_stencil_width);
+  m_data->da = m_impl->grid->get_dm(buffer_size, this->m_impl->da_stencil_width);
 
   // allocate the 3D Vec:
   PetscErrorCode ierr = DMCreateGlobalVector(*m_data->da, m_data->v.rawptr());
@@ -199,8 +199,8 @@ IceModelVec2T::~IceModelVec2T() {
   delete m_data;
 }
 
-unsigned int IceModelVec2T::n_records() {
-  return m_data->n_records;
+unsigned int IceModelVec2T::buffer_size() {
+  return m_data->buffer_size;
 }
 
 double*** IceModelVec2T::array3() {
@@ -293,7 +293,7 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
   }
 
   if (m_data->period > 0.0) {
-    if ((size_t)m_data->n_records < m_data->time.size()) {
+    if ((size_t)m_data->buffer_size < m_data->time.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "buffer has to be big enough to hold all records of periodic data");
     }
@@ -343,16 +343,16 @@ void IceModelVec2T::update(double t, double dt) {
 
   // check if all the records necessary to cover this interval fit in the
   // buffer:
-  if (N > m_data->n_records) {
+  if (N > m_data->buffer_size) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot read %d records of %s (buffer size: %d)",
-                                  N, m_impl->name.c_str(), m_data->n_records);
+                                  N, m_impl->name.c_str(), m_data->buffer_size);
   }
 
   update(first);
 }
 
-//! Update by reading at most n_records records from the file.
+//! Update by reading at most buffer_size records from the file.
 void IceModelVec2T::update(unsigned int start) {
 
   unsigned int time_size = (int)m_data->time.size();
@@ -362,7 +362,7 @@ void IceModelVec2T::update(unsigned int start) {
                                   "IceModelVec2T::update(int start): start = %d is invalid", start);
   }
 
-  unsigned int missing = std::min(m_data->n_records, time_size - start);
+  unsigned int missing = std::min(m_data->buffer_size, time_size - start);
 
   if (start == static_cast<unsigned int>(m_data->first)) {
     // nothing to do
@@ -395,7 +395,7 @@ void IceModelVec2T::update(unsigned int start) {
   auto t = m_impl->grid->ctx()->time();
 
   auto log = m_impl->grid->ctx()->log();
-  if (this->n_records() > 1) {
+  if (this->buffer_size() > 1) {
     log->message(4,
                "  reading \"%s\" into buffer\n"
                "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",

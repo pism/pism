@@ -82,7 +82,7 @@ void Given::init_impl(const Geometry &geometry) {
   m_shelfbmassflux->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
-  if (m_shelfbtemp->n_records() == 1 && m_shelfbmassflux->n_records() == 1) {
+  if (m_shelfbtemp->buffer_size() == 1 && m_shelfbmassflux->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 

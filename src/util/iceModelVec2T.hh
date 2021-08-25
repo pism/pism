@@ -56,12 +56,14 @@ public:
                                                  const std::string &short_name,
                                                  double value);
 
-  IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
+  IceModelVec2T(IceGrid::ConstPtr grid,
+                const std::string &short_name,
+                unsigned int buffer_size,
                 unsigned int n_evaluations_per_year,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 
-  unsigned int n_records();
+  unsigned int buffer_size();
 
   void init(const std::string &filename, bool periodic);
 

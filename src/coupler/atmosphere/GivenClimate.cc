@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -80,7 +80,7 @@ void Given::init_impl(const Geometry &geometry) {
   m_precipitation->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
-  if (m_air_temp->n_records() == 1 && m_precipitation->n_records() == 1) {
+  if (m_air_temp->buffer_size() == 1 && m_precipitation->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
