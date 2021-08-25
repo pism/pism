@@ -173,24 +173,10 @@ void ScalarForcing::initialize(const Context &ctx,
 
     bool extrapolate = ctx.config()->get_flag("input.forcing.time_extrapolation");
 
-    // Check if the modeled time interval is a subset of the interval covered by this
-    // forcing.
     if (not (extrapolate or periodic)) {
-      auto time = ctx.time();
-
-      double run_t0 = time->start();
-      double run_t1 = time->end();
-
-      if (not (run_t0 >= forcing_t0 and
-               run_t1 <= forcing_t1)) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "A time-dependent forcing has to span the whole length of the simulation\n"
-                                      "  Run time:     [%s, %s]\n"
-                                      "  Forcing data: [%s, %s]",
-                                      time->date(run_t0).c_str(), time->date(run_t1).c_str(),
-                                      time->date(forcing_t0).c_str(), time->date(forcing_t1).c_str());
-      }
+      check_forcing_duration(*ctx.time(), forcing_t0, forcing_t1);
     }
+
   } catch (RuntimeError &e) {
     e.add_context("reading %s (%s) from '%s'",
                   long_name.c_str(), variable_name.c_str(), filename.c_str());

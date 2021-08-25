@@ -175,6 +175,11 @@ protected:
   void compute_times_yearly(std::vector<double> &result) const;
 };
 
+void check_forcing_duration(const Time &time,
+                            double forcing_start,
+                            double forcing_end);
+
+
 } // end of namespace pism
 
 #endif /* _PISMTIME_H_ */

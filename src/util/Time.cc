@@ -884,4 +884,29 @@ void Time::compute_times(double time_start, double time_end,
   }
 }
 
+/*!
+ * Check if the modeled time interval is a subset of the time interval in a forcing file.
+ *
+ * Returns silently if it is, otherwise throws an exception with an error message.
+ */
+void check_forcing_duration(const Time &time,
+                            double forcing_start,
+                            double forcing_end) {
+
+  double run_start = time.start();
+  double run_end = time.end();
+
+  if (not (run_start >= forcing_start and
+           run_end <= forcing_end)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "A time-dependent forcing has to span the whole length of the simulation\n"
+                                  "  Run time:     [%s, %s]\n"
+                                  "  Forcing data: [%s, %s]",
+                                  time.date(run_start).c_str(),
+                                  time.date(run_end).c_str(),
+                                  time.date(forcing_start).c_str(),
+                                  time.date(forcing_end).c_str());
+  }
+}
+
 } // end of namespace pism
