@@ -809,7 +809,7 @@ class ISMIP6(TestCase):
 
         out.redef()
         out.write_attribute("time", "bounds", "time_bounds")
-        out.write_attribute("time", "units", "seconds since 2000-1-1")
+        out.write_attribute("time", "units", "seconds since 1-1-1")
 
         out.close()
 

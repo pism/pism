@@ -40,8 +40,8 @@ namespace pism {
 struct IceModelVec2T::Data {
   Data()
     : array(nullptr),
-      n_records(0),
       first(-1),
+      n_records(0),
       period(0.0),
       reference_time(0.0) {
     // empty
@@ -52,41 +52,45 @@ struct IceModelVec2T::Data {
   //! time bounds
   std::vector<double> time_bounds;
 
-  //! file to read (regrid) from
+  //! name of the file to read (regrid) from
   std::string filename;
 
-  // DM with dof equal to buffer_size
+  //! DM with dof equal to buffer_size
   std::shared_ptr<petsc::DM> da;
 
   //! a 3D Vec used to store records
   petsc::Vec v;
 
+  //! pointer used to access records stored in memory
   double ***array;
 
   //! maximum number of records stored in memory
   unsigned int buffer_size;
 
+  //! in-file index of the first record stored in memory (a signed `int` to allow
+  //! `first==-1` as an *invalid* first value)
+  int first;
+
   //! number of records currently kept in memory
   unsigned int n_records;
 
-  //! number of evaluations per year used to compute temporal averages
-  unsigned int n_evaluations_per_year;
-
-  //! in-file index of the first record stored in memory ("int" to allow first==-1 as an
-  //! "invalid" first value)
-  int first;
-
+  //! temporal interpolation type
   InterpolationType interp_type;
+
+  //! temporal interpolation code
   std::shared_ptr<Interpolation> interp;
 
-  // forcing period, in seconds
+  //! forcing period, in seconds
   double period;
 
-  // reference time, in seconds
+  //! reference time, in seconds
   double reference_time;
 
-  // minimum time step length in max_timestep()
+  //! minimum time step length in max_timestep(), in seconds
   double dt_min;
+
+  //! number of evaluations per year used to compute temporal averages
+  unsigned int n_evaluations_per_year;
 };
 
 /*!
@@ -150,7 +154,8 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
   result->m_data->first = 0;
 
   // set fake time bounds:
-  result->m_data->time_bounds = {-1.0, 1.0};
+  double eps = 0.5 * result->m_data->dt_min;
+  result->m_data->time_bounds = {-eps, eps};
 
   return result;
 }
@@ -229,77 +234,85 @@ void IceModelVec2T::end_access() const {
 }
 
 void IceModelVec2T::init(const std::string &filename, bool periodic) {
+  try {
+    auto ctx = m_impl->grid->ctx();
+    auto time = ctx->time();
 
-  auto ctx = m_impl->grid->ctx();
+    bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
 
-  m_data->filename = filename;
+    m_data->filename = filename;
 
-  File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
-  auto var = file.find_variable(m_impl->metadata[0].get_name(),
-                                m_impl->metadata[0].get_string("standard_name"));
-  if (not var.exists) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "can't find %s (%s) in %s.",
-                                  m_impl->metadata[0].get_string("long_name").c_str(),
-                                  m_impl->metadata[0].get_name().c_str(),
-                                  m_data->filename.c_str());
-  }
-
-  auto time_name = io::time_dimension(ctx->unit_system(), file, var.name);
-
-  // dimension_length() will return 0 if a dimension is missing
-  bool one_record = file.dimension_length(time_name) < 2;
-
-  if (not one_record) {
-    std::vector<double> times{};
-    std::vector<double> bounds{};
-    io::read_time_info(*ctx->log(), ctx->unit_system(),
-                       file, time_name, ctx->time()->units_string(),
-                       times, bounds);
-    size_t N = times.size();
-
-    if (periodic) {
-      m_data->reference_time = bounds.front();
-      m_data->period = bounds.back() - bounds.front();
+    File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
+    auto var = file.find_variable(m_impl->metadata[0].get_name(),
+                                  m_impl->metadata[0].get_string("standard_name"));
+    if (not var.exists) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "variable not found");
     }
 
-    if (times.size() > 1) {
+    auto time_name = io::time_dimension(ctx->unit_system(), file, var.name);
+
+    // dimension_length() will return 0 if a dimension is missing
+    bool one_record = file.dimension_length(time_name) < 2;
+
+    if (not one_record) {
+      std::vector<double> times{};
+      std::vector<double> bounds{};
+      io::read_time_info(*ctx->log(), ctx->unit_system(),
+                         file, time_name, time->units_string(),
+                         times, bounds);
+
+      if (periodic) {
+        m_data->reference_time = bounds.front();
+        m_data->period = bounds.back() - bounds.front();
+      }
 
       if (m_data->interp_type == PIECEWISE_CONSTANT) {
-        // time bounds data overrides the time variable: we make t[j] be the
+        // Time bounds data overrides the time variable: we make t[j] be the
         // left end-point of the j-th interval
-        for (unsigned int k = 0; k < N; ++k) {
+        for (unsigned int k = 0; k < times.size(); ++k) {
           times[k] = bounds[2*k + 0];
         }
       }
 
+      m_data->time        = times;
+      m_data->time_bounds = bounds;
+
     } else {
-      // only one time record; set fake time bounds:
-      bounds = {times[0] - 1.0, times[0] + 1.0};
-      // ignore "periodic" and keep m_data->period at zero
+      // Only one time record or no time dimension at all: set fake time bounds assuming
+      // that the user wants to use constant-in-time forcing for the whole simulation
+      extrapolate = true;
+
+      // this value does not matter
+      m_data->time = {0.0};
+
+      // set fake time bounds:
+      double eps = 0.5 * m_data->dt_min;
+      m_data->time_bounds = {-eps, eps};
+
+      // note that in this case all data is periodic and constant in time
     }
 
-    m_data->time        = times;
-    m_data->time_bounds = bounds;
-
-  } else {
-    // no time dimension; assume that we have only one record and set the time
-    // to 0
-    m_data->time = {0.0};
-
-    // set fake time bounds:
-    m_data->time_bounds = {-1.0, 1.0};
-
-    // note that in this case all data is periodic and constant in time
-  }
-
-  if (m_data->period > 0.0) {
-    if ((size_t)m_data->buffer_size < m_data->time.size()) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "buffer has to be big enough to hold all records of periodic data");
+    if (not (extrapolate or periodic)) {
+      check_forcing_duration(*time,
+                             m_data->time_bounds.front(),
+                             m_data->time_bounds.back());
     }
 
-    // read periodic data right away (we need to hold it all in memory anyway)
-    update(0);
+    if (periodic) {
+      if ((size_t)m_data->buffer_size < m_data->time.size()) {
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "buffer has to be big enough to hold all records of periodic data");
+      }
+
+      // read periodic data right away (we need to hold it all in memory anyway)
+      update(0);
+    }
+  } catch (RuntimeError &e) {
+    e.add_context("reading %s (%s) from '%s'",
+                  m_impl->metadata[0].get_string("long_name").c_str(),
+                  m_impl->metadata[0].get_name().c_str(),
+                  m_data->filename.c_str());
+    throw;
   }
 }
 

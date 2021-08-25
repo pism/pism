@@ -11,6 +11,11 @@ from unittest import TestCase
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
 
+# set run duration so that all forcing used here spans the duration of the run
+time = ctx.time
+time.set_start(0.5)
+time.set_end(1)
+
 class BeddefGiven(TestCase):
     def setUp(self):
 

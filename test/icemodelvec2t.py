@@ -12,6 +12,11 @@ ctx = PISM.Context()
 ctx.config.set_string("time.calendar", "360_day")
 ctx.ctx.time().init_calendar("360_day")
 
+# set run duration so that all forcing used here spans the duration of the run
+time = PISM.Context().time
+time.set_start(0.5)
+time.set_end(1)
+
 # suppress all output
 ctx.log.set_threshold(1)
 
