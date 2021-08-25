@@ -1182,12 +1182,13 @@ def test_bq2():
 
 class ScalarForcing(TestCase):
     def setUp(self):
-        self.filename = filename("scalar-forcing-input-")
-        self.filename_decreasing = filename("scalar-forcing-decreasing-")
-        self.filename_wrong_bounds = filename("scalar-forcing-wrong-bounds-")
-        self.filename_2d = filename("scalar-forcing-2d-")
-        self.filename_1 = filename("scalar-forcing-one-value-")
-        self.filename_no_bounds = filename("scalar-forcing-no-bounds-")
+        suffix = filename("-scalar-forcing-")
+        self.filename              = "input" + suffix
+        self.filename_decreasing   = "decreasing" + suffix
+        self.filename_wrong_bounds = "wrong-bounds" + suffix
+        self.filename_2d           = "2d" + suffix
+        self.filename_1            = "one-value" + suffix
+        self.filename_no_bounds    = "no-bounds" + suffix
 
         def f(x):
             return np.sin(2 * np.pi / 12 * x)
@@ -1251,28 +1252,33 @@ class ScalarForcing(TestCase):
         except:
             pass
 
+    def create(self, filename=None, periodic=False):
+        if filename is not None:
+            return PISM.ScalarForcing(ctx.ctx,
+                                      filename,
+                                      "delta_T",
+                                      "K",
+                                      "K",
+                                      "temperature offsets", periodic)
+
+        return PISM.ScalarForcing(ctx.ctx,
+                                  "surface.delta_T",
+                                  "delta_T",
+                                  "K",
+                                  "K",
+                                  "temperature offsets")
+
     def test_file_not_set(self):
         try:
             ctx.config.set_string("surface.delta_T.file", "")
-            PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets")
+            self.create()
             assert False, "failed to stop if prefix.file is empty"
         except RuntimeError:
             pass
 
     def test_decreasing_time(self):
         try:
-            PISM.ScalarForcing(ctx.ctx,
-                               self.filename_decreasing,
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets",
-                               False)
+            self.create(self.filename_decreasing, False)
             assert False, "failed to stop if times are non-increasing"
         except RuntimeError as e:
             print(e)
@@ -1280,13 +1286,7 @@ class ScalarForcing(TestCase):
 
     def test_wrong_bounds(self):
         try:
-            PISM.ScalarForcing(ctx.ctx,
-                               self.filename_wrong_bounds,
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets",
-                               False)
+            self.create(self.filename_wrong_bounds, False)
             assert False, "failed to stop if time bounds are wrong"
         except RuntimeError as e:
             print(e)
@@ -1294,14 +1294,7 @@ class ScalarForcing(TestCase):
 
     def test_invalid_dimensions(self):
         try:
-            ctx.config.set_string("surface.delta_T.file", self.filename_2d)
-            ctx.config.set_flag("surface.delta_T.periodic", False)
-            PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets")
+            self.create(self.filename_2d, False)
             assert False, "failed to stop if the variable is not scalar"
         except RuntimeError as e:
             print(e)
@@ -1309,13 +1302,7 @@ class ScalarForcing(TestCase):
 
     def test_no_time_bounds(self):
         try:
-            ctx.config.set_string("surface.delta_T.file", self.filename_no_bounds)
-            PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets")
+            self.create(self.filename_no_bounds, False)
             assert False, "failed to stop if time bounds are missing"
         except RuntimeError:
             pass
@@ -1324,14 +1311,7 @@ class ScalarForcing(TestCase):
         end = ctx.time.end()
         try:
             ctx.time.set_end(100)
-
-            PISM.ScalarForcing(ctx.ctx,
-                               self.filename,
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets",
-                               False)
+            self.create(self.filename, False)
             assert False, "failed to stop because forcing does not span model time"
         except RuntimeError as e:
             print(e)
@@ -1340,14 +1320,7 @@ class ScalarForcing(TestCase):
             ctx.time.set_end(end)
 
     def test_periodic_interpolation(self):
-        ctx.config.set_string("surface.delta_T.file", self.filename)
-        ctx.config.set_flag("surface.delta_T.periodic", True)
-        F = PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets")
+        F = self.create(self.filename, True)
 
         Y_numpy = np.interp(self.ts, self.times_long, self.values_long)
         Y = [F.value(t) for t in self.ts]
@@ -1357,12 +1330,8 @@ class ScalarForcing(TestCase):
     def test_interpolation(self):
         ctx.config.set_string("surface.delta_T.file", self.filename)
         ctx.config.set_flag("surface.delta_T.periodic", False)
-        F = PISM.ScalarForcing(ctx.ctx,
-                               "surface.delta_T",
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets")
+
+        F = self.create()
 
         # two outside and one inside
         T = [-1, 13, 5.123]
@@ -1373,13 +1342,7 @@ class ScalarForcing(TestCase):
         np.testing.assert_almost_equal(Y, Y_numpy)
 
     def test_one_value(self):
-        F = PISM.ScalarForcing(ctx.ctx,
-                               self.filename_1,
-                               "delta_T",
-                               "K",
-                               "K",
-                               "temperature offsets",
-                               False)
+        F = self.create(self.filename_1, False)
 
         T = [1, 2]
 
@@ -1397,12 +1360,7 @@ class ScalarForcing(TestCase):
                 PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
                                                    values, times, time_bounds)
 
-                ctx.config.set_flag("surface.delta_T.periodic", periodic)
-
-                ctx.config.set_string("surface.delta_T.file", filename)
-
-                F = PISM.ScalarForcing(ctx.ctx, "surface.delta_T", "delta_T",
-                                       "Kelvin", "Kelvin", "temperature offsets")
+                F = self.create(filename, periodic)
 
                 return F.average(t, dt)
             finally:
