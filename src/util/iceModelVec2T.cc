@@ -61,7 +61,7 @@ struct IceModelVec2T::Data {
   //! a 3D Vec used to store records
   petsc::Vec v;
 
-  void ***array;
+  double ***array;
 
   //! maximum number of records to store in memory
   unsigned int n_records;
@@ -204,7 +204,7 @@ unsigned int IceModelVec2T::n_records() {
 }
 
 double*** IceModelVec2T::array3() {
-  return reinterpret_cast<double***>(m_data->array);
+  return m_data->array;
 }
 
 void IceModelVec2T::begin_access() const {
