@@ -5,6 +5,7 @@
 import PISM
 from PISM.testing import shallow_grid, create_forcing
 import os
+import numpy as np
 
 from unittest import TestCase
 
@@ -74,17 +75,19 @@ class BeddefGiven(TestCase):
         opts = PISM.process_input_options(ctx.com, ctx.config)
         model.init(opts, geometry.ice_thickness, geometry.sea_level_elevation)
 
+        # use dt == 0 to sample topg_delta at a predictable time
+        dt = 0.0
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     1, 1)
+                     1, dt)
 
         topg_0 = model.bed_elevation().numpy()[0, 0]
 
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     2, 1)
+                     2, dt)
 
         topg_1 = model.bed_elevation().numpy()[0, 0]
 
         # -4 - 2 == -6 (see the create_forcing() call above)
-        assert topg_1 - topg_0 == -6
+        np.testing.assert_almost_equal(topg_1 - topg_0, -6)

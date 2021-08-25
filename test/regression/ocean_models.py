@@ -551,9 +551,9 @@ class DeltaSL2D(TestCase):
         modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
 
         modifier.init(self.geometry)
-        # Use a one second time step to try to sample sea level forcing midway through the
-        # interval from 0 to 1 year.
-        modifier.update(self.geometry, 0.5 * seconds_per_year, 1)
+        # use dt == 0.0 to sample delta_SL at a predictable time
+        dt = 0.0
+        modifier.update(self.geometry, 0.5 * seconds_per_year, dt)
         check_difference(modifier.elevation(),
                          self.model.elevation(),
                          self.dSL)
