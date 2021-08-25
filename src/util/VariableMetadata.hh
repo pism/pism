@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,40 +70,43 @@ class Logger;
 class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, units::System::Ptr system, unsigned int ndims = 0);
-  virtual ~VariableMetadata();
+  virtual ~VariableMetadata() = default;
 
-  // setters
+  // getters and setters
+  double get_number(const std::string &name) const;
   void set_number(const std::string &name, double value);
+
+  std::vector<double> get_numbers(const std::string &name) const;
   void set_numbers(const std::string &name, const std::vector<double> &values);
+
+  std::string get_name() const;
   void set_name(const std::string &name);
+
+  std::string get_string(const std::string &name) const;
   void set_string(const std::string &name, const std::string &value);
 
+  bool get_time_independent() const;
   void set_time_independent(bool flag);
+
+  IO_Type get_output_type() const;
   void set_output_type(IO_Type type);
 
   void clear_all_doubles();
   void clear_all_strings();
 
-  // getters
+  // more getters
   units::System::Ptr unit_system() const;
 
-  double get_number(const std::string &name) const;
-  std::vector<double> get_numbers(const std::string &name) const;
-  std::string get_name() const;
-  std::string get_string(const std::string &name) const;
-
-  unsigned int get_n_spatial_dimensions() const;
+  unsigned int n_spatial_dimensions() const;
 
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
-  bool get_time_independent() const;
-  IO_Type get_output_type() const;
 
   typedef std::map<std::string,std::string> StringAttrs;
-  const StringAttrs& get_all_strings() const;
+  const StringAttrs& all_strings() const;
 
   typedef std::map<std::string,std::vector<double> > DoubleAttrs;
-  const DoubleAttrs& get_all_doubles() const;
+  const DoubleAttrs& all_doubles() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max);
@@ -135,18 +138,17 @@ public:
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name);
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
                           const std::vector<double> &zlevels);
-  virtual ~SpatialVariableMetadata();
+  virtual ~SpatialVariableMetadata() = default;
 
-  void set_levels(const std::vector<double> &levels);
-  const std::vector<double>& get_levels() const;
+  const std::vector<double>& levels() const;
 
-  VariableMetadata& get_x();
-  VariableMetadata& get_y();
-  VariableMetadata& get_z();
+  VariableMetadata& x();
+  VariableMetadata& y();
+  VariableMetadata& z();
 
-  const VariableMetadata& get_x() const;
-  const VariableMetadata& get_y() const;
-  const VariableMetadata& get_z() const;
+  const VariableMetadata& x() const;
+  const VariableMetadata& y() const;
+  const VariableMetadata& z() const;
 
 private:
   VariableMetadata m_x, m_y, m_z;

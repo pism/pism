@@ -1921,9 +1921,9 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   }
 
   m_vars = {SpatialVariableMetadata(m_sys, m_var_name + "_bnds", levels)};
-  m_vars[0].get_z().set_name("nv4");
-  m_vars[0].get_z().clear_all_strings();
-  m_vars[0].get_z().clear_all_doubles();
+  m_vars[0].z().set_name("nv4");
+  m_vars[0].z().clear_all_strings();
+  m_vars[0].z().clear_all_doubles();
   m_vars[0].set_time_independent(true);
 
   if (m_var_name == "lon") {

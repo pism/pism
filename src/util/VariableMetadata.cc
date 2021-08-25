@@ -51,13 +51,9 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
   // valid_min and valid_max are unset
 }
 
-VariableMetadata::~VariableMetadata() {
-  // empty
-}
-
 /** Get the number of spatial dimensions.
  */
-unsigned int VariableMetadata::get_n_spatial_dimensions() const {
+unsigned int VariableMetadata::n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
@@ -167,27 +163,15 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   this->set_time_independent(false);
 
   if (m_zlevels.size() > 1) {
-    get_z().set_name("z");      // default; can be overridden easily
+    z().set_name("z");      // default; can be overridden easily
     m_n_spatial_dims = 3;
   } else {
-    get_z().set_name("");
+    z().set_name("");
     m_n_spatial_dims = 2;
   }
 }
 
-SpatialVariableMetadata::~SpatialVariableMetadata() {
-  // empty
-}
-
-void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
-  if (levels.size() < 1) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "argument \"levels\" has to have length 1 or greater");
-  }
-  m_zlevels = levels;
-}
-
-
-const std::vector<double>& SpatialVariableMetadata::get_levels() const {
+const std::vector<double>& SpatialVariableMetadata::levels() const {
   return m_zlevels;
 }
 
@@ -232,27 +216,27 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   }
 }
 
-VariableMetadata& SpatialVariableMetadata::get_x() {
+VariableMetadata& SpatialVariableMetadata::x() {
   return m_x;
 }
 
-VariableMetadata& SpatialVariableMetadata::get_y() {
+VariableMetadata& SpatialVariableMetadata::y() {
   return m_y;
 }
 
-VariableMetadata& SpatialVariableMetadata::get_z() {
+VariableMetadata& SpatialVariableMetadata::z() {
   return m_z;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_x() const {
+const VariableMetadata& SpatialVariableMetadata::x() const {
   return m_x;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_y() const {
+const VariableMetadata& SpatialVariableMetadata::y() const {
   return m_y;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_z() const {
+const VariableMetadata& SpatialVariableMetadata::z() const {
   return m_z;
 }
 
@@ -277,7 +261,7 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
 }
 
 bool VariableMetadata::has_attributes() const {
-  return not (this->get_all_strings().empty() and this->get_all_doubles().empty());
+  return not (this->all_strings().empty() and this->all_doubles().empty());
 }
 
 void VariableMetadata::set_name(const std::string &name) {
@@ -327,11 +311,11 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
   }
 }
 
-const VariableMetadata::StringAttrs& VariableMetadata::get_all_strings() const {
+const VariableMetadata::StringAttrs& VariableMetadata::all_strings() const {
   return m_strings;
 }
 
-const VariableMetadata::DoubleAttrs& VariableMetadata::get_all_doubles() const {
+const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
   return m_doubles;
 }
 
@@ -380,8 +364,8 @@ std::string VariableMetadata::get_string(const std::string &name) const {
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
-  const VariableMetadata::StringAttrs &strings = this->get_all_strings();
-  const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
+  const VariableMetadata::StringAttrs &strings = this->all_strings();
+  const VariableMetadata::DoubleAttrs &doubles = this->all_doubles();
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;

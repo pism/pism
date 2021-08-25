@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,7 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 // doubles
 
 double NetCDFConfig::get_number_impl(const std::string &name) const {
-  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
+  const VariableMetadata::DoubleAttrs& doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_number(name);
   } else {
@@ -57,7 +57,7 @@ double NetCDFConfig::get_number_impl(const std::string &name) const {
 }
 
 std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
-  const VariableMetadata::DoubleAttrs& doubles = m_data.get_all_doubles();
+  const VariableMetadata::DoubleAttrs& doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_numbers(name);
   } else {
@@ -72,7 +72,7 @@ std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) cons
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
   Doubles result;
 
-  for (auto d : m_data.get_all_doubles()) {
+  for (auto d : m_data.all_doubles()) {
     result[d.first] = d.second;
   }
   return result;
@@ -91,7 +91,7 @@ void NetCDFConfig::set_numbers_impl(const std::string &name,
 // strings
 
 std::string NetCDFConfig::get_string_impl(const std::string &name) const {
-  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
+  const VariableMetadata::StringAttrs& strings = m_data.all_strings();
   if (strings.find(name) != strings.end()) {
     return m_data.get_string(name);
   } else {
@@ -103,7 +103,7 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
 }
 
 Config::Strings NetCDFConfig::all_strings_impl() const {
-  VariableMetadata::StringAttrs strings = m_data.get_all_strings();
+  VariableMetadata::StringAttrs strings = m_data.all_strings();
   Strings result;
 
   for (auto s : strings) {
@@ -136,7 +136,7 @@ static bool string_is_true(const std::string &value) {
 }
 
 bool NetCDFConfig::get_flag_impl(const std::string &name) const {
-  const VariableMetadata::StringAttrs& strings = m_data.get_all_strings();
+  const VariableMetadata::StringAttrs& strings = m_data.all_strings();
   auto j = strings.find(name);
   if (j != strings.end()) {
 
@@ -164,7 +164,7 @@ bool NetCDFConfig::get_flag_impl(const std::string &name) const {
 Config::Flags NetCDFConfig::all_flags_impl() const {
   Flags result;
 
-  for (auto b : m_data.get_all_strings()) {
+  for (auto b : m_data.all_strings()) {
     std::string name = b.first;
     std::string value = b.second;
 

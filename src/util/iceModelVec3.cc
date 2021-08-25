@@ -90,10 +90,10 @@ IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid,
 
   m_impl->metadata[0] = SpatialVariableMetadata(m_impl->grid->ctx()->unit_system(),
                                                 m_impl->name, m_impl->zlevels);
-  m_impl->metadata[0].get_z().set_name(z_name);
+  m_impl->metadata[0].z().set_name(z_name);
 
   for (auto z_attr : z_attrs) {
-    m_impl->metadata[0].get_z().set_string(z_attr.first, z_attr.second);
+    m_impl->metadata[0].z().set_string(z_attr.first, z_attr.second);
   }
 }
 
@@ -307,8 +307,8 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
 
 std::shared_ptr<IceModelVec3> IceModelVec3::allocate_copy() const {
   auto name = get_name();
-  auto z_name = metadata().get_z().get_name();
-  auto z_attrs = metadata().get_z().get_all_strings();
+  auto z_name = metadata().z().get_name();
+  auto z_attrs = metadata().z().all_strings();
 
   return std::make_shared<IceModelVec3>(grid(), name, z_name, levels(), z_attrs);
 }

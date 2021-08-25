@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -278,34 +278,34 @@ static void define_dimensions(const SpatialVariableMetadata& var,
                               const IceGrid& grid, const File &file) {
 
   // x
-  std::string x_name = var.get_x().get_name();
+  std::string x_name = var.x().get_name();
   if (not file.find_dimension(x_name)) {
-    define_dimension(file, grid.Mx(), var.get_x());
+    define_dimension(file, grid.Mx(), var.x());
     file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
                          {grid.x(1) - grid.x(0)});
     file.write_attribute(x_name, "not_written", PISM_INT, {1.0});
   }
 
   // y
-  std::string y_name = var.get_y().get_name();
+  std::string y_name = var.y().get_name();
   if (not file.find_dimension(y_name)) {
-    define_dimension(file, grid.My(), var.get_y());
+    define_dimension(file, grid.My(), var.y());
     file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
                          {grid.y(1) - grid.y(0)});
     file.write_attribute(y_name, "not_written", PISM_INT, {1.0});
   }
 
   // z
-  std::string z_name = var.get_z().get_name();
+  std::string z_name = var.z().get_name();
   if (not z_name.empty()) {
     if (not file.find_dimension(z_name)) {
-      const std::vector<double>& levels = var.get_levels();
+      const std::vector<double>& levels = var.levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
-      define_dimension(file, nlevels, var.get_z());
+      define_dimension(file, nlevels, var.z());
       file.write_attribute(z_name, "not_written", PISM_INT, {1.0});
 
-      bool spatial_dim = not var.get_z().get_string("axis").empty();
+      bool spatial_dim = not var.z().get_string("axis").empty();
 
       if (nlevels > 1 and spatial_dim) {
         double dz_max = levels[1] - levels[0];
@@ -339,21 +339,21 @@ static void write_dimension_data(const File &file, const std::string &name,
 void write_dimensions(const SpatialVariableMetadata& var,
                       const IceGrid& grid, const File &file) {
   // x
-  std::string x_name = var.get_x().get_name();
+  std::string x_name = var.x().get_name();
   if (file.find_dimension(x_name)) {
     write_dimension_data(file, x_name, grid.x());
   }
 
   // y
-  std::string y_name = var.get_y().get_name();
+  std::string y_name = var.y().get_name();
   if (file.find_dimension(y_name)) {
     write_dimension_data(file, y_name, grid.y());
   }
 
   // z
-  std::string z_name = var.get_z().get_name();
+  std::string z_name = var.z().get_name();
   if (file.find_dimension(z_name)) {
-    write_dimension_data(file, z_name, var.get_levels());
+    write_dimension_data(file, z_name, var.levels());
   }
 }
 
@@ -568,9 +568,9 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   define_dimensions(var, grid, file);
 
   std::string
-    x = var.get_x().get_name(),
-    y = var.get_y().get_name(),
-    z = var.get_z().get_name();
+    x = var.x().get_name(),
+    y = var.y().get_name(),
+    z = var.z().get_name();
 
   if (not var.get_time_independent()) {
     dims.push_back(grid.ctx()->config()->get_string("time.dimension_name"));
@@ -634,7 +634,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   {
     // Set of spatial dimensions this field has.
     std::set<int> axes {X_AXIS, Y_AXIS};
-    if (not variable.get_z().get_name().empty()) {
+    if (not variable.z().get_name().empty()) {
       axes.insert(Z_AXIS);
     }
 
@@ -672,7 +672,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   }
 
   // make sure we have at least one level
-  auto zlevels = variable.get_levels();
+  auto zlevels = variable.levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
   read_distributed_array(file, grid, var.name, nlevels, time, output);
@@ -744,7 +744,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   }
 
   // make sure we have at least one level
-  unsigned int nlevels = std::max(var.get_levels().size(), (size_t)1);
+  unsigned int nlevels = std::max(var.levels().size(), (size_t)1);
 
   std::string
     units               = var.get_string("units"),
@@ -926,7 +926,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   const Logger &log = *grid.ctx()->log();
 
   units::System::Ptr sys = variable.unit_system();
-  const std::vector<double>& levels = variable.get_levels();
+  const std::vector<double>& levels = variable.levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
@@ -1406,7 +1406,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, IO_Typ
     }
 
     // Write text attributes:
-    for (auto s : variable.get_all_strings()) {
+    for (auto s : variable.all_strings()) {
       std::string
         name  = s.first,
         value = s.second;
@@ -1421,7 +1421,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, IO_Typ
     }
 
     // Write double attributes:
-    for (auto d : variable.get_all_doubles()) {
+    for (auto d : variable.all_doubles()) {
       std::string name  = d.first;
       std::vector<double> values = d.second;
 

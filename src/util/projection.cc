@@ -145,7 +145,7 @@ void check_consistency_epsg(const MappingInfo &info) {
   } else {
     // Check if the "info.mapping" variable in the input file matches the EPSG code.
     // Check strings.
-    for (auto s : epsg_mapping.get_all_strings()) {
+    for (auto s : epsg_mapping.all_strings()) {
       if (not info.mapping.has_attribute(s.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "PROJ string \"%s\" requires %s = \"%s\",\n"
@@ -169,7 +169,7 @@ void check_consistency_epsg(const MappingInfo &info) {
     }
 
     // Check doubles
-    for (auto d : epsg_mapping.get_all_doubles()) {
+    for (auto d : epsg_mapping.all_doubles()) {
       if (not info.mapping.has_attribute(d.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
