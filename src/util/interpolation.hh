@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -134,6 +134,11 @@ private:
                            unsigned int x_size,
                            const double *output_x,
                            unsigned int output_x_size);
+
+  void init_weights_piecewise_constant(const double *x,
+                                       unsigned int x_size,
+                                       const double *output_x,
+                                       unsigned int output_x_size);
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -171,6 +171,9 @@ void Interpolation::init_nearest(const double *input_x, unsigned int input_x_siz
   }
 }
 
+/*!
+ * Input grid `input_x` corresponds to *left* end-points of intervals.
+ */
 void Interpolation::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                             const double *output_x, unsigned int output_x_size) {
 
@@ -209,6 +212,8 @@ void Interpolation::init_piecewise_constant(const double *input_x, unsigned int 
     assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
     assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
   }
+
+  init_weights_piecewise_constant(input_x, input_x_size, output_x, output_x_size);
 }
 
 void Interpolation::init_linear_periodic(const double *input_x, unsigned int input_x_size,
@@ -292,6 +297,7 @@ void Interpolation::init_weights_linear(const double *x,
                                         unsigned int output_x_size) {
 
   if (output_x_size == 1) {
+    // only one point requested: this cannot define an interval to integrate over
     m_w = {0.0};
     m_interval_length = 0.0;
     return;
@@ -343,6 +349,61 @@ void Interpolation::init_weights_linear(const double *x,
     // last interval
     m_w[bl] += 0.5 * (2.0 - alpha_b) * (b - x[bl]);
     m_w[br] += 0.5 * alpha_b * (b - x[bl]);
+  }
+}
+
+/*!
+ * Initialize integration weights in the piecewise-constant case
+ */
+void Interpolation::init_weights_piecewise_constant(const double *x,
+                                                    unsigned int x_size,
+                                                    const double *output_x,
+                                                    unsigned int output_x_size) {
+
+  if (output_x_size == 1) {
+    // only one point requested: this cannot define an interval to integrate over
+    m_w = {0.0};
+    m_interval_length = 0.0;
+    return;
+  }
+
+  int
+    N = output_x_size - 1,
+    al = m_left[0],
+    ar = m_right[0],
+    bl = m_left[N],
+    br = m_right[N];
+
+  double
+    a = output_x[0],
+    b = output_x[N];
+
+  if (a >= b) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid interval: (%f, %f)", a, b);
+  }
+
+  m_interval_length = b - a;
+
+  m_w.resize(x_size);
+  for (unsigned int k = 0; k < x_size; ++k) {
+    m_w[k] = 0.0;
+  }
+
+  if (al == bl and ar == br) {
+    // both end points are in the same interval
+    m_w[al] += (b - a);
+  } else {
+    // first interval
+    m_w[al] += (x[ar] - a);
+
+    // intermediate intervals
+    for (int k = ar; k < bl; ++k) {
+      m_w[k] += x[k + 1] - x[k];
+    }
+
+    // last interval
+    m_w[bl] += b - x[bl];
   }
 }
 
