@@ -224,7 +224,7 @@ void IceModelVec2T::end_access() const {
   if (m_impl->access_counter == 0) {
     PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_data->da, m_data->v, &m_data->array);
     PISM_CHK(ierr, "DMDAVecRestoreArrayDOF");
-    m_data->array = NULL;
+    m_data->array = nullptr;
   }
 }
 
@@ -584,8 +584,6 @@ void IceModelVec2T::average(double t, double dt) {
 void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
   assert(m_data->first >= 0);
-
-  auto time = m_impl->grid->ctx()->time();
 
   // Compute "periodized" times if necessary.
   std::vector<double> times_requested(ts.size());
