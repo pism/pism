@@ -482,6 +482,7 @@ void IceModelVec2T::get_record(int n) {
 MaxTimestep IceModelVec2T::max_timestep(double t) const {
   // only allow going to the next record
 
+  // FIXME: don't mix times and time bounds here!
   // find the index k such that m_data->time[k] <= x < m_data->time[k + 1]
   size_t k = gsl_interp_bsearch(m_data->time.data(), t, 0, m_data->time.size());
 
