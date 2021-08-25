@@ -311,11 +311,6 @@ void IceModelVec2T::update(double t, double dt) {
     return;
   }
 
-  if (m_data->time_bounds.empty()) {
-    update(0);
-    return;
-  }
-
   if (m_data->period > 0.0) {
     // we read all data in IceModelVec2T::init() (see above)
     return;
