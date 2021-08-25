@@ -38,6 +38,31 @@ Interpolation::Interpolation(InterpolationType type,
                              const double *input_x, unsigned int input_x_size,
                              const double *output_x, unsigned int output_x_size,
                              double period) {
+
+  // the trivial case (the code below requires input_x_size >= 2)
+  if (input_x_size < 2) {
+    m_left.resize(output_x_size);
+    m_right.resize(output_x_size);
+    m_alpha.resize(output_x_size);
+
+    for (unsigned int k = 0; k < output_x_size; ++k) {
+      m_left[k]  = 0.0;
+      m_right[k] = 0.0;
+      m_alpha[k] = 0.0;
+    }
+
+    return;
+  }
+
+  // input grid points have to be stored in the increasing order
+  for (unsigned int i = 0; i < input_x_size - 1; ++i) {
+    if (input_x[i] >= input_x[i + 1]) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "an input grid for interpolation has to be "
+                         "strictly increasing");
+    }
+  }
+
   switch (type) {
   case LINEAR:
     init_linear(input_x, input_x_size, output_x, output_x_size);
@@ -51,8 +76,10 @@ Interpolation::Interpolation(InterpolationType type,
   case LINEAR_PERIODIC:
     init_linear_periodic(input_x, input_x_size, output_x, output_x_size, period);
     break;
+    // LCOV_EXCL_START
   default:
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type");
+    // LCOV_EXCL_STOP
   }
 }
 
@@ -66,28 +93,11 @@ Interpolation::Interpolation(InterpolationType type,
  */
 void Interpolation::init_linear(const double *input_x, unsigned int input_x_size,
                                 const double *output_x, unsigned int output_x_size) {
+  assert(input_x_size >= 2);
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
-
-  // the trivial case (the code below requires input_x_size >= 2)
-  if (input_x_size < 2) {
-    for (unsigned int k = 0; k < output_x_size; ++k) {
-      m_left[k]  = 0.0;
-      m_right[k] = 0.0;
-      m_alpha[k] = 0.0;
-    }
-    return;
-  }
-
-  // input grid points have to be stored in the increasing order
-  for (unsigned int i = 0; i < input_x_size - 1; ++i) {
-    if (input_x[i] >= input_x[i + 1]) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "an input grid for linear interpolation has to be "
-                         "strictly increasing");
-    }
-  }
 
   // compute indexes and weights
   for (unsigned int i = 0; i < output_x_size; ++i) {
@@ -176,28 +186,11 @@ void Interpolation::init_nearest(const double *input_x, unsigned int input_x_siz
  */
 void Interpolation::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                             const double *output_x, unsigned int output_x_size) {
+  assert(input_x_size >= 2);
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
-
-  // the trivial case
-  if (input_x_size < 2) {
-    for (unsigned int i = 0; i < output_x_size; ++i) {
-      m_left[i]  = 0;
-      m_right[i] = 0;
-      m_alpha[i] = 0.0;
-    }
-    return;
-  }
-
-  // input grid points have to be stored in the increasing order
-  for (unsigned int i = 0; i < input_x_size - 1; ++i) {
-    if (input_x[i] >= input_x[i + 1]) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "an input grid for interpolation has to be "
-                         "strictly increasing");
-    }
-  }
 
   // compute indexes and weights
   for (unsigned int i = 0; i < output_x_size; ++i) {
@@ -221,28 +214,11 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
                                          double period) {
 
   assert(period > 0);
+  assert(input_x_size >= 2);
 
   m_left.resize(output_x_size);
   m_right.resize(output_x_size);
   m_alpha.resize(output_x_size);
-
-  // the trivial case
-  if (input_x_size < 2) {
-    for (unsigned int i = 0; i < output_x_size; ++i) {
-      m_left[i]  = 0;
-      m_right[i] = 0;
-      m_alpha[i] = 0.0;
-    }
-    return;
-  }
-
-  // input grid points have to be stored in the increasing order
-  for (unsigned int i = 0; i < input_x_size - 1; ++i) {
-    if (input_x[i] >= input_x[i + 1]) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "an input grid for interpolation has to be "
-                         "strictly increasing");
-    }
-  }
 
   // compute indexes and weights
   for (unsigned int i = 0; i < output_x_size; ++i) {
@@ -296,9 +272,9 @@ void Interpolation::init_weights_linear(const double *x,
                                         const double *output_x,
                                         unsigned int output_x_size) {
 
-  if (output_x_size == 1) {
+  if (output_x_size < 2) {
     // only one point requested: this cannot define an interval to integrate over
-    m_w = {0.0};
+    m_w = {};
     m_interval_length = 0.0;
     return;
   }
@@ -317,7 +293,11 @@ void Interpolation::init_weights_linear(const double *x,
     alpha_b = m_alpha[N];
 
   if (a >= b) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid interval: (%f, %f)", a, b);
+    // output points cannot do not define an interval [a, b] with a < b. We do not try to
+    // reverse integration limits.
+    m_w = {};
+    m_interval_length = 0.0;
+    return;
   }
 
   m_interval_length = b - a;
@@ -360,9 +340,9 @@ void Interpolation::init_weights_piecewise_constant(const double *x,
                                                     const double *output_x,
                                                     unsigned int output_x_size) {
 
-  if (output_x_size == 1) {
+  if (output_x_size < 2) {
     // only one point requested: this cannot define an interval to integrate over
-    m_w = {0.0};
+    m_w = {};
     m_interval_length = 0.0;
     return;
   }
@@ -379,8 +359,11 @@ void Interpolation::init_weights_piecewise_constant(const double *x,
     b = output_x[N];
 
   if (a >= b) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid interval: (%f, %f)", a, b);
+    // output points cannot do not define an interval [a, b] with a < b. We do not try to
+    // reverse integration limits.
+    m_w = {};
+    m_interval_length = 0.0;
+    return;
   }
 
   m_interval_length = b - a;
@@ -408,6 +391,11 @@ void Interpolation::init_weights_piecewise_constant(const double *x,
 }
 
 double Interpolation::integral(const double *input) const {
+  if (m_w.empty()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "cannot evaluate the integral");
+  }
+
   double result = 0.0;
   for (size_t k = 0; k < m_w.size(); ++k) {
     result += input[k] * m_w[k];

@@ -1040,6 +1040,62 @@ def test_trapezoid_integral():
     assert f(2, 5) == 3 * y[-1]
     assert f(3, 4) == 1 * y[-1]
 
+
+def test_piece_wise_constant_integral():
+    "Linear integration weights"
+    x = [0.0, 0.5, 1.0, 2.0]
+    y = [2.0, 2.5, 3.0, 2.0]
+
+    def f(a, b):
+        return PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, [a, b]).integral(y)
+
+    np.testing.assert_almost_equal(f(0, 2), 5.25)
+    np.testing.assert_almost_equal(f(0.25, 0.35), 0.2)
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2), f(0, 2))
+
+    # constant extrapolation:
+    np.testing.assert_almost_equal(f(-2, -1), 1 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0), 2 * y[0])
+    np.testing.assert_almost_equal(f(2, 5), 3 * y[-1])
+    np.testing.assert_almost_equal(f(3, 4), 1 * y[-1])
+
+def test_interpolation_other():
+    x = [0.0, 10.0]
+
+    I = PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, x)
+    np.testing.assert_almost_equal(I.interval_length(), x[-1] - x[0])
+
+    try:
+        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        assert False, "failed to detect non-increasing data"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        I = PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, [2, 1])
+        I.integral([1, 1])
+        assert False, "failed to catch a >= b (piece wise constant)"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        I = PISM.Interpolation(PISM.LINEAR, x, [2, 1])
+        I.integral([1, 1])
+        assert False, "failed to catch a >= b (linear)"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    np.testing.assert_almost_equal(I.left(), [0, 1])
+    np.testing.assert_almost_equal(I.right(), [1, 2])
+    np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
+
+
 def test_linear_periodic():
     "Linear (periodic) interpolation"
 
