@@ -330,6 +330,7 @@ void IceModelVec2T::update(double t, double dt) {
   }
 
   if (m_data->n_records > 0) {
+    // in-file index of the last record currently in memory
     unsigned int last = m_data->first + (m_data->n_records - 1);
 
     // find the interval covered by data held in memory:
@@ -552,34 +553,32 @@ void IceModelVec2T::interp(double t) {
  */
 void IceModelVec2T::average(double t, double dt) {
 
-  double dt_years = units::convert(m_impl->grid->ctx()->unit_system(),
-                                   dt, "seconds", "years"); // *not* time->year(dt)
-
   // if only one record, nothing to do
-  if (m_data->time.size() == 1) {
+  if (m_data->time.size() == 1 or
+      m_data->n_records == 1 or
+      dt == 0.0) {
+    interp(t);
     return;
   }
 
-  // Determine the number of small time-steps to use for averaging:
-  int M = (int) ceil(m_data->n_evaluations_per_year * (dt_years));
-  if (M < 1) {
-    M = 1;
-  }
+  init_interpolation({t, t + dt});
 
-  std::vector<double> ts(M);
-  double ts_dt = dt / M;
-  for (int k = 0; k < M; k++) {
-    ts[k] = t + k * ts_dt;
-  }
-
-  init_interpolation(ts);
+  double interval_length = m_data->interp->interval_length();
 
   AccessList l{this};
-
   double **a2 = array();
+  double ***a3 = array3();
+
+  // NOTE: interp->integral() below accesses more RAM than it has to (in some cases many
+  // of integration weights are zero and we don't need to access corresponding values),
+  // but this may not matter because the memory access pattern is (inevitably) sub-optimal.
+  //
+  // In other words: revisit this if IceModelVec2T::average() appears to be too slow.
+
   for (Points p(*m_impl->grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    a2[j][i] = average(i, j);
+
+    a2[j][i] = m_data->interp->integral(a3[j][i]) / interval_length;
   }
 }
 
@@ -621,10 +620,11 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
 
 /**
  * \brief Compute values of the time-series using precomputed indices
- * (and piecewise-constant interpolation).
+ * (and piece-wise constant or piece-wise linear interpolation).
  *
  * @param i,j map-plane grid point
- * @param result pointer to an allocated array of `weights.size()` `double`
+ * @param result pointer to an allocated array of the size matching the one passed to
+ *               init_interpolation()
  *
  */
 void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
@@ -634,35 +634,5 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
 
   m_data->interp->interpolate(a3[j][i], result.data());
 }
-
-//! \brief Finds the average value at i,j over the interval (t, t +
-//! dt) using the rectangle rule.
-/*!
-  Can (and should) be optimized. Later, though.
- */
-double IceModelVec2T::average(int i, int j) {
-  unsigned int M = m_data->interp->alpha().size();
-  double result = 0.0;
-
-  if (m_data->n_records == 1) {
-    double ***a3 = array3();
-    result = a3[j][i][0];
-  } else {
-    std::vector<double> values(M);
-
-    interp(i, j, values);
-
-    // rectangular rule (uses the fact that points are equally-spaced
-    // in time)
-    result = 0;
-    for (unsigned int k = 0; k < M; ++k) {
-      result += values[k];
-    }
-    result /= (double)M;
-  }
-  return result;
-}
-
-
 
 } // end of namespace pism

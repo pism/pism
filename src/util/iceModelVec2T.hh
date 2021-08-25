@@ -88,7 +88,6 @@ private:
   double*** array3();
   void update(unsigned int start);
   void discard(int N);
-  double average(int i, int j);
   void set_record(int n);
   void get_record(int n);
 };
