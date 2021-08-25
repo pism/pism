@@ -127,16 +127,6 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   n_records = std::max(n_records, 1);
 
-  // LCOV_EXCL_START
-  if (n_records > IceGrid::max_dm_dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot allocate storage for %d records of %s (%s)"
-                                  " (exceeds the maximum of %d)",
-                                  n_records, short_name.c_str(), standard_name.c_str(),
-                                  IceGrid::max_dm_dof);
-  }
-  // LCOV_EXCL_STOP
-
   if (periodic and interpolation_type == LINEAR) {
     interpolation_type = LINEAR_PERIODIC;
   }
@@ -174,8 +164,8 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
 {
   m_impl->report_range = false;
 
-  m_data->interp_type = interpolation_type;
-  m_data->n_records = n_records;
+  m_data->interp_type            = interpolation_type;
+  m_data->n_records              = n_records;
   m_data->n_evaluations_per_year = n_evaluations_per_year;
 
   auto config = m_impl->grid->ctx()->config();
@@ -513,10 +503,9 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
 }
 
 /*
- * \brief Use piecewise-constant interpolation to initialize
- * IceModelVec2T with the value at time `t`.
+ * @brief Initialize IceModelVec2T with the value at time `t`.
  *
- * \note This method does not check if an update() call is necessary!
+ * @note This method does not check if an update() call is necessary!
  *
  * @param[in] t requested time
  *
@@ -525,7 +514,23 @@ void IceModelVec2T::interp(double t) {
 
   init_interpolation({t});
 
-  get_record(m_data->interp->left(0));
+  // There is only one point to interpolate at ("t" above). Here we get interpolation
+  // indexes and the corresponding weight. Here L == R for the piecewise-constant
+  // interpolation.
+  int L = m_data->interp->left(0);
+  int R = m_data->interp->right(0);
+  double alpha = m_data->interp->alpha(0);
+
+  AccessList l{this};
+  double ***a3 = array3();
+  double  **a2 = array();
+
+  for (Points p(*m_impl->grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+    auto column = a3[j][i];
+    // result (LHS) is a weighted average of two values.
+    a2[j][i] = column[L] + alpha * (column[R] - column[L]);
+  }
 }
 
 

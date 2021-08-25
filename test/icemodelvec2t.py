@@ -110,36 +110,44 @@ class ForcingInput(unittest.TestCase):
         for f in files:
             os.remove(f)
 
-    def forcing(self, filename, buffer_size=12, periodic=False):
+    def forcing(self, filename, buffer_size=12, periodic=False,
+                interpolation_type=PISM.PIECEWISE_CONSTANT):
         "Allocate and initialize forcing"
         input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
         forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
-                                                  buffer_size, 52, periodic)
+                                                  buffer_size, 52, periodic,
+                                                  interpolation_type)
+        input_file.close()
+
         forcing.metadata().set_string("long_name", "test field")
 
         forcing.init(filename, periodic)
 
         return forcing
 
+    def test_interp_linear_periodic(self):
+        F = self.forcing(self.interp_linear,
+                         periodic=True,
+                         interpolation_type=PISM.LINEAR)
+        F.update(0, 4)
+
+        # See self.times_linear, self.values_linear, and self.bounds_linear above.
+        ts = [0.5, 1.5, 3.5, 6.5]
+        vs = [2.5, -1.0, 2.5, 2.5]
+
+        for t, v in zip(ts, vs):
+            F.interp(t)
+            V = F.numpy()[0, 0]
+            numpy.testing.assert_almost_equal(V, v)
+
     def test_interp_linear(self):
-        try:
-            input_file = PISM.File(ctx.com,
-                                   self.interp_linear,
-                                   PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+        F = self.forcing(self.interp_linear, interpolation_type=PISM.LINEAR)
+        F.update(0, 4)
 
-            F = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
-                                                20, 52, False, PISM.LINEAR)
-            F.init(self.interp_linear, False)
-            F.update(0, 4)
-
-            for t, v in zip(self.times_linear, self.values_linear):
-                F.interp(t)
-
-                V = F.numpy()[0, 0]
-                print(t, v, V)
-                numpy.testing.assert_almost_equal(V, v)
-        finally:
-            input_file.close()
+        for t, v in zip(self.times_linear, self.values_linear):
+            F.interp(t)
+            V = F.numpy()[0, 0]
+            numpy.testing.assert_almost_equal(V, v)
 
     def test_missing_file(self):
         "Missing input file"
