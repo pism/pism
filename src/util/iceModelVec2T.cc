@@ -19,6 +19,7 @@
 #include <petsc.h>
 #include <cassert>
 #include <cmath>                // std::floor
+#include <array>
 
 #include "iceModelVec2T.hh"
 #include "pism/util/io/File.hh"
@@ -43,14 +44,14 @@ struct IceModelVec2T::Data {
       first(-1),
       n_records(0),
       period(0.0),
-      reference_time(0.0) {
+      period_start(0.0) {
     // empty
   }
   //! all the times available in filename
   std::vector<double> time;
 
-  //! time bounds
-  std::vector<double> time_bounds;
+  //! the range of times covered by data in `filename`
+  std::array<double,2> time_range;
 
   //! name of the file to read (regrid) from
   std::string filename;
@@ -83,8 +84,8 @@ struct IceModelVec2T::Data {
   //! forcing period, in seconds
   double period;
 
-  //! reference time, in seconds
-  double reference_time;
+  //! start of the period, in seconds
+  double period_start;
 
   //! minimum time step length in max_timestep(), in seconds
   double dt_min;
@@ -118,22 +119,27 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
                                                bool periodic,
                                                InterpolationType interpolation_type) {
 
-  int buffer_size = file.nrecords(short_name, standard_name,
-                                    grid->ctx()->unit_system());
+  int n_records = file.nrecords(short_name, standard_name,
+                                 grid->ctx()->unit_system());
 
-  if (not periodic) {
-    buffer_size = std::min(buffer_size, max_buffer_size);
+  int buffer_size = 0;
+  if (periodic) {
+    // In the periodic case we try to keep all the records in RAM.
+    buffer_size = n_records;
+
+    if (interpolation_type == LINEAR) {
+      // add two more records at the beginning and the end of the period to simplify
+      // interpolation in time
+      buffer_size += 2;
+    }
+  } else {
+    buffer_size = std::min(n_records, max_buffer_size);
   }
-  // In the periodic case we try to keep all the records in RAM.
 
   // Allocate storage for one record if the variable was not found. This is needed to be
   // able to cheaply allocate and then discard an "-atmosphere given" model
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   buffer_size = std::max(buffer_size, 1);
-
-  if (periodic and interpolation_type == LINEAR) {
-    interpolation_type = LINEAR_PERIODIC;
-  }
 
   return std::make_shared<IceModelVec2T>(grid, short_name, buffer_size,
                                          evaluations_per_year, interpolation_type);
@@ -155,7 +161,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 
   // set fake time bounds:
   double eps = 0.5 * result->m_data->dt_min;
-  result->m_data->time_bounds = {-eps, eps};
+  result->m_data->time_range = {-eps, eps};
 
   return result;
 }
@@ -178,8 +184,7 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   m_data->dt_min = config->get_number("time_stepping.resolution");
 
   if (not (m_data->interp_type == PIECEWISE_CONSTANT or
-           m_data->interp_type == LINEAR or
-           m_data->interp_type == LINEAR_PERIODIC)) {
+           m_data->interp_type == LINEAR)) {
     throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
   }
 
@@ -262,7 +267,7 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
                          times, bounds);
 
       if (periodic) {
-        m_data->reference_time = bounds.front();
+        m_data->period_start = bounds.front();
         m_data->period = bounds.back() - bounds.front();
       }
 
@@ -274,8 +279,12 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
         }
       }
 
-      m_data->time        = times;
-      m_data->time_bounds = bounds;
+      m_data->time       = times;
+      m_data->time_range = {bounds.front(), bounds.back()};
+
+      if (not (extrapolate or periodic)) {
+        check_forcing_duration(*time, bounds.front(), bounds.back());
+      }
 
     } else {
       // Only one time record or no time dimension at all: set fake time bounds assuming
@@ -287,25 +296,16 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
 
       // set fake time bounds:
       double eps = 0.5 * m_data->dt_min;
-      m_data->time_bounds = {-eps, eps};
+      m_data->time_range = {-eps, eps};
 
       // note that in this case all data is periodic and constant in time
-    }
-
-    if (not (extrapolate or periodic)) {
-      check_forcing_duration(*time,
-                             m_data->time_bounds.front(),
-                             m_data->time_bounds.back());
+      m_data->period       = 0.0;
+      m_data->period_start = 0.0;
     }
 
     if (periodic) {
-      if ((size_t)m_data->buffer_size < m_data->time.size()) {
-        throw RuntimeError(PISM_ERROR_LOCATION,
-                           "buffer has to be big enough to hold all records of periodic data");
-      }
-
       // read periodic data right away (we need to hold it all in memory anyway)
-      update(0);
+      init_periodic_data(file);
     }
   } catch (RuntimeError &e) {
     e.add_context("reading %s (%s) from '%s'",
@@ -313,6 +313,94 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
                   m_impl->metadata[0].get_name().c_str(),
                   m_data->filename.c_str());
     throw;
+  }
+}
+
+/*!
+ * Read all periodic data from the file and add two more records to simplify
+ * interpolation.
+ */
+void IceModelVec2T::init_periodic_data(const File &file) {
+
+  auto ctx = grid()->ctx();
+
+  auto name = get_name();
+  auto n_records = file.nrecords(name, metadata().get_string("standard_name"),
+                                 ctx->unit_system());
+
+  auto buffer_required = n_records + 2 * (m_data->interp_type == LINEAR);
+
+  if (m_data->buffer_size < buffer_required) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "the buffer is too small to contain periodic data");
+  }
+
+  bool allow_extrapolation = ctx->config()->get_flag("grid.allow_extrapolation");
+
+  int offset = m_data->interp_type == LINEAR ? 1 : 0;
+
+  // Read all the records and store them. The index offset leaves room for an extra record
+  // needed to simplify interpolation
+  for (unsigned int j = 0; j < n_records; ++j) {
+    {
+      petsc::VecArray tmp_array(m_impl->v);
+      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, CRITICAL,
+                                  m_impl->report_range, allow_extrapolation,
+                                  0.0, m_impl->interpolation_type, tmp_array.get());
+    }
+
+    auto t = ctx->time();
+    auto log = ctx->log();
+    log->message(5, " %s: reading entry #%02d, time %s...\n",
+                 name.c_str(),
+                 j,
+                 t->date(m_data->time[j]).c_str());
+
+    set_record(offset + j);
+  }
+
+  m_data->n_records = buffer_required;
+  m_data->first = 0;
+
+  if (m_data->interp_type == PIECEWISE_CONSTANT) {
+    return;
+  }
+
+  double t0 = m_data->time_range[0];
+  double t1 = m_data->time_range[1];
+
+  // compute the interpolation factor used to find the value at the beginning of the
+  // period
+  double alpha = 0.0;
+  {
+    double dt1 = m_data->time.front() - t0;
+    double dt2 = t1 - m_data->time.back();
+
+    alpha = dt1 + dt2 > 0 ? dt2 / (dt1 + dt2) : 0.0;
+  }
+
+  // indexes used to access the first and the last entry in the buffer
+  int first = 1;
+  int last = buffer_required - 2;
+
+  IceModelVec::AccessList list{this};
+
+  // compute values at the beginning (and so at the end) of the period
+  double  **a2 = array();
+  double ***a3 = array3();
+  for (Points p(*grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    a2[j][i] = (1.0 - alpha) * a3[j][i][last] + alpha * a3[j][i][first];
+  }
+
+  set_record(0);
+  set_record(m_data->buffer_size - 1);
+
+  // add two more records to m_data->time
+  {
+    m_data->time.insert(m_data->time.begin(), t0);
+    m_data->time.push_back(t1);
   }
 }
 
@@ -333,9 +421,19 @@ void IceModelVec2T::update(double t, double dt) {
     // in-file index of the last record currently in memory
     unsigned int last = m_data->first + (m_data->n_records - 1);
 
-    // find the interval covered by data held in memory:
-    double t0 = m_data->time_bounds[m_data->first * 2];
-    double t1 = m_data->time_bounds[last * 2 + 1];
+    double t0{}, t1{};
+    if (m_data->interp_type == LINEAR) {
+      t0 = m_data->time[m_data->first];
+      t1 = m_data->time[last];
+    } else {
+      // piece-wise constant
+      t0 = m_data->time[m_data->first];
+      if (last + 1 < m_data->time.size()) {
+        t1 = m_data->time[last + 1];
+      } else {
+        t1 = m_data->time_range[1];
+      }
+    }
 
     // just return if we have all the data we need:
     if (t >= t0 and t + dt <= t1) {
@@ -407,12 +505,10 @@ void IceModelVec2T::update(unsigned int start) {
   if (this->buffer_size() > 1) {
     log->message(4,
                "  reading \"%s\" into buffer\n"
-               "          (short_name = %s): %d records, time intervals (%s, %s) through (%s, %s)...\n",
+               "          (short_name = %s): %d records, time %s through %s...\n",
                metadata().get_string("long_name").c_str(), m_impl->name.c_str(), missing,
-               t->date(m_data->time_bounds[start*2]).c_str(),
-               t->date(m_data->time_bounds[start*2 + 1]).c_str(),
-               t->date(m_data->time_bounds[(start + missing - 1)*2]).c_str(),
-               t->date(m_data->time_bounds[(start + missing - 1)*2 + 1]).c_str());
+               t->date(m_data->time[start]).c_str(),
+               t->date(m_data->time[start + missing - 1]).c_str());
     m_impl->report_range = false;
   } else {
     m_impl->report_range = true;
@@ -476,27 +572,40 @@ void IceModelVec2T::set_record(int n) {
 //! @brief Given the time t determines the maximum possible time-step this IceModelVec2T
 //! allows.
 MaxTimestep IceModelVec2T::max_timestep(double t) const {
-  // only allow going to the next record
+  auto time_size = m_data->time.size();
 
-  // FIXME: don't mix times and time bounds here!
+  if (m_data->period > 0.0) {
+    // all periodic data is stored in RAM and there is no time step restriction
+    return {};
+  }
+
+  if (t >= m_data->time.back()) {
+    // Reached the end of forcing: no time step restriction. We will need only one record
+    // to use constant extrapolation and it will surely fit in the buffer.
+    return {};
+  }
+
   // find the index k such that m_data->time[k] <= x < m_data->time[k + 1]
-  size_t k = gsl_interp_bsearch(m_data->time.data(), t, 0, m_data->time.size());
+  // Note: `L` below will be strictly less than `time_size - 1`.
+  size_t L = gsl_interp_bsearch(m_data->time.data(), t, 0, time_size - 1);
 
-  // end of the corresponding interval
-  double
-    t_next = m_data->time_bounds[2 * k + 1],
-    dt     = std::max(t_next - t, 0.0);
+  // find the index of the last record we could read in given the size of the buffer
+  size_t R = L + m_data->buffer_size - 1;
 
-  if (dt > m_data->dt_min) {    // never take time-steps shorter than this
-    return MaxTimestep(dt);
+  if (R >= time_size - 1) {
+    // We can read all the remaining records: no time step restriction from now on
+    return {};
   }
 
-  if (k + 1 < m_data->time.size()) {
-    dt = m_data->time_bounds[2 * (k + 1) + 1] - m_data->time_bounds[2 * (k + 1)];
-    return MaxTimestep(dt);
+  if (m_data->interp_type == PIECEWISE_CONSTANT) {
+    // in the piece-wise constant case we can go all the way to the *next* record
+    R = std::min(R + 1, time_size - 1);
+    return m_data->time[R] - t;
+  } else {
+    return m_data->time[R] - t;
   }
 
-  return MaxTimestep();
+  return {};
 }
 
 /*
@@ -548,11 +657,46 @@ void IceModelVec2T::average(double t, double dt) {
     return;
   }
 
-  auto weights = integration_weights(&m_data->time[m_data->first],
-                                     m_data->n_records,
-                                     m_data->interp_type,
-                                     t,
-                                     t + dt);
+  const double *data = &m_data->time[m_data->first];
+  size_t data_size = m_data->n_records;
+  auto type = m_data->interp_type;
+
+  std::map<size_t, double> weights{};
+
+  if (m_data->period > 0.0) {
+    double a = t;
+    double b = t + dt;
+    double t0 = m_data->period_start;
+    double P = m_data->period;
+
+    double N = std::floor((a - t0) / P);
+    double M = std::floor((b - t0) / P);
+    double delta = a - t0 - P * N;
+    double gamma = b - t0 - P * M;
+
+    double N_periods = M - (N + 1);
+
+    if (N_periods >= 0.0) {
+      auto W1 = integration_weights(data, data_size, type, t0 + delta, t0 + P);
+      auto W2 = integration_weights(data, data_size, type, t0, t0 + P);
+      auto W3 = integration_weights(data, data_size, type, t0, t0 + gamma);
+
+      // before the first complete period:
+      weights = W1;
+      // an integer number of complete periods:
+      for (const auto &w : W2) {
+        weights[w.first] += N_periods * w.second;
+      }
+      // after the last complete period:
+      for (const auto &w : W3) {
+        weights[w.first] += w.second;
+      }
+    } else {
+      weights = integration_weights(data, data_size, type, t0 + delta, t0 + gamma);
+    }
+  } else {
+    weights = integration_weights(data, data_size, type, t, t + dt);
+  }
 
   AccessList l{this};
   double **a2 = array();
@@ -586,7 +730,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
   std::vector<double> times_requested(ts.size());
   if (m_data->period > 0.0) {
     double P  = m_data->period;
-    double T0 = m_data->reference_time;
+    double T0 = m_data->period_start;
 
     for (unsigned int k = 0; k < ts.size(); ++k) {
       double t = ts[k] - T0;

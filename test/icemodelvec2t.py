@@ -137,8 +137,8 @@ class ForcingInput(unittest.TestCase):
         F.update(0, 4)
 
         # See self.times_linear, self.values_linear, and self.bounds_linear above.
-        ts = [0.5, 1.5, 3.5, 6.5]
-        vs = [2.5, -1.0, 2.5, 2.5]
+        ts = [0.5, 0.75, 1.5, 3.5, 3.75, 6.5]
+        vs = [2.5, 2.25, -1.0, 2.5, 2.25, 2.5]
 
         for t, v in zip(ts, vs):
             F.interp(t)
@@ -159,7 +159,17 @@ class ForcingInput(unittest.TestCase):
         try:
             forcing = self.forcing(self.empty)
             assert 0, "initialized with an empty file"
-        except RuntimeError:
+        except RuntimeError as e:
+            print("\n" + str(e))
+            pass
+
+    def test_invalid_interpolation_type(self):
+        "Invalid interpolation type"
+        try:
+            forcing = self.forcing(self.filename, interpolation_type=PISM.NEAREST)
+            assert False, "initialized with an invalid interpolation type"
+        except RuntimeError as e:
+            print("\n" + str(e))
             pass
 
     def test_average(self):
@@ -168,8 +178,8 @@ class ForcingInput(unittest.TestCase):
 
         # second month
         N = 1
-        t = seconds(self.tb[N]) + 1
-        dt = forcing.max_timestep(t).value()
+        t = seconds(self.tb[N])
+        dt = seconds(self.tb[N + 1] - self.tb[N])
         forcing.update(t, dt)
         forcing.average(t, dt)
 
@@ -277,7 +287,8 @@ class ForcingInput(unittest.TestCase):
         try:
             forcing.init(self.filename, periodic=True)
             assert False, "Failed to stop because the buffer size is too small"
-        except RuntimeError:
+        except RuntimeError as e:
+            print(e)
             pass
 
     def test_time_step_too_long(self):
@@ -290,7 +301,8 @@ class ForcingInput(unittest.TestCase):
             dt = seconds(N + 1)
             forcing.update(0, dt)
             assert False, "Failed to catch a time step that is too long"
-        except RuntimeError:
+        except RuntimeError as e:
+            print("\n" + str(e))
             pass
 
     def test_no_time_bounds(self):
@@ -298,7 +310,8 @@ class ForcingInput(unittest.TestCase):
         try:
             forcing = self.forcing(self.no_bounds)
             assert False, "Loaded forcing without time bounds"
-        except RuntimeError:
+        except RuntimeError as e:
+            print("\n" + str(e))
             pass
 
     def test_decreasing_time(self):
@@ -306,7 +319,8 @@ class ForcingInput(unittest.TestCase):
         try:
             forcing = self.forcing(self.time_order)
             assert False, "Loaded forcing with a decreasing time dimension"
-        except RuntimeError:
+        except RuntimeError as e:
+            print("\n" + str(e))
             pass
 
     def test_multiple_steps(self):
@@ -341,10 +355,19 @@ class ForcingInput(unittest.TestCase):
         numpy.testing.assert_almost_equal(forcing.max_timestep(0).value(),
                                           tb[1] - tb[0])
         numpy.testing.assert_almost_equal(forcing.max_timestep(tb[1] - 0.5).value(),
-                                          tb[2] - tb[1])
+                                          0.5)
 
         assert forcing.max_timestep(tb[-1]).infinite()
         assert forcing.max_timestep(tb[-1] - 0.5).infinite()
+
+        forcing = self.forcing(self.filename, periodic=True)
+        assert forcing.max_timestep(tb[0]).infinite()
+
+        forcing = self.forcing(self.filename, buffer_size=3,
+                               interpolation_type=PISM.LINEAR)
+        numpy.testing.assert_almost_equal(forcing.max_timestep(seconds(self.t[0])).value(),
+                                          seconds(self.t[2] - self.t[0]))
+
 
     def test_periodic(self):
         "Using periodic data"
@@ -362,3 +385,27 @@ class ForcingInput(unittest.TestCase):
         b = numpy.r_[self.f, self.f[0:(6 + 1)]]
 
         numpy.testing.assert_almost_equal(a, b)
+
+    def test_periodic_averaged(self):
+        "Averaging periodic data"
+        forcing = self.forcing(self.filename, periodic=True)
+
+        t = seconds(self.tb[0])
+        dt = seconds(self.tb[-1]) - t
+
+        forcing.update(t, dt)
+
+        forcing.average(t, dt)
+        # the forcing consists of 6 zeros and 6 ones, equally spaced in time. The average
+        # should be zero
+        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+
+        # the average over three periods should be zero as well
+        forcing.average(t, 3*dt)
+        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)
+
+        # averaging over a part of the period (also zero in this case)
+        t = seconds(self.t[0])
+        dt = seconds(self.t[-1]) - t
+        forcing.average(t, dt)
+        numpy.testing.assert_almost_equal(forcing.numpy()[0,0], 0.0)

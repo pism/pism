@@ -89,6 +89,7 @@ private:
   void update(unsigned int start);
   void discard(int N);
   void set_record(int n);
+  void init_periodic_data(const File &file);
 };
 
 
