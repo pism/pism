@@ -396,7 +396,7 @@ void Interpolation::init_weights_piecewise_constant(const double *x,
   }
 }
 
-double Interpolation::integral(const double *input) const {
+double Interpolation::integrate(const double *input) const {
   if (m_w.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "cannot evaluate the integral");
@@ -409,8 +409,8 @@ double Interpolation::integral(const double *input) const {
   return result;
 }
 
-double Interpolation::integral(const std::vector<double> &input) const {
-  return integral(input.data());
+double Interpolation::integrate(const std::vector<double> &input) const {
+  return integrate(input.data());
 }
 
 double Interpolation::interval_length() const {

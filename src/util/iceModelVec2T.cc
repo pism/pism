@@ -569,7 +569,7 @@ void IceModelVec2T::average(double t, double dt) {
   double **a2 = array();
   double ***a3 = array3();
 
-  // NOTE: interp->integral() below accesses more RAM than it has to (in some cases many
+  // NOTE: interp->integrate() below accesses more RAM than it has to (in some cases many
   // of integration weights are zero and we don't need to access corresponding values),
   // but this may not matter because the memory access pattern is (inevitably) sub-optimal.
   //
@@ -578,7 +578,7 @@ void IceModelVec2T::average(double t, double dt) {
   for (Points p(*m_impl->grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    a2[j][i] = m_data->interp->integral(a3[j][i]) / interval_length;
+    a2[j][i] = m_data->interp->integrate(a3[j][i]) / interval_length;
   }
 }
 
