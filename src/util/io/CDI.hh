@@ -105,13 +105,9 @@ protected:
   void create_grid_impl(int lengthx, int lengthy) const;
   void define_timestep_impl(int tsID) const;
   void def_ref_date_impl(double time) const;
-  std::map<std::string, int> get_var_map_impl();
-  std::map<std::string, AxisType> get_dim_map_impl();
   void def_vlist_impl() const;
   void set_diagvars_impl(const std::set<std::string> &variables) const;
   void set_bdiag_impl(bool value) const;
-  int get_ncstreamID_impl() const;
-  int get_ncvlistID_impl() const;
   void set_calendar_impl(double year_length, const std::string &calendar_string) const;
 
 private:

@@ -228,14 +228,6 @@ File::~File() {
   delete m_impl;
 }
 
-int File::get_streamID() const {
-  return m_impl->nc->get_ncstreamID();
-}
-
-int File::get_vlistID() const {
-  return m_impl->nc->get_ncvlistID();
-}
-
 void File::reset_dimension_written() const {
   m_impl->dim_written["x"]  = false;
   m_impl->dim_written["y"]  = false;
@@ -882,14 +874,6 @@ void File::reference_date(double time) const {
     e.add_context("setting reference date in '%s'", filename().c_str());
     throw;
   }
-}
-
-std::map<std::string, int> File::get_variables_map() const {
-  return m_impl->nc->get_var_map();
-}
-
-std::map<std::string, AxisType> File::get_dimensions_map() const {
-  return m_impl->nc->get_dim_map();
 }
 
 void File::define_vlist() const {

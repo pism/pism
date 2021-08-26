@@ -295,15 +295,11 @@ void IceModel::open_files() {
                                   m_ctx->pio_iosys_id(),
                                   filetype) );
 
-          m_streamIDs[filename] = m_save_file[filename]->get_streamID();
-
           write_metadata(*(m_save_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
           m_snapshots_file_is_ready = true;
           write_run_stats(*(m_save_file[filename]));
           m_save_file[filename]->set_calendar(-1.0, m_time->calendar());
           save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
-          m_vlistIDs[filename] = m_save_file[filename]->get_vlistID();
-          m_DimSnapMap = m_save_file[filename]->get_dimensions_map();
         }
         m_snapshots_file_is_ready = false;
       }
@@ -348,8 +344,6 @@ void IceModel::open_files() {
                                                          m_ctx->pio_iosys_id(),
                                                          filetype ));
 
-          m_streamIDs[filename] = m_extra_file[filename]->get_streamID();
-
           std::string time_name = m_config->get_string("time.dimension_name");
           io::define_time(*(m_extra_file[filename]), *m_ctx);
           m_extra_file[filename]->write_attribute(time_name, "bounds", "time_bounds");
@@ -364,11 +358,6 @@ void IceModel::open_files() {
                          0,
                          PISM_FLOAT,
                          false);
-
-          if (m_extra_file[filename]->backend() == PISM_CDI) {
-            m_vlistIDs[filename] = m_extra_file[filename]->get_vlistID();
-            m_DimExtraMap = m_extra_file[filename]->get_dimensions_map();
-          }
         }
         m_extra_file_is_ready = false;
       }
@@ -388,7 +377,6 @@ void IceModel::open_files() {
                        "PISM WARNING: output file name does not have the '.nc' suffix!\n");
       }
 
-      int fileID = -1;
       IO_Mode mode = PISM_READWRITE_MOVE;
       m_output_file.reset(new File( m_grid->com,
                               filename,
@@ -397,18 +385,12 @@ void IceModel::open_files() {
                               m_ctx->pio_iosys_id(),
                               filetype ));
 
-      m_streamIDs[filename] = m_output_file->get_streamID();
-
       write_metadata(*m_output_file, WRITE_MAPPING, PREPEND_HISTORY);
 
       write_run_stats(*m_output_file);
       m_output_file->set_calendar(-1.0, m_time->calendar());
       save_variables(*m_output_file, INCLUDE_MODEL_STATE, m_output_vars,
                      0, PISM_FLOAT, false);
-      if (m_output_file->backend() == PISM_CDI) {
-        m_vlistIDs[filename] = m_output_file->get_vlistID();
-        m_DimOutMap = m_output_file->get_dimensions_map();
-      }
     }
   }
 

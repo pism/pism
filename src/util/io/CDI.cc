@@ -740,14 +740,6 @@ void CDI::write_darray_impl(const std::string &variable_name,
   }
 }
 
-std::map<std::string, int> CDI::get_var_map_impl() {
-  return m_varsID;
-}
-
-std::map<std::string, AxisType> CDI::get_dim_map_impl() {
-  return m_dimsAxis;
-}
-
 // define variables list (if not done before)
 void CDI::def_vlist_impl() const {
   if (streamInqVlist(m_file_id) == -1) {
@@ -763,14 +755,6 @@ void CDI::set_diagvars_impl(const std::set<std::string> &variables) const {
 // FIXME: what is the purpose of this?
 void CDI::set_bdiag_impl(bool value) const {
   m_beforediag = value;
-}
-
-int CDI::get_ncstreamID_impl() const {
-  return m_file_id;
-}
-
-int CDI::get_ncvlistID_impl() const {
-  return m_vlistID;
 }
 
 // Not used

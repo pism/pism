@@ -161,13 +161,9 @@ public:
   void new_grid(int lengthx, int lengthy) const;
   void new_timestep(int tsID) const;
   void reference_date(double time) const;
-  std::map<std::string, int> get_variables_map() const;
-  std::map<std::string, AxisType> get_dimensions_map() const;
   void define_vlist() const;
   void send_diagnostics(const std::set<std::string> &variables) const;
   void set_beforediag(bool value) const;
-  int get_streamID() const;
-  int get_vlistID() const;
   void set_calendar(double year_length, const std::string &calendar_string) const;
   bool is_var_written(const std::string &name) const;
 

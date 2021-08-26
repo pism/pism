@@ -154,13 +154,9 @@ public:
   void create_grid(int lengthx, int lengthy) const;
   void define_timestep(int tsID) const;
   void def_ref_date(double time) const;
-  std::map<std::string, int> get_var_map();
-  std::map<std::string, AxisType> get_dim_map();
   void def_vlist() const;
   void set_diagvars(const std::set<std::string> &variables) const;
   void set_bdiag(bool value) const;
-  int get_ncstreamID() const;
-  int get_ncvlistID() const;
   void set_calendar(double year_length, const std::string &calendar_string) const;
 
 protected:
@@ -251,13 +247,9 @@ protected:
   virtual void create_grid_impl(int lengthx, int lengthy) const;
   virtual void define_timestep_impl(int tsID) const;
   virtual void def_ref_date_impl(double time) const;
-  virtual std::map<std::string, int> get_var_map_impl();
-  virtual std::map<std::string, AxisType> get_dim_map_impl();
   virtual void def_vlist_impl() const;
   virtual void set_diagvars_impl(const std::set<std::string> &variables) const;
   virtual void set_bdiag_impl(bool value) const;
-  virtual int get_ncstreamID_impl() const;
-  virtual int get_ncvlistID_impl() const;
   virtual void set_calendar_impl(double year_length, const std::string &calendar_string) const;
 
 protected:                      // data members

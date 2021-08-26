@@ -330,9 +330,6 @@ void IceModel::write_extras() {
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
     m_extra_file[filename]->sync();
-    if (m_extra_file[filename]->backend() == PISM_CDI) {
-      m_streamIDs[filename] = m_extra_file[filename]->get_streamID();
-    }
   }
   if (current_extra < m_extra_times.size() - 1) {
     m_sthwritten = true;

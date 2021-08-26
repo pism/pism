@@ -307,22 +307,6 @@ void NCFile::def_ref_date(double time) const {
   this->def_ref_date_impl(time);
 }
 
-std::map<std::string, int> NCFile::get_var_map() {
-  return this->get_var_map_impl();
-}
-
-std::map<std::string, AxisType> NCFile::get_dim_map() {
-  return this->get_dim_map_impl();
-}
-
-std::map<std::string, int> NCFile::get_var_map_impl() {
-  return {};
-}
-
-std::map<std::string, AxisType> NCFile::get_dim_map_impl() {
-  return {};
-}
-
 void NCFile::def_vlist() const {
   this->def_vlist_impl();
 }
@@ -344,22 +328,6 @@ void NCFile::set_bdiag(bool value) const {
 
 void NCFile::set_bdiag_impl(bool value) const {
   (void) value;
-}
-
-int NCFile::get_ncstreamID() const {
-  return this->get_ncstreamID_impl();
-}
-
-int NCFile::get_ncvlistID() const {
-  return this->get_ncvlistID_impl();
-}
-
-int NCFile::get_ncstreamID_impl() const {
-  return 0;
-}
-
-int NCFile::get_ncvlistID_impl() const {
-  return 0;
 }
 
 void NCFile::set_calendar(double year_length, const std::string &calendar_string) const {
