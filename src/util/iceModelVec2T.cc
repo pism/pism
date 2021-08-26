@@ -561,24 +561,26 @@ void IceModelVec2T::average(double t, double dt) {
     return;
   }
 
-  init_interpolation({t, t + dt});
-
-  double interval_length = m_data->interp->interval_length();
+  auto weights = integration_weights(&m_data->time[m_data->first],
+                                     m_data->n_records,
+                                     m_data->interp_type,
+                                     t,
+                                     t + dt);
 
   AccessList l{this};
   double **a2 = array();
   double ***a3 = array3();
 
-  // NOTE: interp->integrate() below accesses more RAM than it has to (in some cases many
-  // of integration weights are zero and we don't need to access corresponding values),
-  // but this may not matter because the memory access pattern is (inevitably) sub-optimal.
-  //
-  // In other words: revisit this if IceModelVec2T::average() appears to be too slow.
-
   for (Points p(*m_impl->grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    a2[j][i] = m_data->interp->integrate(a3[j][i]) / interval_length;
+    a2[j][i] = 0.0;
+    for (const auto &weight : weights) {
+      size_t k = weight.first;
+      double w = weight.second;
+      a2[j][i] += w * a3[j][i][k];
+    }
+    a2[j][i] /= dt;
   }
 }
 

@@ -20,12 +20,12 @@
 #ifndef _PISM_UTILITIES_H_
 #define _PISM_UTILITIES_H_
 
-#include <cstdint>              // uint16_t, uint32_t
+#include <cstdint>              // uint32_t
 
 #include <algorithm>            // std::min, std::max
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include <mpi.h>
 

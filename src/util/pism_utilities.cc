@@ -26,7 +26,7 @@
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
-#include <gsl/gsl_version.h>
+#include <gsl/gsl_version.h>    // GSL_VERSION
 
 #include "pism/pism_config.hh"  // Pism_USE_XXX, version info
 
@@ -480,6 +480,5 @@ double average_water_column_pressure(double ice_thickness, double bed,
   }
   return 0.0;
 }
-
 
 } // end of namespace pism

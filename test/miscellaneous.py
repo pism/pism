@@ -1027,7 +1027,12 @@ def test_trapezoid_integral():
     y = [2.0, 2.5, 3.0, 2.0]
 
     def f(a, b):
-        return PISM.Interpolation(PISM.LINEAR, x, [a, b]).integrate(y)
+        weights = PISM.integration_weights(x, PISM.LINEAR, a, b)
+
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
     assert f(0, 2) == 5.0
     assert f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2) == f(0, 2)
@@ -1047,7 +1052,12 @@ def test_piece_wise_constant_integral():
     y = [2.0, 2.5, 3.0, 2.0]
 
     def f(a, b):
-        return PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, [a, b]).integrate(y)
+        weights = PISM.integration_weights(x, PISM.PIECEWISE_CONSTANT, a, b)
+
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
     np.testing.assert_almost_equal(f(0, 2), 5.25)
     np.testing.assert_almost_equal(f(0.25, 0.35), 0.2)
@@ -1064,9 +1074,6 @@ def test_piece_wise_constant_integral():
 def test_interpolation_other():
     x = [0.0, 10.0]
 
-    I = PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, x)
-    np.testing.assert_almost_equal(I.interval_length(), x[-1] - x[0])
-
     try:
         PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
         assert False, "failed to detect non-increasing data"
@@ -1075,17 +1082,8 @@ def test_interpolation_other():
         pass
 
     try:
-        I = PISM.Interpolation(PISM.PIECEWISE_CONSTANT, x, [2, 1])
-        I.integrate([1, 1])
-        assert False, "failed to catch a >= b (piece wise constant)"
-    except RuntimeError as e:
-        print(e)
-        pass
-
-    try:
-        I = PISM.Interpolation(PISM.LINEAR, x, [2, 1])
-        I.integrate([1, 1])
-        assert False, "failed to catch a >= b (linear)"
+        W = PISM.integration_weights(x, PISM.LINEAR, 1, 1)
+        assert False, "failed to catch a >= b"
     except RuntimeError as e:
         print(e)
         pass

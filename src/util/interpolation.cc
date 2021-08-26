@@ -22,6 +22,7 @@
 
 #include "interpolation.hh"
 #include "error_handling.hh"
+#include "pism_utilities.hh"
 
 namespace pism {
 
@@ -127,8 +128,6 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
     m_right[i] = R;
     m_alpha[i] = alpha;
   }
-
-  init_weights_linear(input_x, input_x_size, output_x, output_x_size);
 }
 
 const std::vector<int>& Interpolation::left() const {
@@ -209,8 +208,6 @@ void Interpolation::init_piecewise_constant(const double *input_x, unsigned int 
     assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
     assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
   }
-
-  init_weights_piecewise_constant(input_x, input_x_size, output_x, output_x_size);
 }
 
 void Interpolation::init_linear_periodic(const double *input_x, unsigned int input_x_size,
@@ -270,152 +267,160 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
   }
 }
 
-/*!
- * Initialize integration weights (trapezoid rule).
- */
-void Interpolation::init_weights_linear(const double *x,
-                                        unsigned int x_size,
-                                        const double *output_x,
-                                        unsigned int output_x_size) {
+static std::map<size_t, double> weights_piecewise_constant(const double *x,
+                                                           size_t x_size,
+                                                           double a,
+                                                           double b) {
 
-  if (output_x_size < 2) {
-    // only one point requested: this cannot define an interval to integrate over
-    m_w = {};
-    m_interval_length = 0.0;
-    return;
-  }
+  size_t
+    al = gsl_interp_bsearch(x, a, 0, x_size),
+    ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
+    bl = gsl_interp_bsearch(x, b, 0, x_size),
+    br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
 
-  int
-    N = output_x_size - 1,
-    al = m_left[0],
-    ar = m_right[0],
-    bl = m_left[N],
-    br = m_right[N];
-
-  double
-    a = output_x[0],
-    b = output_x[N],
-    alpha_a = m_alpha[0],
-    alpha_b = m_alpha[N];
-
-  if (a >= b) {
-    // output points cannot do not define an interval [a, b] with a < b. We do not try to
-    // reverse integration limits.
-    m_w = {};
-    m_interval_length = 0.0;
-    return;
-  }
-
-  m_interval_length = b - a;
-
-  m_w.resize(x_size);
-  for (unsigned int k = 0; k < x_size; ++k) {
-    m_w[k] = 0.0;
-  }
+  std::map<size_t, double> result;
 
   if (al == bl and ar == br) {
     // both end points are in the same interval
-
-    m_w[al] += 0.5 * (2.0 - alpha_a - alpha_b) * (b - a);
-    m_w[ar] += 0.5 * (alpha_a + alpha_b) * (b - a);
+    result[al] += (b - a);
   } else {
     // first interval
-    m_w[al] += 0.5 * (1.0 - alpha_a) * (x[ar] - a);
-    m_w[ar] += 0.5 * (1.0 + alpha_a) * (x[ar] - a);
+    result[al] += (x[ar] - a);
 
     // intermediate intervals
-    for (int k = ar; k < bl; ++k) {
-      int
-        L = k,
-        R = k + 1;
-      m_w[L] += 0.5 * (x[R] - x[L]);
-      m_w[R] += 0.5 * (x[R] - x[L]);
+    for (size_t k = ar; k < bl; ++k) {
+      result[k] += x[k + 1] - x[k];
     }
 
     // last interval
-    m_w[bl] += 0.5 * (2.0 - alpha_b) * (b - x[bl]);
-    m_w[br] += 0.5 * alpha_b * (b - x[bl]);
-  }
-}
-
-/*!
- * Initialize integration weights in the piecewise-constant case
- */
-void Interpolation::init_weights_piecewise_constant(const double *x,
-                                                    unsigned int x_size,
-                                                    const double *output_x,
-                                                    unsigned int output_x_size) {
-
-  if (output_x_size < 2) {
-    // only one point requested: this cannot define an interval to integrate over
-    m_w = {};
-    m_interval_length = 0.0;
-    return;
+    result[bl] += b - x[bl];
   }
 
-  int
-    N = output_x_size - 1,
-    al = m_left[0],
-    ar = m_right[0],
-    bl = m_left[N],
-    br = m_right[N];
-
-  double
-    a = output_x[0],
-    b = output_x[N];
-
-  if (a >= b) {
-    // output points cannot do not define an interval [a, b] with a < b. We do not try to
-    // reverse integration limits.
-    m_w = {};
-    m_interval_length = 0.0;
-    return;
-  }
-
-  m_interval_length = b - a;
-
-  m_w.resize(x_size);
-  for (unsigned int k = 0; k < x_size; ++k) {
-    m_w[k] = 0.0;
-  }
-
-  if (al == bl and ar == br) {
-    // both end points are in the same interval
-    m_w[al] += (b - a);
-  } else {
-    // first interval
-    m_w[al] += (x[ar] - a);
-
-    // intermediate intervals
-    for (int k = ar; k < bl; ++k) {
-      m_w[k] += x[k + 1] - x[k];
-    }
-
-    // last interval
-    m_w[bl] += b - x[bl];
-  }
-}
-
-double Interpolation::integrate(const double *input) const {
-  if (m_w.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "cannot evaluate the integral");
-  }
-
-  double result = 0.0;
-  for (size_t k = 0; k < m_w.size(); ++k) {
-    result += input[k] * m_w[k];
-  }
   return result;
 }
 
-double Interpolation::integrate(const std::vector<double> &input) const {
-  return integrate(input.data());
+static std::map<size_t, double> weights_piecewise_linear(const double *x,
+                                                         size_t x_size,
+                                                         double a,
+                                                         double b) {
+
+  size_t
+    al = gsl_interp_bsearch(x, a, 0, x_size),
+    ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
+    bl = gsl_interp_bsearch(x, b, 0, x_size),
+    br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
+
+  double
+    alpha_a = (al == ar) ? 0.0 : (a - x[al]) / (x[ar] - x[al]),
+    alpha_b = (bl == br) ? 0.0 : (b - x[bl]) / (x[br] - x[bl]);
+
+  std::map<size_t, double> result;
+
+  if (al == bl and ar == br) {
+    // both end points are in the same interval
+
+    result[al] += 0.5 * (2.0 - alpha_a - alpha_b) * (b - a);
+    result[ar] += 0.5 * (alpha_a + alpha_b) * (b - a);
+  } else {
+    // first interval
+    result[al] += 0.5 * (1.0 - alpha_a) * (x[ar] - a);
+    result[ar] += 0.5 * (1.0 + alpha_a) * (x[ar] - a);
+
+    // intermediate intervals
+    for (size_t k = ar; k < bl; ++k) {
+      int
+        L = k,
+        R = k + 1;
+      result[L] += 0.5 * (x[R] - x[L]);
+      result[R] += 0.5 * (x[R] - x[L]);
+    }
+
+    // last interval
+    result[bl] += 0.5 * (2.0 - alpha_b) * (b - x[bl]);
+    result[br] += 0.5 * alpha_b * (b - x[bl]);
+  }
+
+  return result;
 }
 
-double Interpolation::interval_length() const {
-  return m_interval_length;
+/*!
+ * Compute weights for integrating a piece-wise linear or piece-wise constant function
+ * defined on the grid `x` from `a` to `b`.
+ *
+ * Uses constant extrapolation, both on the left and on the right.
+ *
+ * In the piece-wise constant case points in `x` are interpreted as left end points of
+ * intervals, i.e. the value `data[k]` corresponds to the interval `x[k], x[k + 1]`.
+ *
+ * To evaluate in the integral compute the dot product of data on the grid `x` with
+ * weights computed by this function:
+ *
+ * ```
+ * double result = 0.0;
+ * for (const auto &weight : weights) {
+ *   size_t k = weight.first;
+ *   double w = weight.second;
+ *   result += w * data[k];
+ * }
+ * ```
+ */
+std::map<size_t, double> integration_weights(const double *x,
+                                             size_t x_size,
+                                             InterpolationType type,
+                                             double a,
+                                             double b) {
+
+  if (a >= b) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "invalid integration interval (a >= b)");
+  }
+
+  if (type != LINEAR and type != PIECEWISE_CONSTANT) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "unsupported interpolation type");
+  }
+
+  auto weights = (type == LINEAR) ?
+    weights_piecewise_linear :
+    weights_piecewise_constant;
+
+  size_t N  = x_size - 1;
+  double t0 = x[0];
+  double t1 = x[N];
+
+  // both points are to the left of [t0, t1]
+  if (b <= t0) {
+    return {{0, b - a}};
+  }
+
+  // both points are to the right of [t0, t1]
+  if (a >= t1) {
+    return {{N, b - a}};
+  }
+
+  // a is to the left of [t0, t1]
+  if (a < t0) {
+    auto W = weights(x, x_size, t0, b);
+    W[0] += t0 - a;
+    return W;
+  }
+
+  // b is to the right of [t0, t1]
+  if (b > t1) {
+    auto W = weights(x, x_size, a, t1);
+    W[N] += b - t1;
+    return W;
+  }
+
+  // both a and b are inside [t0, t1]
+  return weights(x, x_size, a, b);
 }
 
+std::map<size_t, double> integration_weights(const std::vector<double> &x,
+                                             InterpolationType type,
+                                             double a,
+                                             double b) {
+  return integration_weights(x.data(), x.size(), type, a, b);
+}
 
 } // end of namespace pism
