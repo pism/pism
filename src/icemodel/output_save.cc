@@ -134,19 +134,14 @@ void IceModel::write_snapshot() {
 
   // flush time-series buffers
   flush_timeseries();
-  int fileID = -1;
+
+  // filename
   if (m_split_snapshots) {
-    m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
     filename = pism::printf("%s_%s.nc",
                             m_snapshots_filename.c_str(),
                             m_time->date(saving_after).c_str());
   } else {
     filename = m_snapshots_filename;
-  }
-
-  if (m_streamIDs.count(filename) > 0) {
-    fileID = m_streamIDs[filename];
-    m_snapshots_file_is_ready = true;
   }
 
   m_log->message(2,
@@ -157,30 +152,9 @@ void IceModel::write_snapshot() {
   const Profiling &profiling = m_ctx->profiling();
 
   profiling.begin("io.snapshots");
-  IO_Mode mode = m_snapshots_file_is_ready ? PISM_READWRITE : PISM_READWRITE_MOVE;
-  {
-    File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
-              mode,
-              m_ctx->pio_iosys_id(),
-              fileID,
-              m_DimSnapMap);
-
-    if (not m_snapshots_file_is_ready) {
-      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
-      m_snapshots_file_is_ready = true;
-    }
-
-    write_run_stats(file);
-    file.set_calendar(m_time->year_length(), m_time->calendar());
-    save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
-
-    if (file.backend() == PISM_CDI) {
-      m_streamIDs[filename] = file.get_streamID();
-    }
-  }
+  write_run_stats(*(m_save_file[filename]));
+  m_save_file[filename]->set_calendar(m_time->year_length(), m_time->calendar());
+  save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   if (m_current_snapshot < m_snapshot_times.size()) m_sthwritten = true;
   profiling.end("io.snapshots");
 }

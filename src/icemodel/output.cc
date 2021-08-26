@@ -119,51 +119,29 @@ void IceModel::save_results() {
     prepend_history(str);
   }
 
+  // filename
   std::string filename = m_config->get_string("output.file_name");
-
   if (filename.empty()) {
     m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
     filename = "unnamed.nc";
   }
-
   if (not ends_with(filename, ".nc")) {
     m_log->message(2,
                    "PISM WARNING: output file name does not have the '.nc' suffix!\n");
   }
 
   const Profiling &profiling = m_ctx->profiling();
-  int fileID = -1;
-  IO_Mode mode = PISM_READWRITE_MOVE;
-  if (m_streamIDs.count(filename) > 0) {
-    fileID = m_streamIDs[filename];
-    mode = PISM_READWRITE;
-  }
-
   profiling.begin("io.model_state");
   if (m_config->get_string("output.size") != "none") {
     m_log->message(2, "Writing model state to file `%s'...\n", filename.c_str());
-    profiling.begin("io.open");
-    File file(m_grid->com,
-              filename,
-              string_to_backend(m_config->get_string("output.format")),
-              mode,
-              m_ctx->pio_iosys_id(),
-              fileID,
-              m_DimOutMap);
-    profiling.end("io.open");
+    write_metadata(*m_output_file, WRITE_MAPPING, PREPEND_HISTORY);
+    write_run_stats(*m_output_file);
 
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file);
-
-    file.set_calendar(m_time->year_length(), m_time->calendar());
-    save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+    m_output_file->set_calendar(m_time->year_length(), m_time->calendar());
+    save_variables(*m_output_file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
     m_sthwritten = true;
     expose_windows();
-
-    if (file.backend() == PISM_CDI) {
-      m_streamIDs[filename] = file.get_streamID();
-    }
   }
   profiling.end("io.model_state");
 }
@@ -284,8 +262,7 @@ void IceModel::save_variables(const File &file,
 }
 
 void IceModel::open_files() {
-#if (Pism_USE_CDIPIO==1)
-if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+
   if (not m_opened) {
     m_opened = true;
     std::string filetype = m_config->get_string("output.cdi_pio.filetype");
@@ -311,23 +288,24 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
         int fileID = -1;
         IO_Mode mode = PISM_READWRITE_MOVE;
         {
-          File file(m_grid->com,
-                    filename,
-                    string_to_backend(m_config->get_string("output.format")),
-                    mode,
-                    m_ctx->pio_iosys_id(),
-                    fileID,
-                    m_DimSnapMap,
-                    filetype);
-          m_streamIDs[filename] = file.get_streamID();
+          m_save_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
+                                  filename,
+                                  string_to_backend(m_config->get_string("output.format")),
+                                  mode,
+                                  m_ctx->pio_iosys_id(),
+                                  fileID,
+                                  m_DimSnapMap,
+                                  filetype) );
 
-          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          m_streamIDs[filename] = m_save_file[filename]->get_streamID();
+
+          write_metadata(*(m_save_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
           m_snapshots_file_is_ready = true;
-          write_run_stats(file);
-          file.set_calendar(-1.0, m_time->calendar());
-          save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
-          m_vlistIDs[filename] = file.get_vlistID();
-          m_DimSnapMap = file.get_dimensions_map();
+          write_run_stats(*(m_save_file[filename]));
+          m_save_file[filename]->set_calendar(-1.0, m_time->calendar());
+          save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
+          m_vlistIDs[filename] = m_save_file[filename]->get_vlistID();
+          m_DimSnapMap = m_save_file[filename]->get_dimensions_map();
         }
         m_snapshots_file_is_ready = false;
       }
@@ -365,34 +343,35 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
         int fileID = -1;
         IO_Mode mode = PISM_READWRITE_MOVE;
         {
-          File file(m_grid->com,
-                    filename,
-                    string_to_backend(m_config->get_string("output.format")),
-                    mode,
-                    m_ctx->pio_iosys_id(),
-                    fileID,
-                    m_DimExtraMap,
-                    filetype);
-          m_streamIDs[filename] = file.get_streamID();
+          m_extra_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
+                                                         filename,
+                                                         string_to_backend(m_config->get_string("output.format")),
+                                                         mode,
+                                                         m_ctx->pio_iosys_id(),
+                                                         fileID,
+                                                         m_DimExtraMap,
+                                                         filetype ));
+
+          m_streamIDs[filename] = m_extra_file[filename]->get_streamID();
 
           std::string time_name = m_config->get_string("time.dimension_name");
-          io::define_time(file, *m_ctx);
-          file.write_attribute(time_name, "bounds", "time_bounds");
-          io::define_time_bounds(m_extra_bounds, "time", "nv", file);
-          write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+          io::define_time(*(m_extra_file[filename]), *m_ctx);
+          m_extra_file[filename]->write_attribute(time_name, "bounds", "time_bounds");
+          io::define_time_bounds(m_extra_bounds, "time", "nv", *(m_extra_file[filename]));
+          write_metadata(*(m_extra_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
           m_extra_file_is_ready = true;
-          write_run_stats(file);
-          file.set_calendar(-1.0, m_time->calendar());
-          save_variables(file,
+          write_run_stats(*(m_extra_file[filename]));
+          m_extra_file[filename]->set_calendar(-1.0, m_time->calendar());
+          save_variables(*(m_extra_file[filename]),
                          m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                          m_extra_vars,
                          0,
                          PISM_FLOAT,
                          false);
 
-          if (file.backend() == PISM_CDI) {
-            m_vlistIDs[filename] = file.get_vlistID();
-            m_DimExtraMap = file.get_dimensions_map();
+          if (m_extra_file[filename]->backend() == PISM_CDI) {
+            m_vlistIDs[filename] = m_extra_file[filename]->get_vlistID();
+            m_DimExtraMap = m_extra_file[filename]->get_dimensions_map();
           }
         }
         m_extra_file_is_ready = false;
@@ -412,32 +391,33 @@ if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
         m_log->message(2,
                        "PISM WARNING: output file name does not have the '.nc' suffix!\n");
       }
+
       int fileID = -1;
       IO_Mode mode = PISM_READWRITE_MOVE;
-      File file(m_grid->com,
-                filename,
-                string_to_backend(m_config->get_string("output.format")),
-                mode,
-                m_ctx->pio_iosys_id(),
-                fileID,
-                m_DimOutMap,
-                filetype);
-      m_streamIDs[filename] = file.get_streamID();
+      m_output_file.reset(new File( m_grid->com,
+                              filename,
+                              string_to_backend(m_config->get_string("output.format")),
+                              mode,
+                              m_ctx->pio_iosys_id(),
+                              fileID,
+                              m_DimOutMap,
+                              filetype ));
 
-      write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+      m_streamIDs[filename] = m_output_file->get_streamID();
 
-      write_run_stats(file);
-      file.set_calendar(-1.0, m_time->calendar());
-      save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
+      write_metadata(*m_output_file, WRITE_MAPPING, PREPEND_HISTORY);
+
+      write_run_stats(*m_output_file);
+      m_output_file->set_calendar(-1.0, m_time->calendar());
+      save_variables(*m_output_file, INCLUDE_MODEL_STATE, m_output_vars,
                      0, PISM_FLOAT, false);
-      if (file.backend() == PISM_CDI) {
-        m_vlistIDs[filename] = file.get_vlistID();
-        m_DimOutMap = file.get_dimensions_map();
+      if (m_output_file->backend() == PISM_CDI) {
+        m_vlistIDs[filename] = m_output_file->get_vlistID();
+        m_DimOutMap = m_output_file->get_dimensions_map();
       }
     }
   }
-}
-#endif
+
 }
 
 void IceModel::expose_windows() {
@@ -452,21 +432,23 @@ void IceModel::expose_windows() {
 }
 
 void IceModel::close_files() {
-#if (Pism_USE_CDIPIO==1)
-if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
+
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.close_streams");
-  // Close all files
-  for (auto const& streamID : m_streamIDs) {
-    streamClose(streamID.second);
+  // close save files
+  for (auto it = m_save_file.begin(); it != m_save_file.end(); it++)
+  {
+    (it->second).reset(nullptr);
   }
-  // Destroy all streams
-  for (auto const& vlistID : m_vlistIDs) {
-    vlistDestroy(vlistID.second);
+  // close extra files
+  for (auto it = m_extra_file.begin(); it != m_extra_file.end(); it++)
+  {
+    (it->second).reset(nullptr);
   }
+  // close restart file
+  m_output_file.reset(nullptr);
   profiling.end("io.close_streams");
-}
-#endif
+
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,

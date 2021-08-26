@@ -294,9 +294,8 @@ void IceModel::write_extras() {
     return;
   }
 
-  int fileID = -1;
+  // filename
   if (m_split_extra) {
-    m_extra_file_is_ready = false;        // each time-series record is written to a separate file
     filename = pism::printf("%s_%s.nc",
                             m_extra_filename.c_str(),
                             m_time->date().c_str());
@@ -304,50 +303,19 @@ void IceModel::write_extras() {
     filename = m_extra_filename;
   }
 
-  if (m_streamIDs.count(filename) > 0) {
-    fileID = m_streamIDs[filename];
-    m_extra_file_is_ready = true;
-  }
-
   m_log->message(3,
                  "saving spatial time-series to %s at %s\n",
                  filename.c_str(), m_time->date().c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_flag("output.extra.append");
-  IO_Mode mode = m_extra_file_is_ready or append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-
   const Profiling &profiling = m_ctx->profiling();
   profiling.begin("io.extra_file");
   {
-    if (not m_extra_file) {
-      m_extra_file.reset(new File(m_grid->com,
-                                  filename,
-                                  string_to_backend(m_config->get_string("output.format")),
-                                  mode,
-                                  m_ctx->pio_iosys_id(),
-                                  fileID,
-                                  m_DimExtraMap));
-    }
-
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    if (not m_extra_file_is_ready) {
-      // Prepare the file:
-      io::define_time(*m_extra_file, *m_ctx);
-      m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
-
-      io::define_time_bounds(m_extra_bounds,
-                             time_name, "nv", *m_extra_file);
-
-      write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
-
-      m_extra_file_is_ready = true;
-    }
-
-    write_run_stats(*m_extra_file);
-    m_extra_file->set_calendar(m_time->year_length(), m_time->calendar());
-    save_variables(*m_extra_file,
+    write_run_stats(*(m_extra_file[filename]));
+    m_extra_file[filename]->set_calendar(m_time->year_length(), m_time->calendar());
+    save_variables(*(m_extra_file[filename]),
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                    m_extra_vars,
                    0.5 * (m_last_extra + current_time), // use the mid-point of the
@@ -355,15 +323,15 @@ void IceModel::write_extras() {
                    PISM_FLOAT);
 
     // Get the length of the time dimension *after* it is appended to.
-    unsigned int time_length = m_extra_file->dimension_length(time_name);
+    unsigned int time_length = m_extra_file[filename]->dimension_length(time_name);
     size_t time_start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
 
-    io::write_time_bounds(*m_extra_file, m_extra_bounds,
+    io::write_time_bounds(*(m_extra_file[filename]), m_extra_bounds,
                           time_start, {m_last_extra, current_time});
     // make sure all changes are written
-    m_extra_file->sync();
-    if (m_extra_file->backend() == PISM_CDI) {
-      m_streamIDs[filename] = m_extra_file->get_streamID();
+    m_extra_file[filename]->sync();
+    if (m_extra_file[filename]->backend() == PISM_CDI) {
+      m_streamIDs[filename] = m_extra_file[filename]->get_streamID();
     }
   }
   if (current_extra < m_extra_times.size() - 1) {
@@ -372,11 +340,6 @@ void IceModel::write_extras() {
   profiling.end("io.extra_file");
 
   flush_timeseries();
-
-  if (m_split_extra) {
-    // each record is saved to a new file, so we can close this one
-    m_extra_file.reset(nullptr);
-  }
 
   m_last_extra = current_time;
 
