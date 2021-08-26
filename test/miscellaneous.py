@@ -1068,6 +1068,7 @@ def test_piece_wise_constant_integral():
     # constant extrapolation:
     np.testing.assert_almost_equal(f(-2, -1), 1 * y[0])
     np.testing.assert_almost_equal(f(-2, 0), 2 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0.5), 2 * y[0] + 0.5 * 2)
     np.testing.assert_almost_equal(f(2, 5), 3 * y[-1])
     np.testing.assert_almost_equal(f(3, 4), 1 * y[-1])
 
@@ -1077,6 +1078,13 @@ def test_interpolation_other():
     try:
         PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
         assert False, "failed to detect non-increasing data"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        W = PISM.integration_weights(x, PISM.NEAREST, 1, 2)
+        assert False, "failed to detect an unsupported interpolation type"
     except RuntimeError as e:
         print(e)
         pass
