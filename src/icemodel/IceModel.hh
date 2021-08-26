@@ -426,6 +426,7 @@ protected:
   std::map<std::string, AxisType> m_DimOutMap;
   MaxTimestep save_max_timestep(double my_t);
   std::map<std::string, int> m_streamIDs, m_vlistIDs;
+  std::map<std::string, std::unique_ptr<File>> m_save_file;
 
   //! file to write scalar time-series to
   std::string m_ts_filename;
@@ -444,11 +445,13 @@ protected:
   double m_last_extra;
   std::set<std::string> m_extra_vars;
   VariableMetadata m_extra_bounds;
-  std::unique_ptr<File> m_extra_file;
+  std::map<std::string, std::unique_ptr<File>> m_extra_file;
   void init_extras();
   void write_extras();
   std::map<std::string, AxisType> m_DimExtraMap;
   MaxTimestep extras_max_timestep(double my_t);
+
+  std::unique_ptr<File> m_output_file;
 
   // automatic backups
   std::string m_backup_filename;
