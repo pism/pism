@@ -93,39 +93,6 @@ int String::process(const std::string& option,
   return 0;
 }
 
-StringList::StringList(const std::string& option,
-                       const std::string& description,
-                       const std::string& default_value) {
-  String input(option, description, default_value, DONT_ALLOW_EMPTY);
-
-  this->set(split(input, ','), input.is_set());
-}
-
-const std::string& StringList::operator[](size_t index) const {
-  return m_value[index];
-}
-
-std::string StringList::to_string() {
-  return join(m_value, ",");
-}
-
-StringSet::StringSet(const std::string& option,
-                     const std::string& description,
-                     const std::string& default_value) {
-  StringList input(option, description, default_value);
-  std::set<std::string> result;
-
-  for (auto s : input.value()) {
-    result.insert(s);
-  }
-
-  this->set(result, input.is_set());
-}
-
-std::string StringSet::to_string() {
-  return set_join(m_value, ",");
-}
-
 Keyword::Keyword(const std::string& option,
                  const std::string& description,
                  const std::string& choices,

@@ -70,23 +70,6 @@ private:
               ArgumentFlag flag);
 };
 
-class StringList : public Option<std::vector<std::string> > {
-public:
-  StringList(const std::string& option,
-             const std::string& description,
-             const std::string& default_value);
-  std::string to_string();
-  const std::string& operator[](size_t index) const;
-};
-
-class StringSet : public Option<std::set<std::string> > {
-public:
-  StringSet(const std::string& option,
-            const std::string& description,
-            const std::string& default_value);
-  std::string to_string();
-};
-
 class Keyword : public Option<std::string> {
 public:
   Keyword(const std::string& option,
