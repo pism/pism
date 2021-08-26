@@ -103,8 +103,7 @@ void ParallelIO::open_impl(const std::string &filename,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void ParallelIO::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
-  (void) FileID;
+void ParallelIO::create_impl(const std::string &filename, const std::string &filetype) {
   (void) filetype;
 
   int mode = NC_CLOBBER;

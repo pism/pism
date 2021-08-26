@@ -63,8 +63,7 @@ void PNCFile::open_impl(const std::string &fname,
 }
 
 
-void PNCFile::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
-  (void) FileID;
+void PNCFile::create_impl(const std::string &fname, const std::string &filetype) {
   (void) filetype;
 
   int stat;

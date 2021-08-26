@@ -47,8 +47,7 @@ NC4_Serial::~NC4_Serial() {
   // empty
 }
 
-void NC4_Serial::create_impl(const std::string &fname, int FileID, const std::string &filetype) {
-  (void) FileID;
+void NC4_Serial::create_impl(const std::string &fname, const std::string &filetype) {
   (void) filetype;
 
   int stat = NC_NOERR;

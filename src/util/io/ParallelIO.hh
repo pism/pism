@@ -35,7 +35,7 @@ protected:
                  IO_Mode mode,
                  int FileID = -1,
                  const std::map<std::string, AxisType> &dimsa = {});
-  void create_impl(const std::string &filename, int FileID = -1, const std::string &filetype = std::string());
+  void create_impl(const std::string &filename, const std::string &filetype = std::string());
   void sync_impl() const;
   void close_impl();
 
