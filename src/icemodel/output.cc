@@ -293,8 +293,6 @@ void IceModel::open_files() {
                                   string_to_backend(m_config->get_string("output.format")),
                                   mode,
                                   m_ctx->pio_iosys_id(),
-                                  fileID,
-                                  m_DimSnapMap,
                                   filetype) );
 
           m_streamIDs[filename] = m_save_file[filename]->get_streamID();
@@ -348,8 +346,6 @@ void IceModel::open_files() {
                                                          string_to_backend(m_config->get_string("output.format")),
                                                          mode,
                                                          m_ctx->pio_iosys_id(),
-                                                         fileID,
-                                                         m_DimExtraMap,
                                                          filetype ));
 
           m_streamIDs[filename] = m_extra_file[filename]->get_streamID();
@@ -399,8 +395,6 @@ void IceModel::open_files() {
                               string_to_backend(m_config->get_string("output.format")),
                               mode,
                               m_ctx->pio_iosys_id(),
-                              fileID,
-                              m_DimOutMap,
                               filetype ));
 
       m_streamIDs[filename] = m_output_file->get_streamID();

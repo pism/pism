@@ -64,9 +64,7 @@ public:
 
   // open/create/close
   void open(const std::string &filename,
-            IO_Mode mode,
-            int FileID = -1,
-            const std::map<std::string, AxisType> &dimsa = {});
+            IO_Mode mode);
 
   void create(const std::string &filename, const std::string &filetype = std::string());
 
@@ -170,9 +168,7 @@ protected:
 
   // open/create/close
   virtual void open_impl(const std::string &filename,
-                         IO_Mode mode,
-                         int FileID = -1,
-                         const std::map<std::string, AxisType> &dimsa = {}) = 0;
+                         IO_Mode mode) = 0;
   virtual void create_impl(const std::string &filename,
                            const std::string &filetype = std::string()) = 0;
   virtual void sync_impl() const = 0;

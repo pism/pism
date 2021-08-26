@@ -194,8 +194,6 @@ File::File(MPI_Comm com,
            IO_Backend backend,
            IO_Mode mode,
            int iosysid,
-           int FileID,
-           const std::map<std::string, AxisType> &dimsa,
            const std::string &filetype)
   : m_impl(new Impl) {
 
@@ -214,8 +212,6 @@ File::File(MPI_Comm com,
   m_impl->nc  = create_backend(m_impl->com, m_impl->backend, iosysid);
   this->open(filename,
              mode,
-             FileID,
-             dimsa,
              filetype);
 }
 
@@ -280,8 +276,6 @@ void File::set_compression_level(int level) const {
 
 void File::open(const std::string &filename,
                 IO_Mode mode,
-                int FileID,
-                const std::map<std::string, AxisType> &dimsa,
                 const std::string &filetype) {
   try {
 
@@ -305,9 +299,7 @@ void File::open(const std::string &filename,
     } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
 
       m_impl->nc->open(filename,
-                       mode,
-                       FileID,
-                       dimsa);
+                       mode);
 
       int old_fill;
       m_impl->nc->set_fill(PISM_NOFILL, old_fill);

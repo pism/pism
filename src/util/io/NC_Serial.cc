@@ -74,11 +74,7 @@ void NC_Serial::set_compression_level_impl(int level) const {
 
 // open/create/close
 void NC_Serial::open_impl(const std::string &fname,
-                        IO_Mode mode,
-                        int FileID,
-                        const std::map<std::string, AxisType> &dimsa) {
-  (void) FileID;
-  (void) dimsa;
+                          IO_Mode mode) {
 
   int stat = NC_NOERR;
 

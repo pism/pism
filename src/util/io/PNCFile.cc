@@ -46,11 +46,7 @@ static void check(const ErrorLocation &where, int return_code) {
 }
 
 void PNCFile::open_impl(const std::string &fname,
-                        IO_Mode mode,
-                        int FileID,
-                        const std::map<std::string, AxisType> &dimsa) {
-  (void) FileID;
-  (void) dimsa;
+                        IO_Mode mode) {
 
   int stat;
 

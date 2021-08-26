@@ -55,8 +55,6 @@ public:
        IO_Backend backend,
        IO_Mode mode,
        int iosysid = -1,
-       int FileID = -1,
-       const std::map<std::string, AxisType> &dimsa = {},
        const std::string &filetype = std::string());
   ~File();
 
@@ -178,8 +176,6 @@ private:
   Impl *m_impl;
   void open(const std::string &filename,
             IO_Mode mode,
-            int FileID = -1,
-            const std::map<std::string, AxisType> &dimsa = {},
 	    const std::string& filetype = std::string());
 
   // disable copying and assignments

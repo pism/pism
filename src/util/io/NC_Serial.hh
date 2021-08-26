@@ -37,9 +37,7 @@ protected:
   // implementations:
   // open/create/close
   void open_impl(const std::string &filename,
-                 IO_Mode mode,
-                 int FileID = -1,
-                 const std::map<std::string, AxisType> &dimsa = {});
+                 IO_Mode mode);
 
   virtual void create_impl(const std::string &filename, const std::string &filetype = std::string());
 
