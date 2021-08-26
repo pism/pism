@@ -296,7 +296,7 @@ double ScalarForcing::integral(double a, double b) const {
 
   // gsl_interp_bsearch() above returns the index i of the array ‘m_times’ such that
   // ‘m_times[i] <= t < m_times[i+1]’.  The index is searched for in the
-  // range [0, m_times.size() - 1]
+  // range [0, m_times.size() - 1] (inclusive).
 
   double v_a = gsl_spline_eval(m_spline, a, m_acc);
   double v_b = gsl_spline_eval(m_spline, b, m_acc);

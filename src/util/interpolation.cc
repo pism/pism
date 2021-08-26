@@ -103,6 +103,8 @@ void Interpolation::init_linear(const double *input_x, unsigned int input_x_size
   for (unsigned int i = 0; i < output_x_size; ++i) {
     double x = output_x[i];
 
+    // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
+    // the right
     unsigned int
       L = gsl_interp_bsearch(input_x, x, 0, input_x_size),
       R = L + 1;
@@ -195,6 +197,8 @@ void Interpolation::init_piecewise_constant(const double *input_x, unsigned int 
   // compute indexes and weights
   for (unsigned int i = 0; i < output_x_size; ++i) {
 
+    // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
+    // the right
     size_t L = gsl_interp_bsearch(input_x, output_x[i], 0, input_x_size);
 
     m_left[i] = L;
@@ -229,6 +233,8 @@ void Interpolation::init_linear_periodic(const double *input_x, unsigned int inp
       L = input_x_size - 1;
       R = 0.0;
     } else {
+      // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
+      // the right
       L = gsl_interp_bsearch(input_x, x, 0, input_x_size);
       R = L + 1 < input_x_size ? L + 1 : 0;
     }
