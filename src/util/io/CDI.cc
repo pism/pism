@@ -57,22 +57,11 @@ CDI::CDI(MPI_Comm c)
 }
 
 void CDI::open_impl(const std::string &filename,
-                    IO_Mode mode,
-                    int FileID,
-                    const std::map<std::string, AxisType> &dimsa) {
-  // FIXME: in general the assumption below is incorrect
-  //
-  // the file is already created and opened - restore file info into the class
+                    IO_Mode mode) {
+  // FIXME: implement to append a file
   if (mode == PISM_READONLY) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
   }
-  m_file_id = FileID;
-  m_vlistID = streamInqVlist(m_file_id);
-  m_tID     = vlistInqTaxis(m_vlistID);
-  map_varsID();
-  map_zaxisID();
-  m_gridID   = vlistGrid(m_vlistID, 0);
-  m_dimsAxis = dimsa;
 }
 
 void CDI::map_varsID() const {
@@ -117,8 +106,7 @@ static int file_type(const std::string &string) {
   return types[string];
 }
 
-void CDI::create_impl(const std::string &filename, int FileID, const std::string &filetype) {
-  // FIXME: parameter FileID is not used
+void CDI::create_impl(const std::string &filename, const std::string &filetype) {
   m_file_id = streamOpenWrite(filename.c_str(), file_type(filetype));
   m_tID     = -1;
   m_zsID    = -1;
@@ -127,22 +115,30 @@ void CDI::create_impl(const std::string &filename, int FileID, const std::string
 }
 
 void CDI::close_impl() {
-  m_file_id = -1;
-  m_varsID.clear();
-  m_dimsAxis.clear();
-  m_zID.clear();
-  m_diagvars.clear();
+  // close stream
+  streamClose(m_file_id);
+  // grid destroy
+  if (m_gridID  != -1) gridDestroy(m_gridID);
+  if (m_gridsID != 0 ) gridDestroy(m_gridsID);
+  if (m_gridgID != 0 ) gridDestroy(m_gridgID);
+  // Z axis destroy
+  for (auto it = m_zID.begin(); it != m_zID.end(); it++)
+  {
+    zaxisDestroy(it->second);
+  }
+  // Time axis destroy
+  if (m_tID != -1) taxisDestroy(m_tID);
+  // variable list destroy
+  vlistDestroy(m_vlistID);
 }
 
 void CDI::def_vlist() const {
   if (m_vlistID == -1) {
     // create variable list
     m_vlistID = vlistCreate();
-    // FIXME: who's responsible for calling vlistDestroy()?
 
     // create dummy grid to handle scalar values
     m_gridsID = gridCreate(GRID_LONLAT, 1);
-    // FIXME: who's responsible for calling gridDestroy()?
 
     gridDefXsize(m_gridsID, 1);
     gridDefXname(m_gridsID, "x_dummy");
@@ -155,7 +151,6 @@ void CDI::def_zs() const {
   // create surface Z axis (only if it was not done before)
   if (m_zsID == -1) {
     m_zsID      = zaxisCreate(ZAXIS_SURFACE, 1);
-    // FIXME: who's responsible for calling zaxisDestroy()?
     m_zID["zs"] = m_zsID;
     zaxisDefName(m_zsID, "zs");
   }
@@ -184,7 +179,6 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
       // define z axis only if it's new
       if (m_zID.count(name) == 0U) {
         m_zID[name] = zaxisCreate(ZAXIS_GENERIC, static_cast<int>(length));
-        // FIXME: who's responsible for calling zaxisDestroy()?
         zaxisDefName(m_zID[name], name.c_str());
       }
       break;
@@ -204,7 +198,6 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
     {
       // define grid for 1D data
       m_gridgID = gridCreate(GRID_LONLAT, length);
-      // FIXME: who's responsible for calling gridDestroy()?
 
       gridDefXsize(m_gridgID, length);
       gridDefXname(m_gridgID, name.c_str());
@@ -712,7 +705,6 @@ void CDI::create_grid_impl(int lengthx, int lengthy) const {
     // We should use GRID_PROJECTION, but CDI halts with the error "unimplemented grid
     // type: 12" in cdiPioQueryVarDims().
     m_gridID = gridCreate(GRID_LONLAT, lengthx * lengthy);
-    // FIXME: who's responsible for calling gridDestroy()?
   }
   // FIXME: that happens if this is called twice, but with different lengthx and lengthy?
 }
