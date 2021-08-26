@@ -473,19 +473,6 @@ void IceModelVec2T::set_record(int n) {
   }
 }
 
-//! Sets the (internal) Vec v to the contents of the nth record.
-void IceModelVec2T::get_record(int n) {
-
-  AccessList l{this};
-
-  double  **a2 = array();
-  double ***a3 = array3();
-  for (Points p(*m_impl->grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    a2[j][i] = a3[j][i][n];
-  }
-}
-
 //! @brief Given the time t determines the maximum possible time-step this IceModelVec2T
 //! allows.
 MaxTimestep IceModelVec2T::max_timestep(double t) const {

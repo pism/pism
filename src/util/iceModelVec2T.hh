@@ -89,7 +89,6 @@ private:
   void update(unsigned int start);
   void discard(int N);
   void set_record(int n);
-  void get_record(int n);
 };
 
 
