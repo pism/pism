@@ -333,7 +333,8 @@ void IceModel::open_files() {
                                   m_time->date(tt).c_str());
         }
 
-        IO_Mode mode = PISM_READWRITE_MOVE;
+        bool append = m_config->get_flag("output.extra.append");
+        IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
         m_extra_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
                                                        filename,
                                                        string_to_backend(m_config->get_string("output.format")),
