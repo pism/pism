@@ -83,7 +83,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
 #if (Pism_USE_CDIPIO==1)
-    m_wnd(),
+    m_wnd(string_to_backend(m_config->get_string("output.format"))),
 #endif
     m_timestamp("timestamp", m_sys) {
 
