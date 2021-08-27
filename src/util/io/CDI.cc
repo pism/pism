@@ -62,6 +62,9 @@ void CDI::open_impl(const std::string &filename,
   if (mode == PISM_READONLY) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file reading not supported with CDI-PIO in PISM");
   }
+  if (mode == PISM_READWRITE) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file appending with CDI-PIO not implemented in PISM yet");
+  }
 }
 
 void CDI::map_varsID() const {
@@ -188,7 +191,6 @@ void CDI::def_dim_impl(const std::string &name, size_t length, AxisType dim) con
       // define time axis if it was not done before
       if (m_tID == -1) {
         m_tID = taxisCreate(TAXIS_ABSOLUTE);
-        // FIXME: who's responsible for calling taxisDestroy()?
         taxisDefCalendar(m_tID, m_cdi_calendar);
         vlistDefTaxis(m_vlistID, m_tID);
       }
