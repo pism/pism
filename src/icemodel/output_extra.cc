@@ -331,9 +331,7 @@ void IceModel::write_extras() {
     // make sure all changes are written
     m_extra_file[filename]->sync();
   }
-  if (current_extra < m_extra_times.size() - 1) {
-    m_sthwritten = true;
-  }
+  if (current_extra < m_extra_times.size() - 1) m_wnd.update(true);
   profiling.end("io.extra_file");
 
   flush_timeseries();

@@ -140,8 +140,8 @@ void IceModel::save_results() {
     m_output_file->set_calendar(m_time->year_length(), m_time->calendar());
     save_variables(*m_output_file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
-    m_sthwritten = true;
-    expose_windows();
+    m_wnd.update(true);
+    m_wnd.expose();
   }
   profiling.end("io.model_state");
 }
@@ -269,6 +269,7 @@ void IceModel::open_files() {
     // Open snap file/s
     if (m_save_snapshots) {
       std::string filename;
+      // number of files
       int nsnap;
       if (not m_split_snapshots) {
         nsnap = 1;
@@ -277,6 +278,7 @@ void IceModel::open_files() {
       }
 
       for (int sn = 0; sn < nsnap; sn++) {
+        // filename
         if (not m_split_snapshots) {
           filename = m_snapshots_filename;
         } else {
@@ -285,30 +287,25 @@ void IceModel::open_files() {
                                   m_time->date(m_snapshot_times[sn]).c_str());
         }
 
-        int fileID = -1;
         IO_Mode mode = PISM_READWRITE_MOVE;
-        {
-          m_save_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
-                                  filename,
-                                  string_to_backend(m_config->get_string("output.format")),
-                                  mode,
-                                  m_ctx->pio_iosys_id(),
-                                  filetype) );
+        m_save_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
+                                filename,
+                                string_to_backend(m_config->get_string("output.format")),
+                                mode,
+                                m_ctx->pio_iosys_id(),
+                                filetype) );
 
-          write_metadata(*(m_save_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
-          m_snapshots_file_is_ready = true;
-          write_run_stats(*(m_save_file[filename]));
-          m_save_file[filename]->set_calendar(-1.0, m_time->calendar());
-          save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
-        }
-        m_snapshots_file_is_ready = false;
+        write_metadata(*(m_save_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
+        write_run_stats(*(m_save_file[filename]));
+        m_save_file[filename]->set_calendar(-1.0, m_time->calendar());
+        save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current(), PISM_FLOAT, false);
       }
-      m_snapshots_file_is_ready = true;
     }
 
     // Open Extra file/s
     if (m_save_extra) {
       std::string filename;
+      // numer of files
       int nsnap;
       if (not m_split_extra) {
         nsnap = 1;
@@ -321,6 +318,7 @@ void IceModel::open_files() {
       }
 
       for (int sn = 0; sn < nsnap; sn++) {
+        // filename
         if (not m_split_extra) {
           filename = m_extra_filename;
         } else {
@@ -334,39 +332,35 @@ void IceModel::open_files() {
                                   m_extra_filename.c_str(),
                                   m_time->date(tt).c_str());
         }
-        int fileID = -1;
-        IO_Mode mode = PISM_READWRITE_MOVE;
-        {
-          m_extra_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
-                                                         filename,
-                                                         string_to_backend(m_config->get_string("output.format")),
-                                                         mode,
-                                                         m_ctx->pio_iosys_id(),
-                                                         filetype ));
 
-          std::string time_name = m_config->get_string("time.dimension_name");
-          io::define_time(*(m_extra_file[filename]), *m_ctx);
-          m_extra_file[filename]->write_attribute(time_name, "bounds", "time_bounds");
-          io::define_time_bounds(m_extra_bounds, "time", "nv", *(m_extra_file[filename]));
-          write_metadata(*(m_extra_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
-          m_extra_file_is_ready = true;
-          write_run_stats(*(m_extra_file[filename]));
-          m_extra_file[filename]->set_calendar(-1.0, m_time->calendar());
-          save_variables(*(m_extra_file[filename]),
+        IO_Mode mode = PISM_READWRITE_MOVE;
+        m_extra_file[filename] = std::unique_ptr<File>(new File( m_grid->com,
+                                                       filename,
+                                                       string_to_backend(m_config->get_string("output.format")),
+                                                       mode,
+                                                       m_ctx->pio_iosys_id(),
+                                                       filetype ));
+
+        std::string time_name = m_config->get_string("time.dimension_name");
+        io::define_time(*(m_extra_file[filename]), *m_ctx);
+        m_extra_file[filename]->write_attribute(time_name, "bounds", "time_bounds");
+        io::define_time_bounds(m_extra_bounds, "time", "nv", *(m_extra_file[filename]));
+        write_metadata(*(m_extra_file[filename]), WRITE_MAPPING, PREPEND_HISTORY);
+        write_run_stats(*(m_extra_file[filename]));
+        m_extra_file[filename]->set_calendar(-1.0, m_time->calendar());
+        save_variables(*(m_extra_file[filename]),
                          m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,
                          m_extra_vars,
                          0,
                          PISM_FLOAT,
                          false);
-        }
-        m_extra_file_is_ready = false;
       }
-      m_extra_file_is_ready = true;
     }
 
     // Open Output file
     if (m_config->get_string("output.size") != "none")
     {
+      // filename
       std::string filename = m_config->get_string("output.file_name");
       if (filename.empty()) {
         m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
@@ -384,27 +378,14 @@ void IceModel::open_files() {
                               mode,
                               m_ctx->pio_iosys_id(),
                               filetype ));
-
       write_metadata(*m_output_file, WRITE_MAPPING, PREPEND_HISTORY);
-
       write_run_stats(*m_output_file);
       m_output_file->set_calendar(-1.0, m_time->calendar());
       save_variables(*m_output_file, INCLUDE_MODEL_STATE, m_output_vars,
-                     0, PISM_FLOAT, false);
+                      0, PISM_FLOAT, false);
     }
   }
 
-}
-
-void IceModel::expose_windows() {
-#if (Pism_USE_CDIPIO==1)
-  if (string_to_backend(m_config->get_string("output.format")) == PISM_CDI) {
-    if (m_sthwritten) {
-      pioWriteTimestep();
-      m_sthwritten = false;
-    }
-  }
-#endif
 }
 
 void IceModel::close_files() {

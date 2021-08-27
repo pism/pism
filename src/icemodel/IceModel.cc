@@ -72,7 +72,6 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_opened(false),
-    m_sthwritten(false),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
     m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
@@ -83,6 +82,9 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
+#if (Pism_USE_CDIPIO==1)
+    m_wnd(),
+#endif
     m_timestamp("timestamp", m_sys) {
 
   // time-independent info
@@ -819,7 +821,7 @@ void IceModel::run() {
     write_snapshot();
     write_extras();
     write_backup();
-    expose_windows();
+    m_wnd.expose();
     profiling.end("io");
 
     if (stepcount >= 0) {

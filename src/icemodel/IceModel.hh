@@ -53,8 +53,13 @@
 #include "pism/geometry/GeometryEvolution.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
+#include "pism/util/cdipio/CDIPIOWindow.hh"
 
 namespace pism {
+
+namespace cdipio {
+class Window;
+}
 
 namespace ocean {
 class OceanModel;
@@ -124,7 +129,6 @@ public:
   virtual void run();
   virtual void close_files();
   virtual void open_files();
-  virtual void expose_windows();
 
   /** Advance the current PISM run to a specific time */
   virtual void run_to(double time);
@@ -254,7 +258,6 @@ protected:
   VariableMetadata m_run_stats;
 
   bool m_opened;
-  bool m_sthwritten;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
@@ -455,6 +458,10 @@ protected:
   std::set<std::string> m_backup_vars;
   void init_backups();
   void write_backup();
+
+#if (Pism_USE_CDIPIO==1)
+  cdipio::Window m_wnd;
+#endif
 
   // last time at which PISM hit a multiple of X years, see the configuration parameter
   // time_stepping.hit_multiples

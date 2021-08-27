@@ -155,7 +155,7 @@ void IceModel::write_snapshot() {
   write_run_stats(*(m_save_file[filename]));
   m_save_file[filename]->set_calendar(m_time->year_length(), m_time->calendar());
   save_variables(*(m_save_file[filename]), INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
-  if (m_current_snapshot < m_snapshot_times.size()) m_sthwritten = true;
+  if (m_current_snapshot < m_snapshot_times.size()) m_wnd.update(true);
   profiling.end("io.snapshots");
 }
 

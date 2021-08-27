@@ -83,6 +83,7 @@ if (Pism_USE_CDIPIO)
   list(APPEND PISMUTIL_SRC io/CDI.cc)
   list(APPEND PISMUTIL_SRC
     cdipio/CDIPIOInitializer.cc
+    cdipio/CDIPIOWindow.cc
     cdipio/Idxlist.cc)
 endif()
 
