@@ -1077,7 +1077,7 @@ def test_interpolation_other():
 
     try:
         PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
-        assert False, "failed to detect non-increasing data"
+        assert False, "failed to detect non-increasing times"
     except RuntimeError as e:
         print(e)
         pass
@@ -1100,27 +1100,6 @@ def test_interpolation_other():
     np.testing.assert_almost_equal(I.left(), [0, 1])
     np.testing.assert_almost_equal(I.right(), [1, 2])
     np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
-
-
-def test_linear_periodic():
-    "Linear (periodic) interpolation"
-
-    period = 1.0
-    x_p = np.linspace(0, 0.9, 10) + 0.05
-    y_p = np.sin(2 * np.pi * x_p)
-
-    # grid with end points added (this makes periodic interpolation unnecessary)
-    x = np.r_[0, x_p, 1]
-    y = np.sin(2 * np.pi * x)
-
-    # target grid
-    xx = np.linspace(0, 1, 21)
-
-    yy_p = PISM.Interpolation(PISM.LINEAR_PERIODIC, x_p, xx, period).interpolate(y_p)
-
-    yy = PISM.Interpolation(PISM.LINEAR, x, xx).interpolate(y)
-
-    np.testing.assert_almost_equal(yy, yy_p)
 
 def test_nearest_neighbor():
     "Nearest neighbor interpolation"

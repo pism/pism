@@ -28,17 +28,15 @@ namespace pism {
 
 Interpolation::Interpolation(InterpolationType type,
                              const std::vector<double> &input_x,
-                             const std::vector<double> &output_x,
-                             double period)
+                             const std::vector<double> &output_x)
   : Interpolation(type, input_x.data(), input_x.size(),
-                  output_x.data(), output_x.size(), period) {
+                  output_x.data(), output_x.size()) {
   // empty
 }
 
 Interpolation::Interpolation(InterpolationType type,
                              const double *input_x, unsigned int input_x_size,
-                             const double *output_x, unsigned int output_x_size,
-                             double period) {
+                             const double *output_x, unsigned int output_x_size) {
 
   // the trivial case (the code below requires input_x_size >= 2)
   if (input_x_size < 2) {
@@ -73,9 +71,6 @@ Interpolation::Interpolation(InterpolationType type,
     break;
   case PIECEWISE_CONSTANT:
     init_piecewise_constant(input_x, input_x_size, output_x, output_x_size);
-    break;
-  case LINEAR_PERIODIC:
-    init_linear_periodic(input_x, input_x_size, output_x, output_x_size, period);
     break;
     // LCOV_EXCL_START
   default:
@@ -207,63 +202,6 @@ void Interpolation::init_piecewise_constant(const double *input_x, unsigned int 
     assert(m_left[i] >= 0 and m_left[i] < (int)input_x_size);
     assert(m_right[i] >= 0 and m_right[i] < (int)input_x_size);
     assert(m_alpha[i] >= 0.0 and m_alpha[i] <= 1.0);
-  }
-}
-
-void Interpolation::init_linear_periodic(const double *input_x, unsigned int input_x_size,
-                                         const double *output_x, unsigned int output_x_size,
-                                         double period) {
-
-  assert(period > 0);
-  assert(input_x_size >= 2);
-
-  m_left.resize(output_x_size);
-  m_right.resize(output_x_size);
-  m_alpha.resize(output_x_size);
-
-  // compute indexes and weights
-  for (unsigned int i = 0; i < output_x_size; ++i) {
-    double x = output_x[i];
-
-    unsigned int L = 0, R = 0;
-    if (x < input_x[0]) {
-      L = input_x_size - 1;
-      R = 0.0;
-    } else {
-      // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
-      // the right
-      L = gsl_interp_bsearch(input_x, x, 0, input_x_size);
-      R = L + 1 < input_x_size ? L + 1 : 0;
-    }
-
-    double
-      x_l = input_x[L],
-      x_r = input_x[R],
-      alpha = 0.0;
-    if (L < R) {
-      // regular case
-      alpha = (x - x_l) / (x_r - x_l);
-    } else {
-      double
-        x0 = input_x[0],
-        dx = (period - x_l) + x0;
-      assert(dx > 0);
-      if (x > x0) {
-        // interval from the last point of the input grid to the period
-        alpha = (x - x_l) / dx;
-      } else {
-        // interval from 0 to the first point of the input grid
-        alpha = 1.0 - (x_r - x) / dx;
-      }
-    }
-
-    assert(L < input_x_size);
-    assert(R < input_x_size);
-    assert(alpha >= 0.0 and alpha <= 1.0);
-
-    m_left[i]  = L;
-    m_right[i] = R;
-    m_alpha[i] = alpha;
   }
 }
 

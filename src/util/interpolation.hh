@@ -25,7 +25,7 @@
 
 namespace pism {
 
-enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
+enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT};
 
 /**
  * Class encapsulating linear and piece-wise constant interpolation indexes and weights.
@@ -76,18 +76,13 @@ enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
  * intervals: [0, 1) and [1, x_e). Here the value x_e is irrelevant because we use
  * constant extrapolation for points outside the interval covered by input data.
  *
- *
- * Linear interpolation for periodic data (annual temperature cycles, etc).
- *
- * Input data are assumed to be periodic on the interval from 0 to `period`.
- *
  */
 class Interpolation {
 public:
   Interpolation(InterpolationType type, const std::vector<double> &input_x,
-                const std::vector<double> &output_x, double period = 0.0);
+                const std::vector<double> &output_x);
   Interpolation(InterpolationType type, const double *input_x, unsigned int input_x_size,
-                const double *output_x, unsigned int output_x_size, double period = 0.0);
+                const double *output_x, unsigned int output_x_size);
 
   const std::vector<int>& left() const;
   const std::vector<int>& right() const;
@@ -119,9 +114,6 @@ private:
                     const double *output_x, unsigned int output_x_size);
   void init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                const double *output_x, unsigned int output_x_size);
-  void init_linear_periodic(const double *input_x, unsigned int input_x_size,
-                            const double *output_x, unsigned int output_x_size,
-                            double period);
 };
 
 std::map<size_t, double> integration_weights(const double *x,

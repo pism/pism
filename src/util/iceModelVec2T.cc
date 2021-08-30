@@ -747,8 +747,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
                                          &m_data->time[m_data->first],
                                          m_data->n_records,
                                          times_requested.data(),
-                                         times_requested.size(),
-                                         m_data->period));
+                                         times_requested.size()));
 }
 
 /**
