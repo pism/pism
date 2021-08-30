@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #include "MaxTimestep.hh"
 
+#include <cassert>
+
 namespace pism {
 
 // Time step restrictions
@@ -29,7 +31,7 @@ MaxTimestep::MaxTimestep()
 
 MaxTimestep::MaxTimestep(double v)
   : m_finite(true), m_value(v) {
-  // empty
+  assert(v > 0.0);
 }
 
 MaxTimestep::MaxTimestep(const std::string &description)
