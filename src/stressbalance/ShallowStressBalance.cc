@@ -220,8 +220,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
       (*result)(i,j).u = 0.0;
       (*result)(i,j).v = 0.0;
     } else {
-      (*result)(i,j).u = - pressure * surface->diff_x_p(i,j);
-      (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
+      (*result)(i,j).u = - pressure * diff_x_p(*surface, i,j);
+      (*result)(i,j).v = - pressure * diff_y_p(*surface, i,j);
     }
   }
 
@@ -243,9 +243,9 @@ IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taud = IceModelVec2V::ToVector(SSB_taud(model).compute());
+  IceModelVec2V::Ptr taud = IceModelVec::cast<IceModelVec2V>(SSB_taud(model).compute());
 
-  result->set_to_magnitude(*taud);
+  compute_magnitude(*taud, *result);
 
   return result;
 }
@@ -312,9 +312,9 @@ IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taub_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taub = IceModelVec2V::ToVector(SSB_taub(model).compute());
+  IceModelVec2V::Ptr taub = IceModelVec::cast<IceModelVec2V>(SSB_taub(model).compute());
 
-  result->set_to_magnitude(*taub);
+  compute_magnitude(*taub, *result);
 
   return result;
 }

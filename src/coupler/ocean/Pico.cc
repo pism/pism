@@ -145,9 +145,11 @@ void Pico::init_impl(const Geometry &geometry) {
   m_geometry.init(geometry.cell_type);
 
   // FIXME: m_n_basins is a misnomer
-  m_n_basins = static_cast<int>(m_geometry.basin_mask().max()) + 1;
+  m_n_basins = static_cast<int>(max(m_geometry.basin_mask())) + 1;
 
-  m_log->message(4, "PICO basin min=%f, max=%f\n", m_geometry.basin_mask().min(), m_geometry.basin_mask().max());
+  m_log->message(4, "PICO basin min=%f, max=%f\n",
+                 min(m_geometry.basin_mask()),
+                 max(m_geometry.basin_mask()));
 
   PicoPhysics physics(*m_config);
 
@@ -210,7 +212,7 @@ static void extend_basal_melt_rates(const IceModelVec2CellType &cell_type,
 
     const int i = p.i(), j = p.j();
 
-    auto M = cell_type.int_box(i, j);
+    auto M = cell_type.box(i, j);
 
     bool potential_partially_filled_cell =
       ((M.ij == MASK_GROUNDED or M.ij == MASK_ICE_FREE_OCEAN) and
@@ -275,7 +277,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_geometry.update(bed_elevation, cell_type);
 
   // FIXME: m_n_shelves is not really the number of shelves.
-  m_n_shelves = static_cast<int>(m_geometry.ice_shelf_mask().max()) + 1;
+  m_n_shelves = static_cast<int>(max(m_geometry.ice_shelf_mask())) + 1;
 
   // Physical part of PICO
   {
@@ -483,7 +485,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 
       // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
       if (mask.as_int(i, j) == MASK_FLOATING) {
-        auto M = mask.int_star(i, j);
+        auto M = mask.star(i, j);
         if (M.n == MASK_ICE_FREE_OCEAN or
             M.e == MASK_ICE_FREE_OCEAN or
             M.s == MASK_ICE_FREE_OCEAN or

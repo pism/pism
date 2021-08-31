@@ -118,29 +118,15 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
   }
 }
 
-//! 3D version
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system,
+                                                 const std::string &name,
                                                  const std::vector<double> &zlevels)
-  : VariableMetadata("unnamed", system),
+  : VariableMetadata(name, system),
     m_x("x", system),
     m_y("y", system),
-    m_z("z", system) {
+    m_z("z", system),
+    m_zlevels(zlevels) {
 
-  init_internal(name, zlevels);
-}
-
-//! 2D version
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name)
-  : VariableMetadata("unnamed", system),
-    m_x("x", system),
-    m_y("y", system),
-    m_z("z", system) {
-
-  init_internal(name, {0.0});
-}
-
-void SpatialVariableMetadata::init_internal(const std::string &name,
-                                            const std::vector<double> &z_levels) {
   m_x["axis"]          = "X";
   m_x["long_name"]     = "X-coordinate in Cartesian system";
   m_x["standard_name"] = "projection_x_coordinate";
@@ -155,12 +141,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   m_z["long_name"] = "Z-coordinate in Cartesian system";
   m_z["units"]     = "m";
   m_z["positive"]  = "up";
-
-  set_name(name);
-
-  m_zlevels = z_levels;
-
-  this->set_time_independent(false);
 
   if (m_zlevels.size() > 1) {
     z().set_name("z");      // default; can be overridden easily
@@ -410,10 +390,6 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
     }
 
   }
-}
-
-bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
-  return member(variable.get_name(), S);
 }
 
 ConstAttribute::ConstAttribute(const VariableMetadata *var, const std::string &name)

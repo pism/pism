@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -129,7 +129,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    m_flux_magnitude.set_to_magnitude(model->flux());
+    compute_magnitude(model->flux(), m_flux_magnitude);
 
     m_accumulator.add(dt, m_flux_magnitude);
 

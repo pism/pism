@@ -200,7 +200,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
         col[m].j = J[m];
       }
 
-      auto M = mask.int_star(i, j);
+      auto M = mask.star(i, j);
 
       if (M.ij == 1) {
         // Regular location: use coefficients of the discretization of the Laplacian

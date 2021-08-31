@@ -19,36 +19,23 @@
 #ifndef PISM_ICEMODELVEC2V_H
 #define PISM_ICEMODELVEC2V_H
 
-#include "pism/util/IceModelVec2Struct.hh"
+#include "pism/util/IceModelVec2.hh"
 
 namespace pism {
 
 /** Class for storing and accessing 2D vector fields
 */
-class IceModelVec2V : public IceModelVec2Struct<Vector2> {
+class IceModelVec2V : public IceModelVec2<Vector2> {
 public:
   IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-  virtual ~IceModelVec2V();
+  virtual ~IceModelVec2V() = default;
 
   typedef std::shared_ptr<IceModelVec2V> Ptr;
   typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
-
-  static Ptr ToVector(IceModelVec::Ptr input);
-
-  void copy_from(const IceModelVec2V &source);
-  void add(double alpha, const IceModelVec2V &x);
-  void add(double alpha, const IceModelVec2V &x, IceModelVec2V &result) const;
-
-  /*!
-   * Interpolation helper. See the pism::interpolate() for details.
-   */
-  Vector2 interpolate(double x, double y) const {
-    return pism::interpolate<IceModelVec2V, Vector2>(*this, x, y);
-  }
-
-  std::shared_ptr<IceModelVec2V> allocate_copy() const;
 };
+
+std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source);
 
 } // end of namespace pism
 

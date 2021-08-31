@@ -66,8 +66,7 @@ SSAFD::SSAFD(IceGrid::ConstPtr grid)
     m_nuH(grid, "nuH", WITH_GHOSTS),
     m_nuH_old(grid, "nuH_old", WITH_GHOSTS),
     m_work(grid, "work_vector", WITH_GHOSTS,
-           2, /* stencil width */
-           6  /* dof */),
+           2 /* stencil width */),
     m_b(grid, "right_hand_side", WITHOUT_GHOSTS),
     m_velocity_old(grid, "velocity_old", WITH_GHOSTS)
 {
@@ -317,7 +316,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
     if (use_cfbc) {
       double H_ij = thickness(i,j);
 
-      auto M = m_mask.int_star(i, j);
+      auto M = m_mask.star(i, j);
 
       // Note: this sets velocities at both ice-free ocean and ice-free
       // bedrock to zero. This means that we need to set boundary conditions
@@ -584,7 +583,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // be prescribed and is a temperature-independent free (user determined) parameter
 
         // direct neighbors
-        auto M = m_mask.int_star(i, j);
+        auto M = m_mask.star(i, j);
         auto H = thickness.star(i, j);
         auto b = bed.star(i, j);
         double h = surface(i, j);
@@ -634,7 +633,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       int M_ij = m_mask.as_int(i,j);
 
       if (use_cfbc) {
-        auto M = m_mask.int_box(i, j);
+        auto M = m_mask.box(i, j);
 
         // Note: this sets velocities at both ice-free ocean and ice-free
         // bedrock to zero. This means that we need to set boundary conditions
@@ -793,7 +792,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // Set very high basal drag *in the direction along the boundary* at locations
         // bordering "fjord walls".
 
-        auto M = m_mask.int_star(i, j);
+        auto M = m_mask.star(i, j);
         auto b = bed.star(i, j);
         double h = surface(i, j);
 
@@ -1250,8 +1249,8 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
   m_nuH_old.add(-1, m_nuH);
 
   std::vector<double>
-    nuNorm   = m_nuH.norm_all(MY_NORM),
-    nuChange = m_nuH_old.norm_all(MY_NORM);
+    nuNorm   = m_nuH.norm(MY_NORM),
+    nuChange = m_nuH_old.norm(MY_NORM);
 
   nuChange[0] *= area;
   nuChange[1] *= area;
@@ -1470,8 +1469,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
 
       double nu = 0.0;
       m_flow_law->effective_viscosity(m_hardness(i,j,o),
-                                      secondInvariant_2D(Vector2(u_x, v_x),
-                                                         Vector2(u_y, v_y)),
+                                      secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                       &nu, NULL);
 
       result(i,j,o) = nu * H;
@@ -1497,15 +1495,6 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
  * @param[out] result nu*H product
  * @param[in] nuH_regularization regularization parameter (added to nu*H to keep it away from zero)
  *
- * m_work storage scheme:
- *
- * m_work(i,j,0) - u_x on the i-offset
- * m_work(i,j,1) - v_x on the i-offset
- * m_work(i,j,2) - i-offset weight
- * m_work(i,j,3) - u_y on the j-offset
- * m_work(i,j,4) - v_y on the j-offset
- * m_work(i,j,5) - j-offset weight
- *
  * @return 0 on success
  */
 void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
@@ -1520,14 +1509,12 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
     n_glen                 = m_flow_law->exponent(),
     nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
 
-  const unsigned int U_X = 0, V_X = 1, W_I = 2, U_Y = 3, V_Y = 4, W_J = 5;
-
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
   IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
 
   assert(m_velocity.stencil_width() >= 2);
-  assert(m_mask.stencil_width()    >= 2);
+  assert(m_mask.stencil_width()     >= 2);
   assert(m_work.stencil_width()     >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
@@ -1536,26 +1523,26 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
     // x-derivative, i-offset
     {
       if (m_mask.icy(i,j) && m_mask.icy(i+1,j)) {
-        m_work(i,j,U_X) = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
-        m_work(i,j,V_X) = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
-        m_work(i,j,W_I) = 1.0;
+        m_work(i,j).u_x = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
+        m_work(i,j).v_x = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
+        m_work(i,j).w_i = 1.0;
       } else {
-        m_work(i,j,U_X) = 0.0;
-        m_work(i,j,V_X) = 0.0;
-        m_work(i,j,W_I) = 0.0;
+        m_work(i,j).u_x = 0.0;
+        m_work(i,j).v_x = 0.0;
+        m_work(i,j).w_i = 0.0;
       }
     }
 
     // y-derivative, j-offset
     {
       if (m_mask.icy(i,j) && m_mask.icy(i,j+1)) {
-        m_work(i,j,U_Y) = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
-        m_work(i,j,V_Y) = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
-        m_work(i,j,W_J) = 1.0;
+        m_work(i,j).u_y = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
+        m_work(i,j).v_y = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
+        m_work(i,j).w_j = 1.0;
       } else {
-        m_work(i,j,U_Y) = 0.0;
-        m_work(i,j,V_Y) = 0.0;
-        m_work(i,j,W_J) = 0.0;
+        m_work(i,j).u_y = 0.0;
+        m_work(i,j).v_y = 0.0;
+        m_work(i,j).w_j = 0.0;
       }
     }
   }
@@ -1578,15 +1565,15 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
       }
 
       if (H >= strength_extension->get_min_thickness()) {
-        u_x = m_work(i,j,U_X);
-        v_x = m_work(i,j,V_X);
+        u_x = m_work(i,j).u_x;
+        v_x = m_work(i,j).v_x;
 
-        W = m_work(i,j,W_J) + m_work(i,j-1,W_J) + m_work(i+1,j-1,W_J) + m_work(i+1,j,W_J);
+        W = m_work(i,j).w_j + m_work(i,j-1).w_j + m_work(i+1,j-1).w_j + m_work(i+1,j).w_j;
         if (W > 0) {
-          u_y = 1.0/W * (m_work(i,j,U_Y) + m_work(i,j-1,U_Y) +
-                         m_work(i+1,j-1,U_Y) + m_work(i+1,j,U_Y));
-          v_y = 1.0/W * (m_work(i,j,V_Y) + m_work(i,j-1,V_Y) +
-                         m_work(i+1,j-1,V_Y) + m_work(i+1,j,V_Y));
+          u_y = 1.0/W * (m_work(i,j).u_y + m_work(i,j-1).u_y +
+                         m_work(i+1,j-1).u_y + m_work(i+1,j).u_y);
+          v_y = 1.0/W * (m_work(i,j).v_y + m_work(i,j-1).v_y +
+                         m_work(i+1,j-1).v_y + m_work(i+1,j).v_y);
         } else {
           u_y = 0.0;
           v_y = 0.0;
@@ -1613,15 +1600,15 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
       }
 
       if (H >= strength_extension->get_min_thickness()) {
-        u_y = m_work(i,j,U_Y);
-        v_y = m_work(i,j,V_Y);
+        u_y = m_work(i,j).u_y;
+        v_y = m_work(i,j).v_y;
 
-        W = m_work(i,j,W_I) + m_work(i-1,j,W_I) + m_work(i-1,j+1,W_I) + m_work(i,j+1,W_I);
+        W = m_work(i,j).w_i + m_work(i-1,j).w_i + m_work(i-1,j+1).w_i + m_work(i,j+1).w_i;
         if (W > 0.0) {
-          u_x = 1.0/W * (m_work(i,j,U_X) + m_work(i-1,j,U_X) +
-                         m_work(i-1,j+1,U_X) + m_work(i,j+1,U_X));
-          v_x = 1.0/W * (m_work(i,j,V_X) + m_work(i-1,j,V_X) +
-                         m_work(i-1,j+1,V_X) + m_work(i,j+1,V_X));
+          u_x = 1.0/W * (m_work(i,j).u_x + m_work(i-1,j).u_x +
+                         m_work(i-1,j+1).u_x + m_work(i,j+1).u_x);
+          v_x = 1.0/W * (m_work(i,j).v_x + m_work(i-1,j).v_x +
+                         m_work(i-1,j+1).v_x + m_work(i,j+1).v_x);
         } else {
           u_x = 0.0;
           v_x = 0.0;
@@ -1681,7 +1668,7 @@ void SSAFD::update_nuH_viewers() {
                                          m_grid->Lx(), m_grid->Ly()));
   }
 
-  tmp.view(m_nuh_viewer, std::shared_ptr<petsc::Viewer>());
+  tmp.view({m_nuh_viewer});
 }
 
 void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
@@ -1716,7 +1703,7 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
  */
 bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
 
-  auto M = m_mask.int_box(i, j);
+  auto M = m_mask.box(i, j);
 
   using mask::ice_free;
   using mask::ice_free_ocean;

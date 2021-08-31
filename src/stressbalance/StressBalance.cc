@@ -680,12 +680,13 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                        const IceModelVec2CellType &mask,
-                                       IceModelVec2 &result) {
+                                       IceModelVec3 &result) {
 
   using mask::ice_free;
 
   IceGrid::ConstPtr grid = result.grid();
-  double    dx = grid->dx(), dy = grid->dy();
+  double dx = grid->dx();
+  double dy = grid->dy();
 
   if (result.ndof() != 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
@@ -702,8 +703,8 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
       continue;
     }
 
-    StarStencil<int> m = mask.int_star(i,j);
-    StarStencil<Vector2> U = V.star(i,j);
+    auto m = mask.star(i,j);
+    auto U = V.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -766,7 +767,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
                          const IceModelVec2CellType &cell_type,
-                         IceModelVec2 &result) {
+                         IceModelVec3 &result) {
 
   using mask::ice_free;
 
@@ -792,8 +793,8 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
       continue;
     }
 
-    StarStencil<int> m = cell_type.int_star(i,j);
-    StarStencil<Vector2> U = velocity.star(i,j);
+    auto m = cell_type.star(i,j);
+    auto U = velocity.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,

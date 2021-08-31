@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -634,7 +634,7 @@ void GeometryEvolution::compute_flux_divergence(double dt,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      StarStencil<double> Q = flux.star(i, j);
+      auto Q = flux.star(i, j);
 
       double divQ = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
 
@@ -711,7 +711,7 @@ void GeometryEvolution::update_in_place(double dt,
           // Add the flow contribution to this partially filled cell.
           area_specific_volume(i, j) += -divQ * dt;
 
-          double threshold = part_grid_threshold_thickness(m_impl->cell_type.int_star(i, j),
+          double threshold = part_grid_threshold_thickness(m_impl->cell_type.star(i, j),
                                                            m_impl->thickness.star(i, j),
                                                            m_impl->surface_elevation.star(i, j),
                                                            bed_topography(i, j));
@@ -779,7 +779,7 @@ void GeometryEvolution::update_in_place(double dt,
     if (not done) {
       m_log->message(2,
                      "WARNING: not done redistributing mass after %d iterations, remaining residual: %f m^3.\n",
-                     max_n_iterations, m_impl->residual.sum() * m_grid->cell_area());
+                     max_n_iterations, sum(m_impl->residual) * m_grid->cell_area());
 
       // Add residual to ice thickness, preserving total ice mass. (This is not great, but
       // better than losing mass.)
@@ -825,7 +825,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
         continue;
       }
 
-      StarStencil<int> m = cell_type.int_star(i, j);
+      auto m = cell_type.star(i, j);
 
       int N = 0; // number of empty or partially filled neighbors
       for (unsigned int n = 0; n < 4; ++n) {
@@ -893,7 +893,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
         continue;
       }
 
-      double threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
+      double threshold = part_grid_threshold_thickness(cell_type.star(i, j),
                                                        m_impl->thickness.star(i, j),
                                                        ice_surface_elevation.star(i, j),
                                                        bed_topography(i, j));
@@ -1254,7 +1254,7 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
       double result = 0.0;
 
       if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.int_star(i, j);
+        auto M = cell_type.star(i, j);
         auto Q = flux.star(i, j);
 
         if (grounded(M.n) and Q.n <= 0.0) {
@@ -1317,7 +1317,7 @@ double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
       double volume_flux = 0.0;
 
       if (cell_type.ocean(i ,j)) {
-        auto M = cell_type.int_star(i, j);
+        auto M = cell_type.star(i, j);
         auto Q = flux.star(i, j); // m^2 / s
 
         if (grounded(M.n) and Q.n <= 0.0) {

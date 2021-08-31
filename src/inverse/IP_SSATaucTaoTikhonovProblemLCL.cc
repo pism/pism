@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -260,36 +260,38 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
 
+  PetscErrorCode ierr;
   {
-    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
-    PetscObjectReference((PetscObject)x);
-    petsc::Vec tmp(x);
-    m_dzeta.copy_from_vec(tmp);
+    ierr = DMGlobalToLocalBegin(*m_dzeta.dm(), x, INSERT_VALUES, m_dzeta.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_dzeta.dm(), x, INSERT_VALUES, m_dzeta.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
   }
 
   m_ssaforward.set_design(m_d_Jdesign);
 
   m_ssaforward.apply_jacobian_design(m_u_Jdesign, m_dzeta, y);
 
-  PetscErrorCode ierr = VecScale(y,1./m_constraintsScale);
-  PISM_CHK(ierr, "VecScale");
+  ierr = VecScale(y, 1.0 / m_constraintsScale); PISM_CHK(ierr, "VecScale");
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
 
+  PetscErrorCode ierr;
   {
-    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
-    PetscObjectReference((PetscObject)x);
-    petsc::Vec tmp(x);
-    m_du.copy_from_vec(tmp);
+    ierr = DMGlobalToLocalBegin(*m_du.dm(), x, INSERT_VALUES, m_du.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_du.dm(), x, INSERT_VALUES, m_du.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
   }
 
   m_ssaforward.set_design(m_d_Jdesign);
 
   m_ssaforward.apply_jacobian_design_transpose(m_u_Jdesign, m_du, y);
 
-  PetscErrorCode ierr = VecScale(y, 1.0 / m_constraintsScale);
-  PISM_CHK(ierr, "VecScale");
+  ierr = VecScale(y, 1.0 / m_constraintsScale); PISM_CHK(ierr, "VecScale");
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_callback(Mat A, Vec x, Vec y) {

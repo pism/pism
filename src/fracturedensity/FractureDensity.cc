@@ -37,11 +37,10 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_age_new(grid, "new_fracture_age", WITHOUT_GHOSTS),
     m_toughness(grid, "fracture_toughness", WITHOUT_GHOSTS),
     m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS,
-                   2,           // stencil width
-                   2),          // dof
-    m_deviatoric_stresses(grid, "sigma", WITHOUT_GHOSTS,
-                          0, // stencil width
-                          3), // dof
+                   2,           // dof
+                   2),          // stencil width
+    m_deviatoric_stresses(grid, "sigma",
+                          WITHOUT_GHOSTS, 3),
     m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
     m_flow_law(flow_law) {
 
@@ -474,8 +473,8 @@ void FractureDensity::update(double dt,
     }
   }
 
-  A_new.update_ghosts(A);
-  D_new.update_ghosts(D);
+  A.copy_from(A_new);
+  D.copy_from(D_new);
 }
 
 DiagnosticList FractureDensity::diagnostics_impl() const {

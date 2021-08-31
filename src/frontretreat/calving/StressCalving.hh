@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ public:
 protected:
   const int m_stencil_width;
 
-  IceModelVec2 m_strain_rates;
+  IceModelVec3 m_strain_rates;
 
   IceModelVec2S m_calving_rate;
 

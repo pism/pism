@@ -133,7 +133,7 @@ void IBIceModel::energy_step() {
   // strain_heating_sum += my_dt * sum_columns(strainheating3p)
   const IceModelVec3 &strain_heating3(m_stress_balance->volumetric_strain_heating());
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
-  strain_heating3.sum_columns(1.0, my_dt, cur.strain_heating);
+  sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 
   printf("END IBIceModel::energy_step(time=%f)\n", t_TempAge);
 }

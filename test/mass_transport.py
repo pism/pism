@@ -166,7 +166,7 @@ def average_error(N):
     exact.add(-1.0, geometry.ice_thickness, diff)
 
     # return the average error
-    return diff.norm(PISM.PETSc.NormType.N1) / (N*N)
+    return diff.norm(PISM.PETSc.NormType.N1)[0] / (N*N)
 
 
 def part_grid_convergence_test():

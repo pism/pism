@@ -122,8 +122,7 @@ def bed_smoother_test():
 
     computed_range = {}
     for f in [topg, topg_smoothed, theta]:
-        R = f.range()
-        computed_range[f.get_name()] = [R[0], R[1]]
+        computed_range[f.get_name()] = f.range()
 
     for name in list(stored_range.keys()):
         computed = computed_range[name]

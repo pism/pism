@@ -281,17 +281,30 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
     }
     sigma.back() = 1.0;
 
+    m_u_sigma.reset(new IceModelVec3(grid, "uvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_u_sigma->set_attrs("diagnostic",
+                         "u velocity component on the sigma grid",
+                         "m s-1", "m s-1", "", 0);
+
+    m_v_sigma.reset(new IceModelVec3(grid, "vvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_v_sigma->set_attrs("diagnostic",
+                         "v velocity component on the sigma grid",
+                         "m s-1", "m s-1", "", 0);
+
     std::map<std::string,std::string> z_attrs =
       {{"axis", "Z"},
        {"long_name", "scaled Z-coordinate in the ice (z_base=0, z_surface=1)"},
        {"units", "1"},
        {"positive", "up"}};
 
-    m_u_sigma.reset(new IceModelVec3(grid, "uvel_sigma", "z_sigma", sigma, z_attrs));
-    m_u_sigma->set_attrs("diagnostic", "u velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
+    m_u_sigma->metadata(0).z().set_name("z_sigma");
+    m_v_sigma->metadata(0).z().set_name("z_sigma");
 
-    m_v_sigma.reset(new IceModelVec3(grid, "vvel_sigma", "z_sigma", sigma, z_attrs));
-    m_v_sigma->set_attrs("diagnostic", "v velocity component on the sigma grid", "m s-1", "m s-1", "", 0);
+    for (const auto &z_attr : z_attrs) {
+      m_u_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      m_v_sigma->metadata(0).z().set_string(z_attr.first, z_attr.second);
+    }
+
   }
 
   {

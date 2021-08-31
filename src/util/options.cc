@@ -105,7 +105,7 @@ Keyword::Keyword(const std::string& option,
   std::string long_description = description + " Choose one of " + list;
 
   String input(option, long_description, default_value, DONT_ALLOW_EMPTY);
-  
+
   // use the default value if the option was not set
   if (not input.is_set()) {
     this->set(input, input.is_set());
@@ -177,7 +177,7 @@ IntegerList::IntegerList(const std::string& option,
     }
     result.push_back(static_cast<int>(v));
   }
-  
+
   this->set(result, input.is_set());
 }
 

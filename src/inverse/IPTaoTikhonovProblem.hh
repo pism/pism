@@ -384,9 +384,9 @@ template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::conver
   dWeight = 1/m_eta;
   sWeight = 1;
   
-  designNorm = m_grad_design->norm(NORM_2);
-  stateNorm  = m_grad_state->norm(NORM_2);
-  sumNorm    = m_grad->norm(NORM_2);
+  designNorm = m_grad_design->norm(NORM_2)[0];
+  stateNorm  = m_grad_state->norm(NORM_2)[0];
+  sumNorm    = m_grad->norm(NORM_2)[0];
 
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
@@ -406,10 +406,11 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
   PetscErrorCode ierr;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
   {
-    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
-    PetscObjectReference((PetscObject)x);
-    petsc::Vec tmp(x);
-    m_d->copy_from_vec(tmp);
+    ierr = DMGlobalToLocalBegin(*m_d->dm(), x, INSERT_VALUES, m_d->vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_d->dm(), x, INSERT_VALUES, m_d->vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
   }
 
   TerminationReason::Ptr reason = m_forward.linearize_at(*m_d);

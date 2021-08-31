@@ -17,20 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _STARSTENCIL_H_
-#define _STARSTENCIL_H_
+#ifndef PISM_STENCILS_HH
+#define PISM_STENCILS_HH
 
 namespace pism {
 enum Direction {North = 0, East, South, West};
 
+namespace stencils {
+
 //! \brief Star stencil points (in the map-plane).
 template <typename T>
-struct StarStencil {
+struct Star {
   T ij, e, w, n, s;
 
-  StarStencil() = default;
+  Star() = default;
 
-  StarStencil(T value) {
+  Star(T value) {
     set(value);
   }
 
@@ -69,6 +71,15 @@ struct StarStencil {
   }
 };
 
-}
+// NB: Do not change the order of elements in this struct. IceModelVec2S::box() and
+// IceModelVec2Int::box() depend on it.
+template <typename T>
+struct Box {
+  T ij, n, nw, w, sw, s, se, e, ne;
+};
 
-#endif /* _STARSTENCIL_H_ */
+} // end of namespace stencils
+
+} // end of namespace pism
+
+#endif /* PISM_STENCILS_HH */

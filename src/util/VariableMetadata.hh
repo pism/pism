@@ -167,14 +167,11 @@ private:
   IO_Type m_output_type;
 };
 
-bool set_contains(const std::set<std::string> &S, const VariableMetadata &field);
-
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).
 class SpatialVariableMetadata : public VariableMetadata {
 public:
-  SpatialVariableMetadata(units::System::Ptr system, const std::string &name);
   SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
-                          const std::vector<double> &zlevels);
+                          const std::vector<double> &zlevels = {0.0});
   virtual ~SpatialVariableMetadata() = default;
 
   const std::vector<double>& levels() const;
@@ -190,8 +187,6 @@ public:
 private:
   VariableMetadata m_x, m_y, m_z;
   std::vector<double> m_zlevels;
-  void init_internal(const std::string &name,
-                     const std::vector<double> &z_levels);
 };
 
 } // end of namespace pism

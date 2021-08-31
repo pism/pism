@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ void IceCompModel::energy_step() {
 
   IceModelVec2S &bedtoptemp              = *m_work2d[1];
   IceModelVec2S &basal_enthalpy          = *m_work2d[2];
-  m_energy_model->enthalpy().extract_surface(0.0, basal_enthalpy);
+  extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,

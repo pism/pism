@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,12 +57,6 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     m_Mbz = grid.Mbz;
     m_Lbz = grid.Lbz;
 
-    std::map<std::string, std::string> attrs;
-    attrs["units"]     = "m";
-    attrs["long_name"] = "Z-coordinate in bedrock";
-    attrs["axis"]      = "Z";
-    attrs["positive"]  = "up";
-
     std::vector<double> z(m_Mbz);
     double dz = m_Lbz / (m_Mbz - 1);
     for (unsigned int k = 0; k < m_Mbz; ++k) {
@@ -70,7 +64,17 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", "zb", z, attrs));
+    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
+    m_temp->metadata(0).z().set_name("zb");
+
+    std::map<std::string, std::string> z_attrs =
+      {{"units", "m"},
+       {"long_name", "Z-coordinate in bedrock"},
+       {"axis", "Z"},
+       {"positive", "up"}};
+    for (const auto &z_attr : z_attrs) {
+      m_temp->metadata(0).z().set_string(z_attr.first, z_attr.second);
+    }
 
     m_temp->set_attrs("model_state",
                       "lithosphere (bedrock) temperature, in BTU_Full",

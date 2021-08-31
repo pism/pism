@@ -336,7 +336,7 @@ void IceModelVec2T::init_periodic_data(const File &file) {
   // needed to simplify interpolation
   for (unsigned int j = 0; j < n_records; ++j) {
     {
-      petsc::VecArray tmp_array(m_impl->v);
+      petsc::VecArray tmp_array(vec());
       io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, CRITICAL,
                                   m_impl->report_range, allow_extrapolation,
                                   0.0, m_impl->interpolation_type, tmp_array.get());
@@ -513,7 +513,7 @@ void IceModelVec2T::update(unsigned int start) {
 
   for (unsigned int j = 0; j < missing; ++j) {
     {
-      petsc::VecArray tmp_array(m_impl->v);
+      petsc::VecArray tmp_array(vec());
       io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j, CRITICAL,
                                   m_impl->report_range, allow_extrapolation,
                                   0.0, m_impl->interpolation_type, tmp_array.get());

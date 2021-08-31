@@ -119,14 +119,9 @@ std::vector<std::string> split(const std::string &input, char separator) {
 
 //! Transform a `separator`-separated list (a string) into a set of strings.
 std::set<std::string> set_split(const std::string &input, char separator) {
-  std::istringstream input_list(input);
-  std::string token;
   std::set<std::string> result;
-
-  while (getline(input_list, token, separator)) {
-    if (not token.empty()) {
-      result.insert(token);
-    }
+  for (const auto &token : split(input, separator)) {
+    result.insert(token);
   }
   return result;
 }

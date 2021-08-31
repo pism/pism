@@ -81,7 +81,7 @@ void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
-  m_n_basins = static_cast<int>(m_basin_mask.max()) + 1;
+  m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
 
   m_n_basin_neighbors.resize(2*m_n_basins);
   get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
@@ -121,7 +121,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
   // computing ice_shelf_mask and box_mask could be done at the same time
   {
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
-    auto n_shelves = static_cast<int>(m_ice_shelves.max()) + 1;
+    auto n_shelves = static_cast<int>(max(m_ice_shelves)) + 1;
 
     std::vector<int> cfs_in_basins_per_shelf(n_shelves*m_n_basins, 0);
     std::vector<int> most_shelf_cells_in_basin(n_shelves, 0);
@@ -524,8 +524,8 @@ void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
     int b = basin_mask.as_int(i, j);
     if (result[2 * b] == 0 or result[2 * b + 1] == 0) {
 
-      auto B = basin_mask.int_star(i, j);
-      auto M = cell_type.int_star(i, j);
+      auto B = basin_mask.star(i, j);
+      auto M = cell_type.star(i, j);
       int bn = 0; // neighbor basin id
 
       if (M.ij == MASK_ICE_FREE_OCEAN and
@@ -593,7 +593,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
       n_shelf_cells_per_basin[sb]++;
 
       if (cell_type.as_int(i, j) == MASK_FLOATING) {
-        auto M = cell_type.int_star(i, j);
+        auto M = cell_type.star(i, j);
         if (M.n == MASK_ICE_FREE_OCEAN or
             M.e == MASK_ICE_FREE_OCEAN or
             M.s == MASK_ICE_FREE_OCEAN or
@@ -774,7 +774,7 @@ void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
         // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
         // label the shelf cells adjacent to the ice front with 1
-        auto M = ocean_mask.int_star(i, j);
+        auto M = ocean_mask.star(i, j);
 
         if (M.n == 2 or M.e == 2 or M.s == 2 or M.w == 2) {
           // i.e. there is a neighboring open ocean cell
@@ -830,7 +830,7 @@ void eikonal_equation(IceModelVec2Int &mask) {
 
       if (mask.as_int(i, j) == 0) {
 
-        auto R = mask.int_star(i, j);
+        auto R = mask.star(i, j);
 
         if (R.ij == 0 and
             (R.n == current_label or R.s == current_label or

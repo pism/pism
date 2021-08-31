@@ -202,8 +202,8 @@ int main(int argc, char *argv[]) {
 
     // compute numerical error
     heat_flux_at_ice_base.shift(-FF);
-    double max_error = heat_flux_at_ice_base.norm(NORM_INFINITY);
-    double avg_error = heat_flux_at_ice_base.norm(NORM_1);
+    double max_error = heat_flux_at_ice_base.norm(NORM_INFINITY)[0];
+    double avg_error = heat_flux_at_ice_base.norm(NORM_1)[0];
     heat_flux_at_ice_base.shift(+FF); // shift it back for writing
     avg_error /= (grid->Mx() * grid->My());
     log->message(2,
