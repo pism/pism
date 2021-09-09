@@ -162,13 +162,13 @@ PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name) {
   /* Get the DM for parameters from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
   if (!da_fine) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
   }
 
   /* Get the DM for parameters from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
   if (!da_coarse) {
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name);
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
   }
 
   /* call DMCreateInterpolation */
@@ -204,37 +204,37 @@ PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name) {
   /* get the restriction matrix from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, mat_name.c_str(), (PetscObject *)&mat); CHKERRQ(ierr);
   if (!mat) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the restriction matrix");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the restriction matrix"); // LCOV_EXCL_LINE
   }
 
   /* get the scaling vector from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, scaling_name.c_str(), (PetscObject *)&scaling); CHKERRQ(ierr);
   if (!scaling) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the scaling vector");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the scaling vector"); // LCOV_EXCL_LINE
   }
 
   /* get the DMDA from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
   if (!da_fine) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid DM");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid DM"); // LCOV_EXCL_LINE
   }
 
   /* get the storage vector from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, vec_name.c_str(), (PetscObject *)&X_fine); CHKERRQ(ierr);
   if (!X_fine) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid Vec");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid Vec"); // LCOV_EXCL_LINE
   }
 
   /* get the DMDA from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
   if (!da_coarse) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid DM");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid DM"); // LCOV_EXCL_LINE
   }
 
   /* get the storage vector from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, vec_name.c_str(), (PetscObject *)&X_coarse); CHKERRQ(ierr);
   if (!X_coarse) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid Vec");
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid Vec"); // LCOV_EXCL_LINE
   }
 
   ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);

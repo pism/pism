@@ -66,8 +66,6 @@ Pico::Pico(IceGrid::ConstPtr grid)
 
   {
     auto buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
-    auto evaluations_per_year = static_cast<int>(m_config->get_number("input.forcing.evaluations_per_year"));
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -76,8 +74,7 @@ Pico::Pico(IceGrid::ConstPtr grid)
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
@@ -85,8 +82,7 @@ Pico::Pico(IceGrid::ConstPtr grid)
                                                    "salinity_ocean",
                                                    "", // no standard name
                                                    buffer_size,
-                                                   evaluations_per_year,
-                                                   periodic,
+                                                   opt.periodic,
                                                    LINEAR);
   }
 
@@ -142,8 +138,8 @@ void Pico::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
-  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_theta_ocean->init(opt.filename, opt.periodic);
+  m_salinity_ocean->init(opt.filename, opt.periodic);
 
   // This initializes the basin_mask
   m_geometry.init(geometry.cell_type);
@@ -164,7 +160,7 @@ void Pico::init_impl(const Geometry &geometry) {
                  physics.continental_shelf_depth());
 
   // read time-independent data right away:
-  if (m_theta_ocean->n_records() == 1 and m_salinity_ocean->n_records() == 1) {
+  if (m_theta_ocean->buffer_size() == 1 and m_salinity_ocean->buffer_size() == 1) {
     m_theta_ocean->update(m_grid->ctx()->time()->current(), 0.0);
     m_salinity_ocean->update(m_grid->ctx()->time()->current(), 0.0);
   }

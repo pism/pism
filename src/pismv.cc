@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 

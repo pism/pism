@@ -37,7 +37,7 @@
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
 #include "pism/frontretreat/PrescribedRetreat.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 
@@ -133,9 +133,8 @@ void IceModel::front_retreat_step() {
       }
 
       if (m_calving_rate_factor) {
-        m_calving_rate_factor->update(m_time->current(), m_dt);
-
-        retreat_rate.scale(m_calving_rate_factor->value());
+        double T = m_time->current() + 0.5 * m_dt;
+        retreat_rate.scale(m_calving_rate_factor->value(T));
       }
 
       m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,

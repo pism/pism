@@ -363,11 +363,7 @@ The effective pressure `N_{till}` above satisfies (see equation 20 in
 In other words, `\delta` controls the lower bound of the effective pressure. In addition
 to setting it using a configuration parameter one can use a space- and time-dependent
 field. Set :config:`basal_yield_stress.mohr_coulomb.delta.file` to the name of the file
-containing the variable :var:`mohr_coulomb_delta` (dimensionless, `units=1`). Just like
-when using other 2D time-dependent forcing, set
-:config:`basal_yield_stress.mohr_coulomb.delta.period` and
-:config:`basal_yield_stress.mohr_coulomb.delta.reference_year` to use periodic data. (See
-:ref:`sec-periodic-forcing` for details.)
+containing the variable :var:`mohr_coulomb_delta` (dimensionless, i.e. units of "1").
 
 .. note::
 

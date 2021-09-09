@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,9 +36,6 @@ Given::Given(IceGrid::ConstPtr grid)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    // point-wise time-series are not used
-    unsigned int evaluations_per_year = 1;
-
     // periodic inputs are not supported
     bool periodic = false;
 
@@ -49,7 +46,6 @@ Given::Given(IceGrid::ConstPtr grid)
                                                "topg_delta",
                                                "", // no standard name
                                                buffer_size,
-                                               evaluations_per_year,
                                                periodic,
                                                LINEAR);
     m_topg_delta->set_attrs("bed_deformation",
@@ -79,7 +75,7 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
 
   {
     auto filename = m_config->get_string("bed_deformation.given.file");
-    m_topg_delta->init(filename, 0.0, 0.0);
+    m_topg_delta->init(filename, false);
   }
 }
 

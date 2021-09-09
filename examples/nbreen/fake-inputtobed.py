@@ -2,63 +2,43 @@
 
 from PISMNC import PISMDataset as PNC
 import numpy as np
-from sys import exit
-
-# Import all necessary modules here so that if it fails, it fails early.
-try:
-    import netCDF4 as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+import netCDF4 as NC
 
 inname = "pismnbreen.nc"
 outname = "fakesummerevent.nc"
 
-try:
-    innc = NC.Dataset(inname, 'r')
-except:
-    print("file %s not found" % inname)
-    exit(1)
+innc = NC.Dataset(inname, 'r')
 
-try:
-    nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
-except:
-    print("can't open file %s for writing" % outname)
-    exit(1)
-
+nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 
 def get(name):
     global innc
     return np.squeeze(innc.variables[name][:])
 
-
 x = get('x')
 y = get('y')
 bmelt = get('basal_melt_rate_grounded')
-Mx = len(x)
-My = len(y)
-zero = np.zeros((My, Mx))
+zero = np.zeros_like(bmelt)
 
 nc.create_dimensions(x, y, time_dependent=True, use_time_bounds=True)
 
-
 def drainage(t):
     """time-dependence of bogus summer runoff event in m/a: a positive wavepacket"""
-    return np.exp(-(t - 180.0) ** 2 / 80.0) * 20.0 * (np.cos(0.2 * t * 2 * 3.14159) + 1.0)
-
+    C = np.cos(0.2 * t * 2 * 3.14159) + 1.0
+    return np.exp(-(t - 180.0) ** 2 / 80.0) * 20.0 * C
 
 year = 2012
-nc.variables['time'].units = "days since %d-1-1" % (year)
+nc.variables['time'].units = "days since {}-1-1".format(year)
 
+water_density = 1000.0
 # generate space-time bogus summer runoff event; mask where bmelt > 0
 for a in range(1, 366):
     nc.append_time(a, (a, a + 1))
-    inputthisday = (zero + drainage(np.double(a))) * (bmelt > 0)
-    nc.write("inputtobed", inputthisday, True)
+    inputthisday = (zero + drainage(np.double(a))) * (bmelt > 0) * water_density
+    nc.write("water_input_rate", inputthisday, True)
 
 # Set attributes
-inputtobed = nc.variables["inputtobed"]
-inputtobed.units = "m / year"
+nc.variables["water_input_rate"].units = "kg m-2 year-1"
 
 nc.close()
 innc.close()

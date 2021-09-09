@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "Frac_P.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/options.hh"
 
@@ -45,23 +45,20 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   bool scalar = input.dimensions(variable_name).size() == 1;
 
   if (scalar) {
-    m_1d_scaling.reset(new ScalarForcing(grid->ctx(),
+    m_1d_scaling.reset(new ScalarForcing(*grid->ctx(),
                                          prefix,
                                          variable_name,
                                          units, units,
                                          long_name));
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     m_2d_scaling = IceModelVec2T::ForcingField(m_grid,
                                                input,
                                                variable_name,
                                                "", // no standard name
                                                buffer_size,
-                                               evaluations_per_year,
-                                               periodic);
+                                               opt.periodic);
 
     m_2d_scaling->set_attrs("climate_forcing",
                             long_name, units, units, "", 0);
@@ -79,13 +76,9 @@ void Frac_P::init_impl(const Geometry &geometry) {
 
   m_log->message(2, "* Initializing precipitation forcing using scalar multipliers...\n");
 
-  if (m_1d_scaling) {
-    m_1d_scaling->init();
-  }
-
   if (m_2d_scaling) {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.frac_P");
-    m_2d_scaling->init(opt.filename, opt.period, opt.reference_time);
+    m_2d_scaling->init(opt.filename, opt.periodic);
   }
 }
 
@@ -126,8 +119,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_precipitation->copy_from(m_input_model->mean_precipitation());
 
   if (m_1d_scaling) {
-    m_1d_scaling->update(t, dt);
-    m_precipitation->scale(m_1d_scaling->value());
+    m_precipitation->scale(m_1d_scaling->value(t + 0.5 * dt));
   }
 
   if (m_2d_scaling) {

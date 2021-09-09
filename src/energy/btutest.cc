@@ -59,16 +59,15 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("grid.Mbz", 11);
   config->set_number("grid.Lbz", 1000);
 
-  config->set_string("time.calendar", "none");
   // when IceGrid constructor is called, these settings are used
-  config->set_number("time.start_year", 0.0);
+  config->set_string("time.start", "0s");
   config->set_number("time.run_length", 1.0);
 
   set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
@@ -121,8 +120,6 @@ int main(int argc, char *argv[]) {
 
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));
-
-    ctx->time()->init(*log);
 
     auto outname = config->get_string("output.file_name");
 
@@ -195,11 +192,13 @@ int main(int argc, char *argv[]) {
     // compute final output heat flux G_0 at z=0
     heat_flux_at_ice_base.copy_from(btu->flux_through_top_surface());
 
+    auto time = ctx->time();
+
     // get, and tell stdout, the correct answer from Test K
-    const double FF = exactK(ctx->time()->end(), 0.0, 0).F;
+    const double FF = exactK(time->end(), 0.0, 0).F;
     log->message(2,
                  "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
-                 ctx->time()->end_date().c_str(), FF);
+                 time->date(time->end()).c_str(), FF);
 
     // compute numerical error
     heat_flux_at_ice_base.shift(-FF);

@@ -223,7 +223,7 @@ void define_time(const File &file, const Context &ctx) {
   define_time(file,
               config.get_string("time.dimension_name"),
               time.calendar(),
-              time.CF_units_string(),
+              time.units_string(),
               ctx.unit_system());
 }
 
@@ -1047,7 +1047,7 @@ void define_timeseries(const VariableMetadata& var,
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
 void read_timeseries(const File &file, const VariableMetadata &metadata,
-                     const Time &time, const Logger &log, std::vector<double> &data) {
+                     const Logger &log, std::vector<double> &data) {
 
   std::string name = metadata.get_name();
 
@@ -1065,7 +1065,9 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
 
     std::vector<std::string> dims = file.dimensions(var.name);
     if (dims.size() != 1) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "a time-series variable has to be one-dimensional");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "variable '%s' in '%s' should to have 1 dimension (got %d)",
+                                    name.c_str(), file.filename().c_str(), (int)dims.size());
     }
 
     auto dimension_name = dims[0];
@@ -1080,19 +1082,15 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
     file.read_variable(var.name, {0}, {length}, data.data());
 
     units::System::Ptr system = metadata.unit_system();
-    bool input_has_units = false;
     units::Unit internal_units(system, metadata.get_string("units")),
       input_units(system, "1");
 
     std::string input_units_string = file.read_text_attribute(var.name, "units");
 
-    if (input_units_string.empty()) {
-      input_has_units = false;
-    } else {
-      input_units_string = time.CF_units_to_PISM_units(input_units_string);
+    bool input_has_units = not input_units_string.empty();
 
+    if (input_has_units) {
       input_units = units::Unit(system, input_units_string);
-      input_has_units = true;
     }
 
     if (metadata.has_attribute("units") && not input_has_units) {
@@ -1171,7 +1169,7 @@ void define_time_bounds(const VariableMetadata& var,
 
 void read_time_bounds(const File &file,
                       const VariableMetadata &metadata,
-                      const Time &time, const Logger &log,
+                      const Logger &log,
                       std::vector<double> &data) {
 
   std::string name = metadata.get_name();
@@ -1224,9 +1222,7 @@ void read_time_bounds(const File &file,
     units::Unit input_units(internal_units.system(), "1");
 
     std::string input_units_string = file.read_text_attribute(dimension_name, "units");
-    input_units_string = time.CF_units_to_PISM_units(input_units_string);
-
-    if (input_units_string.empty() == true) {
+    if (input_units_string.empty()) {
       input_has_units = false;
     } else {
       input_units = units::Unit(internal_units.system(), input_units_string);
@@ -1282,6 +1278,61 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
                   file.filename().c_str());
     throw;
   }
+}
+
+/*!
+ * Reads and validates times and time bounds.
+ */
+void read_time_info(const Logger &log,
+                    std::shared_ptr<units::System> unit_system,
+                    const File &file,
+                    const std::string &time_name,
+                    const std::string &time_units,
+                    std::vector<double> &times,
+                    std::vector<double> &bounds) {
+
+  size_t N = 0;
+  {
+    VariableMetadata time_variable(time_name, unit_system);
+    time_variable.set_string("units", time_units);
+
+    io::read_timeseries(file, time_variable, log, times);
+
+    if (not is_increasing(times)) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "times have to be strictly increasing");
+    }
+    N = times.size();
+  }
+
+  // Read time bounds
+  {
+    std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
+
+    if (time_bounds_name.empty()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "please provide cell bounds for '%s'",
+                                    time_name.c_str());
+    }
+
+    VariableMetadata bounds_variable(time_bounds_name, unit_system);
+    bounds_variable.set_string("units", time_units);
+
+    io::read_time_bounds(file, bounds_variable, log, bounds);
+
+    if (2 * N != bounds.size()) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "each time record has to have 2 bounds");
+    }
+
+    for (size_t k = 0; k < N; ++k) {
+      if (not (times[k] >= bounds[2 * k + 0] and
+               times[k] <= bounds[2 * k + 1])) {
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "each time has to be contained in its time interval");
+      }
+    }
+  } // end of the block reading time bounds
 }
 
 bool file_exists(MPI_Comm com, const std::string &filename) {

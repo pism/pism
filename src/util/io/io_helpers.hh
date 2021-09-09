@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -91,17 +91,25 @@ void define_time_bounds(const VariableMetadata& var,
                         const File &nc, IO_Type nctype = PISM_DOUBLE);
 
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
-                     const Time &time, const Logger &log, std::vector<double> &data);
+                     const Logger &log, std::vector<double> &data);
 
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
 void read_time_bounds(const File &nc,
                       const VariableMetadata &metadata,
-                      const Time &time, const Logger &log, std::vector<double> &data);
+                      const Logger &log, std::vector<double> &data);
 
 void write_time_bounds(const File &nc, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
+
+void read_time_info(const Logger &log,
+                    std::shared_ptr<units::System> unit_system,
+                    const File &file,
+                    const std::string &time_name,
+                    const std::string &time_units,
+                    std::vector<double> &times,
+                    std::vector<double> &bounds);
 
 std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,

@@ -5,11 +5,17 @@
 import PISM
 from PISM.testing import shallow_grid, create_forcing
 import os
+import numpy as np
 
 from unittest import TestCase
 
 ctx = PISM.Context()
 ctx.log.set_threshold(1)
+
+# set run duration so that all forcing used here spans the duration of the run
+time = ctx.time
+time.set_start(0.5)
+time.set_end(1)
 
 class BeddefGiven(TestCase):
     def setUp(self):
@@ -22,7 +28,8 @@ class BeddefGiven(TestCase):
 
         # Create time-dependent topography changes
         create_forcing(self.grid, self.filename, "topg_delta", "meters",
-                       values=[2, -4, 3], times=[1, 2, 3])
+                       values=[2, -4, 3], times=[1, 2, 3],
+                       time_bounds=[0.5, 1.5, 2.5, 3.5])
 
         # Create the reference topography
         topg_ref = PISM.IceModelVec2S(self.grid, "topg", PISM.WITHOUT_GHOSTS)
@@ -68,17 +75,19 @@ class BeddefGiven(TestCase):
         opts = PISM.process_input_options(ctx.com, ctx.config)
         model.init(opts, geometry.ice_thickness, geometry.sea_level_elevation)
 
+        # use dt == 0 to sample topg_delta at a predictable time
+        dt = 0.0
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     1, 1)
+                     1, dt)
 
         topg_0 = model.bed_elevation().numpy()[0, 0]
 
         model.update(geometry.ice_thickness,
                      geometry.sea_level_elevation,
-                     2, 1)
+                     2, dt)
 
         topg_1 = model.bed_elevation().numpy()[0, 0]
 
         # -4 - 2 == -6 (see the create_forcing() call above)
-        assert topg_1 - topg_0 == -6
+        np.testing.assert_almost_equal(topg_1 - topg_0, -6)

@@ -70,23 +70,20 @@
 #include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/frontalmelt/Factory.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 
 //! Initialize time from an input file or command-line options.
 void IceModel::time_setup() {
-  initialize_time(m_grid->com,
-                  m_config->get_string("time.dimension_name"),
-                  *m_log, *m_time);
 
   bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
 
   if (use_calendar) {
     m_log->message(2,
                    "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n",
-                   m_time->start_date().c_str(),
-                   m_time->end_date().c_str(),
+                   m_time->date(m_time->start()).c_str(),
+                   m_time->date(m_time->end()).c_str(),
                    m_time->run_length().c_str(),
                    m_time->calendar().c_str());
   } else {
@@ -395,12 +392,12 @@ void IceModel::bootstrap_2d(const File &input_file) {
                                   m_config->get_number("bootstrapping.defaults.ice_thickness"));
   // check the range of the ice thickness
   {
-    Range thk_range = m_geometry.ice_thickness.range();
+    auto thk_range = m_geometry.ice_thickness.range();
 
-    if (thk_range.max >= m_grid->Lz() + 1e-6) {
+    if (thk_range[1] >= m_grid->Lz() + 1e-6) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
                                     "exceeds the height of the computational domain (%f meters).",
-                                    thk_range.max, m_grid->Lz());
+                                    thk_range[1], m_grid->Lz());
     }
   }
 
@@ -428,12 +425,12 @@ void IceModel::bootstrap_2d(const File &input_file) {
   }
 
   // check if Lz is valid
-  Range thk_range = m_geometry.ice_thickness.range();
+  auto thk_range = m_geometry.ice_thickness.range();
 
-  if (thk_range.max > m_grid->Lz()) {
+  if (thk_range[1] > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_range.max, m_grid->Lz());
+                                  thk_range[1], m_grid->Lz());
   }
 }
 
@@ -467,7 +464,7 @@ void IceModel::regrid() {
     // Check the range of the ice thickness.
     {
       double
-        max_thickness = m_geometry.ice_thickness.range().max,
+        max_thickness = m_geometry.ice_thickness.range()[1],
         Lz            = m_grid->Lz();
 
       if (max_thickness >= Lz + 1e-6) {
@@ -828,8 +825,7 @@ void IceModel::misc_setup() {
   if (m_surface_input_for_hydrology) {
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     m_surface_input_for_hydrology->init(surface_input.filename,
-                                        surface_input.period,
-                                        surface_input.reference_time);
+                                        surface_input.periodic);
   }
 
   if (m_fracture) {
@@ -966,13 +962,12 @@ void IceModel::init_calving() {
   {
     auto filename = m_config->get_string("calving.rate_scaling.file");
     if (not filename.empty()) {
-      m_calving_rate_factor.reset(new ScalarForcing(m_ctx,
+      m_calving_rate_factor.reset(new ScalarForcing(*m_ctx,
                                                     "calving.rate_scaling",
                                                     "frac_calving_rate",
                                                     "1",
                                                     "1",
                                                     "calving rate scaling factor"));
-      m_calving_rate_factor->init();
     }
   }
 }

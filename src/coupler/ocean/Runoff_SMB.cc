@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Runoff_SMB.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
@@ -25,7 +25,7 @@ namespace ocean {
 Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(g->ctx(),
+  m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "-ocean_runoff_smb",
                                     "delta_T",
                                     "Kelvin",
@@ -52,16 +52,12 @@ void Runoff_SMB::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
                  "*   derived from delta_T air temperature modifier\n");
-
-  m_forcing->init();
 }
 
 void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
-  mass_flux(m_forcing->value(), *m_shelf_base_mass_flux);
+  mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }
 
 void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {

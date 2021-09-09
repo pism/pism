@@ -64,8 +64,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -74,8 +72,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
@@ -83,8 +80,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    "salinity_ocean",
                                                    "", // no standard name
                                                    buffer_size,
-                                                   evaluations_per_year,
-                                                   periodic,
+                                                   opt.periodic,
                                                    LINEAR);
   }
 
@@ -110,7 +106,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   // potential temperature is required
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_theta_ocean->init(opt.filename, opt.periodic);
 
   // read ocean salinity from a file if present, otherwise use a constant
   {
@@ -119,11 +115,11 @@ void GivenTH::init_impl(const Geometry &geometry) {
     auto variable_name = m_salinity_ocean->metadata().get_name();
 
     if (input.find_variable(variable_name)) {
-      m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+      m_salinity_ocean->init(opt.filename, opt.periodic);
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
 
-      m_salinity_ocean->init_constant(salinity);
+      m_salinity_ocean = IceModelVec2T::Constant(m_grid, variable_name, salinity);
 
       m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
                      variable_name.c_str(), salinity);
@@ -131,7 +127,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
   }
 
   // read time-independent data right away:
-  if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
+  if (m_theta_ocean->buffer_size() == 1 && m_salinity_ocean->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 

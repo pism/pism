@@ -225,10 +225,11 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
       m_log->message(2, stdout_flags_count0);
     }
 
+    double T = m_time->current();
     if (use_calendar) {
-      tempstr = pism::printf("%12s", m_time->date().c_str());
+      tempstr = pism::printf("%12s", m_time->date(T).c_str());
     } else {
-      tempstr = pism::printf("%.3f", m_time->convert_time_interval(m_time->current(), time_units));
+      tempstr = pism::printf("%.3f", m_time->convert_time_interval(T, time_units));
     }
 
     const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();

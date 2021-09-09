@@ -17,12 +17,10 @@ set(PISMUTIL_SRC
   ConfigInterface.cc
   Diagnostic.cc
   Time.cc
-  Time_Calendar.cc
   Units.cc
   Vars.cc
   Profiling.cc
   TerminationReason.cc
-  Timeseries.cc
   VariableMetadata.cc
   error_handling.cc
   iceModelVec.cc
@@ -57,6 +55,7 @@ set(PISMUTIL_SRC
   Poisson.cc
   label_components.cc
   connected_components.cc
+  ScalarForcing.cc
   )
 
 if(Pism_USE_JANSSON)

@@ -12,6 +12,11 @@ from unittest import TestCase
 
 config = PISM.Context().config
 
+# set run duration to 1 second so that all forcing used here spans the duration of the run
+time = PISM.Context().time
+time.set_start(0)
+time.set_end(1)
+
 # reduce the grid size to speed this up
 config.set_number("grid.Mx", 3)
 config.set_number("grid.My", 5)
@@ -229,14 +234,15 @@ class DeltaT(TestCase):
         self.model = PISM.OceanConstant(self.grid)
         self.dT = -5.0
 
-        PISM.testing.create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
+        PISM.testing.create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+                                           [self.dT], [0], time_bounds=[0, 1])
 
     def test_ocean_delta_t(self):
         "Modifier Delta_T"
 
-        modifier = PISM.OceanDeltaT(self.grid, self.model)
-
         config.set_string("ocean.delta_T.file", self.filename)
+
+        modifier = PISM.OceanDeltaT(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -257,14 +263,14 @@ class DeltaSMB(TestCase):
         self.dSMB = -5.0
 
         create_scalar_forcing(self.filename, "delta_mass_flux", "kg m-2 s-1",
-                              [self.dSMB], [0])
+                              [self.dSMB], [0], time_bounds=[0, 1])
 
     def test_ocean_delta_smb(self):
         "Modifier Delta_SMB"
 
-        modifier = PISM.OceanDeltaSMB(self.grid, self.model)
-
         config.set_string("ocean.delta_mass_flux.file", self.filename)
+
+        modifier = PISM.OceanDeltaSMB(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -323,14 +329,15 @@ class DeltaMBP(TestCase):
         self.geometry.bed_elevation.set(-2 * self.H)
         self.geometry.ensure_consistency(0.0)
 
-        create_scalar_forcing(self.filename, "delta_MBP", "Pa", [self.dP], [0])
+        create_scalar_forcing(self.filename, "delta_MBP", "Pa", [self.dP], [0],
+                              time_bounds=[0, 1])
 
     def test_ocean_delta_mpb(self):
         "Modifier Delta_MBP"
 
-        modifier = PISM.OceanDeltaMBP(self.grid, self.model)
-
         config.set_string("ocean.delta_MBP.file", self.filename)
+
+        modifier = PISM.OceanDeltaMBP(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -366,14 +373,15 @@ class FracMBP(TestCase):
         self.geometry.bed_elevation.set(-2 * self.H)
         self.geometry.ensure_consistency(0.0)
 
-        create_scalar_forcing(self.filename, "frac_MBP", "1", [self.Lambda], [0])
+        create_scalar_forcing(self.filename, "frac_MBP", "1",
+                              [self.Lambda], [0], time_bounds=[0, 1])
 
     def test_ocean_frac_mpb(self):
         "Modifier Frac_MBP"
 
-        modifier = PISM.OceanFracMBP(self.grid, self.model)
-
         config.set_string("ocean.frac_MBP.file", self.filename)
+
+        modifier = PISM.OceanFracMBP(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -406,14 +414,15 @@ class FracSMB(TestCase):
         self.model = PISM.OceanConstant(self.grid)
         self.dSMB = 0.5
 
-        create_scalar_forcing(self.filename, "frac_mass_flux", "1", [self.dSMB], [0])
+        create_scalar_forcing(self.filename, "frac_mass_flux", "1",
+                              [self.dSMB], [0], time_bounds=[0, 1])
 
     def test_ocean_frac_smb(self):
         "Modifier Frac_SMB"
 
-        modifier = PISM.OceanFracSMB(self.grid, self.model)
-
         config.set_string("ocean.frac_mass_flux.file", self.filename)
+
+        modifier = PISM.OceanFracSMB(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -444,13 +453,15 @@ class Cache(TestCase):
         self.geometry.ensure_consistency(0.0)
 
         self.constant = PISM.OceanConstant(self.grid)
-        self.delta_T = PISM.OceanDeltaT(self.grid, self.constant)
 
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
 
         config.set_string("ocean.delta_T.file", self.filename)
+
+        self.delta_T = PISM.OceanDeltaT(self.grid, self.constant)
+
         config.set_number("ocean.cache.update_interval", 2.0)
 
     def test_ocean_cache(self):
@@ -495,14 +506,15 @@ class DeltaSL(TestCase):
         self.model = PISM.SeaLevel(self.grid)
         self.dSL = -5.0
 
-        create_scalar_forcing(self.filename, "delta_SL", "meters", [self.dSL], [0])
+        create_scalar_forcing(self.filename, "delta_SL", "meters", [self.dSL], [0],
+                              time_bounds=[0, 1])
 
     def test_ocean_delta_sl(self):
         "Modifier Delta_SL"
 
-        modifier = PISM.SeaLevelDelta(self.grid, self.model)
-
         config.set_string("ocean.delta_sl.file", self.filename)
+
+        modifier = PISM.SeaLevelDelta(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -515,17 +527,6 @@ class DeltaSL(TestCase):
         os.remove(self.filename)
 
 class DeltaSL2D(TestCase):
-    def create_delta_SL_file(self, filename, times, sea_level_offsets):
-        output = PISM.util.prepare_output(filename, append_time=False)
-
-        SL = PISM.IceModelVec2S(self.grid, "delta_SL", PISM.WITHOUT_GHOSTS)
-        SL.set_attrs("forcing", "sea level forcing", "meters", "meters", "", 0)
-
-        for k in range(len(times)):
-            PISM.append_time(output, config, times[k])
-            SL.set(sea_level_offsets[k])
-            SL.write(output)
-
     def setUp(self):
         self.filename = tmp_name("ocean_delta_SL_input")
         self.grid = shallow_grid()
@@ -535,7 +536,12 @@ class DeltaSL2D(TestCase):
         self.model = PISM.SeaLevel(self.grid)
         self.dSL = -5.0
 
-        self.create_delta_SL_file(self.filename, [0, seconds_per_year], [0, 2 * self.dSL])
+        bounds = [0, 0.5*seconds_per_year, 1.5*seconds_per_year]
+        PISM.testing.create_forcing(self.grid, self.filename,
+                                    "delta_SL", "meters",
+                                    values=[0, 2 * self.dSL],
+                                    times=[0, seconds_per_year],
+                                    time_bounds=bounds)
 
         config.set_string("ocean.delta_sl_2d.file", self.filename)
 
@@ -545,9 +551,9 @@ class DeltaSL2D(TestCase):
         modifier = PISM.SeaLevelDelta2D(self.grid, self.model)
 
         modifier.init(self.geometry)
-        # Use a one second time step to try to sample sea level forcing midway through the
-        # interval from 0 to 1 year.
-        modifier.update(self.geometry, 0.5 * seconds_per_year, 1)
+        # use dt == 0.0 to sample delta_SL at a predictable time
+        dt = 0.0
+        modifier.update(self.geometry, 0.5 * seconds_per_year, dt)
         check_difference(modifier.elevation(),
                          self.model.elevation(),
                          self.dSL)

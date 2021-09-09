@@ -43,27 +43,26 @@ PISM will stop if variables :var:`ice_surface_temp` (ice temperature at the ice 
 but below firn) and :var:`climatic_mass_balance` (top surface mass flux into the ice) are
 not present in the input file.
 
-Command-line options:
+Configuration parameters:
 
-- :opt:`-surface_given_file` prescribes an input file
-- :opt:`-surface_given_period` (*years*) makes PISM interpret data in
-  ``-surface_given_file`` as periodic. See :ref:`sec-periodic-forcing`.
-- :opt:`-surface_given_reference_year` sets the reference model year; see
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: surface.given.
 
 A file ``foo.nc`` used with ``-surface given -surface_given_file foo.nc`` should contain
 several records. If this file contains one record (i.e. fields corresponding to one time
 value only), provided forcing data is interpreted as time-independent. The :var:`time`
 variable should describe what model time these records correspond to; see
-:ref:`sec-model-time` for details.
+:ref:`sec-forcing-time-dependent` for details.
+
+.. FIXME!!!
 
 For example, to use monthly records and period of 1 year, create a file (say,
 "``foo.nc``") with 12 records. The :var:`time` variable may contain `0, 1, 2, 3,
-\dots, 11` and have the units of "month" [#]_. Then, run
+\dots, 11` and have the units of "month" [#time-units]_. Then, run
 
 .. code-block:: none
 
-    pismr -surface given -surface_given_file foo.nc -surface_given_period 1
+    pismr -surface given -surface_given_file foo.nc -surface.given.periodic
 
 .. note::
 
@@ -188,28 +187,26 @@ significant, as the seasonal cycle may never reach the melting point but that po
 reached with some probability, in the presence of the daily variability, and thus melt may
 occur. Concretely, a normally-distributed, mean zero random temperature increment is added
 to the seasonal cycle. There is no assumed spatial correlation of daily variability. The
-standard deviation of the daily variability is controlled by command-line options:
+standard deviation of the daily variability is controlled by configuration parameters with
+the prefix ``surface.pdd.std_dev.``:
 
-- :opt:`-pdd_sd_file`, which prescribes an input file containing :var:`air_temp_sd`
-- :opt:`-pdd_sd_period` (*years*), which interprets its data as periodic; see
-  :ref:`sec-periodic-forcing`.
-- :opt:`-pdd_sd_reference_year`, which sets the reference model year; see
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: surface.pdd.std_dev.
 
 A file ``foo.nc`` used with ``-surface pdd -pdd_sd_file foo.nc`` should contain standard
 deviation of near-surface air temperature in variable :var:`air_temp_sd`, and the
 corresponding time coordinate in variable :var:`time`. If ``-pdd_sd_file`` is not set,
 PISM uses a constant value for standard deviation, which is set by the
-configuration parameter :config:`surface.pdd.std_dev`. The default value is `5.0` degrees
+configuration parameter :config:`surface.pdd.std_dev.value`. The default value is `5.0` degrees
 :cite:`RitzEISMINT`. However, this approach is not recommended as it induces significant
 errors in modeled surface mass balance in both ice-covered and ice-free regions
 :cite:`RogozhinaRau2014`, :cite:`Seguinot2013`.
 
 Over ice-covered grid cells, daily variability can also be parameterized as a linear
 function of near-surface air temperature `\sigma = a \cdot T + b` using the
-:config:`surface.pdd.std_dev_use_param` configuration flag, and the corresponding
-parameters :config:`surface.pdd.std_dev_param_a` and
-:config:`surface.pdd.std_dev_param_b`. This parametrization replaces prescribed standard
+:config:`surface.pdd.std_dev.use_param` configuration flag, and the corresponding
+parameters :config:`surface.pdd.std_dev.param_a` and
+:config:`surface.pdd.std_dev.param_b`. This parametrization replaces prescribed standard
 deviation values over glacierized grid cells as defined by the :var:`mask` variable (see
 :config:`geometry.ice_free_thickness_standard`). Default values for the slope `a` and
 intercept `b` were derived from the ERA-40 reanalysis over the Greenland ice sheet
@@ -259,12 +256,15 @@ This code also implements latitude- and mean July temperature dependent ice and 
 factors using formulas (6) and (7) in :cite:`Faustoetal2009`; set :opt:`-pdd_fausto` to enable.
 The default standard deviation of the daily variability (option :opt:`-pdd_std_dev`) is
 2.53 degrees when :opt:`-pdd_fausto` is set :cite:`Faustoetal2009`. See also configuration
-parameters with the ``surface.pdd.fausto`` prefix.
+parameters with the ``surface.pdd.fausto`` prefix:
+
+.. pism-parameters::
+   :prefix: surface.pdd.fausto.
 
 Note that when used with periodic climate data (air temperature and precipitation) that is
 read from a file (see section :ref:`sec-atmosphere-given`), use of
-:opt:`-timestep_hit_multiplies X` is recommended. (Here `X` is the length of the climate
-data period in years.)
+:config:`time_stepping.hit_multiples` is recommended: set it to the length of the climate
+data period in years.
 
 This model provides the following scalar:
 
@@ -317,14 +317,10 @@ Scalar temperature offsets
 :|variables|: :var:`delta_T`
 :|implementation|: ``pism::surface::Delta_T``
 
-Command-line options:
+Configuration parameters:
 
-- :opt:`-surface_delta_T_file` sets the name of the file PISM will read :var:`delta_T`
-  from.
-- :opt:`-surface_delta_T_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`)
-- :opt:`-surface_delta_T_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+.. pism-parameters::
+   :prefix: surface.delta_T.
 
 The time-dependent scalar offsets :var:`delta_T` are added to :var:`ice_surface_temp`
 computed by a surface model.
@@ -459,14 +455,10 @@ Using climate data anomalies
 This modifier implements a spatially-variable version of ``-surface ...,delta_T`` which
 also applies time-dependent climatic mass balance anomalies.
 
-It takes the following options:
+It uses the following parameters:
 
-- :opt:`-surface_anomaly_file` specifies a file containing variables
-  :var:`ice_surface_temp_anomaly` and :var:`climatic_mass_balance_anomaly`.
-- :opt:`-surface_anomaly_period` (years) specifies the period of the forcing data, in
-  model years; see :ref:`sec-periodic-forcing`
-- :opt:`-surface_anomaly_reference_year` specifies the reference year; see
-  :ref:`sec-periodic-forcing`
+.. pism-parameters::
+   :prefix: surface.anomaly.
 
 See also to ``-atmosphere ...,anomaly`` (section :ref:`sec-atmosphere-anomaly`), which is
 similar, but applies anomalies at the atmosphere level.
@@ -481,17 +473,17 @@ The caching modifier
 :|seealso|: :ref:`sec-ocean-cache`
     
 This modifier skips surface model updates, so that a surface model is called no more than
-every :opt:`-surface.cache.update_interval` years. A time-step of `1` year is used every
-time a surface model is updated.
+every :config:`surface.cache.update_interval` 365-day "years". A time-step of `1` year is
+used every time a surface model is updated.
 
 This is useful in cases when inter-annual climate variability is important, but one year
 differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
-It takes the following options:
+It uses the following parameters:
 
-- :opt:`-surface.cache.update_interval` (*years*) Specifies the minimum interval between
-  updates. PISM may take longer time-steps if the adaptive scheme allows it, though.
+.. pism-parameters::
+   :prefix: surface.cache.
 
 .. rubric:: Footnotes
 
-.. [#] You can use other time units supported by UDUNITS_.
+.. [#time-units] You can use other time units supported by UDUNITS_.

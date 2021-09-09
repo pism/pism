@@ -34,8 +34,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -44,8 +42,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 "ice_surface_temp",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
 
     m_mass_flux = IceModelVec2T::ForcingField(m_grid,
@@ -53,8 +50,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                               "climatic_mass_balance",
                                               "land_ice_surface_specific_mass_balance_flux",
                                               buffer_size,
-                                              evaluations_per_year,
-                                              periodic);
+                                              opt.periodic);
   }
 
   m_temperature->set_attrs("climate_forcing",
@@ -84,11 +80,11 @@ void Given::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
-  m_temperature->init(opt.filename, opt.period, opt.reference_time);
-  m_mass_flux->init(opt.filename, opt.period, opt.reference_time);
+  m_temperature->init(opt.filename, opt.periodic);
+  m_mass_flux->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
-  if (m_temperature->n_records() == 1 && m_mass_flux->n_records() == 1) {
+  if (m_temperature->buffer_size() == 1 && m_mass_flux->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }

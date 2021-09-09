@@ -26,7 +26,7 @@
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
-#include <gsl/gsl_version.h>
+#include <gsl/gsl_version.h>    // GSL_VERSION
 
 #include "pism/pism_config.hh"  // Pism_USE_XXX, version info
 
@@ -50,6 +50,22 @@
 #include "error_handling.hh"
 
 namespace pism {
+
+std::string string_strip(const std::string &input) {
+  if (input.empty()) {
+    return "";
+  }
+
+  std::string tmp = input;
+
+  // strip leading spaces
+  tmp.erase(0, tmp.find_first_not_of(" \t"));
+
+  // strip trailing spaces
+  tmp.substr(tmp.find_last_not_of(" \t"));
+
+  return tmp;
+}
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
@@ -464,6 +480,5 @@ double average_water_column_pressure(double ice_thickness, double bed,
   }
   return 0.0;
 }
-
 
 } // end of namespace pism

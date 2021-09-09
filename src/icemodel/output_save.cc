@@ -149,7 +149,7 @@ void IceModel::write_snapshot() {
 
   m_log->message(2,
                  "saving snapshot to %s at %s, for time-step goal %s\n",
-                 filename.c_str(), m_time->date().c_str(),
+                 filename.c_str(), m_time->date(m_time->current()).c_str(),
                  m_time->date(saving_after).c_str());
 
   const Profiling &profiling = m_ctx->profiling();

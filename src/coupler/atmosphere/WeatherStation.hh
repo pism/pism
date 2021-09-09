@@ -17,13 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PAWEATHERSTATION_H_
-#define _PAWEATHERSTATION_H_
+#ifndef PISM_WEATHER_STATION_HH
+#define PISM_WEATHER_STATION_HH
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/Timeseries.hh"
+
+#include <memory>               // std::shared_ptr
+
 
 namespace pism {
+
+class ScalarForcing;
+
 namespace atmosphere {
 
 /** This class implements an atmosphere model corresponding to *one* weather station.
@@ -41,21 +46,24 @@ public:
   virtual ~WeatherStation();
 
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const IceModelVec2S& mean_precipitation_impl() const;
-  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& mean_annual_temp_impl() const;
 
-  virtual void begin_pointwise_access_impl() const;
-  virtual void end_pointwise_access_impl() const;
-  virtual void init_timeseries_impl(const std::vector<double> &ts) const;
-  virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
-  virtual void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
+  void init_timeseries_impl(const std::vector<double> &ts) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t) const;
 protected:
-  Timeseries m_precipitation_timeseries, m_air_temp_timeseries;
+
+  std::shared_ptr<ScalarForcing> m_precipitation_timeseries;
+  std::shared_ptr<ScalarForcing> m_air_temp_timeseries;
+
   mutable std::vector<double> m_precip_values, m_air_temp_values;
 
   IceModelVec2S::Ptr m_temperature;
@@ -65,4 +73,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAWEATHERSTATION_H_ */
+#endif /* PISM_WEATHER_STATION_HH */

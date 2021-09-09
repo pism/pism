@@ -16,13 +16,10 @@ import sys
 import os
 import numpy as np
 from unittest import TestCase, SkipTest
-import uuid
+from PISM.testing import filename
 
 ctx = PISM.Context()
 ctx.log.set_threshold(0)
-
-def filename(prefix):
-    return prefix + str(uuid.uuid4()) + ".nc"
 
 def create_dummy_grid():
     "Create a dummy grid"
@@ -604,7 +601,7 @@ def pism_context_test():
 
     EC = PISM.EnthalpyConverter(config)
 
-    time = PISM.Time(config, "360_day", system)
+    time = PISM.Time(com, config, logger, system)
 
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
@@ -1024,97 +1021,18 @@ class PrincipalStrainRates(TestCase):
     def tearDown(self):
         pass
 
-class Timeseries(TestCase):
-
-    def setUp(self):
-        self.filename = filename("timeseries-")
-
-        self.times_constant = [1, 2, 3]
-        self.values_constant = [2, 3, 1]
-        PISM.testing.create_scalar_forcing(self.filename,
-                                           "v1", "1",
-                                           self.values_constant,
-                                           times=None,
-                                           time_bounds=[0, 1, 1, 2, 2, 3],
-                                           time_name="time")
-
-        N = 4
-        self.times_linear = np.arange(N + 1, dtype=np.float64)
-        PISM.testing.create_scalar_forcing(self.filename,
-                                           "v2", "1",
-                                           self.f(self.times_linear),
-                                           times=self.times_linear,
-                                           time_name="time2")
-
-    def f(self, x):
-        "a linear function that can be reproduced exactly"
-        return 2.0 * x - 3.0
-
-    def tearDown(self):
-        os.remove(self.filename)
-
-    def test_constant_interpolation(self):
-        "Piecewise-constant interpolation in Timeseries"
-
-        ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v1")
-
-        try:
-            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            ts.read(f, ctx.time, ctx.log)
-        finally:
-            f.close()
-
-        t = self.times_constant
-        y = self.values_constant
-        N = len(y)
-
-        # extrapolation on the left
-        assert ts(t[0] - 1) == y[0]
-        # extrapolation on the right
-        assert ts(t[-1] + 1) == y[-1]
-        # interior intervals
-        for k in range(1, N):
-            dt = t[k] - t[k - 1]
-            T = t[k - 1] + 0.25 * dt    # *not* the midpoint of the interval
-
-            assert ts(T) == y[k], (k, T, ts(T), y[k])
-
-    def test_timeseries_linear_interpolation(self):
-        "Linear interpolation in Timeseries"
-
-        ctx = PISM.Context()
-        ts = PISM.Timeseries(ctx.com, ctx.unit_system, "v2")
-
-        try:
-            f = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-            ts.read(f, ctx.time, ctx.log)
-        finally:
-            f.close()
-
-        t = self.times_linear
-        N = len(t) - 1
-
-        # extrapolation on the left (note that t[0] is not used)
-        assert ts(t[0] - 1) == self.f(t[0]), "left extrapolation failed"
-
-        # extrapolation on the right
-        assert ts(t[-1] + 1) == self.f(t[-1]), "right extrapolation failed"
-
-        # interior intervals
-        for k in range(1, N):
-            dt = t[k + 1] - t[k]
-            T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
-
-            assert ts(T) == self.f(T), (T, ts(T), self.f(T))
-
 def test_trapezoid_integral():
     "Linear integration weights"
     x = [0.0, 0.5, 1.0, 2.0]
     y = [2.0, 2.5, 3.0, 2.0]
 
     def f(a, b):
-        return PISM.Interpolation(PISM.LINEAR, x, [a, b]).integral(y)
+        weights = PISM.integration_weights(x, PISM.LINEAR, a, b)
+
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
     assert f(0, 2) == 5.0
     assert f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2) == f(0, 2)
@@ -1127,25 +1045,61 @@ def test_trapezoid_integral():
     assert f(2, 5) == 3 * y[-1]
     assert f(3, 4) == 1 * y[-1]
 
-def test_linear_periodic():
-    "Linear (periodic) interpolation"
 
-    period = 1.0
-    x_p = np.linspace(0, 0.9, 10) + 0.05
-    y_p = np.sin(2 * np.pi * x_p)
+def test_piece_wise_constant_integral():
+    "Linear integration weights"
+    x = [0.0, 0.5, 1.0, 2.0]
+    y = [2.0, 2.5, 3.0, 2.0]
 
-    # grid with end points added (this makes periodic interpolation unnecessary)
-    x = np.r_[0, x_p, 1]
-    y = np.sin(2 * np.pi * x)
+    def f(a, b):
+        weights = PISM.integration_weights(x, PISM.PIECEWISE_CONSTANT, a, b)
 
-    # target grid
-    xx = np.linspace(0, 1, 21)
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
-    yy_p = PISM.Interpolation(PISM.LINEAR_PERIODIC, x_p, xx, period).interpolate(y_p)
+    np.testing.assert_almost_equal(f(0, 2), 5.25)
+    np.testing.assert_almost_equal(f(0.25, 0.35), 0.2)
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2), f(0, 2))
 
-    yy = PISM.Interpolation(PISM.LINEAR, x, xx).interpolate(y)
+    # constant extrapolation:
+    np.testing.assert_almost_equal(f(-2, -1), 1 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0), 2 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0.5), 2 * y[0] + 0.5 * 2)
+    np.testing.assert_almost_equal(f(2, 5), 3 * y[-1])
+    np.testing.assert_almost_equal(f(3, 4), 1 * y[-1])
 
-    np.testing.assert_almost_equal(yy, yy_p)
+def test_interpolation_other():
+    x = [0.0, 10.0]
+
+    try:
+        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        assert False, "failed to detect non-increasing times"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        W = PISM.integration_weights(x, PISM.NEAREST, 1, 2)
+        assert False, "failed to detect an unsupported interpolation type"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        W = PISM.integration_weights(x, PISM.LINEAR, 1, 1)
+        assert False, "failed to catch a >= b"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    np.testing.assert_almost_equal(I.left(), [0, 1])
+    np.testing.assert_almost_equal(I.right(), [1, 2])
+    np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
 
 def test_nearest_neighbor():
     "Nearest neighbor interpolation"
@@ -1231,8 +1185,7 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_with_file(self):
         "ForcingOptions: xxx.file is set"
@@ -1241,25 +1194,13 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_without_file_and_without_input_file(self):
         "ForcingOptions: xxx.file is not set and -i is not set"
         try:
             opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
             assert False, "failed to stop with an error message"
-        except RuntimeError:
-            pass
-
-    def test_negative_period(self):
-        "ForcingOptions: negative period"
-        ctx.config.set_string("input.file", self.filename)
-        ctx.config.set_number("surface.given.period", -1)
-
-        try:
-            opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
-            assert False, "failed to catch negative xxx.period"
         except RuntimeError:
             pass
 
@@ -1279,6 +1220,232 @@ def test_bq2():
         for s in [0, 1, 2, 3]:
             psi = [Q.germ(s, q, k).val for k in [0, 1]]
             assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
+
+class ScalarForcing(TestCase):
+    def setUp(self):
+        suffix = filename("-scalar-forcing-")
+        self.filename              = "input" + suffix
+        self.filename_decreasing   = "decreasing" + suffix
+        self.filename_wrong_bounds = "wrong-bounds" + suffix
+        self.filename_2d           = "2d" + suffix
+        self.filename_1            = "one-value" + suffix
+        self.filename_no_bounds    = "no-bounds" + suffix
+
+        def f(x):
+            return np.sin(2 * np.pi / 12 * x)
+
+        dt = 1.0
+        self.times = (0.5 + np.arange(12)) * dt
+        self.values = f(self.times)
+
+        self.times_long = (0.5 + np.arange(24)) * dt
+        self.values_long = f(self.times_long)
+
+        self.ts = np.linspace(0 + dt, 24 - dt, 1001)
+
+        time_bounds = np.vstack((self.times - 0.5 * dt, self.times + 0.5 * dt)).T.flatten()
+
+        ctx.time.set_start(0)
+        ctx.time.set_end(4)
+
+        # good input
+        PISM.testing.create_scalar_forcing(self.filename,
+                                           "delta_T", "Kelvin",
+                                           self.values, self.times, time_bounds)
+
+        # non-increasing times
+        PISM.testing.create_scalar_forcing(self.filename_decreasing,
+                                           "delta_T", "Kelvin",
+                                           [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
+
+        # wrong time bounds
+        PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
+                                           "delta_T", "Kelvin",
+                                           [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
+        # invalid number of dimensions
+        grid = create_dummy_grid()
+        PISM.testing.create_forcing(grid,
+                                    self.filename_2d,
+                                    "delta_T",
+                                    "Kelvin",
+                                    [0, 1],
+                                    "seconds since 1-1-1",
+                                    times=[0, 1])
+
+        # only one value
+        PISM.testing.create_scalar_forcing(self.filename_1,
+                                           "delta_T", "Kelvin",
+                                           [1], [0], time_bounds=[0, 4])
+
+        # no time bounds
+        PISM.testing.create_scalar_forcing(self.filename_no_bounds,
+                                           "delta_T", "Kelvin",
+                                           [1], [0], time_bounds=None)
+
+    def tearDown(self):
+        try:
+            os.remove(self.filename)
+            os.remove(self.filename_decreasing)
+            os.remove(self.filename_wrong_bounds)
+            os.remove(self.filename_2d)
+            os.remove(self.filename_1)
+            os.remove(self.filename_no_bounds)
+        except:
+            pass
+
+    def create(self, filename=None, periodic=False):
+        if filename is not None:
+            return PISM.ScalarForcing(ctx.ctx,
+                                      filename,
+                                      "delta_T",
+                                      "K",
+                                      "K",
+                                      "temperature offsets", periodic)
+
+        return PISM.ScalarForcing(ctx.ctx,
+                                  "surface.delta_T",
+                                  "delta_T",
+                                  "K",
+                                  "K",
+                                  "temperature offsets")
+
+    def test_file_not_set(self):
+        try:
+            ctx.config.set_string("surface.delta_T.file", "")
+            self.create()
+            assert False, "failed to stop if prefix.file is empty"
+        except RuntimeError:
+            pass
+
+    def test_decreasing_time(self):
+        try:
+            self.create(self.filename_decreasing, False)
+            assert False, "failed to stop if times are non-increasing"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_wrong_bounds(self):
+        try:
+            self.create(self.filename_wrong_bounds, False)
+            assert False, "failed to stop if time bounds are wrong"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_invalid_dimensions(self):
+        try:
+            self.create(self.filename_2d, False)
+            assert False, "failed to stop if the variable is not scalar"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_no_time_bounds(self):
+        try:
+            self.create(self.filename_no_bounds, False)
+            assert False, "failed to stop if time bounds are missing"
+        except RuntimeError:
+            pass
+
+    def test_run_duration(self):
+        end = ctx.time.end()
+        try:
+            ctx.time.set_end(100)
+            self.create(self.filename, False)
+            assert False, "failed to stop because forcing does not span model time"
+        except RuntimeError as e:
+            print(e)
+            pass
+        finally:
+            ctx.time.set_end(end)
+
+    def test_periodic_interpolation(self):
+        F = self.create(self.filename, True)
+
+        Y_numpy = np.interp(self.ts, self.times_long, self.values_long)
+        Y = [F.value(t) for t in self.ts]
+
+        np.testing.assert_almost_equal(Y, Y_numpy)
+
+    def test_interpolation(self):
+        ctx.config.set_string("surface.delta_T.file", self.filename)
+        ctx.config.set_flag("surface.delta_T.periodic", False)
+
+        F = self.create()
+
+        # two outside and one inside
+        T = [-1, 13, 5.123]
+
+        Y_numpy = np.interp(T, self.times, self.values)
+        Y = [F.value(t) for t in T]
+
+        np.testing.assert_almost_equal(Y, Y_numpy)
+
+    def test_one_value(self):
+        F = self.create(self.filename_1, False)
+
+        T = [1, 2]
+
+        Y_ref = [1, 1]
+        Y = [F.value(t) for t in T]
+
+        np.testing.assert_almost_equal(Y, Y_ref)
+
+    def test_average_scalar_forcing(self):
+        """Test ScalarForcing::average(t, dt)"""
+
+        def compute_average(times, time_bounds, values, t, dt, periodic=False):
+            filename = PISM.testing.filename("forcing-")
+            try:
+                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
+                                                   values, times, time_bounds)
+
+                F = self.create(filename, periodic)
+
+                return F.average(t, dt)
+            finally:
+                os.remove(filename)
+
+        times       = [0.5, 1.5, 2.5, 3.5]
+        time_bounds = [0, 1, 1, 2, 2, 3, 3, 4]
+        values      = [1, 1, -1, -1]
+
+        def f(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=True)
+
+        def g(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=False)
+
+        # both points are outside on the left
+        np.testing.assert_equal(g(-2, -1), 1.0)
+        # both are outside on the right
+        np.testing.assert_equal(g(4.5, 5.5), -1.0)
+        # one too far left, one too far right
+        np.testing.assert_equal(g(-0.5, 4.5), 0.0)
+        # same sub-interval
+        np.testing.assert_equal(g(0, 0.25), 1.0)
+        # dt == 0.0
+        np.testing.assert_equal(g(0, 0), 1.0)
+
+        try:
+            np.testing.assert_equal(g(1, 0), 1.0)
+            assert False, "failed to catch negative dt"
+        except RuntimeError:
+            pass
+
+        # one full period
+        np.testing.assert_equal(f(0, 4), 0.0)
+        # two periods
+        np.testing.assert_equal(f(0, 8), 0.0)
+        # one period, but starting from 4
+        np.testing.assert_equal(f(4, 8), 0.0)
+        # part of a period
+        np.testing.assert_equal(f(4, 6), 0.75)
+        # part of a period (check if shifting affects results)
+        np.testing.assert_equal(f(4, 6), f(0, 2))
 
 def thickness_calving_test():
     "Test the time-dependent thickness calving threshold"
@@ -1306,11 +1473,11 @@ def thickness_calving_test():
     geometry.ensure_consistency(0.0)
 
     config = PISM.Context().config
-    N = config.get_number("input.forcing.evaluations_per_year")
 
     filename = PISM.testing.filename("threshold_thickness_")
     day = 86400.0
     times = [0, 30, 60]
+    time_bounds = [-15, 15, 45, 75]
     time_units = "days since 1-1-1"
     values = [100, 150, 200]
     try:
@@ -1321,12 +1488,8 @@ def thickness_calving_test():
                                     "m",
                                     values,
                                     time_units,
-                                    times=times)
-
-        # we need to use enough quadrature points to get an accurate
-        # estimate of the calving threshold within the interval passed
-        # to update()
-        config.set_number("input.forcing.evaluations_per_year", 365)
+                                    times=times,
+                                    time_bounds=time_bounds)
 
         config.set_string("calving.thickness_calving.file", filename)
         calving = PISM.CalvingAtThickness(grid)
@@ -1359,4 +1522,3 @@ def thickness_calving_test():
 
         # restore default values
         config.set_string("calving.thickness_calving.file", "")
-        config.set_number("input.forcing.evaluations_per_year", N)

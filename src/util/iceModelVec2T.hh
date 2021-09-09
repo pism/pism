@@ -48,19 +48,22 @@ public:
                const std::string &short_name,
                const std::string &standard_name,
                int max_buffer_size,
-               int evaluations_per_year,
                bool periodic,
                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
-  IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
-                unsigned int n_evaluations_per_year,
+  static std::shared_ptr<IceModelVec2T> Constant(IceGrid::ConstPtr grid,
+                                                 const std::string &short_name,
+                                                 double value);
+
+  IceModelVec2T(IceGrid::ConstPtr grid,
+                const std::string &short_name,
+                unsigned int buffer_size,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 
-  unsigned int n_records();
+  unsigned int buffer_size();
 
-  void init(const std::string &filename, unsigned int period, double reference_time);
-  void init_constant(double value);
+  void init(const std::string &filename, bool periodic);
 
   void update(double t, double dt);
   MaxTimestep max_timestep(double t) const;
@@ -83,9 +86,8 @@ private:
   double*** array3();
   void update(unsigned int start);
   void discard(int N);
-  double average(int i, int j);
   void set_record(int n);
-  void get_record(int n);
+  void init_periodic_data(const File &file);
 };
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,14 +47,13 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
     m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS) {
 
-  m_sd_period                  = m_config->get_number("surface.pdd.std_dev.period");
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
   m_base_ddf.refreeze_fraction = m_config->get_number("surface.pdd.refreeze");
-  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
-  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev_use_param");
-  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
-  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev_param_b");
+  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev.value");
+  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev.use_param");
+  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev.param_a");
+  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev.param_b");
 
   bool use_fausto_params     = m_config->get_flag("surface.pdd.fausto.enabled");
 
@@ -76,19 +75,18 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
-    int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
+    bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
     m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
-                                                evaluations_per_year,
-                                                m_sd_period > 0,
+                                                sd_periodic,
                                                 LINEAR);
     m_sd_file_set = true;
   } else {
-    m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1, 1));
+    m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1));
     m_sd_file_set = false;
   }
 
@@ -157,15 +155,15 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
-      m_air_temp_sd->init_constant(m_base_pddStdDev);
+
+      m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
     } else {
       m_log->message(2,
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
-      auto sd_ref_time = m_config->get_number("surface.pdd.std_dev.reference_year", "seconds");
-
-      m_air_temp_sd->init(sd_file, m_sd_period, sd_ref_time);
+      bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
+      m_air_temp_sd->init(sd_file, sd_periodic);
     }
   }
 
@@ -270,8 +268,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
                                m_accumulation.get(), m_melt.get(), m_runoff.get()};
 
   const double
-    sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
+    sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   const IceModelVec2S *latitude = nullptr;
   if (fausto_greve or sigmalapserate != 0.0) {

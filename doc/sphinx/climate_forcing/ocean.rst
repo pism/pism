@@ -3,7 +3,7 @@
 Ocean model components
 ----------------------
 
-PISM Ocean model components provide sub-shelf ice temperature (:var:`shelfbtemp`) and
+PISM's ocean model components provide sub-shelf ice temperature (:var:`shelfbtemp`) and
 sub-shelf mass flux (:var:`shelfbmassflux`) to the ice dynamics core.
 
 The sub-shelf ice temperature is used as a Dirichlet boundary condition in the energy
@@ -28,11 +28,7 @@ This ocean model component implements boundary conditions at the ice/ocean inter
 are constant *both* in space and time.
 
 The sub-shelf ice temperature is set to pressure melting and the sub-shelf melt rate is
-assumed to be proportional to the heat flux from the ocean into the ice (configuration
-parameter :config:`ocean.sub_shelf_heat_flux_into_ice`).
-
-Alternatively, the sub-shelf melt rate in meters per year can be set using the
-:opt:`-shelf_base_melt_rate` command-line option.
+controlled by :config:`ocean.constant.melt_rate`.
 
 .. _sec-ocean-given:
 
@@ -45,15 +41,12 @@ Reading forcing data from a file
 :|implementation|: ``pism::ocean::Given``
 
 This ocean model component reads sub-shelf ice temperature :var:`shelfbtemp` and the
-sub-shelf mass flux :var:`shelfbmassflux` from a file. It takes the following command-line
-options.
+sub-shelf mass flux :var:`shelfbmassflux` from a file.
 
-- :opt:`-ocean_given_file`: sets the name of the file to read forcing data from. The file
-  may contain several records. If only one record is provided it is interpreted as
-  time-independent.
-- :opt:`-ocean_given_reference_year` specifies the reference date; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_given_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
+It uses the following parameters:
+
+.. pism-parameters::
+   :prefix: ocean.given.
 
 Variables :var:`shelfbtemp` and :var:`shelfbmassflux` may be time-dependent. (The ``-ocean
 given`` component is very similar to ``-surface given`` and ``-atmosphere given``.)
@@ -67,14 +60,14 @@ PIK
 :|variables|: none
 :|implementation|: ``pism::ocean::PIK``
 
-This ocean model component implements the ocean forcing setup used in :cite:`Martinetal2011`.
-The sub-shelf ice temperature is set to pressure-melting; the sub-shelf mass flux
-computation follows :cite:`BeckmannGoosse2003`.
+This ocean model component implements the ocean forcing setup used in
+:cite:`Martinetal2011`. The sub-shelf ice temperature is set to pressure-melting; the
+sub-shelf mass flux computation follows :cite:`BeckmannGoosse2003`.
 
-It takes one command-line option:
+It uses the following parameters:
 
-- :opt:`-meltfactor_pik`: a melt factor `F_{\mathrm{melt}}` in sub-shelf-melting
-  parameterization, see equation (5) in :cite:`Martinetal2011`.
+.. pism-parameters::
+   :prefix: ocean.pik_
 
 .. _sec-ocean-th:
 
@@ -108,16 +101,20 @@ This implementation uses different approximations of the temperature gradient at
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
 or neither (see :cite:`HollandJenkins1999` for details).
 
-It takes two command-line option:
+It uses the following parameters:
 
-- :opt:`-ocean_th_file`: specifies the NetCDF file providing potential temperature and
-  salinity fields.
-- :opt:`-clip_shelf_base_salinity`: if this is set (which is the default), the sub-shelf
-  salinity is clipped so that it stays in the `[4, 40]` psu range. This is done to
-  ensure that we stay in the range of applicability of the melting point temperature
-  parameterization; see :cite:`HollandJenkins1999`. To disable salinity clipping, use the
-  :opt:`-no_clip_shelf_base_salinity` option or set the configuration parameter
-  :config:`ocean.th.clip_salinity`  to "no".
+.. pism-parameters::
+   :prefix: ocean.th.
+
+.. note::
+
+   If :config:`ocean.th.clip_salinity` is set (the default), the sub-shelf salinity is
+   clipped so that it stays in the `[4, 40]` psu range. This is done to ensure that we
+   stay in the range of applicability of the melting point temperature parameterization;
+   see :cite:`HollandJenkins1999`.
+
+   Set :config:`ocean.th.clip_salinity` to ``false`` if restricting salinity is not
+   appropriate.
 
 See :ref:`sec-ocean-th-details` for implementation details.
 
@@ -194,15 +191,10 @@ Scalar sea level offsets
 
 The ``delta_sl`` modifier implements sea level forcing using scalar offsets.
 
-It takes the following command-line options:
+It uses the following parameters:
 
-- :opt:`-ocean_delta_sl_file`: specifies the name of the file containing forcing data.
-  This file has to contain the :var:`delta_SL` variable using units "meters" or
-  equivalent.
-- :opt:`-ocean_delta_sl_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_delta_sl_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.delta_sl.
 
 .. _sec-ocean-delta-sl-2d:
 
@@ -218,13 +210,8 @@ spatially-variable offsets.
 
 It uses the following configuration parameters:
 
-- :config:`ocean.delta_sl_2d.file`: specifies the name of the file containing forcing
-  data. This file has to contain the :var:`delta_SL` variable using units "meters" or
-  equivalent.
-- :config:`ocean.delta_sl_2d.period` specifies the length of the period of the forcing
-  data, in model years; see section :ref:`sec-periodic-forcing`.
-- :config:`ocean.delta_sl_2d.reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.delta_sl_2d.
 
 .. _sec-ocean-delta-t:
 
@@ -238,14 +225,10 @@ Scalar sub-shelf temperature offsets
 
 This modifier implements forcing using sub-shelf ice temperature offsets.
 
-It takes the following command-line options:
+It uses the following parameters:
 
-- :opt:`-ocean_delta_T_file`: specifies the name of the file containing forcing data. This
-  file has to contain the :var:`delta_T` variable using units of "Kelvin" or equivalent.
-- :opt:`-ocean_delta_T_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_delta_T_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.delta_T.
 
 .. _sec-ocean-delta-smb:
 
@@ -258,14 +241,10 @@ Scalar sub-shelf mass flux offsets
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) offsets.
 
-It takes the following command-line options:
+It uses the following parameters:
 
-- :opt:`-ocean_delta_SMB_file`: specifies the name of the file containing forcing data.
-  This file has to contain the :var:`delta_SMB` variable using units |flux| or equivalent.
-- :opt:`-ocean_delta_SMB_period` specifies the length of the period of the forcing data,
-  in model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_delta_SMB_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.delta_mass_flux.
 
 .. _sec-ocean-frac-smb:
 
@@ -278,14 +257,10 @@ Scalar sub-shelf mass flux fraction offsets
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) fraction offsets.
 
-It takes the following command-line options:
+It uses the following parameters:
 
-- :opt:`-ocean_frac_SMB_file`: specifies the name of the file containing forcing data.
-  This file has to contain the :var:`frac_SMB` variable.
-- :opt:`-ocean_frac_SMB_period` specifies the length of the period of the forcing data, in
-  model years; see section :ref:`sec-periodic-forcing`.
-- :opt:`-ocean_frac_SMB_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+.. pism-parameters::
+   :prefix: ocean.frac_mass_flux.
 
 .. _sec-ocean-anomaly:
 
@@ -300,19 +275,14 @@ This modifier implements a spatially-variable version of ``-ocean ...,delta_SMB`
 applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
 model intercomparisons.
 
-It takes the following command-line options:
+It uses the following parameters:
 
-- :opt:`-ocean_anomaly_file` specifies a file containing the variable
-  :var:`shelf_base_mass_flux_anomaly`.
-- :opt:`-ocean_anomaly_period` (years) specifies the period of the forcing data, in
-  model years; see :ref:`sec-periodic-forcing`
-- :opt:`-ocean_anomaly_reference_year` specifies the reference year; see
-  :ref:`sec-periodic-forcing`
+.. pism-parameters::
+   :prefix: ocean.anomaly.
 
-  See also to ``-atmosphere ...,anomaly`` or
-  ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`)
-  which is similar, but applies anomalies at the atmosphere or surface level,
-  respectively.
+See also to ``-atmosphere ...,anomaly`` or ``-surface ...,anomaly`` (section
+:ref:`sec-surface-anomaly`) which is similar, but applies anomalies at the atmosphere or
+surface level, respectively.
 
 .. _sec-ocean-delta-mbp:
 
@@ -391,13 +361,13 @@ The caching modifier
 :|seealso|: :ref:`sec-surface-cache`
 
 This modifier skips ocean model updates, so that a ocean model is called no more than
-every :opt:`-ocean_cache_update_interval` years. A time-step of `1` year is used every
-time a ocean model is updated.
+every :config:`ocean.cache.update_interval` 365-day "years". A time-step of `1` year
+(respecting the chosen calendar) is used every time a ocean model is updated.
 
 This is useful in cases when inter-annual climate variability is important, but one year
 differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
-It takes the following options:
+It uses the following parameters:
 
-- :opt:`-ocean_cache_update_interval` (*years*) Specifies the minimum interval between
-  updates. PISM may take longer time-steps if the adaptive scheme allows it, though.
+.. pism-parameters::
+   :prefix: ocean.cache.

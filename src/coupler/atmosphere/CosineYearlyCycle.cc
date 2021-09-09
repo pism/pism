@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -37,7 +37,7 @@ CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");
 
   if (not scaling_file.empty()) {
-    m_A.reset(new ScalarForcing(grid->ctx(),
+    m_A.reset(new ScalarForcing(*grid->ctx(),
                                 "atmosphere.yearly_cycle.scaling",
                                 "amplitude_scaling",
                                 "1", "1",
@@ -70,10 +70,6 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   m_air_temp_mean_annual.regrid(input_file, CRITICAL);
   m_air_temp_mean_summer.regrid(input_file, CRITICAL);
   m_precipitation.regrid(input_file, CRITICAL);
-
-  if (m_A) {
-    m_A->init();
-  }
 }
 
 MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
@@ -83,9 +79,9 @@ MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
 
 void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
   (void) geometry;
-  if (m_A) {
-    m_A->update(t, dt);
-  }
+  (void) t;
+  (void) dt;
+  // an implementation is necessary because the base class does not define this
 }
 
 void CosineYearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {

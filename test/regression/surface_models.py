@@ -12,6 +12,11 @@ from unittest import TestCase, SkipTest
 
 from PISM.util import convert
 
+# set run duration to 1 second so that all forcing used here spans the duration of the run
+time = PISM.Context().time
+time.set_start(0)
+time.set_end(1)
+
 config = PISM.Context().config
 
 seconds_per_year = 365 * 86400
@@ -125,8 +130,8 @@ def ice_surface_temp(grid, value):
 
 class Given(TestCase):
     def setUp(self):
-        self.filename = "surface_given_input.nc"
-        self.output_filename = "surface_given_output.nc"
+        self.filename = filename("surface_given_input_")
+        self.output_filename = filename("surface_given_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -161,21 +166,22 @@ class Given(TestCase):
 
 class DeltaT(TestCase):
     def setUp(self):
-        self.filename = "surface_delta_T_input.nc"
-        self.output_filename = "surface_delta_T_output.nc"
+        self.filename = filename("surface_delta_T_input_")
+        self.output_filename = filename("surface_delta_T_output_")
         self.grid = shallow_grid()
         self.model = surface_simple(self.grid)
         self.dT = -5.0
         self.geometry = PISM.Geometry(self.grid)
 
-        create_scalar_forcing(self.filename, "delta_T", "Kelvin", [self.dT], [0])
+        create_scalar_forcing(self.filename, "delta_T", "Kelvin",
+                              [self.dT], [0], time_bounds=[0, 1])
 
     def test_surface_delta_t(self):
         "Modifier 'delta_T'"
 
-        modifier = PISM.SurfaceDeltaT(self.grid, self.model)
-
         config.set_string("surface.delta_T.file", self.filename)
+
+        modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
@@ -191,8 +197,8 @@ class DeltaT(TestCase):
 
 class ElevationChange(TestCase):
     def setUp(self):
-        self.filename = "surface_reference_surface.nc"
-        self.output_filename = "surface_lapse_rates_output.nc"
+        self.filename = filename("surface_reference_surface_")
+        self.output_filename = filename("surface_lapse_rates_output_")
         self.grid     = shallow_grid()
         self.dTdz     = 1.0         # 1 Kelvin per km
         self.dSMBdz   = 2.0         # m year-1 per km
@@ -281,7 +287,7 @@ class Elevation(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "surface_elevation_output.nc"
+        self.output_filename = filename("surface_elevation_output_")
 
         # change geometry just to make this a bit more interesting
         self.geometry.ice_thickness.set(1000.0)
@@ -340,7 +346,7 @@ class TemperatureIndex1(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
-        self.output_filename = "surface_pdd_output.nc"
+        self.output_filename = filename("surface_pdd_output_")
 
     def pdd_test(self):
         "Model 'pdd', test 1"
@@ -395,7 +401,7 @@ class TemperatureIndex2(TestCase):
 
         config.set_number("atmosphere.uniform.temperature", self.T)
         # disable daily variability so that we can compute the number of PDDs exactly
-        config.set_number("surface.pdd.std_dev", 0.0)
+        config.set_number("surface.pdd.std_dev.value", 0.0)
         # no precipitation
         config.set_number("atmosphere.uniform.precipitation", 0)
 
@@ -416,8 +422,8 @@ class TemperatureIndex2(TestCase):
 
 class PIK(TestCase):
     def setUp(self):
-        self.filename = "surface_pik_input.nc"
-        self.output_filename = "surface_pik_output.nc"
+        self.filename = filename("surface_pik_input_")
+        self.output_filename = filename("surface_pik_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
@@ -453,7 +459,7 @@ class PIK(TestCase):
 class Simple(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
-        self.output_filename = "surface_simple_output.nc"
+        self.output_filename = filename("surface_simple_output_")
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = PISM.Geometry(self.grid)
 
@@ -480,8 +486,8 @@ class Simple(TestCase):
 
 class Anomaly(TestCase):
     def setUp(self):
-        self.filename = "surface_anomaly_input.nc"
-        self.output_filename = "surface_anomaly_output.nc"
+        self.filename = filename("surface_anomaly_input_")
+        self.output_filename = filename("surface_anomaly_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = surface_simple(self.grid)
@@ -533,19 +539,20 @@ class Anomaly(TestCase):
 
 class Cache(TestCase):
     def setUp(self):
-        self.filename = "surface_dT.nc"
-        self.output_filename = "surface_cache_output.nc"
+        self.filename = filename("surface_dT_")
+        self.output_filename = filename("surface_cache_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
         self.simple = surface_simple(self.grid)
-        self.delta_T = PISM.SurfaceDeltaT(self.grid, self.simple)
 
         time_bounds = np.array([0, 1, 1, 2, 2, 3, 3, 4]) * seconds_per_year
         create_scalar_forcing(self.filename, "delta_T", "Kelvin", [1, 2, 3, 4],
                               times=None, time_bounds=time_bounds)
 
         config.set_string("surface.delta_T.file", self.filename)
+
+        self.delta_T = PISM.SurfaceDeltaT(self.grid, self.simple)
 
         config.set_number("surface.cache.update_interval", 2.0)
 
@@ -567,12 +574,28 @@ class Cache(TestCase):
             original = sample(self.simple.temperature())
             cached = sample(modifier.temperature())
 
+            # the "cache" modifier will (note: times in years)
+            # - timestep [0, 1]: call update(0, 1), which evaluates forcing at 0.5.
+            #
+            #   Since we assume that times are at midpoints of intervals indicated using
+            #   bounds, this will return 1.
+            #
+            # - timestep [1, 2]: re-use cached values, i.e. return 1
+            #
+            # - timestep [2, 3]: call update(2, 1), which evaluates forcing at 2.5
+            #
+            #   Since we assume that times are at midpoints of intervals indicated using
+            #   bounds, this will return 3.
+            #
+            # - timestep [3, 4]: re-use cached values, i.e. return 3.
+
             diff.append(cached - original)
 
-        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
-
         write_state(modifier, self.output_filename)
+
         probe_interface(modifier)
+
+        np.testing.assert_almost_equal(diff, [1, 1, 3, 3])
 
     def tearDown(self):
         os.remove(self.filename)
@@ -583,8 +606,8 @@ class ForceThickness(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
         self.model = surface_simple(self.grid)
-        self.filename = "surface_force_to_thickness_input.nc"
-        self.output_filename = "surface_force_to_thickness_output.nc"
+        self.filename = filename("surface_force_to_thickness_input_")
+        self.output_filename = filename("surface_force_to_thickness_output_")
 
         self.H = 1000.0
         self.dH = 1000.0
@@ -634,7 +657,7 @@ class EISMINTII(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "surface_eismint_output.nc"
+        self.output_filename = filename("surface_eismint_output_")
 
     def eismintii_test(self):
         "Model EISMINTII: define and write model state; get diagnostics"
@@ -661,7 +684,7 @@ class Initialization(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
-        self.output_filename = "surface_init_output.nc"
+        self.output_filename = filename("surface_init_output_")
         self.model = surface_simple(self.grid)
 
     def initialization_test(self):
@@ -786,7 +809,7 @@ class ISMIP6(TestCase):
 
         out.redef()
         out.write_attribute("time", "bounds", "time_bounds")
-        out.write_attribute("time", "units", "seconds since 2000-1-1")
+        out.write_attribute("time", "units", "seconds since 1-1-1")
 
         out.close()
 
@@ -799,8 +822,8 @@ class ISMIP6(TestCase):
 
         self.geometry.ice_surface_elevation.set(100.0)
 
-        self.forcing_file = "surface_ismip6_forcing.nc"
-        self.reference_file = "surface_ismip6_reference.nc"
+        self.forcing_file = filename("surface_ismip6_forcing_")
+        self.reference_file = filename("surface_ismip6_reference_")
 
         self.prepare_reference_data(self.grid, self.reference_file)
         self.prepare_climate_forcing(self.grid, self.forcing_file)

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #include "Delta_T.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -29,7 +29,7 @@ namespace atmosphere {
 Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(grid->ctx(),
+  m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "atmosphere.delta_T",
                                     "delta_T",
                                     "Kelvin",
@@ -42,9 +42,8 @@ Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
 void Delta_T::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing near-surface air temperature forcing using scalar offsets...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing near-surface air temperature forcing using scalar offsets...\n");
 }
 
 void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -58,10 +57,9 @@ void Delta_T::init_timeseries_impl(const std::vector<double> &ts) const {
 
 void Delta_T::update_impl(const Geometry& geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_forcing->update(t, dt);
 
   m_temperature->copy_from(m_input_model->mean_annual_temp());
-  m_temperature->shift(m_forcing->value());
+  m_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
 const IceModelVec2S& Delta_T::mean_annual_temp_impl() const {

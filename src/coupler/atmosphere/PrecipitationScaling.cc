@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,7 @@
 
 #include "PrecipitationScaling.hh"
 
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {
@@ -28,7 +28,7 @@ PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
                                            std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(grid->ctx(),
+  m_forcing.reset(new ScalarForcing(*grid->ctx(),
                                     "atmosphere.precip_scaling",
                                     "delta_T",
                                     "Kelvin",
@@ -50,8 +50,6 @@ void PrecipitationScaling::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing precipitation scaling"
                  " using temperature offsets...\n");
-
-  m_forcing->init();
 }
 
 void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -65,10 +63,9 @@ void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) c
 
 void PrecipitationScaling::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_forcing->update(t, dt);
 
   m_precipitation->copy_from(m_input_model->mean_precipitation());
-  m_precipitation->scale(exp(m_exp_factor * m_forcing->value()));
+  m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
 const IceModelVec2S& PrecipitationScaling::mean_precipitation_impl() const {

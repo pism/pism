@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2020 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2021 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,6 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
-#include "util/Time_Calendar.hh"
 #include "util/Poisson.hh"
 #include "util/label_components.hh"
 %}
@@ -86,6 +85,7 @@
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
 // Conversions between python lists and certain STL vectors
+%include std_array.i
 %include std_vector.i
 %include std_set.i
 %include std_map.i
@@ -101,6 +101,7 @@
 %include header
 %enddef
 
+%template(RangeArray) std::array<double, 2>;
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;
@@ -111,6 +112,7 @@
 %template(BoolMap) std::map<std::string, bool >;
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
+%template(SizeDoubleMap) std::map<size_t, double>;
 
 // Why did I include this?
 %include "cstring.i"
@@ -236,8 +238,6 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
-%shared_ptr(pism::Time_Calendar);
-%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -250,9 +250,6 @@
 
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
-
-/* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
-%include pism_Timeseries.i
 
 /* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
 %include pism_IceModelVec.i
@@ -349,10 +346,10 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 %include pism_inverse.i
 
 %include "coupler/util/PCFactory.hh"
-%{
-#include "coupler/util/options.hh"
-%}
-%include "coupler/util/options.hh"
+
+pism_class(pism::ForcingOptions, "pism/coupler/util/options.hh")
+
+pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
 %template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;

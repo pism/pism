@@ -18,7 +18,7 @@
  */
 
 #include "Frac_MBP.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -28,7 +28,7 @@ namespace ocean {
 Frac_MBP::Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(g->ctx(),
+  m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "ocean.frac_MBP",
                                     "frac_MBP",
                                     "1", "1",
@@ -45,9 +45,8 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
-
-  m_forcing->init();
+  m_log->message(2,
+                 "* Initializing melange back pressure fraction forcing...\n");
 }
 
 
@@ -65,12 +64,10 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
 void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
   m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
   double
-    lambda      = m_forcing->value(),
+    lambda      = m_forcing->value(t + 0.5 * dt),
     ice_density = m_config->get_number("constants.ice.density"),
     g           = m_config->get_number("constants.standard_gravity");
 

@@ -68,8 +68,21 @@ Changes since v1.2
   a multiple of this number (default: 1 second). This reduces the influence of rounding
   errors on time step lengths. See `issue 407`_.
 - Remove the `pisms` executable. Run `pismr -eisII X` to run EISMINT-II test `X`.
-- Ice thickness threshold read in from :config:`calving.thickness_calving.file` can be
-  both space- and time-dependent.
+- Ice thickness threshold read in from `calving.thickness_calving.file` can be both space-
+  and time-dependent.
+- Now PISM stops with an error message if time-dependent forcing data read from a file do
+  not span the whole length of a simulation. Set `input.forcing.time_extrapolation` to
+  "true" to disable this check.
+- Remove the configuration parameter `input.forcing.evaluations_per_year`. Now
+  the code evaluates *exact* values of time averages of time-dependent forcing inputs.
+- Major improvement in the handling of time-dependent forcing. A file containing periodic
+  forcing has to contain *exactly* one period. The start and the length of the period are
+  derived from time bounds read from this file. This makes it easier to use periodic
+  forcing and adds supports for arbitrary period lengths. See the manual section about
+  time-dependent inputs.
+- All time-dependent forcing files have to contain time bounds.
+- Now PISM always respects the reference date in input files.
+
 
 Changes from v1.1 to v1.2
 =========================

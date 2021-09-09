@@ -26,7 +26,6 @@
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
-#include "Time_Calendar.hh"
 #include "ConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"

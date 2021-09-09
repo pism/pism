@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -185,7 +185,7 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   }
 
   // time manager
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   // enthalpy converter
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));

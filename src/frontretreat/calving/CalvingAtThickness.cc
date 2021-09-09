@@ -38,8 +38,6 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -48,8 +46,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
                                                       "thickness_calving_threshold",
                                                       "", // no standard name
                                                       buffer_size,
-                                                      evaluations_per_year,
-                                                      periodic,
+                                                      opt.periodic,
                                                       LINEAR);
 
     m_calving_threshold->set_attrs("diagnostic",
@@ -78,11 +75,13 @@ void CalvingAtThickness::init() {
                    "  Reading thickness calving threshold from file '%s'...\n",
                    opt.filename.c_str());
 
-    m_calving_threshold->init(opt.filename, opt.period, opt.reference_time);
+    m_calving_threshold->init(opt.filename, opt.periodic);
   } else {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
-    m_calving_threshold->init_constant(calving_threshold);
+    m_calving_threshold = IceModelVec2T::Constant(m_grid,
+                                                  "thickness_calving_threshold",
+                                                  calving_threshold);
 
     m_log->message(2,
                    "  Thickness threshold: %3.3f meters.\n", calving_threshold);

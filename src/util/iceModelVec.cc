@@ -142,21 +142,20 @@ GlobalMax,GlobalMin \e are needed, when m_impl->ghosted==true, to get correct
 values because Vecs created with DACreateLocalVector() are of type
 VECSEQ and not VECMPI.  See src/trypetsc/localVecMax.c.
  */
-Range IceModelVec::range() const {
-  Range result;
-  PetscErrorCode ierr;
+std::array<double, 2> IceModelVec::range() const {
   assert(m_impl->v != NULL);
 
-  ierr = VecMin(m_impl->v, NULL, &result.min);
+  std::array<double, 2> result;
+  PetscErrorCode ierr = VecMin(m_impl->v, NULL, &result[0]);
   PISM_CHK(ierr, "VecMin");
 
-  ierr = VecMax(m_impl->v, NULL, &result.max);
+  ierr = VecMax(m_impl->v, NULL, &result[1]);
   PISM_CHK(ierr, "VecMax");
 
   if (m_impl->ghosted) {
     // needs a reduce operation; use GlobalMin and GlobalMax;
-    result.min = GlobalMin(m_impl->grid->com, result.min);
-    result.max = GlobalMax(m_impl->grid->com, result.max);
+    result[0] = GlobalMin(m_impl->grid->com, result[0]);
+    result[1] = GlobalMax(m_impl->grid->com, result[1]);
   }
   return result;
 }
@@ -169,16 +168,16 @@ Range IceModelVec::range() const {
  * @return norm type as PETSc's `NormType`.
  */
 static NormType int_to_normtype(int input) {
-  assert(input == NORM_1 || input == NORM_2 || input == NORM_INFINITY);
-
   switch (input) {
   case NORM_1:
     return NORM_1;
   case NORM_2:
     return NORM_2;
-  default:
   case NORM_INFINITY:
     return NORM_INFINITY;
+  default:
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid norm type: %d",
+                                  input);
   }
 }
 

@@ -17,7 +17,7 @@ hydrology submodel.
 
 First do
 
-    ln -s ../../util/PISMNC.py
+    ln -s ../preprocessing/PISMNC.py .
     ./preprocess.sh
 
 This builds PISM-readable NetCDF file `pismnbreen.nc` and it generates a

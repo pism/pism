@@ -20,12 +20,12 @@
 #ifndef _PISM_UTILITIES_H_
 #define _PISM_UTILITIES_H_
 
-#include <cstdint>              // uint16_t, uint32_t
+#include <cstdint>              // uint32_t
 
 #include <algorithm>            // std::min, std::max
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include <mpi.h>
 
@@ -60,6 +60,9 @@ bool is_increasing(const std::vector<double> &a);
 
 // string
 bool ends_with(const std::string &str, const std::string &suffix);
+
+// remove leading and trailing whitespace
+std::string string_strip(const std::string &input);
 
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
 

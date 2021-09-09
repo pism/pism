@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,22 +55,7 @@ ForcingOptions::ForcingOptions(const Context &ctx,
     }
   }
 
-  {
-    auto P = config.get_number(prefix + ".period");
-
-    if (P < 0.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "invalid %s_period %d (period length cannot be negative)",
-                                    prefix.c_str(), (int)P);
-    }
-    this->period = P;
-  }
-
-  {
-    auto ref_year = config.get_number(prefix + ".reference_year");
-
-    this->reference_time = units::convert(ctx.unit_system(), ref_year, "years", "seconds");
-  }
+  this->periodic = config.get_flag(prefix + ".periodic");
 }
 
 } // end of namespace pism

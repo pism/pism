@@ -339,12 +339,8 @@ unsigned int File::nrecords(const std::string &name, const std::string &std_name
       return 0;
     }
 
-    auto dims = dimensions(var.name);
-
-    for (auto d : dims) {
-      AxisType dimtype = dimension_type(d, unit_system);
-
-      if (dimtype == T_AXIS) {
+    for (auto d : dimensions(var.name)) {
+      if (dimension_type(d, unit_system) == T_AXIS) {
         return this->dimension_length(d);
       }
     }
