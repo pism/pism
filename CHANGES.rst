@@ -75,6 +75,14 @@ Changes since v1.2
   "true" to disable this check.
 - Remove the configuration parameter `input.forcing.evaluations_per_year`. Now
   the code evaluates *exact* values of time averages of time-dependent forcing inputs.
+- Major improvement in the handling of time-dependent forcing. A file containing periodic
+  forcing has to contain *exactly* one period. The start and the length of the period are
+  derived from time bounds read from this file. This makes it easier to use periodic
+  forcing and adds supports for arbitrary period lengths. See the manual section about
+  time-dependent inputs.
+- All time-dependent forcing files have to contain time bounds.
+- Now PISM always respects the reference date in input files.
+
 
 Changes from v1.1 to v1.2
 =========================
