@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,6 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -41,7 +40,6 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
                                             "delta_SL",
                                             "", // no standard name
                                             buffer_size,
-                                            evaluations_per_year,
                                             opt.periodic,
                                             LINEAR);
     m_forcing->set_attrs("climate_forcing",

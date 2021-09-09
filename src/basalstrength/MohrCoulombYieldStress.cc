@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 PISM Authors
+// Copyright (C) 2004--2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -116,7 +116,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
     ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -125,7 +124,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
                                           "mohr_coulomb_delta",
                                           "", // no standard name
                                           buffer_size,
-                                          evaluations_per_year,
                                           opt.periodic, LINEAR);
     m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
                        "1", "1", "", 0);

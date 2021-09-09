@@ -34,7 +34,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -43,7 +42,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 "ice_surface_temp",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
                                                 opt.periodic,
                                                 LINEAR);
 
@@ -52,7 +50,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                               "climatic_mass_balance",
                                               "land_ice_surface_specific_mass_balance_flux",
                                               buffer_size,
-                                              evaluations_per_year,
                                               opt.periodic);
   }
 

@@ -1473,7 +1473,6 @@ def thickness_calving_test():
     geometry.ensure_consistency(0.0)
 
     config = PISM.Context().config
-    N = config.get_number("input.forcing.evaluations_per_year")
 
     filename = PISM.testing.filename("threshold_thickness_")
     day = 86400.0
@@ -1491,11 +1490,6 @@ def thickness_calving_test():
                                     time_units,
                                     times=times,
                                     time_bounds=time_bounds)
-
-        # we need to use enough quadrature points to get an accurate
-        # estimate of the calving threshold within the interval passed
-        # to update()
-        config.set_number("input.forcing.evaluations_per_year", 365)
 
         config.set_string("calving.thickness_calving.file", filename)
         calving = PISM.CalvingAtThickness(grid)
@@ -1528,4 +1522,3 @@ def thickness_calving_test():
 
         # restore default values
         config.set_string("calving.thickness_calving.file", "")
-        config.set_number("input.forcing.evaluations_per_year", N)

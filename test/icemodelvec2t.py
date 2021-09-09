@@ -120,7 +120,7 @@ class ForcingInput(unittest.TestCase):
         "Allocate and initialize forcing"
         input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
         forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
-                                                  buffer_size, 52, periodic,
+                                                  buffer_size, periodic,
                                                   interpolation_type)
         input_file.close()
 

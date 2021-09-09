@@ -48,7 +48,6 @@ public:
                const std::string &short_name,
                const std::string &standard_name,
                int max_buffer_size,
-               int evaluations_per_year,
                bool periodic,
                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
@@ -59,7 +58,6 @@ public:
   IceModelVec2T(IceGrid::ConstPtr grid,
                 const std::string &short_name,
                 unsigned int buffer_size,
-                unsigned int n_evaluations_per_year,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 

@@ -73,6 +73,8 @@ Changes since v1.2
 - Now PISM stops with an error message if time-dependent forcing data read from a file do
   not span the whole length of a simulation. Set `input.forcing.time_extrapolation` to
   "true" to disable this check.
+- Remove the configuration parameter `input.forcing.evaluations_per_year`. Now
+  the code evaluates *exact* values of time averages of time-dependent forcing inputs.
 
 Changes from v1.1 to v1.2
 =========================

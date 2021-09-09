@@ -133,7 +133,6 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
   if (not surface_input_file.empty()) {
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -142,7 +141,6 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
                                                                 "water_input_rate",
                                                                 "", // no standard name
                                                                 buffer_size,
-                                                                evaluations_per_year,
                                                                 surface_input.periodic);
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",

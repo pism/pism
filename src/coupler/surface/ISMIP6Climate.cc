@@ -69,7 +69,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -79,7 +78,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                         "climatic_mass_balance_anomaly",
                                                         "", // no standard name
                                                         buffer_size,
-                                                        evaluations_per_year,
                                                         opt.periodic);
 
       m_mass_flux_anomaly->set_attrs("climate_forcing",
@@ -95,7 +93,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                          "climatic_mass_balance_gradient",
                                                          "", // no standard name
                                                          buffer_size,
-                                                         evaluations_per_year,
                                                          opt.periodic);
 
       m_mass_flux_gradient->set_attrs("climate_forcing",
@@ -110,7 +107,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                           "ice_surface_temp_anomaly",
                                                           "", // no standard name
                                                           buffer_size,
-                                                          evaluations_per_year,
                                                           opt.periodic);
 
       m_temperature_anomaly->set_attrs("climate_forcing",
@@ -124,7 +120,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                                            "ice_surface_temp_gradient",
                                                            "", // no standard name
                                                            buffer_size,
-                                                           evaluations_per_year,
                                                            opt.periodic);
 
       m_temperature_gradient->set_attrs("climate_forcing",

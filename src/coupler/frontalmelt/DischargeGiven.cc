@@ -51,7 +51,6 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -60,7 +59,6 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
                                                 opt.periodic);
 
     m_subglacial_discharge = IceModelVec2T::ForcingField(m_grid,
@@ -68,7 +66,6 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
                                                 "subglacial_discharge",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
                                                 opt.periodic);
   }
 

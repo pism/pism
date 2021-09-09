@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,6 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
   ForcingOptions opt(*m_grid->ctx(), "geometry.front_retreat.prescribed");
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -36,7 +35,6 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
                                                  "land_ice_area_fraction_retreat",
                                                  "", // no standard name
                                                  buffer_size,
-                                                 evaluations_per_year,
                                                  opt.periodic);
     m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
                               "1", "1", "", 0);

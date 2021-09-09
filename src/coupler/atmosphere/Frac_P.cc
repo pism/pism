@@ -52,14 +52,12 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
                                          long_name));
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
 
     m_2d_scaling = IceModelVec2T::ForcingField(m_grid,
                                                input,
                                                variable_name,
                                                "", // no standard name
                                                buffer_size,
-                                               evaluations_per_year,
                                                opt.periodic);
 
     m_2d_scaling->set_attrs("climate_forcing",

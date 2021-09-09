@@ -89,9 +89,6 @@ struct IceModelVec2T::Data {
 
   //! minimum time step length in max_timestep(), in seconds
   double dt_min;
-
-  //! number of evaluations per year used to compute temporal averages
-  unsigned int n_evaluations_per_year;
 };
 
 /*!
@@ -107,7 +104,6 @@ struct IceModelVec2T::Data {
  * @param[in] short_name variable name in `file`
  * @param[in] standard_name standard name (if available); leave blank to ignore
  * @param[in] max_buffer_size maximum buffer size for non-periodic fields
- * @param[in] evaluations_per_year number of evaluations per year to use when averaging
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
 std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
@@ -115,7 +111,6 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
                                                const std::string &short_name,
                                                const std::string &standard_name,
                                                int max_buffer_size,
-                                               int evaluations_per_year,
                                                bool periodic,
                                                InterpolationType interpolation_type) {
 
@@ -142,13 +137,13 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
   buffer_size = std::max(buffer_size, 1);
 
   return std::make_shared<IceModelVec2T>(grid, short_name, buffer_size,
-                                         evaluations_per_year, interpolation_type);
+                                         interpolation_type);
 }
 
 std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
                                                        const std::string &short_name,
                                                        double value) {
-  auto result = std::make_shared<IceModelVec2T>(grid, short_name, 1, 1, PIECEWISE_CONSTANT);
+  auto result = std::make_shared<IceModelVec2T>(grid, short_name, 1, PIECEWISE_CONSTANT);
 
   // set constant value everywhere
   result->set(value);
@@ -168,7 +163,6 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int buffer_size,
-                             unsigned int n_evaluations_per_year,
                              InterpolationType interpolation_type)
   : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
     m_data(new Data())
@@ -177,7 +171,6 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
 
   m_data->interp_type            = interpolation_type;
   m_data->buffer_size            = buffer_size;
-  m_data->n_evaluations_per_year = n_evaluations_per_year;
 
   auto config = m_impl->grid->ctx()->config();
 

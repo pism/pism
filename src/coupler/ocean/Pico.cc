@@ -66,7 +66,6 @@ Pico::Pico(IceGrid::ConstPtr grid)
 
   {
     auto buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
-    auto evaluations_per_year = static_cast<int>(m_config->get_number("input.forcing.evaluations_per_year"));
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -75,7 +74,6 @@ Pico::Pico(IceGrid::ConstPtr grid)
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
                                                 opt.periodic,
                                                 LINEAR);
 
@@ -84,7 +82,6 @@ Pico::Pico(IceGrid::ConstPtr grid)
                                                    "salinity_ocean",
                                                    "", // no standard name
                                                    buffer_size,
-                                                   evaluations_per_year,
                                                    opt.periodic,
                                                    LINEAR);
   }
