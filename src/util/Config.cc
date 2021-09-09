@@ -122,7 +122,7 @@ Config::Strings NetCDFConfig::all_strings_impl() const {
 }
 
 void NetCDFConfig::set_string_impl(const std::string &name, const std::string &value) {
-  m_data.set_string(name, value);
+  m_data[name] = value;
 }
 
 // flags
@@ -179,11 +179,7 @@ Config::Flags NetCDFConfig::all_flags_impl() const {
 
 //! Set a value of a flag flag.
 void NetCDFConfig::set_flag_impl(const std::string &name, bool value) {
-  if (value) {
-    m_data.set_string(name, "true");
-  } else {
-    m_data.set_string(name, "false");
-  }
+  m_data[name] = value ? "true" : "false";
 }
 
 // file I/O

@@ -101,7 +101,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
   m_viscous_displacement->metadata().y().set_name("y_lc");
 
   // do not point to auxiliary coordinates "lon" and "lat".
-  m_viscous_displacement->metadata().set_string("coordinates", "");
+  m_viscous_displacement->metadata()["coordinates"] = "";
 
   m_viscous_displacement0 = m_viscous_displacement->allocate_proc0_copy();
 

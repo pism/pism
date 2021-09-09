@@ -74,9 +74,9 @@ void ScalarForcing::initialize(const Context &ctx,
 
     VariableMetadata variable(variable_name, unit_system);
 
-    variable.set_string("units", units);
-    variable.set_string("glaciological_units", glaciological_units);
-    variable.set_string("long_name", long_name);
+    variable["units"]               = units;
+    variable["glaciological_units"] = glaciological_units;
+    variable["long_name"]           = long_name;
 
     double forcing_t0{};
     double forcing_t1{};

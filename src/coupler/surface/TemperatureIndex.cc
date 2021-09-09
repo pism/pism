@@ -99,7 +99,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                         "kg m-2 s-1", "kg m-2 s-1",
                         "land_ice_surface_specific_mass_balance_flux", 0);
 
-  m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
+  m_mass_flux.metadata()["comment"] = "positive values correspond to ice gain";
 
   m_snow_depth.set_attrs("diagnostic",
                          "snow cover depth (set to zero once a year)",
@@ -109,7 +109,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_firn_depth.set_attrs("diagnostic",
                          "firn cover depth",
                          "m", "m", "", 0);
-  m_firn_depth.metadata().set_number("valid_min", 0.0);
+  m_firn_depth.metadata()["valid_min"] = {0.0};
   m_firn_depth.set(0.0);
 
   m_temperature = allocate_temperature(g);
@@ -534,12 +534,12 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
@@ -594,12 +594,12 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
@@ -654,12 +654,12 @@ public:
 
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, "", internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
@@ -717,7 +717,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_accumulation_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_variable.set_string("long_name", "surface accumulation rate (PDD model)");
+    m_variable["long_name"] = "surface accumulation rate (PDD model)";
   }
 
   double compute() {
@@ -734,7 +734,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_melt_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_variable.set_string("long_name", "surface melt rate (PDD model)");
+    m_variable["long_name"] = "surface melt rate (PDD model)";
   }
 
   double compute() {
@@ -751,7 +751,7 @@ public:
     : TSDiag<TSFluxDiagnostic, TemperatureIndex>(m, "surface_runoff_rate") {
 
     set_units("kg s-1", "kg year-1");
-    m_variable.set_string("long_name", "surface runoff rate (PDD model)");
+    m_variable["long_name"] = "surface runoff rate (PDD model)";
   }
 
   double compute() {

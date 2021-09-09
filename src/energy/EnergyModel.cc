@@ -147,7 +147,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
                                 "m s-1", "m year-1", "", 0);
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
-    m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
+    m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   }
 
   // a 3d work vector
@@ -342,11 +342,10 @@ public:
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
     set_units("m3 / second", "m3 / year");
-    m_variable.set_string("long_name",
-                          "rate of ice loss due to liquefaction,"
-                          " averaged over the reporting interval");
-    m_variable.set_string("comment", "positive means ice loss");
-    m_variable.set_string("cell_methods", "time: mean");
+    m_variable["long_name"] =
+      "rate of ice loss due to liquefaction, averaged over the reporting interval";
+    m_variable["comment"]      = "positive means ice loss";
+    m_variable["cell_methods"] = "time: mean";
   }
 protected:
   double compute() {

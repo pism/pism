@@ -39,14 +39,14 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change of the total mass of subglacial water", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -64,14 +64,14 @@ public:
     : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate_from_surface")};
-    m_accumulator.metadata().set_string("units", "m");
+    m_accumulator.metadata()["units"] = "m";
 
     set_attrs("water input rate from the ice surface into the subglacial water system",
               "", "m second-1", "m year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -90,14 +90,14 @@ public:
 
     m_vars = {SpatialVariableMetadata(m_sys,
                                       "tendency_of_subglacial_water_mass_due_to_input")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to input", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -115,13 +115,13 @@ public:
       m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
 
     m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
-    m_accumulator.metadata().set_string("units", "m2");
+    m_accumulator.metadata()["units"] = "m2";
 
     set_attrs("magnitude of the subglacial water flux", "",
               "m2 second-1", "m2 year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 
     m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux",
                                "m2 s-1", "m2 s-1", "", 0);
@@ -150,14 +150,14 @@ public:
 
     m_vars = {SpatialVariableMetadata(m_sys,
                                       "tendency_of_subglacial_water_mass_at_grounded_margins")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounded ice margins", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -174,14 +174,14 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_grounding_line")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounding lines", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -200,14 +200,14 @@ public:
 
     m_vars = {SpatialVariableMetadata(m_sys,
                                       "tendency_of_subglacial_water_mass_due_to_conservation_error")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -224,14 +224,14 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary", TOTAL_CHANGE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -250,14 +250,14 @@ public:
 
     m_vars = {SpatialVariableMetadata(m_sys,
                                       "tendency_of_subglacial_water_mass_due_to_flow")};
-    m_accumulator.metadata().set_string("units", "kg");
+    m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change subglacial water mass due to lateral flow", "",
               "kg second-1", "Gt year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to water gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -305,17 +305,17 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
   m_Wtill.set_attrs("model_state",
                     "effective thickness of subglacial water stored in till",
                     "m", "m", "", 0);
-  m_Wtill.metadata().set_number("valid_min", 0.0);
+  m_Wtill.metadata()["valid_min"] = {0.0};
 
   m_Pover.set_attrs("internal", "overburden pressure",
                     "Pa", "Pa", "", 0);
-  m_Pover.metadata().set_number("valid_min", 0.0);
+  m_Pover.metadata()["valid_min"] = {0.0};
 
   // needs ghosts in Routing and Distributed
   m_W.set_attrs("diagnostic",
                 "thickness of transportable subglacial water layer",
                 "m", "m", "", 0);
-  m_W.metadata().set_number("valid_min", 0.0);
+  m_W.metadata()["valid_min"] = {0.0};
 
   m_Q.set_attrs("diagnostic", "advective subglacial water flux",
                 "m2 s-1", "m2 day-1", "", 0);

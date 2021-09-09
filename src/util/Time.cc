@@ -360,7 +360,7 @@ static double start_time(const Config &config,
   // number instead.
   if (file->dimension_length(time_name) > 0) {
     VariableMetadata time_axis(time_name, time_units.system());
-    time_axis.set_string("units", time_units.format());
+    time_axis["units"] = time_units.format();
 
     std::vector<double> time{};
     io::read_timeseries(*file, time_axis, log, time);
@@ -750,13 +750,13 @@ void Time::init_from_file(MPI_Comm com,
     if (not time_bounds_name.empty()) {
       // use the time bounds
       VariableMetadata bounds(time_bounds_name, m_unit_system);
-      bounds.set_string("units", m_time_units.format());
+      bounds["units"] = m_time_units.format();
 
       io::read_time_bounds(file, bounds, log, time);
     } else {
       // use the time axis
       VariableMetadata time_axis(time_name, m_unit_system);
-      time_axis.set_string("units", m_time_units.format());
+      time_axis["units"] = m_time_units.format();
 
       io::read_timeseries(file, time_axis, log, time);
     }

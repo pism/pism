@@ -53,7 +53,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
                                    "threshold used by the 'calving at threshold' calving method",
                                    "m", "m",
                                    "", 0); // no standard name
-    m_calving_threshold->metadata().set_number("valid_min", 0.0);
+    m_calving_threshold->metadata()["valid_min"] = {0.0};
   }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   m_temperature->set_attrs("climate_forcing",
                            "temperature of the ice at the ice surface but below firn processes",
                            "Kelvin", "Kelvin", "", 0);
-  m_temperature->metadata().set_numbers("valid_range", {0.0, 323.15}); // [0C, 50C]
+  m_temperature->metadata()["valid_range"] = {0.0, 323.15}; // [0C, 50C]
 
   const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
@@ -65,7 +65,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                          "kg m-2 s-1", "kg m-2 year-1",
                          "land_ice_surface_specific_mass_balance_flux", 0);
 
-  m_mass_flux->metadata().set_numbers("valid_range", {-smb_max, smb_max});
+  m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};
 }
 
 Given::~Given() {

@@ -240,10 +240,10 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
     // time
     VariableMetadata time(name, unit_system);
-    time.set_string("long_name", "time");
-    time.set_string("calendar", calendar);
-    time.set_string("units", units);
-    time.set_string("axis", "T");
+    time["long_name"] = "time";
+    time["calendar"] = calendar;
+    time["units"] = units;
+    time["axis"] = "T";
 
     define_dimension(file, PISM_UNLIMITED, time);
   } catch (RuntimeError &e) {
@@ -1131,7 +1131,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 
     // convert to glaciological units:
     units::Converter(metadata.unit_system(),
-                     metadata.get_string("units"),
+                     metadata["units"],
                      metadata.get_string("glaciological_units")).convert_doubles(tmp.data(),
                                                                                  tmp.size());
 
@@ -1294,7 +1294,7 @@ void read_time_info(const Logger &log,
   size_t N = 0;
   {
     VariableMetadata time_variable(time_name, unit_system);
-    time_variable.set_string("units", time_units);
+    time_variable["units"] = time_units;
 
     io::read_timeseries(file, time_variable, log, times);
 
@@ -1316,7 +1316,7 @@ void read_time_info(const Logger &log,
     }
 
     VariableMetadata bounds_variable(time_bounds_name, unit_system);
-    bounds_variable.set_string("units", time_units);
+    bounds_variable["units"] = time_units;
 
     io::read_time_bounds(file, bounds_variable, log, bounds);
 
@@ -1375,11 +1375,11 @@ void read_attributes(const File &file,
       IO_Type nctype = file.attribute_type(variable_name, attribute_name);
 
       if (nctype == PISM_CHAR) {
-        variable.set_string(attribute_name,
-                            file.read_text_attribute(variable_name, attribute_name));
+        variable[attribute_name] = file.read_text_attribute(variable_name,
+                                                            attribute_name);
       } else {
-        variable.set_numbers(attribute_name,
-                             file.read_double_attribute(variable_name, attribute_name));
+        variable[attribute_name] = file.read_double_attribute(variable_name,
+                                                              attribute_name);
       }
     } // end of for (int j = 0; j < nattrs; ++j)
   } catch (RuntimeError &e) {
@@ -1512,23 +1512,21 @@ void read_valid_range(const File &file, const std::string &name, VariableMetadat
       file_units = variable.get_string("units");
     }
 
-    units::Converter c(variable.unit_system(),
-                       file_units,
-                       variable.get_string("units"));
+    units::Converter c(variable.unit_system(), file_units, variable["units"]);
 
     std::vector<double> bounds = file.read_double_attribute(name, "valid_range");
     if (bounds.size() == 2) {             // valid_range is present
-      variable.set_number("valid_min", c(bounds[0]));
-      variable.set_number("valid_max", c(bounds[1]));
+      variable["valid_min"] = {c(bounds[0])};
+      variable["valid_max"] = {c(bounds[1])};
     } else {                      // valid_range has the wrong length or is missing
       bounds = file.read_double_attribute(name, "valid_min");
       if (bounds.size() == 1) {           // valid_min is present
-        variable.set_number("valid_min", c(bounds[0]));
+        variable["valid_min"] = {c(bounds[0])};
       }
 
       bounds = file.read_double_attribute(name, "valid_max");
       if (bounds.size() == 1) {           // valid_max is present
-        variable.set_number("valid_max", c(bounds[0]));
+        variable["valid_max"] = {c(bounds[0])};
       }
     }
   } catch (RuntimeError &e) {

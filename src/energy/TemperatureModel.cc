@@ -36,7 +36,7 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
   m_ice_temperature.set_attrs("model_state",
                               "ice temperature",
                               "K", "K", "land_ice_temperature", 0);
-  m_ice_temperature.metadata().set_number("valid_min", 0.0);
+  m_ice_temperature.metadata()["valid_min"] = {0.0};
 }
 
 const IceModelVec3 & TemperatureModel::temperature() const {

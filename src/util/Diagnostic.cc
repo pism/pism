@@ -144,16 +144,16 @@ void Diagnostic::set_attrs(const std::string &long_name,
                                   static_cast<int>(m_vars.size()));
   }
 
-  m_vars[N].set_string("pism_intent", "diagnostic");
+  m_vars[N]["pism_intent"] = "diagnostic";
 
-  m_vars[N].set_string("long_name", long_name);
+  m_vars[N]["long_name"] = long_name;
 
-  m_vars[N].set_string("standard_name", standard_name);
+  m_vars[N]["standard_name"] = standard_name;
 
-  m_vars[N].set_string("units", units);
+  m_vars[N]["units"] = units;
 
   if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
-    m_vars[N].set_string("glaciological_units", glaciological_units);
+    m_vars[N]["glaciological_units"] = glaciological_units;
   }
 }
 
@@ -186,12 +186,12 @@ TSDiagnostic::TSDiagnostic(IceGrid::ConstPtr grid, const std::string &name)
 
   m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
 
-  m_variable.set_string("ancillary_variables", name + "_aux");
+  m_variable["ancillary_variables"] = name + "_aux";
 
-  m_dimension.set_string("calendar", m_grid->ctx()->time()->calendar());
-  m_dimension.set_string("long_name", "time");
-  m_dimension.set_string("axis", "T");
-  m_dimension.set_string("units", m_grid->ctx()->time()->units_string());
+  m_dimension["calendar"] = m_grid->ctx()->time()->calendar();
+  m_dimension["long_name"] = "time";
+  m_dimension["axis"] = "T";
+  m_dimension["units"] = m_grid->ctx()->time()->units_string();
 }
 
 TSDiagnostic::~TSDiagnostic() {
@@ -200,10 +200,10 @@ TSDiagnostic::~TSDiagnostic() {
 
 void TSDiagnostic::set_units(const std::string &units,
                              const std::string &glaciological_units) {
-  m_variable.set_string("units", units);
+  m_variable["units"] = units;
 
   if (not m_config->get_flag("output.use_MKS")) {
-    m_variable.set_string("glaciological_units", glaciological_units);
+    m_variable["glaciological_units"] = glaciological_units;
   }
 }
 

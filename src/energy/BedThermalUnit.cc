@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,7 +103,7 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
                                  "W m-2", "mW m-2",
                                  "upward_geothermal_heat_flux_at_ground_level_in_land_ice", 0);
-    m_top_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
+    m_top_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
   }
   {
     // PROPOSED standard_name = lithosphere_upward_heat_flux
@@ -111,7 +111,7 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
                                     "upward geothermal flux at the bottom bedrock surface",
                                     "W m-2", "mW m-2", "", 0);
 
-    m_bottom_surface_flux.metadata().set_string("comment", "positive values correspond to an upward flux");
+    m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
     m_bottom_surface_flux.set_time_independent(true);
   }
 }
@@ -231,8 +231,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
              "upward_geothermal_heat_flux_in_land_ice" :
              "upward_geothermal_heat_flux_at_ground_level_in_land_ice"),
             "W m-2", "mW m-2", 0);
-  m_vars[0].set_string("comment",
-                       "positive values correspond to an upward flux");
+  m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {

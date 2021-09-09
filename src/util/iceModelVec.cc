@@ -391,17 +391,17 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
                             const std::string &standard_name,
                             unsigned int N) {
 
-  metadata(N).set_string("long_name", long_name);
+  metadata(N)["long_name"] = long_name;
 
-  metadata(N).set_string("units", units);
+  metadata(N)["units"] = units;
 
   if (not m_impl->grid->ctx()->config()->get_flag("output.use_MKS")) {
-    metadata(N).set_string("glaciological_units", glaciological_units);
+    metadata(N)["glaciological_units"] = glaciological_units;
   }
 
-  metadata(N).set_string("pism_intent", pism_intent);
+  metadata(N)["pism_intent"] = pism_intent;
 
-  metadata(N).set_string("standard_name", standard_name);
+  metadata(N)["standard_name"] = standard_name;
 }
 
 //! Gets an IceModelVec from a file `file`, interpolating onto the current grid.

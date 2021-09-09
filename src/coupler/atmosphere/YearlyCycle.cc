@@ -45,13 +45,13 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
                                    "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "K", "K",
                                    "", 0);  // no CF standard_name
-  m_air_temp_mean_annual.metadata().set_string("source", m_reference);
+  m_air_temp_mean_annual.metadata()["source"] = m_reference;
 
   m_air_temp_mean_summer.set_attrs("diagnostic",
                                    "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "Kelvin", "Kelvin",
                                    "", 0);  // no CF standard_name
-  m_air_temp_mean_summer.metadata().set_string("source", m_reference);
+  m_air_temp_mean_summer.metadata()["source"] = m_reference;
 
   m_precipitation.set_attrs("model_state", "precipitation rate",
                             "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);

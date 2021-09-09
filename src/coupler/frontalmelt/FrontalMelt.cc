@@ -200,13 +200,13 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
-    m_accumulator.metadata().set_string("units", "m");
+    m_accumulator.metadata()["units"] = "m";
 
     set_attrs("frontal melt rate", "",
               "m second-1", "m day-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
@@ -223,14 +223,14 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
-    m_accumulator.metadata().set_string("units", "m");
+    m_accumulator.metadata()["units"] = "m";
 
     set_attrs("retreat rate due to frontal melt", "",
               "m second-1", "m year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "takes into account what part of the front is submerged");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "takes into account what part of the front is submerged";
   }
 
 protected:

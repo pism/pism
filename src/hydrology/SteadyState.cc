@@ -309,7 +309,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   VariableMetadata tb(bounds_name, m_grid->ctx()->unit_system());
-  tb.set_string("units", m_grid->ctx()->time()->units_string());
+  tb["units"] = m_grid->ctx()->time()->units_string();
 
   io::read_time_bounds(file, tb, *m_log, m_time_bounds);
 

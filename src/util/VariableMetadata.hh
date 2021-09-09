@@ -67,10 +67,47 @@ class Logger;
 
 */
 
+class VariableMetadata;
+
+class ConstAttribute {
+public:
+  friend class VariableMetadata;
+  ConstAttribute(const ConstAttribute&) = delete;
+  ConstAttribute& operator=(const ConstAttribute&) = delete;
+
+  operator std::string() const;
+  operator double() const;
+  operator std::vector<double> () const;
+protected:
+  ConstAttribute(const VariableMetadata *var, const std::string &name);
+  ConstAttribute(ConstAttribute&& a);
+
+  std::string m_name;
+  VariableMetadata* m_var;
+};
+
+class Attribute : public ConstAttribute {
+public:
+  friend class VariableMetadata;
+  void operator=(const std::string &value);
+  void operator=(const std::initializer_list<double> &value);
+  void operator=(const std::vector<double> &value);
+private:
+  using ConstAttribute::ConstAttribute;
+};
+
 class VariableMetadata {
 public:
   VariableMetadata(const std::string &name, units::System::Ptr system, unsigned int ndims = 0);
   virtual ~VariableMetadata() = default;
+
+  Attribute operator[](const std::string &name) {
+    return Attribute(this, name);
+  }
+
+  const ConstAttribute operator[](const std::string &name) const {
+    return ConstAttribute(this, name);
+  }
 
   // getters and setters
   double get_number(const std::string &name) const;

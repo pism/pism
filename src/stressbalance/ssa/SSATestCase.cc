@@ -71,11 +71,11 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
 
   auto large_number = units::convert(m_sys,  1e6, "m year-1", "m second-1");
 
-  m_bc_values.metadata(0).set_numbers("valid_range", {-large_number, large_number});
-  m_bc_values.metadata(0).set_number("_FillValue", fill_value);
+  m_bc_values.metadata(0)["valid_range"] = {-large_number, large_number};
+  m_bc_values.metadata(0)["_FillValue"] = {fill_value};
 
-  m_bc_values.metadata(1).set_numbers("valid_range", {-large_number, large_number});
-  m_bc_values.metadata(1).set_number("_FillValue", fill_value);
+  m_bc_values.metadata(1)["valid_range"] = {-large_number, large_number};
+  m_bc_values.metadata(1)["_FillValue"] = {fill_value};
 
   m_bc_values.set(fill_value);
 
@@ -84,9 +84,8 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
                       "grounded_dragging_floating integer mask",
                       "", "", "", 0);
 
-  m_bc_mask.metadata().set_numbers("flag_values", {0.0, 1.0});
-  m_bc_mask.metadata().set_string("flag_meanings",
-                                  "no_data ssa.dirichlet_bc_location");
+  m_bc_mask.metadata()["flag_values"] = {0.0, 1.0};
+  m_bc_mask.metadata()["flag_meanings"] = "no_data ssa.dirichlet_bc_location";
 }
 
 SSATestCase::~SSATestCase()
@@ -231,7 +230,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
     return;
   }
 
-  err.set_string("units", "1");
+  err["units"] = "1";
 
   m_ctx->log()->message(2, "Also writing errors to '%s'...\n", filename->c_str());
 
@@ -242,7 +241,7 @@ void SSATestCase::report_netcdf(const std::string &testname,
     mode = PISM_READWRITE_MOVE;
   }
 
-  global_attributes.set_string("source", std::string("PISM ") + pism::revision);
+  global_attributes["source"] = std::string("PISM ") + pism::revision;
 
   // Find the number of records in this file:
   File file(m_grid->com, filename, PISM_NETCDF3, mode);      // OK to use NetCDF3.
@@ -255,50 +254,50 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   // Always write grid parameters:
   err.set_name("dx");
-  err.set_string("units", "meters");
+  err["units"] = "meters";
   io::write_timeseries(file, err, (size_t)start, {m_grid->dx()});
   err.set_name("dy");
   io::write_timeseries(file, err, (size_t)start, {m_grid->dy()});
 
   // Always write the test name:
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("test");
   io::write_timeseries(file, err, (size_t)start, {(double)testname[0]});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("max_velocity");
-  err.set_string("units", "m year-1");
-  err.set_string("long_name", "maximum ice velocity magnitude error");
+  err["units"] = "m year-1";
+  err["long_name"] = "maximum ice velocity magnitude error";
   io::write_timeseries(file, err, (size_t)start, {max_vector});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("relative_velocity");
-  err.set_string("units", "percent");
-  err.set_string("long_name", "relative ice velocity magnitude error");
+  err["units"] = "percent";
+  err["long_name"] = "relative ice velocity magnitude error";
   io::write_timeseries(file, err, (size_t)start, {rel_vector});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("maximum_u");
-  err.set_string("units", "m year-1");
-  err.set_string("long_name", "maximum error in the X-component of the ice velocity");
+  err["units"] = "m year-1";
+  err["long_name"] = "maximum error in the X-component of the ice velocity";
   io::write_timeseries(file, err, (size_t)start, {max_u});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("maximum_v");
-  err.set_string("units", "m year-1");
-  err.set_string("long_name", "maximum error in the Y-component of the ice velocity");
+  err["units"] = "m year-1";
+  err["long_name"] = "maximum error in the Y-component of the ice velocity";
   io::write_timeseries(file, err, (size_t)start, {max_v});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("average_u");
-  err.set_string("units", "m year-1");
-  err.set_string("long_name", "average error in the X-component of the ice velocity");
+  err["units"] = "m year-1";
+  err["long_name"] = "average error in the X-component of the ice velocity";
   io::write_timeseries(file, err, (size_t)start, {avg_u});
 
-  err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
+  err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("average_v");
-  err.set_string("units", "m year-1");
-  err.set_string("long_name", "average error in the Y-component of the ice velocity");
+  err["units"] = "m year-1";
+  err["long_name"] = "average error in the Y-component of the ice velocity";
   io::write_timeseries(file, err, (size_t)start, {avg_v});
 
   file.close();

@@ -75,54 +75,54 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
   switch (epsg) {
   case 3413:
-    mapping.set_number("latitude_of_projection_origin", 90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", -45.0);
-    mapping.set_number("standard_parallel", 70.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 0.0);
+    mapping["latitude_of_projection_origin"]         = {90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {-45.0};
+    mapping["standard_parallel"]                     = {70.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {0.0};
     break;
   case 3031:
-    mapping.set_number("latitude_of_projection_origin", -90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", 0.0);
-    mapping.set_number("standard_parallel", -71.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 0.0);
+    mapping["latitude_of_projection_origin"]         = {-90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {0.0};
+    mapping["standard_parallel"]                     = {-71.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {0.0};
     break;
   case 3057:
-    mapping.set_string("grid_mapping_name", "lambert_conformal_conic") ;
-    mapping.set_number("longitude_of_central_meridian", -19.) ;
-    mapping.set_number("false_easting", 500000.) ;
-    mapping.set_number("false_northing", 500000.) ;
-    mapping.set_number("latitude_of_projection_origin", 65.) ;
-    mapping.set_numbers("standard_parallel", {64.25, 65.75}) ;
-    mapping.set_string("long_name", "CRS definition") ;
-    mapping.set_number("longitude_of_prime_meridian", 0.) ;
-    mapping.set_number("semi_major_axis", 6378137.) ;
-    mapping.set_number("inverse_flattening", 298.257222101) ;
+    mapping["grid_mapping_name"]                     = "lambert_conformal_conic" ;
+    mapping["longitude_of_central_meridian"]         = {-19.} ;
+    mapping["false_easting"]                         = {500000.} ;
+    mapping["false_northing"]                        = {500000.} ;
+    mapping["latitude_of_projection_origin"]         = {65.} ;
+    mapping["standard_parallel"]                     = {64.25, 65.75} ;
+    mapping["long_name"]                             = "CRS definition" ;
+    mapping["longitude_of_prime_meridian"]           = {0.} ;
+    mapping["semi_major_axis"]                       = {6378137.} ;
+    mapping["inverse_flattening"]                    = {298.257222101} ;
     break;
   case 5936:
-    mapping.set_number("latitude_of_projection_origin", 90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", -150.0);
-    mapping.set_number("standard_parallel", 90.0);
-    mapping.set_number("false_northing", 2000000.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 2000000.0);
+    mapping["latitude_of_projection_origin"]         = {90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {-150.0};
+    mapping["standard_parallel"]                     = {90.0};
+    mapping["false_northing"]                        = {2000000.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {2000000.0};
     break;
   case 26710:
-    mapping.set_number("longitude_of_central_meridian", -123.0);
-    mapping.set_number("false_easting", 500000.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "transverse_mercator");
-    mapping.set_number("inverse_flattening", 294.978698213898);
-    mapping.set_number("latitude_of_projection_origin", 0.0);
-    mapping.set_number("scale_factor_at_central_meridian", 0.9996);
-    mapping.set_number("semi_major_axis", 6378206.4);
-    mapping.set_string("unit", "metre");
+    mapping["longitude_of_central_meridian"]         = {-123.0};
+    mapping["false_easting"]                         = {500000.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "transverse_mercator";
+    mapping["inverse_flattening"]                    = {294.978698213898};
+    mapping["latitude_of_projection_origin"]         = {0.0};
+    mapping["scale_factor_at_central_meridian"]      = {0.9996};
+    mapping["semi_major_axis"]                       = {6378206.4};
+    mapping["unit"]                                  = "metre";
     break;
   default:
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ string '%s'",

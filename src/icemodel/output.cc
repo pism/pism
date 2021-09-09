@@ -89,7 +89,7 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     std::string old_history = file.read_text_attribute("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
-    tmp.set_string("history", tmp.get_string("history") + old_history);
+    tmp["history"] = std::string(tmp["history"]) + old_history;
 
     io::write_attributes(file, tmp, PISM_DOUBLE);
   } else {
@@ -107,9 +107,9 @@ void IceModel::save_results() {
 
     auto str = pism::printf(
       "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      m_run_stats.get_number("wall_clock_hours"),
-      m_run_stats.get_number("processor_hours"),
-      m_run_stats.get_number("model_years_per_processor_hour"));
+      (double)m_run_stats["wall_clock_hours"],
+      (double)m_run_stats["processor_hours"],
+      (double)m_run_stats["model_years_per_processor_hour"]);
 
     prepend_history(str);
   }

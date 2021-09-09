@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,12 +40,12 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   m_P.set_attrs("model_state",
                 "pressure of transportable water in subglacial layer",
                 "Pa", "Pa", "", 0);
-  m_P.metadata().set_number("valid_min", 0.0);
+  m_P.metadata()["valid_min"] = {0.0};
 
   m_Pnew.set_attrs("internal",
                    "new transportable subglacial water pressure during update",
                    "Pa", "Pa", "", 0);
-  m_Pnew.metadata().set_number("valid_min", 0.0);
+  m_Pnew.metadata()["valid_min"] = {0.0};
 }
 
 Distributed::~Distributed() {

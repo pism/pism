@@ -68,7 +68,7 @@ public:
     set_attrs("pressure of transportable water in subglacial layer"
               " as fraction of the overburden pressure", "",
               "", "", 0);
-    m_vars[0].set_number("_FillValue", m_fill_value);
+    m_vars[0]["_FillValue"] = {m_fill_value};
   }
 
 protected:
@@ -271,7 +271,7 @@ Routing::Routing(IceGrid::ConstPtr grid)
     m_dy(grid->dy()),
     m_bottom_surface(grid, "ice_bottom_surface_elevation", WITH_GHOSTS) {
 
-  m_W.metadata().set_string("pism_intent", "model_state");
+  m_W.metadata()["pism_intent"] = "model_state";
 
   m_rg = (m_config->get_number("constants.fresh_water.density") *
           m_config->get_number("constants.standard_gravity"));
@@ -293,12 +293,12 @@ Routing::Routing(IceGrid::ConstPtr grid)
   m_Wstag.set_attrs("internal",
                     "cell face-centered (staggered) values of water layer thickness",
                     "m", "m", "", 0);
-  m_Wstag.metadata().set_number("valid_min", 0.0);
+  m_Wstag.metadata()["valid_min"] = {0.0};
 
   m_Kstag.set_attrs("internal",
                     "cell face-centered (staggered) values of nonlinear conductivity",
                     "", "", "", 0);
-  m_Kstag.metadata().set_number("valid_min", 0.0);
+  m_Kstag.metadata()["valid_min"] = {0.0};
 
   m_R.set_attrs("internal",
                 "work space for modeled subglacial water hydraulic potential",
@@ -308,12 +308,12 @@ Routing::Routing(IceGrid::ConstPtr grid)
   m_Wnew.set_attrs("internal",
                    "new thickness of transportable subglacial water layer during update",
                    "m", "m", "", 0);
-  m_Wnew.metadata().set_number("valid_min", 0.0);
+  m_Wnew.metadata()["valid_min"] = {0.0};
 
   m_Wtillnew.set_attrs("internal",
                        "new thickness of till (subglacial) water layer during update",
                        "m", "m", "", 0);
-  m_Wtillnew.metadata().set_number("valid_min", 0.0);
+  m_Wtillnew.metadata()["valid_min"] = {0.0};
 
   {
     double alpha = m_config->get_number("hydrology.thickness_power_in_flux");

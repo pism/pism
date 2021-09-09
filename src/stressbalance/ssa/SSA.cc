@@ -86,10 +86,10 @@ SSA::SSA(IceGrid::ConstPtr g)
   // grounded_dragging_floating integer mask
   m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                    "", "", "", 0);
-  std::vector<double> mask_values = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
-  m_mask.metadata().set_numbers("flag_values", mask_values);
-  m_mask.metadata().set_string("flag_meanings",
-                              "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  m_mask.metadata()["flag_values"] =
+    {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  m_mask.metadata()["flag_meanings"] =
+    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   m_taud.set_attrs("diagnostic",
                    "X-component of the driving shear stress at the base of ice",
@@ -100,10 +100,10 @@ SSA::SSA(IceGrid::ConstPtr g)
 
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
-  m_velocity.metadata(0).set_string("long_name", "SSA model ice velocity in the X direction");
+  m_velocity.metadata(0)["long_name"] = "SSA model ice velocity in the X direction";
 
   m_velocity.metadata(1).set_name("v_ssa");
-  m_velocity.metadata(1).set_string("long_name", "SSA model ice velocity in the Y direction");
+  m_velocity.metadata(1)["long_name"] = "SSA model ice velocity in the Y direction";
 
   m_da = m_velocity_global.dm();
 
@@ -374,8 +374,7 @@ SSA_taud::SSA_taud(const SSA *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this is the driving stress used by the SSA solver");
+    v["comment"] = "this is the driving stress used by the SSA solver";
   }
 }
 
@@ -398,8 +397,8 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                     "this is the magnitude of the driving stress used by the SSA solver");
+  m_vars[0]["comment"] =
+    "this is the magnitude of the driving stress used by the SSA solver";
 }
 
 IceModelVec::Ptr SSA_taud_mag::compute_impl() const {

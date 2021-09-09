@@ -42,12 +42,11 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
       m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
 
-  m_boxes.metadata().set_number("_FillValue", 0.0);
+  m_boxes.metadata()["_FillValue"] = {0.0};
 
-  m_ice_rises.metadata().set_numbers("flag_values",
-                                     {OCEAN, RISE, CONTINENTAL, FLOATING});
-  m_ice_rises.metadata().set_string("flag_meanings",
-                                     "ocean ice_rise continental_ice_sheet, floating_ice");
+  m_ice_rises.metadata()["flag_values"] = {OCEAN, RISE, CONTINENTAL, FLOATING};
+  m_ice_rises.metadata()["flag_meanings"] =
+    "ocean ice_rise continental_ice_sheet, floating_ice";
 
   m_basin_mask.set_attrs("climate_forcing", "mask determines basins for PICO",
                          "", "", "", 0);

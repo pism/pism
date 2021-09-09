@@ -75,7 +75,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     m_temp->set_attrs("model_state",
                       "lithosphere (bedrock) temperature, in BTU_Full",
                       "K", "K", "", 0);
-    m_temp->metadata().set_number("valid_min", 0.0);
+    m_temp->metadata()["valid_min"] = {0.0};
   }
 
   m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));

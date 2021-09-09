@@ -185,13 +185,12 @@ public:
     m_interval_length(0.0),
     m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset.set_string("units", "seconds");
-    m_time_since_reset.set_string("long_name",
-                                  "time since " + m_accumulator.get_name() +
-                                  " was reset to 0");
+    m_time_since_reset["units"] = "seconds";
+    m_time_since_reset["long_name"] =
+      "time since " + m_accumulator.get_name() + " was reset to 0";
 
-    m_accumulator.metadata().set_string("long_name",
-                                        "accumulator for the " + name + " diagnostic");
+    m_accumulator.metadata()["long_name"] =
+      "accumulator for the " + name + " diagnostic";
 
     m_accumulator.set(0.0);
   }

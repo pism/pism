@@ -46,18 +46,18 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_flow_law(flow_law) {
 
   m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);
-  m_density.metadata().set_number("valid_max", 1.0);
-  m_density.metadata().set_number("valid_min", 0.0);
+  m_density.metadata()["valid_max"] = {1.0};
+  m_density.metadata()["valid_min"] = {0.0};
 
   m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
-  m_growth_rate.metadata().set_number("valid_min", 0.0);
+  m_growth_rate.metadata()["valid_min"] = {0.0};
 
   m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
 
   m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
 
   m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
-  m_age.metadata().set_string("glaciological_units", "years");
+  m_age.metadata()["glaciological_units"] = "years";
 
   m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
 

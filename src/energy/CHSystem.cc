@@ -63,8 +63,7 @@ CHSystem::CHSystem(IceGrid::ConstPtr grid,
 
   m_ice_enthalpy.set_name("ch_enthalpy");
   m_ice_enthalpy.metadata().set_name("ch_enthalpy");
-  m_ice_enthalpy.metadata().set_string("long_name",
-                                       "enthalpy of the cryo-hydrologic system");
+  m_ice_enthalpy.metadata()["long_name"] = "enthalpy of the cryo-hydrologic system";
 }
 
 CHSystem::~CHSystem() {

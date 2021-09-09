@@ -54,7 +54,7 @@ Given::Given(IceGrid::ConstPtr g)
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_numbers("valid_range", {0.0, 323.15}); // (0 C, 50 C)
+    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",

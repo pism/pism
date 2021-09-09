@@ -607,8 +607,8 @@ static void write(units::System::Ptr sys,
                   double value,
                   IO_Type type=PISM_DOUBLE) {
   VariableMetadata v(name, sys);
-  v.set_string("units", units);
-  v.set_string("long_name", long_name);
+  v["units"] = units;
+  v["long_name"] = long_name;
 
   io::define_timeseries(v, "N", file, type);
   io::write_timeseries(file, v, start, {value});

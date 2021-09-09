@@ -99,9 +99,9 @@ void IceModel::update_run_stats() {
     model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
                                       "seconds", "years");
 
-  m_run_stats.set_number("wall_clock_hours", wall_clock_hours);
-  m_run_stats.set_number("processor_hours", proc_hours);
-  m_run_stats.set_number("model_years_per_processor_hour", model_years / proc_hours);
+  m_run_stats["wall_clock_hours"]               = {wall_clock_hours};
+  m_run_stats["processor_hours"]                = {proc_hours};
+  m_run_stats["model_years_per_processor_hour"] = {model_years / proc_hours};
 }
 
 //! Get time and user/host name and add it to the given string.

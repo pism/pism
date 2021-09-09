@@ -47,13 +47,13 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
   latitude.set_time_independent(true);
-  latitude.metadata().set_string("grid_mapping", "");
-  latitude.metadata().set_numbers("valid_range", {-90.0, 90.0});
+  latitude.metadata()["grid_mapping"] = "";
+  latitude.metadata()["valid_range"] = {-90.0, 90.0};
 
   longitude.set_attrs("mapping", "longitude", "degree_east", "degree_east", "longitude", 0);
   longitude.set_time_independent(true);
-  longitude.metadata().set_string("grid_mapping", "");
-  longitude.metadata().set_numbers("valid_range", {-180.0, 180.0});
+  longitude.metadata()["grid_mapping"] = "";
+  longitude.metadata()["valid_range"] = {-180.0, 180.0};
 
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "m", "bedrock_altitude", 0);
@@ -64,23 +64,20 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   ice_thickness.set_attrs("model_state", "land ice thickness",
                           "m", "m", "land_ice_thickness", 0);
-  ice_thickness.metadata().set_number("valid_min", 0.0);
+  ice_thickness.metadata()["valid_min"] = {0.0};
 
   ice_area_specific_volume.set_attrs("model_state",
                                      "ice-volume-per-area in partially-filled grid cells",
                                      "m3/m2", "m3/m2", "", 0);
-  ice_area_specific_volume.metadata().set_string("comment",
-                                                 "this variable represents the amount of ice "
-                                                 "in a partially-filled cell and not "
-                                                 "the corresponding geometry, so thinking "
-                                                 "about it as 'thickness' is not helpful");
+  ice_area_specific_volume.metadata()["comment"] =
+    "this variable represents the amount of ice in a partially-filled cell and not "
+    "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
   cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                       "", "", "", 0);
-  cell_type.metadata().set_numbers("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
-                                                   MASK_FLOATING, MASK_ICE_FREE_OCEAN});
-  cell_type.metadata().set_string("flag_meanings",
-                                  "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  cell_type.metadata()["flag_meanings"] =
+    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
   cell_type.metadata().set_output_type(PISM_INT);
 
   cell_grounded_fraction.set_attrs("internal",

@@ -97,36 +97,36 @@ Pico::Pico(IceGrid::ConstPtr grid)
   // computed salinity in ocean boxes
   m_Soc.set_attrs("model_state", "ocean salinity field",
                   "g/kg", "g/kg", "ocean salinity field", 0);
-  m_Soc.metadata().set_number("_FillValue", 0.0);
+  m_Soc.metadata()["_FillValue"] = {0.0};
 
   // salinity input for box 1
   m_Soc_box0.set_attrs("model_state", "ocean base salinity field",
                        "g/kg", "g/kg", "", 0);
-  m_Soc_box0.metadata().set_number("_FillValue", 0.0);
+  m_Soc_box0.metadata()["_FillValue"] = {0.0};
 
   // computed temperature in ocean boxes
   m_Toc.set_attrs("model_state", "ocean temperature field",
                   "K", "K", "", 0);
-  m_Toc.metadata().set_number("_FillValue", 0.0);
+  m_Toc.metadata()["_FillValue"] = {0.0};
 
   // temperature input for box 1
   m_Toc_box0.set_attrs("model_state", "ocean base temperature",
                        "K", "K", "", 0);
-  m_Toc_box0.metadata().set_number("_FillValue", 0.0);
+  m_Toc_box0.metadata()["_FillValue"] = {0.0};
 
   m_T_star.set_attrs("model_state", "T_star field",
                      "degree C", "degree C", "", 0);
-  m_T_star.metadata().set_number("_FillValue", 0.0);
+  m_T_star.metadata()["_FillValue"] = {0.0};
 
   m_overturning.set_attrs("model_state", "cavity overturning",
                           "m^3 s-1", "m^3 s-1", "", 0);
-  m_overturning.metadata().set_number("_FillValue", 0.0);
+  m_overturning.metadata()["_FillValue"] = {0.0};
 
   m_basal_melt_rate.set_attrs("model_state", "PICO sub-shelf melt rate",
                               "m s-1", "m year-1", "", 0);
-  m_basal_melt_rate.metadata().set_number("_FillValue", 0.0);
+  m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
 
-  m_shelf_base_temperature->metadata().set_number("_FillValue", 0.0);
+  m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 
   m_n_boxes  = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
 }

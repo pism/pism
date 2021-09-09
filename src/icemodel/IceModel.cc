@@ -85,14 +85,14 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
 
   // time-independent info
   {
-    m_run_stats.set_string("source", std::string("PISM ") + pism::revision);
-    m_run_stats.set_string("long_name", "Run statistics");
+    m_run_stats["source"] = std::string("PISM ") + pism::revision;
+    m_run_stats["long_name"] = "Run statistics";
   }
 
-  m_extra_bounds.set_string("units", m_time->units_string());
+  m_extra_bounds["units"] = m_time->units_string();
 
-  m_timestamp.set_string("units", "hours");
-  m_timestamp.set_string("long_name", "wall-clock time since the beginning of the run");
+  m_timestamp["units"] = "hours";
+  m_timestamp["long_name"] = "wall-clock time since the beginning of the run";
 
   pism_signal = 0;
   signal(SIGTERM, pism_signal_handler);
@@ -106,8 +106,8 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
   m_btu = nullptr;
   m_energy_model = nullptr;
 
-  m_output_global_attributes.set_string("Conventions", "CF-1.6");
-  m_output_global_attributes.set_string("source", pism::version());
+  m_output_global_attributes["Conventions"] = "CF-1.6";
+  m_output_global_attributes["source"] = pism::version();
 
   // Do not save snapshots by default:
   m_save_snapshots = false;
@@ -145,7 +145,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
                                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
-    m_surface_input_for_hydrology->metadata().set_number("valid_min", 0.0);
+    m_surface_input_for_hydrology->metadata()["valid_min"] = {0.0};
   }
 }
 
@@ -218,7 +218,7 @@ void IceModel::allocate_storage() {
   m_basal_melt_rate.set_attrs("internal",
                               "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
                               "m s-1", "m year-1", "land_ice_basal_melt_rate", 0);
-  m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
+  m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
 
   // SSA Dirichlet B.C. locations and values
@@ -228,8 +228,8 @@ void IceModel::allocate_storage() {
   {
     m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
                                       "", "", "", 0);
-    m_ssa_dirichlet_bc_mask.metadata().set_numbers("flag_values", {0, 1});
-    m_ssa_dirichlet_bc_mask.metadata().set_string("flag_meanings", "no_data bc_condition");
+    m_ssa_dirichlet_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_ssa_dirichlet_bc_mask.metadata()["flag_meanings"] = "no_data bc_condition";
     m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_INT);
     m_ssa_dirichlet_bc_mask.set_time_independent(true);
 
@@ -252,8 +252,8 @@ void IceModel::allocate_storage() {
                                         "Y-component of the SSA velocity boundary conditions",
                                         "m s-1", "m year-1", "", 1);
     for (int j = 0; j < 2; ++j) {
-      m_ssa_dirichlet_bc_values.metadata(j).set_numbers("valid_range", {-valid_range, valid_range});
-      m_ssa_dirichlet_bc_values.metadata(j).set_number("_FillValue", fill_value);
+      m_ssa_dirichlet_bc_values.metadata(j)["valid_range"] = {-valid_range, valid_range};
+      m_ssa_dirichlet_bc_values.metadata(j)["_FillValue"] = {fill_value};
     }
 
     // FIXME: this is used by the inverse modeling code. Do NOT get

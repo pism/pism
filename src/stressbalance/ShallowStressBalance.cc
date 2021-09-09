@@ -189,8 +189,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this field is purely diagnostic (not used by the model)");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
 
@@ -237,8 +236,7 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                     "this field is purely diagnostic (not used by the model)");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
 IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
@@ -264,8 +262,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this field is purely diagnostic (not used by the model)");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
 
@@ -308,8 +305,7 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   set_attrs("magnitude of the basal shear stress at the base of ice",
             "land_ice_basal_drag", // ISMIP6 "standard" name
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                       "this field is purely diagnostic (not used by the model)");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {

@@ -93,7 +93,7 @@ IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid,
   m_impl->metadata[0].z().set_name(z_name);
 
   for (auto z_attr : z_attrs) {
-    m_impl->metadata[0].z().set_string(z_attr.first, z_attr.second);
+    m_impl->metadata[0].z()[z_attr.first] = z_attr.second;
   }
 }
 

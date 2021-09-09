@@ -166,12 +166,11 @@ void IceModel::model_state_setup() {
                        info.proj.c_str(), input.filename.c_str());
       }
 
-      m_output_global_attributes.set_string("proj", info.proj);
+      m_output_global_attributes["proj"] = info.proj;
       m_grid->set_mapping_info(info);
 
       std::string history = input_file->read_text_attribute("PISM_GLOBAL", "history");
-      m_output_global_attributes.set_string("history",
-                                            history + m_output_global_attributes.get_string("history"));
+      m_output_global_attributes["history"] = history + m_output_global_attributes.get_string("history");
 
     }
 
@@ -373,7 +372,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
     auto lon = input_file.find_variable("lon", "longitude");
 
     if (not lon.exists) {
-      m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "true");
+      m_geometry.longitude.metadata()["missing_at_bootstrap"] = "true";
     }
   }
 
@@ -384,7 +383,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
     auto lat = input_file.find_variable("lat", "latitude");
 
     if (not lat.exists) {
-      m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "true");
+      m_geometry.latitude.metadata()["missing_at_bootstrap"] = "true";
     }
   }
 
@@ -1008,9 +1007,9 @@ void IceModel::process_options() {
   set_config_from_options(m_sys, *m_config);
 
   // Set global attributes using the config database:
-  m_output_global_attributes.set_string("title", m_config->get_string("run_info.title"));
-  m_output_global_attributes.set_string("institution", m_config->get_string("run_info.institution"));
-  m_output_global_attributes.set_string("command", args_string());
+  m_output_global_attributes["title"] = m_config->get_string("run_info.title");
+  m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
+  m_output_global_attributes["command"] = args_string();
 
   // warn about some option combinations
 
@@ -1066,9 +1065,9 @@ void IceModel::compute_lat_lon() {
                    "* Computing longitude and latitude using projection parameters...\n");
 
     compute_longitude(projection, m_geometry.longitude);
-    m_geometry.longitude.metadata().set_string("missing_at_bootstrap", "");
+    m_geometry.longitude.metadata()["missing_at_bootstrap"] = "";
     compute_latitude(projection, m_geometry.latitude);
-    m_geometry.latitude.metadata().set_string("missing_at_bootstrap", "");
+    m_geometry.latitude.metadata()["missing_at_bootstrap"] = "";
   }
 }
 

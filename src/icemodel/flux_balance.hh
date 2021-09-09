@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,9 +57,9 @@ public:
 
     auto large_number = to_internal(1e6);
 
-    m_vars[0].set_numbers("valid_range",  {-large_number, large_number});
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["valid_range"] = {-large_number, large_number};
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["cell_methods"] = "time: mean";
 
     auto units = internal_units + " second";
     m_last_amount.set_attrs("internal",
@@ -164,12 +164,12 @@ public:
     m_factor = m_config->get_number("constants.ice.density");
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:
@@ -227,13 +227,13 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:
@@ -287,13 +287,13 @@ public:
       external_units    = "Gt year-1";
     }
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:
@@ -347,13 +347,13 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:
@@ -411,13 +411,13 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:
@@ -476,13 +476,13 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "positive flux corresponds to ice gain");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
 protected:

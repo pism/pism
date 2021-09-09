@@ -1,4 +1,4 @@
-// Copyright (C) 2019 PISM Authors
+// Copyright (C) 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,21 +46,21 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
                                     "land_ice_surface_specific_mass_balance_flux", 0);
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
-    m_mass_flux_reference.metadata().set_numbers("valid_range", {-smb_max, smb_max});
+    m_mass_flux_reference.metadata()["valid_range"] = {-smb_max, smb_max};
     m_mass_flux_reference.set_time_independent(true);
 
     m_surface_reference.set_attrs("climate_forcing",
                                   "reference surface altitude",
                                   "m", "m", "surface_altitude", 0);
 
-    m_surface_reference.metadata().set_numbers("valid_range", {0.0, m_grid->Lz()});
+    m_surface_reference.metadata()["valid_range"] = {0.0, m_grid->Lz()};
     m_surface_reference.set_time_independent(true);
 
     m_temperature_reference.set_attrs("climate_forcing",
                                       "reference temperature",
                                       "Kelvin", "Kelvin", "", 0);
 
-    m_temperature_reference.metadata().set_numbers("valid_range", {0.0, 373.15});
+    m_temperature_reference.metadata()["valid_range"] = {0.0, 373.15};
     m_temperature_reference.set_time_independent(true);
   }
 

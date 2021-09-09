@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,8 +44,8 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
 
   set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
             "1", "", 0);
-  m_vars[0].set_number("valid_min", 0);
-  m_vars[0].set_number("valid_max", 1);
+  m_vars[0]["valid_min"] = {0};
+  m_vars[0]["valid_max"] = {1};
 }
 
 IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {

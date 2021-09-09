@@ -141,20 +141,20 @@ SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, cons
 
 void SpatialVariableMetadata::init_internal(const std::string &name,
                                             const std::vector<double> &z_levels) {
-  m_x.set_string("axis", "X");
-  m_x.set_string("long_name", "X-coordinate in Cartesian system");
-  m_x.set_string("standard_name", "projection_x_coordinate");
-  m_x.set_string("units", "m");
+  m_x["axis"]          = "X";
+  m_x["long_name"]     = "X-coordinate in Cartesian system";
+  m_x["standard_name"] = "projection_x_coordinate";
+  m_x["units"]         = "m";
 
-  m_y.set_string("axis", "Y");
-  m_y.set_string("long_name", "Y-coordinate in Cartesian system");
-  m_y.set_string("standard_name", "projection_y_coordinate");
-  m_y.set_string("units", "m");
+  m_y["axis"]          = "Y";
+  m_y["long_name"]     = "Y-coordinate in Cartesian system";
+  m_y["standard_name"] = "projection_y_coordinate";
+  m_y["units"]         = "m";
 
-  m_z.set_string("axis", "Z");
-  m_z.set_string("long_name", "Z-coordinate in Cartesian system");
-  m_z.set_string("units", "m");
-  m_z.set_string("positive", "up");
+  m_z["axis"]      = "Z";
+  m_z["long_name"] = "Z-coordinate in Cartesian system";
+  m_z["units"]     = "m";
+  m_z["positive"]  = "up";
 
   set_name(name);
 
@@ -414,6 +414,45 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
 
 bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
   return member(variable.get_name(), S);
+}
+
+ConstAttribute::ConstAttribute(const VariableMetadata *var, const std::string &name)
+  : m_name(name), m_var(const_cast<VariableMetadata*>(var)) {
+}
+
+ConstAttribute::ConstAttribute(ConstAttribute&& a)
+  : m_name(a.m_name), m_var(a.m_var) {
+  a.m_name.clear();
+  a.m_var = nullptr;
+}
+
+ConstAttribute::operator std::string() const {
+  return m_var->get_string(m_name);
+}
+
+ConstAttribute::operator double() const {
+  auto values = m_var->get_numbers(m_name);
+  if (values.size() == 1) {
+    return values[0];
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "%s:%s has more than one value",
+                                m_var->get_name().c_str(), m_name.c_str());
+}
+
+ConstAttribute::operator std::vector<double> () const {
+  return m_var->get_numbers(m_name);
+}
+
+void Attribute::operator=(const std::string &value) {
+  m_var->set_string(m_name, value);
+}
+void Attribute::operator=(const std::initializer_list<double> &value) {
+  m_var->set_numbers(m_name, value);
+}
+
+void Attribute::operator=(const std::vector<double> &value) {
+  m_var->set_numbers(m_name, value);
 }
 
 } // end of namespace pism

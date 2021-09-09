@@ -131,8 +131,8 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
   set_attrs("magnitude of vertically-integrated horizontal velocity of ice", "",
             "m second-1", "m year-1", 0);
 
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-  m_vars[0].set_number("valid_min", 0.0);
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_min"] = {0.0};
 }
 
 IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
@@ -248,8 +248,8 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   set_attrs("magnitude of vertically-integrated horizontal flux of ice", "",
             "m2 s-1", "m2 year-1", 0);
 
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-  m_vars[0].set_number("valid_min", 0.0);
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_min"] = {0.0};
 }
 
 IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
@@ -282,8 +282,8 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   set_attrs("magnitude of horizontal velocity of ice at base of ice", "",
             "m s-1", "m year-1", 0);
 
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-  m_vars[0].set_number("valid_min", 0.0);
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_min"] = {0.0};
 }
 
 IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
@@ -317,8 +317,8 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   set_attrs("magnitude of horizontal velocity of ice at ice surface", "",
             "m s-1", "m year-1", 0);
 
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-  m_vars[0].set_number("valid_min",  0.0);
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["valid_min"] = {0.0};
 }
 
 IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
@@ -363,11 +363,11 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 
   auto large_number = to_internal(1e6);
 
-  m_vars[0].set_numbers("valid_range", {-large_number, large_number});
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+  m_vars[0]["valid_range"] = {-large_number, large_number};
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 
-  m_vars[1].set_numbers("valid_range", {-large_number, large_number});
-  m_vars[1].set_number("_FillValue", to_internal(m_fill_value));
+  m_vars[1]["valid_range"] = {-large_number, large_number};
+  m_vars[1]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
 IceModelVec::Ptr PSB_velsurf::compute_impl() const {
@@ -418,7 +418,7 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 
   auto large_number = to_internal(1e6);
 
-  m_vars[0].set_numbers("valid_range", {-large_number, large_number});
+  m_vars[0]["valid_range"] = {-large_number, large_number};
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
@@ -517,8 +517,8 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
 
   auto large_number = to_internal(1e6);
 
-  m_vars[0].set_numbers("valid_range", {-large_number, large_number});
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+  m_vars[0]["valid_range"] = {-large_number, large_number};
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
@@ -563,8 +563,8 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
 
   auto large_number = to_internal(1e6);
 
-  m_vars[0].set_numbers("valid_range", {-large_number, large_number});
-  m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+  m_vars[0]["valid_range"] = {-large_number, large_number};
+  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
 IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
@@ -612,11 +612,11 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
   auto fill_value = to_internal(m_fill_value);
   auto large_number = to_internal(1e6);
 
-  m_vars[0].set_numbers("valid_range", {-large_number, large_number});
-  m_vars[1].set_numbers("valid_range", {-large_number, large_number});
+  m_vars[0]["valid_range"] = {-large_number, large_number};
+  m_vars[1]["valid_range"] = {-large_number, large_number};
 
-  m_vars[0].set_number("_FillValue", fill_value);
-  m_vars[1].set_number("_FillValue", fill_value);
+  m_vars[0]["_FillValue"] = {fill_value};
+  m_vars[1]["_FillValue"] = {fill_value};
 }
 
 IceModelVec::Ptr PSB_velbase::compute_impl() const {
