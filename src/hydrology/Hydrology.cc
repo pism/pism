@@ -38,7 +38,7 @@ public:
   TendencyOfWaterMass(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change of the total mass of subglacial water", "",
@@ -63,7 +63,7 @@ public:
   TotalInputRate(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate_from_surface")};
+    m_vars = {{m_sys, "subglacial_water_input_rate_from_surface"}};
     m_accumulator.metadata()["units"] = "m";
 
     set_attrs("water input rate from the ice surface into the subglacial water system",
@@ -88,8 +88,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_input",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_input")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_input"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to input", "",
@@ -114,7 +113,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
       m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
+    m_vars = {{m_sys, "subglacial_water_flux"}};
     m_accumulator.metadata()["units"] = "m2";
 
     set_attrs("magnitude of the subglacial water flux", "",
@@ -148,8 +147,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounded_margins",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_at_grounded_margins")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounded ice margins", "",
@@ -173,7 +171,7 @@ public:
   GroundingLineFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_grounding_line")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounding_line"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounding lines", "",
@@ -198,8 +196,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_conservation_error",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_conservation_error")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
@@ -223,7 +220,7 @@ public:
   DomainBoundaryFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
@@ -248,8 +245,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_flow",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_flow")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_flow"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change subglacial water mass due to lateral flow", "",
