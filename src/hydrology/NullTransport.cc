@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -170,7 +170,8 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // remove water in ice-free areas and account for changes
   enforce_bounds(inputs.geometry->cell_type,
                  inputs.no_model_mask,
-                 m_tillwat_max,
+                 m_tillwat_max, // global maximum till water thickness
+                 m_tillwat_max, // till water thickness under the ocean
                  m_Wtill,
                  m_grounded_margin_change,
                  m_grounding_line_change,

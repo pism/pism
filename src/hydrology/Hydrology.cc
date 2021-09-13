@@ -681,6 +681,7 @@ void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
 void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                const IceModelVec2Int *no_model_mask,
                                double max_thickness,
+                               double ocean_water_thickness,
                                IceModelVec2S &water_thickness,
                                IceModelVec2S &grounded_margin_change,
                                IceModelVec2S &grounding_line_change,
@@ -696,8 +697,6 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
   double
     fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
-
-  const bool tillwat_ocean = m_config->get_boolean("hydrology.set_tillwat_ocean"); 
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -715,18 +714,31 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
     }
 
     if (cell_type.ice_free_land(i, j)) {
-      grounded_margin_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
+      double grounded_ice_free_max_thickness = 0.0;
+      double excess = water_thickness(i, j) - grounded_ice_free_max_thickness;
+      grounded_margin_change(i, j) += -excess * kg_per_m;
+      water_thickness(i, j) = grounded_ice_free_max_thickness;
     }
 
+    // This keeps track of water mass changes at the grounding line due to
+    //
+    // - water leaving the system (drainage into the ocean) and
+    //
+    // - water added to the system when the sea level rises and previously grounded areas
+    //   come in contact with the ocean.
+    //
+    // If the sea level rises and covers previously ice free land, the till water amount
+    // at that location should change to the maximum till water thickness.
+    //
+    // When the sea level recedes, the till water at that location will be set to zero by
+    // the if block above. All these changes will be accounted for.
     if ((include_floating and cell_type.ice_free_ocean(i, j)) or
         (not include_floating and cell_type.ocean(i, j))) {
-      grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      if (tillwat_ocean) {
-        water_thickness(i, j) = max_thickness;
-      } else {
-        water_thickness(i, j) = 0.0;
-      }
+
+      double mismatch = water_thickness(i, j) - ocean_water_thickness;
+
+      grounding_line_change(i, j) += -mismatch * kg_per_m;
+      water_thickness(i, j) = ocean_water_thickness;
     }
   }
 

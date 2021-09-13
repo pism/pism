@@ -1323,11 +1323,6 @@ netcdf pism_config {
     pism_config:hydrology.tillwat_max_type = "number";
     pism_config:hydrology.tillwat_max_units = "meters";
 
-    pism_config:hydrology.set_tillwat_ocean = "no";
-    pism_config:hydrology.set_tillwat_ocean_doc = "if 'yes', tillwat_max is set in ocean area, which reduces basal friction for grounding line advance";
-    pism_config:hydrology.set_tillwat_ocean_option = "set_tillwat_ocean";
-    pism_config:hydrology.set_tillwat_ocean_type = "boolean";
-
     pism_config:hydrology.use_const_bmelt = "no";
     pism_config:hydrology.use_const_bmelt_doc = "if \"yes\", subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt";
     pism_config:hydrology.use_const_bmelt_option = "hydrology_use_const_bmelt";

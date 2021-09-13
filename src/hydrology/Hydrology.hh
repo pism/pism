@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -205,6 +205,7 @@ protected:
   void enforce_bounds(const IceModelVec2CellType &cell_type,
                       const IceModelVec2Int *no_model_mask,
                       double max_thickness,
+                      double ocean_water_thickness,
                       IceModelVec2S &water_thickness,
                       IceModelVec2S &grounded_margin_change,
                       IceModelVec2S &grounding_line_change,

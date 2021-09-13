@@ -862,8 +862,9 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     hdt = 0.0;
 
   const double
-    t_final = t + dt,
-    dt_max  = m_config->get_number("hydrology.maximum_time_step", "seconds");
+    t_final     = t + dt,
+    dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
+    tillwat_max = m_config->get_number("hydrology.tillwat_max");
 
   m_Qstag_average.set(0.0);
 
@@ -877,8 +878,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 #if (Pism_DEBUG==1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
-
-    check_bounds(m_Wtill, m_config->get_number("hydrology.tillwat_max"));
+    check_bounds(m_Wtill, tillwat_max);
 #endif
 
     // updates ghosts of m_Wstag
@@ -936,7 +936,8 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
       // remove water in ice-free areas and account for changes
       enforce_bounds(inputs.geometry->cell_type,
                      inputs.no_model_mask,
-                     0.0,        // do not limit maximum thickness
+                     0.0,           // do not limit maximum thickness
+                     tillwat_max,   // till water thickness under the ocean
                      m_Wtillnew,
                      m_grounded_margin_change,
                      m_grounding_line_change,
@@ -960,6 +961,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
       enforce_bounds(inputs.geometry->cell_type,
                      inputs.no_model_mask,
                      0.0,        // do not limit maximum thickness
+                     0.0,        // transportable water thickness under the ocean
                      m_Wnew,
                      m_grounded_margin_change,
                      m_grounding_line_change,
