@@ -1368,13 +1368,11 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     GridParameters input_grid(config);
 
-    std::vector<std::string> names = {"land_ice_thickness", "bedrock_altitude",
-                                      "thk", "topg"};
     bool grid_info_found = false;
 
     File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
-    for (auto name : names) {
+    for (auto name : {"land_ice_thickness", "bedrock_altitude", "thk", "topg"}) {
 
       grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
