@@ -47,6 +47,8 @@
 
 #include <petsctime.h>          // PetscTime
 
+#include <cstdlib>              // strtol(), strtod()
+
 #include "error_handling.hh"
 
 namespace pism {
@@ -479,6 +481,28 @@ double average_water_column_pressure(double ice_thickness, double bed,
     return 0.5 * rho_water * g * pow(water_column_height, 2.0) / ice_thickness;
   }
   return 0.0;
+}
+
+double parse_number(const std::string &input) {
+  char *endptr = NULL;
+  double result = strtod(input.c_str(), &endptr);
+  if (*endptr != '\0') {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't parse %s (expected a floating point number)",
+                                  input.c_str());
+  }
+  return result;
+}
+
+long int parse_integer(const std::string &input) {
+  char *endptr = NULL;
+  long int result = strtol(input.c_str(), &endptr, 10);
+  if (*endptr != '\0') {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't parse %s (expected an integer)",
+                                  input.c_str());
+  }
+  return result;
 }
 
 } // end of namespace pism

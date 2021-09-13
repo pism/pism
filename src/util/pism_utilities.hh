@@ -138,6 +138,10 @@ void validate_format_string(const std::string &format);
 
 uint64_t fletcher64(const uint32_t *data, size_t len);
 
+double parse_number(const std::string &input);
+
+long int parse_integer(const std::string &input);
+
 } // end of namespace pism
 
 

@@ -18,8 +18,8 @@
 
 #include <cmath>
 #include <cassert>              // assert
-#include <cstdlib>              // strtol(), strtod()
 #include <cstring>              // strlen()
+#include <limits>
 
 #include "Time.hh"
 
@@ -252,17 +252,23 @@ static double parse_date(const std::string &input,
 
     std::vector<int> numbers;
     for (const auto &p : parts) {
-      // check if strtol can parse it:
-      char *endptr = NULL;
-      long int n = strtol(p.c_str(), &endptr, 10);
-      if (*endptr != '\0') {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "date specification '%s' is invalid ('%s' is not an integer)",
-                                      spec.c_str(), p.c_str());
+      long int n = 0;
+      try {
+        n = parse_integer(p);
+
+        std::numeric_limits<int> limits;
+        if (n > limits.max() or n < limits.min()) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "%ld does not fit in an 'int'",
+                                        n);
+        }
+      } catch (RuntimeError &e) {
+        e.add_context("parsing a date specification %s",
+                      spec.c_str());
+        throw;
       }
 
-      // FIXME: this may overflow!
-      numbers.push_back((int)n);
+      numbers.push_back(static_cast<int>(n));
     }
 
     if (year_is_negative) {

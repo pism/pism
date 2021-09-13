@@ -18,7 +18,6 @@
  */
 
 #include <cstring> // memset
-#include <sstream> // istringstream, getline()
 
 #include <petscsys.h>
 
@@ -143,12 +142,13 @@ Integer::Integer(const std::string& option,
                DONT_ALLOW_EMPTY);
 
   if (input.is_set()) {
-    char *endptr = NULL;
-    long int result = strtol(input->c_str(), &endptr, 10);
-    if (*endptr != '\0') {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't parse '%s %s': (%s is not an integer).",
-                                    option.c_str(), input->c_str(), input->c_str());
+    long int result = 0;
+    try {
+      result = parse_integer(input);
+    } catch (RuntimeError &e) {
+      e.add_context("processing command-line option '%s %s'",
+                    option.c_str(), input->c_str());
+      throw;
     }
     this->set(static_cast<int>(result), true);
   } else {
@@ -224,21 +224,9 @@ RealList::RealList(const std::string& option,
   std::vector<double> result = default_value;
 
   if (input.is_set()) {
-    std::istringstream arg(input);
-    std::string tmp;
-
     result.clear();
-    while(getline(arg, tmp, ',')) {
-      double d;
-      char *endptr;
-
-      d = strtod(tmp.c_str(), &endptr);
-      if (*endptr != '\0') {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse %s (%s is not a number).",
-                                      tmp.c_str(), tmp.c_str());
-      } else {
-        result.push_back(d);
-      }
+    for (auto p : split(input, ',')) {
+      result.push_back(parse_number(p));
     }
   }
   this->set(result, input.is_set());
