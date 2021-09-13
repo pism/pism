@@ -338,8 +338,6 @@ void FractureDensity::update(double dt,
     double fdnew = 0.0;
     if (borstad_limit) {
       if (geometry.ice_thickness(i, j) > minH) {
-        double softness = pow(hardness(i, j), -glen_exponent);
-
         // mean parameters from paper
         double t0    = initThreshold;
         double kappa = 2.8;
