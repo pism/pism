@@ -82,7 +82,8 @@ Changes since v1.2
   time-dependent inputs.
 - All time-dependent forcing files have to contain time bounds.
 - Now PISM always respects the reference date in input files.
-
+- Implement the fracture density growth parameterization due to Borstad et al
+  (equation 4 in http://doi.org/10.1002/2015GL067365). Code contributed by T. Albrecht).
 
 Changes from v1.1 to v1.2
 =========================

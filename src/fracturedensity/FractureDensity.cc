@@ -166,7 +166,7 @@ void FractureDensity::update(double dt,
   IceModelVec::AccessList list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
                                &D, &D_new, &geometry.cell_type, &bc_mask, &A, &A_new,
                                &m_growth_rate, &m_healing_rate, &m_flow_enhancement,
-                               &m_toughness};
+                               &m_toughness, &hardness, &geometry.ice_thickness};
 
   D_new.copy_from(D);
 
@@ -222,6 +222,12 @@ void FractureDensity::update(double dt,
   bool constant_fd = m_config->get_flag("fracture_density.constant_fd");
 
   bool fd2d_scheme = m_config->get_flag("fracture_density.fd2d_scheme");
+
+  double glen_exponent = m_flow_law->exponent();
+
+  bool borstad_limit = m_config->get_flag("fracture_density.borstad_limit");
+
+  double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -328,10 +334,45 @@ void FractureDensity::update(double dt,
 
     //////////////////////////////////////////////////////////////////////////////
 
-    //fracture density
-    double fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
-    if (sigmat > initThreshold) {
-      D_new(i, j) += fdnew * dt;
+    // fracture density
+    double fdnew = 0.0;
+    if (borstad_limit) {
+      if (geometry.ice_thickness(i, j) > minH) {
+        double softness = pow(hardness(i, j), -glen_exponent);
+
+        // mean parameters from paper
+        double t0    = initThreshold;
+        double kappa = 2.8;
+
+        // effective strain rate
+        double e1 = m_strain_rates(i, j, 0);
+        double e2 = m_strain_rates(i, j, 1);
+        double ee = sqrt(pow(e1, 2.0) + pow(e2, 2.0) - e1 * e2);
+
+        // threshold for unfractured ice
+        double e0 = pow((t0 / hardness(i, j)), glen_exponent);
+
+        // threshold for fractured ice (exponential law)
+        double ex = exp((e0 - ee) / (e0 * (kappa - 1)));
+
+        // stress threshold for fractures ice
+        double te = t0 * ex;
+
+        // actual effective stress
+        double ts = hardness(i, j) * pow(ee, 1.0 / glen_exponent) * (1 - D_new(i, j));
+
+        // fracture formation if threshold is hit
+        if (ts > te and ee > e0) {
+          // new fracture density:
+          fdnew       = 1.0 - (ex * pow((ee / e0), -1 / glen_exponent));
+          D_new(i, j) = fdnew;
+        }
+      }
+    } else {
+      fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+      if (sigmat > initThreshold) {
+        D_new(i, j) += fdnew * dt;
+      }
     }
 
     //healing
@@ -393,10 +434,9 @@ void FractureDensity::update(double dt,
       }
 
       // additional flow enhancement due to fracture softening
-      double phi_exp   = 3.0; //flow_law->exponent();
-      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
+      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -glen_exponent);
       if (geometry.cell_type.icy(i, j)) {
-        m_flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
+        m_flow_enhancement(i, j) = 1.0 / pow(softening, 1 / glen_exponent);
       } else {
         m_flow_enhancement(i, j) = 1.0;
       }

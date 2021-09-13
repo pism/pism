@@ -900,8 +900,13 @@ netcdf pism_config {
     pism_config:flow_law.isothermal_Glen.ice_softness_type = "number";
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
+    pism_config:fracture_density.borstad_limit = "no";
+    pism_config:fracture_density.borstad_limit_doc = "Define fracture growth dependent on empirical function from Bortstad et al., 2016";
+    pism_config:fracture_density.borstad_limit_option = "constitutive_stress_limit";
+    pism_config:fracture_density.borstad_limit_type = "flag";
+
     pism_config:fracture_density.constant_fd = "no";
-    pism_config:fracture_density.constant_fd_doc = "FIXME";
+    pism_config:fracture_density.constant_fd_doc = "Do not update the fracture density field";
     pism_config:fracture_density.constant_fd_option = "constant_fd";
     pism_config:fracture_density.constant_fd_type = "flag";
 
