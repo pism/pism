@@ -2452,6 +2452,7 @@ netcdf pism_config {
     pism_config:time.file = "";
     pism_config:time.file_doc = "Name of the file used to set :config:`time.start`, :config:`time.end`, :config:`time.calendar`, and :config:`time.reference_date`";
     pism_config:time.file_type = "string";
+    pism_config:time.file_option = "time_file";
 
     pism_config:time.file.continue = "false";
     pism_config:time.file.continue_doc = "If true, don't set :config:`time.start` using :config:`time.file` (helpful when continuing an interrupted simulation)";
