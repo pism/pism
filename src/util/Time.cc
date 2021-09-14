@@ -745,9 +745,9 @@ void Time::init_from_file(MPI_Comm com,
       bool stop_on_error = true;
       std::string date_string = reference_date_from_file(file,
                                                          time_name,
-                                                         "FIXME",
+                                                         "irrelevant (not used)",
                                                          stop_on_error);
-      m_time_units = units::Unit(m_unit_system, "seconds " + date_string);
+      m_time_units = units::Unit(m_unit_system, "seconds since" + date_string);
     }
 
     // Read time information from the file.
