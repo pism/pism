@@ -96,7 +96,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
   m_till_phi.set_attrs("model_state",
                        "friction angle for till under grounded ice sheet",
                        "degrees", "degrees", "", 0);
-  m_till_phi.set_time_independent(true);
+  //m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
   {
@@ -445,3 +445,4 @@ DiagnosticList MohrCoulombYieldStress::diagnostics_impl() const {
 }
 
 } // end of namespace pism
+

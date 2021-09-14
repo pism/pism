@@ -37,9 +37,18 @@ public:
   virtual ~MohrCoulombYieldStress() = default;
 
   void set_till_friction_angle(const IceModelVec2S &input);
-private:
-  void restart_impl(const File &input_file, int record);
+protected:
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
+  void restart_impl(const File &input_file, int record);
+
+  void finish_initialization(const YieldStressInputs &inputs);
+
+  IceModelVec2S m_till_phi;
+
+  std::shared_ptr<IceModelVec2T> m_delta;
+
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
+private:
   void init_impl(const YieldStressInputs &inputs);
 
   void define_model_state_impl(const File &output) const;
@@ -48,9 +57,6 @@ private:
   DiagnosticList diagnostics_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const YieldStressInputs &inputs, double t, double dt);
-
-  void finish_initialization(const YieldStressInputs &inputs);
 private:
   void till_friction_angle(const IceModelVec2S &bed_topography,
                            IceModelVec2S &result);
@@ -60,10 +66,6 @@ private:
                            const IceModelVec2S &ice_thickness,
                            const IceModelVec2CellType &cell_type,
                            IceModelVec2S &result);
-
-  IceModelVec2S m_till_phi;
-
-  std::shared_ptr<IceModelVec2T> m_delta;
 };
 
 } // end of namespace pism

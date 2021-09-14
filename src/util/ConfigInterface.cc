@@ -683,6 +683,46 @@ void set_config_from_options(units::System::Ptr unit_system,
     }
   }
 
+  // -iterative_phi
+   // 2,5,70,1,250,500,-300,700,1e-3
+
+  {
+    std::vector<double> defaults = {
+
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_max"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_min"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_max"),
+      config.get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv")
+    };
+
+    options::RealList iterative_phi("-iterative_phi", "phi_min, phi_minup, phi_max, dphi, dt_phi_inv, h_inv, topg_min, topg_max, dhdt_conv",
+                                  defaults);
+    if (iterative_phi.is_set()) {
+      if (iterative_phi->size() != 9) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "option -iterative_phi expected 9 numbers; got %d",
+                                      (int)iterative_phi->size());
+      }
+
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min", iterative_phi[0]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup", iterative_phi[1]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_max", iterative_phi[2]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi", iterative_phi[3]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt", iterative_phi[4]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv", iterative_phi[5]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_min", iterative_phi[6]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_max", iterative_phi[7]);
+      config.set_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv", iterative_phi[8]);
+
+    }
+  }
+
+
   // -topg_to_phi
   {
     std::vector<double> defaults = {

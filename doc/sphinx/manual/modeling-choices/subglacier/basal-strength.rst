@@ -249,6 +249,8 @@ unlikely to be a good modelling choice for real ice sheets.
      - Use a constant till friction angle. The default is `30^{\circ}`.
    * - :opt:`-topg_to_phi` (*list of 4 numbers*)
      - Compute `\phi` using equation :eq:`eq-phipiecewise`.
+   * - :opt:`-yield_stress mohr_coulomb_iter`
+     - Compute `\phi` iteratively in an equilibrium simulation using equation :eq:`eq-phiiterative`.
    * - :opt:`-yield_stress constant`
      - Keep the current values of the till yield stress `\tau_c`. That is, do not update
        them by the default model using the stored basal melt water. Only effective if
@@ -257,6 +259,11 @@ unlikely to be a good modelling choice for real ice sheets.
      - Directly set the till yield stress `\tau_c`, in units Pa, at all grounded locations
        and all times. Only effective if used with ``-yield_stress constant``, because
        otherwise `\tau_c` is updated dynamically.
+
+.. _sec-tillphi-heuristic:
+
+Till friction angle heuristic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We find that an effective, though heuristic, way to determine `\phi` in
 :eq:`eq-mohrcoulomb` is to make it a function of bed elevation
@@ -269,6 +276,7 @@ option is
 .. code-block:: none
 
    -topg_to_phi phimin,phimax,bmin,bmax
+
 
 Thus the user supplies 4 parameters: `\phimin`, `\phimax`, `\bmin`, `\bmax`, where `b`
 stands for the bed elevation. To explain these, we define `M = (\phimax - \phimin) /
@@ -308,6 +316,99 @@ warning during initialization of the second run:
 
 Omitting :opt:`-topg_to_phi` in the second run would make PISM continue with the
 same :var:`tillphi` field which was set in the first run.
+
+
+.. _sec-tillphi-optimization:
+
+Till friction angle optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In *grounded* areas the distribution of till friction angle `\phi` (see
+:eq:`eq-mohrcoulomb`) can be iteratively optimized in a forward equilibrium simulation.
+[#f1]_
+
+At each grid location the value of `\phi` is adjusted according to the mismatch `\Delta
+h_{\mathrm{obs}}` between reference (usually observed present day, :cite:`BEDMAP02`) and
+modeled surface elevations.
+
+The iterations starts from an initial :var:`tillphi` field initialized using
+:opt:`-plastic_phi`, :opt:`-topg_to_phi`, or read from an input file.
+
+At each iteration the till friction angle adjustment `\Delta \phi` is set to the ratio of
+the surface elevation mismatch at a given point to the *reference mismatch* `\dhinv`:
+
+.. math::
+
+   \Delta \phi = \frac{\Delta h_{\mathrm{obs}}}{\dhinv}
+
+Then, `\Delta \phi` is clipped to ensure `\Delta \phi \in [-\dphiup\, /\, 2, \dphiup]`.
+
+The resulting adjustment is applied to `\phi` and the result clipped to ensure that `\phi
+\in [\phimin, \phimax]`. Here, the lower bound `\phimin` is a piecewise-linear function 
+of the bed topography, similar to :eq:`eq-phipiecewise`, assuming that "marine" sediments 
+(below :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_min`) can be much weaker 
+than rather "continental" bedrock material 
+(above :config:`basal_yield_stress.mohr_coulomb.iterative_phi.topg_max`), where we assign 
+a slightly larger lower limit of `\phiminup`. In sensitivity experiments we found a strong 
+sensitivity of the Antarctic Ice Sheet's ice volume in particular to the choice of `\phimin` 
+(see :cite:`Albrecht2020PaleoSensitivity`).
+
+
+To allow ice geometry to respond to changes in the till friction angle the simulation goes
+on for `\dtinv` years between iterations. When the change in surface elevation between 
+subsequent iterations falls below a threshold, iterations stop for this 
+grid cell and the :var:`diff_mask` is set to value 0:
+
+.. math::
+   :label: eq-phiiterative
+
+   \frac{( h_{(x,y,T+\dtinv)} - h_{(x,y,T)} )}{\dtinv} \leq \dhdtconv
+
+..   \frac{(\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)} - \Delta h_{\mathrm{obs}\,(x,y,T)}    )}{\dtinv} > \dhdtconv
+
+..   \phi_{(x,y,T+\dtinv)} &=  \max ( \phimin , \min [ \phimax , \phi_{(x,y,T)} + \Delta\phi]) \\
+..   \Delta\phi &= \min \left( \dphiup , \max \left[ \dphidown , \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dhinv} \right] \right), \\
+..   &\mathrm{if}\,\; \frac{\Delta h_{\mathrm{obs}\,(x,y,T+\dtinv)}}{\dtinv} > \dhdtconv
+
+.. -iterative_phi 2,5,70,1,250,500,-300,700,1e-3
+
+This model is controlled by the following parameters (prefix:
+``basal_yield_stress.mohr_coulomb.iterative_phi.``):
+
+.. pism-parameters::
+   :prefix: basal_yield_stress.mohr_coulomb.iterative_phi.
+
+Nine of these can be set all at once using the command-line option :opt:`iterative_phi`:
+
+.. code-block:: none
+
+   -iterative_phi phi_min,phi_minup,phi_max,dphi,dt,h_inv,topg_min,topg_max,dh_conv
+
+When the domain contains a grounding line, the mismatch between modeled and observed
+surface elevation is meaningful only if the ice is grounded in *both* data sets. A retreat
+of the grounding line would make it impossible to optimize the till friction angle in
+areas that are observed to contain grounded ice but are covered by water in a simulation.
+The mechanism triggered by :config:`geometry.update.prescribe_groundingline` avoids this
+issue by adjusting ice thickness changes applied **during the mass-continuity step** in a
+way that keeps grounded ice from thinning enough to come afloat, while the ice thickness in 
+the ice shelves remains constant.
+
+.. FIXME: There's more to it. Describe this mechanism in more detail. To be continued...
+
+.. note::
+
+   :config:`geometry.update.prescribe_groundingline` adds or removes ice *in violation of
+   mass conservation*. The added (or removed) ice mass is accounted for as a part of the
+   :var:`conservation_error` variable (see :ref:`sec-mass-conservation`).
+
+This code provides the following diagnostic quantities:
+
+#. :var:`diff_usurf` reports the mismatch between modeled and reference surface elevation
+   fields `\Delta h_{\mathrm{obs}}`
+#. :var:`diff_mask` reports the area where the till friction angle is iteratively adjusted
+   or where the convergence criterion is met.
+#. :var:`target_usurf` reports the reference (target) ice surface elevation in use.
+
 
 .. _sec-effective-pressure:
 
@@ -377,3 +478,7 @@ containing the variable :var:`mohr_coulomb_delta` (dimensionless, i.e. units of 
 ..
    FIXME: EVOLVING CODE: If the :config:`basal_yield_stress.add_transportable_water`
    configuration flag is set then the above formula becomes...
+
+.. [#f1] This is similar to the simple inversion method described in
+   :cite:`PollardDeConto2012SLIDE` which optimizes the basal sliding coefficient `\tau_c`
+   instead.

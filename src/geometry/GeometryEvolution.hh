@@ -122,6 +122,16 @@ protected:
                                                       const IceModelVec2S        &basal_melt_rate,
                                                       IceModelVec2S              &effective_SMB,
                                                       IceModelVec2S              &effective_BMB);
+
+  enum ThicknessChangeFlag {FLOW, SOURCE};
+  virtual void ensure_grounded_icearea(const Geometry &geometry,
+                                       IceModelVec2S &effective_SMB,
+                                       IceModelVec2S &effective_BMB,
+                                       ThicknessChangeFlag flag,
+                                       IceModelVec2S &thickness_change,
+                                       IceModelVec2S &conservation_error);
+
+
 protected:
   struct Impl;
   Impl *m_impl;
