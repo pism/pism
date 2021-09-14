@@ -149,7 +149,9 @@ latex_elements = {
     'preamble': r'\usepackage{txfonts}'
 }
 
-mathjax_config = {"TeX": {"Macros": {}}}
+# -- Add custom math definitions ----------------
+
+mathjax3_config = {"tex": {"macros": {}}}
 
 # Add math definitions to the LaTeX preamble and MathJax settings:
 for line in open("math-definitions.tex"):
@@ -162,9 +164,15 @@ for line in open("math-definitions.tex"):
             args = M.group(3)
             if M.group(4):
                 default = M.group(5)
-                mathjax_config["TeX"]["Macros"][name] = [definition, args, default]
+                mathjax3_config["tex"]["macros"][name] = [definition, args, default]
             else:
-                mathjax_config["TeX"]["Macros"][name] = [definition, args]
+                mathjax3_config["tex"]["macros"][name] = [definition, args]
         else:
-            mathjax_config["TeX"]["Macros"][name] = definition
+            mathjax3_config["tex"]["macros"][name] = definition
         latex_elements["preamble"] += line
+
+# Support Sphinx 3.x:
+import sphinx
+if sphinx.version_info[0] < 4:
+    mathjax_config = {"TeX" : {"Macros" : {}}}
+    mathjax_config["TeX"]["Macros"] = mathjax3_config["tex"]["macros"]
