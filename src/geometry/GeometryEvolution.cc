@@ -1117,27 +1117,31 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
  *
  */
 void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
-                                                      IceModelVec2S &smb_flux,
-                                                      IceModelVec2S &basal_melt_rate,
-                                                      ThicknessChangeFlag flag,
-                                                      IceModelVec2S &thickness_change,
-                                                      IceModelVec2S &conservation_error) {
+                                                IceModelVec2S &smb_flux,
+                                                IceModelVec2S &basal_melt_rate,
+                                                ThicknessChangeFlag flag,
+                                                IceModelVec2S &thickness_change,
+                                                IceModelVec2S &conservation_error) {
 
 
-  const IceModelVec2S &H   = geometry.ice_thickness,
-                      &bed = geometry.bed_elevation,
-                      &sl = geometry.sea_level_elevation;
-  const IceModelVec2CellType &mask = geometry.cell_type;
+  const auto
+    &H   = geometry.ice_thickness,
+    &bed = geometry.bed_elevation,
+    &sl  = geometry.sea_level_elevation;
 
-  double ocean_density = m_config->get_number("constants.sea_water.density");
-  double ice_density   = m_config->get_number("constants.ice.density");
+  const auto &mask = geometry.cell_type;
+
+  double ocean_density     = m_config->get_number("constants.sea_water.density");
+  double ice_density       = m_config->get_number("constants.ice.density");
   double icefree_thickness = m_config->get_number("geometry.ice_free_thickness_standard");
 
   if (flag == SOURCE) {
     thickness_change.set(0.0);
-  }        
+  }
 
-  IceModelVec::AccessList list{&H, &bed, &sl, &mask, &smb_flux, &basal_melt_rate, &thickness_change, &conservation_error};
+  IceModelVec::AccessList list{
+    &H, &bed, &sl, &mask, &smb_flux, &basal_melt_rate, &thickness_change, &conservation_error
+  };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1145,24 +1149,24 @@ void GeometryEvolution::ensure_grounded_icearea(const Geometry &geometry,
       const int i = p.i(), j = p.j();
 
       const double
-        rho_ratio = ocean_density/ice_density,
-        Hfl       = (sl(i,j) - bed(i,j)) * rho_ratio + icefree_thickness,
-        Hnew      = (flag == SOURCE ? (H(i, j) + smb_flux(i, j)) + basal_melt_rate(i, j) : H(i,j) + thickness_change(i,j));
+        rho_ratio = ocean_density / ice_density,
+        Hfl       = (sl(i, j) - bed(i, j)) * rho_ratio + icefree_thickness,
+        Hnew      = (flag == SOURCE ? (H(i, j) + smb_flux(i, j)) + basal_melt_rate(i, j) :
+                                                 (H(i, j) + thickness_change(i, j)));
 
-        // prevent grounded parts form becoming afloat, assuming that mask has not been updated yet
-        if (H(i, j) >= Hfl) {
-          if (Hnew < Hfl) { //if(H-Hfl + dH < 0.0)
-               thickness_change(i, j) = (flag == SOURCE ? -(Hnew - Hfl) : -(H(i, j) - Hfl));
-               conservation_error(i, j) += -(Hnew - Hfl);  //-(H-Hfl + dH) = -( Hnew - Hfl)
-          }
+      // prevent grounded parts form becoming afloat, assuming that mask has not been updated yet
+      if (H(i, j) >= Hfl) {
+        if (Hnew < Hfl) {       // if(H-Hfl + dH < 0.0)
+          thickness_change(i, j) = (flag == SOURCE ? -(Hnew - Hfl) : -(H(i, j) - Hfl));
+          conservation_error(i, j) += -(Hnew - Hfl); // -(H-Hfl + dH) = -( Hnew - Hfl)
         }
-        else if (H(i, j) != Hnew) { //if (H-H + dH < 0) 
+      } else if (H(i, j) != Hnew) { // if (H-H + dH < 0)
 
-          // floating ice shelves thickness remains unchanged
-            thickness_change(i, j) = (flag == SOURCE ? -(Hnew - H(i,j)) : 0.0);
-            conservation_error(i, j) += -(Hnew - H(i,j));
-            
-        } // else (all areas with constant or absent ice thickness
+        // floating ice shelves thickness remains unchanged
+        thickness_change(i, j) = (flag == SOURCE ? -(Hnew - H(i, j)) : 0.0);
+        conservation_error(i, j) += -(Hnew - H(i, j));
+
+      } // else (all areas with constant or absent ice thickness
     }
   } catch (...) {
     loop.failed();

@@ -270,42 +270,42 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-      double diff_usurf_prev = m_diff_usurf(i,j);
-      m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
-      double dh_step = std::abs(m_diff_usurf(i,j)-diff_usurf_prev);
+    double diff_usurf_prev = m_diff_usurf(i,j);
+    m_diff_usurf(i,j) = usurf(i,j)-m_target_usurf(i,j);
+    double dh_step = std::abs(m_diff_usurf(i,j)-diff_usurf_prev);
 
-      if (mask.grounded_ice(i,j)) {
+    if (mask.grounded_ice(i,j)) {
 
-        // Convergence criterion
-        if (dh_step / dt_phi_inv > dhdt_conv) {
-          m_diff_mask(i,j)=1.0;
+      // Convergence criterion
+      if (dh_step / dt_phi_inv > dhdt_conv) {
+        m_diff_mask(i,j)=1.0;
 
-          double dphi = pism::clip(m_diff_usurf(i, j) / h_inv, dphi_min, dphi_max);
-          m_till_phi(i, j) -= dphi;
+        double dphi = pism::clip(m_diff_usurf(i, j) / h_inv, dphi_min, dphi_max);
+        m_till_phi(i, j) -= dphi;
 
-          // Different lower constraints for marine (b<topg_min) and continental (b>topg_max) areas)
-          if (bed_topography(i,j) > topg_max) {
-            m_till_phi(i, j) = std::max(phi_minup, m_till_phi(i,j));
+        // Different lower constraints for marine (b<topg_min) and continental (b>topg_max) areas)
+        if (bed_topography(i,j) > topg_max) {
+          m_till_phi(i, j) = std::max(phi_minup, m_till_phi(i,j));
 
           // Apply smooth transition between marine and continental areas
-          } else if (bed_topography(i,j) <= topg_max && bed_topography(i,j) >= topg_min) {
-            m_till_phi(i, j) = std::max((phi_min + (bed_topography(i,j) - topg_min) * slope),m_till_phi(i,j));
+        } else if (bed_topography(i,j) <= topg_max && bed_topography(i,j) >= topg_min) {
+          m_till_phi(i, j) = std::max((phi_min + (bed_topography(i,j) - topg_min) * slope), m_till_phi(i,j));
 
           // Apply absolute upper and lower bounds
-          } else {
-            m_till_phi(i, j) = pism::clip(m_till_phi(i, j), phi_min, phi_max);
-          }
-
         } else {
-          m_diff_mask(i, j)=0.0;
+          m_till_phi(i, j) = pism::clip(m_till_phi(i, j), phi_min, phi_max);
         }
 
-      // Floating and ice free ocean
-      } else if (mask.ocean(i,j)){
-
-        m_till_phi(i,j)   = phi_min;
-        m_diff_mask(i,j)  = 0.0;
+      } else {
+        m_diff_mask(i, j)=0.0;
       }
+
+      // Floating and ice free ocean
+    } else if (mask.ocean(i,j)){
+
+      m_till_phi(i,j)   = phi_min;
+      m_diff_mask(i,j)  = 0.0;
+    }
   }
 }
 
