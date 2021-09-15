@@ -1142,11 +1142,6 @@ netcdf pism_config {
     pism_config:geometry.update.enabled_option = "mass";
     pism_config:geometry.update.enabled_type = "flag";
 
-    pism_config:geometry.update.prescribe_groundingline = "no";
-    pism_config:geometry.update.prescribe_groundingline_doc = "Prescribes grounding line location for iterative optimization of till friction angle";
-    pism_config:geometry.update.prescribe_groundingline_option = "prescribe_gl";
-    pism_config:geometry.update.prescribe_groundingline_type = "flag";
-
     pism_config:geometry.update.use_basal_melt_rate = "yes";
     pism_config:geometry.update.use_basal_melt_rate_doc = "Include basal melt rate in the continuity equation";
     pism_config:geometry.update.use_basal_melt_rate_option = "bmr_in_cont";
