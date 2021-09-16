@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,10 +31,10 @@
 
 namespace pism {
 
-Geometry::Geometry(IceGrid::ConstPtr grid)
+Geometry::Geometry(const IceGrid::ConstPtr &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(grid->ctx()->config()->get_number("grid.max_stencil_width")),
+  : m_stencil_width(static_cast<int>(grid->ctx()->config()->get_number("grid.max_stencil_width"))),
     latitude(grid, "lat", WITHOUT_GHOSTS),
     longitude(grid, "lon", WITHOUT_GHOSTS),
     bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),

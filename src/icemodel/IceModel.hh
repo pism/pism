@@ -110,7 +110,7 @@ class ScalarForcing;
 //! an ice sheet.
 class IceModel {
 public:
-  IceModel(IceGrid::Ptr g, std::shared_ptr<Context> context);
+  IceModel(const IceGrid::Ptr &grid, const std::shared_ptr<Context> &context);
 
   // the destructor must be virtual merely because some members are virtual
   virtual ~IceModel();
@@ -124,7 +124,7 @@ public:
   virtual void run();
 
   /** Advance the current PISM run to a specific time */
-  virtual void run_to(double time);
+  virtual void run_to(double run_end);
 
   virtual void save_results();
 
@@ -145,7 +145,6 @@ public:
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
   const frontalmelt::FrontalMelt* frontalmelt_model() const;
-  const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
 
@@ -281,7 +280,7 @@ protected:
   std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
-  bed::BedDef *m_beddef;
+  std::shared_ptr<bed::BedDef> m_beddef;
 
   // state variables and some diagnostics/internals
 
@@ -381,7 +380,7 @@ protected:
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
   struct ThicknessChanges {
-    ThicknessChanges(IceGrid::ConstPtr grid);
+    ThicknessChanges(const IceGrid::ConstPtr &grid);
 
     // calving during the last time step
     IceModelVec2S calving;
