@@ -194,6 +194,10 @@ void GeometryEvolution::init_impl(const InputOptions &opts) {
   // empty: the default implementation has no state
 }
 
+void GeometryEvolution::reset() {
+  m_impl->conservation_error.set(0.0);
+}
+
 const IceModelVec2S& GeometryEvolution::flux_divergence() const {
   return m_impl->flux_divergence;
 }
@@ -304,7 +308,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                        geometry.ice_area_specific_volume,       // in
                        m_impl->thickness_change,                // in/out
                        m_impl->ice_area_specific_volume_change, // in/out
-                       m_impl->conservation_error);             // out
+                       m_impl->conservation_error);             // in/out
   m_impl->profile.end("ge.ensure_nonnegativity");
 
   // Now the caller can compute
@@ -923,7 +927,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
  * @param[in] area_specific_volume area-specific volume (m3/m2)
  * @param[in,out] thickness_change "proposed" thickness change (m)
  * @param[in,out] area_specific_volume_change "proposed" area-specific volume change (m3/m2)
- * @param[out] conservation_error computed conservation error (m)
+ * @param[in,out] conservation_error computed conservation error (m)
  *
  * This computation is purely local.
  */
@@ -940,8 +944,6 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-
-      conservation_error(i, j) = 0.0;
 
       const double
         H  = ice_thickness(i, j),

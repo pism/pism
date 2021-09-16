@@ -512,6 +512,9 @@ void IceModel::step(bool do_mass_continuity,
   IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
 
   if (do_mass_continuity) {
+    // reset the conservation error field:
+    m_geometry_evolution->reset();
+
     profiling.begin("mass_transport");
     {
       // Note that there are three adaptive time-stepping criteria. Two of them (using max.
