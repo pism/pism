@@ -374,7 +374,7 @@ void FractureDensity::update(double dt,
     }
 
     //healing
-    double fdheal = gammaheal * (m_strain_rates(i, j, 0) - healThreshold);
+    double fdheal = gammaheal * std::min(0.0,(m_strain_rates(i, j, 0) - healThreshold));
     if (geometry.cell_type.icy(i, j)) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);

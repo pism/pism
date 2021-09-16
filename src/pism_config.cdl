@@ -921,7 +921,7 @@ netcdf pism_config {
     pism_config:fracture_density.enabled_type = "flag";
 
     pism_config:fracture_density.fd2d_scheme = "no";
-    pism_config:fracture_density.fd2d_scheme_doc = "FIXME";
+    pism_config:fracture_density.fd2d_scheme_doc = "Making use of advanced two-dimensional transport scheme to reduce numerical diffusion, compare Eq. 10 in :cite:`AlbrechtLevermann2014softening`";
     pism_config:fracture_density.fd2d_scheme_option = "scheme_fd2d";
     pism_config:fracture_density.fd2d_scheme_type = "flag";
 
@@ -936,7 +936,7 @@ netcdf pism_config {
     pism_config:fracture_density.include_grounded_ice_type = "flag";
 
     pism_config:fracture_density.lefm = "no";
-    pism_config:fracture_density.lefm_doc = "FIXME";
+    pism_config:fracture_density.lefm_doc = "Calculate the KSI mixed-mode stress criterion based on Linear Elastic Fracture Mechanics, see ";
     pism_config:fracture_density.lefm_option = "lefm";
     pism_config:fracture_density.lefm_type = "flag";
 
@@ -946,7 +946,7 @@ netcdf pism_config {
     pism_config:fracture_density.max_shear_stress_type = "flag";
 
     pism_config:fracture_density.phi0 = 0.0;
-    pism_config:fracture_density.phi0_doc = "FIXME";
+    pism_config:fracture_density.phi0_doc = " Setting fracture density in :var:`bc_mask` to constant value, assuming that all ice draining into an ice shelf (e.g. via ice streams) is already to some extent fractured.";
     pism_config:fracture_density.phi0_option = "phi0";
     pism_config:fracture_density.phi0_type = "number";
     pism_config:fracture_density.phi0_units = "1";
@@ -962,6 +962,7 @@ netcdf pism_config {
     pism_config:frontal_melt.constant.melt_rate_option = "frontal_melt_rate";
     pism_config:frontal_melt.constant.melt_rate_type = "number";
     pism_config:frontal_melt.constant.melt_rate_units = "m / day";
+
 
     pism_config:frontal_melt.discharge_given.file = "";
     pism_config:frontal_melt.discharge_given.file_doc = "Name of the file containing climate forcing fields.";
