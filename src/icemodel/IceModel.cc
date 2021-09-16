@@ -222,10 +222,7 @@ void IceModel::allocate_storage() {
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
 
-  // SSA Dirichlet B.C. locations and values
-  //
-  // The mask m_velocity_bc_mask is also used to prescribe locations of ice thickness Dirichlet
-  // B.C. (FIXME)
+  // Sliding velocity (usually SSA) Dirichlet B.C. locations and values
   {
     m_velocity_bc_mask.set_attrs("model_state",
                                  "Mask prescribing Dirichlet boundary locations for the sliding velocity",
@@ -303,7 +300,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
     // stress-balance-related threshold here.
     m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
-    m_iceberg_remover->update(m_velocity_bc_mask,
+    m_iceberg_remover->update(m_ice_thickness_bc_mask,
                               m_geometry.cell_type,
                               m_geometry.ice_thickness);
     // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
@@ -517,9 +514,6 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the thickness of the ice according to the mass conservation model and calving
   //! parameterizations
 
-  // FIXME: thickness B.C. mask should be separate
-  IceModelVec2Int &thickness_bc_mask = m_velocity_bc_mask;
-
   if (do_mass_continuity) {
     // reset the conservation error field:
     m_geometry_evolution->reset();
@@ -546,7 +540,7 @@ void IceModel::step(bool do_mass_continuity,
                                       m_dt,
                                       m_stress_balance->advective_velocity(),
                                       m_stress_balance->diffusive_flux(),
-                                      thickness_bc_mask);
+                                      m_ice_thickness_bc_mask);
 
       m_geometry_evolution->apply_flux_divergence(m_geometry);
 
@@ -586,7 +580,7 @@ void IceModel::step(bool do_mass_continuity,
     // compute and apply effective surface and basal mass balance
 
     m_geometry_evolution->source_term_step(m_geometry, m_dt,
-                                           thickness_bc_mask,
+                                           m_ice_thickness_bc_mask,
                                            m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);

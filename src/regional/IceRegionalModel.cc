@@ -253,13 +253,15 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    IceModelVec::AccessList list{&m_no_model_mask, &m_velocity_bc_mask};
+    IceModelVec::AccessList list
+      {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_no_model_mask(i, j) > 0.5) {
-        m_velocity_bc_mask(i, j) = 1;
+        m_velocity_bc_mask(i, j)      = 1;
+        m_ice_thickness_bc_mask(i, j) = 1;
       }
     }
   }

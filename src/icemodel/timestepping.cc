@@ -147,7 +147,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
     assert(m_front_retreat);
 
     restrictions.push_back(m_front_retreat->max_timestep(m_geometry.cell_type,
-                                                         m_velocity_bc_mask,
+                                                         m_ice_thickness_bc_mask,
                                                          retreat_rate));
   }
 

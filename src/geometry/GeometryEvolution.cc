@@ -1150,7 +1150,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
 
       const int M = m_no_model_mask.as_int(i, j);
 
-      for (unsigned int n = 0; n < 2; ++n) {
+      for (int n : {0, 1}) {
         const int
           oi  = 1 - n,               // offset in the i direction
           oj  = n,                   // offset in the j direction

@@ -319,6 +319,20 @@ void IceModel::model_state_setup() {
     m_stress_balance->init();
   }
 
+  // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
+  // prescribed
+  {
+    IceModelVec::AccessList list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_velocity_bc_mask.as_int(i, j)) {
+        m_ice_thickness_bc_mask(i, j) = 1.0;
+      }
+    }
+  }
+
   // miscellaneous steps
   {
     reset_counters();
@@ -422,6 +436,8 @@ void IceModel::bootstrap_2d(const File &input_file) {
     m_velocity_bc_mask.set(0.0);
     m_velocity_bc_values.set(0.0);
   }
+
+  m_ice_thickness_bc_mask.regrid(input_file, OPTIONAL, 0.0);
 
   // check if Lz is valid
   auto thk_range = m_geometry.ice_thickness.range();

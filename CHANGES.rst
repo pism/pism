@@ -84,6 +84,9 @@ Changes since v1.2
 - Now PISM always respects the reference date in input files.
 - Rename NetCDF variables `bc_mask` to `vel_bc_mask` and `u_ssa_bc` and `v_ssa_bc` to
   `u_bc` and `v_bc`.
+- Add a new NetCDF variable `thk_bc_mask` prescribing locations where the ice thickness is
+  kept fixed. This mask is combined with `vel_bc_mask`: we keep ice thickness fixed at all
+  the locations where the sliding (usually SSA) velocity is fixed.
 
 Changes from v1.1 to v1.2
 =========================
