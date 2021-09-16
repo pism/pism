@@ -78,6 +78,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
     m_bedtoptemp(m_grid, "bedtoptemp", WITHOUT_GHOSTS),
     m_velocity_bc_mask(m_grid, "vel_bc_mask", WITH_GHOSTS, m_wide_stencil),
     m_velocity_bc_values(m_grid, "_bc", WITH_GHOSTS, m_wide_stencil), // u_bc and v_bc
+    m_ice_thickness_bc_mask(grid, "thk_bc_mask", WITHOUT_GHOSTS),
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
@@ -226,10 +227,11 @@ void IceModel::allocate_storage() {
   // The mask m_velocity_bc_mask is also used to prescribe locations of ice thickness Dirichlet
   // B.C. (FIXME)
   {
-    m_velocity_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
-                                      "", "", "", 0);
+    m_velocity_bc_mask.set_attrs("model_state",
+                                 "Mask prescribing Dirichlet boundary locations for the sliding velocity",
+                                 "", "", "", 0);
     m_velocity_bc_mask.metadata()["flag_values"] = {0, 1};
-    m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data bc_condition";
+    m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
     m_velocity_bc_mask.metadata().set_output_type(PISM_INT);
     m_velocity_bc_mask.set_time_independent(true);
 
@@ -253,9 +255,24 @@ void IceModel::allocate_storage() {
     }
   }
 
+  // Ice thickness BC mask
+  {
+    m_ice_thickness_bc_mask.set_attrs("model_state",
+                                      "Mask specifying locations where ice thickness is held constant",
+                                      "", "", "", 0);
+    m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
+    m_ice_thickness_bc_mask.metadata().set_output_type(PISM_INT);
+    m_ice_thickness_bc_mask.set_time_independent(true);
+
+    m_ice_thickness_bc_mask.set(0.0);
+  }
+
   // Add some variables to the list of "model state" fields.
   m_model_state.insert(&m_velocity_bc_mask);
   m_model_state.insert(&m_velocity_bc_values);
+
+  m_model_state.insert(&m_ice_thickness_bc_mask);
 
   m_model_state.insert(&m_geometry.latitude);
   m_model_state.insert(&m_geometry.longitude);

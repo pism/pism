@@ -303,6 +303,9 @@ protected:
   //! Dirichlet boundary velocities
   IceModelVec2V m_velocity_bc_values;
 
+  //! Mask prescribing locations where ice thickness is held constant
+  IceModelVec2Int m_ice_thickness_bc_mask;
+
   // parameters
   //! mass continuity time step, s
   double m_dt;
