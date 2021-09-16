@@ -23,4 +23,4 @@ In order to use the constitutive framework for fracture/damage growth, run
 
     $ ./run_frac_borstad.sh 4 105 0.6 1000 &> out.Mx105yr1000 &
 
-A FRACRATE is not needed in this empirical relationship.
+The choice of the FRACRATE is disregarded in this empirical relationship.

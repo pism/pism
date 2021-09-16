@@ -22,9 +22,9 @@ fi
 exdt=25 # for the extrafile
 
 FRACTHRESHOLD=4.5e4   #  stress threshold
-FRACTHRESHOLD=1.4e5   #  meaning 140 kPa
+FRACTHRESHOLD=1.3e5   #  meaning 130 kPa
 
-FRACRATE=0.5   #  fracture rate
+FRACRATE=0.5     #  fracture growth rate
 FRACRATE=0.0     # can be set to 0 in case of using constitutive framework by Borstad et al., 2016
 
 HEALTHRESHOLD=2.0e-10   #  healing threshold
@@ -52,8 +52,10 @@ extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} \
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
 criterion=""
+#criterion="-lefm" # -max_shear #
 
 boundary="-do_frac_on_grounded"
+#boundary="-phi0 0.2"
 
 healing=""
 #healing="-constant_healing" #independent of strain rates
