@@ -414,13 +414,13 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_ssa_dirichlet_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+    m_velocity_bc_mask.regrid(input_file, OPTIONAL, 0.0);
     // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that make sense are the
     // zero Dirichlet B.C.
-    m_ssa_dirichlet_bc_values.regrid(input_file, OPTIONAL,  0.0);
+    m_velocity_bc_values.regrid(input_file, OPTIONAL,  0.0);
   } else {
-    m_ssa_dirichlet_bc_mask.set(0.0);
-    m_ssa_dirichlet_bc_values.set(0.0);
+    m_velocity_bc_mask.set(0.0);
+    m_velocity_bc_values.set(0.0);
   }
 
   // check if Lz is valid

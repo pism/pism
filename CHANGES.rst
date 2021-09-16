@@ -82,7 +82,8 @@ Changes since v1.2
   time-dependent inputs.
 - All time-dependent forcing files have to contain time bounds.
 - Now PISM always respects the reference date in input files.
-
+- Rename NetCDF variables `bc_mask` to `vel_bc_mask` and `u_ssa_bc` and `v_ssa_bc` to
+  `u_bc` and `v_bc`.
 
 Changes from v1.1 to v1.2
 =========================

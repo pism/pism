@@ -93,7 +93,7 @@ void IceModel::front_retreat_step() {
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
     // apply frontal melt rate
-    m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,
+    m_front_retreat->update_geometry(m_dt, m_geometry, m_velocity_bc_mask,
                                      m_frontal_melt->retreat_rate(),
                                      m_geometry.ice_area_specific_volume,
                                      m_geometry.ice_thickness);
@@ -137,7 +137,7 @@ void IceModel::front_retreat_step() {
         retreat_rate.scale(m_calving_rate_factor->value(T));
       }
 
-      m_front_retreat->update_geometry(m_dt, m_geometry, m_ssa_dirichlet_bc_mask,
+      m_front_retreat->update_geometry(m_dt, m_geometry, m_velocity_bc_mask,
                                        retreat_rate,
                                        m_geometry.ice_area_specific_volume,
                                        m_geometry.ice_thickness);
