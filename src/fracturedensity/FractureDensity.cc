@@ -176,15 +176,24 @@ void FractureDensity::update(double dt,
                                        "soft_residual", "1", 1.0);
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
-  // more: T. Albrecht, A. Levermann; Fracture-induced softening for
-  // large-scale ice dynamics; (2013), The Cryosphere Discussions 7;
-  // 4501-4544; DOI:10.5194/tcd-7-4501-2013
-
+  // See the following article for more:
+  //
+  // Albrecht, T. / Levermann, A.
+  // Fracture-induced softening for large-scale ice dynamics
+  // 2014-04
+  //
+  // The Cryosphere , Vol. 8, No. 2
+  // Copernicus GmbH
+  // p. 587-605
+  //
+  // doi:10.5194/tc-8-587-2014
+  //
   // get four options for calculation of fracture density.
   // 1st: fracture growth constant gamma
   // 2nd: fracture initiation stress threshold sigma_cr
   // 3rd: healing rate constant gamma_h
   // 4th: healing strain rate threshold
+  //
   // more: T. Albrecht, A. Levermann; Fracture field for large-scale
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
