@@ -60,7 +60,7 @@ model in PISM thus requires four parameters (see option below). The fracture gro
 
    * - :opt:`-fracture_weighted_healing`
      - adds a term `1-D` to the healing term (similar to the source term),
-       assuming that highly damaged ice heals slower, can be combined with :opt:`-constant_healing
+       assuming that highly damaged ice heals slower, can be combined with :opt:`-constant_healing`
 
    * - :opt:`-max_shear`
      - uses the maximum shear stress criterion for fracture formation (a.k.a. Tresca
@@ -82,11 +82,11 @@ model in PISM thus requires four parameters (see option below). The fracture gro
      - Making use of advanced two-dimensional transport scheme to reduce the effect of
        numerical diffusion (Eq. 10 in :cite:`AlbrechtLevermann2014softening`)
 
-  * - :opt:`-fracture_softening`
+   * - :opt:`-fracture_softening`
      - Parameter for the feedback strength of damage on the ice flow, if one no feedback,
        if zero full feedback (see `\epsilon` in Eq. 6 in :cite:`AlbrechtLevermann2014softening`)
 
-  * - :opt:`-constant_fd`
+   * - :opt:`-constant_fd`
      - Do not update the fracture density fields, but for instance make use of its softening effect.
 
 
