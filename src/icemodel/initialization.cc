@@ -972,29 +972,29 @@ void IceModel::init_calving() {
 }
 
 void IceModel::allocate_bed_deformation() {
-  std::string model = m_config->get_string("bed_deformation.model");
-
-  if (m_beddef != NULL) {
+  if (m_beddef) {
     return;
   }
 
   m_log->message(2,
                  "# Allocating a bed deformation model...\n");
 
+  std::string model = m_config->get_string("bed_deformation.model");
+
   if (model == "none") {
-    m_beddef = new bed::Null(m_grid);
+    m_beddef = std::make_shared<bed::Null>(m_grid);
   }
   else if (model == "iso") {
-    m_beddef = new bed::PointwiseIsostasy(m_grid);
+    m_beddef = std::make_shared<bed::PointwiseIsostasy>(m_grid);
   }
   else if (model == "lc") {
-    m_beddef = new bed::LingleClark(m_grid);
+    m_beddef = std::make_shared<bed::LingleClark>(m_grid);
   }
   else if (model == "given") {
-    m_beddef = new bed::Given(m_grid);
+    m_beddef = std::make_shared<bed::Given>(m_grid);
   }
 
-  m_submodels["bed deformation"] = m_beddef;
+  m_submodels["bed deformation"] = m_beddef.get();
 }
 
 //! Read some runtime (command line) options and alter the

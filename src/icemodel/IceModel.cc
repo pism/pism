@@ -61,14 +61,15 @@
 
 namespace pism {
 
-IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
+IceModel::IceModel(const IceGrid::Ptr &grid,
+                   const std::shared_ptr<Context> &context)
   : m_grid(grid),
     m_config(context->config()),
     m_ctx(context),
     m_sys(context->unit_system()),
     m_log(context->log()),
     m_time(context->time()),
-    m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
+    m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
@@ -132,7 +133,7 @@ IceModel::IceModel(IceGrid::Ptr grid, std::shared_ptr<Context> context)
   auto surface_input_file = m_config->get_string("hydrology.surface_input.file");
   if (not surface_input_file.empty()) {
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
-    int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
     File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -163,9 +164,6 @@ void IceModel::reset_counters() {
 
 
 IceModel::~IceModel() {
-
-  delete m_beddef;
-
   delete m_btu;
   delete m_energy_model;
 }
@@ -243,7 +241,8 @@ void IceModel::allocate_storage() {
   {
     double fill_value = units::convert(m_sys, m_config->get_number("output.fill_value"),
                                        "m year-1", "m second-1");
-    double valid_range = units::convert(m_sys, 1e6, "m year-1", "m second-1");
+    const double huge_value = 1e6;
+    double valid_range = units::convert(m_sys, huge_value, "m year-1", "m second-1");
     // vel_bc
     m_ssa_dirichlet_bc_values.set_attrs("model_state",
                                         "X-component of the SSA velocity boundary conditions",
@@ -581,9 +580,8 @@ void IceModel::step(bool do_mass_continuity,
 
     // add removed icebergs to discharge due to calving
     {
-      IceModelVec2S
-        &old_H    = *m_work2d[0],
-        &old_Href = *m_work2d[1];
+      auto &old_H    = *m_work2d[0];
+      auto &old_Href = *m_work2d[1];
 
       {
         old_H.copy_from(m_geometry.ice_thickness);
@@ -619,11 +617,7 @@ void IceModel::step(bool do_mass_continuity,
                      current_time, m_dt);
     profiling.end("bed_deformation");
 
-    if (m_beddef->bed_elevation().state_counter() != topg_state_counter) {
-      m_new_bed_elevation = true;
-    } else {
-      m_new_bed_elevation = false;
-    }
+    m_new_bed_elevation = m_beddef->bed_elevation().state_counter() != topg_state_counter;
   } else {
     m_new_bed_elevation = false;
   }
@@ -772,7 +766,7 @@ void IceModel::run() {
   // This is needed to compute rates of change of the ice mass, volume, etc.
   {
     const double time = m_time->current();
-    for (auto d : m_ts_diagnostics) {
+    for (const auto &d : m_ts_diagnostics) {
       d.second->update(time, time);
     }
   }
@@ -827,11 +821,12 @@ void IceModel::run() {
   profiling.stage_end("time-stepping loop");
 
   if (stepcount >= 0) {
+    double count = stepcount;
     m_log->message(1,
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
                stepcount,
-               units::convert(m_sys, m_time->end() - m_time->start(), "seconds", "years")/(double)stepcount);
+               units::convert(m_sys, m_time->end() - m_time->start(), "seconds", "years") / count);
   }
 }
 
@@ -895,10 +890,6 @@ const ocean::OceanModel* IceModel::ocean_model() const {
   return m_ocean.get();
 }
 
-const bed::BedDef* IceModel::bed_model() const {
-  return m_beddef;
-}
-
 const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
   return m_btu;
 }
@@ -934,7 +925,7 @@ void warn_about_missing(const Logger &log,
                         const std::set<std::string> &available,
                         bool stop) {
   std::vector<std::string> missing;
-  for (auto v : vars) {
+  for (const auto &v : vars) {
     if (available.find(v) == available.end()) {
       missing.push_back(v);
     }
@@ -942,9 +933,8 @@ void warn_about_missing(const Logger &log,
 
   if (not missing.empty()) {
     size_t N = missing.size();
-    const char
-      *ending = N > 1 ? "s" : "",
-      *verb   = N > 1 ? "are" : "is";
+    const char *ending = N > 1 ? "s" : "";
+    const char *verb   = N > 1 ? "are" : "is";
     if (stop) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "%s variable%s %s %s not available!\n"
@@ -954,14 +944,14 @@ void warn_about_missing(const Logger &log,
                                     join(missing, ",").c_str(),
                                     verb,
                                     set_join(available, ",\n- ").c_str());
-    } else {
-      log.message(2,
-                  "\nWARNING: %s variable%s %s %s not available!\n\n",
-                  type.c_str(),
-                  ending,
-                  join(missing, ",").c_str(),
-                  verb);
     }
+
+    log.message(2,
+                "\nWARNING: %s variable%s %s %s not available!\n\n",
+                type.c_str(),
+                ending,
+                join(missing, ",").c_str(),
+                verb);
   }
 }
 
@@ -977,7 +967,7 @@ void IceModel::prune_diagnostics() {
 
   // get the list of available diagnostics
   std::set<std::string> available;
-  for (auto d : m_diagnostics) {
+  for (const auto &d : m_diagnostics) {
     available.insert(d.first);
   }
 
@@ -995,7 +985,7 @@ void IceModel::prune_diagnostics() {
   requested = combine(requested, m_backup_vars);
 
   // de-allocate diagnostics that were not requested
-  for (auto v : available) {
+  for (const auto &v : available) {
     if (requested.find(v) == requested.end()) {
       m_diagnostics.erase(v);
     }
@@ -1007,7 +997,7 @@ void IceModel::prune_diagnostics() {
     // use all diagnostics
   } else {
     TSDiagnosticList diagnostics;
-    for (auto v : m_ts_vars) {
+    for (const auto &v : m_ts_vars) {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
         diagnostics[v] = m_ts_diagnostics[v];
       } else {
@@ -1033,12 +1023,12 @@ void IceModel::prune_diagnostics() {
  * Call this after prune_diagnostics() to avoid unnecessary work.
  */
 void IceModel::update_diagnostics(double dt) {
-  for (auto d : m_diagnostics) {
+  for (const auto &d : m_diagnostics) {
     d.second->update(dt);
   }
 
   const double time = m_time->current();
-  for (auto d : m_ts_diagnostics) {
+  for (const auto &d : m_ts_diagnostics) {
     d.second->update(time - dt, time);
   }
 }
@@ -1047,12 +1037,12 @@ void IceModel::update_diagnostics(double dt) {
  * Reset accumulators in diagnostics that compute time-averaged quantities.
  */
 void IceModel::reset_diagnostics() {
-  for (auto d : m_diagnostics) {
+  for (auto &d : m_diagnostics) {
     d.second->reset();
   }
 }
 
-IceModel::ThicknessChanges::ThicknessChanges(IceGrid::ConstPtr grid)
+IceModel::ThicknessChanges::ThicknessChanges(const IceGrid::ConstPtr &grid)
   : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
     forced_retreat(grid, "thickness_change_due_to_forced_retreat", WITHOUT_GHOSTS) {
