@@ -205,9 +205,16 @@ CDI-PIO supports several NetCDF file formats. The default value (``NC2``) corres
 the choice that gave the best performance in our experiments, but you may need to switch
 to a different format using :config:`output.cdi_pio.filetype` if grid dimensions are too
 large. See NetCDF documentation on Large-Files_ for details.
+The supported file types are only available if the CDI library was compiled with NetCDF
+support:
 
-CDI-PIO also supports different writing modes which can be set using
-:config:`output.cdi_pio.mode`.
+- ``CDI_FILETYPE_NC``: NetCDF file format
+
+- ``CDI_FILETYPE_NC2``: NetCDF version 2 (64-bit)
+
+- ``CDI_FILETYPE_NC4``: NetCDF version 4
+
+- ``CDI_FILETYPE_NC4C``: NetCDF version 4 (classic)
 
 CDI is designed for climate data and is less flexible than the NetCDF library. The
 limitations and differences with standard output data in PISM are listed below.
