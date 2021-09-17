@@ -19,16 +19,17 @@ framework by introducing a linear mapping between the actual physical (damaged) 
 of the material and an effective state that is compatible with a homogeneous,
 continuum representation of the creep law (Eq. 6 in :cite:`AlbrechtLevermann2014softening`).
 
-Fractures form above a critical stress threshold `\sigma_t` (or `\tau_0`) in the ice (von
+Fractures form above a critical stress threshold `\sigma_{\text{cr}}` in the ice (von
 Mises or maximum stress criterion or fracture toughness from Linear Elastic Fracture
-Mechanics) with a certain fracture growth rate `\gamma`, that is related to the strain
-rate (longitudinal spreading or effective strain rate; Eq. 9 in
-:cite:`AlbrechtLevermann2012`). Fracture healing is assumed to occur with a defined
-healing rate below a strain rate threshold (scaled with the difference to the threshold or
-constant; Eq. 11 in :cite:`AlbrechtLevermann2012`).
+Mechanics) with a fracture growth rate proportional to `\gamma` (Eq. 2 in
+:cite:`AlbrechtLevermann2014softening`), that is related to the strain rate (longitudinal
+spreading or effective strain rate; Eq. 9 in :cite:`AlbrechtLevermann2012`). Fracture
+healing is assumed to occur with a defined healing rate below a strain rate threshold
+(scaled with the difference to the threshold or constant; Eq. 11 in
+:cite:`AlbrechtLevermann2012`).
 
-The fracture growth rate `\gamma` is ignored if :config:`fracture_density.borstad_limit`
-is set.
+The fracture growth constant `\gamma` (:config:`fracture_density.gamma`) is ignored if
+:config:`fracture_density.borstad_limit` is set.
 
 To enable this model, set :config:`fracture_density.enabled`.
 
@@ -37,10 +38,6 @@ This model is controlled by the following parameters:
 .. pism-parameters::
    :prefix: fracture_density.
    :exclude: fracture_density.enabled
-
-
-The four parameters FIXME, FIXME, FIXME, FIXME can be set using one command-line option
-:opt:`-fracture_parameters`: use a comma-separated list of four values.
 
 .. rubric:: Testing
 
