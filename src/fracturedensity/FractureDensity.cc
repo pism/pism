@@ -172,8 +172,7 @@ void FractureDensity::update(double dt,
 
   //options
   /////////////////////////////////////////////////////////
-  double soft_residual = options::Real(m_sys, "-fracture_softening",
-                                       "soft_residual", "1", 1.0);
+  double soft_residual = m_config->get_number("fracture_density.softening_lower_limit");
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
   // See the following article for more:
@@ -198,19 +197,10 @@ void FractureDensity::update(double dt,
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  double gamma = 1.0, initThreshold = 7.0e4, gammaheal = 0.0, healThreshold = 2.0e-10;
-  {
-    options::RealList fractures("-fracture_parameters",
-                                "gamma, initThreshold, gammaheal, healThreshold",
-                                {gamma, initThreshold, gammaheal, healThreshold});
-    if (fractures->size() != 4) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "option -fracture_parameters requires exactly 4 arguments");
-    }
-    gamma         = fractures[0];
-    initThreshold = fractures[1];
-    gammaheal     = fractures[2];
-    healThreshold = fractures[3];
-  }
+  double gamma         = m_config->get_number("fracture_density.gamma");
+  double initThreshold = m_config->get_number("fracture_density.initiation_threshold");
+  double gammaheal     = m_config->get_number("fracture_density.gamma_h");
+  double healThreshold = m_config->get_number("fracture_density.healing_threshold");
 
   m_log->message(3, "PISM-PIK INFO: fracture density is found with parameters:\n"
                     " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",

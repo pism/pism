@@ -931,22 +931,34 @@ netcdf pism_config {
     pism_config:fracture_density.fracture_weighted_healing_option = "fracture_weighted_healing";
     pism_config:fracture_density.fracture_weighted_healing_type = "flag";
 
-    pism_config:fracture_density.growth_rate = 0.0;
-    pism_config:fracture_density.growth_rate_doc = "fracture growth constant `\\gamma`";
-    pism_config:fracture_density.growth_rate_option = "fracture_growth_rate";
-    pism_config:fracture_density.growth_rate_units = "1/s";
-    pism_config:fracture_density.growth_rate_type = "number";
+    pism_config:fracture_density.gamma = 1.0;
+    pism_config:fracture_density.gamma_doc = "fracture growth constant `\\gamma`";
+    pism_config:fracture_density.gamma_option = "fracture_gamma";
+    pism_config:fracture_density.gamma_units = "1";
+    pism_config:fracture_density.gamma_type = "number";
 
-    pism_config:fracture_density.healing_rate = 0.0;
-    pism_config:fracture_density.healing_rate_doc = "fracture healing constant `\\gamma_{h}`";
-    pism_config:fracture_density.healing_rate_option = "fracture_healing_rate";
-    pism_config:fracture_density.healing_rate_units = "1/s";
-    pism_config:fracture_density.healing_rate_type = "number";
+    pism_config:fracture_density.gamma_h = 0.0;
+    pism_config:fracture_density.gamma_h_doc = "fracture healing constant `\\gamma_{h}`";
+    pism_config:fracture_density.gamma_h_option = "fracture_gamma_h";
+    pism_config:fracture_density.gamma_h_units = "1/s";
+    pism_config:fracture_density.gamma_h_type = "number";
+
+    pism_config:fracture_density.healing_threshold = 2.0e-10;
+    pism_config:fracture_density.healing_threshold_doc = "fracture healing strain rate threshold `\\dot \\epsilon_{h}`";
+    pism_config:fracture_density.healing_threshold_option = "fracture_healing_threshold";
+    pism_config:fracture_density.healing_threshold_units = "1/s";
+    pism_config:fracture_density.healing_threshold_type = "number";
 
     pism_config:fracture_density.include_grounded_ice = "no";
     pism_config:fracture_density.include_grounded_ice_doc = "Model fracture density in grounded areas (e.g. along ice stream shear zones) in addition to ice shelves";
     pism_config:fracture_density.include_grounded_ice_option = "do_frac_on_grounded";
     pism_config:fracture_density.include_grounded_ice_type = "flag";
+
+    pism_config:fracture_density.initiation_threshold = 7.0e4;
+    pism_config:fracture_density.initiation_threshold_doc = "fracture initiation stress threshold `\\sigma_{\\text{cr}}`";
+    pism_config:fracture_density.initiation_threshold_option = "fracture_initiation_threshold";
+    pism_config:fracture_density.initiation_threshold_units = "Pa";
+    pism_config:fracture_density.initiation_threshold_type = "number";
 
     pism_config:fracture_density.lefm = "no";
     pism_config:fracture_density.lefm_doc = "Use the mixed-mode fracture toughness stress criterion based on Linear Elastic Fracture Mechanics, see Eqs. 8-9 in :cite:`AlbrechtLevermann2014softening`";
