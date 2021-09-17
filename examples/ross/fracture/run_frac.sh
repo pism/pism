@@ -60,9 +60,12 @@ healing=""
 #softening="-fracture_softening 1.0" #no softening
 softening="-fracture_softening ${SOFTRES}" #residual eps=0.001
 
-fractures="-fractures -fracture_parameters  ${FRACRATE},${FRACTHRESHOLD},${HEALRATE},${HEALTHRESHOLD} \
-           -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
-
+fractures="-fractures \
+  -fracture_density.gamma ${FRACRATE} \
+  -fracture_density.initiation_threshold ${FRACTHRESHOLD} \
+  -fracture_density.gamma_h ${HEALRATE} \
+  -fracture_density.healing_threshold ${HEALTHRESHOLD} \
+  -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
 
 # run commands #############################################################################
 

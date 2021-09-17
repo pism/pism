@@ -66,8 +66,12 @@ softening="-fracture_softening ${SOFTRES}" #residual eps=0.001
 
 borstadlimit="-constitutive_stress_limit"
 
-fractures="-fractures -fracture_parameters ${FRACRATE},${FRACTHRESHOLD},${HEALRATE},${HEALTHRESHOLD} \
-           -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening} ${borstadlimit}"
+fractures="-fractures \
+  -fracture_density.gamma ${FRACRATE} \
+  -fracture_density.initiation_threshold ${FRACTHRESHOLD} \
+  -fracture_density.gamma_h ${HEALRATE} \
+  -fracture_density.healing_threshold ${HEALTHRESHOLD} \
+  -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening} ${borstadlimit}"
 
 
 # run commands #############################################################################
