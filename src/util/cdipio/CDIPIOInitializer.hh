@@ -28,7 +28,7 @@ namespace cdipio {
 
 class Initializer {
 public:
-  Initializer(unsigned int n_writers, const std::string &IOmode, MPI_Comm glob);
+  Initializer(unsigned int n_writers, MPI_Comm glob);
   ~Initializer();
   MPI_Comm comp_comm();
   int pio_namespace();
@@ -38,7 +38,6 @@ private:
   MPI_Comm m_comp_comm;
   int m_pioNamespace;
   bool m_initialized;
-  int define_mode(const std::string &IOmode);
 };
 
 } // namespace cdipio

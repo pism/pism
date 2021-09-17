@@ -51,7 +51,6 @@ int main(int argc, char *argv[]) {
 #if (Pism_USE_CDIPIO==1)
     MPI_Comm world = MPI_COMM_WORLD;
     int cdipio_nwriters;
-    std::string cdipio_io_mode;
     {
       // Initialize PETSc on MPI_COMM_WORLD to be able to use PetscOptionsXXX in the code
       // below. Will be finalized at the end of this code block.
@@ -62,10 +61,9 @@ int main(int argc, char *argv[]) {
       auto config = config_from_options(world, *log, sys);
 
       cdipio_nwriters = config->get_number("output.cdi_pio.n_writers");
-      cdipio_io_mode  = config->get_string("output.cdi_pio.mode");
     }
     std::unique_ptr<cdipio::Initializer> cdipio;
-    cdipio.reset(new cdipio::Initializer(cdipio_nwriters, cdipio_io_mode, world));
+    cdipio.reset(new cdipio::Initializer(cdipio_nwriters, world));
     com = cdipio->comp_comm();
     if (com == MPI_COMM_NULL) {
       // com is null if this process is a part of the I/O sub-communicator

@@ -1910,11 +1910,6 @@ netcdf pism_config {
     pism_config:output.cdi_pio.filetype_doc = "Filetype to use for asynchronous I/O";
     pism_config:output.cdi_pio.filetype_type = "keyword";
 
-    pism_config:output.cdi_pio.mode = "PIO_MPI_FW_AT_ALL";
-    pism_config:output.cdi_pio.mode_choices = "PIO_NONE,PIO_MPI,PIO_WRITER,PIO_ASYNCH,PIO_FPGUARD,PIO_MPI_FW_ORDERED,PIO_MPI_FW_AT_ALL,PIO_MPI_FW_AT_REBLOCK";
-    pism_config:output.cdi_pio.mode_doc = "Mode to use for asynchronous I/O";
-    pism_config:output.cdi_pio.mode_type = "keyword";
-
     pism_config:output.cdi_pio.n_writers = 0;
     pism_config:output.cdi_pio.n_writers_doc = "Number of I/O tasks to use for asynchronous writing";
     pism_config:output.cdi_pio.n_writers_type = "integer";
