@@ -5,22 +5,22 @@
 Fracture density modeling
 -------------------------
 
-The fracture density (Continuum Damage Mechanics) approach in PISM based on
-:cite:`AlbrechtLevermann2012` and assumes a macroscopic measure for the abundance of
-(partly microscale) crevasses and rifts that form in ice (shelves) and that can be
-transported with the ice flow as represented in a continuum ice-flow model. This approach
-is similar to the Continuum Damage Mechanics (CDM) (e.g. :cite:`Lemaitre1996Damage` and
+The fracture density approach in PISM is based on :cite:`AlbrechtLevermann2012`
+and assumes a macroscopic measure for the abundance of (partly microscale) crevasses
+and rifts that form in ice (shelves) and that can be transported with the ice flow
+as represented in a continuum ice-flow model. This approach is similar to the
+Continuum Damage Mechanics (CDM) (e.g. :cite:`Lemaitre1996Damage` and
 :cite:`Borstad2013Creep`) introducing a damage state variable (`\phi` or `D`) that
-equals zero for fully intact ice and one for fully fractured ice. This can be interpreted
-as a loss of all load bearing capacity.
+equals zero for fully intact ice and one for fully fractured ice, that can be
+interpreted as a loss of all load bearing capacity.
 
 The feedback of damage to the ice flow (creep) works within the existing constitutive
 framework by introducing a linear mapping between the actual physical (damaged) state
 of the material and an effective state that is compatible with a homogeneous,
 continuum representation of the creep law (Eq. 6 in :cite:`AlbrechtLevermann2014softening`).
 
-Fractures form above a critical stress threshold `\sigma_{\text{cr}}` in the ice (von
-Mises or maximum stress criterion or fracture toughness from Linear Elastic Fracture
+Fractures form above a critical stress threshold `\sigma_{\text{cr}}` in the ice (e.g. von
+Mises criterion, maximum stress criterion or fracture toughness from Linear Elastic Fracture
 Mechanics) with a fracture growth rate proportional to `\gamma` (Eq. 2 in
 :cite:`AlbrechtLevermann2014softening`), that is related to the strain rate (longitudinal
 spreading or effective strain rate; Eq. 9 in :cite:`AlbrechtLevermann2012`). Fracture
