@@ -111,6 +111,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   // temperature and precipitation time series
   m_surface.copy_from(geometry.ice_surface_elevation);
 
+
   // temperature
   {
     m_temperature->copy_from(m_input_model->mean_annual_temp());
@@ -126,6 +127,8 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
     switch (m_precip_method) {
     case SCALE:
       {
+        auto atm_model = m_config->get_string("atmosphere.models");
+
         const IceModelVec2S &input_temperature = m_input_model->mean_annual_temp();
 
         IceModelVec::AccessList list{m_temperature.get(),
@@ -139,6 +142,12 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
           (*m_precipitation)(i, j) *= std::exp(m_precip_exp_factor * dT);
         }
+
+        // Reset temperature, when using PIK temperature parameterization, which already includes a lapse rate correction, 
+        // but use temporarily changed temperature for precipitation scaling
+        if (atm_model.substr(0, 3) == "pik"){
+            m_temperature->copy_from(m_input_model->mean_annual_temp());}
+
 
       }
       break;
