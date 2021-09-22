@@ -60,10 +60,10 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
 
   //FIXME standard parametrization
 
-  m_base_pddStdDev             = m_config->get_number("surface.pdd.std_dev");
-  m_sd_use_param               = m_config->get_flag("surface.pdd.std_dev_use_param");
-  m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev_param_a");
-  m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev_param_b");
+  m_base_pddStdDev             = m_config->get_number("surface.itm.std_dev");
+  m_sd_use_param               = m_config->get_flag("surface.itm.std_dev_use_param");
+  m_sd_param_a                 = m_config->get_number("surface.itm.std_dev_param_a");
+  m_sd_param_b                 = m_config->get_number("surface.itm.std_dev_param_b");
   m_melt_conversion_factor     = m_config->get_number("surface.itm.melt_conversion_factor");
   m_refreeze_fraction          = m_config->get_number("surface.itm.refreeze");
 
@@ -111,7 +111,7 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
   
   // initialize the spatially-variable air temperature standard deviation
   
-  std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
+  std::string sd_file = m_config->get_string("surface.itm.std_dev.file");
 
   //   if (sd_file.empty()) {
     //     m_log->message(2,

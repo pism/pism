@@ -63,11 +63,11 @@ std::string LocalMassBalanceITM::method() const {
 
 ITMMassBalance::ITMMassBalance(Config::ConstPtr config, units::System::Ptr system)
   : LocalMassBalanceITM(config, system) {
-  precip_as_snow     = m_config->get_flag("surface.pdd.interpret_precip_as_snow");
-  Tmin               = m_config->get_number("surface.pdd.air_temp_all_precip_as_snow");
-  Tmax               = m_config->get_number("surface.pdd.air_temp_all_precip_as_rain");
-  refreeze_ice_melt  = m_config->get_flag("surface.pdd.refreeze_ice_melt");
-  pdd_threshold_temp = m_config->get_number("surface.pdd.positive_threshold_temp");
+  precip_as_snow     = m_config->get_flag("surface.itm.interpret_precip_as_snow");
+  Tmin               = m_config->get_number("surface.itm.air_temp_all_precip_as_snow");
+  Tmax               = m_config->get_number("surface.itm.air_temp_all_precip_as_rain");
+  refreeze_ice_melt  = m_config->get_flag("surface.itm.refreeze_ice_melt");
+  pdd_threshold_temp = m_config->get_number("surface.itm.positive_threshold_temp");
   
 
   //FIXME use itm instead of pdd! 

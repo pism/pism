@@ -2338,6 +2338,16 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.itm.air_temp_all_precip_as_rain = 275.15;
+    pism_config:surface.itm.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.itm.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
+    pism_config:surface.itm.air_temp_all_precip_as_rain_type = "number";
+    pism_config:surface.itm.air_temp_all_precip_as_rain_units = "Kelvin";
+
+    pism_config:surface.itm.air_temp_all_precip_as_snow = 273.15;
+    pism_config:surface.itm.air_temp_all_precip_as_snow_doc = "threshold temperature below which all precipitation is snow";
+    pism_config:surface.itm.air_temp_all_precip_as_snow_type = "number";
+    pism_config:surface.itm.air_temp_all_precip_as_snow_units = "Kelvin";
+
     pism_config:surface.itm.air_temp_all_refreeze = 268.65;
     pism_config:surface.itm.air_temp_all_refreeze_doc = "threshold temperature below which all meltwater refreezes to ice";
     pism_config:surface.itm.air_temp_all_refreeze_type = "number";
@@ -2423,6 +2433,10 @@ netcdf pism_config {
     pism_config:surface.itm.max_evals_per_year_type = "integer";
     pism_config:surface.itm.max_evals_per_year_units = "count";
 
+    pism_config:surface.itm.interpret_precip_as_snow = "no";
+    pism_config:surface.itm.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
+    pism_config:surface.itm.interpret_precip_as_snow_type = "flag";
+
     pism_config:surface.itm.itm_c = -93.0;
     pism_config:surface.itm.itm_c_doc = "factor in melt calculation";
     pism_config:surface.itm.itm_c_type = "number";
@@ -2469,6 +2483,10 @@ netcdf pism_config {
     pism_config:surface.itm.refreeze_type = "number";
     pism_config:surface.itm.refreeze_units = "1";
 
+    pism_config:surface.itm.refreeze_ice_melt = "yes";
+    pism_config:surface.itm.refreeze_ice_melt_doc = "If set to 'yes', refreeze surface.pdd.refreeze fraction of melted ice, otherwise all of the melted ice runs off.";
+    pism_config:surface.itm.refreeze_ice_melt_type = "flag";
+
     pism_config:surface.itm.snow_depth_crit = 0.02;
     pism_config:surface.itm.snow_depth_crit_doc = "scale of snow depth for albedo calculation, see Krapp et al. 2017, Table 3 (2.8 cm was just too arbitrary, so 3.5 cm is the center of the interval consistent with optimal solutions (see 3.4 parameter sensitivity)";
     pism_config:surface.itm.snow_depth_crit_type = "number";
@@ -2478,6 +2496,52 @@ netcdf pism_config {
     pism_config:surface.itm.solar_constant_doc = "constant for solar radiation";
     pism_config:surface.itm.solar_constant_type = "number";
     pism_config:surface.itm.solar_constant_units = "W m-2";
+
+    pism_config:surface.itm.std_dev = 5.0;
+    pism_config:surface.itm.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
+    pism_config:surface.itm.std_dev_type = "number";
+    pism_config:surface.itm.std_dev_units = "Kelvin";
+
+    pism_config:surface.itm.std_dev.file = "";
+    pism_config:surface.itm.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
+    pism_config:surface.itm.std_dev.file_option = "pdd_sd_file";
+    pism_config:surface.itm.std_dev.file_type = "string";
+
+    pism_config:surface.itm.std_dev.period = 0;
+    pism_config:surface.itm.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
+    pism_config:surface.itm.std_dev.period_option = "pdd_sd_period";
+    pism_config:surface.itm.std_dev.period_type = "integer";
+    pism_config:surface.itm.std_dev.period_units = "years";
+
+    pism_config:surface.itm.std_dev.reference_year = 0;
+    pism_config:surface.itm.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
+    pism_config:surface.itm.std_dev.reference_year_option = "pdd_sd_reference_year";
+    pism_config:surface.itm.std_dev.reference_year_type = "integer";
+    pism_config:surface.itm.std_dev.reference_year_units = "years";
+
+    pism_config:surface.itm.std_dev_lapse_lat_base = 72.0;
+    pism_config:surface.itm.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero";
+    pism_config:surface.itm.std_dev_lapse_lat_base_type = "number";
+    pism_config:surface.itm.std_dev_lapse_lat_base_units = "degree_north";
+
+    pism_config:surface.itm.std_dev_lapse_lat_rate = 0.0;
+    pism_config:surface.itm.std_dev_lapse_lat_rate_doc = "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant";
+    pism_config:surface.itm.std_dev_lapse_lat_rate_type = "number";
+    pism_config:surface.itm.std_dev_lapse_lat_rate_units = "Kelvin / degree_north";
+
+    pism_config:surface.itm.std_dev_param_a = -0.15;
+    pism_config:surface.itm.std_dev_param_a_doc = "Parameter a in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.";
+    pism_config:surface.itm.std_dev_param_a_type = "number";
+    pism_config:surface.itm.std_dev_param_a_units = "pure number";
+
+    pism_config:surface.itm.std_dev_param_b = 0.66;
+    pism_config:surface.itm.std_dev_param_b_doc = "Parameter b in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.";
+    pism_config:surface.itm.std_dev_param_b_type = "number";
+    pism_config:surface.itm.std_dev_param_b_units = "Kelvin";
+
+    pism_config:surface.itm.std_dev_use_param = "no";
+    pism_config:surface.itm.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
+    pism_config:surface.itm.std_dev_use_param_type = "flag";
 
     pism_config:surface.itm.tau_a_intercept = 0.65;  // the best fit is 0.57;
     pism_config:surface.itm.tau_a_intercept_doc = "intercept in transmissivity parametrization";
