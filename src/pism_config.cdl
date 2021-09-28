@@ -1850,7 +1850,7 @@ netcdf pism_config {
     pism_config:output.size_option = "o_size";
     pism_config:output.size_type = "keyword";
 
-    pism_config:output.sizes.big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel";
+    pism_config:output.sizes.big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel,taud";
     pism_config:output.sizes.big_doc = "Comma-separated list of variables to write to the output (in addition to ``model_state`` variables and variables listed in :config:`output.sizes.medium` and :config:`output.sizes.big_2d`) if ``big`` output size is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.big_type = "string";
 
@@ -1984,6 +1984,11 @@ netcdf pism_config {
     pism_config:stress_balance.calving_front_stress_bc_doc = "Apply CFBC condition as in :cite:`Albrechtetal2011`, :cite:`Winkelmannetal2011`.  May only apply to some stress balances; e.g. SSAFD as of May 2011.  If not set then a strength-extension is used, as in :cite:`BBssasliding`.";
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
     pism_config:stress_balance.calving_front_stress_bc_type = "flag";
+
+    pism_config:stress_balance.fix_taud_at_margin = "no";
+    pism_config:stress_balance.fix_taud_at_margin_doc = "Fix one-sided scheme for driving stress calculation at calving front";
+    pism_config:stress_balance.fix_taud_at_margin_option = "taudfix";
+    pism_config:stress_balance.fix_taud_at_margin_type = "flag";
 
     pism_config:stress_balance.ice_free_thickness_standard = 10.0;
     pism_config:stress_balance.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a cell is considered ice-free for purposes of computing ice velocity distribution.";
