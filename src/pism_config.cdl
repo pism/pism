@@ -2478,6 +2478,11 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.long_peri_type = "number";
     pism_config:surface.itm.paleo.long_peri_units = "degree";
 
+    pism_config:surface.itm.positive_threshold_temp = 273.15;
+    pism_config:surface.itm.positive_threshold_temp_doc = "temperature used to determine meaning of 'positive' degree day temperature";
+    pism_config:surface.itm.positive_threshold_temp_type = "number";
+    pism_config:surface.itm.positive_threshold_temp_units = "Kelvin";
+
     pism_config:surface.itm.refreeze = 0.6;
     pism_config:surface.itm.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
     pism_config:surface.itm.refreeze_type = "number";
