@@ -56,7 +56,8 @@ struct GeometryEvolution::Impl {
   //! Flux divergence (used to track thickness changes due to flow).
   IceModelVec2S flux_divergence;
 
-  //! Conservation error due to enforcing non-negativity of ice thickness.
+  //! Conservation error due to enforcing non-negativity of ice thickness and enforcing
+  //! thickness BC.
   IceModelVec2S conservation_error;
 
   //! Effective surface mass balance.
@@ -271,9 +272,11 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   m_impl->flux_staggered.update_ghosts();
 
   m_impl->profile.begin("ge.flux_divergence");
-  compute_flux_divergence(m_impl->flux_staggered,   // in (uses ghosts)
-                          thickness_bc_mask,        // in
-                          m_impl->flux_divergence); // out
+  compute_flux_divergence(dt,                         // in
+                          m_impl->flux_staggered,     // in (uses ghosts)
+                          thickness_bc_mask,          // in
+                          m_impl->conservation_error, // in/out
+                          m_impl->flux_divergence);   // out
   m_impl->profile.end("ge.flux_divergence");
 
   // This is where part_grid is implemented.
@@ -615,26 +618,33 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
  *
  * The flux divergence at *ice thickness* Dirichlet B.C. locations is set to zero.
  */
-void GeometryEvolution::compute_flux_divergence(const IceModelVec2Stag &flux,
+void GeometryEvolution::compute_flux_divergence(double dt,
+                                                const IceModelVec2Stag &flux,
                                                 const IceModelVec2Int &thickness_bc_mask,
+                                                IceModelVec2S &conservation_error,
                                                 IceModelVec2S &output) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&flux, &thickness_bc_mask, &output};
+  IceModelVec::AccessList list{&flux, &thickness_bc_mask, &conservation_error, &output};
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (thickness_bc_mask(i, j) > 0.5) {
-        output(i, j) = 0.0;
-      } else {
-        StarStencil<double> Q = flux.star(i, j);
+      StarStencil<double> Q = flux.star(i, j);
 
-        output(i, j) = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
+      double divQ = (Q.e - Q.w) / dx + (Q.n - Q.s) / dy;
+
+      if (thickness_bc_mask(i, j) > 0.5) {
+        // the thickness change would have been equal to -divQ*dt. By keeping ice
+        // thickness fixed we *add* divQ*dt meters of ice.
+        conservation_error(i, j) += divQ * dt; // units: meters
+        output(i, j)              = 0.0;
+      } else {
+        output(i, j) = divQ;
       }
     }
   } catch (...) {
@@ -920,8 +930,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
  * Correct `thickness_change` and `area_specific_volume_change` so that applying them will not
  * result in negative `ice_thickness` and `area_specific_volume`.
  *
- * Compute the `conservation_error`, i.e. the amount of ice that is added to preserve
- * non-negativity.
+ * Compute the the amount of ice that is added to preserve non-negativity of ice thickness.
  *
  * @param[in] ice_thickness ice thickness (m)
  * @param[in] area_specific_volume area-specific volume (m3/m2)

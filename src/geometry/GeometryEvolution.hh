@@ -98,8 +98,10 @@ protected:
                                         const IceModelVec2Stag     &diffusive_flux,
                                         IceModelVec2Stag           &output);
 
-  virtual void compute_flux_divergence(const IceModelVec2Stag &flux_staggered,
+  virtual void compute_flux_divergence(double dt,
+                                       const IceModelVec2Stag &flux_staggered,
                                        const IceModelVec2Int &thickness_bc_mask,
+                                       IceModelVec2S &conservation_error,
                                        IceModelVec2S &flux_fivergence);
 
   virtual void ensure_nonnegativity(const IceModelVec2S &ice_thickness,
