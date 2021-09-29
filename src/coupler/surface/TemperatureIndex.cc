@@ -156,7 +156,11 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
 
+      SpatialVariableMetadata attributes = m_air_temp_sd->metadata();
+      // replace with a constant IceModelVec2T:
       m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
+      // restore metadata:
+      m_air_temp_sd->metadata() = attributes;
     } else {
       m_log->message(2,
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
