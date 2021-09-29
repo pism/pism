@@ -88,8 +88,8 @@ regions as discussed in :ref:`SSADiscrete`.
 Dirichlet boundary conditions (i.e. locations where :math:`\vU` is known)
 can be turned on with the :cfg:`-ssa_dirichlet_bc` flag, in which case
 the known velocities are taken from the NC variable
-:ncvar:`vel_ssa_bc`.  For regional models, the Dirichlet locations are specified
-indirectly via the NC mask variable :ncvar:`no_model_mask`, otherwise the NC mask variable :ncvar:`bc_mask` determines these locations.
+:ncvar:`vel_bc`.  For regional models, the Dirichlet locations are specified
+indirectly via the NC mask variable :ncvar:`no_model_mask`, otherwise the NC mask variable :ncvar:`vel_bc_mask` determines these locations.
 
 PISM supports a calving front boundary condition :cite:`AlbrechtLevermann2012` 
 that modifies the stress balance at the ice/ocean interface (config variable 

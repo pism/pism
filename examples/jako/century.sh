@@ -76,7 +76,7 @@ echo
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i $BOOT -bootstrap  \
   -Mx $Mx -My $My -Lz 4000 -Lbz 1000 -Mz $Mz -Mbz $Mbz -z_spacing equal \
   -no_model_strip 10 $PHYS \
-  -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,basal_melt_rate_grounded,tillwat,enthalpy,litho_temp,vel_ssa_bc \
+  -ssa_dirichlet_bc -regrid_file $PREFILE -regrid_vars thk,basal_melt_rate_grounded,tillwat,enthalpy,litho_temp,vel_bc \
   $CLIMATE -y 0.01 -o jakofine_short.nc"
 $PISM_DO $cmd
 
@@ -86,7 +86,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -i jakofine_short.nc \
   -extra_file ex_jakofine.nc -extra_times 0:yearly:$LENGTH \
   -extra_vars mask,thk,velbase_mag,tillwat,tauc,dhdt,hardav,velsurf_mag,temppabase,diffusivity,bmelt,tempicethk_basal \
   -ts_file ts_jakofine.nc -ts_times 0:monthly:$LENGTH \
-  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_ssa_bc \
+  -ssa_dirichlet_bc -regrid_file $BCFILE -regrid_vars vel_bc \
   $CLIMATE -ys 0 -ye $LENGTH -skip -skip_max $SKIP -o jakofine.nc"
 $PISM_DO $cmd
 

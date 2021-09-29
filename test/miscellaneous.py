@@ -721,7 +721,7 @@ def ssa_trivial_test():
 
             # zero Dirichler B.C. everywhere
             vecs.vel_bc.set(0.0)
-            vecs.bc_mask.set(1.0)
+            vecs.vel_bc_mask.set(1.0)
 
         def _initSSA(self):
             # The following ensure that the strength extension is used everywhere

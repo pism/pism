@@ -181,7 +181,7 @@ def final_corrections(filename):
     nc = NC.Dataset(filename, 'a')
 
     # replace missing values with zeros
-    for var in ['u_ssa_bc', 'v_ssa_bc', 'magnitude']:
+    for var in ['u_bc', 'v_bc', 'magnitude']:
         tmp = nc.variables[var][:]
         tmp[tmp.mask == True] = 0
         nc.variables[var][:] = tmp
@@ -217,7 +217,7 @@ def final_corrections(filename):
                     mask[j, i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
+    vel_bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
     # mark ocean_icy cells next to grounded_icy ones too:
     row = np.array([0, -1, 1,  0])
@@ -227,10 +227,10 @@ def final_corrections(filename):
             nearest = mask[j + row, i + col]
 
             if mask[j, i] == ocean_icy and np.any(nearest == grounded_icy):
-                bc_mask[j, i] = 1
+                vel_bc_mask[j, i] = 1
 
     # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
-    bc_mask[thk < 1.0] = 0
+    vel_bc_mask[thk < 1.0] = 0
 
     # modifications for the prognostic run
     # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
@@ -242,10 +242,10 @@ def final_corrections(filename):
 
     nc.variables[temp_name][:] = temperature
     nc.variables['topg'][:] = topg
-    bc_mask_var = nc.createVariable('bc_mask', 'i', ('y', 'x'))
-    bc_mask_var[:] = bc_mask
+    vel_bc_mask_var = nc.createVariable('vel_bc_mask', 'i', ('y', 'x'))
+    vel_bc_mask_var[:] = vel_bc_mask
 
-    bad_bc_mask_mask = np.logical_and(thk < 1.0, bc_mask == 1)
+    bad_bc_mask_mask = np.logical_and(thk < 1.0, vel_bc_mask == 1)
     bad_bc_mask_var = nc.createVariable('bad_bc_mask', 'i', ('y', 'x'))
     bad_bc_mask_var[:] = bad_bc_mask_mask
 
@@ -267,7 +267,7 @@ if __name__ == "__main__":
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
-                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -v v_magnitude,magnitude -O %s" % output]
+                "ncrename -v vx,u_bc -v vy,v_bc -v v_magnitude,magnitude -O %s" % output]
     run(commands)
 
     final_corrections(output)

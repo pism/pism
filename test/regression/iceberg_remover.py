@@ -31,7 +31,7 @@ def check(version):
     grid = PISM.testing.shallow_grid(11, 11, Lx=1e4, Ly=1e4)
 
     cell_type     = PISM.IceModelVec2CellType(grid, "cell_type", PISM.WITH_GHOSTS)
-    bc_mask       = PISM.IceModelVec2Int(grid, "bc_mask", PISM.WITH_GHOSTS)
+    vel_bc_mask       = PISM.IceModelVec2Int(grid, "vel_bc_mask", PISM.WITH_GHOSTS)
     ice_thickness = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
 
     input_mask, result_fd, result_fem = create_mask(cell_type.shape())
@@ -52,7 +52,7 @@ def check(version):
     else:
         raise ValueError("invalid iceberg remover type: {}".format(version))
 
-    model.update(bc_mask, cell_type, ice_thickness)
+    model.update(vel_bc_mask, cell_type, ice_thickness)
     np.testing.assert_equal(cell_type.numpy(), desired_result)
 
 def iceberg_remover_fd_test():

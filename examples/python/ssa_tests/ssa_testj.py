@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -53,7 +53,7 @@ class testj(PISM.ssa.SSAExactTestCase):
         # ensures that the ice is floating (max. thickness if 770 m)
         vecs.bedrock_altitude.set(-1000.0)
         vecs.mask.set(PISM.MASK_FLOATING)
-        vecs.bc_mask.set(0)  # No dirichlet data.
+        vecs.vel_bc_mask.set(0)  # No dirichlet data.
 
         EC = PISM.EnthalpyConverter(PISM.Context().config)
         enth0 = EC.enthalpy(273.15, 0.01, 0)  # 0.01 water fraction
@@ -68,7 +68,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
         with PISM.vec.Access(comm=[vecs.land_ice_thickness,
                                    vecs.surface_altitude,
-                                   vecs.bc_mask,
+                                   vecs.vel_bc_mask,
                                    vecs.vel_bc]):
             grid = self.grid
             for (i, j) in grid.points():
@@ -78,7 +78,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
                 # special case at center point (Dirichlet BC)
                 if (i == grid.Mx() // 2) and (j == grid.My() // 2):
-                    vecs.bc_mask[i, j] = 1
+                    vecs.vel_bc_mask[i, j] = 1
                     vecs.vel_bc[i, j] = [p.u, p.v]
 
     def _initSSA(self):

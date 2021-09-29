@@ -40,8 +40,8 @@ while x0 + width < M - 1:
 # make tongues shorter
 thk[5:, :] = 0
 
-bc_mask = np.zeros_like(thk)
-bc_mask[thk > 0] = 1
+vel_bc_mask = np.zeros_like(thk)
+vel_bc_mask[thk > 0] = 1
 
 # make the bed deep everywhere except in icy areas, where it is barely
 # grounded
@@ -51,7 +51,7 @@ z[thk > 0] = -(910.0 / 1028.0) * 100.0 + 1
 # Velocity Dirichlet B.C.:
 ubar = np.zeros_like(thk)
 vbar = np.zeros_like(thk)
-vbar[bc_mask == 1] = 100.0
+vbar[vel_bc_mask == 1] = 100.0
 
 try:
     nc = NC(options.output, 'w')
@@ -66,8 +66,8 @@ try:
     nc.define_2d_field("climatic_mass_balance", attrs={"units": "kg m-2 year-1"})
     nc.define_2d_field("ice_surface_temp", attrs={"units": "Celsius"})
 
-    nc.define_2d_field("u_ssa_bc", attrs={"units": "m/year"})
-    nc.define_2d_field("v_ssa_bc", attrs={"units": "m/year"})
+    nc.define_2d_field("u_bc", attrs={"units": "m/year"})
+    nc.define_2d_field("v_bc", attrs={"units": "m/year"})
 except:
     nc = NC(options.output, 'a')
 
@@ -75,8 +75,8 @@ nc.write("topg", z)
 nc.write("thk", thk)
 nc.write("climatic_mass_balance", np.zeros_like(xx))
 nc.write("ice_surface_temp", np.zeros_like(xx) - 30.0)  # irrelevant
-nc.write("u_ssa_bc", ubar)
-nc.write("v_ssa_bc", vbar)
-nc.write("bc_mask", bc_mask)
+nc.write("u_bc", ubar)
+nc.write("v_bc", vbar)
+nc.write("vel_bc_mask", vel_bc_mask)
 
 nc.close()

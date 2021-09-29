@@ -20,7 +20,7 @@ We use the following typesetting conventions for variable names:
   * Command line flags setting PISM/PETSc options appear the same way,
     but start with a hyphen: :cfg:`-ssa_dirichlet_bc`
   * Variables in NC files corresponding to data defined on a grid appear
-    as: :ncvar:`vel_ssa_bc`.
+    as: :ncvar:`vel_bc`.
 
 .. toctree::
   refresher
