@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from sys import exit
+import uuid
 
 # Import all necessary modules here so that if it fails, it fails early.
 try:
@@ -11,6 +12,9 @@ except:
 import subprocess
 import numpy as np
 import os
+
+# This seems to be needed by NCO:
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 smb_name = "climatic_mass_balance"
 temp_name = "ice_surface_temp"
@@ -89,9 +93,9 @@ def preprocess_ice_velocity():
         cmd = "ncks -d x,3500,7500 -d y,6000,10000 -O %s %s" % (input_filename, output_filename)
         run(cmd)
 
-        cmd = "ncrename -O -v VX,vx -v VY,vy %s" % (output_filename)
-        run(cmd)
-
+        tmp_filename = "tmp-{}.nc".format(uuid.uuid4())
+        run("cdo setmisstoc,0 -setattribute,VX@_FillValue=-1.0f -setattribute,VY@_FillValue=-1.0f {} {}".format(output_filename, tmp_filename))
+        run("cdo chname,VX,vx -chname,VY,vy {} {}".format(tmp_filename, output_filename))
 
         nc = NC.Dataset(output_filename, 'a')
 
@@ -104,14 +108,10 @@ def preprocess_ice_velocity():
             vx = nc.variables['vx'][:]
             vy = nc.variables['vy'][:]
 
-            v_magnitude = np.zeros_like(vx)
-
-            v_magnitude = np.sqrt(vx ** 2 + vy ** 2)
-
             magnitude = nc.createVariable('v_magnitude', 'f8', ('y', 'x'))
             magnitude.units = "m / year"
 
-            magnitude[:] = v_magnitude
+            magnitude[:] = np.sqrt(vx ** 2 + vy ** 2)
 
         nc.close()
 
@@ -120,9 +120,9 @@ def preprocess_ice_velocity():
 
 def preprocess_albmap():
     """
-    Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
+    Download and preprocess the ~16Mb ALBMAP dataset from https://doi.pangaea.de/10.1594/PANGAEA.734145
     """
-    url = "http://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
+    url = "https://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
