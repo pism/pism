@@ -4,7 +4,7 @@
 from the rest of PISM.
 
 Given an input file containing ice thickness, bed topography, x and y components of the
-SSA velocity (u_ssa_bc, v_ssa_bc), and the mask bc_mask (ones where fracture density is
+SSA velocity (u_bc, v_bc), and the mask vel_bc_mask (ones where fracture density is
 set, zero elsewhere) this code will run the fracture density model for a few time steps
 and save its outputs to a file.
 """
@@ -32,7 +32,7 @@ fracture = PISM.FractureDensity(grid, flow_law)
 fracture.initialize()
 
 # read in the velocity field
-velocity = PISM.IceModelVec2V(grid, "_ssa_bc", PISM.WITHOUT_GHOSTS)
+velocity = PISM.IceModelVec2V(grid, "_bc", PISM.WITHOUT_GHOSTS)
 velocity.set_attrs("", "x-component of the ice velocity", "m s-1", "m s-1", "", 0)
 velocity.set_attrs("", "y-component of the ice velocity", "m s-1", "m s-1", "", 1)
 velocity.regrid(filename)
@@ -42,8 +42,8 @@ data = PISM.max_timestep_cfl_2d(geometry.ice_thickness, geometry.cell_type, velo
 dt = data.dt_max.value()
 
 # read in the BC mask
-bc_mask = PISM.IceModelVec2Int(grid, "bc_mask", PISM.WITHOUT_GHOSTS)
-bc_mask.regrid(filename)
+vel_bc_mask = PISM.IceModelVec2Int(grid, "vel_bc_mask", PISM.WITHOUT_GHOSTS)
+vel_bc_mask.regrid(filename)
 
 # Set hardness to a constant corresponding to -30C at 0 Pa
 hardness = PISM.IceModelVec2S(grid, "hardness", PISM.WITHOUT_GHOSTS)
@@ -55,7 +55,7 @@ hardness.set(flow_law.hardness(E, P))
 # take a few steps
 N = 100                         # arbitrary
 for k in range(N):
-    fracture.update(dt, geometry, velocity, hardness, bc_mask)
+    fracture.update(dt, geometry, velocity, hardness, vel_bc_mask)
 
 # save results
 output_filename = ctx.config.get_string("output.file_name")

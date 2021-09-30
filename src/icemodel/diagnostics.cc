@@ -2719,9 +2719,10 @@ void IceModel::init_diagnostics() {
     {"effective_viscosity", f(new IceViscosity(this))},
 
     // boundary conditions
-    {"ssa_bc_mask",                    d::wrap(m_ssa_dirichlet_bc_mask)},
-    {"ssa_bc_vel",                     d::wrap(m_ssa_dirichlet_bc_values)},
+    {"vel_bc_mask",                    d::wrap(m_velocity_bc_mask)},
+    {"vel_bc_values",                  d::wrap(m_velocity_bc_values)},
     {"ice_margin_pressure_difference", f(new IceMarginPressureDifference(this))},
+    {"thk_bc_mask",                    d::wrap(m_ice_thickness_bc_mask)},
 
     // balancing the books
     // tendency_of_ice_amount = (tendency_of_ice_amount_due_to_flow +

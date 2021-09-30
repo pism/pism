@@ -33,18 +33,18 @@ ncatted -O -a standard_name,basal_melt_rate_grounded,d,c, $PISMDATA
 ncatted -O -a long_name,basal_melt_rate_grounded,o,c,"basal melt rate as input to subglacial hydrology" $PISMDATA
 
 # 50 m/a basal speed; only the magnitude affects "-hydrology distributed"
-ncap2 -O -s "u_ssa_bc=0.0*topg+50.0" $PISMDATA $PISMDATA
-ncatted -O -a units,u_ssa_bc,o,c,"m year-1" $PISMDATA
-ncatted -O -a long_name,u_ssa_bc,o,c,"x-component of prescribed sliding velocity" $PISMDATA
-ncatted -O -a standard_name,u_ssa_bc,d,c, $PISMDATA
-ncap2 -O -s "v_ssa_bc=0.0*topg" $PISMDATA $PISMDATA
-ncatted -O -a units,v_ssa_bc,o,c,"m year-1" $PISMDATA
-ncatted -O -a long_name,v_ssa_bc,o,c,"y-component of prescribed sliding velocity" $PISMDATA
-ncatted -O -a standard_name,v_ssa_bc,d,c, $PISMDATA
-ncap2 -O -s "bc_mask=0.0*topg+1.0" $PISMDATA $PISMDATA
-ncatted -O -a units,bc_mask,d,c, $PISMDATA
-ncatted -O -a long_name,bc_mask,o,c,"equals one where (u_ssa_bc,v_ssa_bc) should be applied as sliding seen by hydrology" $PISMDATA
-ncatted -O -a standard_name,bc_mask,d,c, $PISMDATA
+ncap2 -O -s "u_bc=0.0*topg+50.0" $PISMDATA $PISMDATA
+ncatted -O -a units,u_bc,o,c,"m year-1" $PISMDATA
+ncatted -O -a long_name,u_bc,o,c,"x-component of prescribed sliding velocity" $PISMDATA
+ncatted -O -a standard_name,u_bc,d,c, $PISMDATA
+ncap2 -O -s "v_bc=0.0*topg" $PISMDATA $PISMDATA
+ncatted -O -a units,v_bc,o,c,"m year-1" $PISMDATA
+ncatted -O -a long_name,v_bc,o,c,"y-component of prescribed sliding velocity" $PISMDATA
+ncatted -O -a standard_name,v_bc,d,c, $PISMDATA
+ncap2 -O -s "vel_bc_mask=0.0*topg+1.0" $PISMDATA $PISMDATA
+ncatted -O -a units,vel_bc_mask,d,c, $PISMDATA
+ncatted -O -a long_name,vel_bc_mask,o,c,"equals one where (u_bc,v_bc) should be applied as sliding seen by hydrology" $PISMDATA
+ncatted -O -a standard_name,vel_bc_mask,d,c, $PISMDATA
 
 INTOBED=fakesummerevent.nc
 echo "calling fake-inputtobed.py to create PISM-readable -input_to_bed file $INTOBED ..."

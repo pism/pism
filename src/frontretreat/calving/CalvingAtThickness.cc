@@ -79,9 +79,13 @@ void CalvingAtThickness::init() {
   } else {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
+    SpatialVariableMetadata attributes = m_calving_threshold->metadata();
+    // replace with a constant IceModelVec2T
     m_calving_threshold = IceModelVec2T::Constant(m_grid,
                                                   "thickness_calving_threshold",
                                                   calving_threshold);
+    // restore metadata
+    m_calving_threshold->metadata() = attributes;
 
     m_log->message(2,
                    "  Thickness threshold: %3.3f meters.\n", calving_threshold);

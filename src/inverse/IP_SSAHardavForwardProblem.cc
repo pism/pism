@@ -104,8 +104,8 @@ void IP_SSAHardavForwardProblem::init() {
     inputs.basal_yield_stress = m_grid->variables().get_2d_scalar("tauc");
     inputs.enthalpy           = m_grid->variables().get_3d_scalar("enthalpy");
     inputs.age                = NULL;
-    inputs.bc_mask            = m_grid->variables().get_2d_mask("bc_mask");
-    inputs.bc_values          = m_grid->variables().get_2d_vector("vel_ssa_bc");
+    inputs.bc_mask            = m_grid->variables().get_2d_mask("vel_bc_mask");
+    inputs.bc_values          = m_grid->variables().get_2d_vector("vel_bc");
 
     inputs.water_column_pressure = NULL;
 

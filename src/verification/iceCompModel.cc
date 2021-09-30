@@ -859,26 +859,29 @@ void IceCompModel::test_V_init() {
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_ssa_dirichlet_bc_mask,
-      &m_ssa_dirichlet_bc_values};
+  IceModelVec::AccessList list
+    {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
+     &m_velocity_bc_mask, &m_velocity_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {
-      m_ssa_dirichlet_bc_mask(i,j) = 1;
-      m_ssa_dirichlet_bc_values(i,j)  = Vector2(upstream_velocity, 0.0);
+      m_velocity_bc_mask(i,j) = 1;
+      m_velocity_bc_values(i,j)  = {upstream_velocity, 0.0};
       m_geometry.ice_thickness(i, j) = upstream_thk;
+      m_ice_thickness_bc_mask(i, j) = 1;
     } else {
-      m_ssa_dirichlet_bc_mask(i,j) = 0;
-      m_ssa_dirichlet_bc_values(i,j)  = Vector2(0.0, 0.0);
+      m_velocity_bc_mask(i,j) = 0;
+      m_velocity_bc_values(i,j)  = Vector2(0.0, 0.0);
       m_geometry.ice_thickness(i, j) = 0;
+      m_ice_thickness_bc_mask(i, j) = 0;
     }
   }
 
-  m_ssa_dirichlet_bc_mask.update_ghosts();
+  m_velocity_bc_mask.update_ghosts();
 
-  m_ssa_dirichlet_bc_values.update_ghosts();
+  m_velocity_bc_values.update_ghosts();
 
   m_geometry.ice_thickness.update_ghosts();
 }

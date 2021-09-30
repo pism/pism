@@ -77,8 +77,9 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
     m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
     m_basal_melt_rate(m_grid, "bmelt", WITHOUT_GHOSTS),
     m_bedtoptemp(m_grid, "bedtoptemp", WITHOUT_GHOSTS),
-    m_ssa_dirichlet_bc_mask(m_grid, "bc_mask", WITH_GHOSTS, m_wide_stencil),
-    m_ssa_dirichlet_bc_values(m_grid, "_ssa_bc", WITH_GHOSTS, m_wide_stencil), // u_ssa_bc and v_ssa_bc
+    m_velocity_bc_mask(m_grid, "vel_bc_mask", WITH_GHOSTS, m_wide_stencil),
+    m_velocity_bc_values(m_grid, "_bc", WITH_GHOSTS, m_wide_stencil), // u_bc and v_bc
+    m_ice_thickness_bc_mask(grid, "thk_bc_mask", WITH_GHOSTS),
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
@@ -219,23 +220,17 @@ void IceModel::allocate_storage() {
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
 
-  // SSA Dirichlet B.C. locations and values
-  //
-  // The mask m_ssa_dirichlet_bc_mask is also used to prescribe locations of ice thickness Dirichlet
-  // B.C. (FIXME)
+  // Sliding velocity (usually SSA) Dirichlet B.C. locations and values
   {
-    m_ssa_dirichlet_bc_mask.set_attrs("model_state", "Dirichlet boundary mask",
-                                      "", "", "", 0);
-    m_ssa_dirichlet_bc_mask.metadata()["flag_values"] = {0, 1};
-    m_ssa_dirichlet_bc_mask.metadata()["flag_meanings"] = "no_data bc_condition";
-    m_ssa_dirichlet_bc_mask.metadata().set_output_type(PISM_INT);
-    m_ssa_dirichlet_bc_mask.set_time_independent(true);
+    m_velocity_bc_mask.set_attrs("model_state",
+                                 "Mask prescribing Dirichlet boundary locations for the sliding velocity",
+                                 "", "", "", 0);
+    m_velocity_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
+    m_velocity_bc_mask.metadata().set_output_type(PISM_INT);
+    m_velocity_bc_mask.set_time_independent(true);
 
-    // FIXME: this is used by the inverse modeling code. Do NOT get
-    // this field from m_grid->variables() elsewhere in the code!
-    m_grid->variables().add(m_ssa_dirichlet_bc_mask);
-
-    m_ssa_dirichlet_bc_mask.set(0.0);
+    m_velocity_bc_mask.set(0.0);
   }
   // SSA Dirichlet B.C. values
   {
@@ -244,25 +239,36 @@ void IceModel::allocate_storage() {
     const double huge_value = 1e6;
     double valid_range = units::convert(m_sys, huge_value, "m year-1", "m second-1");
     // vel_bc
-    m_ssa_dirichlet_bc_values.set_attrs("model_state",
+    m_velocity_bc_values.set_attrs("model_state",
                                         "X-component of the SSA velocity boundary conditions",
                                         "m s-1", "m year-1", "", 0);
-    m_ssa_dirichlet_bc_values.set_attrs("model_state",
+    m_velocity_bc_values.set_attrs("model_state",
                                         "Y-component of the SSA velocity boundary conditions",
                                         "m s-1", "m year-1", "", 1);
-    for (int j = 0; j < 2; ++j) {
-      m_ssa_dirichlet_bc_values.metadata(j)["valid_range"] = {-valid_range, valid_range};
-      m_ssa_dirichlet_bc_values.metadata(j)["_FillValue"] = {fill_value};
+    for (int j : {0, 1}) {
+      m_velocity_bc_values.metadata(j)["valid_range"] = {-valid_range, valid_range};
+      m_velocity_bc_values.metadata(j)["_FillValue"] = {fill_value};
     }
+  }
 
-    // FIXME: this is used by the inverse modeling code. Do NOT get
-    // this field from m_grid->variables() elsewhere in the code!
-    m_grid->variables().add(m_ssa_dirichlet_bc_values);
+  // Ice thickness BC mask
+  {
+    m_ice_thickness_bc_mask.set_attrs("model_state",
+                                      "Mask specifying locations where ice thickness is held constant",
+                                      "", "", "", 0);
+    m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
+    m_ice_thickness_bc_mask.metadata().set_output_type(PISM_INT);
+    m_ice_thickness_bc_mask.set_time_independent(true);
+
+    m_ice_thickness_bc_mask.set(0.0);
   }
 
   // Add some variables to the list of "model state" fields.
-  m_model_state.insert(&m_ssa_dirichlet_bc_mask);
-  m_model_state.insert(&m_ssa_dirichlet_bc_values);
+  m_model_state.insert(&m_velocity_bc_mask);
+  m_model_state.insert(&m_velocity_bc_values);
+
+  m_model_state.insert(&m_ice_thickness_bc_mask);
 
   m_model_state.insert(&m_geometry.latitude);
   m_model_state.insert(&m_geometry.longitude);
@@ -293,7 +299,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
     // stress-balance-related threshold here.
     m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
-    m_iceberg_remover->update(m_ssa_dirichlet_bc_mask,
+    m_iceberg_remover->update(m_ice_thickness_bc_mask,
                               m_geometry.cell_type,
                               m_geometry.ice_thickness);
     // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
@@ -335,8 +341,8 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   result.water_column_pressure = &m_ocean->average_water_column_pressure();
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    result.bc_mask   = &m_ssa_dirichlet_bc_mask;
-    result.bc_values = &m_ssa_dirichlet_bc_values;
+    result.bc_mask   = &m_velocity_bc_mask;
+    result.bc_values = &m_velocity_bc_values;
   }
 
   if (m_config->get_flag("fracture_density.enabled")) {
@@ -507,10 +513,10 @@ void IceModel::step(bool do_mass_continuity,
   //! \li update the thickness of the ice according to the mass conservation model and calving
   //! parameterizations
 
-  // FIXME: thickness B.C. mask should be separate
-  IceModelVec2Int &thickness_bc_mask = m_ssa_dirichlet_bc_mask;
-
   if (do_mass_continuity) {
+    // reset the conservation error field:
+    m_geometry_evolution->reset();
+
     profiling.begin("mass_transport");
     {
       // Note that there are three adaptive time-stepping criteria. Two of them (using max.
@@ -533,7 +539,7 @@ void IceModel::step(bool do_mass_continuity,
                                       m_dt,
                                       m_stress_balance->advective_velocity(),
                                       m_stress_balance->diffusive_flux(),
-                                      thickness_bc_mask);
+                                      m_ice_thickness_bc_mask);
 
       m_geometry_evolution->apply_flux_divergence(m_geometry);
 
@@ -573,7 +579,7 @@ void IceModel::step(bool do_mass_continuity,
     // compute and apply effective surface and basal mass balance
 
     m_geometry_evolution->source_term_step(m_geometry, m_dt,
-                                           thickness_bc_mask,
+                                           m_ice_thickness_bc_mask,
                                            m_surface->mass_flux(),
                                            m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);

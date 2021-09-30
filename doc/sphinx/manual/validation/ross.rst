@@ -58,10 +58,10 @@ bed elevations, surface temperature, net accumulation, as well as latitude and l
 values. All of these are typical of ice sheet modelling data, both in diagnostic runs and
 as needed to initialize and provide boundary conditions for prognostic (evolutionary)
 runs; see below for the prognostic case with these data. The ``_combined`` file also has
-variables ``u_ssa_bc`` and ``v_ssa_bc`` for the boundary values used in the (diagnostic
+variables ``u_bc`` and ``v_bc`` for the boundary values used in the (diagnostic
 and prognostic) computation of velocity. They are used at all grounded locations and at
-ice shelf cells that are immediate neighbors of grounded ice. The variable ``bc_mask``
-specifies these locations. Finally the variables ``u_ssa_bc,v_ssa_bc``, which contain
+ice shelf cells that are immediate neighbors of grounded ice. The variable ``vel_bc_mask``
+specifies these locations. Finally the variables ``u_bc,v_bc``, which contain
 observed values, are used after the run to compare to the computed interior velocities.
 
 Diagnostic computation of ice shelf velocity
@@ -103,8 +103,8 @@ options,
   ice, especially in McMurdo sound area, so that the SSA problem is well-posed for the
   grounded-ice-sheet-connected ice shelf.
 
-- Option :opt:`-ssa_dirichlet_bc` forces the use of fields ``u_ssa_bc, v_ssa_bc, bc_mask``
-  described above. The field ``bc_mask`` is `1` at boundary condition locations, and `0`
+- Option :opt:`-ssa_dirichlet_bc` forces the use of fields ``u_bc, v_bc, vel_bc_mask``
+  described above. The field ``vel_bc_mask`` is `1` at boundary condition locations, and `0`
   elsewhere. For the prognostic runs below, the ice thickness is also fixed at boundary
   condition locations, so as to prescribe ice flux as an ice shelf input.
 

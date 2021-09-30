@@ -100,7 +100,7 @@ examined in the usual ways, for example:
 
 The boundary condition file ``g5km_bc.nc`` contains thermodynamical spun-up variables
 (``enthalpy,bmelt,bwat``) and boundary values for the sliding velocity
-(``u_ssa_bc,v_ssa_bc``); these have been extracted from ``g5km_gridseq.nc``.
+(``u_bc,v_bc``); these have been extracted from ``g5km_gridseq.nc``.
 
 None of the above actions is specific to Jakobshavn, though all are specific to Greenland.
 If your goal is to build a regional model of another outlet glacier in Greenland, then you
@@ -280,9 +280,9 @@ Some more comments on this run are appropriate:
 
   .. code-block:: none
   
-     -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_ssa_bc
+     -regrid_file g5km_bc.nc -regrid_vars bmelt,tillwat,enthalpy,litho_temp,vel_bc
 
-- Dirichlet boundary conditions ``u_ssa_bc,v_ssa_bc`` are also regridded from
+- Dirichlet boundary conditions ``u_bc,v_bc`` are also regridded from
   ``g5km_bc.nc`` for the sliding SSA stress balance, and the option ``-ssa_dirichlet_bc``
   then uses them during the run. The SSA equations are solved as usual except in the
   ``no_model_strip`` where these Dirichlet boundary conditions are used. Note that the

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011-2012, 2015, 2020 the PISM authors
+# Copyright (C) 2011-2012, 2015, 2020, 2021 the PISM authors
 
 # executes all preprocessing actions appropriate to Jakobshavn case,
 # with a particular selection of terminus rectangle
@@ -14,7 +14,7 @@ set -e
 
 ./preprocess.sh
 
-python pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
+python3 pism_regional.py -i gr1km.nc -o jakomask.nc -x 360,382 -y 1135,1176 -b 50
 
 ncks -O -d x,299,918 -d y,970,1394 gr1km.nc jako.nc
 # rename x and y to avoid type clash (float in gr1km.nc and double in jako.nc)

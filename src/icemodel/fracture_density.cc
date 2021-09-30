@@ -40,8 +40,8 @@ void IceModel::update_fracture_density() {
     IceModelVec::AccessList list{&bc_mask, &m_geometry.cell_type};
 
     if (dirichlet_bc) {
-      list.add(m_ssa_dirichlet_bc_mask);
-      list.add(m_ssa_dirichlet_bc_values);
+      list.add(m_velocity_bc_mask);
+      list.add(m_velocity_bc_values);
     }
 
     for (Points p(*m_grid); p; p.next()) {
@@ -52,9 +52,9 @@ void IceModel::update_fracture_density() {
       }
 
       if (dirichlet_bc) {
-        if (m_ssa_dirichlet_bc_mask(i, j) > 0.5 and
-            (m_ssa_dirichlet_bc_values(i, j).u != 0.0 or
-             m_ssa_dirichlet_bc_values(i, j).v != 0.0)) {
+        if (m_velocity_bc_mask(i, j) > 0.5 and
+            (m_velocity_bc_values(i, j).u != 0.0 or
+             m_velocity_bc_values(i, j).v != 0.0)) {
           bc_mask(i, j) = 1.0;
         }
       }

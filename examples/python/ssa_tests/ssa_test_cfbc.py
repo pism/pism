@@ -98,7 +98,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         grid = self.grid
         thickness = vecs.land_ice_thickness
         surface = vecs.surface_altitude
-        bc_mask = vecs.bc_mask
+        vel_bc_mask = vecs.vel_bc_mask
         vel_bc = vecs.vel_bc
         ice_mask = vecs.mask
 
@@ -106,7 +106,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         ice_rho = self.config.get_number("constants.ice.density")
 
         x_min = grid.x(0)
-        with PISM.vec.Access(comm=[thickness, surface, bc_mask, vel_bc, ice_mask]):
+        with PISM.vec.Access(comm=[thickness, surface, vel_bc_mask, vel_bc, ice_mask]):
             for (i, j) in grid.points():
                 x = grid.x(i)
                 if i != grid.Mx() - 1:
@@ -119,11 +119,11 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
                 surface[i, j] = (1.0 - ice_rho / ocean_rho) * thickness[i, j]
 
                 if i == 0:
-                    bc_mask[i, j] = 1
+                    vel_bc_mask[i, j] = 1
                     vel_bc[i, j].u = V0
                     vel_bc[i, j].v = 0.
                 else:
-                    bc_mask[i, j] = 0
+                    vel_bc_mask[i, j] = 0
                     vel_bc[i, j].u = 0.
                     vel_bc[i, j].v = 0.
 

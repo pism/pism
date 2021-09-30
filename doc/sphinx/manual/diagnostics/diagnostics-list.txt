@@ -451,23 +451,6 @@ Spatially-variable fields
    :Units: m
    :Description: snow cover depth (set to zero once a year)
 
-#. ``ssa_bc_mask``
-
-   :Units: ---
-   :Description: Dirichlet boundary mask
-
-#. ``ssa_bc_vel``
-
-   - ``u_ssa_bc``
-
-     :Units: m year-1
-     :Description: X-component of the SSA velocity boundary conditions
-
-   - ``v_ssa_bc``
-
-     :Units: m year-1
-     :Description: Y-component of the SSA velocity boundary conditions
-
 #. ``steady_state_hydraulic_potential``
 
    :Units: Pa
@@ -776,6 +759,11 @@ Spatially-variable fields
    :Description: land ice thickness
    :Standard name: ``land_ice_thickness``
 
+#. ``thk_bc_mask``
+
+   :Units: ---
+   :Description: Mask specifying locations where ice thickness is held constant
+
 #. ``thksmooth``
 
    :Units: m
@@ -818,6 +806,23 @@ Spatially-variable fields
    :Units: m year-1
    :Description: horizontal velocity of ice in the X direction
    :Standard name: ``land_ice_x_velocity``
+
+#. ``vel_bc_mask``
+
+   :Units: ---
+   :Description: Mask prescribing Dirichlet boundary locations for the sliding velocity
+
+#. ``vel_bc_values``
+
+   - ``u_bc``
+
+     :Units: m year-1
+     :Description: X-component of the SSA velocity boundary conditions
+
+   - ``v_bc``
+
+     :Units: m year-1
+     :Description: Y-component of the SSA velocity boundary conditions
 
 #. ``velbar``
 

@@ -297,10 +297,13 @@ protected:
 
   std::shared_ptr<FractureDensity> m_fracture;
 
-  //! mask to determine Dirichlet boundary locations
-  IceModelVec2Int m_ssa_dirichlet_bc_mask;
+  //! mask to determine Dirichlet boundary locations for the sliding velocity
+  IceModelVec2Int m_velocity_bc_mask;
   //! Dirichlet boundary velocities
-  IceModelVec2V m_ssa_dirichlet_bc_values;
+  IceModelVec2V m_velocity_bc_values;
+
+  //! Mask prescribing locations where ice thickness is held constant
+  IceModelVec2Int m_ice_thickness_bc_mask;
 
   // parameters
   //! mass continuity time step, s

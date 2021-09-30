@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2011-2014, 2017, 2019 the PISM authors
+# Copyright (C) 2011-2014, 2017, 2019, 2021 the PISM authors
 
 # downloads SeaRISE "1km Greenland data set" NetCDF file,
 # adjusts metadata, saves under new name with fields needed
@@ -85,6 +85,6 @@ BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE from whole ice sheet result ..."
 ncks -O -v u_ssa,v_ssa,bmelt,tillwat,enthalpy,litho_temp $WHOLE $BCFILE
 # rename bmelt and u_ssa and v_ssa so that they are used as b.c.
-ncrename -O -v bmelt,basal_melt_rate_grounded -v u_ssa,u_ssa_bc -v v_ssa,v_ssa_bc $BCFILE
+ncrename -O -v bmelt,basal_melt_rate_grounded -v u_ssa,u_bc -v v_ssa,v_bc $BCFILE
 echo "... done"
 echo

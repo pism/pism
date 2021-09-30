@@ -319,6 +319,20 @@ void IceModel::model_state_setup() {
     m_stress_balance->init();
   }
 
+  // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
+  // prescribed
+  {
+    IceModelVec::AccessList list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_velocity_bc_mask.as_int(i, j)) {
+        m_ice_thickness_bc_mask(i, j) = 1.0;
+      }
+    }
+  }
+
   // miscellaneous steps
   {
     reset_counters();
@@ -414,14 +428,16 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_ssa_dirichlet_bc_mask.regrid(input_file, OPTIONAL, 0.0);
-    // In the absence of u_ssa_bc and v_ssa_bc in the file the only B.C. that make sense are the
+    m_velocity_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+    // In absence of u_bc and v_bc in the file the only B.C. that make sense are the
     // zero Dirichlet B.C.
-    m_ssa_dirichlet_bc_values.regrid(input_file, OPTIONAL,  0.0);
+    m_velocity_bc_values.regrid(input_file, OPTIONAL,  0.0);
   } else {
-    m_ssa_dirichlet_bc_mask.set(0.0);
-    m_ssa_dirichlet_bc_values.set(0.0);
+    m_velocity_bc_mask.set(0.0);
+    m_velocity_bc_values.set(0.0);
   }
+
+  m_ice_thickness_bc_mask.regrid(input_file, OPTIONAL, 0.0);
 
   // check if Lz is valid
   auto thk_range = m_geometry.ice_thickness.range();

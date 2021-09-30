@@ -54,8 +54,8 @@ mask = get('mask')
 u = floating(get('u_ssa'))*seconds_per_year
 v = floating(get('v_ssa'))*seconds_per_year
 # B.C.s are observations, so a PISM output file contains everything we need
-u_bc = floating(get('u_ssa_bc'))
-v_bc = floating(get('v_ssa_bc'))
+u_bc = floating(get('u_bc'))
+v_bc = floating(get('v_bc'))
 
 plt.clf()
 

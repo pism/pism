@@ -191,8 +191,8 @@ The model state file must contain the following variables:
 If Dirichlet boundary conditions are being used (:cfg:`-ssa_dirichlet_bc`),
 the model state file must contain
 
-  4. SSA Dirichlet velocities :ncvar:`vel_ssa_bc`
-  5. Dirichlet mask :ncvar:`bc_mask` specifying where Dirichlet conditions 
+  4. SSA Dirichlet velocities :ncvar:`vel_bc`
+  5. Dirichlet mask :ncvar:`vel_bc_mask` specifying where Dirichlet conditions
      apply.
   
 If PISM is being used in regional model mode (:cfg:`-regional`), this last variable is replaced with
