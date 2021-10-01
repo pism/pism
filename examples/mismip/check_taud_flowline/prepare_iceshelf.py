@@ -69,7 +69,7 @@ def thickness(x, step, Q0, H0, calving_front=1750e3, perturbation='default'):
     dx=x[1]-x[0]
     thk = np.zeros_like(x)
     A0 = MISMIP.A('1a', step)
-    print A0,A0**(-1.0/3.0)
+    print(A0,A0**(-1.0/3.0))
     B0 = A0**(-1.0/MISMIP.n())
     #C = (900.0*9.8/(4.0*B0)*(1.0-900.0/1000.0))**3.0
     C = (MISMIP.rho_i()*MISMIP.g()/(4.0*B0)*(1.0-MISMIP.rho_i()/MISMIP.rho_w()))**MISMIP.n()
@@ -153,7 +153,7 @@ def pism_bootstrap_file(filename, step,
     xx = x(N)
     yy = y(xx)
 
-    print "dx",xx[1]-xx[0]
+    print("dx",xx[1]-xx[0])
 
     v0 = v0/MISMIP.secpera()
     #H0 = 800.0
