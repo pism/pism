@@ -331,10 +331,10 @@ void SSATestCase::write(const std::string &filename) {
   IceModelVec2V exact(m_grid, "_exact", WITHOUT_GHOSTS);
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
-                  "m s-1", "m year-1", "", 0);
+                  "m s-1", "m s-1", "", 0);
   exact.set_attrs("diagnostic",
                   "Y-component of the SSA exact solution",
-                  "m s-1", "m year-1", "", 1);
+                  "m s-1", "m s-1", "", 1);
 
   IceModelVec::AccessList list(exact);
   for (Points p(*m_grid); p; p.next()) {
