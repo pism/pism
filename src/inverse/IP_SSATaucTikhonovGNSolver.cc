@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -136,12 +136,14 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   DesignVec &tmp_gD = m_tmp_D1Global;
   DesignVec &GNx    = m_tmp_D2Global;
 
+  PetscErrorCode ierr;
   // FIXME: Needless copies for now.
   {
-    // increment the reference counter so that it does not get destroyed by petsc::Vec::~Vec()
-    PetscObjectReference((PetscObject)x);
-    petsc::Vec tmp(x);
-    m_x.copy_from_vec(tmp);
+    ierr = DMGlobalToLocalBegin(*m_x.dm(), x, INSERT_VALUES, m_x.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_x.dm(), x, INSERT_VALUES, m_x.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
   }
 
   m_ssaforward.apply_linearization(m_x,Tx);
@@ -154,7 +156,7 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   m_designFunctional.interior_product(m_x,tmp_gD);
   GNx.add(m_alpha,tmp_gD);
 
-  PetscErrorCode ierr = VecCopy(GNx.vec(), y); PISM_CHK(ierr, "VecCopy");
+  ierr = VecCopy(GNx.vec(), y); PISM_CHK(ierr, "VecCopy");
 }
 
 void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
@@ -216,13 +218,13 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::check_convergence() {
   dWeight = m_alpha;
   sWeight = 1;
 
-  designNorm = m_grad_design.norm(NORM_2);
-  stateNorm  = m_grad_state.norm(NORM_2);
+  designNorm = m_grad_design.norm(NORM_2)[0];
+  stateNorm  = m_grad_state.norm(NORM_2)[0];
 
   designNorm *= dWeight;
   stateNorm  *= sWeight;
 
-  sumNorm = m_gradient.norm(NORM_2);
+  sumNorm = m_gradient.norm(NORM_2)[0];
 
   m_log->message(2,
              "----------------------------------------------------------\n");

@@ -691,7 +691,7 @@ void IceModel::hydrology_step() {
   hydrology::Inputs inputs;
 
   IceModelVec2S &sliding_speed = *m_work2d[0];
-  sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+  compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = nullptr;
   inputs.geometry           = &m_geometry;

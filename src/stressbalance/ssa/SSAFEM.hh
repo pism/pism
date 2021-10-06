@@ -50,7 +50,7 @@ protected:
   //! Storage for SSA coefficients at element nodes.
   //!
   //! All fields must be "double" or structures containing "double"
-  //! for IceModelVec2Struct to work correctly.
+  //! for IceModelVec2 to work correctly.
   struct Coefficients {
     //! ice thickness
     double thickness;
@@ -73,7 +73,7 @@ protected:
   double m_alpha;
   double m_rho_g;
 
-  IceModelVec2Struct<Coefficients> m_coefficients;
+  IceModelVec2<Coefficients> m_coefficients;
 
   void quad_point_values(const fem::Element &Q,
                          const Coefficients *x,

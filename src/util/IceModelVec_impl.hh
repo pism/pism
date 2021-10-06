@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,7 @@
 #include <gsl/gsl_interp.h>
 
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -38,7 +39,7 @@ struct IceModelVec::Impl {
 
     da_stencil_width = 1;
     dof = 1;
-    begin_access_use_dof = true;
+    begin_access_use_dof = false;
 
     ghosted = true;
 
@@ -50,11 +51,15 @@ struct IceModelVec::Impl {
 
     state_counter = 0;
     interpolation_type = LINEAR;
+
+    bsearch_accel = nullptr;
   }
   //! If true, report range when regridding.
   bool report_range;
 
   //! The array itself
+  //!
+  //! Note: do not access this directly (via `m_impl->v`). Use `vec()` instead.
   petsc::Vec v;
 
   //! Name of the field. In general this is *not* the name of the corresponding NetCDF

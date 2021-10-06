@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,17 +20,20 @@
 #define PISM_ICEMODELVEC2_STRUCT_H
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/iceModelVec_helpers.hh"
 
 namespace pism {
 
 //! A storage vector combining related fields in a struct
 template<typename T>
-class IceModelVec2Struct : public IceModelVec2 {
+class IceModelVec2 : public IceModelVec {
 public:
-  IceModelVec2Struct(IceGrid::ConstPtr grid, const std::string &short_name,
-                     IceModelVecKind ghostedp, unsigned int stencil_width = 1)
-    : IceModelVec2(grid, short_name, ghostedp, stencil_width,
-                   sizeof(T) / sizeof(double)) {
+  using value_type = T;
+
+  IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
+               IceModelVecKind ghostedp, unsigned int stencil_width = 1)
+    : IceModelVec(grid, short_name, ghostedp,
+                  sizeof(T) / sizeof(double), stencil_width, {0.0}) {
     set_begin_access_use_dof(false);
   }
 
@@ -56,10 +59,10 @@ public:
     return static_cast<T**>(m_array)[j][i];
   }
 
-  inline StarStencil<T> star(int i, int j) const {
+  inline stencils::Star<T> star(int i, int j) const {
     const auto &self = *this;
 
-    StarStencil<T> result;
+    stencils::Star<T> result;
 
     result.ij = self(i,j);
     result.e =  self(i+1,j);
@@ -70,7 +73,7 @@ public:
     return result;
   }
 
-  inline BoxStencil<T> box(int i, int j) const {
+  inline stencils::Box<T> box(int i, int j) const {
     const auto &x = *this;
 
     const int
@@ -82,6 +85,19 @@ public:
     return {x(i, j), x(i, N), x(W, N), x(W, j), x(W, S),
             x(i, S), x(E, S), x(E, j), x(E, N)};
   }
+
+  void add(double alpha, const IceModelVec2<T> &x) {
+    vec::add(*this, alpha, x, *this);
+  }
+
+  void add(double alpha, const IceModelVec2<T> &x, IceModelVec2<T> &result) const {
+    vec::add(*this, alpha, x, result);
+  }
+
+  void copy_from(const IceModelVec2<T> &source) {
+    return vec::copy(source, *this);
+  }
+
 };
 
 } // end of namespace pism

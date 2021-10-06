@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -76,7 +76,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
       auto H = ice_thickness.box(i, j);
 
       // flags indicating whether the current node and its neighbors are "icy"
-      BoxStencil<bool> icy;
+      stencils::Box<bool> icy;
 
       icy.ij = H.ij >= H_min;
       icy.nw = H.nw >= H_min;

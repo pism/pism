@@ -455,7 +455,8 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
-  std::map<std::string,std::shared_ptr<petsc::Viewer> > m_viewers;
+  std::map<std::string,
+           std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 
 private:
   VariableMetadata m_timestamp;

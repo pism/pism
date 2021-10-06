@@ -353,7 +353,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   }
 
   // copy to m_ice_temperature, updating ghosts
-  m_work.update_ghosts(m_ice_temperature);
+  m_ice_temperature.copy_from(m_work);
 
   // Set ice enthalpy in place. EnergyModel::update will scatter ghosts
   compute_enthalpy_cold(m_work, ice_thickness, m_work);

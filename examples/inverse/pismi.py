@@ -568,8 +568,8 @@ def run():
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 
-    r_mag.set_to_magnitude(residual)
-    r_mag.mask_by(vecs.land_ice_thickness)
+    PISM.compute_magnitude(residual, r_mag)
+    PISM.apply_mask(vecs.land_ice_thickness, 0.0, r_mag)
 
     vecs.add(residual, writing=True)
     vecs.add(r_mag, writing=True)

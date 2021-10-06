@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2020 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -668,7 +668,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      auto M = no_model_mask->int_star(i, j);
+      auto M = no_model_mask->star(i, j);
 
       if (M.ij or M.e) {
         result(i, j, 0) = 0.0;
@@ -719,7 +719,7 @@ double Routing::max_timestep_W_diff(double KW_max) const {
  */
 double Routing::max_timestep_W_cfl() const {
   // V could be zero if P is constant and bed is flat
-  std::vector<double> tmp = m_Vstag.absmaxcomponents();
+  auto tmp = absmax(m_Vstag);
 
   // add a safety margin
   double alpha = 0.95;

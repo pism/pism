@@ -70,7 +70,7 @@ void IceModel::front_retreat_step() {
     if (m_frontal_melt) {
       IceModelVec2S &flux_magnitude = *m_work2d[0];
 
-      flux_magnitude.set_to_magnitude(m_subglacial_hydrology->flux());
+      compute_magnitude(m_subglacial_hydrology->flux(), flux_magnitude);
 
       FrontalMeltInputs inputs;
 

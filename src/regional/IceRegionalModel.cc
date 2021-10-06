@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -427,7 +427,7 @@ void IceRegionalModel::hydrology_step() {
   hydrology::Inputs inputs;
 
   IceModelVec2S &sliding_speed = *m_work2d[0];
-  sliding_speed.set_to_magnitude(m_stress_balance->advective_velocity());
+  compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = &m_no_model_mask;
   inputs.geometry           = &m_geometry;

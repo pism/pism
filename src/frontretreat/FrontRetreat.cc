@@ -192,7 +192,7 @@ void FrontRetreat::update_geometry(double dt,
         Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.star(i, j),
                                                          ice_thickness.star(i, j),
                                                          surface_elevation.star(i, j),
                                                          bed(i, j));
@@ -215,8 +215,8 @@ void FrontRetreat::update_geometry(double dt,
         int N = 0;
         {
           auto
-            M  = m_cell_type.int_star(i, j),
-            BC = bc_mask.int_star(i, j);
+            M  = m_cell_type.star(i, j),
+            BC = bc_mask.star(i, j);
 
           auto
             b  = bed.star(i, j),

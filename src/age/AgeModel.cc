@@ -166,7 +166,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   }
   loop.check();
 
-  m_work.update_ghosts(m_ice_age);
+  m_ice_age.copy_from(m_work);
 }
 
 const IceModelVec3 & AgeModel::age() const {

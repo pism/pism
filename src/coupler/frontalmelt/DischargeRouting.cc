@@ -141,7 +141,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
       auto R = m_frontal_melt_rate->star(i, j);
-      auto M = cell_type.int_star(i, j);
+      auto M = cell_type.star(i, j);
 
       int N = 0;
       double R_sum = 0.0;

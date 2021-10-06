@@ -21,6 +21,7 @@
 
 #include "iceModelVec.hh"
 #include "MaxTimestep.hh"
+#include "interpolation.hh"     // InterpolationType
 
 namespace pism {
 

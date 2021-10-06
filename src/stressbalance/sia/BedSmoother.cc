@@ -105,7 +105,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
     //   including ghosts, to public member topgsmooth ...
-    topg.update_ghosts(m_topgsmooth);
+    m_topgsmooth.copy_from(topg);
     // and we tell theta() to return theta=1
     m_Nx = -1;
     m_Ny = -1;

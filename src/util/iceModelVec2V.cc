@@ -26,8 +26,6 @@
 
 #include "error_handling.hh"    // RuntimeError
 
-#include "iceModelVec_helpers.hh" // add_2d, copy_2d
-
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 
@@ -35,45 +33,28 @@ namespace pism {
 
 IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                              IceModelVecKind ghostedp, unsigned int stencil_width)
-  : IceModelVec2Struct<Vector2>(grid, short_name, ghostedp, stencil_width) {
+  : IceModelVec2<Vector2>(grid, short_name, ghostedp, stencil_width) {
 
   auto sys = m_impl->grid->ctx()->unit_system();
 
-  m_impl->metadata = {SpatialVariableMetadata(sys, "u" + short_name),
-                      SpatialVariableMetadata(sys, "v" + short_name)};
-
-  m_impl->name = "vel" + short_name;
-}
-
-IceModelVec2V::~IceModelVec2V() {
-  // empty
-}
-
-IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
-
- IceModelVec2V::Ptr result = std::dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
-
-  if (not (bool)result) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
+  m_impl->metadata.clear();
+  for (auto prefix : {"u", "v"}) {
+    m_impl->metadata.emplace_back(SpatialVariableMetadata{sys, prefix + short_name});
   }
 
+  set_name("vel" + short_name);
+}
+
+std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source) {
+
+  auto result = std::make_shared<IceModelVec2V>(source.grid(),
+                                                source.get_name(),
+                                                WITHOUT_GHOSTS,
+                                                1);
+  result->metadata(0) = source.metadata(0);
+  result->metadata(1) = source.metadata(1);
+
   return result;
-}
-
-void IceModelVec2V::add(double alpha, const IceModelVec2V &x) {
-  return add_2d<IceModelVec2V>(this, alpha, &x, this);
-}
-
-void IceModelVec2V::add(double alpha, const IceModelVec2V &x, IceModelVec2V &result) const {
-  return add_2d<IceModelVec2V>(this, alpha, &x, &result);
-}
-
-void IceModelVec2V::copy_from(const IceModelVec2V &source) {
-  return copy_2d<IceModelVec2V>(&source, this);
-}
-
-std::shared_ptr<IceModelVec2V> IceModelVec2V::allocate_copy() const {
-  return std::make_shared<IceModelVec2V>(this->grid(), this->get_name(), WITHOUT_GHOSTS, 1);
 }
 
 } // end of namespace pism

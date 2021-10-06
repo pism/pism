@@ -279,7 +279,7 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
-    m_work.update_ghosts(m_ice_enthalpy);
+    m_ice_enthalpy.copy_from(m_work);
   }
   profiling.end("ice_energy");
 

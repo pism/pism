@@ -101,7 +101,6 @@
 %include header
 %enddef
 
-%template(RangeArray) std::array<double, 2>;
 %template(SizetVector) std::vector<size_t>;
 %template(IntVector) std::vector<int>;
 %template(UnsignedIntVector) std::vector<unsigned int>;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020 PISM Authors
+/* Copyright (C) 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -237,11 +237,11 @@ static double F(double SL, double B, double H, double alpha) {
   return shelf_depth - water_depth;
 }
 
-typedef BoxStencil<double> Box;
 
 /*!
  * Compute the flotation criterion at all the points in the box stencil.
  */
+typedef stencils::Box<double> Box;
 static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
   return {F(SL.ij, B.ij, H.ij, alpha),
           F(SL.n,  B.n,  H.n,  alpha),
@@ -295,7 +295,7 @@ void compute_grounded_cell_fraction(double ice_density,
       */
 
       // compute the floatation function at 8 points surrounding the current grid point
-      BoxStencil<double> f;
+      stencils::Box<double> f;
       {
         auto S = sea_level.box(i, j);
         auto H = ice_thickness.box(i, j);

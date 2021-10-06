@@ -20,18 +20,18 @@
 #define __IceModelVec_hh
 
 #include <initializer_list>
-#include <memory>               // shared_ptr
+#include <memory>               // shared_ptr, dynamic_pointer_cast
 #include <cstdint>              // uint64_t
 #include <set>
 #include <map>
 #include <array>
 
 #include "Vector2.hh"
-#include "StarStencil.hh"
+#include "stencils.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/pism_config.hh"  // Pism_DEBUG
-#include "pism/util/interpolation.hh" // InterpolationType
+#include "pism/util/error_handling.hh" // RuntimeError
 
 namespace pism {
 
@@ -47,13 +47,6 @@ class Viewer;
 
 //! What "kind" of a vector to create: with or without ghosts.
 enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
-
-// NB: Do not change the order of elements in this struct. IceModelVec2S::box() and
-// IceModelVec2Int::int_box() depend on it.
-template <typename T>
-struct BoxStencil {
-  T ij, n, nw, w, sw, s, se, e, ne;
-};
 
 class PetscAccessible {
 public:
@@ -213,6 +206,18 @@ public:
   typedef std::shared_ptr<IceModelVec> Ptr;
   typedef std::shared_ptr<const IceModelVec> ConstPtr;
 
+  //! `dynamic_pointer_cast` wrapper that checks if the cast succeeded.
+  template<class T>
+  static typename T::Ptr cast(IceModelVec::Ptr input) {
+    auto result = std::dynamic_pointer_cast<T,IceModelVec>(input);
+
+    if (not result) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
+    }
+
+    return result;
+  }
+
   IceGrid::ConstPtr grid() const;
   unsigned int ndims() const;
   std::vector<int> shape() const;
@@ -221,20 +226,17 @@ public:
   unsigned int stencil_width() const;
   std::vector<double> levels() const;
 
-  virtual std::array<double, 2> range() const;
-  double norm(int n) const;
-  std::vector<double> norm_all(int n) const;
+  std::array<double,2> range() const;
+  std::vector<double> norm(int n) const;
 
   void add(double alpha, const IceModelVec &x);
-  virtual void shift(double alpha);
-  virtual void scale(double alpha);
+  void shift(double alpha);
+  void scale(double alpha);
 
-  void copy_from_vec(petsc::Vec &source);
-  void copy_from(const IceModelVec &source);
-  petsc::Vec& vec();
+  petsc::Vec& vec() const;
   std::shared_ptr<petsc::DM> dm() const;
 
-  virtual void set_name(const std::string &name);
+  void set_name(const std::string &name);
   const std::string& get_name() const;
 
   void set_attrs(const std::string &pism_intent,
@@ -244,7 +246,7 @@ public:
                  const std::string &standard_name,
                  unsigned int component);
 
-  virtual void define(const File &nc, IO_Type default_type = PISM_DOUBLE) const;
+  void define(const File &nc, IO_Type default_type = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const File &nc, unsigned int time);
@@ -260,7 +262,6 @@ public:
   virtual void begin_access() const;
   virtual void end_access() const;
   void update_ghosts();
-  void update_ghosts(IceModelVec &destination) const;
 
   std::shared_ptr<petsc::Vec> allocate_proc0_copy() const;
   void put_on_proc0(petsc::Vec &onp0) const;
@@ -276,8 +277,15 @@ public:
   void inc_state_counter();
   void set_time_independent(bool flag);
 
+  void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
+
 protected:
-  IceModelVec();
+  IceModelVec(IceGrid::ConstPtr grid,
+              const std::string &name,
+              IceModelVecKind ghostedp,
+              size_t dof,
+              size_t stencil_width,
+              const std::vector<double> &zlevels);
   struct Impl;
   Impl *m_impl;
 
@@ -287,12 +295,12 @@ protected:
 
   void set_begin_access_use_dof(bool flag);
 
-  virtual void read_impl(const File &nc, unsigned int time);
-  virtual void regrid_impl(const File &nc, RegriddingFlag flag,
-                                     double default_value = 0.0);
-  virtual void write_impl(const File &nc) const;
+  void read_impl(const File &nc, unsigned int time);
+  void regrid_impl(const File &nc, RegriddingFlag flag,
+                   double default_value = 0.0);
+  void write_impl(const File &nc) const;
 
-  virtual void checkCompatibility(const char *function, const IceModelVec &other) const;
+  void checkCompatibility(const char *function, const IceModelVec &other) const;
 
   //! @brief Check array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k) const;
@@ -322,47 +330,9 @@ protected:
   void get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel);
 };
 
-bool set_contains(const std::set<std::string> &S, const IceModelVec &field);
-
-class IceModelVec2S;
-
-/** Class for a 2d DA-based Vec.
-
-    As for the difference between IceModelVec2 and IceModelVec2S, the
-    former can store fields with more than 1 "degree of freedom" per grid
-    point (such as 2D fields on the "staggered" grid, with the first
-    degree of freedom corresponding to the i-offset and second to
-    j-offset). */
-class IceModelVec2 : public IceModelVec {
-public:
-  IceModelVec2(IceGrid::ConstPtr grid, const std::string &name,
-               IceModelVecKind ghostedp, unsigned int stencil_width, int dof);
-
-  typedef std::shared_ptr<IceModelVec2> Ptr;
-  typedef std::shared_ptr<const IceModelVec2> ConstPtr;
-
-  static Ptr To2D(IceModelVec::Ptr input);
-
-  virtual void view(int viewer_size) const;
-  virtual void view(std::shared_ptr<petsc::Viewer> v1,
-                    std::shared_ptr<petsc::Viewer> v2) const;
-  // component-wise access:
-  virtual void get_component(unsigned int n, IceModelVec2S &result) const;
-  virtual void set_component(unsigned int n, const IceModelVec2S &source);
-  inline double& operator() (int i, int j, int k);
-  inline const double& operator() (int i, int j, int k) const;
-protected:
-  virtual void read_impl(const File &nc, const unsigned int time);
-  virtual void regrid_impl(const File &nc, RegriddingFlag flag,
-                                     double default_value = 0.0);
-  virtual void write_impl(const File &nc) const;
-};
-
-class IceModelVec2V;
-
 /** A class for storing and accessing scalar 2D fields.
     IceModelVec2S is just IceModelVec2 with "dof == 1" */
-class IceModelVec2S : public IceModelVec2 {
+class IceModelVec2S : public IceModelVec {
 public:
   IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
                 IceModelVecKind ghostedp, int width = 1);
@@ -370,32 +340,12 @@ public:
   typedef std::shared_ptr<IceModelVec2S> Ptr;
   typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
 
-  static Ptr To2DScalar(IceModelVec::Ptr input);
-
-  /*!
-   * Interpolation helper. See the pism::interpolate() for details.
-   */
-  double interpolate(double x, double y) const {
-    return pism::interpolate<IceModelVec2S, double>(*this, x, y);
-  }
-
   // does not need a copy constructor, because it does not add any new data members
   void copy_from(const IceModelVec2S &source);
   double** array();
   double const* const* array() const;
-  virtual void set_to_magnitude(const IceModelVec2S &v_x, const IceModelVec2S &v_y);
-  virtual void set_to_magnitude(const IceModelVec2V &input);
-  virtual void mask_by(const IceModelVec2S &M, double fill = 0.0);
   void add(double alpha, const IceModelVec2S &x);
   void add(double alpha, const IceModelVec2S &x, IceModelVec2S &result) const;
-  virtual double sum() const;
-  virtual double min() const;
-  virtual double max() const;
-  virtual double absmax() const;
-  virtual double diff_x(int i, int j) const;
-  virtual double diff_y(int i, int j) const;
-  virtual double diff_x_p(int i, int j) const;
-  virtual double diff_y_p(int i, int j) const;
 
   //! Provides access (both read and write) to the internal double array.
   /*!
@@ -403,12 +353,35 @@ public:
   */
   inline double& operator() (int i, int j);
   inline const double& operator()(int i, int j) const;
-  inline StarStencil<double> star(int i, int j) const;
-  inline BoxStencil<double> box(int i, int j) const;
-
-  std::shared_ptr<IceModelVec2S> allocate_copy() const;
+  inline stencils::Star<double> star(int i, int j) const;
+  inline stencils::Box<double> box(int i, int j) const;
 };
 
+// Finite-difference shortcuts. They may be slower than hard-coding FD approximations of x
+// and y derivatives. Use with care.
+double diff_x(const IceModelVec2S &array, int i, int j);
+double diff_y(const IceModelVec2S &array, int i, int j);
+
+// These take grid periodicity into account and use one-sided differences at domain edges.
+double diff_x_p(const IceModelVec2S &array, int i, int j);
+double diff_y_p(const IceModelVec2S &array, int i, int j);
+
+double sum(const IceModelVec2S &input);
+double min(const IceModelVec2S &input);
+double max(const IceModelVec2S &input);
+double absmax(const IceModelVec2S &input);
+
+void apply_mask(const IceModelVec2S &M, double fill, IceModelVec2S &result);
+
+void compute_magnitude(const IceModelVec2S &v_x,
+                       const IceModelVec2S &v_y,
+                       IceModelVec2S &result);
+
+class IceModelVec2V;
+
+void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result);
+
+std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source);
 
 //! \brief A simple class "hiding" the fact that the mask is stored as
 //! floating-point scalars (instead of integers).
@@ -421,30 +394,8 @@ public:
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
 
   inline int as_int(int i, int j) const;
-  inline StarStencil<int> int_star(int i, int j) const;
-  inline BoxStencil<int> int_box(int i, int j) const;
-};
-
-//! \brief A class for storing and accessing internal staggered-grid 2D fields.
-//! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
-//! components are not called `u` and `v` (to avoid confusion).
-class IceModelVec2Stag : public IceModelVec2 {
-public:
-  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
-                   IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-
-  typedef std::shared_ptr<IceModelVec2Stag> Ptr;
-  typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
-
-  static Ptr ToStaggered(IceModelVec::Ptr input);
-
-  std::vector<double> absmaxcomponents() const;
-
-  //! Returns the values at interfaces of the cell i,j using the staggered grid.
-  /*! The ij member of the return value is set to 0, since it has no meaning in
-    this context.
-  */
-  inline StarStencil<double> star(int i, int j) const;
+  inline stencils::Star<int> star(int i, int j) const;
+  inline stencils::Box<int> box(int i, int j) const;
 };
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
@@ -452,19 +403,21 @@ public:
 class IceModelVec3 : public IceModelVec {
 public:
 
+  // Three-dimensional array with a number of vertical levels
   IceModelVec3(IceGrid::ConstPtr grid,
                const std::string &name,
                IceModelVecKind ghostedp,
                const std::vector<double> &levels,
                unsigned int stencil_width = 1);
 
+  // A collection of two-dimensional arrays using three-dimensional indexing
   IceModelVec3(IceGrid::ConstPtr grid,
                const std::string &name,
-               const std::string &z_name,
-               const std::vector<double> &my_zlevels,
-               const std::map<std::string, std::string> &z_attrs);
+               IceModelVecKind ghostedp,
+               unsigned int dof,
+               unsigned int stencil_width = 1);
 
-  virtual ~IceModelVec3();
+  virtual ~IceModelVec3() = default;
 
   typedef std::shared_ptr<IceModelVec3> Ptr;
   typedef std::shared_ptr<const IceModelVec3> ConstPtr;
@@ -479,24 +432,35 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 
-  // testing methods (for use from Python)
-  void set_column(int i, int j, const std::vector<double> &valsIN);
-  const std::vector<double> get_column_vector(int i, int j) const;
-
-  static Ptr To3DScalar(IceModelVec::Ptr input);
-
-  void extract_surface(double z, IceModelVec2S &output) const;
-  void extract_surface(const IceModelVec2S &z, IceModelVec2S &output) const;
-
-  void sum_columns(double A, double B, IceModelVec2S &output) const;
-
   void copy_from(const IceModelVec3 &input);
-
-  std::shared_ptr<IceModelVec3> allocate_copy() const;
-
-protected:
-  bool legal_level(double z) const;
 };
+
+void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output);
+void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output);
+
+void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &output);
+
+std::shared_ptr<IceModelVec3> duplicate(const IceModelVec3 &source);
+
+//! \brief A class for storing and accessing internal staggered-grid 2D fields.
+//! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
+//! components are not called `u` and `v` (to avoid confusion).
+class IceModelVec2Stag : public IceModelVec3 {
+public:
+  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
+                   IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+
+  typedef std::shared_ptr<IceModelVec2Stag> Ptr;
+  typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
+
+  //! Returns the values at interfaces of the cell i,j using the staggered grid.
+  /*! The ij member of the return value is set to 0, since it has no meaning in
+    this context.
+  */
+  inline stencils::Star<double> star(int i, int j) const;
+};
+
+std::array<double,2> absmax(const IceModelVec2Stag &input);
 
 /**
  * Convert a PETSc Vec from the units in `from` into units in `to` (in place).

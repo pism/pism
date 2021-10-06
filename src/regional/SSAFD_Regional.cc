@@ -91,7 +91,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = no_model_mask->int_star(i, j);
+    auto M = no_model_mask->star(i, j);
 
     if (M.ij == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
@@ -106,7 +106,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
     }
 
     auto h = m_h_stored->star(i, j);
-    auto CT = cell_type.int_star(i, j);
+    auto CT = cell_type.star(i, j);
 
     // x-derivative
     double h_x = 0.0;

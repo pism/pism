@@ -265,8 +265,8 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     // Special case for verification tests.
     if (surface_gradient_inward) {
       double
-        h_x = surface_elevation.diff_x_p(i, j),
-        h_y = surface_elevation.diff_y_p(i, j);
+        h_x = diff_x_p(surface_elevation, i, j),
+        h_y = diff_y_p(surface_elevation, i, j);
       result(i, j) = - pressure * Vector2(h_x, h_y);
       continue;
     }
@@ -288,12 +288,12 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     //
     // The y derivative is handled the same way.
 
-    auto M = cell_type.int_star(i, j);
+    auto M = cell_type.star(i, j);
     auto h = surface_elevation.star(i, j);
-    StarStencil<int> N(0);
+    stencils::Star<int> N(0);
 
     if (no_model_mask) {
-      N = no_model_mask->int_star(i, j);
+      N = no_model_mask->star(i, j);
     }
 
     // x-derivative
@@ -407,7 +407,7 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  result->set_to_magnitude(model->driving_stress());
+  compute_magnitude(model->driving_stress(), *result);
 
   return result;
 }

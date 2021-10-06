@@ -152,13 +152,13 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
 
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const IceModelVec2CellType &mask,
-                                       IceModelVec2 &result);
+                                       IceModelVec3 &result);
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
                          const IceModelVec2CellType &cell_type,
-                         IceModelVec2 &result);
+                         IceModelVec3 &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

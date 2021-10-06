@@ -75,8 +75,8 @@ void remove_narrow_tongues(const Geometry &geometry,
       continue;
     }
 
-    BoxStencil<bool> ice_free;
-    auto M = mask.int_box(i, j);
+    stencils::Box<bool> ice_free;
+    auto M = mask.box(i, j);
 
     if (mask::grounded_ice(M.ij)) {
       using mask::ice_free_ocean;

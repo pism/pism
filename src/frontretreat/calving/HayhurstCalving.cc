@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -137,7 +137,7 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {
 
       auto R = m_calving_rate.star(i, j);
-      auto M = cell_type.int_star(i, j);
+      auto M = cell_type.star(i, j);
 
       int N = 0;
       double R_sum = 0.0;

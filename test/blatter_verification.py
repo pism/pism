@@ -160,7 +160,7 @@ class TestXY(TestCase):
         error.copy_from(u_exact)
         error.add(-1.0, model.velocity())
 
-        return error.norm_all(PISM.PETSc.NormType.NORM_INFINITY)
+        return error.norm(PISM.PETSc.NormType.NORM_INFINITY)
 
     def test(self):
         "Test that the convergence rate for the XY test is at least quadratic"
@@ -403,7 +403,7 @@ class TestXZ(TestCase):
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
-        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
+        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)[0]
 
     def test(self):
         "Test that the convergence rate for the XZ test is at least quadratic"
@@ -596,7 +596,7 @@ class TestCFBC(TestCase):
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
-        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
+        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)[0]
 
     def test(self):
         "Test that the convergence rate for the XZ-CFBC test is at least quadratic"
@@ -892,7 +892,7 @@ class TestXZHalfar(TestCase):
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
-        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)
+        return u_error.norm(PISM.PETSc.NormType.NORM_INFINITY)[0]
 
     def test(self):
         "Check that the Halfar test case converges with z refinement"

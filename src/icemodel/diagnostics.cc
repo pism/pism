@@ -557,7 +557,7 @@ IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
     (*result)(i,j) = std::max(ice_thickness(i,j) - 1.0, 0.0);
   }
 
-  ice_enthalpy.extract_surface(*result, *result);  // z=0 slice
+  extract_surface(ice_enthalpy, *result, *result);  // slice at 1 m below the surface
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -595,9 +595,9 @@ IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpybase", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  model->energy_balance_model()->enthalpy().extract_surface(0.0, *result);  // z=0 slice
+  extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
 
-  result->mask_by(model->geometry().ice_thickness, m_fill_value);
+  apply_mask(model->geometry().ice_thickness, m_fill_value, *result);
 
   return result;
 }
@@ -650,7 +650,7 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  model->energy_balance_model()->enthalpy().extract_surface(0.0, *result);  // z=0 (basal) slice
+  extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -708,8 +708,8 @@ IceModelVec::Ptr TemperatureSurface::compute_impl() const {
 
   const IceModelVec2S &thickness = model->geometry().ice_thickness;
 
-  IceModelVec::Ptr enth = IceEnthalpySurface(model).compute();
-  IceModelVec2S::Ptr result = IceModelVec2S::To2DScalar(enth);
+  auto enth = IceEnthalpySurface(model).compute();
+  auto result = IceModelVec::cast<IceModelVec2S>(enth);
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -1908,12 +1908,7 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   m_var_name = var_name;
 
   // set metadata:
-  std::vector<double> levels(4);
-  for (int k = 0; k < 4; ++k) {
-    levels[k] = k;
-  }
-
-  m_vars = {SpatialVariableMetadata(m_sys, m_var_name + "_bnds", levels)};
+  m_vars = {{m_sys, m_var_name + "_bnds", {0.0, 1.0, 2.0, 3.0}}};
   m_vars[0].z().set_name("nv4");
   m_vars[0].z().clear_all_strings();
   m_vars[0].z().clear_all_doubles();
@@ -1939,19 +1934,13 @@ LatLonBounds::LatLonBounds(const IceModel *m,
 }
 
 IceModelVec::Ptr LatLonBounds::compute_impl() const {
-  std::map<std::string,std::string> attrs;
-  std::vector<double> indices(4);
-
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, m_var_name + "_bnds", "nv4",
-                                            indices, attrs));
+  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
+                                            m_var_name + "_bnds",
+                                            WITHOUT_GHOSTS,
+                                            {0.0, 1.0, 2.0, 3.0}));
   result->metadata(0) = m_vars[0];
 
-  bool latitude = true;
-  if (m_var_name == "lon") {
-    latitude = false;
-  }
-
-  if (latitude) {
+  if (m_var_name == "lat") {
     compute_lat_bounds(m_proj_string, *result);
   } else {
     compute_lon_bounds(m_proj_string, *result);
@@ -2012,7 +2001,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
         double H_reference = do_part_grid ? Href(i, j) : 0.0;
 
         if (H_reference > 0.0) {
-          const double H_threshold = part_grid_threshold_thickness(cell_type.int_star(i, j),
+          const double H_threshold = part_grid_threshold_thickness(cell_type.star(i, j),
                                                                    thickness.star(i, j),
                                                                    surface_elevation.star(i, j),
                                                                    bed_topography(i,j));
@@ -2113,13 +2102,10 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
 
 IceModelVec::Ptr IceAreaFractionFloating::compute_impl() const {
 
-  IceAreaFraction land_ice_area_fraction(model);
-  IceModelVec::Ptr ice_area_fraction = land_ice_area_fraction.compute();
+  auto ice_area_fraction = IceAreaFraction(model).compute();
+  auto grounded_area_fraction = IceAreaFractionGrounded(model).compute();
 
-  IceAreaFractionGrounded grounded_ice_sheet_area_fraction(model);
-  IceModelVec::Ptr grounded_area_fraction = grounded_ice_sheet_area_fraction.compute();
-
-  IceModelVec::Ptr result = ice_area_fraction;
+  auto result = ice_area_fraction;
   result->metadata() = m_vars[0];
 
   // Floating area fraction is total area fraction minus grounded area fraction.
@@ -2415,7 +2401,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
     &V                = model->stress_balance()->velocity_v(),
     &W_without_ghosts = model->stress_balance()->velocity_w();
 
-  W_without_ghosts.update_ghosts(W);
+  W.copy_from(W_without_ghosts);
 
   const unsigned int Mz = m_grid->Mz();
   const double
@@ -2456,7 +2442,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
         *w_s = W.get_column(i, j - 1),
         *w_w = W.get_column(i - 1, j);
 
-      StarStencil<int> m = mask.int_star(i, j);
+      auto m = mask.star(i, j);
       const unsigned int
         east  = ice_free(m.e) ? 0 : 1,
         west  = ice_free(m.w) ? 0 : 1,

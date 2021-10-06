@@ -76,7 +76,7 @@ protected:
   // solver
   petsc::SNES m_snes;
 
-  IceModelVec2Struct<Parameters> m_parameters;
+  IceModelVec2<Parameters> m_parameters;
 
   // Scaling of quadrature weights (note: this does not seem to matter).
   double m_scaling;

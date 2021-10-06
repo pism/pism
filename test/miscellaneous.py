@@ -927,7 +927,7 @@ def vertical_extrapolation_during_regridding_test():
 
         # get a column
         with PISM.vec.Access(nocomm=[v_tall]):
-            column = np.array(v_tall.get_column_vector(1, 1))
+            column = np.array(v_tall.get_column(1, 1))
 
         # compute the desired result
         desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
@@ -987,7 +987,8 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.IceModelVec2(grid, "strain_rates", PISM.WITHOUT_GHOSTS, 0, 2)
+        strain_rates = PISM.IceModelVec3(grid, "strain_rates",
+                                         PISM.WITHOUT_GHOSTS, 2)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()

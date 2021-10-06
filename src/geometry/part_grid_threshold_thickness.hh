@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 PISM Authors
+// Copyright (C) 2004-2017, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,13 @@
 #ifndef PART_GRID_THRESHOLD_THICKNESS_H
 #define PART_GRID_THRESHOLD_THICKNESS_H
 
-#include "pism/util/StarStencil.hh"
+#include "pism/util/stencils.hh"
 
 namespace pism {
 
-double part_grid_threshold_thickness(StarStencil<int> Mask,
-                                     StarStencil<double> thickness,
-                                     StarStencil<double> surface_elevation,
+double part_grid_threshold_thickness(stencils::Star<int> Mask,
+                                     stencils::Star<double> thickness,
+                                     stencils::Star<double> surface_elevation,
                                      double bed_elevation);
 
 } // end of namespace pism
