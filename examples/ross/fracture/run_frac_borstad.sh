@@ -76,12 +76,12 @@ fractures="-fractures \
 
 # run commands #############################################################################
 #This first initialization is required as direct bootstrap may lead to KSP solve failure 
-cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
+cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures -fracture_parameters 0,0,0,0 -write_fd_fields "
 
 # add "-verbose 4" to this command for additional internal info
-cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -i startfile_Mx${M}.nc -surface given \
+cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i startfile_Mx${M}.nc -surface given \
   ${ssa} -y ${YEARS} ${output} -front_retreat_file startfile_Mx${M}.nc \
   ${fractures} ${extra} ${timeseries}"
 
