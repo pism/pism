@@ -21,23 +21,25 @@ if [ $# -gt 3 ] ; then  # if user says "run_frac.sh 8 211 0.6 500" then ... and 
 fi
 exdt=25 # for the extrafile
 
-FRACTHRESHOLD=1.3e5   #  stress threshold
+FRACTHRESHOLD=4.5e4   #  stress threshold
+FRACTHRESHOLD=1.3e5   #  meaning 130 kPa
 
-FRACRATE=0.5   #  fracture rate
+FRACRATE=0.5     #  fracture growth rate
+FRACRATE=0.0     # can be set to 0 in case of using constitutive framework by Borstad et al., 2016
 
 HEALTHRESHOLD=2.0e-10   #  healing threshold
 
 HEALRATE=0.15   #  healing rate
 
 SOFTRES=0.01   #  softening residual (avoid viscosity from degeneration), value 1 inhibits softening effect
-
+#SOFTRES=1.0
 
 # options ###############################
 
 PISMPREFIX=""
 #PISMPREFIX="../../../bin/"
 
-NAME=frac_Mx${M}_yr-${YEARS}.nc
+NAME=borfrac_Mx${M}_yr-${YEARS}.nc
 
 output="-o $NAME -o_order zyx -o_size big"
 
@@ -50,8 +52,10 @@ extra="-extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} \
 timeseries="-ts_file ts-${NAME} -ts_times 0:1:${YEARS}"
 
 criterion=""
+#criterion="-lefm" # -max_shear #
 
 boundary="-do_frac_on_grounded"
+#boundary="-phi0 0.2"
 
 healing=""
 #healing="-constant_healing" #independent of strain rates
@@ -60,15 +64,18 @@ healing=""
 #softening="-fracture_softening 1.0" #no softening
 softening="-fracture_softening ${SOFTRES}" #residual eps=0.001
 
+borstadlimit="-constitutive_stress_limit"
+
 fractures="-fractures \
   -fracture_density.gamma ${FRACRATE} \
   -fracture_density.initiation_threshold ${FRACTHRESHOLD} \
   -fracture_density.gamma_h ${HEALRATE} \
   -fracture_density.healing_threshold ${HEALTHRESHOLD} \
-  -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening}"
+  -write_fd_fields -scheme_fd2d ${healing} ${boundary} ${criterion} ${softening} ${borstadlimit}"
+
 
 # run commands #############################################################################
-
+#This first initialization is required as direct bootstrap may lead to KSP solve failure 
 cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i ../Ross_combined.nc -bootstrap -Mx $M -My $M \
   -Mz 61 -Lz 3000 -z_spacing equal -surface given ${ssa} -kill_icebergs \
   -y 0 -ys 0.0 -o startfile_Mx${M}.nc -o_order zyx -fractures -fracture_parameters 0,0,0,0 -write_fd_fields "
@@ -77,8 +84,6 @@ cmd_diag="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i ../Ross_combined.nc -bo
 cmd_frac="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i startfile_Mx${M}.nc -surface given \
   ${ssa} -y ${YEARS} ${output} -front_retreat_file startfile_Mx${M}.nc \
   ${fractures} ${extra} ${timeseries}"
-
-# -ssafd_picard_rtol 1.0e-3 -ssa_eps 5.0e15
 
 echo "running command:"
 echo

@@ -87,6 +87,8 @@ Changes since v1.2
 - Add a new NetCDF variable `thk_bc_mask` prescribing locations where the ice thickness is
   kept fixed. This mask is combined with `vel_bc_mask`: we keep ice thickness fixed at all
   the locations where the sliding (usually SSA) velocity is fixed.
+- Implement the fracture density growth parameterization due to Borstad et al
+  (equation 4 in http://doi.org/10.1002/2015GL067365). Code contributed by T. Albrecht).
 
 Changes from v1.1 to v1.2
 =========================

@@ -900,54 +900,83 @@ netcdf pism_config {
     pism_config:flow_law.isothermal_Glen.ice_softness_type = "number";
     pism_config:flow_law.isothermal_Glen.ice_softness_units = "Pascal-3 second-1";
 
+    pism_config:fracture_density.borstad_limit = "no";
+    pism_config:fracture_density.borstad_limit_doc = "Model fracture growth according to the constitutive law in :cite:`Borstad2016Constitutive` (Eq. 4), ignoring :config:`fracture_density.gamma`.";
+    pism_config:fracture_density.borstad_limit_option = "constitutive_stress_limit";
+    pism_config:fracture_density.borstad_limit_type = "flag";
+
     pism_config:fracture_density.constant_fd = "no";
-    pism_config:fracture_density.constant_fd_doc = "FIXME";
+    pism_config:fracture_density.constant_fd_doc = "Keep fracture density fields constant in time but include its softening effect.";
     pism_config:fracture_density.constant_fd_option = "constant_fd";
     pism_config:fracture_density.constant_fd_type = "flag";
 
     pism_config:fracture_density.constant_healing = "no";
-    pism_config:fracture_density.constant_healing_doc = "Constant healing";
+    pism_config:fracture_density.constant_healing_doc = "Use a constant healing rate `-\\gamma_h \\dot{\\epsilon}_h` independent of the local strain rate.";
     pism_config:fracture_density.constant_healing_option = "constant_healing";
     pism_config:fracture_density.constant_healing_type = "flag";
 
     pism_config:fracture_density.enabled = "no";
-    pism_config:fracture_density.enabled_doc = "Calculation of fracture density according to stresses and strain rate field.";
+    pism_config:fracture_density.enabled_doc = "Model the fracture density using computed to stresses and strain rates.";
     pism_config:fracture_density.enabled_option = "fractures";
     pism_config:fracture_density.enabled_type = "flag";
 
     pism_config:fracture_density.fd2d_scheme = "no";
-    pism_config:fracture_density.fd2d_scheme_doc = "FIXME";
+    pism_config:fracture_density.fd2d_scheme_doc = "Use an alternative transport scheme to reduce numerical diffusion (Eq. 10 in :cite:`AlbrechtLevermann2014softening`)";
     pism_config:fracture_density.fd2d_scheme_option = "scheme_fd2d";
     pism_config:fracture_density.fd2d_scheme_type = "flag";
 
     pism_config:fracture_density.fracture_weighted_healing = "no";
-    pism_config:fracture_density.fracture_weighted_healing_doc = "Fracture weighted healing";
+    pism_config:fracture_density.fracture_weighted_healing_doc = "Multiply the healing rate by `1 - D`, i.e. assume that highly damaged ice heals slower. This mechanism can be combined with :config:`fracture_density.constant_healing`.";
     pism_config:fracture_density.fracture_weighted_healing_option = "fracture_weighted_healing";
     pism_config:fracture_density.fracture_weighted_healing_type = "flag";
 
+    pism_config:fracture_density.gamma = 1.0;
+    pism_config:fracture_density.gamma_doc = "fracture growth constant `\\gamma`";
+    pism_config:fracture_density.gamma_option = "fracture_gamma";
+    pism_config:fracture_density.gamma_units = "1";
+    pism_config:fracture_density.gamma_type = "number";
+
+    pism_config:fracture_density.gamma_h = 0.0;
+    pism_config:fracture_density.gamma_h_doc = "fracture healing constant `\\gamma_{h}`";
+    pism_config:fracture_density.gamma_h_option = "fracture_gamma_h";
+    pism_config:fracture_density.gamma_h_units = "1";
+    pism_config:fracture_density.gamma_h_type = "number";
+
+    pism_config:fracture_density.healing_threshold = 2.0e-10;
+    pism_config:fracture_density.healing_threshold_doc = "fracture healing strain rate threshold `\\dot \\epsilon_{h}`";
+    pism_config:fracture_density.healing_threshold_option = "fracture_healing_threshold";
+    pism_config:fracture_density.healing_threshold_units = "1/s";
+    pism_config:fracture_density.healing_threshold_type = "number";
+
     pism_config:fracture_density.include_grounded_ice = "no";
-    pism_config:fracture_density.include_grounded_ice_doc = "model fracture density in grounded areas";
+    pism_config:fracture_density.include_grounded_ice_doc = "Model fracture density in grounded areas (e.g. along ice stream shear zones) in addition to ice shelves";
     pism_config:fracture_density.include_grounded_ice_option = "do_frac_on_grounded";
     pism_config:fracture_density.include_grounded_ice_type = "flag";
 
+    pism_config:fracture_density.initiation_threshold = 7.0e4;
+    pism_config:fracture_density.initiation_threshold_doc = "fracture initiation stress threshold `\\sigma_{\\text{cr}}`";
+    pism_config:fracture_density.initiation_threshold_option = "fracture_initiation_threshold";
+    pism_config:fracture_density.initiation_threshold_units = "Pa";
+    pism_config:fracture_density.initiation_threshold_type = "number";
+
     pism_config:fracture_density.lefm = "no";
-    pism_config:fracture_density.lefm_doc = "FIXME";
+    pism_config:fracture_density.lefm_doc = "Use the mixed-mode fracture toughness stress criterion based on Linear Elastic Fracture Mechanics, Eqs. 8-9 in :cite:`AlbrechtLevermann2014softening`";
     pism_config:fracture_density.lefm_option = "lefm";
     pism_config:fracture_density.lefm_type = "flag";
 
     pism_config:fracture_density.max_shear_stress = "no";
-    pism_config:fracture_density.max_shear_stress_doc = "Use the max. shear stress criterion.";
+    pism_config:fracture_density.max_shear_stress_doc = "Use the maximum shear stress criterion for fracture formation (Tresca or Guest criterion in literature), which is more stringent than the default von Mises criterion, see Eq. 7 in :cite:`AlbrechtLevermann2014softening`";
     pism_config:fracture_density.max_shear_stress_option = "max_shear";
     pism_config:fracture_density.max_shear_stress_type = "flag";
 
     pism_config:fracture_density.phi0 = 0.0;
-    pism_config:fracture_density.phi0_doc = "FIXME";
+    pism_config:fracture_density.phi0_doc = "Fracture density value used at grid points where ice velocity is prescribed. This assumes that all ice entering a shelf at :var:`bc_mask` locations has the same fracture density.";
     pism_config:fracture_density.phi0_option = "phi0";
     pism_config:fracture_density.phi0_type = "number";
     pism_config:fracture_density.phi0_units = "1";
 
     pism_config:fracture_density.softening_lower_limit = 1.0;
-    pism_config:fracture_density.softening_lower_limit_doc = "epsilon in equation (6) in Albrecht and Levermann, \"Fracture-induced softening for large-scale ice dynamics\"";
+    pism_config:fracture_density.softening_lower_limit_doc = "Parameter controlling the strength of the feedback of damage on the ice flow. If `1`: no feedback, if `0`: full feedback (`\\epsilon` in Eq. 6 in :cite:`AlbrechtLevermann2014softening`)";
     pism_config:fracture_density.softening_lower_limit_option = "fracture_softening";
     pism_config:fracture_density.softening_lower_limit_type = "number";
     pism_config:fracture_density.softening_lower_limit_units = "1";
