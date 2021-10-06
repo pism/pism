@@ -62,7 +62,8 @@ public:
   virtual unsigned int get_timeseries_length(double dt) = 0;
 
 
-  virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print) = 0;
+  virtual double get_albedo_melt(double melt, int mask_value, double dtseries) = 0;
+  virtual double get_tau_a(double surface_elevation) = 0;
 
   /*! Remove rain from precipitation. */
   virtual void get_snow_accumulationITM(const std::vector<double> &T,
@@ -96,6 +97,12 @@ public:
 
 
 
+
+
+
+
+
+
   //! (ITMs).  
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
@@ -109,26 +116,25 @@ public:
                                          const double &delta,
                                          const double &distance2,
                                          const double &lat,
-                                         const double &albedo, bool print ) = 0;
+                                         const double &albedo) = 0;
 
 
   /** 
    * Take a step of the ITM model.
    *
-   * @param[in] melt_conversion_factor , refreeze_fraction
+   * @param[in] refreeze_fraction
    * @param[in] albedo
    * @param[in] melt
    * @param[in] old_firn_depth firn depth [ice equivalent meters]
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
-  virtual Changes step(const double &melt_conversion_factor,
-                       const double &refreeze_fraction,
+  virtual Changes step(const double &refreeze_fraction,
                        double thickness,
                        double ITM_melt,
                        double old_firn_depth,
                        double old_snow_depth,
-                       double accumulation, bool print ) = 0;
+                       double accumulation) = 0;
 
   virtual double get_refreeze_fraction(const double &T)  = 0;
 
@@ -141,11 +147,10 @@ protected:
 };
 
 
-//! A ITM implementation which computes the local mass balance based on an expectation integral.
+//! A dEBM implementation 
 /*!
-  The expected number of positive degree days is computed by an integral in \ref CalovGreve05.
+  after Krebs-Kanzow et al. 2018
 
-  Uses degree day factors which are location-independent.
 */
 class ITMMassBalance : public LocalMassBalanceITM {
 
@@ -155,7 +160,7 @@ public:
 
   virtual unsigned int get_timeseries_length(double dt);
 
-  virtual double get_albedo_melt(double melt, int mask_value, double dtseries, bool print);
+  virtual double get_albedo_melt(double melt, int mask_value, double dtseries);
 
   virtual double get_refreeze_fraction(const double &T);
   
@@ -168,18 +173,40 @@ public:
                                          const double &delta,
                                          const double &distance2,
                                          const double &lat,
-                                         const double &albedo, bool print );
+                                         const double &albedo);
 
   virtual void get_snow_accumulationITM(const std::vector<double> &T,
                                      std::vector<double> &precip_rate);
 
-  virtual Changes step(const double &melt_conversion_factor,
-                       const double &refreeze_fraction,
+  virtual Changes step(const double &refreeze_fraction,
                        double thickness,
                        double ITM_melt,
                        double firn_depth,
                        double snow_depth,
-                       double accumulation, bool print);
+                       double accumulation);
+
+
+
+  virtual double get_tau_a(double surface_elevation);  
+  
+
+
+
+  virtual double get_h_phi(const double &phi, const double &lat, const double &delta);
+
+  virtual double get_q_insol(
+  const double &solar_constant,
+  const double &distance2, 
+  const double &h_phi, 
+  const double &lat, 
+  const double &delta);
+
+  virtual double get_TOA_insol(
+  const double &solar_constant,
+  const double &distance2, 
+  const double &h0, 
+  const double &lat, 
+  const double &delta);
 
 protected:
 

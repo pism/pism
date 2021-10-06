@@ -2447,11 +2447,6 @@ netcdf pism_config {
     pism_config:surface.itm.itm_lambda_type = "number";
     pism_config:surface.itm.itm_lambda_units = "W m-2 K-1";
 
-    pism_config:surface.itm.melt_conversion_factor = 1.;
-    pism_config:surface.itm.melt_conversion_factor_doc = "conversion factor between melt of snow and ice in itm scheme";
-    pism_config:surface.itm.melt_conversion_factor_type = "number";
-    pism_config:surface.itm.melt_conversion_factor_units = "1";
-
     pism_config:surface.itm.method = "daily";
     pism_config:surface.itm.method_choices = "daily,not_daily,albedo_forcing";
     pism_config:surface.itm.method_doc = "itm implementation method";
@@ -2477,6 +2472,11 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
     pism_config:surface.itm.paleo.long_peri_type = "number";
     pism_config:surface.itm.paleo.long_peri_units = "degree";
+
+    pism_config:surface.itm.phi =  17.5;
+    pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
+    pism_config:surface.itm.phi_type = "number";
+    pism_config:surface.itm.phi_units = "degree";   
 
     pism_config:surface.itm.positive_threshold_temp = 273.15;
     pism_config:surface.itm.positive_threshold_temp_doc = "temperature used to determine meaning of 'positive' degree day temperature";
