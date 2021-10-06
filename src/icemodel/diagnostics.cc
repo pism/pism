@@ -69,7 +69,7 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_margin_pressure_difference")};
+  m_vars = {{m_sys, "ice_margin_pressure_difference"}};
   m_vars[0]["_FillValue"] = {m_fill_value};
 
   set_attrs("vertically-averaged pressure difference"
@@ -160,7 +160,7 @@ public:
       standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
     }
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars = {{m_sys, name}};
     m_accumulator.metadata()["units"] = "kg m-2";
 
     set_attrs(description, standard_name, "kg m-2 s-1", "kg m-2 year-1", 0);
@@ -213,7 +213,7 @@ HardnessAverage::HardnessAverage(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "hardav")};
+  m_vars = {{m_sys, "hardav"}};
 
   // choice to use SSA power; see #285
   const double power = 1.0 / m_config->get_number("stress_balance.ssa.Glen_exponent");
@@ -281,7 +281,7 @@ protected:
 
 Rank::Rank(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "rank")};
+  m_vars = {{m_sys, "rank"}};
   set_attrs("processor rank", "", "1", "", 0);
   m_vars[0].set_time_independent(true);
   m_vars[0].set_output_type(PISM_INT);
@@ -314,7 +314,7 @@ CTS::CTS(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "cts", m_grid->z())};
+  m_vars = {{m_sys, "cts", m_grid->z()}};
 
   set_attrs("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1", "",
             "1", "1", 0);
@@ -344,7 +344,7 @@ Temperature::Temperature(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "temp", m_grid->z())};
+  m_vars = {{m_sys, "temp", m_grid->z()}};
 
   set_attrs("ice temperature", "land_ice_temperature", "K", "K", 0);
   m_vars[0]["valid_min"] = {0.0};
@@ -400,7 +400,7 @@ TemperaturePA::TemperaturePA(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "temp_pa", m_grid->z())};
+  m_vars = {{m_sys, "temp_pa", m_grid->z()}};
 
   set_attrs("pressure-adjusted ice temperature (degrees above pressure-melting point)", "",
             "deg_C", "deg_C", 0);
@@ -468,7 +468,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "temppabase")};
+  m_vars = {{m_sys, "temppabase"}};
 
   set_attrs("pressure-adjusted ice temperature at the base of ice", "",
             "Celsius", "Celsius", 0);
@@ -532,7 +532,7 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "enthalpysurf")};
+  m_vars = {{m_sys, "enthalpysurf"}};
 
   set_attrs("ice enthalpy at 1m below the ice surface", "",
             "J kg-1", "J kg-1", 0);
@@ -583,7 +583,7 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "enthalpybase")};
+  m_vars = {{m_sys, "enthalpybase"}};
 
   set_attrs("ice enthalpy at the base of ice", "",
             "J kg-1", "J kg-1", 0);
@@ -635,7 +635,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
     break;
   }
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, name)};
+  m_vars = {{m_sys, name}};
 
   set_attrs(long_name, standard_name, "K", "K", 0);
   m_vars[0]["_FillValue"] = {m_fill_value};
@@ -696,7 +696,7 @@ TemperatureSurface::TemperatureSurface(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "tempsurf")};
+  m_vars = {{m_sys, "tempsurf"}};
 
   set_attrs("ice temperature at 1m below the ice surface",
             "temperature_at_ground_level_in_snow_or_firn", // InitMIP "standard" name
@@ -753,7 +753,7 @@ LiquidFraction::LiquidFraction(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "liqfrac", m_grid->z())};
+  m_vars = {{m_sys, "liqfrac", m_grid->z()}};
 
   set_attrs("liquid water fraction in ice (between 0 and 1)", "",
             "1", "1", 0);
@@ -791,8 +791,7 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys,
-                                    "tempicethk")};
+  m_vars = {{m_sys, "tempicethk"}};
 
   set_attrs("temperate ice thickness (total column content)", "",
             "m", "m", 0);
@@ -863,8 +862,7 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys,
-                                    "tempicethk_basal")};
+  m_vars = {{m_sys, "tempicethk_basal"}};
 
   set_attrs("thickness of the basal layer of temperate ice", "",
             "m", "m", 0);
@@ -1841,7 +1839,7 @@ public:
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
     // set metadata:
-    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "dlithkdt" : "dHdt")};
+    m_vars = {{m_sys, ismip6 ? "dlithkdt" : "dHdt"}};
 
     set_attrs("ice thickness rate of change",
               "tendency_of_land_ice_thickness",
@@ -1959,7 +1957,7 @@ protected:
 
 IceAreaFraction::IceAreaFraction(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, land_ice_area_fraction_name)};
+  m_vars = {{m_sys, land_ice_area_fraction_name}};
   set_attrs("fraction of a grid cell covered by ice (grounded or floating)",
             "land_ice_area_fraction", // InitMIP "standard" name
             "1", "1", 0);
@@ -2038,7 +2036,7 @@ protected:
 
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, grounded_ice_sheet_area_fraction_name)};
+  m_vars = {{m_sys, grounded_ice_sheet_area_fraction_name}};
   set_attrs("fraction of a grid cell covered by grounded ice",
             "grounded_ice_sheet_area_fraction", // InitMIP "standard" name
             "1", "1", 0);
@@ -2094,7 +2092,7 @@ protected:
 
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
   : Diag<IceModel>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, floating_ice_sheet_area_fraction_name)};
+  m_vars = {{m_sys, floating_ice_sheet_area_fraction_name}};
   set_attrs("fraction of a grid cell covered by floating ice",
             "floating_ice_shelf_area_fraction",
             "1", "1", 0);
@@ -2127,7 +2125,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "height_above_flotation")};
+  m_vars = {{m_sys, "height_above_flotation"}};
 
   set_attrs("ice thickness in excess of the maximum floating ice thickness",
             "", "m", "m", 0);
@@ -2191,7 +2189,7 @@ IceMass::IceMass(const IceModel *m)
   : Diag<IceModel>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_mass")};
+  m_vars = {{m_sys, "ice_mass"}};
 
   set_attrs("mass per cell",
             "",                 // no standard name
@@ -2264,7 +2262,7 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "topg_sl_adjusted")};
+  m_vars = {{m_sys, "topg_sl_adjusted"}};
 
   set_attrs("sea-level adjusted bed topography (zero is at sea level)", "",
             "meters", "meters", 0);
@@ -2303,7 +2301,7 @@ IceHardness::IceHardness(const IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "hardness", m_grid->z())};
+  m_vars = {{m_sys, "hardness", m_grid->z()}};
 
   const double power = 1.0 / m_config->get_number("stress_balance.sia.Glen_exponent");
   auto unitstr = pism::printf("Pa s%f", power);
@@ -2367,7 +2365,7 @@ IceViscosity::IceViscosity(IceModel *m)
   : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "effective_viscosity", m_grid->z())};
+  m_vars = {{m_sys, "effective_viscosity", m_grid->z()}};
 
   set_attrs("effective viscosity of ice", "",
             "Pascal second", "kPascal second", 0);
@@ -2550,7 +2548,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "lithk" : "thk")};
+    m_vars = {{m_sys, ismip6 ? "lithk" : "thk"}};
 
     set_attrs("land ice thickness", "land_ice_thickness",
               "m", "m", 0);
@@ -2578,7 +2576,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "base" : "ice_base_elevation")};
+    m_vars = {{m_sys, ismip6 ? "base" : "ice_base_elevation"}};
 
     set_attrs("ice bottom surface elevation", "", // no standard name
               "m", "m", 0);
@@ -2605,7 +2603,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "orog" : "usurf")};
+    m_vars = {{m_sys, ismip6 ? "orog" : "usurf"}};
 
     set_attrs("ice top surface elevation", "surface_altitude",
               "m", "m", 0);
@@ -2632,7 +2630,7 @@ public:
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "ligroundf" : "grounding_line_flux")};
+    m_vars = {{m_sys, ismip6 ? "ligroundf" : "grounding_line_flux"}};
     m_accumulator.metadata()["units"] = "kg m-2";
 
     set_attrs("grounding line flux", "",

@@ -38,7 +38,7 @@ public:
   TendencyOfWaterMass(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change of the total mass of subglacial water", "",
@@ -63,7 +63,7 @@ public:
   TotalInputRate(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_input_rate_from_surface")};
+    m_vars = {{m_sys, "subglacial_water_input_rate_from_surface"}};
     m_accumulator.metadata()["units"] = "m";
 
     set_attrs("water input rate from the ice surface into the subglacial water system",
@@ -88,8 +88,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_input",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_input")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_input"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to input", "",
@@ -114,7 +113,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
       m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
 
-    m_vars = {SpatialVariableMetadata(m_sys, "subglacial_water_flux")};
+    m_vars = {{m_sys, "subglacial_water_flux"}};
     m_accumulator.metadata()["units"] = "m2";
 
     set_attrs("magnitude of the subglacial water flux", "",
@@ -148,8 +147,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounded_margins",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_at_grounded_margins")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounded ice margins", "",
@@ -173,7 +171,7 @@ public:
   GroundingLineFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_grounding_line")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounding_line"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at grounding lines", "",
@@ -198,8 +196,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_conservation_error",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_conservation_error")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
@@ -223,7 +220,7 @@ public:
   DomainBoundaryFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary", TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
@@ -248,8 +245,7 @@ public:
     : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_flow",
                                  TOTAL_CHANGE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys,
-                                      "tendency_of_subglacial_water_mass_due_to_flow")};
+    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_flow"}};
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("rate of change subglacial water mass due to lateral flow", "",
@@ -681,6 +677,7 @@ void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
 void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
                                const IceModelVec2Int *no_model_mask,
                                double max_thickness,
+                               double ocean_water_thickness,
                                IceModelVec2S &water_thickness,
                                IceModelVec2S &grounded_margin_change,
                                IceModelVec2S &grounding_line_change,
@@ -713,14 +710,31 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
     }
 
     if (cell_type.ice_free_land(i, j)) {
-      grounded_margin_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
+      double grounded_ice_free_max_thickness = 0.0;
+      double excess = water_thickness(i, j) - grounded_ice_free_max_thickness;
+      grounded_margin_change(i, j) += -excess * kg_per_m;
+      water_thickness(i, j) = grounded_ice_free_max_thickness;
     }
 
+    // This keeps track of water mass changes at the grounding line due to
+    //
+    // - water leaving the system (drainage into the ocean) and
+    //
+    // - water added to the system when the sea level rises and previously grounded areas
+    //   come in contact with the ocean.
+    //
+    // If the sea level rises and covers previously ice free land, the till water amount
+    // at that location should change to the maximum till water thickness.
+    //
+    // When the sea level recedes, the till water at that location will be set to zero by
+    // the if block above. All these changes will be accounted for.
     if ((include_floating and cell_type.ice_free_ocean(i, j)) or
         (not include_floating and cell_type.ocean(i, j))) {
-      grounding_line_change(i, j) += -water_thickness(i, j) * kg_per_m;
-      water_thickness(i, j) = 0.0;
+
+      double mismatch = water_thickness(i, j) - ocean_water_thickness;
+
+      grounding_line_change(i, j) += -mismatch * kg_per_m;
+      water_thickness(i, j) = ocean_water_thickness;
     }
   }
 

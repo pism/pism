@@ -89,6 +89,10 @@ Changes since v1.2
   the locations where the sliding (usually SSA) velocity is fixed.
 - Implement the fracture density growth parameterization due to Borstad et al
   (equation 4 in http://doi.org/10.1002/2015GL067365). Code contributed by T. Albrecht).
+- Assume that in the "ocean" areas the till at the base is saturated with water, i.e. the
+  till water amount is equal to `hydrology.tillwat_max`. This change should improve
+  grounding line movement and make the basal yield stress modification turned on with
+  `basal_yield_stress.slippery_grounding_lines` unnecessary.
 
 Changes from v1.1 to v1.2
 =========================
