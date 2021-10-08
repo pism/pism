@@ -89,6 +89,7 @@ void  IceModelVec3::set_column(int i, int j, const double *valsIN) {
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
+#if (Pism_DEBUG==1)
 static bool legal_level(const std::vector<double> &levels, double z) {
   double z_min = levels.front();
   double z_max = levels.back();
@@ -97,6 +98,7 @@ static bool legal_level(const std::vector<double> &levels, double z) {
   }
   return true;
 }
+#endif
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double IceModelVec3::interpolate(int i, int j, double z) const {
