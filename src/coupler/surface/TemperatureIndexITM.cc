@@ -86,18 +86,8 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
 
-  // std::string method = m_config->get_string("surface.itm.method"); //FIXME I am not sure that i need a period
+  m_mbscheme.reset(new ITMMassBalance(m_config, m_sys));
 
-  
-
-  
-  // if (method == "albedo_forcing"){
-    // m_mbscheme.reset(new ITMMassBalance(m_config, m_sys)); // FIXME add new instance of ITMMassbalance
-  // }else if (method == "not_daily"){
-    // m_mbscheme.reset(new ITMMassBalance(m_config, m_sys)); // FIXME add new instance of ITMMassbalance
-  // } else {
-    // m_mbscheme.reset(new ITMMassBalance(m_config, m_sys));
-  // }
 
 
 
@@ -207,10 +197,10 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
                    "  Surface mass balance and ice upper surface temperature are outputs.\n"
                    "  See PISM User's Manual for control of degree-day factors.\n");
 
-    m_log->message(2,
+   /* m_log->message(2,
                    "  Computing melt: %s.\n",
                    m_mbscheme->method().c_str());
-
+*/
   }
 
   // initialize the spatially-variable air temperature standard deviation
