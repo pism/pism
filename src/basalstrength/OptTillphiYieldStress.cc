@@ -237,7 +237,7 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
   const double
         h_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv"),
     // FIXME: check units of dhdt_conv
-    dhdt_conv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv"),
+    dhdt_conv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv", "m / s"),
      dphi_max = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi"),
      dphi_min = -0.5 * dphi_max,
       phi_min = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min"),
