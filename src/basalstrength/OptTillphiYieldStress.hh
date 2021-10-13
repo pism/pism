@@ -19,11 +19,9 @@
 #ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
 #define _PISMOPTTILLPHIYIELDSTRESS_H_
 
-#include "YieldStress.hh"
 #include "MohrCoulombYieldStress.hh"
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
