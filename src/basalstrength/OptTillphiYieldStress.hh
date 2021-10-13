@@ -55,7 +55,6 @@ protected:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  bool m_iterative_phi;
   IceModelVec2S m_diff_mask;
   IceModelVec2S m_diff_usurf;
   IceModelVec2S m_target_usurf;
@@ -63,7 +62,7 @@ protected:
 
   double m_last_time;
   double m_last_inverse_time;
-  double dt_phi_inv;
+  double m_dt_phi_inv;
 };
 
 } // end of namespace pism

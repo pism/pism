@@ -108,7 +108,7 @@ void OptTillphiYieldStress::restart_impl(const File &input_file, int record) {
   }
 
 
-  dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
+  m_dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
 
   double start_time = m_grid->ctx()->time()->start();
   m_last_time = start_time,
@@ -145,7 +145,7 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
       m_target_usurf.copy_from(m_usurf); 
   }
 
-  dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
+  m_dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt","seconds");
 
   double start_time = m_grid->ctx()->time()->start();
   m_last_time = start_time,
@@ -206,7 +206,7 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
 
   double dt_inverse = t - m_last_inverse_time;
 
-  if (dt_inverse > dt_phi_inv) {
+  if (dt_inverse > m_dt_phi_inv) {
 
       iterative_phi_step(inputs.geometry->ice_surface_elevation,
                          inputs.geometry->bed_elevation,
@@ -277,7 +277,7 @@ void OptTillphiYieldStress::iterative_phi_step(const IceModelVec2S &ice_surface_
     if (mask.grounded_ice(i,j)) {
 
       // Convergence criterion
-      if (dh_step / dt_phi_inv > dhdt_conv) {
+      if (dh_step / m_dt_phi_inv > dhdt_conv) {
         m_diff_mask(i,j)=1.0;
 
         double dphi = pism::clip(m_diff_usurf(i, j) / h_inv, dphi_min, dphi_max);
