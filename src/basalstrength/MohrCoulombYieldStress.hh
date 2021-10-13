@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,9 +22,10 @@
 #include "YieldStress.hh"
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
+
+class IceModelVec2T;
 
 class IceModelVec2CellType;
 
