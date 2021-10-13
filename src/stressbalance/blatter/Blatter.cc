@@ -653,10 +653,6 @@ void Blatter::nodal_parameter_values(const fem::Q1Element3 &element,
   }
 }
 
-Blatter::~Blatter() {
-  // empty
-}
-
 void Blatter::init_impl() {
   m_log->message(2, "* Initializing the Blatter stress balance...\n");
 

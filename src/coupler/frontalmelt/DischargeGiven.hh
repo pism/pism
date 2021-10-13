@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2021 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ class DischargeGiven : public FrontalMelt
 {
 public:
   DischargeGiven(IceGrid::ConstPtr g);
-  virtual ~DischargeGiven();
+  virtual ~DischargeGiven() = default;
 
   void initialize(const IceModelVec2S &theta, const IceModelVec2S &sgl);
 

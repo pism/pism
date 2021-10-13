@@ -86,10 +86,6 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
                                   "Pa", "Pa", "", 2);
 }
 
-FractureDensity::~FractureDensity() {
-  // empty
-}
-
 void FractureDensity::restart(const File &input_file, int record) {
   m_log->message(2, "* Restarting the fracture density model from %s...\n",
                  input_file.filename().c_str());

@@ -45,10 +45,6 @@ CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
   }
 }
 
-CosineYearlyCycle::~CosineYearlyCycle() {
-  // empty
-}
-
 void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   (void) geometry;
 

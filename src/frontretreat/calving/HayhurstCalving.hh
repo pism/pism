@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ namespace calving {
 class HayhurstCalving : public Component {
 public:
   HayhurstCalving(IceGrid::ConstPtr grid);
-  virtual ~HayhurstCalving();
+  virtual ~HayhurstCalving() = default;
 
   void init();
 

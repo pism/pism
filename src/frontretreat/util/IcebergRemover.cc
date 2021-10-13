@@ -36,10 +36,6 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
   m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
 
-IcebergRemover::~IcebergRemover() {
-  // empty
-}
-
 /**
  * Use PISM's ice cover mask to update ice thickness, removing "icebergs".
  *

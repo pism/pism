@@ -330,10 +330,6 @@ Routing::Routing(IceGrid::ConstPtr grid)
   }
 }
 
-Routing::~Routing() {
-  // empty
-}
-
 void Routing::initialization_message() const {
   m_log->message(2,
                  "* Initializing the routing subglacial hydrology model ...\n");

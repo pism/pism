@@ -37,10 +37,6 @@ HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
 
 }
 
-HayhurstCalving::~HayhurstCalving() {
-  // empty
-}
-
 void HayhurstCalving::init() {
 
   m_log->message(2,

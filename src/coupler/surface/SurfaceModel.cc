@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -166,10 +166,6 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
   : SurfaceModel(grid) {        // this constructor will allocate storage
 
   m_atmosphere = atmosphere;
-}
-
-SurfaceModel::~SurfaceModel() {
-  // empty
 }
 
 

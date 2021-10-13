@@ -119,10 +119,6 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
   m_runoff       = allocate_runoff(g);
 }
 
-TemperatureIndex::~TemperatureIndex() {
-  // empty
-}
-
 void TemperatureIndex::init_impl(const Geometry &geometry) {
 
   // call the default implementation (not the interface method init())

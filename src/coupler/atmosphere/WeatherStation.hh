@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ namespace atmosphere {
 class WeatherStation : public AtmosphereModel {
 public:
   WeatherStation(IceGrid::ConstPtr g);
-  virtual ~WeatherStation();
+  virtual ~WeatherStation() = default;
 
 protected:
   void init_impl(const Geometry &geometry);

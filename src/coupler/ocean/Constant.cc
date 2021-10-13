@@ -33,10 +33,6 @@ Constant::Constant(IceGrid::ConstPtr g)
   // empty
 }
 
-Constant::~Constant() {
-  // empty
-}
-
 void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -106,7 +106,7 @@ public:
 
   BedThermalUnit(IceGrid::ConstPtr g);
 
-  virtual ~BedThermalUnit();
+  virtual ~BedThermalUnit() = default;
 
   typedef std::shared_ptr<BedThermalUnit> Ptr;
   typedef std::shared_ptr<const BedThermalUnit> ConstPtr;

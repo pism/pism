@@ -45,10 +45,6 @@ BedDef::BedDef(IceGrid::ConstPtr grid)
                      "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
 }
 
-BedDef::~BedDef() {
-  // empty
-}
-
 const IceModelVec2S& BedDef::bed_elevation() const {
   return m_topg;
 }

@@ -40,7 +40,7 @@ public:
   // "model" constructor
   OceanModel(IceGrid::ConstPtr g);
 
-  virtual ~OceanModel();
+  virtual ~OceanModel() = default;
 
   void init(const Geometry &geometry);
 

@@ -63,10 +63,6 @@ Given::Given(IceGrid::ConstPtr g)
                               "kg m-2 s-1", "kg m-2 year-1", "", 0);
 }
 
-Given::~Given() {
-  // empty
-}
-
 void Given::init_impl(const Geometry &geometry) {
 
   m_log->message(2,

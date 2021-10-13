@@ -117,10 +117,6 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_log = d0.grid()->ctx()->log();
 }
 
-IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
-  // empty
-}
-
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {
   return m_ssaforward.linearize_at(m_d0);
 }

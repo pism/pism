@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018 PISM Authors
+// Copyright (C) 2012-2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ namespace hydrology {
 class NullTransport : public Hydrology {
 public:
   NullTransport(IceGrid::ConstPtr g);
-  virtual ~NullTransport();
+  virtual ~NullTransport() = default;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);

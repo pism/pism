@@ -42,7 +42,7 @@ namespace pism {
 class PrescribedRetreat : public Component {
 public:
   PrescribedRetreat(IceGrid::ConstPtr grid);
-  virtual ~PrescribedRetreat();
+  virtual ~PrescribedRetreat() = default;
 
   void init();
 

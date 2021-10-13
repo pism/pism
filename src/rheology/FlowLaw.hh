@@ -77,7 +77,7 @@ class FlowLaw {
 public:
   FlowLaw(const std::string &prefix, const Config &config,
           EnthalpyConverter::Ptr EC);
-  virtual ~FlowLaw();
+  virtual ~FlowLaw() = default;
 
   void effective_viscosity(double hardness, double gamma,
                            double *nu, double *dnu) const;

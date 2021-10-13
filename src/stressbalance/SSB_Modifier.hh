@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ class Inputs;
 class SSB_Modifier : public Component {
 public:
   SSB_Modifier(IceGrid::ConstPtr g);
-  virtual ~SSB_Modifier();
+  virtual ~SSB_Modifier() = default;
 
   virtual void init();
 
@@ -74,7 +74,7 @@ protected:
 class ConstantInColumn : public SSB_Modifier {
 public:
   ConstantInColumn(IceGrid::ConstPtr g);
-  virtual ~ConstantInColumn();
+  virtual ~ConstantInColumn() = default;
 
   virtual void init();
 

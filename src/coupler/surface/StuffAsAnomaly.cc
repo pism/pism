@@ -57,10 +57,6 @@ StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
                        "K", "");
 }
 
-StuffAsAnomaly::~StuffAsAnomaly() {
-  // empty
-}
-
 void StuffAsAnomaly::init_impl(const Geometry &geometry) {
   if (m_input_model != NULL) {
     m_input_model->init(geometry);

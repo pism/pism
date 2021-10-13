@@ -49,10 +49,6 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
 
 }
 
-SSB_Modifier::~SSB_Modifier() {
-  // empty
-}
-
 void SSB_Modifier::init() {
 }
 
@@ -90,10 +86,6 @@ ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g)
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
 
   m_flow_law = ice_factory.create();
-}
-
-ConstantInColumn::~ConstantInColumn() {
-  // empty
 }
 
 

@@ -48,10 +48,6 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   m_Pnew.metadata()["valid_min"] = {0.0};
 }
 
-Distributed::~Distributed() {
-  // empty
-}
-
 void Distributed::initialization_message() const {
   m_log->message(2,
                  "* Initializing the distributed, linked-cavities subglacial hydrology model...\n");

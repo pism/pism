@@ -33,10 +33,6 @@ PatersonBudd::PatersonBudd(const std::string &prefix,
   m_name = "Paterson-Budd";
 }
 
-PatersonBudd::~PatersonBudd() {
-  // empty
-}
-
 /*! Converts enthalpy to temperature and uses the Paterson-Budd formula. */
 double PatersonBudd::softness_impl(double E, double pressure) const {
   double T_pa = m_EC->pressure_adjusted_temperature(E, pressure);

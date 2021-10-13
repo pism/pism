@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -113,7 +113,7 @@ public:
   IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
                              IPDesignVariableParameterization &tp);
 
-  virtual ~IP_SSAHardavForwardProblem();
+  virtual ~IP_SSAHardavForwardProblem() = default;
 
   //! Selects nodes where \f$\tau_c\f$ (more specifically \f$\zeta\f$) should not be adjusted.
   /*! The paramter \a locations should be set to 1 at each node where \f$\tau_c\f$

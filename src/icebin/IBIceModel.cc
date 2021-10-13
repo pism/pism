@@ -33,10 +33,6 @@ IBIceModel::IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceMo
   // empty
 }
 
-IBIceModel::~IBIceModel() {
-  // empty
-}
-
 
 void IBIceModel::allocate_subglacial_hydrology() {
   printf("BEGIN IBIceModel::allocate_subglacial_hydrology()\n");

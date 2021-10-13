@@ -35,10 +35,6 @@ IceBasalResistancePlasticLaw::IceBasalResistancePlasticLaw(const Config &config)
   m_plastic_regularize = config.get_number("basal_resistance.plastic.regularization", "m second-1");
 }
 
-IceBasalResistancePlasticLaw::~IceBasalResistancePlasticLaw() {
-  // empty
-}
-
 void IceBasalResistancePlasticLaw::print_info(const Logger &log,
                                               int threshold,
                                               units::System::Ptr system) const {
@@ -79,10 +75,6 @@ IceBasalResistancePseudoPlasticLaw::IceBasalResistancePseudoPlasticLaw(const Con
   m_pseudo_q = config.get_number("basal_resistance.pseudo_plastic.q");
   m_pseudo_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
   m_sliding_scale_factor_reduces_tauc = config.get_number("basal_resistance.pseudo_plastic.sliding_scale_factor");
-}
-
-IceBasalResistancePseudoPlasticLaw::~IceBasalResistancePseudoPlasticLaw() {
-  // empty
 }
 
 void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
@@ -201,10 +193,6 @@ IceBasalResistanceRegularizedLaw::IceBasalResistanceRegularizedLaw(const Config 
   m_pseudo_q = config.get_number("basal_resistance.pseudo_plastic.q");
   m_pseudo_u_threshold = config.get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1");
   m_sliding_scale_factor_reduces_tauc = config.get_number("basal_resistance.pseudo_plastic.sliding_scale_factor");
-}
-
-IceBasalResistanceRegularizedLaw::~IceBasalResistanceRegularizedLaw() {
-  // empty
 }
 
 void IceBasalResistanceRegularizedLaw::print_info(const Logger &log,

@@ -43,10 +43,6 @@ NC4_Serial::NC4_Serial(MPI_Comm c)
   // empty
 }
 
-NC4_Serial::~NC4_Serial() {
-  // empty
-}
-
 void NC4_Serial::create_impl(const std::string &fname) {
   int stat = NC_NOERR;
 

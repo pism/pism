@@ -31,7 +31,7 @@ class Geometry;
 class FractureDensity : public Component {
 public:
   FractureDensity(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
-  virtual ~FractureDensity();
+  virtual ~FractureDensity() = default;
 
   void restart(const File &input_file, int record);
   void bootstrap(const File &input_file);

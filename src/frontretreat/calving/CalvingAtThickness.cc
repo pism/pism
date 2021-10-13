@@ -57,11 +57,6 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   }
 }
 
-CalvingAtThickness::~CalvingAtThickness() {
-  // empty
-}
-
-
 void CalvingAtThickness::init() {
 
   m_log->message(2, "* Initializing the 'calving at a threshold thickness' mechanism...\n");

@@ -54,10 +54,6 @@ Verification::Verification(IceGrid::ConstPtr g,
   // empty
 }
 
-Verification::~Verification() {
-  // empty
-}
-
 void Verification::init_impl(const Geometry &geometry) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell

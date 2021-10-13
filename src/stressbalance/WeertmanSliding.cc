@@ -33,10 +33,6 @@ WeertmanSliding::WeertmanSliding(IceGrid::ConstPtr grid)
   m_flow_law = ice_factory.create();
 }
 
-WeertmanSliding::~WeertmanSliding() {
-  // empty
-}
-
 void WeertmanSliding::init_impl() {
   m_log->message(2, "* Initializing Weertman-style basal sliding...\n");
 }

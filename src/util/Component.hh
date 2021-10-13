@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,7 +103,7 @@ public:
 
   /** Create a Component instance given a grid. */
   Component(IceGrid::ConstPtr g);
-  virtual ~Component();
+  virtual ~Component() = default;
 
   DiagnosticList diagnostics() const;
   TSDiagnosticList ts_diagnostics() const;

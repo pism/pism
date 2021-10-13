@@ -79,10 +79,6 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
   PISM_CHK(ierr, "KSPSetFromOptions");
 }
 
-IP_SSATaucForwardProblem::~IP_SSATaucForwardProblem() {
-  // empty
-}
-
 void IP_SSATaucForwardProblem::init() {
 
   // This calls SSA::init(), which calls pism::Vars::get_2d_scalar()

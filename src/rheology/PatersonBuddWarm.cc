@@ -30,10 +30,6 @@ PatersonBuddWarm::PatersonBuddWarm(const std::string &prefix,
   m_name = "Paterson-Budd (warm case)";
 }
 
-PatersonBuddWarm::~PatersonBuddWarm() {
-  // empty
-}
-
 double PatersonBuddWarm::tempFromSoftness(double A) const {
   return - m_Q_warm / (m_ideal_gas_constant * (log(A) - log(m_A_warm)));
 }

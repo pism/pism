@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020 David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -114,7 +114,7 @@ public:
   IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
                            IPDesignVariableParameterization &tp);
 
-  virtual ~IP_SSATaucForwardProblem();
+  virtual ~IP_SSATaucForwardProblem() = default;
 
   void init();
 

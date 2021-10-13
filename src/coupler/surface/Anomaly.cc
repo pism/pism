@@ -66,10 +66,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
   m_runoff       = allocate_runoff(g);
 }
 
-Anomaly::~Anomaly() {
-  // empty
-}
-
 void Anomaly::init_impl(const Geometry &geometry) {
 
   if (m_input_model) {

@@ -131,10 +131,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
   }
 }
 
-MohrCoulombYieldStress::~MohrCoulombYieldStress() {
-  // empty
-}
-
 void MohrCoulombYieldStress::restart_impl(const File &input_file, int record) {
   m_basal_yield_stress.read(input_file, record);
   m_till_phi.read(input_file, record);

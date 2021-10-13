@@ -51,10 +51,5 @@ const IceModelVec2S &StressCalving::calving_rate() const {
   return m_calving_rate;
 }
 
-
-StressCalving::~StressCalving() {
-  // empty
-}
-
 } // end of namespace calving
 } // end of namespace pism

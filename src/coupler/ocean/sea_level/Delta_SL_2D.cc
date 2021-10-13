@@ -48,10 +48,6 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
   }
 }
 
-Delta_SL_2D::~Delta_SL_2D() {
-  // empty
-}
-
 void Delta_SL_2D::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);

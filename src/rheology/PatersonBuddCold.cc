@@ -35,10 +35,6 @@ double PatersonBuddCold::tempFromSoftness(double A) const {
   return - m_Q_cold / (m_ideal_gas_constant * (log(A) - log(m_A_cold)));
 }
 
-PatersonBuddCold::~PatersonBuddCold() {
-  // empty
-}
-
 // takes care of hardness...
 double PatersonBuddCold::softness_from_temp(double T_pa) const {
   return m_A_cold * exp(-m_Q_cold / (m_ideal_gas_constant * T_pa));

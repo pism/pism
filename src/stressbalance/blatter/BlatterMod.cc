@@ -39,10 +39,6 @@ BlatterMod::BlatterMod(std::shared_ptr<Blatter> solver)
   m_flow_law = ice_factory.create();
 }
 
-BlatterMod::~BlatterMod() {
-  // empty
-}
-
 void BlatterMod::init() {
   // empty
 }

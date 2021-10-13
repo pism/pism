@@ -58,10 +58,6 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
 
 }
 
-vonMisesCalving::~vonMisesCalving() {
-  // empty
-}
-
 void vonMisesCalving::init() {
 
   m_log->message(2,

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ class NC4_Serial : public NC_Serial
 {
 public:
   NC4_Serial(MPI_Comm c);
-  virtual ~NC4_Serial();
+  virtual ~NC4_Serial() = default;
 
 protected:
   void set_compression_level_impl(int level) const;

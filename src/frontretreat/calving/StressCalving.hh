@@ -31,7 +31,7 @@ namespace calving {
 class StressCalving : public Component {
 public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
-  virtual ~StressCalving();
+  virtual ~StressCalving() = default;
 
   const IceModelVec2S &calving_rate() const;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ public:
   PatersonBudd(const std::string &prefix,
                const Config &config,
                EnthalpyConverter::Ptr EC);
-  virtual ~PatersonBudd();
+  virtual ~PatersonBudd() = default;
 
 protected:
   virtual double flow_impl(double stress, double E,

@@ -56,9 +56,5 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<Frac_MBP>("frac_MBP");
 }
 
-Factory::~Factory() {
-  // empty
-}
-
 } // end of namespace ocean
 } // end of namespace pism

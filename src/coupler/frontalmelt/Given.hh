@@ -30,7 +30,7 @@ class Given : public FrontalMelt
 {
 public:
   Given(IceGrid::ConstPtr g);
-  virtual ~Given();
+  virtual ~Given() = default;
 
 private:
   void init_impl(const Geometry &geometry);

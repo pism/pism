@@ -35,10 +35,6 @@ BTU_Verification::BTU_Verification(IceGrid::ConstPtr g,
   m_bedrock_is_ice = bedrock_is_ice;
 }
 
-BTU_Verification::~BTU_Verification() {
-  // empty
-}
-
 void BTU_Verification::initialize_bottom_surface_flux() {
   // hard-wired value used in exact solutions (tests K and O)
   m_bottom_surface_flux.set(0.042);

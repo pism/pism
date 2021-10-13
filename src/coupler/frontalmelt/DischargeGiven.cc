@@ -40,10 +40,6 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
   m_subglacial_discharge = IceModelVec2T::Constant(grid, "subglacial_discharge", 0.0);
 }
 
-DischargeGiven::~DischargeGiven() {
-  // empty
-}
-
 void DischargeGiven::init_impl(const Geometry &geometry) {
   (void) geometry;
 

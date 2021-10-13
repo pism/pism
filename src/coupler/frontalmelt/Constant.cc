@@ -32,10 +32,6 @@ Constant::Constant(IceGrid::ConstPtr g)
   m_frontal_melt_rate = allocate_frontal_melt_rate(g);
 }
 
-Constant::~Constant() {
-  // empty
-}
-
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class Anomaly : public AtmosphereModel
 {
 public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~Anomaly();
+  virtual ~Anomaly() = default;
 
 protected:
   void init_impl(const Geometry &geometry);

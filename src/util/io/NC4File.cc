@@ -44,10 +44,6 @@ NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
   // empty
 }
 
-NC4File::~NC4File() {
-  // empty
-}
-
 // open/create/close
 
 void NC4File::sync_impl() const {

@@ -85,10 +85,6 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
   m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));
 }
 
-BTU_Full::~BTU_Full() {
-  // empty
-}
-
 
 //! \brief Initialize the bedrock thermal unit.
 void BTU_Full::init_impl(const InputOptions &opts) {

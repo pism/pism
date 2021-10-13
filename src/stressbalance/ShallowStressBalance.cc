@@ -130,10 +130,6 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g)
   m_flow_law = ice_factory.create();
 }
 
-ZeroSliding::~ZeroSliding() {
-  // empty
-}
-
 //! \brief Update the trivial shallow stress balance object.
 void ZeroSliding::update(const Inputs &inputs, bool full_update) {
   (void) inputs;
@@ -327,10 +323,6 @@ IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
  */
 PrescribedSliding::PrescribedSliding(IceGrid::ConstPtr g)
   : ZeroSliding(g) {
-  // empty
-}
-
-PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 

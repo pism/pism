@@ -35,10 +35,6 @@ Diagnostic::Diagnostic(IceGrid::ConstPtr grid)
   // empty
 }
 
-Diagnostic::~Diagnostic() {
-  // empty
-}
-
 void Diagnostic::update(double dt) {
   this->update_impl(dt);
 }

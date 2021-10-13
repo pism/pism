@@ -96,7 +96,7 @@ protected:
 class ZeroSliding : public ShallowStressBalance {
 public:
   ZeroSliding(IceGrid::ConstPtr g);
-  virtual ~ZeroSliding();
+  virtual ~ZeroSliding() = default;
 
   virtual void update(const Inputs &inputs, bool full_update);
 
@@ -106,7 +106,7 @@ protected:
 class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(IceGrid::ConstPtr g);
-  virtual ~PrescribedSliding();
+  virtual ~PrescribedSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:
   virtual void init_impl();

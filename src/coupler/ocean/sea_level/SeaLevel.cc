@@ -44,10 +44,6 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr g)
   // empty
 }
 
-SeaLevel::~SeaLevel() {
-  // empty
-}
-
 void SeaLevel::init(const Geometry &geometry) {
   init_impl(geometry);
 }

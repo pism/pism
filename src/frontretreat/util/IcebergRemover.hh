@@ -50,7 +50,7 @@ class IcebergRemover : public Component
 {
 public:
   IcebergRemover(IceGrid::ConstPtr g);
-  virtual ~IcebergRemover();
+  virtual ~IcebergRemover() = default;
 
   void update(const IceModelVec2Int &bc_mask,
               IceModelVec2CellType &pism_mask,

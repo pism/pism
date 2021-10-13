@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ namespace atmosphere {
 class Frac_P : public AtmosphereModel {
 public:
   Frac_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~Frac_P();
+  virtual ~Frac_P() = default;
 
 private:
   void init_impl(const Geometry &geometry);

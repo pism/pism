@@ -54,10 +54,6 @@ Given::Given(IceGrid::ConstPtr grid)
   }
 }
 
-Given::~Given() {
-  // empty
-}
-
 void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
                       const IceModelVec2S &sea_level_elevation) {
   (void) ice_thickness;

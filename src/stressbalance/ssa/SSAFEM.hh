@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020, 2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ class SSAFEM : public SSA {
 public:
   SSAFEM(IceGrid::ConstPtr g);
 
-  virtual ~SSAFEM();
+  virtual ~SSAFEM() = default;
 
 protected:
   virtual void init_impl();

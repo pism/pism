@@ -32,10 +32,6 @@ SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr grid)
   // empty
 }
 
-SIAFD_Regional::~SIAFD_Regional() {
-  // empty
-}
-
 void SIAFD_Regional::init() {
 
   SIAFD::init();

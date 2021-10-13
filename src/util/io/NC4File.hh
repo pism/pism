@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ class NC4File : public NCFile
 {
 public:
   NC4File(MPI_Comm com, unsigned int compression_level);
-  virtual ~NC4File();
+  virtual ~NC4File() = default;
 
 protected:
   // implementations:

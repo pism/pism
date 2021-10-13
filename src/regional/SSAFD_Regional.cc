@@ -33,10 +33,6 @@ SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g)
   m_no_model_mask = NULL;
 }
 
-SSAFD_Regional::~SSAFD_Regional() {
-  // empty
-}
-
 void SSAFD_Regional::init() {
 
   SSAFD::init();

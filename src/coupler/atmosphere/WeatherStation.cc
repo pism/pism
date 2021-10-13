@@ -72,10 +72,6 @@ WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
   m_temperature   = allocate_temperature(grid);
 }
 
-WeatherStation::~WeatherStation() {
-  // empty
-}
-
 void WeatherStation::init_impl(const Geometry &geometry) {
   (void) geometry;
 }

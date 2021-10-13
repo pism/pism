@@ -37,10 +37,6 @@ Delta_P::Delta_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   m_precipitation = allocate_precipitation(grid);
 }
 
-Delta_P::~Delta_P() {
-  // empty
-}
-
 void Delta_P::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 

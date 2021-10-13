@@ -41,10 +41,6 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
   }
 }
 
-PrescribedRetreat::~PrescribedRetreat() {
-  // empty
-}
-
 void PrescribedRetreat::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "geometry.front_retreat.prescribed");

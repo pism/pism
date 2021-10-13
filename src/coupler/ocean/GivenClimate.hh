@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class Given : public OceanModel
 {
 public:
   Given(IceGrid::ConstPtr g);
-  virtual ~Given();
+  virtual ~Given() = default;
 
 private:
   void update_impl(const Geometry &geometry, double t, double dt);

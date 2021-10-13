@@ -64,10 +64,6 @@ FlowLaw::FlowLaw(const std::string &prefix, const Config &config,
   m_schoofReg = PetscSqr(schoofVel / schoofLen);
 }
 
-FlowLaw::~FlowLaw() {
-  // empty
-}
-
 std::string FlowLaw::name() const {
   return m_name;
 }

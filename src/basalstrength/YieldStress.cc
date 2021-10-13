@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,10 +40,6 @@ YieldStress::YieldStress(IceGrid::ConstPtr g)
   m_basal_yield_stress.set_attrs("model_state",
                                  "yield stress for basal till (plastic or pseudo-plastic model)",
                                  "Pa", "Pa", "", 0);
-}
-
-YieldStress::~YieldStress() {
-  // empty
 }
 
 /*!

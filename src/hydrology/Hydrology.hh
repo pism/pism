@@ -114,7 +114,7 @@ public:
 class Hydrology : public Component {
 public:
   Hydrology(IceGrid::ConstPtr g);
-  virtual ~Hydrology();
+  virtual ~Hydrology() = default;
 
   void restart(const File &input_file, int record);
 

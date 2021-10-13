@@ -43,10 +43,6 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
   }
 }
 
-NullTransport::~NullTransport() {
-  // empty
-}
-
 void NullTransport::initialization_message() const {
   m_log->message(2,
                  "* Initializing the null-transport (till only) subglacial hydrology model ...\n");

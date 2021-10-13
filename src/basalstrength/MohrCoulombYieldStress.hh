@@ -34,7 +34,7 @@ class IceModelVec2CellType;
 class MohrCoulombYieldStress : public YieldStress {
 public:
   MohrCoulombYieldStress(IceGrid::ConstPtr g);
-  virtual ~MohrCoulombYieldStress();
+  virtual ~MohrCoulombYieldStress() = default;
 
   void set_till_friction_angle(const IceModelVec2S &input);
 private:

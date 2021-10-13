@@ -67,10 +67,6 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
 }
 
-EnthalpyConverter::~EnthalpyConverter() {
-  // empty
-}
-
 //! Return `true` if ice at `(E, P)` is temperate.
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
@@ -293,10 +289,6 @@ ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
   // zero
   m_beta = 0.0;
-}
-
-ColdEnthalpyConverter::~ColdEnthalpyConverter() {
-  // empty
 }
 
 //! Latent heat of fusion of water as a function of pressure melting

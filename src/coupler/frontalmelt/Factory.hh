@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ namespace frontalmelt {
 class Factory : public PCFactory<frontalmelt::FrontalMelt> {
 public:
   Factory(IceGrid::ConstPtr g);
-  ~Factory();
+  ~Factory() = default;
 };
 } // end of namespace frontalmelt
 } // end of namespace pism

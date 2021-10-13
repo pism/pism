@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ public:
   typedef std::shared_ptr<NCFile> Ptr;
 
   NCFile(MPI_Comm com);
-  virtual ~NCFile();
+  virtual ~NCFile() = default;
 
   // open/create/close
   void open(const std::string &filename, IO_Mode mode);

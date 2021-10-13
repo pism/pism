@@ -36,10 +36,6 @@ PIK::PIK(IceGrid::ConstPtr g)
   // empty
 }
 
-PIK::~PIK() {
-  // empty
-}
-
 void PIK::init_impl(const Geometry &geometry) {
   (void) geometry;
 

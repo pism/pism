@@ -221,10 +221,6 @@ DefaultConfig::DefaultConfig(MPI_Comm com,
   // empty
 }
 
-DefaultConfig::~DefaultConfig() {
-  // empty
-}
-
 void DefaultConfig::init(const Logger &log, bool use_default_path) {
   options::String file(m_option,
                        "Name of the file to read " + m_data.get_name() + " from",

@@ -58,10 +58,6 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   m_precipitation.set_time_independent(true);
 }
 
-YearlyCycle::~YearlyCycle() {
-  // empty
-}
-
 //! Reads in the precipitation data from the input file.
 void YearlyCycle::init_impl(const Geometry &geometry) {
   (void) geometry;

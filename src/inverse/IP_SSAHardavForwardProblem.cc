@@ -113,10 +113,6 @@ void IP_SSAHardavForwardProblem::init() {
   }
 }
 
-IP_SSAHardavForwardProblem::~IP_SSAHardavForwardProblem() {
-  // empty
-}
-
 //! Sets the current value of of the design paramter \f$\zeta\f$.
 /*! This method sets \f$\zeta\f$ but does not solve the %SSA.
 It it intended for inverse methods that simultaneously compute

@@ -72,10 +72,6 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceMod
   m_runoff       = allocate_runoff(g);
 }
 
-ElevationChange::~ElevationChange() {
-  // empty
-}
-
 void ElevationChange::init_impl(const Geometry &geometry) {
   using units::convert;
 

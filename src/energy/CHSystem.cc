@@ -66,10 +66,6 @@ CHSystem::CHSystem(IceGrid::ConstPtr grid,
   m_ice_enthalpy.metadata()["long_name"] = "enthalpy of the cryo-hydrologic system";
 }
 
-CHSystem::~CHSystem() {
-  // empty
-}
-
 void CHSystem::restart_impl(const File &input_file, int record) {
 
   m_log->message(2, "* Restarting the cryo-hydrologic system from %s...\n",

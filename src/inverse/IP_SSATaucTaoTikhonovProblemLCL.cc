@@ -103,11 +103,6 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   m_x.reset(new IPTwoBlockVec(m_dGlobal.vec(),m_uGlobal->vec()));
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL()
-{
-  // empty
-}
-
 void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   m_dGlobal.copy_from(d0);
 }

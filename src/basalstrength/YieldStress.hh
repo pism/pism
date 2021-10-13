@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ public:
 class YieldStress : public Component {
 public:
   YieldStress(IceGrid::ConstPtr g);
-  virtual ~YieldStress();
+  virtual ~YieldStress() = default;
 
   void restart(const File &input_file, int record);
 

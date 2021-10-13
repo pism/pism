@@ -62,10 +62,6 @@ Given::Given(IceGrid::ConstPtr g)
   }
 }
 
-Given::~Given() {
-  // empty
-}
-
 void Given::init_impl(const Geometry &geometry) {
   m_log->message(2,
              "* Initializing the atmosphere model reading near-surface air temperature\n"

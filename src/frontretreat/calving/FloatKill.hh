@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ class FloatKill : public Component
 {
 public:
   FloatKill(IceGrid::ConstPtr g);
-  virtual ~FloatKill();
+  virtual ~FloatKill() = default;
 
   virtual void init();
   void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);

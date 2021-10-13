@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ namespace hydrology {
 class EmptyingProblem : public Component {
 public:
   EmptyingProblem(IceGrid::ConstPtr g);
-  virtual ~EmptyingProblem();
+  virtual ~EmptyingProblem() = default;
 
   void update(const Geometry &geometry,
               const IceModelVec2Int *no_model_mask,

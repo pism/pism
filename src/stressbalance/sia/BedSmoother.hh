@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -80,7 +80,7 @@ namespace stressbalance {
 class BedSmoother {
 public:
   BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS);
-  virtual ~BedSmoother();
+  virtual ~BedSmoother() = default;
 
   void preprocess_bed(const IceModelVec2S &topg);
 

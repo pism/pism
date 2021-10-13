@@ -178,10 +178,6 @@ ParallelSection::ParallelSection(MPI_Comm com)
   // empty
 }
 
-ParallelSection::~ParallelSection() {
-  // empty
-}
-
 //! @brief Indicates a failure of a parallel section.
 /*!
  * This should be called from a `catch (...) { ... }` block **only**.

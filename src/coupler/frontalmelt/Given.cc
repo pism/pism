@@ -33,10 +33,6 @@ Given::Given(IceGrid::ConstPtr grid)
   m_frontal_melt_rate = IceModelVec2T::Constant(grid, "frontal_melt_rate", 0.0);
 }
 
-Given::~Given() {
-  // empty
-}
-
 void Given::init_impl(const Geometry &geometry) {
   (void) geometry;
 

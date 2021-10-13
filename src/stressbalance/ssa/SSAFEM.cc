@@ -116,10 +116,6 @@ SSA* SSAFEMFactory(IceGrid::ConstPtr g) {
   return new SSAFEM(g);
 }
 
-SSAFEM::~SSAFEM() {
-  // empty
-}
-
 // Initialize the solver, called once by the client before use.
 void SSAFEM::init_impl() {
 

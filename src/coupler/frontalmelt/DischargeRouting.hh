@@ -29,7 +29,7 @@ class DischargeRouting : public FrontalMelt
 {
 public:
   DischargeRouting(IceGrid::ConstPtr g);
-  virtual ~DischargeRouting();
+  virtual ~DischargeRouting() = default;
 
   void initialize(const IceModelVec2S &theta);
 

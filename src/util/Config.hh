@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,7 +75,7 @@ public:
                 const std::string &variable_name,
                 const std::string &option,
                 units::System::Ptr unit_system);
-  ~DefaultConfig();
+  ~DefaultConfig() = default;
 
   typedef std::shared_ptr<DefaultConfig> Ptr;
   typedef std::shared_ptr<const DefaultConfig> ConstPtr;

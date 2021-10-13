@@ -164,10 +164,6 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
   m_tau = m_config->get_number("hydrology.steady.input_rate_scaling");
 }
 
-EmptyingProblem::~EmptyingProblem() {
-  // empty
-}
-
 /*!
  * Compute steady state water flux.
  *

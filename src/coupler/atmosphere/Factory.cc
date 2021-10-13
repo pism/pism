@@ -58,9 +58,5 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_modifier<OrographicPrecipitation>("orographic_precipitation");
 }
 
-Factory::~Factory() {
-  // empty
-}
-
 } // end of namespace atmosphere
 } // end of namespace pism

@@ -47,10 +47,6 @@ LocalMassBalance::LocalMassBalance(Config::ConstPtr myconfig, units::System::Ptr
   // empty
 }
 
-LocalMassBalance::~LocalMassBalance() {
-  // empty
-}
-
 std::string LocalMassBalance::method() const {
   return m_method;
 }
@@ -387,10 +383,6 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
   m_temp_mj.set_attrs("internal",
                     "mean July air temp from Fausto et al (2009) parameterization",
                       "K", "K", "", 0);
-}
-
-FaustoGrevePDDObject::~FaustoGrevePDDObject() {
-  // empty
 }
 
 LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,

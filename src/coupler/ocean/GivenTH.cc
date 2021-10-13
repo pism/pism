@@ -93,10 +93,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                               "g/kg", "g/kg", "", 0);
 }
 
-GivenTH::~GivenTH() {
-  // empty
-}
-
 void GivenTH::init_impl(const Geometry &geometry) {
 
   m_log->message(2,

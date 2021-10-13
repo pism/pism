@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ public:
   // "model" constructor
   FrontalMelt(IceGrid::ConstPtr g);
 
-  virtual ~FrontalMelt();
+  virtual ~FrontalMelt() = default;
 
   void init(const Geometry &geometry);
 

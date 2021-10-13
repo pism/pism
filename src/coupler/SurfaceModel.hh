@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -48,7 +48,7 @@ public:
   SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
   SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 
-  virtual ~SurfaceModel();
+  virtual ~SurfaceModel() = default;
 
   void init(const Geometry &geometry);
 

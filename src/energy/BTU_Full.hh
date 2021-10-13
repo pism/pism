@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -83,7 +83,7 @@ class BedrockColumn;
 class BTU_Full : public BedThermalUnit {
 public:
   BTU_Full(IceGrid::ConstPtr g, const BTUGrid &vertical_grid);
-  virtual ~BTU_Full();
+  virtual ~BTU_Full() = default;
 
   //! Bedrock thermal layer temperature field.
   const IceModelVec3& temperature() const;

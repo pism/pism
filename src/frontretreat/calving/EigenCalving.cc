@@ -39,10 +39,6 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
                            "m s-1", "m year-1", "", 0);
 }
 
-EigenCalving::~EigenCalving() {
-  // empty
-}
-
 void EigenCalving::init() {
 
   m_log->message(2, "* Initializing the 'eigen-calving' mechanism...\n");

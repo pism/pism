@@ -130,10 +130,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
   }
 }
 
-ISMIP6::~ISMIP6() {
-  // empty
-}
-
 void ISMIP6::init_impl(const Geometry &geometry) {
   (void) geometry;
 

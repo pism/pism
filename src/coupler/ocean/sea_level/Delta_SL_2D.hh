@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ namespace sea_level {
 class Delta_SL_2D : public SeaLevel {
 public:
   Delta_SL_2D(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in);
-  virtual ~Delta_SL_2D();
+  virtual ~Delta_SL_2D() = default;
 
 private:
   void init_impl(const Geometry &geometry);

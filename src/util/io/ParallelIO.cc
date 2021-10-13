@@ -81,10 +81,6 @@ ParallelIO::ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype)
   }
 }
 
-ParallelIO::~ParallelIO() {
-  // empty
-}
-
 void ParallelIO::set_compression_level_impl(int level) const {
   (void) level;
   // FIXME: it may make sense to implement this for PIO IO types using HDF5.

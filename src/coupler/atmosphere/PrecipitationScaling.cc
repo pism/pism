@@ -40,10 +40,6 @@ PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
   m_precipitation = allocate_precipitation(grid);
 }
 
-PrecipitationScaling::~PrecipitationScaling() {
-  // empty
-}
-
 void PrecipitationScaling::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 

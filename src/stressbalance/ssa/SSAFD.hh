@@ -34,7 +34,7 @@ class SSAFD : public SSA
 {
 public:
   SSAFD(IceGrid::ConstPtr g);
-  virtual ~SSAFD();
+  virtual ~SSAFD() = default;
 
   const IceModelVec2Stag & integrated_viscosity() const;
 protected:

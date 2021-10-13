@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ namespace bed {
 class Given : public BedDef {
 public:
   Given(IceGrid::ConstPtr grid);
-  virtual ~Given();
+  virtual ~Given() = default;
 protected:
   void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
                  const IceModelVec2S &sea_level_elevation);

@@ -39,10 +39,6 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
   m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
 }
 
-DischargeRouting::~DischargeRouting() {
-  // empty
-}
-
 void DischargeRouting::init_impl(const Geometry &geometry) {
   (void) geometry;
 

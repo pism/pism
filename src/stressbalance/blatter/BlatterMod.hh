@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,7 +34,7 @@ namespace stressbalance {
 class BlatterMod : public SSB_Modifier {
 public:
   BlatterMod(std::shared_ptr<Blatter> solver);
-  virtual ~BlatterMod();
+  virtual ~BlatterMod() = default;
 
   void init();
 

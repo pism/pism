@@ -128,10 +128,6 @@ FrontalMelt::FrontalMelt(IceGrid::ConstPtr g)
   // empty
 }
 
-FrontalMelt::~FrontalMelt() {
-  // empty
-}
-
 void FrontalMelt::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }

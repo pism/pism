@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,10 +30,6 @@ ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr grid)
   : YieldStress(grid) {
 
   m_name = "constant yield stress model";
-}
-
-ConstantYieldStress::~ConstantYieldStress() {
-  // empty
 }
 
 void ConstantYieldStress::restart_impl(const File &input_file, int record) {

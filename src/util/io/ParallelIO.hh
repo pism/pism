@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@ namespace io {
 class ParallelIO : public NCFile {
 public:
   ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype);
-  virtual ~ParallelIO();
+  virtual ~ParallelIO() = default;
 
   static IO_Backend best_iotype(bool netcdf3);
 protected:

@@ -37,9 +37,5 @@ Factory::Factory(IceGrid::ConstPtr g)
   add_model<Given>("given");
 }
 
-Factory::~Factory() {
-  // empty
-}
-
 } // end of namespace frontalmelt
 } // end of namespace pism

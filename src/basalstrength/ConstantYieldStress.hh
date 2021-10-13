@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ class IceGrid;
 class ConstantYieldStress : public YieldStress {
 public:
   ConstantYieldStress(IceGrid::ConstPtr g);
-  virtual ~ConstantYieldStress();
+  virtual ~ConstantYieldStress() = default;
 private:
   void restart_impl(const File &input_file, int record);
 

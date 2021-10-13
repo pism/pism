@@ -68,10 +68,6 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};
 }
 
-Given::~Given() {
-  // empty
-}
-
 void Given::init_impl(const Geometry &geometry) {
 
   m_log->message(2,

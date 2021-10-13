@@ -33,10 +33,6 @@ PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
   // empty
 }
 
-PointwiseIsostasy::~PointwiseIsostasy() {
-  // empty
-}
-
 void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
                                   const IceModelVec2S &sea_level_elevation) {
 

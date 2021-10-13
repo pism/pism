@@ -91,10 +91,6 @@ BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
 }
 
 
-BedSmoother::~BedSmoother() {
-  // empty
-}
-
 /*!
 Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the

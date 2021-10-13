@@ -1,4 +1,4 @@
-// Copyright (C) 2018 PISM Authors
+// Copyright (C) 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ namespace sea_level {
 class Factory : public PCFactory<ocean::sea_level::SeaLevel> {
 public:
   Factory(IceGrid::ConstPtr grid);
-  ~Factory();
+  ~Factory() = default;
 };
 
 } // end of namespace sea_level

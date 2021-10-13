@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ void compute_load(const IceModelVec2S &bed_elevation,
 class BedDef : public Component {
 public:
   BedDef(IceGrid::ConstPtr g);
-  virtual ~BedDef();
+  virtual ~BedDef() = default;
 
   void init(const InputOptions &opts, const IceModelVec2S &ice_thickness,
             const IceModelVec2S &sea_level_elevation);
@@ -106,7 +106,7 @@ protected:
 class PointwiseIsostasy : public BedDef {
 public:
   PointwiseIsostasy(IceGrid::ConstPtr g);
-  virtual ~PointwiseIsostasy();
+  virtual ~PointwiseIsostasy() = default;
 protected:
   MaxTimestep max_timestep_impl(double t) const;
   void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,

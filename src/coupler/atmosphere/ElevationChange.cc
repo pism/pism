@@ -69,10 +69,6 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
   m_temperature   = allocate_temperature(grid);
 }
 
-ElevationChange::~ElevationChange() {
-  // empty
-}
-
 void ElevationChange::init_impl(const Geometry &geometry) {
   using units::convert;
 

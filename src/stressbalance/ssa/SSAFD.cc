@@ -126,10 +126,6 @@ SSAFD::SSAFD(IceGrid::ConstPtr grid)
   }
 }
 
-SSAFD::~SSAFD() {
-  // empty
-}
-
 //! @note Uses `PetscErrorCode` *intentionally*.
 void SSAFD::pc_setup_bjacobi() {
   PetscErrorCode ierr;

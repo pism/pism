@@ -32,10 +32,6 @@ EISMINTII::EISMINTII(IceGrid::ConstPtr g, int experiment)
   // empty
 }
 
-EISMINTII::~EISMINTII() {
-  // empty
-}
-
 void EISMINTII::init_impl(const Geometry &geometry) {
   (void) geometry;
 

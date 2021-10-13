@@ -139,10 +139,6 @@ Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_si
 }
 
 
-Element::~Element() {
-  // empty
-}
-
 //! Initialize shape function values and quadrature weights of a 2D physical element.
 /** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
  */

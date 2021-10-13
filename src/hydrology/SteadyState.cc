@@ -76,10 +76,6 @@ SteadyState::SteadyState(IceGrid::ConstPtr grid)
   }
 }
 
-SteadyState::~SteadyState() {
-  // empty
-}
-
 void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
   NullTransport::update_impl(t, dt, inputs);
 

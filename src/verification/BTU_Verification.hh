@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ public:
   BTU_Verification(IceGrid::ConstPtr g,
                    const BTUGrid &vertical_grid,
                    int test, bool bii);
-  virtual ~BTU_Verification();
+  virtual ~BTU_Verification() = default;
 
 protected:
   virtual void initialize_bottom_surface_flux();

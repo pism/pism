@@ -60,10 +60,6 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
   m_runoff       = allocate_runoff(g);
 }
 
-ForceThickness::~ForceThickness() {
-  // empty
-}
-
 void ForceThickness::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);

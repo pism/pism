@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace energy {
 class CHSystem : public EnergyModel {
 public:
   CHSystem(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
-  virtual ~CHSystem();
+  virtual ~CHSystem() = default;
 
 protected:
   void restart_impl(const File &input_file, int record);

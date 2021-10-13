@@ -39,10 +39,6 @@ Hooke::Hooke(const std::string &prefix,
   m_Tr_Hooke = config.get_number("flow_law.Hooke.Tr");
 }
 
-Hooke::~Hooke() {
-  // empty
-}
-
 double Hooke::softness_from_temp(double T_pa) const {
   return m_A_Hooke * exp(-m_Q_Hooke/(m_ideal_gas_constant * T_pa)
                          + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));

@@ -67,10 +67,6 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   m_precipitation = allocate_precipitation(grid);
 }
 
-Frac_P::~Frac_P() {
-  // empty
-}
-
 void Frac_P::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 

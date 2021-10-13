@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2020 PISM Authors
+// Copyright (C) 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //

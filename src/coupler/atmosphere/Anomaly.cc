@@ -64,11 +64,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   m_temperature   = allocate_temperature(g);
 }
 
-Anomaly::~Anomaly()
-{
-  // empty
-}
-
 void Anomaly::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 

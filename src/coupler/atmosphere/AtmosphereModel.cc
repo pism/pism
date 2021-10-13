@@ -57,10 +57,6 @@ AtmosphereModel::AtmosphereModel(IceGrid::ConstPtr g,
   // empty
 }
 
-AtmosphereModel::~AtmosphereModel() {
-  // empty
-}
-
 void AtmosphereModel::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }

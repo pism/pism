@@ -86,10 +86,6 @@ Component::Component(IceGrid::ConstPtr g)
   // empty
 }
 
-Component::~Component() {
-  // empty
-}
-
 DiagnosticList Component::diagnostics() const {
   return this->diagnostics_impl();
 }

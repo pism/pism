@@ -116,10 +116,6 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   }
 }
 
-BedThermalUnit::~BedThermalUnit() {
-  // empty
-}
-
 void BedThermalUnit::init(const InputOptions &opts) {
   this->init_impl(opts);
 }

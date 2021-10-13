@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2018, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -70,7 +70,7 @@ public:
 class ParallelSection {
 public:
   ParallelSection(MPI_Comm com);
-  ~ParallelSection();
+  ~ParallelSection() = default;
   void check();
   void failed();
   void reset();

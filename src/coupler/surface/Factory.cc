@@ -54,10 +54,6 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   add_modifier<ElevationChange>("elevation_change");
 }
 
-Factory::~Factory() {
-  // empty
-}
-
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
 
   std::vector<std::string> choices = split(type, ',');

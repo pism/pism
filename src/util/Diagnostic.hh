@@ -59,7 +59,7 @@ namespace pism {
 class Diagnostic {
 public:
   Diagnostic(IceGrid::ConstPtr g);
-  virtual ~Diagnostic();
+  virtual ~Diagnostic() = default;
 
   typedef std::shared_ptr<Diagnostic> Ptr;
 

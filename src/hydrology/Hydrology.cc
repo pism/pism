@@ -351,10 +351,6 @@ Hydrology::Hydrology(IceGrid::ConstPtr g)
                                         "kg", "kg", "", 0);
 }
 
-Hydrology::~Hydrology() {
-  // empty
-}
-
 void Hydrology::restart(const File &input_file, int record) {
   initialization_message();
   this->restart_impl(input_file, record);

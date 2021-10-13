@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ public:
   };
 
   LocalMassBalance(Config::ConstPtr config, units::System::Ptr system);
-  virtual ~LocalMassBalance();
+  virtual ~LocalMassBalance() = default;
 
   std::string method() const;
 
@@ -219,7 +219,7 @@ class FaustoGrevePDDObject {
 
 public:
   FaustoGrevePDDObject(IceGrid::ConstPtr g);
-  virtual ~FaustoGrevePDDObject();
+  virtual ~FaustoGrevePDDObject() = default;
 
   void update_temp_mj(const IceModelVec2S &surfelev,
                               const IceModelVec2S &lat,

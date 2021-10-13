@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ class CalvingAtThickness : public Component
 {
 public:
   CalvingAtThickness(IceGrid::ConstPtr g);
-  virtual ~CalvingAtThickness();
+  virtual ~CalvingAtThickness() = default;
 
   void init();
   void update(double t,

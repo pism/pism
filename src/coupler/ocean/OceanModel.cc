@@ -72,11 +72,6 @@ OceanModel::OceanModel(IceGrid::ConstPtr g)
   // empty
 }
 
-
-OceanModel::~OceanModel() {
-  // empty
-}
-
 void OceanModel::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }

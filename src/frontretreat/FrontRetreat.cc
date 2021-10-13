@@ -39,10 +39,6 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 
-FrontRetreat::~FrontRetreat() {
-  // empty
-}
-
 /*!
  * Compute the modified mask to avoid "wrapping around" of front retreat at domain
  * boundaries.

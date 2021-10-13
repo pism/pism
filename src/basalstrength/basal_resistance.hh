@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2015, 2017, 2019 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2015, 2017, 2019, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ class Logger;
 class IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePlasticLaw(const Config &config);
-  virtual ~IceBasalResistancePlasticLaw();
+  virtual ~IceBasalResistancePlasticLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
@@ -46,7 +46,7 @@ protected:
 class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
-  virtual ~IceBasalResistancePseudoPlasticLaw();
+  virtual ~IceBasalResistancePseudoPlasticLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,
@@ -58,7 +58,7 @@ protected:
 class IceBasalResistanceRegularizedLaw : public IceBasalResistancePlasticLaw{
 public:
   IceBasalResistanceRegularizedLaw(const Config &config);
-  virtual ~IceBasalResistanceRegularizedLaw();
+  virtual ~IceBasalResistanceRegularizedLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
   virtual void drag_with_derivative(double tauc, double vx, double vy,

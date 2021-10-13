@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,7 +60,7 @@ class Quadrature;
 */
 class Element {
 public:
-  ~Element();
+  ~Element() = default;
 
   int n_chi() const {
     return m_n_chi;

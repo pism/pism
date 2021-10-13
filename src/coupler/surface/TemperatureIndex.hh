@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ namespace surface {
 class TemperatureIndex : public SurfaceModel {
 public:
   TemperatureIndex(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~TemperatureIndex();
+  virtual ~TemperatureIndex() = default;
 
   // diagnostics (for the last time step)
   const IceModelVec2S& firn_depth() const;
