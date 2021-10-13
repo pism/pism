@@ -66,6 +66,7 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
     m_target_usurf(m_grid, "target_usurf", WITH_GHOSTS),
     m_usurf(m_grid, "usurf", WITH_GHOSTS)
 {
+  m_till_phi.set_time_independent(false);
 
   m_name = "Mohr-Coulomb yield stress model to iteratively optimize till friction angle";
 
