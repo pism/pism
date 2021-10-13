@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011--2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,40 +27,42 @@ namespace pism {
 
 class IceModelVec2CellType;
 
-//! @brief PISM's iteratively optimized basal yield stress model which applies the
-//! Mohr-Coulomb model of deformable, pressurized till, with adjusted till friction angle.
+//! Iterative optimization of the till friction angle.
 class OptTillphiYieldStress : public MohrCoulombYieldStress {
 public:
   OptTillphiYieldStress(IceGrid::ConstPtr g);
   virtual ~OptTillphiYieldStress() = default;
 
 private:
-
   DiagnosticList diagnostics_impl() const;
 
-  void iterative_phi_step(const IceModelVec2S &ice_surface_elevation,
-                          const IceModelVec2S &bed_topography,
-                          const IceModelVec2CellType &mask);
-
-protected:
+  void update_tillphi(const IceModelVec2S &ice_surface_elevation,
+                      const IceModelVec2S &bed_topography,
+                      const IceModelVec2CellType &mask);
 
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
-
-  void update_impl(const YieldStressInputs &inputs, double t, double dt);
-
   void restart_impl(const File &input_file, int record);
-  //void init_impl(const YieldStressInputs &inputs);
+  void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2S m_diff_mask;
-  IceModelVec2S m_diff_usurf;
-  IceModelVec2S m_target_usurf;
-  IceModelVec2S m_usurf;
+  IceModelVec2S m_mask;
+  IceModelVec2S m_usurf_difference;
+  IceModelVec2S m_usurf_target;
 
-  double m_last_time;
   double m_last_inverse_time;
   double m_dt_phi_inv;
+
+  double m_h_inv;
+  double m_dhdt_conv;
+  double m_dphi_max;
+  double m_dphi_min;
+  double m_phi_min;
+  double m_phi_minup;
+  double m_phi_max;
+  double m_topg_min;
+  double m_topg_max;
+  double m_slope;
 };
 
 } // end of namespace pism
