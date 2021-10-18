@@ -18,6 +18,7 @@ import os
 from argparse import ArgumentParser
 from dateutil import rrule
 from dateutil.parser import parse
+from datetime import datetime
 import time
 import numpy as np
 
