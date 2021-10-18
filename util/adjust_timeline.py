@@ -27,7 +27,7 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 NC = netCDF.Dataset
-import cdtime
+import cftime
 
 # Set up the option parser
 parser = ArgumentParser()
