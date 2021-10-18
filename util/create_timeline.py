@@ -30,7 +30,7 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 NC = netCDF.Dataset
-from cftime import utime
+import cftime
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -38,6 +38,14 @@ parser.description = """Script creates a time file with time and time
 bounds that can be used to determine to force PISM via command line
 option -time_file"""
 parser.add_argument("FILE", nargs="*")
+parser.add_argument(
+    "-c",
+    "--calendar",
+    dest="calendar",
+    choices=["standard", "gregorian", "no_leap", "365_day", "360_day", "julian"],
+    help="""Sets the calendar. Default="standard".""",
+    default="standard",
+)
 parser.add_argument(
     "-p",
     "--periodicity",
@@ -88,11 +96,7 @@ else:
     nc = NC(infile, "w", format="NETCDF3_CLASSIC")
 
 time_units = "%s since %s" % (ref_unit, ref_date)
-# currently PISM only supports the gregorian standard calendar
-# once this changes, calendar should become a command-line option
-time_calendar = "standard"
-
-cdftime = utime(time_units, time_calendar)
+calendar = options.calendar
 
 # create a dictionary so that we can supply the periodicity as a
 # command-line argument.
@@ -115,7 +119,7 @@ refdate = datetime(int(r[0]), int(r[1]), int(r[2]))
 bnds_datelist = list(rrule.rrule(prule, dtstart=start_date, until=end_date))
 
 # calculate the days since refdate, including refdate, with time being the
-bnds_interval_since_refdate = cdftime.date2num(bnds_datelist)
+bnds_interval_since_refdate = cftime.date2num(bnds_datelist, time_units, calendar=calendar)
 if interval_type == "mid":
     # mid-point value:
     # time[n] = (bnds[n] + bnds[n+1]) / 2
@@ -144,7 +148,7 @@ time_var = nc.createVariable(time_var_name, "d", dimensions=(time_dim))
 time_var[:] = time_interval_since_refdate
 time_var.bounds = bnds_var_name
 time_var.units = time_units
-time_var.calendar = time_calendar
+time_var.calendar = calendar
 time_var.standard_name = time_var_name
 time_var.axis = "T"
 

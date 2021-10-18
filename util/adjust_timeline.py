@@ -27,7 +27,7 @@ except:
     print("netCDF4 is not installed!")
     sys.exit(1)
 NC = netCDF.Dataset
-from cftime import utime, datetime
+import cdtime
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -97,9 +97,7 @@ nc = NC(infile, "a")
 nt = len(nc.variables["time"])
 
 time_units = "%s since %s" % (ref_unit, ref_date)
-time_calendar = options.calendar
-
-cdftime = utime(time_units, time_calendar)
+calendar = options.calendar
 
 # create a dictionary so that we can supply the periodicity as a
 # command-line argument.
@@ -122,7 +120,7 @@ refdate = datetime(int(r[0]), int(r[1]), int(r[2]))
 bnds_datelist = list(rrule.rrule(prule, dtstart=start_date, count=nt + 1))
 
 # calculate the days since refdate, including refdate, with time being the
-bnds_interval_since_refdate = cdftime.date2num(bnds_datelist)
+bnds_interval_since_refdate = cftime.date2num(bnds_datelist, time_units, calendar=calendar)
 if interval_type == "mid":
     # mid-point value:
     # time[n] = (bnds[n] + bnds[n+1]) / 2
@@ -154,7 +152,7 @@ else:
 time_var[:] = time_interval_since_refdate
 time_var.bounds = bnds_var_name
 time_var.units = time_units
-time_var.calendar = time_calendar
+time_var.calendar = calendar
 time_var.standard_name = time_var_name
 time_var.axis = "T"
 
