@@ -1349,17 +1349,6 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   Logger::ConstPtr log = ctx->log();
 
   if (not input_file.empty() and (not bootstrap)) {
-    // These options are ignored because we're getting *all* the grid
-    // parameters from a file.
-    options::ignored(*log, "-Mx");
-    options::ignored(*log, "-My");
-    options::ignored(*log, "-Mz");
-    options::ignored(*log, "-Mbz");
-    options::ignored(*log, "-Lx");
-    options::ignored(*log, "-Ly");
-    options::ignored(*log, "-Lz");
-    options::ignored(*log, "-z_spacing");
-
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else if (not input_file.empty() and bootstrap) {
