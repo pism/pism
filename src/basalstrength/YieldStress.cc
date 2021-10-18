@@ -46,7 +46,7 @@ YieldStress::YieldStress(IceGrid::ConstPtr g)
  * Restart a yield stress model from an input file.
  */
 void YieldStress::restart(const File &input_file, int record) {
-  m_log->message(2, "Initializing the %s...\n", name().c_str());
+  m_log->message(2, "* Initializing the %s...\n", name().c_str());
 
   this->restart_impl(input_file, record);
 }
