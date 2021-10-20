@@ -45,59 +45,71 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
 
   m_name = "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
 
-  m_usurf_target.set_attrs("internal",
+  m_usurf_target.set_attrs("",
                            "target surface elevation for tillphi optimization",
                            "m", "m", "" /* no standard name */, 0);
   m_usurf_target.set_time_independent(true);
 
-  m_usurf_difference.set_attrs("internal",
-                               "difference between modeled and target surface elevations",
+  m_usurf_difference.set_attrs("diagnostic",
+                               "difference between modeled and target"
+                               " surface elevations",
                                "m", "m", "", 0);
+  m_usurf_difference.set(0.0);
 
-  m_mask.set_attrs("internal", "mask for till phi iteration", "", "", "", 0);
+  m_mask.set_attrs("diagnostic",
+                   "one if the till friction angle was"
+                   " updated by the last iteration, zero otherwise ", "", "", "", 0);
+  m_mask.metadata()["flag_values"] = {0.0, 1.0};
+  m_mask.metadata()["flag_meanings"] = "no_update updated_during_last_iteration";
 
   double start_time   = m_grid->ctx()->time()->start();
   m_last_inverse_time = start_time;
 
   {
-    m_dt_phi_inv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dt",
-                                        "seconds");
-    m_h_inv     = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.h_inv");
-    // FIXME: check units of dhdt_conv
-    m_dhdt_conv = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dh_conv", "m / s");
-    m_dphi_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.dphi");
-    m_dphi_min  = -0.5 * m_dphi_max;
-    m_phi_min   = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_min");
-    m_phi_minup = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_minup");
-    m_phi_max   = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.phi_max");
-    m_topg_min  = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_min");
-    m_topg_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.iterative_phi.topg_max");
+    // time interval between iterations:
+    m_update_interval = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt",
+                                             "seconds");
 
-    m_slope = (m_phi_minup - m_phi_min) / (m_topg_max - m_topg_min);
+    // convergence threshold
+    m_dhdt_min  = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dhdt_min", "m / s");
 
-    m_log->message(2,
-                   "  lower bound of till friction angle (phi) is piecewise-linear function of bed elev (topg):\n"
-                   "             /  %5.2f                                         for   topg < %.f\n"
-                   "   phi_min = |  %5.2f + (topg - (%.f)) * (%.2f / %.f)   for   %.f < topg < %.f\n"
-                   "             \\  %5.2f                                        for   %.f < topg\n",
-                   m_phi_min, m_topg_min, m_phi_min, m_topg_min, m_phi_minup - m_phi_min, m_topg_max - m_topg_min, m_topg_min, m_topg_max,
-                   m_phi_minup, m_topg_max);
+    // scale used to compute tillphi adjustment using the surface elevation mismatch:
+    m_dphi_scale = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dphi_scale", "degree / m");
+    // upper and lower bounds of the tillphi adjustment during an iteration:
+    m_dphi_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dphi_max");
+    m_dphi_min = -2 * m_dphi_max;
+    // lower bound of tillphi:
+    m_phi0_min = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.phi0_min");
+    m_phi0_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.phi0_max");
+    m_topg_min = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.topg_min");
+    m_topg_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.topg_max");
+    // upper bound of tillphi:
+    m_phi_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.phi_max");
 
-    if (m_phi_min >= m_phi_max) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -iterative_phi arguments: phi_min < phi_max is required");
+    if (m_phi0_min >= m_phi_max) {
+      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -tillphi_opt arguments: phi0_min < phi_max is required");
     }
 
     if (m_topg_min >= m_topg_max) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -iterative_phi arguments: topg_min < topg_max is required");
+      throw RuntimeError(PISM_ERROR_LOCATION, "invalid -tillphi_opt arguments: topg_min < topg_max is required");
     }
   }
+
+  m_log->message(2,
+                 "  Using iterative optimization of the till friction angle.\n"
+                 "  Lower bound phi0 of the till friction angle is a piecewise-linear function of bed elevation (b):\n"
+                 "          /  %5.2f                                for b < %.f\n"
+                 "   phi0 = |  %5.2f + (b - (%.f)) * (%.2f / %.f)   for %.f < b < %.f\n"
+                 "          \\  %5.2f                               for %.f < b\n",
+                 m_phi0_min, m_topg_min, m_phi0_min, m_topg_min, m_phi0_max - m_phi0_min, m_topg_max - m_topg_min, m_topg_min, m_topg_max,
+                 m_phi0_max, m_topg_max);
 }
 
 void OptTillphiYieldStress::restart_impl(const File &input_file, int record) {
 
   MohrCoulombYieldStress::restart_impl(input_file, record);
 
-  auto phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.iterative_phi.file");
+  auto phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tillphi_opt.file");
 
   if (not phi_file.empty()) {
      m_usurf_target.regrid(phi_file, CRITICAL);
@@ -118,7 +130,7 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
 
   MohrCoulombYieldStress::bootstrap_impl(input_file, inputs);
 
-  auto phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.iterative_phi.file");
+  auto phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tillphi_opt.file");
 
   if (not phi_file.empty()) {
     m_usurf_target.regrid(phi_file, CRITICAL);
@@ -150,7 +162,7 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
   double dt_inverse = t - m_last_inverse_time;
 
   // FIXME: use predictable time step lengths
-  if (dt_inverse > m_dt_phi_inv) {
+  if (dt_inverse > m_update_interval) {
 
     update_tillphi(inputs.geometry->ice_surface_elevation,
                        inputs.geometry->bed_elevation,
@@ -168,48 +180,51 @@ void OptTillphiYieldStress::update_tillphi(const IceModelVec2S &ice_surface_elev
                                            const IceModelVec2S &bed_topography,
                                            const IceModelVec2CellType &cell_type) {
 
-  m_log->message(2, "\n* Perform iterative step for optimization of till friction angle phi!\n\n");
+  m_log->message(2, "* Updating till friction angle...\n");
 
   IceModelVec::AccessList list
     { &m_till_phi, &m_usurf_target, &m_usurf_difference, &m_mask, &ice_surface_elevation, &bed_topography, &cell_type };
 
-  m_mask.set(1.0);
+  m_mask.set(0.0);
+
+  double slope = (m_phi0_max - m_phi0_min) / (m_topg_max - m_topg_min);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double usurf_difference_prev = m_usurf_difference(i, j);
-    m_usurf_difference(i, j)     = ice_surface_elevation(i, j) - m_usurf_target(i, j);
-    double dh_step               = std::abs(m_usurf_difference(i, j) - usurf_difference_prev);
+    // Compute the lower bound of the till friction angle (default value corresponds
+    // to "bed_topography(i, j) > topg_max"):
+    double phi0 = m_phi0_max;
+    if (bed_topography(i, j) <= m_topg_min) {
+      phi0 = m_phi0_min;
+    } else if (bed_topography(i, j) <= m_topg_max) {
+      phi0 = m_phi0_min + (bed_topography(i, j) - m_topg_min) * slope;
+    }
 
     if (cell_type.grounded_ice(i, j)) {
+      double dh_previous       = m_usurf_difference(i, j);
+      m_usurf_difference(i, j) = m_usurf_target(i, j) - ice_surface_elevation(i, j);
+      double dh_change         = std::abs(m_usurf_difference(i, j) - dh_previous);
 
-      // Convergence criterion
-      if (dh_step / m_dt_phi_inv > m_dhdt_conv) {
+      if (dh_change / m_update_interval > m_dhdt_min) {
+        // Update tillphi if the rate of change of the surface elevation mismatch since
+        // the last iteration is greater than the convergence threshold m_dhdt_min.
+
+        // Mark this location as "updated by the last iteration":
         m_mask(i, j) = 1.0;
 
-        double dphi = m_usurf_difference(i, j) / m_h_inv;
+        // Compute (and clip) the tillphi adjustment
+        double dphi = m_usurf_difference(i, j) * m_dphi_scale;
         dphi        = pism::clip(dphi, m_dphi_min, m_dphi_max);
 
-        m_till_phi(i, j) -= dphi;
-
-        // default value corresponds to "bed_topography(i, j) > topg_max"
-        double tillphi_min = m_phi_minup;
-        if (bed_topography(i, j) <= m_topg_min) {
-          tillphi_min = m_phi_min;
-        } else if (bed_topography(i, j) <= m_topg_max) {
-          tillphi_min = m_phi_min + (bed_topography(i, j) - m_topg_min) * m_slope;
-        }
-
-        m_till_phi(i, j) = pism::clip(m_till_phi(i, j), tillphi_min, m_phi_max);
-      } else {
-        m_mask(i, j) = 0.0;
+        // Update (and clip) the till friction angle:
+        m_till_phi(i, j) += dphi;
+        m_till_phi(i, j) = pism::clip(m_till_phi(i, j), phi0, m_phi_max);
       }
-
-      // Floating and ice free ocean
     } else if (cell_type.ocean(i, j)) {
-      m_till_phi(i, j) = m_phi_min;
-      m_mask(i, j)     = 0.0;
+      // Floating and ice free ocean: use the bed-elevation-dependent lower bound of
+      // tillphi:
+      m_till_phi(i, j) = phi0;
     }
   } // end of the loop over grid points
 }

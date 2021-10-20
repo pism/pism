@@ -51,18 +51,25 @@ private:
   IceModelVec2S m_usurf_target;
 
   double m_last_inverse_time;
-  double m_dt_phi_inv;
+  double m_update_interval;
 
-  double m_h_inv;
-  double m_dhdt_conv;
-  double m_dphi_max;
+  double m_dphi_scale;
+
+  // convergence threshold:
+  double m_dhdt_min;
+
+  // lower and upper bounds of a tillphi adjustment:
   double m_dphi_min;
-  double m_phi_min;
-  double m_phi_minup;
-  double m_phi_max;
+  double m_dphi_max;
+
+  // constants defining the lower bound of tillphi:
+  double m_phi0_min;
+  double m_phi0_max;
   double m_topg_min;
   double m_topg_max;
-  double m_slope;
+
+  // the upper bound of tillphi:
+  double m_phi_max;
 };
 
 } // end of namespace pism

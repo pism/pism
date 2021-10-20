@@ -484,6 +484,31 @@ It uses the following parameters:
 .. pism-parameters::
    :prefix: surface.cache.
 
+.. _sec-surface-no-gl-retreat:
+
+Preventing grounding line retreat
++++++++++++++++++++++++++++++++++
+
+:|options|: ``-surface ...,no_gl_retreat``
+:|implementation|: ``pism::surface::NoGLRetreat``
+
+This modifier adjust the surface mass balance to prevent the retreat of the grounding
+line. See :ref:`sec-tillphi-optimization` for an application.
+
+.. note::
+
+   - This modifier *adds mass* in violation of mass conservation. Save the diagnostic
+     :var:`no_gl_retreat_smb_adjustment` to get an idea about the amount added. Note,
+     though, that this is an imperfect measure: it includes mass added to maintain
+     non-negativity of ice thickness.
+
+   - We assume that the sea level and the bed elevation remain constant throughout the
+     simulation.
+
+   - This does *not* prevent grounding line retreat caused by the thinning of the ice due
+     to the melt at the base. Set :config:`geometry.update.use_basal_melt_rate` to "false"
+     to ensure that basal melt has no effect on the position of the grounding line
+
 .. rubric:: Footnotes
 
 .. [#time-units] You can use other time units supported by UDUNITS_.
