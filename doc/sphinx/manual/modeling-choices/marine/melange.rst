@@ -38,7 +38,7 @@ It can be re-written as
 
    \bar p_{\text{ice}} &= \frac12\, \rho_{\text{ice}}\, g\, H,
 
-   \bar p_{\text{water}} &= \frac12\, \rho_{\text{water}}\, g\, \frac{\max(z_s - b)^2}{H}.
+   \bar p_{\text{water}} &= \frac12\, \rho_{\text{water}}\, g\, \frac{\max(z_s - b, 0)^2}{H}.
 
 PISM's ocean model components provide `\bar p_{\text{water}}`, the vertically-averaged
 pressure of the water column adjacent to an ice margin.
