@@ -1985,11 +1985,6 @@ netcdf pism_config {
     pism_config:stress_balance.calving_front_stress_bc_option = "cfbc";
     pism_config:stress_balance.calving_front_stress_bc_type = "flag";
 
-    pism_config:stress_balance.fix_taud_at_margin = "no";
-    pism_config:stress_balance.fix_taud_at_margin_doc = "Fix one-sided scheme for driving stress calculation at calving front";
-    pism_config:stress_balance.fix_taud_at_margin_option = "taudfix";
-    pism_config:stress_balance.fix_taud_at_margin_type = "flag";
-
     pism_config:stress_balance.ice_free_thickness_standard = 10.0;
     pism_config:stress_balance.ice_free_thickness_standard_doc = "If ice is thinner than this standard then a cell is considered ice-free for purposes of computing ice velocity distribution.";
     pism_config:stress_balance.ice_free_thickness_standard_type = "number";
