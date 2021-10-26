@@ -33,11 +33,11 @@ set +e
 diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                1.0998      0.06498    1.0998    0.0000    0.6331    0.0000
+                0.1050      0.00506    0.1050    0.0000    0.0493    0.0000
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.5112      0.02765    0.5112    0.0000    0.2697    0.0000
+                0.0778      0.00633    0.0778    0.0000    0.0618    0.0000
 NUM ERRORS DONE
 END-OF-OUTPUT
 
