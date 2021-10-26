@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pylab import close, figure, clf, hold, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
+from pylab import close, figure, clf, plot, xlabel, ylabel, xticks, yticks, axis, legend, title, grid, show, savefig
 from numpy import array, polyfit, polyval, log10, floor, ceil, unique
 import sys
 
@@ -35,7 +35,6 @@ class Plotter:
 
         figure(figsize=(10, 6))
         clf()
-        hold(True)
 
         colors = ['red', 'blue', 'green', 'black', 'brown', 'cyan']
         for (v, c) in zip(vars, colors):
