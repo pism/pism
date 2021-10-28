@@ -9,21 +9,14 @@ import netCDF4 as nc
 
 data_path = ""
 
-experiments = [data_path+'result_1a_A1_800_300_1750e3_601_onesided_',
-               data_path+'result_1a_A1_800_300_1750e3_601_centered_']
-labels = ['one sided', 'centered']
+experiments = [data_path+'result_1a_A1_800_300_1750e3_601_']
+labels = ['old', 'new']
 
 # FIXME resolution dependent!!
-
-refdat = data_path+'ICESHELF_1a_A1_800_300_1750e3_601_default.nc'
-with nc.Dataset(refdat, 'r') as ncr:
-    velref = np.ma.array(ncr.variables["u_ssa_bc"][1,:])
 
 with nc.Dataset(experiments[0]+'default.nc', 'r') as ncr:
     mask = np.ma.array(ncr.variables["mask"][0,1,:])
     x = np.ma.array(ncr.variables["x"][:]) / 1000.0 # convert to km
-
-start_idx = 2
 
 # find the index of the last grounded cell gl_idx:
 MASK_FLOATING = 3
@@ -36,71 +29,104 @@ for i in range(len(x) - 1):
 #MISMIP
 secpera=3.15569259747e7
 
-def plot_taud(axis, exp, i):
+def plot_thk(axis, case, i):
+    varname = "thk"
+    axis.axvline(x=(x[gl_idx]), color='grey', linestyle='--', label=None)
+    axis.axhline(y=0, color='grey', linestyle='--', label=None)
+
+    run = experiments[0]
+
+    label=case.split('_')[-1].rstrip('.nc')
+
+    def plot(filename, label):
+        with nc.Dataset(filename, 'r') as ncr:
+            thk = np.ma.array(ncr.variables[varname][0,1,:])
+            thk.mask = mask > MASK_FLOATING
+
+        axis.plot(x, thk,
+                  linewidth=2,
+                  label=label)
+        axis.scatter(x, thk)
+
+    if case != "default.nc":
+        plot(run+"default.nc", "default")
+
+    plot(run+case, label)
+
+    axis.set_ylim([0, 100]) # m
+    axis.set_xlim([1730,1750]) # km
+    axis.legend(loc='lower right')
+    axis.grid(True)
+
+    if i==0:
+      axis.set_title('Change in ice thickness (m)')
+    if i<2:
+      axis.set_xticklabels([])
+
+def plot_taud(axis, case, i):
     varname = "taud_x"
     axis.axvline(x=(x[gl_idx]), color='grey', linestyle='--', label=None)
     axis.axhline(y=0, color='grey', linestyle='--', label=None)
-    for n,run in enumerate(experiments):
+    for run in experiments:
 
         with nc.Dataset(run+"default.nc", 'r') as ncr:
             refvariable = np.ma.array(ncr.variables[varname][0,1,:])
+            refvariable.mask = mask > MASK_FLOATING
 
-        with nc.Dataset(run+exp, 'r') as ncr:
+        with nc.Dataset(run+case, 'r') as ncr:
             variable = np.ma.array(ncr.variables[varname][0,1,:])
+            variable.mask = mask > MASK_FLOATING
 
-        variable.mask = mask > MASK_FLOATING
-        axis.plot(x[start_idx:], variable[start_idx:]-refvariable[start_idx:],
-                  linewidth=2*(2-n),
-                  label=labels[n])
-        axis.scatter(x[start_idx:], variable[start_idx:]-refvariable[start_idx:], label=None)
+        axis.plot(x, variable-refvariable, linewidth=2)
+        axis.scatter(x, variable-refvariable, label=None)
 
-    axis.set_ylim([-1200,600]) # km
-    axis.set_xlim([1700,1755]) # km
-    axis.text(1702,400,exp.split('_')[-1].rstrip('.nc'))
+    axis.set_ylim([-700,700]) # Pa
+    axis.set_xlim([1730,1750]) # km
+    axis.grid(True)
 
     if i==0:
       axis.set_title('Change in driving stress (Pa)')
-    if i<3:
+    if i<2:
       axis.set_xticklabels([])
 
-def plot_velocity(axis, exp, i):
+def plot_velocity(axis, case, i):
     varname = "u_ssa"
     axis.axvline(x=x[gl_idx], color='grey', linestyle='--', label=None)
     axis.axhline(y=0, color='grey', linestyle='--', label=None)
-    for n,run in enumerate(experiments):
-        refvariable=velref
+    for run in experiments:
+        with nc.Dataset(run+"default.nc", 'r') as ncr:
+            refvariable=np.ma.array(ncr.variables[varname][0,1,:])
 
-        with nc.Dataset(run+exp, 'r') as ncr:
-            variable = np.ma.array(ncr.variables[varname][0,1,:])*secpera
+        with nc.Dataset(run+case, 'r') as ncr:
+            variable = np.ma.array(ncr.variables[varname][0,1,:])
+            variable.mask = mask > MASK_FLOATING
 
-        variable.mask = mask > MASK_FLOATING
-        axis.plot(x[start_idx:], variable[start_idx:] - refvariable[start_idx:],
-                  linewidth=2*(2-n),
-                  label=labels[n])
+        axis.plot(x, (variable - refvariable)*secpera, linewidth=2)
+        axis.scatter(x, (variable - refvariable)*secpera, label=None)
 
-    axis.set_ylim([-2000,500]) # km
-    axis.set_xlim([0,1760]) # km
+    axis.set_xlim([1730,1750]) # km
+    axis.grid(True)
 
     if i==0:
         axis.set_title('Change in velocity (m/a)')
-    if i<3:
+    if i<2:
         axis.set_xticklabels([])
 
-fig, axes = plt.subplots(4, 2, sharex=False, sharey=False, figsize=(10, 8))
+fig, axes = plt.subplots(3, 3, sharex=False, sharey=False, figsize=(10, 8))
 plt.subplots_adjust( wspace=0.25, hspace=0.1)
 
-for i,exp in enumerate([ 'default.nc', 'p1.nc', 'p2.nc', 'p3.nc']):
+for i,case in enumerate(['p1.nc', 'p2.nc', 'p3.nc']):
+
+    # plot ice thickness
+    plot_thk(axes[i, 0], case, i)
+
     # plot changes is taud
-    axis = axes.flatten()[2*i]
-    plot_taud(axis, exp, i)
+    plot_taud(axes[i, 1], case, i)
 
     # plot changes in ice velocity
-    axis = axes.flatten()[2*i+1]
-    plot_velocity(axis, exp, i)
+    plot_velocity(axes[i, 2], case, i)
 
-ax = axes.flatten()[0]
-ax.legend(loc='lower right')
-axes.flatten()[6].set_xlabel('Distance from ice divide (km)')
-axes.flatten()[7].set_xlabel('Distance from ice divide (km)')
+for k in [0, 1, 2]:
+    axes[2, k].set_xlabel('x (km)')
 
 plt.show()
