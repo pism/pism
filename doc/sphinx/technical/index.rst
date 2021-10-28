@@ -15,6 +15,8 @@ Technical notes
 
    ssafd-cfbc.rst
 
+   ssafd-flow-line.rst
+
    bombproof.rst
 
    steady-hydrology.rst
