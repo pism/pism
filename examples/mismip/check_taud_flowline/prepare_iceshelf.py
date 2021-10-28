@@ -10,6 +10,9 @@ import MISMIP
 
 import numpy as np
 
+# the constant used to protect from division by zero and raising negative numbers to a
+# negative power
+eps = 1e-16
 
 def bcmask(x):
 
@@ -67,14 +70,14 @@ def thickness(x, step, Q0, H0, calving_front=1750e3, perturbation='default'):
         raise ValueError("x has to have an odd number of points, got %d", x.size)
 
     dx=x[1]-x[0]
-    thk = np.zeros_like(x)
+
     A0 = MISMIP.A('1a', step)
     print(A0,A0**(-1.0/3.0))
     B0 = A0**(-1.0/MISMIP.n())
     #C = (900.0*9.8/(4.0*B0)*(1.0-900.0/1000.0))**3.0
     C = (MISMIP.rho_i()*MISMIP.g()/(4.0*B0)*(1.0-MISMIP.rho_i()/MISMIP.rho_w()))**MISMIP.n()
 
-    thk = (4.0*C*(x-100e3)/Q0 + H0**(-4.0))**(-0.25)
+    thk = (4.0*C*np.maximum(x-100e3, eps)/Q0 + H0**(-4.0))**(-0.25)
     #thk = (x-100e3)*(-1e-4) + 800.0
     thk[x < 100e3] = 800.0
     thk[0]=0.0
@@ -163,8 +166,10 @@ def pism_bootstrap_file(filename, step,
     thk = thickness(xx, step, Q0, H0, calving_front, p)
     smb = surface_mass_balance(xx)
     temp = ice_surface_temp(xx)
-    vel = Q0/thk*MISMIP.secpera()
+
+    vel = Q0/np.maximum(thk, eps)*MISMIP.secpera()
     vel[thk==0.0]=0.0
+
     #vel = np.nan_to_num(Q0/thk)*MISMIP.secpera()
     bcm = bcmask(xx)
     vel0 = np.zeros_like(vel)
