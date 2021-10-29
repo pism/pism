@@ -93,6 +93,8 @@ Changes since v1.2
   till water amount is equal to `hydrology.tillwat_max`. This change should improve
   grounding line movement and make the basal yield stress modification turned on with
   `basal_yield_stress.slippery_grounding_lines` unnecessary.
+- Fix the approximation of the driving stress at floating ice margins. (This fix was
+  contributed by Ronja Reese and Torsten Albrecht.)
 
 Changes from v1.1 to v1.2
 =========================

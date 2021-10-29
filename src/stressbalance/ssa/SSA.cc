@@ -240,6 +240,8 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2Int *no_model_mask,
                                  IceModelVec2V &result) const {
 
+  using mask::ice_free_ocean;
+
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
@@ -305,6 +307,11 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
       if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+        if (ice_free_ocean(M.e) or ice_free_ocean(M.w))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent (see the notes in the manual)
+          h_x /= 2.0;
+        }
       } else {
         h_x = 0.0;
       }
@@ -319,6 +326,11 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
       if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
+        if (ice_free_ocean(M.s) or ice_free_ocean(M.n))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent
+          h_y /= 2.0;
+        }
       } else {
         h_y = 0.0;
       }

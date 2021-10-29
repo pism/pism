@@ -5,7 +5,7 @@
 Authorship
 ==========
 
-   *Copyright* |copy| *2004 -- 2020 the PISM authors.*
+   *Copyright* |copy| *2004 -- 2021 the PISM authors.*
 
    *This file is part of PISM. PISM is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as published by the Free
@@ -65,7 +65,7 @@ Research (PIK), and several additional developers listed here.
    * - Ward van Pelt (IMAU)
      - hydrology analysis and design
    * - Ronja Reese (PIK)
-     - sub-shelf mass balance
+     - sub-shelf mass balance, ice shelf numerics, bug fixes
    * - Julien Seguinot (ETH)
      - bug fixes, temperature index model 
    * - Ricarda Winkelmann (PIK)
