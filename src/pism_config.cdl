@@ -1850,7 +1850,7 @@ netcdf pism_config {
     pism_config:output.size_option = "o_size";
     pism_config:output.size_type = "keyword";
 
-    pism_config:output.sizes.big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel,taud";
+    pism_config:output.sizes.big = "cts,liqfrac,temp,temp_pa,uvel,vvel,wvel,wvel_rel";
     pism_config:output.sizes.big_doc = "Comma-separated list of variables to write to the output (in addition to ``model_state`` variables and variables listed in :config:`output.sizes.medium` and :config:`output.sizes.big_2d`) if ``big`` output size is selected. Does not include fields written by sub-models.";
     pism_config:output.sizes.big_type = "string";
 

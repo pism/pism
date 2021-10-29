@@ -25,6 +25,7 @@ do
     -i $of \
     -no_mass \
     -o $rf -o_order zyx -o_size big \
+    -output.sizes.big taud \
     -ssa_dirichlet_bc \
     -ssa_flow_law isothermal_glen \
     -ssa_method fd \
