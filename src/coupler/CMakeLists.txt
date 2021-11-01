@@ -67,4 +67,5 @@ add_library (boundary OBJECT
   ./surface/Factory.cc
   ./surface/Formulas.cc
   ./surface/EISMINTII.cc
+  ./surface/NoGLRetreat.cc
   )

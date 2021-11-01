@@ -95,6 +95,8 @@ Changes since v1.2
   `basal_yield_stress.slippery_grounding_lines` unnecessary.
 - Fix the approximation of the driving stress at floating ice margins. (This fix was
   contributed by Ronja Reese and Torsten Albrecht.)
+- Implement a mechanism for "optimizing" the till friction angle used by the Mohr-Coulomb
+  yield stress model. The implementation is based on the code contributed by T. Albrecht.
 
 Changes from v1.1 to v1.2
 =========================

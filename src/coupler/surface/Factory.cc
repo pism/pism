@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,17 +21,17 @@
 
 // surface models:
 #include "Anomaly.hh"
+#include "Cache.hh"
+#include "ConstantPIK.hh"
+#include "Delta_T.hh"
 #include "Elevation.hh"
+#include "ElevationChange.hh"
+#include "ForceThickness.hh"
 #include "GivenClimate.hh"
 #include "ISMIP6Climate.hh"
-#include "ElevationChange.hh"
-#include "Delta_T.hh"
-#include "TemperatureIndex.hh"
+#include "NoGLRetreat.hh"
 #include "Simple.hh"
-#include "ConstantPIK.hh"
-#include "ForceThickness.hh"
-#include "Cache.hh"
-
+#include "TemperatureIndex.hh"
 
 namespace pism {
 namespace surface {
@@ -52,6 +52,7 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   add_modifier<Delta_T>("delta_T");
   add_modifier<ForceThickness>("forcing");
   add_modifier<ElevationChange>("elevation_change");
+  add_modifier<NoGLRetreat>("no_gl_retreat");
 }
 
 std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
