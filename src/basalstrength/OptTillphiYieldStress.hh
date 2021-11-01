@@ -40,18 +40,22 @@ private:
                       const IceModelVec2S &bed_topography,
                       const IceModelVec2CellType &mask);
 
+  void init_t_last(const File &input_file);
+  void init_usurf_target(const File &input_file);
+
+  void init_impl(const YieldStressInputs &inputs);
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
   void restart_impl(const File &input_file, int record);
   void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
   MaxTimestep max_timestep_impl(double t) const;
 
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
+
   IceModelVec2S m_mask;
   IceModelVec2S m_usurf_difference;
   IceModelVec2S m_usurf_target;
-
-  double m_last_inverse_time;
-  double m_update_interval;
 
   double m_dphi_scale;
 
@@ -70,6 +74,15 @@ private:
 
   // the upper bound of tillphi:
   double m_phi_max;
+
+  //! time of the last till friction angle update
+  double m_t_last;
+  //! Update interval in seconds
+  double m_update_interval;
+  //! Temporal resolution to use when checking whether it's time to update
+  double m_t_eps;
+  //! Name of the variable used to store the last update time.
+  std::string m_time_name;
 };
 
 } // end of namespace pism
