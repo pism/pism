@@ -97,6 +97,13 @@ Changes since v1.2
   contributed by Ronja Reese and Torsten Albrecht.)
 - Implement a mechanism for "optimizing" the till friction angle used by the Mohr-Coulomb
   yield stress model. The implementation is based on the code contributed by T. Albrecht.
+- Add `atmosphere.elevation_change.precipitation.temp_lapse_rate` to the `-atmosphere
+  ...,elevation_change` modifier. Now this parameter is used to compute the temperature
+  change `dT` used to scale precipitation by a factor `exp(C * dT)` with `C =
+  atmosphere.precip_exponential_factor_for_temperature`. We need a separate temperature
+  lapse rate parameter to be able to use this modifier with atmosphere models that include
+  an elevation-dependent near-surface air temperature parameterizations, e.g. `-atmosphere
+  pik,elevation_change`.
 
 Changes from v1.1 to v1.2
 =========================

@@ -50,8 +50,15 @@ protected:
   enum Method {SCALE, SHIFT};
 
   Method m_precip_method;
+
+  // parameter used when m_precip_method == SHIFT
   double m_precip_lapse_rate;
+
+  // parameters used when m_precip_method == SCALE
+  double m_precip_temp_lapse_rate;
   double m_precip_exp_factor;
+
+  // surface temperature lapse rate
   double m_temp_lapse_rate;
 
   std::shared_ptr<IceModelVec2T> m_reference_surface;

@@ -275,6 +275,14 @@ The near-surface air temperature is modified using an elevation lapse rate `\gam
 .. math::
    \gamma_T = -\frac{dT}{dz}.
 
+.. warning::
+
+   Some atmosphere models (:ref:`sec-atmosphere-pik`, for example) use elevation-dependent
+   near-surface air temperature parameterizations that include an elevation lapse rate.
+
+   In most cases one should not combine such a temperature parameterization with an
+   additional elevation lapse rate for temperature.
+
 Two methods of adjusting precipitation are available:
 
 - Scaling using an exponential factor
@@ -284,8 +292,8 @@ Two methods of adjusting precipitation are available:
      \mathrm{P} = \mathrm{P_{input}} \cdot \exp(C \cdot \Delta T),
 
   where `C =` :config:`atmosphere.precip_exponential_factor_for_temperature` and `\Delta
-  T` is the temperature difference produced by applying
-  :config:`atmosphere.elevation_change.temperature_lapse_rate`.
+  T` is the temperature difference produced by applying the lapse rate
+  :config:`atmosphere.elevation_change.precipitation.temp_lapse_rate`.
 
   This mechanisms increases precipitation by `100(\exp(C) - 1)` percent for each degree of
   temperature increase.

@@ -49,7 +49,7 @@ netcdf pism_config {
     pism_config:atmosphere.elevation_change.periodic_type = "flag";
 
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate = 0.0;
-    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the surface mass balance";
+    pism_config:atmosphere.elevation_change.precipitation.lapse_rate_doc = "Elevation lapse rate for the precipitation";
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate_option = "precip_lapse_rate";
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate_type = "number";
     pism_config:atmosphere.elevation_change.precipitation.lapse_rate_units = "(kg m-2 / year) / km";
@@ -59,6 +59,12 @@ netcdf pism_config {
     pism_config:atmosphere.elevation_change.precipitation.method_doc = "Choose the precipitation adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the precipitation lapse rate.";
     pism_config:atmosphere.elevation_change.precipitation.method_option = "precip_adjustment";
     pism_config:atmosphere.elevation_change.precipitation.method_type = "keyword";
+
+    pism_config:atmosphere.elevation_change.precipitation.temp_lapse_rate = 0.0;
+    pism_config:atmosphere.elevation_change.precipitation.temp_lapse_rate_doc = "Elevation lapse rate for the surface temperature used to compute `\\Delta T` in the precipitation scaling factor `\\exp(C \\cdot \\Delta T)`";
+    pism_config:atmosphere.elevation_change.precipitation.temp_lapse_rate_option = "precip_temp_lapse_rate";
+    pism_config:atmosphere.elevation_change.precipitation.temp_lapse_rate_type = "number";
+    pism_config:atmosphere.elevation_change.precipitation.temp_lapse_rate_units = "Kelvin / km";
 
     pism_config:atmosphere.elevation_change.temperature_lapse_rate = 0.0;
     pism_config:atmosphere.elevation_change.temperature_lapse_rate_doc = "Elevation lapse rate for the surface temperature";

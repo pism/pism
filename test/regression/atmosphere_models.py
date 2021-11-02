@@ -543,6 +543,7 @@ class ElevationChange(TestCase):
         self.dz = 1000.0        # m
         self.dT = -self.dTdz * self.dz / 1000.0
         self.dP = -PISM.util.convert(self.dPdz * self.dz / 1000.0, "kg m-2 year-1", "kg m-2 s-1")
+        self.precip_dTdz = 2.0  # Kelvin per km
 
         self.geometry = PISM.Geometry(self.grid)
 
@@ -552,6 +553,8 @@ class ElevationChange(TestCase):
         config.set_string("atmosphere.elevation_change.file", self.filename)
 
         config.set_number("atmosphere.elevation_change.precipitation.lapse_rate", self.dPdz)
+
+        config.set_number("atmosphere.elevation_change.precipitation.temp_lapse_rate", self.precip_dTdz)
 
         config.set_number("atmosphere.elevation_change.temperature_lapse_rate", self.dTdz)
 
@@ -589,12 +592,13 @@ class ElevationChange(TestCase):
         # change surface elevation
         self.geometry.ice_surface_elevation.shift(self.dz)
 
-        # check that the temperature changed accordingly
+        # check that the temperature and precipitation changed accordingly
         modifier.update(self.geometry, 0, 1)
 
         C = config.get_number("atmosphere.precip_exponential_factor_for_temperature")
+        dT = -self.precip_dTdz * self.dz / 1000.0
         P = sample(model.mean_precipitation())
-        dP = np.exp(C * self.dT) * P - P
+        dP = np.exp(C * dT) * P - P
 
         check_modifier(model, modifier, T=self.dT, P=dP,
                        ts=[0.5], Ts=[self.dT], Ps=[dP])
