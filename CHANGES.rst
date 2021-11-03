@@ -104,6 +104,9 @@ Changes since v1.2
   lapse rate parameter to be able to use this modifier with atmosphere models that include
   an elevation-dependent near-surface air temperature parameterizations, e.g. `-atmosphere
   pik,elevation_change`.
+- Fix a bug in the approximation of the grounding line flux (scalar and 2D diagnostics
+  `grounding_line_flux`): the flux through the grounding line should be zero if its
+  direction is parallel to the grounding line. This issue was reported by Ronja Reese.
 
 Changes from v1.1 to v1.2
 =========================

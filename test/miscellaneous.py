@@ -1523,3 +1523,69 @@ def thickness_calving_test():
 
         # restore default values
         config.set_string("calving.thickness_calving.file", "")
+
+def grounding_line_flux_test():
+    """Test that the grounding line flux approximation
+
+    The grounding line flux should be zero if the direction of the flux is parallel to the
+    grounding line.
+
+    """
+
+    # Mx and My have to be odd
+    Mx = 51
+    My = 51
+    Lx = 1e5
+    Ly = 1e5
+    grid = PISM.testing.shallow_grid(Mx=Mx, My=My, Lx=Lx, Ly=Ly)
+
+    geometry = PISM.Geometry(grid)
+
+    with PISM.vec.Access([geometry.bed_elevation, geometry.ice_thickness]):
+        for i,j in grid.points():
+            x = grid.x(i)
+            y = grid.y(j)
+            C = 0.25 * (Lx + Ly)
+
+            if x - y <= 0.0:
+                geometry.bed_elevation[i, j] = 10.0
+            elif x + y >= C:
+                geometry.bed_elevation[i, j] = 10.0
+            else:
+                geometry.bed_elevation[i, j] = -10.0
+
+            if i == 0 or j == 0 or i == Mx-1 or j == My-1:
+                geometry.ice_thickness[i, j] = 0.0
+            elif x + y < C:
+                geometry.ice_thickness[i, j] = 10.0
+            else:
+                geometry.ice_thickness[i, j] = 0.0
+
+    geometry.ensure_consistency(0)
+
+    velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
+    thk_bc_mask = PISM.IceModelVec2Int(grid, "thk_bc_mask", PISM.WITHOUT_GHOSTS)
+    thk_bc_mask.set(0)
+    sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
+    sia_flux.set(0)
+
+    dt = 365 * 86400
+    V = 1.0 / dt
+    with PISM.vec.Access(velocity):
+        for i,j in grid.points():
+            velocity[i, j].u = V
+            velocity[i, j].v = V
+
+    geometry_evolution = PISM.GeometryEvolution(grid)
+
+    geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
+
+    gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux", PISM.WITHOUT_GHOSTS)
+    PISM.grounding_line_flux(geometry.cell_type,
+                             geometry_evolution.flux_staggered(),
+                             dt,
+                             False, # replace values instead of adding
+                             gl_flux)
+
+    NORM_INFINITY = 3
+    np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
