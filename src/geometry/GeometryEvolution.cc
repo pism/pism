@@ -1257,19 +1257,19 @@ void grounding_line_flux(const IceModelVec2CellType &cell_type,
         auto M = cell_type.star(i, j);
         auto Q = flux.star(i, j);
 
-        if (grounded(M.n) and Q.n <= 0.0) {
+        if (grounded(M.n)) {
           result += Q.n * dx;
         }
 
-        if (grounded(M.e) and Q.e <= 0.0) {
+        if (grounded(M.e)) {
           result += Q.e * dy;
         }
 
-        if (grounded(M.s) and Q.s >= 0.0) {
+        if (grounded(M.s)) {
           result -= Q.s * dx;
         }
 
-        if (grounded(M.w) and Q.w >= 0.0) {
+        if (grounded(M.w)) {
           result -= Q.w * dy;
         }
 
@@ -1320,19 +1320,19 @@ double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
         auto M = cell_type.star(i, j);
         auto Q = flux.star(i, j); // m^2 / s
 
-        if (grounded(M.n) and Q.n <= 0.0) {
+        if (grounded(M.n)) {
           volume_flux += Q.n * dx;
         }
 
-        if (grounded(M.e) and Q.e <= 0.0) {
+        if (grounded(M.e)) {
           volume_flux += Q.e * dy;
         }
 
-        if (grounded(M.s) and Q.s >= 0.0) {
+        if (grounded(M.s)) {
           volume_flux -= Q.s * dx;
         }
 
-        if (grounded(M.w) and Q.w >= 0.0) {
+        if (grounded(M.w)) {
           volume_flux -= Q.w * dy;
         }
       }
