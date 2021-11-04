@@ -70,7 +70,6 @@ ITMMassBalance::ITMMassBalance(Config::ConstPtr config, units::System::Ptr syste
   pdd_threshold_temp = m_config->get_number("surface.itm.positive_threshold_temp");
   
 
-  //FIXME use itm instead of pdd! 
 
   m_method = "insolation temperature melt";
 }
