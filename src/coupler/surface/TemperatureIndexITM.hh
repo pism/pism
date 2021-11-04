@@ -24,6 +24,8 @@
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "localITM.hh"
+#include "pism/coupler/util/ScalarForcing.hh"
+
 // #include "localMassBalance.hh"
 
 namespace pism {
@@ -156,6 +158,12 @@ protected:
   bool m_sd_use_param, m_sd_file_set;
   int m_sd_period;
   double m_sd_param_a, m_sd_param_b;
+
+  std::unique_ptr<ScalarForcing> m_eccentricity;
+
+  std::unique_ptr<ScalarForcing> m_obliquity;
+
+  std::unique_ptr<ScalarForcing> m_long_peri;
 };
 
 } // end of namespace surface

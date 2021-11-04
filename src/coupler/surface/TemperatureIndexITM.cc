@@ -35,6 +35,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include <iostream>
+#include "pism/coupler/util/ScalarForcing.hh"
 
 namespace pism {
 namespace surface {
@@ -177,6 +178,29 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
                               "insolation at the top of the atmosphere, when the sun is above the elvation angle Phi", 
                               "W m-2", "W m-2", "", 0);
   m_qinsol.set(0.0);
+
+
+  m_eccentricity.reset(new ScalarForcing(g->ctx(),
+                                    "surface.itm.paleo.eccentricity",
+                                    "eccentricity",
+                                    "",
+                                    "",
+                                    "eccentricity of the earth "));
+
+  m_obliquity.reset(new ScalarForcing(g->ctx(),
+                                    "surface.itm.paleo.obliquity",
+                                    "obliquity",
+                                    "degree",
+                                    "degree",
+                                    "obliquity of the earth "));
+
+  m_long_peri.reset(new ScalarForcing(g->ctx(),
+                                    "surface.itm.paleo.long_peri",
+                                    "long_peri",
+                                    "degree",
+                                    "degree",
+                                    "longitude of the perihelion "));
+
 
 }
 
@@ -384,8 +408,8 @@ double TemperatureIndexITM::get_distance2_paleo(double time){
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double lambda = get_lambda_paleo(time);
   double 
-    ecc = m_config->get_number("surface.itm.paleo.eccentricity"),
-    peri_deg = m_config->get_number("surface.itm.paleo.long_peri");
+    ecc = m_eccentricity->value(time), //m_config->get_number("surface.itm.paleo.eccentricity"),
+    peri_deg =  m_long_peri->value(time); //m_config->get_number("surface.itm.paleo.long_peri");
   double distance2 = pow((1. - ecc * cos(lambda - peri_deg * M_PI / 180.)),2) / pow((1. - ecc * ecc),2);
   // From Equation 2.2.5 Liou (2002)
   // (a/r)^2
@@ -410,9 +434,9 @@ double TemperatureIndexITM::get_lambda_paleo(double time){
   // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double 
-    epsilon_deg = m_config->get_number("surface.itm.paleo.obliquity"), 
-    ecc = m_config->get_number("surface.itm.paleo.eccentricity"),
-    peri_deg = m_config->get_number("surface.itm.paleo.long_peri");
+    epsilon_deg = m_obliquity->value(time), //m_config->get_number("surface.itm.paleo.obliquity"), 
+    ecc = m_eccentricity->value(time), //m_config->get_number("surface.itm.paleo.eccentricity"),
+    peri_deg = m_long_peri->value(time); // m_config->get_number("surface.itm.paleo.long_peri");
 
   double lambda_m, lambda, delta_lambda; 
 

@@ -2463,15 +2463,30 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.eccentricity_type = "number";
     pism_config:surface.itm.paleo.eccentricity_units = "1";
 
+    pism_config:surface.itm.paleo.eccentricity.file = "";
+    pism_config:surface.itm.paleo.eccentricity.file_doc = "Name of the file containing paleo eccentricity over time.";
+    pism_config:surface.itm.paleo.eccentricity.file_option = "paleo_eccentricity_file";
+    pism_config:surface.itm.paleo.eccentricity.file_type = "string";
+
     pism_config:surface.itm.paleo.obliquity =  23.44;
     pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.itm.paleo.obliquity_type = "number";
     pism_config:surface.itm.paleo.obliquity_units = "degree";
 
+    pism_config:surface.itm.paleo.obliquity.file = "";
+    pism_config:surface.itm.paleo.obliquity.file_doc = "Name of the file containing paleo obliquity over time.";
+    pism_config:surface.itm.paleo.obliquity.file_option = "paleo_obliquity_file";
+    pism_config:surface.itm.paleo.obliquity.file_type = "string";
+
     pism_config:surface.itm.paleo.long_peri =  102.94719;
     pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
     pism_config:surface.itm.paleo.long_peri_type = "number";
     pism_config:surface.itm.paleo.long_peri_units = "degree";
+
+    pism_config:surface.itm.paleo.long_peri.file = "";
+    pism_config:surface.itm.paleo.long_peri.file_doc = "Name of the file containing paleo long_peri over time.";
+    pism_config:surface.itm.paleo.long_peri.file_option = "paleo_long_peri_file";
+    pism_config:surface.itm.paleo.long_peri.file_type = "string";
 
     pism_config:surface.itm.phi =  17.5;
     pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
