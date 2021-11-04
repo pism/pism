@@ -421,7 +421,7 @@ double TemperatureIndexITM::get_distance2_paleo(double time){
 double TemperatureIndexITM::get_delta_paleo(double time){
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double lambda = get_lambda_paleo(time);
-  double epsilon_deg = m_config->get_number("surface.itm.paleo.obliquity");
+  double epsilon_deg = m_obliquity->value(time);// m_config->get_number("surface.itm.paleo.obliquity");
   double delta = sin(epsilon_deg * M_PI / 180.) * sin(lambda);
   // Equation 2.2.4 of Liou (2002)
   return delta;
