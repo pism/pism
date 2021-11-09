@@ -84,13 +84,12 @@ unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity
     return 0;
   }
 
-  const unsigned int skip_max = static_cast<int>(m_config->get_number("time_stepping.skip.max"));
+  const int skip_max = static_cast<int>(m_config->get_number("time_stepping.skip.max"));
 
   if (input_dt_diffusivity > 0.0) {
     const double conservativeFactor = 0.95;
     const double counter = floor(conservativeFactor * (input_dt / input_dt_diffusivity));
-    const unsigned int result = static_cast<unsigned int>(counter);
-    return std::min(result, skip_max);
+    return std::min(static_cast<int>(counter), skip_max);
   } else {
     return skip_max;
   }
@@ -175,7 +174,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // mass continuity stability criteria
   if (m_config->get_flag("geometry.update.enabled")) {
-    CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
+    auto cfl = m_stress_balance->max_timestep_cfl_2d();
 
     restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));
     restrictions.push_back(max_timestep_diffusivity());
@@ -186,20 +185,22 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // note that restrictions has at least 2 elements
   // the first element is the max time step we can take
-  MaxTimestep dt_max = restrictions[0];
-  MaxTimestep dt_other = restrictions[1];
+  auto dt_max = restrictions[0];
+  auto dt_other = restrictions[1];
 
   TimesteppingInfo result;
   result.dt = dt_max.value();
   result.reason = (dt_max.description() + " (overrides " + dt_other.description() + ")");
   result.skip_counter = 0;
 
+  double resolution = m_config->get_number("time_stepping.resolution", "seconds");
+
   // Hit multiples of X years, if requested.
   {
     int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
     if (timestep_hit_multiples > 0) {
       double
-        epsilon = 1.0, // 1 second tolerance
+        epsilon = resolution, // tolerance: usually 1 second
         next_time = m_timestep_hit_multiples_last_time;
 
       while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + result.dt + epsilon) {
@@ -229,8 +230,6 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
       result.skip_counter = 1;
     }
   }
-
-  double resolution = m_config->get_number("time_stepping.resolution");
 
   if (resolution > 0.0) {
     double dt = std::floor(result.dt * resolution) / resolution;
