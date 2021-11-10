@@ -221,6 +221,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   {
     if (dt_max.description() == "diffusivity" and counter == 0) {
       result.skip_counter = skip_counter(dt_other.value(), dt_max.value());
+    } else {
+      result.skip_counter = counter;
     }
 
     // "max" and "end of the run" limit the "big" time-step (in
