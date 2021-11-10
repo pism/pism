@@ -190,9 +190,9 @@ int ccs_set_xition_date( calcalcs_cal *calendar, int year, int month, int day );
 int ccs_get_xition_date( const char *country_code, int *year, int *month, int *day );
 
 /*--------------------------------------------------------------------------
- * calcalcs_err_str: return a static char * to an error string, given the error nmmber
+ * calcalcs_err_str: return a static char * to an error string, given the error number
  */
-char *ccs_err_str( int errno );
+char *ccs_err_str( int error_code );
 
 #define CALCALCS_ERR_NO_YEAR_ZERO		-10
 #define CALCALCS_ERR_DATE_NOT_IN_CALENDAR	-11
