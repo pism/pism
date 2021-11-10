@@ -412,7 +412,6 @@ double TemperatureIndexITM::get_delta(double time){
 
 
 double TemperatureIndexITM::get_distance2_paleo(double time){
-  std::cout << "get distance \n";
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double lambda = get_lambda_paleo(time);
   double 
@@ -427,14 +426,10 @@ double TemperatureIndexITM::get_distance2_paleo(double time){
 
 
 double TemperatureIndexITM::get_delta_paleo(double time){
-  std::cout << "get delta \n";
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double epsilon_deg = m_obliquity->value(time);// m_config->get_number("surface.itm.paleo.obliquity");
-  std::cout << "DEBUG D1 \n";
   double lambda = get_lambda_paleo(time);
-  std::cout << "DEBUG D2 \n";
   double delta = sin(epsilon_deg * M_PI / 180.) * sin(lambda);
-  std::cout << "DEBUG D3 \n";
   // Equation 2.2.4 of Liou (2002)
   return delta;
 
@@ -442,34 +437,25 @@ double TemperatureIndexITM::get_delta_paleo(double time){
 
 
 double TemperatureIndexITM::get_lambda_paleo(double time){
-  std::cout << "get lambda \n";
   // estimates solar longitude at current time in the year 
   // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double 
     epsilon_deg = m_obliquity->value(time); //m_config->get_number("surface.itm.paleo.obliquity"), 
-  std::cout << "DEBUG L01 \n";
   double
     ecc = m_eccentricity->value(time); //m_config->get_number("surface.itm.paleo.eccentricity"),
-  std::cout << "DEBUG L02 \n";
   double
     peri_deg = m_long_peri->value(time); // m_config->get_number("surface.itm.paleo.long_peri");
-  std::cout << "DEBUG L1 \n";
   double lambda_m, lambda, delta_lambda; 
-  std::cout << "DEBUG L2 \n";
   delta_lambda = 2. * M_PI * (m_grid->ctx()->time()->year_fraction(time) - 80./ 365.); 
   // lambda = 0 at March equinox (80th day of the year)
-  std::cout << "DEBUG L3\n";
   double beta = sqrt(1-ecc * ecc);
-  std::cout << "DEBUG L4\n";
   lambda_m = -2.*((ecc/2. + (pow(ecc,3))/8. ) * (1.+beta) * sin(-peri_deg * M_PI / 180.) -
         (pow(ecc,2))/4. * (1./2. + beta) * sin(-2.*peri_deg * M_PI / 180.) + (pow(ecc,3))/8. *
         (1./3. + beta) * sin(-3.*peri_deg * M_PI / 180.)) + delta_lambda;
-  std::cout << "DEBUG L5\n";
   lambda = ( lambda_m + (2.*ecc - (pow(ecc,3))/4.)*sin(lambda_m - peri_deg * M_PI / 180.) +
         (5./4.)*(ecc * ecc) * sin(2.*(lambda_m - peri_deg * M_PI / 180.)) + (13./12.)*(pow(ecc,3))
         * sin(3.*(lambda_m - peri_deg * M_PI / 180.)) );
-  std::cout << "DEBUG L6\n";
   return lambda; 
 
 }
@@ -677,11 +663,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             delta =  get_delta(ts[k]),
             distance2 = get_distance2(ts[k]); 
           if (paleo){
-            std::cout<<"DEBUG 0\n";
             delta = get_delta_paleo(ts[k]);
-            std::cout<<"DEBUG 1\n";
             distance2 = get_distance2_paleo(ts[k]);
-            std::cout<<"DEBUG 2\n";
           }  
               
             
