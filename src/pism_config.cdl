@@ -2468,6 +2468,18 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.eccentricity.file_option = "paleo_eccentricity_file";
     pism_config:surface.itm.paleo.eccentricity.file_type = "string";
 
+    pism_config:surface.itm.paleo.eccentricity.period = 0;
+    pism_config:surface.itm.paleo.eccentricity.period_doc = "Length of the period of the eccentricity forcing data. Set to zero to disable.";
+    pism_config:surface.itm.paleo.eccentricity.period_option = "eccentricity_period";
+    pism_config:surface.itm.paleo.eccentricity.period_type = "integer";
+    pism_config:surface.itm.paleo.eccentricity.period_units = "years";
+
+    pism_config:surface.itm.paleo.eccentricity.reference_year = 0;
+    pism_config:surface.itm.paleo.eccentricity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.eccentricity.period`` is active.";
+    pism_config:surface.itm.paleo.eccentricity.reference_year_option = "eccentricity_reference_year";
+    pism_config:surface.itm.paleo.eccentricity.reference_year_type = "integer";
+    pism_config:surface.itm.paleo.eccentricity.reference_year_units = "years";
+
     pism_config:surface.itm.paleo.obliquity =  23.44;
     pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.itm.paleo.obliquity_type = "number";
@@ -2477,6 +2489,18 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.obliquity.file_doc = "Name of the file containing paleo obliquity over time.";
     pism_config:surface.itm.paleo.obliquity.file_option = "paleo_obliquity_file";
     pism_config:surface.itm.paleo.obliquity.file_type = "string";
+    
+    pism_config:surface.itm.paleo.obliquity.period = 0;
+    pism_config:surface.itm.paleo.obliquity.period_doc = "Length of the period of the obliquity forcing data. Set to zero to disable.";
+    pism_config:surface.itm.paleo.obliquity.period_option = "obliquity_period";
+    pism_config:surface.itm.paleo.obliquity.period_type = "integer";
+    pism_config:surface.itm.paleo.obliquity.period_units = "years";
+
+    pism_config:surface.itm.paleo.obliquity.reference_year = 0;
+    pism_config:surface.itm.paleo.obliquity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.obliquity.period`` is active.";
+    pism_config:surface.itm.paleo.obliquity.reference_year_option = "obliquity_reference_year";
+    pism_config:surface.itm.paleo.obliquity.reference_year_type = "integer";
+    pism_config:surface.itm.paleo.obliquity.reference_year_units = "years";
 
     pism_config:surface.itm.paleo.long_peri =  102.94719;
     pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
@@ -2487,6 +2511,19 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.long_peri.file_doc = "Name of the file containing paleo long_peri over time.";
     pism_config:surface.itm.paleo.long_peri.file_option = "paleo_long_peri_file";
     pism_config:surface.itm.paleo.long_peri.file_type = "string";
+
+    pism_config:surface.itm.paleo.long_peri.period = 0;
+    pism_config:surface.itm.paleo.long_peri.period_doc = "Length of the period of the long_peri forcing data. Set to zero to disable.";
+    pism_config:surface.itm.paleo.long_peri.period_option = "long_peri_period";
+    pism_config:surface.itm.paleo.long_peri.period_type = "integer";
+    pism_config:surface.itm.paleo.long_peri.period_units = "years"; 
+
+    pism_config:surface.itm.paleo.long_peri.reference_year = 0;
+    pism_config:surface.itm.paleo.long_peri.reference_year_doc = "Reference year to use when ``surface.itm.paleo.long_peri.period`` is active.";
+    pism_config:surface.itm.paleo.long_peri.reference_year_option = "long_peri_reference_year";
+    pism_config:surface.itm.paleo.long_peri.reference_year_type = "integer";
+    pism_config:surface.itm.paleo.long_peri.reference_year_units = "years";
+      
 
     pism_config:surface.itm.phi =  17.5;
     pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
