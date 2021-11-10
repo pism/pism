@@ -173,7 +173,6 @@ static std::string calendar(const File *input_file,
 static double increment_date(const units::Unit &time_units,
                              const std::string &calendar,
                              double T, double years) {
-  assert(years >= 0.0);
 
   int whole_years = static_cast<int>(std::floor(years));
   double year_fraction = years - whole_years;
@@ -191,7 +190,10 @@ static double increment_date(const units::Unit &time_units,
     calcalcs_cal *cal = ccs_init_calendar(calendar.c_str());
     assert(cal != NULL);
     int errcode = ccs_isleap(cal, date.year, &leap);
-    assert(errcode == 0);
+    if (errcode != 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "CalCalcs error: %s",
+                                    ccs_err_str(errcode));
+    }
     ccs_free_calendar(cal);
   }
 
@@ -237,13 +239,15 @@ static double parse_date(const std::string &input,
                        "got an empty date specification");
   }
 
-  // If the string starts with "-" then the year is negative. This
-  // would confuse the code below, which treats "-" as a separator, so
-  // we remember that the year is negative and remove "-".
-  bool year_is_negative = false;
-  if (spec[0] == '-') {
-    year_is_negative = true;
-    spec.substr(1);
+  // We need to remember if the year was negative in the input string: split() will ignore
+  // empty tokens separated by "-", so "-1000-1-1" will produce ["1000", "1", "1"].
+  bool year_is_negative = (spec[0] == '-');
+
+  if (year_is_negative and not member(calendar, {"365_day", "360_day", "noleap"})) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "negative dates such as '%s' are not allowed with the '%s' calendar.\n"
+                                  "Please submit a bug report if this is a problem.",
+                                  spec.c_str(), calendar.c_str());
   }
 
   auto parts = split(spec, '-');
@@ -287,6 +291,7 @@ static double parse_date(const std::string &input,
       int dummy = 0;
       int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
       if (errcode != 0) {
+        ccs_free_calendar(cal);
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "date %s is invalid in the %s calendar",
                                       spec.c_str(), calendar.c_str());
@@ -700,6 +705,14 @@ Time::Time(MPI_Comm com, Config::ConstPtr config,
                        m_run_start,
                        m_calendar_string,
                        m_time_units);
+
+  if (m_run_start > m_run_end) {
+    auto start = date(m_run_start);
+    auto end = date(m_run_end);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Negative run length. Start: %s, end: %s.",
+                                  start.c_str(), end.c_str());
+  }
 
   m_time_in_seconds = m_run_start;
 
