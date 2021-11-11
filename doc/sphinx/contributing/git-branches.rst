@@ -10,9 +10,9 @@ Git branches
 PISM development loosely follows the Git branching model described in `A successful Git
 branching model <git-branching-model_>`_ by Vincent Driessen.\ [#]_
 
-PISM's repository contains two long-lived branches: `master` and `dev`.
+PISM's repository contains two long-lived branches: `main` and `dev`.
 
-The default branch `master` contains released code. This way users can clone
+The default branch `main` contains released code. This way users can clone
 |pism-github-url| and get the latest PISM release.
 
 The `dev` branch contains code that is ready to be included in the next release.
@@ -29,8 +29,8 @@ branch was started. However, merging `dev` into a topic branch "just to stay up 
 is not a good idea since it confuses commit history.
 
 When a released version of the code needs a fix, a "bug-fix" branch is created from the
-`master` branch. When the implementation of a fix is complete, the bug-fix branch is
-merged into `master` (and `master` is tagged to mark the new bug-fix release) and into
+`main` branch. When the implementation of a fix is complete, the bug-fix branch is
+merged into `main` (and `main` is tagged to mark the new bug-fix release) and into
 `dev` so that the fix is included in the next major release.
 
 In |pism-github-url| branches are named using the name of the person responsible for the
@@ -39,7 +39,7 @@ branch containing improvements of the I/O code using PnetCDF_.
 
 .. note::
 
-   Please commit all your changes to "topic" branches. The `master` and `dev` branches are
+   Please commit all your changes to "topic" branches. The `main` and `dev` branches are
    managed by PISM developers at UAF.
 
 .. rubric:: Footnotes

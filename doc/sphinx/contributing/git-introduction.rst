@@ -48,12 +48,12 @@ them.
 
       git checkout dev
 
-   When working on a bug fix for the current (released) PISM version, start from `master`
+   When working on a bug fix for the current (released) PISM version, start from `main`
    instead:
 
    .. code-block:: bash
 
-      git checkout master
+      git checkout main
 
    See :ref:`sec-git-branches` for more.
 
@@ -112,7 +112,7 @@ them.
 
    .. note::
 
-      Do *not* push to `dev` or `master` directly unless you know what you are doing.
+      Do *not* push to `dev` or `main` directly unless you know what you are doing.
 
 #. If you started your branch from `dev` and need to use a feature that was added to `dev`
    since then you can run

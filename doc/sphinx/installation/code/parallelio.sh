@@ -13,7 +13,6 @@ netcdf_prefix=~/local/netcdf
 pnetcdf_prefix=~/local/pnetcdf
 
 url=https://github.com/NCAR/ParallelIO.git
-branch=master
 build=~/local/build/parallelio
 prefix=$HOME/local/parallelio
 

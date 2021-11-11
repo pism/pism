@@ -19,7 +19,7 @@
 #
 # - Prints commands needed to complete the release.
 #
-# Run this script *after* merging new code into master.
+# Run this script *after* merging new code into main.
 
 set -u
 set -e

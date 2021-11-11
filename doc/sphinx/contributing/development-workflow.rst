@@ -11,7 +11,7 @@ The recommended development workflow is:
 
 #. When starting a new project, create a topic branch starting from `dev`. If you are
    fixing a bug in a released version of PISM, create a topic branch starting from
-   `master`.
+   `main`.
 #. Make changes to the code or documentation (or both).
 
    a) Compile.
@@ -25,7 +25,7 @@ The recommended development workflow is:
 
 #. Update documentation (if necessary).
 #. Update the change log `CHANGES.rst`.\ [#]_
-#. Merge new features into `dev` and fixes into `master` and `dev` (or submit a pull
+#. Merge new features into `dev` and fixes into `main` and `dev` (or submit a pull
    request).
 
 This document covers the tools and approaches we found useful for the steps listed above.
