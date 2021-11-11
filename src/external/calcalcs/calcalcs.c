@@ -340,11 +340,6 @@ int ccs_isleap( calcalcs_cal *calendar, int year, int *leap )
 	if( calendar == NULL ) return(CALCALCS_ERR_NULL_CALENDAR);
 	if( calendar->sig != CCS_VALID_SIG ) return(CALCALCS_ERR_INVALID_CALENDAR);
 
-	if( year < -4714 ) {
-		sprintf( error_message, "ccs_isleap: year %d is out of range for the %s calendar; dates must not be before 4713 B.C.", year, calendar->name );
-		return( CALCALCS_ERR_OUT_OF_RANGE );
-		}
-
 	if( calendar->mixed ) {
 		if( year >= calendar->year_x )	/* Q: did any countries transition during a year that had different leap status before and after??? Let's hope not! */
 			c2use = calendar->late_cal;
@@ -930,6 +925,11 @@ int c_isleap_julian( int year, int *leap )
 {
 	int	tyear;
 
+	if( year < -4714 ) {
+		sprintf( error_message, "ccs_isleap: year %d is out of range for the Julian calendar; dates must not be before 4713 B.C.", year);
+		return( CALCALCS_ERR_OUT_OF_RANGE );
+		}
+
 	if( year == 0 ) {
 		sprintf( error_message, "the Julian calendar has no year 0" );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
@@ -955,6 +955,11 @@ int c_isleap_gregorian( int year, int *leap )
 {
 	int	tyear;
 
+	if( year < -4714 ) {
+		sprintf( error_message, "ccs_isleap: year %d is out of range for the Gregorian calendar; dates must not be before 4713 B.C.", year);
+		return( CALCALCS_ERR_OUT_OF_RANGE );
+		}
+
 	if( year == 0 ) {
 		sprintf( error_message, "the Gregorian calendar has no year 0. Use the \"Gregorian_y0\" calendar if you want to include year 0." );
 		return( CALCALCS_ERR_DATE_NOT_IN_CALENDAR );
@@ -978,6 +983,11 @@ int c_isleap_gregorian( int year, int *leap )
  */
 int c_isleap_gregorian_y0( int year, int *leap )
 {
+	if( year < -4714 ) {
+		sprintf( error_message, "ccs_isleap: year %d is out of range for the Gregorian_y0 calendar; dates must not be before 4713 B.C.", year);
+		return( CALCALCS_ERR_OUT_OF_RANGE );
+		}
+
 	*leap = (((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0);
 
 	return(0);
