@@ -35,10 +35,10 @@ information on additional citations.
 .. code::
 
    @misc {pism-web-page,
-     AUTHOR = {the PISM authors},
+     AUTHOR = {the {PISM} authors},
       TITLE = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
-        URL = {http://www.pism-docs.org},
-       YEAR = {2015},
+        URL = {http://www.pism.io},
+       YEAR = {2021},
    }
    
    @article {BBssasliding,

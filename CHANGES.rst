@@ -891,7 +891,7 @@ Miscellaneous
 
 - Add numerous regression tests.
 
-.. _Sphinx: http://pism-docs.org/sphinx/
+.. _Sphinx: http://pism.io/docs
 .. _better documentation: Sphinx_
 .. _vectorized: https://en.wikipedia.org/wiki/Automatic_vectorization
 .. _VDT: https://github.com/dpiparo/vdt
@@ -932,7 +932,7 @@ Miscellaneous
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
 .. _issue 407: https://github.com/pism/pism/issues/407
-.. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
+.. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 ..
    Local Variables:
    fill-column: 90
