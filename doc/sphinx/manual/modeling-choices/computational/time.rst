@@ -62,11 +62,11 @@ bounds.
 
 .. note::
 
-   * When preparing input files it is important to use time units that are a fixed multiple
-     of "seconds", such as "``minutes since 1989-1-1``" or "``days since 1999-12-31``" and
-     avoid "months" and "years". (PISM uses UDUNITS-2 to convert units, and in UDUNITS one
-     month is always interpreted as `\frac{1}{12}\cdot 365.242198781` days.) Please see the
-     `CF Conventions`_ document for details.
+   When preparing input files it is important to use time units that are a fixed multiple
+   of "seconds", such as "``minutes since 1989-1-1``" or "``days since 1999-12-31``" and
+   avoid "months" and "years". (PISM uses UDUNITS-2 to convert units, and in UDUNITS one
+   month is always interpreted as `\frac{1}{12}\cdot 365.242198781` days.) Please see the
+   `CF Conventions`_ document for details.
 
 .. _sec-calendars:
 
