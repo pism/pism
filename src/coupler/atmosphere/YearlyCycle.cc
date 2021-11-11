@@ -107,7 +107,7 @@ const IceModelVec2S& YearlyCycle::mean_summer_temp() const {
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
   const double
-    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_summer_day);
+    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
 
   size_t N = ts.size();
 

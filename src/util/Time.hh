@@ -101,7 +101,7 @@ public:
   double year_fraction(double T) const;
 
   //! \brief Convert the day number to the year fraction.
-  double day_of_the_year_to_day_fraction(unsigned int day) const;
+  double day_of_the_year_to_year_fraction(unsigned int day) const;
 
   //! \brief Returns the model time in seconds corresponding to the
   //! beginning of the year `T` falls into.
@@ -117,14 +117,6 @@ public:
   //! @brief Convert time interval from seconds to given units. Handle
   //! 'years' using the year length corresponding to the calendar.
   double convert_time_interval(double T, const std::string &units) const;
-
-  //! Convert time interval length in years into seconds using the year length
-  //! corresponding to the chosen calendar.
-  double years_to_seconds(double input) const;
-
-  //! Convert time interval length in seconds into years using the year length
-  //! corresponding to the chosen calendar.
-  double seconds_to_years(double input) const;
 protected:
 
   std::vector<double> parse_list(const std::string &spec) const;
@@ -145,6 +137,14 @@ protected:
                      std::vector<double> &result) const;
 
   Interval parse_interval_length(const std::string &spec) const;
+
+  //! Convert time interval length in years into seconds using the year length
+  //! corresponding to the chosen calendar.
+  double years_to_seconds(double input) const;
+
+  //! Convert time interval length in seconds into years using the year length
+  //! corresponding to the chosen calendar.
+  double seconds_to_years(double input) const;
 
 protected:
   const Config::ConstPtr m_config;

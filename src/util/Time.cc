@@ -74,7 +74,7 @@ static std::string reference_date_from_file(const File &file,
   return default_value;
 }
 
-//! Get the reference date from a file.
+//! Get the calendar name from a file.
 static std::string calendar_from_file(const File &file,
                                       const std::string &time_name,
                                       const std::string &default_value,
@@ -100,6 +100,9 @@ static std::string calendar_from_file(const File &file,
   return default_value;
 }
 
+/*!
+ * Get the reference date from a file or the configuration parameter.
+ */
 static std::string reference_date(const File *input_file,
                                   const Config &config,
                                   const Logger &log) {
@@ -134,6 +137,9 @@ static std::string reference_date(const File *input_file,
   return default_reference_date;
 }
 
+/*!
+ * Get the calendar name from a file or a configuration parameter.
+ */
 static std::string calendar(const File *input_file,
                             const Config &config,
                             const Logger &log) {
@@ -174,7 +180,16 @@ static double increment_date(const units::Unit &time_units,
                              const std::string &calendar,
                              double T, double years) {
 
-  int whole_years = static_cast<int>(std::floor(years));
+  std::numeric_limits<int> limits;
+  double whole_years_double = std::floor(years);
+  if (whole_years_double > limits.max() or
+      whole_years_double < limits.min()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "time offset of %f years does not fit in an 'int'",
+                                  whole_years_double);
+  }
+
+  int whole_years = static_cast<int>(whole_years_double);
   double year_fraction = years - whole_years;
   const double day_length = 86400.0;
 
@@ -255,24 +270,23 @@ static double parse_date(const std::string &input,
   if (parts.size() == 3) {
 
     std::vector<int> numbers;
+    std::numeric_limits<int> limits;
     for (const auto &p : parts) {
-      long int n = 0;
       try {
-        n = parse_integer(p);
+        long int n = parse_integer(p);
 
-        std::numeric_limits<int> limits;
         if (n > limits.max() or n < limits.min()) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                         "%ld does not fit in an 'int'",
                                         n);
         }
+
+        numbers.push_back(static_cast<int>(n));
       } catch (RuntimeError &e) {
         e.add_context("parsing a date specification %s",
                       spec.c_str());
         throw;
       }
-
-      numbers.push_back(static_cast<int>(n));
     }
 
     if (year_is_negative) {
@@ -484,7 +498,7 @@ std::string Time::run_length() const {
   return pism::printf("%3.3f", seconds_to_years(m_run_end - m_run_start));
 }
 
-double Time::day_of_the_year_to_day_fraction(unsigned int day) const {
+double Time::day_of_the_year_to_year_fraction(unsigned int day) const {
   const double sperd = 86400.0;
   return (sperd / m_year_length) * (double) day;
 }
