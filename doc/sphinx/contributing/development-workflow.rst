@@ -232,6 +232,37 @@ and `CircleCI CLI`_ (command-line interface), then run
 
 in PISM's source code directory.
 
+.. _sec-clang-tidy:
+
+Using `clang-tidy`
+~~~~~~~~~~~~~~~~~~
+
+Clang's tool `clang-tidy` can help one find possible portability, readability, and
+performance issues, resulting in cleaner, easier to maintain code.
+
+To use it, add `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON` to PISM's CMake options. This will
+tell CMake to save information needed by `clang-tidy`.
+
+Then save the script below to `tidy.sh`.
+
+.. literalinclude:: code/tidy.sh
+   :caption: Running `clang-tidy`
+   :name: src-clang-tidy
+   :language: bash
+   :lines: 1-
+
+This scrips assumes that PISM's build directory is in `~/local/build/pism`. You may need
+to adjust this to suit your setup.
+
+Now, to get the report about a source file `foo.cc`, run
+
+.. code-block:: bash
+
+   tidy.sh foo.cc
+
+The output is formatted in a way similar to compiler error messages, which makes it easy
+to navigate using Emacs or a similar editor.
+
 .. _sec-writing-tests:
 
 Writing tests
@@ -265,7 +296,7 @@ Here are some test writing tips:
 - It is good to check if the implementation preserves symmetries if the setup has any.
 - If a test uses a temporary file, make sure that it will not clash with names of files
   used by other tests. One easy way to do this is by generating a unique file name using
-  ``mktemp`` (in Bash scripts) or ``str(uuid.uuid4())`` (in Python).
+  `mktemp` (in Bash scripts) or `str(uuid.uuid4())` (in Python).
 
 Python bindings make it possible to test many PISM's components in isolation from the rest
 of the code. See tests in `test/regression` for some examples.
@@ -278,14 +309,14 @@ of the code. See tests in `test/regression` for some examples.
 Running tests
 ~~~~~~~~~~~~~
 
-Run ``make test`` in parallel by adding
+Run `make test` in parallel by adding
 
 .. code-block:: bash
 
    export CTEST_PARALLEL_LEVEL=N
 
-to your ``.bashrc``. This will tell ``ctest`` to run ``N`` at the same time. Or run
-``ctest -j N`` instead of ``make test``.
+to your `.bashrc`. This will tell `ctest` to run `N` at the same time. Or run
+`ctest -j N` instead of `make test`.
 
 .. _sec-editing-the-manual:
 
@@ -310,7 +341,7 @@ to date with your edits.
 To generate the HTML version of the manual, run `make manual_html`; the output is saved to
 `doc/sphinx/html/` in your build directory.
 
-Edit ``doc/sphinx/math-definitions.tex`` to add custom LaTeX commands used in formulas
+Edit `doc/sphinx/math-definitions.tex` to add custom LaTeX commands used in formulas
 (one per line).
 
 .. _sec-manual-pism-parameters:
@@ -321,12 +352,12 @@ Listing configuration parameters
 The list in :ref:`sec-parameter-list` is generated from |config-cdl|. Edit this file to
 update the list.
 
-When documenting a sub-model, use the ``:config:`` role to mention a parameter. This will
+When documenting a sub-model, use the `:config:` role to mention a parameter. This will
 create a hyperlink to the complete list of parameters and ensure that all parameter names
 are spelled correctly.
 
-To create a list of parameters controlling a sub-model, use the ``pism-parameters``
-directive. For example, to list all parameters with the prefix ``constants.ice.``, add
+To create a list of parameters controlling a sub-model, use the `pism-parameters`
+directive. For example, to list all parameters with the prefix `constants.ice.`, add
 this:
 
 .. code-block:: rst
@@ -340,7 +371,7 @@ This is the resulting list:
    :prefix: constants.ice.
 
 For this to work, configuration parameters should be documented in |config-cdl| (see the
-``..._doc`` attribute for each configuration parameter).
+`..._doc` attribute for each configuration parameter).
 
 .. _sec-manual-pism-diagnostics:
 
