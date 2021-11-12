@@ -33,5 +33,6 @@ instructions in section :ref:`sec-install-quick-tests`.
 
 .. note::
 
-   The AUR package for PISM is maintained by Julien Seguinot (|jseguinot-email|);
-   please e-mail him with questions about it.
+   The AUR package for PISM is maintained by Julien Seguinot; please e-mail him with
+   questions about it. His email is: *first name two first letters + last name three first
+   letters + at + posteo and then dot + eu*.
