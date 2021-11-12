@@ -54,9 +54,8 @@ bool show_usage_check_req_opts(const Logger &log,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage) {
-  const bool
-    keep_running = false,
-    terminate = true;
+  const bool keep_running = false;
+  const bool terminate = true;
 
   log.message(2, "%s %s\n", execname.c_str(), pism::revision);
 
@@ -72,7 +71,7 @@ bool show_usage_check_req_opts(const Logger &log,
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
-  for (auto opt : required_options) {
+  for (const auto &opt : required_options) {
     if (not options::Bool(opt, "a required option")) {
       req_absent = true;
       log.error("PISM ERROR: option %s required\n", opt.c_str());

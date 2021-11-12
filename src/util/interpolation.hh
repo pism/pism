@@ -88,9 +88,9 @@ public:
   const std::vector<int>& right() const;
   const std::vector<double>& alpha() const;
 
-  int left(size_t i) const;
-  int right(size_t i) const;
-  double alpha(size_t i) const;
+  int left(size_t j) const;
+  int right(size_t j) const;
+  double alpha(size_t j) const;
 
   //! Return interpolated values (on the output grid) given `input_values` on the input grid.
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,8 +43,11 @@ void label_components(IceModelVec2Int &mask, bool identify_icebergs, double mask
   try {
     if (grid->rank() == 0) {
       petsc::VecArray array(*mask_p0);
-      label_connected_components(array.get(), grid->My(), grid->Mx(),
-                                 identify_icebergs, mask_grounded);
+      label_connected_components(array.get(),
+                                 static_cast<int>(grid->My()),
+                                 static_cast<int>(grid->Mx()),
+                                 identify_icebergs,
+                                 static_cast<int>(mask_grounded));
     }
   } catch (...) {
     rank0.failed();

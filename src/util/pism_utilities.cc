@@ -75,11 +75,7 @@ bool ends_with(const std::string &str, const std::string &suffix) {
     return false;
   }
 
-  if (str.rfind(suffix) + suffix.size() == str.size()) {
-    return true;
-  }
-
-  return false;
+  return (str.rfind(suffix) + suffix.size() == str.size());
 }
 
 template <class T>
@@ -259,7 +255,8 @@ double wall_clock_hours(MPI_Comm com, double start_time) {
   ParallelSection rank0(com);
   try {
     if (rank == 0) {
-      result = (get_time() - start_time) / 3600.0;
+      const double seconds_per_hour = 3600.0;
+      result = (get_time() - start_time) / seconds_per_hour;
     }
   } catch (...) {
     rank0.failed();
@@ -325,12 +322,13 @@ std::string args_string() {
   PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
   PISM_CHK(ierr, "PetscGetArgs");
 
-  std::string cmdstr, argument;
+  std::string cmdstr;
+  std::string argument;
   for (int j = 0; j < argc; j++) {
     argument = argv[j];
 
     // enclose arguments containing spaces with double quotes:
-    if (argument.find(" ") != std::string::npos) {
+    if (argument.find(' ') != std::string::npos) {
       argument = "\"" + argument + "\"";
     }
 
@@ -351,7 +349,8 @@ std::string args_string() {
 std::string filename_add_suffix(const std::string &filename,
                                      const std::string &separator,
                                      const std::string &suffix) {
-  std::string basename = filename, result;
+  std::string basename = filename;
+  std::string result;
 
   // find where the separator begins:
   std::string::size_type j = basename.rfind(separator);
@@ -408,7 +407,7 @@ void validate_format_string(const std::string &format) {
                                   format.c_str());
   }
 
-  if (format.find("%") != format.rfind("%")) {
+  if (format.find('%') != format.rfind('%')) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s contains more than one %%",
                                   format.c_str());
   }
@@ -443,7 +442,8 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
   // This constant is found by solving n * (n + 1) / 2 * (2^32 - 1) < (2^64 - 1).
   static const size_t block_size = 92681;
 
-  uint64_t c0 = 0, c1 = 0;
+  uint64_t c0 = 0;
+  uint64_t c1 = 0;
   while (length != 0) {
     size_t block = std::min(block_size, length);
 
@@ -468,9 +468,8 @@ double average_water_column_pressure(double ice_thickness, double bed,
                                      double floatation_level, double rho_ice,
                                      double rho_water, double g) {
 
-  double
-    ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness),
-    water_column_height = std::max(floatation_level - ice_bottom, 0.0);
+  double ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness);
+  double water_column_height = std::max(floatation_level - ice_bottom, 0.0);
 
   if (ice_thickness > 0.0) {
     return 0.5 * rho_water * g * pow(water_column_height, 2.0) / ice_thickness;

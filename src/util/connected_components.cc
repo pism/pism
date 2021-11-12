@@ -145,7 +145,7 @@ void label_connected_components(double *image, int nrows, int ncols, bool identi
     // Blobs connected to grounded areas have the label "1", icebergs
     // have labels 2 and greater.
     for (int k = 1; k < N_labels; ++k) {
-      labels[k] = labels[k] > 1;
+      labels[k] = static_cast<bool>(labels[k] > 1);
     }
   } else {
     // Here we subtract 1 because provisional labels start at 2 (1 is

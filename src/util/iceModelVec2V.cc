@@ -38,7 +38,7 @@ IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_na
   auto sys = m_impl->grid->ctx()->unit_system();
 
   m_impl->metadata.clear();
-  for (auto prefix : {"u", "v"}) {
+  for (const auto* prefix : {"u", "v"}) {
     m_impl->metadata.emplace_back(SpatialVariableMetadata{sys, prefix + short_name});
   }
 

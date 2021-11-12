@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,10 +44,10 @@ FFTWArray::FFTWArray(fftw_complex *a, int Mx, int My)
 /*!
  * Return the Discrete Fourier Transform sample frequencies.
  */
-std::vector<double> fftfreq(int M, double d) {
+std::vector<double> fftfreq(int M, double normalization) {
   std::vector<double> result(M);
 
-  int N = M % 2 ? M / 2 : M / 2 - 1;
+  int N = (M % 2) != 0 ? M / 2 : M / 2 - 1;
 
   for (int i = 0; i <= N; i++) {
     result[i] = i;
@@ -59,7 +59,7 @@ std::vector<double> fftfreq(int M, double d) {
 
   // normalize
   for (int i = 0; i < M; i++) {
-    result[i] /= (M * d);
+    result[i] /= (M * normalization);
   }
 
   return result;

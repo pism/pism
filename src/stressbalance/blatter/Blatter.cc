@@ -89,7 +89,7 @@ void Blatter::compute_node_type(double min_thickness) {
       for (int k = 0; k < fem::q1::n_chi; ++k) {
         int ii, jj;
         E.local_to_global(k, ii, jj);
-        node_type(ii, jj) += interior;
+        node_type(ii, jj) += static_cast<double>(interior);
       }
     }
   }
@@ -189,7 +189,7 @@ bool Blatter::grounding_line(const double *F) {
  * over this face when computing lateral boundary conditions.
  */
 bool Blatter::partially_submerged_face(int face, const double *z, const double *sea_level) {
-  auto nodes = fem::q13d::incident_nodes[face];
+  const auto *nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face
   int N = 4;
@@ -225,7 +225,7 @@ bool Blatter::marine_boundary(int face,
                               const int *node_type,
                               const double *ice_bottom,
                               const double *sea_level) {
-  auto nodes = fem::q13d::incident_nodes[face];
+  const auto *nodes = fem::q13d::incident_nodes[face];
 
   // number of nodes per face
   int N = 4;
@@ -449,8 +449,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
       stencil_width = 1;
 
     DMBoundaryType
-      bx = periodicity & X_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
-      by = periodicity & Y_PERIODIC ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      bx = (periodicity & X_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      by = (periodicity & Y_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
       bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(comm,
@@ -512,7 +512,7 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
 
     PetscBool ksp_use_ew = PETSC_FALSE;
     ierr = SNESKSPGetUseEW(m_snes, &ksp_use_ew); CHKERRQ(ierr);
-    m_ksp_use_ew = ksp_use_ew;
+    m_ksp_use_ew = (ksp_use_ew != 0U);
   }
 
   return 0;
@@ -570,7 +570,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
  */
 void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
 
-  auto enthalpy = inputs.enthalpy;
+  const auto *enthalpy = inputs.enthalpy;
   // PISM's vertical grid:
   const auto &zlevels = enthalpy->levels();
   auto Mz = zlevels.size();
@@ -639,15 +639,15 @@ void Blatter::nodal_parameter_values(const fem::Q1Element3 &element,
 
     auto p = P[I.j][I.i];
 
-    node_type[n]        = p.node_type;
+    node_type[n]        = static_cast<int>(p.node_type);
     bottom_elevation[n] = p.bed;
     ice_thickness[n]    = p.thickness;
 
-    if (surface_elevation) {
+    if (surface_elevation != nullptr) {
       surface_elevation[n] = p.bed + p.thickness;
     }
 
-    if (sea_level) {
+    if (sea_level != nullptr) {
       sea_level[n] = p.sea_level;
     }
   }
@@ -714,7 +714,7 @@ void Blatter::report_mesh_info() {
 
       int node_type[4];
       for (int k = 0; k < 4; ++k) {
-        node_type[k] = P[k].node_type;
+        node_type[k] = static_cast<int>(P[k].node_type);
       }
 
       if (exterior_element(node_type)) {
@@ -1103,8 +1103,8 @@ void Blatter::copy_solution() {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = m_u_sigma->get_column(i, j);
-    auto v = m_v_sigma->get_column(i, j);
+    auto *u = m_u_sigma->get_column(i, j);
+    auto *v = m_v_sigma->get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
       u[k] = x[j][i][k].u;      // STORAGE_ORDER
@@ -1143,8 +1143,8 @@ void Blatter::set_initial_guess(const IceModelVec3 &u_sigma,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = u_sigma.get_column(i, j);
-    auto v = v_sigma.get_column(i, j);
+    const auto *u = u_sigma.get_column(i, j);
+    const auto *v = v_sigma.get_column(i, j);
 
     for (int k = 0; k < Mz; ++k) {
       x[j][i][k].u = u[k];      // STORAGE_ORDER

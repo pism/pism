@@ -76,17 +76,17 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
       auto H = ice_thickness.box(i, j);
 
       // flags indicating whether the current node and its neighbors are "icy"
-      stencils::Box<bool> icy;
+      stencils::Box<int> icy;
 
-      icy.ij = H.ij >= H_min;
-      icy.nw = H.nw >= H_min;
-      icy.n  = H.n  >= H_min;
-      icy.ne = H.ne >= H_min;
-      icy.e  = H.e  >= H_min;
-      icy.se = H.se >= H_min;
-      icy.s  = H.s  >= H_min;
-      icy.sw = H.sw >= H_min;
-      icy.w  = H.w  >= H_min;
+      icy.ij = static_cast<int>(H.ij >= H_min);
+      icy.nw = static_cast<int>(H.nw >= H_min);
+      icy.n  = static_cast<int>(H.n  >= H_min);
+      icy.ne = static_cast<int>(H.ne >= H_min);
+      icy.e  = static_cast<int>(H.e  >= H_min);
+      icy.se = static_cast<int>(H.se >= H_min);
+      icy.s  = static_cast<int>(H.s  >= H_min);
+      icy.sw = static_cast<int>(H.sw >= H_min);
+      icy.w  = static_cast<int>(H.w  >= H_min);
 
       // flags indicating whether neighboring elements are "icy" (an element is icy if at
       // least three of its nodes are icy)
@@ -100,7 +100,7 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
           sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (icy.ij) {
+      } else if (icy.ij != 0) {
         // the current node is icy: we are at a boundary
         result(i, j) = NODE_BOUNDARY;
       } else {

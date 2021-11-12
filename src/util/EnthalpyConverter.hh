@@ -70,7 +70,7 @@ public:
   double enthalpy_permissive(double T, double omega, double P) const;
 
   double c() const;
-  double L(double T_m) const;
+  double L(double T_pm) const;
 
   double pressure(double depth) const;
   void pressure(const std::vector<double> &depth,

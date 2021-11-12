@@ -107,8 +107,8 @@ protected:
   /*! @brief Add Jacobian contributions. */
   void add_contribution(const double *K, Mat J) const;
 
-  void mark_row_invalid(int k);
-  void mark_col_invalid(int k);
+  void mark_row_invalid(unsigned int k);
+  void mark_col_invalid(unsigned int k);
 
   DMDALocalInfo m_grid;
 
@@ -265,7 +265,7 @@ public:
 //! P1 element embedded in Q1Element2
 class P1Element2 : public Element2 {
 public:
-  P1Element2(const IceGrid &grid, const Quadrature &quadrature, int N);
+  P1Element2(const IceGrid &grid, const Quadrature &quadrature, int type);
 };
 
 class Element3 : public Element {
@@ -295,13 +295,13 @@ public:
     int i, j, k;
   };
 
-  GlobalIndex local_to_global(int i, int j, int k, int n) const {
+  GlobalIndex local_to_global(int i, int j, int k, unsigned int n) const {
     return {i + m_i_offset[n],
             j + m_j_offset[n],
             k + m_k_offset[n]};
   }
 
-  GlobalIndex local_to_global(int n) const {
+  GlobalIndex local_to_global(unsigned int n) const {
     return {m_i + m_i_offset[n],
             m_j + m_j_offset[n],
             m_k + m_k_offset[n]};

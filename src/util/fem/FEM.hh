@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -228,6 +228,14 @@ const unsigned int incident_nodes[n_faces][4] =
    {0, 1, 2, 3},                // 4 - bottom, zeta = -1
    {4, 5, 6, 7}                 // 5 - top,    zeta = +1
 };
+
+enum ElementFace {FACE_LEFT   = 0,
+                  FACE_RIGHT  = 1,
+                  FACE_FRONT  = 2,
+                  FACE_BACK   = 3,
+                  FACE_BOTTOM = 4,
+                  FACE_TOP    = 5};
+
 } // end of namespace q13d
 
 } // end of namespace fem

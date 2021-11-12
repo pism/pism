@@ -35,7 +35,7 @@ namespace pism {
 VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
   : m_n_spatial_dims(ndims),
-    m_unit_system(system),
+    m_unit_system(std::move(system)),
     m_short_name(name),
     m_time_independent(false),
     m_output_type(PISM_NAT) {
@@ -80,7 +80,7 @@ units::System::Ptr VariableMetadata::unit_system() const {
 //! @brief Check if the range `[min, max]` is a subset of `[valid_min, valid_max]`.
 /*! Throws an exception if this check failed.
  */
-void VariableMetadata::check_range(const std::string &filename, double min, double max) {
+void VariableMetadata::check_range(const std::string &filename, double min, double max) const {
 
   auto units_string = get_string("units");
   auto name_string  = get_name();
@@ -90,9 +90,8 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     *file  = filename.c_str();
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
-    double
-      valid_min = get_number("valid_min"),
-      valid_max = get_number("valid_max");
+    double valid_min = get_number("valid_min");
+    double valid_max = get_number("valid_max");
     if ((min < valid_min) or (max > valid_max)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -226,18 +225,14 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
 
   auto j = m_strings.find(name);
   if (j != m_strings.end()) {
-    if (name != "units" && (j->second).empty()) {
+    if (name != "units" and (j->second).empty()) {
       return false;
     }
 
     return true;
   }
 
-  if (m_doubles.find(name) != m_doubles.end()) {
-    return true;
-  }
-
-  return false;
+  return (m_doubles.find(name) != m_doubles.end());
 }
 
 bool VariableMetadata::has_attributes() const {
@@ -275,10 +270,11 @@ double VariableMetadata::get_number(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" does not have a double attribute \"%s\"",
-                                  get_name().c_str(), name.c_str());
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "variable \"%s\" does not have a double attribute \"%s\"",
+                                get_name().c_str(), name.c_str());
 }
 
 //! Get an array-of-doubles attribute.
@@ -286,9 +282,9 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;
-  } else {
-    return std::vector<double>();
   }
+
+  return {};
 }
 
 const VariableMetadata::StringAttrs& VariableMetadata::all_strings() const {
@@ -311,8 +307,8 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
   } else if (name == "glaciological_units") {
     m_strings[name] = value;
 
-    units::Unit internal(m_unit_system, get_string("units")),
-      glaciological(m_unit_system, value);
+    units::Unit internal(m_unit_system, get_string("units"));
+    units::Unit glaciological(m_unit_system, value);
 
     if (not units::are_convertible(internal, glaciological)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
@@ -337,9 +333,9 @@ std::string VariableMetadata::get_string(const std::string &name) const {
   auto j = m_strings.find(name);
   if (j != m_strings.end()) {
     return j->second;
-  } else {
-    return std::string();
   }
+
+  return {};
 }
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
@@ -349,15 +345,15 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     max_name_length = std::max(max_name_length, s.first.size());
   }
-  for (auto d : doubles) {
+  for (const auto &d : doubles) {
     max_name_length = std::max(max_name_length, d.first.size());
   }
 
   // Print text attributes:
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     std::string name  = s.first;
     std::string value = s.second;
     std::string padding(max_name_length - name.size(), ' ');
@@ -371,7 +367,7 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
   }
 
   // Print double attributes:
-  for (auto d : doubles) {
+  for (const auto &d : doubles) {
     std::string name  = d.first;
     std::vector<double> values = d.second;
     std::string padding(max_name_length - name.size(), ' ');
@@ -380,7 +376,9 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
       continue;
     }
 
-    if ((std::fabs(values[0]) >= 1.0e7) || (std::fabs(values[0]) <= 1.0e-4)) {
+    const double large = 1.0e7;
+    const double small = 1.0e-4;
+    if ((std::fabs(values[0]) >= large) || (std::fabs(values[0]) <= small)) {
       // use scientific notation if a number is big or small
       log.message(verbosity_threshold, "  %s%s = %12.3e\n",
                   name.c_str(), padding.c_str(), values[0]);
@@ -396,8 +394,8 @@ ConstAttribute::ConstAttribute(const VariableMetadata *var, const std::string &n
   : m_name(name), m_var(const_cast<VariableMetadata*>(var)) {
 }
 
-ConstAttribute::ConstAttribute(ConstAttribute&& a)
-  : m_name(a.m_name), m_var(a.m_var) {
+ConstAttribute::ConstAttribute(ConstAttribute&& a) noexcept
+  : m_name(std::move(a.m_name)), m_var(a.m_var) {
   a.m_name.clear();
   a.m_var = nullptr;
 }

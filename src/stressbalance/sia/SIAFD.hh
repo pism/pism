@@ -101,7 +101,7 @@ protected:
 
   virtual void compute_I(const Geometry &geometry);
 
-  bool interglacial(double accumulation_time);
+  bool interglacial(double accumulation_time) const;
 
   const unsigned int m_stencil_width;
 

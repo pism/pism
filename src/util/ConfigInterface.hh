@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -79,8 +79,8 @@ public:
   void write(MPI_Comm com, const std::string &filename, bool append = true) const;
   std::string filename() const;
 
-  void read(const File &nc);
-  void write(const File &nc) const;
+  void read(const File &file);
+  void write(const File &file) const;
 
   bool is_set(const std::string &name) const;
 

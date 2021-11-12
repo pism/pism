@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -85,8 +85,8 @@ void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto u = m_u.get_column(i, j);
-    auto v = m_v.get_column(i, j);
+    auto *u = m_u.get_column(i, j);
+    auto *v = m_v.get_column(i, j);
 
     double H = ice_thickness(i, j);
 
@@ -113,7 +113,7 @@ void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
 void BlatterMod::compute_max_diffusivity(const IceModelVec2V &velocity,
                                          const IceModelVec2S &ice_thickness,
                                          const IceModelVec2S &surface) {
-  double eps = 1e-3;
+  const double eps = 1e-3;
   double
     dx = m_grid->dx(),
     dy = m_grid->dy();

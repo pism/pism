@@ -114,7 +114,7 @@ Keyword::Keyword(const std::string& option,
 
   std::string word = input;
   // find ":" and discard everything that goes after
-  size_t n = word.find(":");
+  size_t n = word.find(':');
   if (n != std::string::npos) {
     word.resize(n);
   }
@@ -169,8 +169,9 @@ IntegerList::IntegerList(const std::string& option,
   RealList input(option, description, default_value);
   std::vector<int> result;
 
+  const double eps = 1e-6;
   for (auto v : input.value()) {
-    if (fabs(v - floor(v)) > 1e-6) {
+    if (fabs(v - floor(v)) > eps) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "Can't process '%s': (%f is not an integer).",
                                     option.c_str(), v);
@@ -225,7 +226,7 @@ RealList::RealList(const std::string& option,
 
   if (input.is_set()) {
     result.clear();
-    for (auto p : split(input, ',')) {
+    for (const auto &p : split(input, ',')) {
       result.push_back(parse_number(p));
     }
   }

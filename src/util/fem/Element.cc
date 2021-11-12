@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -138,7 +138,6 @@ Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_si
   m_col.resize(block_size);
 }
 
-
 //! Initialize shape function values and quadrature weights of a 2D physical element.
 /** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
  */
@@ -210,13 +209,13 @@ void Element2::reset(int i, int j) {
 
 /*!@brief Mark that the row corresponding to local degree of freedom `k` should not be updated
   when inserting into the global residual or Jacobian arrays. */
-void Element::mark_row_invalid(int k) {
+void Element::mark_row_invalid(unsigned int k) {
   m_row[k].i = m_row[k].j = m_row[k].k = m_invalid_dof;
 }
 
 /*!@brief Mark that the column corresponding to local degree of freedom `k` should not be updated
   when inserting into the global Jacobian arrays. */
-void Element::mark_col_invalid(int k) {
+void Element::mark_col_invalid(unsigned int k) {
   m_col[k].i = m_col[k].j = m_col[k].k = m_invalid_dof;
 }
 
@@ -380,6 +379,7 @@ Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   m_j = 0;
   m_k = 0;
 }
+
 Element3::Element3(const IceGrid &grid, int Nq, int n_chi, int block_size)
   : Element(grid, Nq, n_chi, block_size) {
   m_i = 0;
@@ -542,22 +542,22 @@ void Q1Element3Face::reset(int face, const double *z) {
     // This expresses parameterizations of faces of the reference element: for example,
     // face 0 is parameterized by (s, t) -> [-1, s, t].
     switch (face) {
-    case 0:
+    case fem::q13d::FACE_LEFT:
       P = {-1.0, pt.xi, pt.eta};
       break;
-    case 1:
+    case fem::q13d::FACE_RIGHT:
       P = { 1.0, pt.xi, pt.eta};
       break;
-    case 2:
+    case fem::q13d::FACE_FRONT:
       P = {pt.xi, -1.0, pt.eta};
       break;
-    case 3:
+    case fem::q13d::FACE_BACK:
       P = {pt.xi,  1.0, pt.eta};
       break;
-    case 4:
+    case fem::q13d::FACE_BOTTOM:
       P = {pt.xi, pt.eta, -1.0};
       break;
-    case 5:
+    case fem::q13d::FACE_TOP:
       P = {pt.xi, pt.eta,  1.0};
       break;
     }
@@ -588,18 +588,18 @@ void Q1Element3Face::reset(int face, const double *z) {
     double sign = 2 * (face % 2) - 1;
 
     switch (face) {
-    case 0:
-    case 1:
+    case fem::q13d::FACE_LEFT:
+    case fem::q13d::FACE_RIGHT:
       m_weights[q] *= 0.5 * m_dy * dz.z;
       m_normals[q] = {sign, 0.0, 0.0};
       break;
-    case 2:
-    case 3:
+    case fem::q13d::FACE_FRONT:
+    case fem::q13d::FACE_BACK:
       m_weights[q] *= 0.5 * m_dx * dz.z;
       m_normals[q] = {0.0, sign, 0.0};
       break;
-    case 4:
-    case 5:
+    case fem::q13d::FACE_BOTTOM:
+    case fem::q13d::FACE_TOP:
       {
         double
           a =  0.5 * m_dy * dz.x,

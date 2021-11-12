@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _VECTOR2_H_
-#define _VECTOR2_H_
+#ifndef PISM_VECTOR2_HH
+#define PISM_VECTOR2_HH
 
 #include <cmath>                // sqrt
 
@@ -118,4 +118,4 @@ inline bool operator!=(const Vector2 &a, const Vector2 &b) {
 
 } // end of namespace pism
 
-#endif /* _VECTOR2_H_ */
+#endif /* PISM_VECTOR2_HH */

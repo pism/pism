@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PISM_UTILITIES_H_
-#define _PISM_UTILITIES_H_
+#ifndef PISM_UTILITIES_H
+#define PISM_UTILITIES_H
 
 #include <cstdint>              // uint32_t
 
@@ -145,4 +145,4 @@ long int parse_integer(const std::string &input);
 } // end of namespace pism
 
 
-#endif /* _PISM_UTILITIES_H_ */
+#endif /* PISM_UTILITIES_H */

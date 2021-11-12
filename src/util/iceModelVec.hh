@@ -63,7 +63,7 @@ public:
   AccessList(const PetscAccessible &v);
   ~AccessList();
   void add(const PetscAccessible &v);
-  void add(const std::vector<const PetscAccessible*> vecs);
+  void add(const std::vector<const PetscAccessible*> &vecs);
 private:
   std::vector<const PetscAccessible*> m_vecs;
 };
@@ -246,17 +246,17 @@ public:
                  const std::string &standard_name,
                  unsigned int component);
 
-  void define(const File &nc, IO_Type default_type = PISM_DOUBLE) const;
+  void define(const File &file, IO_Type default_type = PISM_DOUBLE) const;
 
   void read(const std::string &filename, unsigned int time);
-  void read(const File &nc, unsigned int time);
+  void read(const File &file, unsigned int time);
 
   void write(const std::string &filename) const;
-  void write(const File &nc) const;
+  void write(const File &file) const;
 
   void regrid(const std::string &filename, RegriddingFlag flag,
               double default_value = 0.0);
-  void regrid(const File &nc, RegriddingFlag flag,
+  void regrid(const File &file, RegriddingFlag flag,
               double default_value = 0.0);
 
   virtual void begin_access() const;
@@ -295,10 +295,10 @@ protected:
 
   void set_begin_access_use_dof(bool flag);
 
-  void read_impl(const File &nc, unsigned int time);
-  void regrid_impl(const File &nc, RegriddingFlag flag,
+  void read_impl(const File &file, unsigned int time);
+  void regrid_impl(const File &file, RegriddingFlag flag,
                    double default_value = 0.0);
-  void write_impl(const File &nc) const;
+  void write_impl(const File &file) const;
 
   void checkCompatibility(const char *function, const IceModelVec &other) const;
 
@@ -306,9 +306,9 @@ protected:
   void check_array_indices(int i, int j, unsigned int k) const;
 
   void copy_to_vec(std::shared_ptr<petsc::DM> destination_da, petsc::Vec &destination) const;
-  void get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, unsigned int n,
+  void get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, unsigned int start,
                unsigned int count=1) const;
-  void set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source, unsigned int n,
+  void set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source, unsigned int start,
                unsigned int count=1);
 private:
   size_t size() const;
@@ -327,7 +327,7 @@ public:
   typedef pism::AccessList AccessList;
 protected:
   void put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const;
-  void get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel);
+  void get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) const;
 };
 
 /** A class for storing and accessing scalar 2D fields.

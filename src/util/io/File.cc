@@ -110,15 +110,17 @@ static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
     file.close();
   }
 
-  if (format == "netcdf4") {
 #if (Pism_USE_PARALLEL_NETCDF4==1)
+  if (format == "netcdf4") {
     return PISM_NETCDF4_PARALLEL;
-#endif
-  } else {
-#if (Pism_USE_PNETCDF==1)
-    return PISM_PNETCDF;
-#endif
   }
+#endif
+
+#if (Pism_USE_PNETCDF==1)
+  if (format != "netcdf4") {
+    return PISM_PNETCDF;
+  }
+#endif
 
   // this choice is appropriate for both NetCDF-3 and NetCDF-4
   return PISM_NETCDF3;
@@ -318,9 +320,9 @@ unsigned int File::nrecords() const {
 
     if (dim.empty()) {
       return 1;                 // one record
-    } else {
-      return this->dimension_length(dim);
     }
+
+    return this->dimension_length(dim);
   } catch (RuntimeError &e) {
     e.add_context("getting the number of records in file \"" + filename() + "\"");
     throw;
@@ -339,7 +341,7 @@ unsigned int File::nrecords(const std::string &name, const std::string &std_name
       return 0;
     }
 
-    for (auto d : dimensions(var.name)) {
+    for (const auto &d : dimensions(var.name)) {
       if (dimension_type(d, unit_system) == T_AXIS) {
         return this->dimension_length(d);
       }
@@ -369,9 +371,8 @@ VariableLookupData File::find_variable(const std::string &short_name, const std:
       int n_variables = nvariables();
 
       for (int j = 0; j < n_variables; ++j) {
-        std::string
-          name      = variable_name(j),
-          attribute = read_text_attribute(name, "standard_name");
+        std::string name      = variable_name(j);
+        std::string attribute = read_text_attribute(name, "standard_name");
 
         if (attribute.empty()) {
           continue;
@@ -459,9 +460,9 @@ unsigned int File::dimension_length(const std::string &name) const {
       unsigned int result = 0;
       m_impl->nc->inq_dimlen(name, result);
       return result;
-    } else {
-      return 0;
     }
+
+    return 0;
   } catch (RuntimeError &e) {
     e.add_context("getting the length of dimension '%s' in '%s'", name.c_str(), filename().c_str());
     throw;
@@ -494,35 +495,51 @@ AxisType File::dimension_type(const std::string &name,
     // check the standard_name attribute:
     if (standard_name == "time") {
       return T_AXIS;
-    } else if (standard_name == "projection_x_coordinate") {
+    }
+
+    if (standard_name == "projection_x_coordinate") {
       return X_AXIS;
-    } else if (standard_name == "projection_y_coordinate") {
+    }
+
+    if (standard_name == "projection_y_coordinate") {
       return Y_AXIS;
     }
 
     // check the axis attribute:
     if (axis == "T" or axis == "t") {
       return T_AXIS;
-    } else if (axis == "X" or axis == "x") {
+    }
+
+    if (axis == "X" or axis == "x") {
       return X_AXIS;
-    } else if (axis == "Y" or axis == "y") {
+    }
+
+    if (axis == "Y" or axis == "y") {
       return Y_AXIS;
-    } else if (axis == "Z" or axis == "z") {
+    }
+
+    if (axis == "Z" or axis == "z") {
       return Z_AXIS;
     }
 
     // check the variable name:
     if (name == "x" or name == "X" or
-        name.find("x") == 0 or name.find("X") == 0) {
+        name.find('x') == 0 or name.find('X') == 0) {
       return X_AXIS;
-    } else if (name == "y" or name == "Y" or
-               name.find("y") == 0 or name.find("Y") == 0) {
+    }
+
+    if (name == "y" or name == "Y" or
+        name.find('y') == 0 or name.find('Y') == 0) {
       return Y_AXIS;
-    } else if (name == "z" or name == "Z" or
-               name.find("z") == 0 or name.find("Z") == 0) {
+    }
+
+    if (name == "z" or name == "Z" or
+        name.find('z') == 0 or name.find('Z') == 0) {
       return Z_AXIS;
-    } else if (name == "t" or name == "T" or name == "time" or
-               name.find("t") == 0 or name.find("T") == 0) {
+    }
+
+    if (name == "t" or name == "T" or name == "time" or
+        name.find('t') == 0 or name.find('T') == 0) {
       return T_AXIS;
     }
 
@@ -651,13 +668,13 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "attribute %s is a string '%s'; expected a number or a list of numbers",
                                     att_name.c_str(), tmp.c_str());
-    } else {
-      // In this case att_type might be PISM_NAT (if an attribute does not
-      // exist), but read_double_attribute can handle that.
-      std::vector<double> result;
-      m_impl->nc->get_att_double(var_name, att_name, result);
-      return result;
     }
+
+    // In this case att_type might be PISM_NAT (if an attribute does not
+    // exist), but read_double_attribute can handle that.
+    std::vector<double> result;
+    m_impl->nc->get_att_double(var_name, att_name, result);
+    return result;
   } catch (RuntimeError &e) {
     e.add_context("reading double attribute '%s:%s' from '%s'",
                   var_name.c_str(), att_name.c_str(), filename().c_str());

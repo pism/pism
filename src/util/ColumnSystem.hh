@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2019 PISM Authors
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __columnSystem_hh
-#define __columnSystem_hh
+#ifndef PISM_COLUMNSYSTEM_HH
+#define PISM_COLUMNSYSTEM_HH
 
 #include <string>
 #include <ostream>
@@ -101,14 +101,14 @@ public:
   void save_system(std::ostream &output,
                    unsigned int system_size) const;
 
-
   void save_matrix(std::ostream &output,
                    unsigned int system_size,
-                   const std::string &info) const;
+                   const std::string &variable) const;
 
-  void save_vector(std::ostream &output,
-                   const std::vector<double> &v,
-                   unsigned int system_size, const std::string &info) const;
+  static void save_vector(std::ostream &output,
+                          const std::vector<double> &v,
+                          unsigned int system_size,
+                          const std::string &variable);
 
   std::string prefix() const;
 
@@ -188,5 +188,4 @@ protected:
 
 } // end of namespace pism
 
-#endif  /* __columnSystem_hh */
-
+#endif  /* PISM_COLUMNSYSTEM_HH */

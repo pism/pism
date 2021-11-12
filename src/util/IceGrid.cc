@@ -47,7 +47,7 @@ namespace pism {
 
 //! Internal structures of IceGrid.
 struct IceGrid::Impl {
-  Impl(std::shared_ptr<const Context> ctx);
+  Impl(std::shared_ptr<const Context> context);
 
   std::shared_ptr<petsc::DM> create_dm(int da_dof, int stencil_width) const;
   void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
@@ -127,18 +127,25 @@ IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
 
 //! Convert a string to Periodicity.
 Periodicity string_to_periodicity(const std::string &keyword) {
-    if (keyword == "none") {
+  if (keyword == "none") {
     return NOT_PERIODIC;
-  } else if (keyword == "x") {
-    return X_PERIODIC;
-  } else if (keyword == "y") {
-    return Y_PERIODIC;
-  } else if (keyword == "xy") {
-    return XY_PERIODIC;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid periodicity type '%s' is invalid.",
-                                  keyword.c_str());
   }
+
+  if (keyword == "x") {
+    return X_PERIODIC;
+  }
+
+  if (keyword == "y") {
+    return Y_PERIODIC;
+  }
+
+  if (keyword == "xy") {
+    return XY_PERIODIC;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "grid periodicity type '%s' is invalid.",
+                                keyword.c_str());
 }
 
 //! Convert Periodicity to a STL string.
@@ -264,7 +271,7 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const GridParameters &p
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
+      int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
 
       try {
         std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
@@ -302,7 +309,7 @@ IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
-  for (auto name : var_names) {
+  for (const auto &name : var_names) {
     if (file.find_variable(name)) {
       return FromFile(ctx, file, name, r);
     }
@@ -427,12 +434,13 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
 
-  if (height < 0.0 - 1.0e-6) {
+  const double eps = 1.0e-6;
+  if (height < 0.0 - eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is below base of ice"
                                   " (height must be non-negative)\n", height);
   }
 
-  if (height > Lz() + 1.0e-6) {
+  if (height > Lz() + eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is above top of computational"
                                   " grid Lz = %5.4f\n", height, Lz());
   }

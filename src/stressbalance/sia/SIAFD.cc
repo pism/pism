@@ -41,7 +41,7 @@ namespace pism {
 namespace stressbalance {
 
 SIAFD::SIAFD(IceGrid::ConstPtr g)
-  : SSB_Modifier(g),
+  : SSB_Modifier(std::move(g)),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
     m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
@@ -766,7 +766,9 @@ void SIAFD::compute_diffusivity(bool full_update,
                                   "too rough.\n"
                                   "Increase stress_balance.sia.max_diffusivity to suppress this message.", m_D_max);
 
-  } else if (high_diffusivity_counter > 0) {
+  }
+
+  if (high_diffusivity_counter > 0) {
     // This can happen only if stress_balance.sia.limit_diffusivity is true and this
     // limiting mechanism was active (high_diffusivity_counter is incremented only if
     // limit_diffusivity is true).
@@ -955,16 +957,16 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
 }
 
 //! Determine if `accumulation_time` corresponds to an interglacial period.
-bool SIAFD::interglacial(double accumulation_time) {
+bool SIAFD::interglacial(double accumulation_time) const {
   if (accumulation_time < m_eemian_start) {
     return false;
-  } else if (accumulation_time < m_eemian_end) {
-    return true;
-  } else if (accumulation_time < m_holocene_start) {
-    return false;
-  } else {
+  }
+
+  if (accumulation_time < m_eemian_end) {
     return true;
   }
+
+  return (accumulation_time >= m_holocene_start);
 }
 
 const IceModelVec2Stag& SIAFD::surface_gradient_x() const {

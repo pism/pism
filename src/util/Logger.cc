@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,12 +62,12 @@ void Logger::message(int threshold, const char format[], ...) const {
   message_impl(buffer);
 }
 
-void Logger::message(int threshold, const std::string &buffer) const {
+void Logger::message(int threshold, const std::string &text) const {
   if ((not m_impl->enabled) or threshold > m_impl->threshold) {
     return;
   }
 
-  message_impl(buffer.c_str());
+  message_impl(text.c_str());
 }
 
 void Logger::message_impl(const char buffer[]) const {

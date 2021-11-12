@@ -63,23 +63,17 @@ std::string MaxTimestep::description() const {
 bool operator==(const MaxTimestep &a, const MaxTimestep &b) {
   if (a.finite() and b.finite()) {
     return a.value() == b.value();
-  } else if (a.infinite() and b.infinite()) {
-    return true;
-  } else {
-    return false;
   }
+
+  return (a.infinite() and b.infinite());
 }
 
 bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
   if (a.finite() and b.finite()) {
     return a.value() < b.value();
-  } else if (a.finite()) {
-    return true;
-  } else if (b.finite()) {
-    return false;
-  } else {
-    return false;
   }
+
+  return a.finite();
 }
 
 bool operator>(const MaxTimestep &a, const MaxTimestep &b) {

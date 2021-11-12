@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
   int auth_len = 5;             // length of "epsg:"
   std::string::size_type position = std::string::npos;
-  for (auto &auth : {"epsg:", "EPSG:"}) {
+  for (const auto &auth : {"epsg:", "EPSG:"}) {
     position = proj_string.find(auth);
     if (position != std::string::npos) {
       break;
@@ -145,7 +145,7 @@ void check_consistency_epsg(const MappingInfo &info) {
   } else {
     // Check if the "info.mapping" variable in the input file matches the EPSG code.
     // Check strings.
-    for (auto s : epsg_mapping.all_strings()) {
+    for (const auto &s : epsg_mapping.all_strings()) {
       if (not info.mapping.has_attribute(s.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "PROJ string \"%s\" requires %s = \"%s\",\n"
@@ -201,7 +201,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
   result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
   bool proj_is_epsg = false;
-  for (auto &auth : {"epsg:", "EPSG:"}) {
+  for (const auto &auth : {"epsg:", "EPSG:"}) {
     if (result.proj.find(auth) != std::string::npos) {
       proj_is_epsg = true;
       break;
@@ -241,7 +241,7 @@ enum LonLat {LONGITUDE, LATITUDE};
 #if (Pism_USE_PROJ==1)
 
 //! Computes the area of a triangle using vector cross product.
-static double triangle_area(double *A, double *B, double *C) {
+static double triangle_area(const double *A, const double *B, const double *C) {
   double V1[3], V2[3];
   for (int j = 0; j < 3; ++j) {
     V1[j] = B[j] - A[j];

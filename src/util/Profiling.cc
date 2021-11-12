@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -88,14 +88,14 @@ void Profiling::begin(const char * name) const {
 }
 
 void Profiling::end(const char * name) const {
-  PetscLogEvent event = 0;
+
   if (m_events.find(name) == m_events.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot end event \"%s\" because it was not started",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot end event \"%s\" because it was not started",
                                   name);
-  } else {
-    event = m_events[name];
   }
-  PetscErrorCode ierr = PetscLogEventEnd(event, 0, 0, 0, 0);
+
+  PetscErrorCode ierr = PetscLogEventEnd(m_events[name], 0, 0, 0, 0);
   PISM_CHK(ierr, "PetscLogEventEnd");
 }
 

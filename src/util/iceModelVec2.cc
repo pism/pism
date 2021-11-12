@@ -136,7 +136,7 @@ double diff_y(const IceModelVec2S &array, int i, int j) {
 double diff_x_p(const IceModelVec2S &array, int i, int j) {
   const auto &grid = *array.grid();
 
-  if (grid.periodicity() & X_PERIODIC) {
+  if ((grid.periodicity() & X_PERIODIC) != 0) {
     return diff_x(array, i,j);
   }
 
@@ -155,17 +155,19 @@ double diff_x_p(const IceModelVec2S &array, int i, int j) {
 double diff_y_p(const IceModelVec2S &array, int i, int j) {
   const auto &grid = *array.grid();
 
-  if (grid.periodicity() & Y_PERIODIC) {
+  if ((grid.periodicity() & Y_PERIODIC) != 0) {
     return diff_y(array, i,j);
   }
 
   if (j == 0) {
     return (array(i,j + 1) - array(i,j)) / (grid.dy());
-  } else if (j == (int)grid.My() - 1) {
-    return (array(i,j) - array(i,j - 1)) / (grid.dy());
-  } else {
-    return diff_y(array, i,j);
   }
+
+  if (j == (int)grid.My() - 1) {
+    return (array(i,j) - array(i,j - 1)) / (grid.dy());
+  }
+
+  return diff_y(array, i,j);
 }
 
 //! Sums up all the values in an IceModelVec2S object. Ignores ghosts.

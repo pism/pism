@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PROFILING_H_
-#define _PROFILING_H_
+#ifndef PISM_PROFILING_HH
+#define PISM_PROFILING_HH
 
 #include <map>
 #include <string>
@@ -43,4 +43,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PROFILING_H_ */
+#endif /* PISM_PROFILING_HH */

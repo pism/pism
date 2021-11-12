@@ -118,11 +118,11 @@ protected:
 
   void write_model_state_impl(const File &output) const;
 
-  bool exterior_element(const int *node_type);
+  static bool exterior_element(const int *node_type);
 
-  bool grounding_line(const double *F);
+  static bool grounding_line(const double *F);
 
-  bool partially_submerged_face(int face, const double *z, const double *sea_level);
+  static bool partially_submerged_face(int face, const double *z, const double *sea_level);
 
   void compute_node_type(double min_thickness);
 
@@ -160,7 +160,7 @@ protected:
                               const Vector2 *u_nodal,
                               double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
-  void compute_residual(DMDALocalInfo *info, const Vector2 ***xg, Vector2 ***yg);
+  void compute_residual(DMDALocalInfo *info, const Vector2 ***X, Vector2 ***R);
 
   void residual_dirichlet(const DMDALocalInfo &info,
                           Parameters **P,
@@ -198,11 +198,11 @@ protected:
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
                                           const Vector2 ***x,
                                           Mat A, Mat J,
-                                          Blatter *data);
+                                          Blatter *solver);
 
   static PetscErrorCode function_callback(DMDALocalInfo *info,
                                           const Vector2 ***x, Vector2 ***f,
-                                          Blatter *data);
+                                          Blatter *solver);
 
   virtual void init_2d_parameters(const Inputs &inputs);
 

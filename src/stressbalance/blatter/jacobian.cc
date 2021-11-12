@@ -33,8 +33,8 @@ namespace stressbalance {
  * Computes the Jacobian contribution of the "main" part of the Blatter system.
  */
 void Blatter::jacobian_f(const fem::Q1Element3 &element,
-                         const Vector2 *velocity,
-                         const double *hardness,
+                         const Vector2 *u_nodal,
+                         const double *B_nodal,
                          double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
@@ -46,8 +46,8 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
 
   double *B = m_work[0];
 
-  element.evaluate(velocity, u, u_x, u_y, u_z);
-  element.evaluate(hardness, B);
+  element.evaluate(u_nodal, u, u_x, u_y, u_z);
+  element.evaluate(B_nodal, B);
 
   // loop over all quadrature points
   for (int q = 0; q < element.n_pts(); ++q) {
@@ -122,7 +122,7 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
 void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
                              const double *tauc_nodal,
                              const double *f_nodal,
-                             const Vector2 *velocity,
+                             const Vector2 *u_nodal,
                              double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
@@ -132,7 +132,7 @@ void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
     *tauc       = m_work[0],
     *floatation = m_work[1];
 
-  face.evaluate(velocity, u);
+  face.evaluate(u_nodal, u);
   face.evaluate(tauc_nodal, tauc);
   face.evaluate(f_nodal, floatation);
 
@@ -253,7 +253,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
   IceModelVec::AccessList list(m_parameters);
-  auto P = m_parameters.array();
+  auto *P = m_parameters.array();
 
   // loop over all the elements that have at least one owned node
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -320,8 +320,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
           fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
 
-          // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z);
+          face->reset(fem::q13d::FACE_BOTTOM, z);
 
           jacobian_basal(*face, basal_yield_stress, floatation, velocity, K);
         }

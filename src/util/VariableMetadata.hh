@@ -80,7 +80,7 @@ public:
   operator std::vector<double> () const;
 protected:
   ConstAttribute(const VariableMetadata *var, const std::string &name);
-  ConstAttribute(ConstAttribute&& a);
+  ConstAttribute(ConstAttribute&& a) noexcept;
 
   std::string m_name;
   VariableMetadata* m_var;
@@ -146,7 +146,7 @@ public:
   const DoubleAttrs& all_doubles() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
-  void check_range(const std::string &filename, double min, double max);
+  void check_range(const std::string &filename, double min, double max) const;
   void report_range(const Logger &log, double min, double max, bool found_by_standard_name);
 
 protected:

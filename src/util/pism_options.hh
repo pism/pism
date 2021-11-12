@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISM_OPTIONS_H_
-#define _PISM_OPTIONS_H_
+#ifndef PISM_OPTIONS_H
+#define PISM_OPTIONS_H
 
 #include <memory>
 #include <set>
@@ -120,4 +120,4 @@ void forbidden(const std::string &name);
 
 } // end of namespace pism
 
-#endif /* _PISM_OPTIONS_H_ */
+#endif /* PISM_OPTIONS_H */

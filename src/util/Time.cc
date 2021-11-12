@@ -49,10 +49,10 @@ static std::string reference_date_from_file(const File &file,
       size_t position = time_units.find("since");
 
       if (position != std::string::npos) {
-
         return string_strip(time_units.substr(position + strlen("since")));
+      }
 
-      } else if (stop_on_error) {
+      if (stop_on_error) {
 
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "%s:units = \"%s\" in '%s' does not contain a reference date",
@@ -85,7 +85,9 @@ static std::string calendar_from_file(const File &file,
 
     if (not calendar_name.empty()) {
       return calendar_name;
-    } else if (stop_on_error) {
+    }
+
+    if (stop_on_error) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "the '%s' variable in '%s' has no calendar attribute",
                                     time_name.c_str(), file.filename().c_str());
@@ -180,10 +182,9 @@ static double increment_date(const units::Unit &time_units,
                              const std::string &calendar,
                              double T, double years) {
 
-  std::numeric_limits<int> limits;
   double whole_years_double = std::floor(years);
-  if (whole_years_double > limits.max() or
-      whole_years_double < limits.min()) {
+  if (whole_years_double > std::numeric_limits<int>::max() or
+      whole_years_double < std::numeric_limits<int>::min()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "time offset of %f years does not fit in an 'int'",
                                   whole_years_double);
@@ -271,14 +272,13 @@ static double parse_date(const std::string &input,
   auto parts = split(spec, '-');
 
   if (parts.size() == 3) {
-
     std::vector<int> numbers;
-    std::numeric_limits<int> limits;
     for (const auto &p : parts) {
       try {
         long int n = parse_integer(p);
 
-        if (n > limits.max() or n < limits.min()) {
+        if (n > std::numeric_limits<int>::max() or
+            n < std::numeric_limits<int>::min()) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                         "%ld does not fit in an 'int'",
                                         n);
@@ -319,29 +319,25 @@ static double parse_date(const std::string &input,
     units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
 
     return time_units.time(d, calendar);
-  } else {
-    // "spec" must be a number or a number with units attached to it
-    double t = 0.0;
-    try {
-      // check if strtod() can parse it:
-      char *endptr = NULL;
-      t = strtod(spec.c_str(), &endptr);
-      if (*endptr == '\0') {
-        // strtod() parsed it successfully: assume that it is in years. This will return
-        // time in seconds.
-        return increment_date(time_units, calendar, 0, t);
-      } else {
-        // strtod() failed -- assume that this is a number followed by units compatible
-        // with seconds
-        auto system = time_units.system();
+  } // end of the block processing dates written as Y-M-D
 
-        // Convert to seconds:
-        return units::convert(system, 1.0, spec, "seconds");
-      }
-    } catch (RuntimeError &e) {
-      e.add_context("parsing the date " + spec);
-      throw;
+  // "spec" must be a number or a number with units attached to it
+  try {
+    // check if strtod() can parse it:
+    char *endptr = NULL;
+    double t = strtod(spec.c_str(), &endptr);
+    if (*endptr == '\0') {
+      // strtod() parsed it successfully: assume that it is in years. This will return
+      // time in seconds.
+      return increment_date(time_units, calendar, 0, t);
     }
+
+    // strtod() failed -- assume that this is a number followed by units compatible
+    // with seconds
+    return units::convert(time_units.system(), 1.0, spec, "seconds");
+  } catch (RuntimeError &e) {
+    e.add_context("parsing the date " + spec);
+    throw;
   }
 }
 
@@ -408,11 +404,11 @@ static double end_time(const Config &config,
   if (not time_end.empty()) {
     // parse use time_end and use it
     return parse_date(time_end, time_units, calendar);
-  } else {
-    auto run_length = config.get_number("time.run_length", "seconds");
-    // use time_start and run_length
-    return time_start + run_length;
   }
+
+  // use time_start and run_length
+  auto run_length = config.get_number("time.run_length", "seconds");
+  return time_start + run_length;
 }
 
 //! Convert model years into seconds using the year length
@@ -489,10 +485,11 @@ std::string Time::calendar() const {
 void Time::step(double delta_t) {
   m_time_in_seconds += delta_t;
 
+  const double eps = 1e-3;
   // If we are less than 0.001 second from the end of the run, reset
   // m_time_in_seconds to avoid taking a very small (and useless) time step.
-  if (m_run_end > m_time_in_seconds &&
-      m_run_end - m_time_in_seconds < 1e-3) {
+  if (m_run_end > m_time_in_seconds and
+      m_run_end - m_time_in_seconds < eps) {
     m_time_in_seconds = m_run_end;
   }
 }
@@ -511,10 +508,10 @@ std::vector<double> Time::parse_times(const std::string &spec) const {
     // a list will always contain a comma because at least two numbers are
     // needed to specify reporting intervals
     return parse_list(spec);
-  } else {
-    // it must be a range specification
-    return parse_range(spec);
   }
+
+  // it must be a range specification
+  return parse_range(spec);
 }
 
 std::vector<double> Time::parse_list(const std::string &spec) const {
@@ -566,9 +563,9 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
   }
 
   try {
-    units::Unit seconds(m_unit_system, "seconds"),
-      one(m_unit_system, "1"),
-      tmp(m_unit_system, spec);
+    units::Unit seconds(m_unit_system, "seconds");
+    units::Unit one(m_unit_system, "1");
+    units::Unit tmp(m_unit_system, spec);
 
     // Check if these units are compatible with "seconds" or "1". The
     // latter allows intervals of the form "0.5", which stands for "half
@@ -578,7 +575,9 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
       units::Converter c(tmp, seconds);
 
       return {c(1.0), SIMPLE};
-    } else if (units::are_convertible(tmp, one)) {
+    }
+
+    if (units::are_convertible(tmp, one)) {
       units::Converter c(tmp, one);
 
       // convert from years to seconds without using UDUNITS-2 (this

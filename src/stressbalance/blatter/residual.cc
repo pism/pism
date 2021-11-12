@@ -348,7 +348,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
   IceModelVec::AccessList list(m_parameters);
-  auto P = m_parameters.array();
+  auto *P = m_parameters.array();
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.
   residual_dirichlet(info, P, X, R);
@@ -423,8 +423,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
           // use an N*N-point equally-spaced quadrature at grounding lines
           fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
-          // face 4 is the bottom face in fem::q13d::incident_nodes
-          face->reset(4, z);
+          face->reset(fem::q13d::FACE_BOTTOM, z);
 
           residual_basal(element, *face, basal_yield_stress, floatation, velocity, R_nodal);
         }
@@ -444,8 +443,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
 
         // top boundary (verification tests only)
         if (k == info.mz - 2) {
-          // face 5 is the top face in fem::q13d::incident_nodes
-          m_face4.reset(5, z);
+          m_face4.reset(fem::q13d::FACE_TOP, z);
 
           residual_surface(element, m_face4, R_nodal);
         }

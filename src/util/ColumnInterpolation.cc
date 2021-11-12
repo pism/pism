@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -184,7 +184,9 @@ static std::vector<unsigned int> init_interpolation_indexes(const std::vector<do
     if (z_output[k] <= z_input.front()) {
       result[k] = 0;
       continue;
-    } else if (z_output[k] >= z_input.back()) {
+    }
+
+    if (z_output[k] >= z_input.back()) {
       result[k] = z_input.size() - 1;
       continue;
     }
@@ -216,11 +218,8 @@ void ColumnInterpolation::init_interpolation() {
     dz_max = std::max(dz, dz_max);
   }
 
-  if (fabs(dz_max - dz_min) <= 1.0e-8) {
-    m_use_linear_interpolation = true;
-  } else {
-    m_use_linear_interpolation = false;
-  }
+  const double eps = 1.0e-8;
+  m_use_linear_interpolation = (fabs(dz_max - dz_min) <= eps);
 
   // initialize quadratic interpolation constants
   if (not m_use_linear_interpolation) {

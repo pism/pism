@@ -115,7 +115,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
                                                InterpolationType interpolation_type) {
 
   int n_records = file.nrecords(short_name, standard_name,
-                                 grid->ctx()->unit_system());
+                                grid->ctx()->unit_system());
 
   int buffer_size = 0;
   if (periodic) {
@@ -594,11 +594,9 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
     // in the piece-wise constant case we can go all the way to the *next* record
     R = std::min(R + 1, time_size - 1);
     return m_data->time[R] - t;
-  } else {
-    return m_data->time[R] - t;
   }
 
-  return {};
+  return m_data->time[R] - t;
 }
 
 /*
@@ -626,7 +624,7 @@ void IceModelVec2T::interp(double t) {
 
   for (Points p(*m_impl->grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    auto column = a3[j][i];
+    auto *column = a3[j][i];
     // result (LHS) is a weighted average of two values.
     a2[j][i] = column[L] + alpha * (column[R] - column[L]);
   }

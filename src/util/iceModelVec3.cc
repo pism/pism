@@ -80,12 +80,12 @@ void IceModelVec3::set_column(int i, int j, double c) {
   }
 }
 
-void  IceModelVec3::set_column(int i, int j, const double *valsIN) {
+void  IceModelVec3::set_column(int i, int j, const double *input) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   double ***arr = (double***) m_array;
-  PetscErrorCode ierr = PetscMemcpy(arr[j][i], valsIN, m_impl->zlevels.size()*sizeof(double));
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, m_impl->zlevels.size()*sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
@@ -93,10 +93,8 @@ void  IceModelVec3::set_column(int i, int j, const double *valsIN) {
 static bool legal_level(const std::vector<double> &levels, double z) {
   double z_min = levels.front();
   double z_max = levels.back();
-  if (z < z_min - 1.0e-6 || z > z_max + 1.0e-6) {
-    return false;
-  }
-  return true;
+  const double eps = 1.0e-6;
+  return not (z < z_min - eps || z > z_max + eps);
 }
 #endif
 
@@ -115,12 +113,14 @@ double IceModelVec3::interpolate(int i, int j, double z) const {
   }
 #endif
 
-  auto column = get_column(i, j);
+  const auto* column = get_column(i, j);
 
   if (z >= zs.back()) {
     unsigned int nlevels = zs.size();
     return column[nlevels - 1];
-  } else if (z <= zs.front()) {
+  }
+
+  if (z <= zs.front()) {
     return column[0];
   }
 
@@ -163,15 +163,15 @@ void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output) 
 }
 
 
-//! Copies the values of an IceModelVec3 at the ice surface (specified by the level myH) to an IceModelVec2S gsurf.
-void extract_surface(const IceModelVec3 &data, const IceModelVec2S &H, IceModelVec2S &output) {
-  IceModelVec::AccessList list{&data, &output, &H};
+//! Copies the values of an IceModelVec3 at the ice surface (specified by the level `z`) to an IceModelVec2S gsurf.
+void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output) {
+  IceModelVec::AccessList list{&data, &output, &z};
 
   ParallelSection loop(output.grid()->com);
   try {
     for (Points p(*output.grid()); p; p.next()) {
       const int i = p.i(), j = p.j();
-      output(i, j) = data.interpolate(i, j, H(i, j));
+      output(i, j) = data.interpolate(i, j, z(i, j));
     }
   } catch (...) {
     loop.failed();

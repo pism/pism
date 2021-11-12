@@ -36,15 +36,13 @@ namespace pism {
 
 //! \brief Report the range of a time-series stored in `data`.
 static void report_range(const std::vector<double> &data,
-                         const units::System::Ptr unit_system,
+                         const units::System::Ptr &unit_system,
                          const VariableMetadata &metadata,
                          const Logger &log) {
-  double min, max;
-
   // min_element and max_element return iterators; "*" is used to get
   // the value corresponding to this iterator
-  min = *std::min_element(data.begin(), data.end());
-  max = *std::max_element(data.begin(), data.end());
+  double min = *std::min_element(data.begin(), data.end());
+  double max = *std::max_element(data.begin(), data.end());
 
   units::Converter c(unit_system,
                      metadata.get_string("units"),
@@ -328,7 +326,13 @@ double ScalarForcing::average(double t, double dt) const {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "negative interval length");
   }
 
-  if (m_period > 0.0) {
+  if (m_period <= 0.0) {
+    // regular case
+    return integral(t, t + dt) / dt;
+  }
+
+  // periodic case
+  {
     double a = t;
     double b = t + dt;
     double t0 = m_period_start;
@@ -348,9 +352,6 @@ double ScalarForcing::average(double t, double dt) const {
     }
 
     return integral(t0 + delta, t0 + gamma) / dt;
-
-  } else {
-    return integral(t, t + dt) / dt;
   }
 }
 

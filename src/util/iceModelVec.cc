@@ -159,13 +159,13 @@ std::vector<int> IceModelVec::shape() const {
 
   if (ndims() == 3) {
     return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
-  } else {
-    if (ndof() == 1) {
-      return {(int)grid->My(), (int)grid->Mx()};
-    } else {
-      return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
-    }
   }
+
+  if (ndof() == 1) {
+    return {(int)grid->My(), (int)grid->Mx()};
+  }
+
+  return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
 }
 
 //! Set the time independent flag for all variables corresponding to this IceModelVec instance.
@@ -334,9 +334,9 @@ void IceModelVec::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &sour
 unsigned int IceModelVec::stencil_width() const {
   if (m_impl->ghosted) {
     return m_impl->da_stencil_width;
-  } else {
-    return 0;
   }
+
+  return 0;
 }
 
 petsc::Vec& IceModelVec::vec() const {
@@ -354,7 +354,7 @@ petsc::Vec& IceModelVec::vec() const {
 }
 
 std::shared_ptr<petsc::DM> IceModelVec::dm() const {
-  if (m_impl->da.get() == nullptr) {
+  if (m_impl->da == nullptr) {
     // dof > 1 for vector, staggered grid 2D fields, etc. In this case zlevels.size() ==
     // 1. For 3D fields, dof == 1 (all 3D fields are scalar) and zlevels.size()
     // corresponds to dof of the underlying PETSc DM object.
@@ -401,19 +401,19 @@ void IceModelVec::set_attrs(const std::string &pism_intent,
                             const std::string &units,
                             const std::string &glaciological_units,
                             const std::string &standard_name,
-                            unsigned int N) {
+                            unsigned int component) {
 
-  metadata(N)["long_name"] = long_name;
+  metadata(component)["long_name"] = long_name;
 
-  metadata(N)["units"] = units;
+  metadata(component)["units"] = units;
 
   if (not m_impl->grid->ctx()->config()->get_flag("output.use_MKS")) {
-    metadata(N)["glaciological_units"] = glaciological_units;
+    metadata(component)["glaciological_units"] = glaciological_units;
   }
 
-  metadata(N)["pism_intent"] = pism_intent;
+  metadata(component)["pism_intent"] = pism_intent;
 
-  metadata(N)["standard_name"] = standard_name;
+  metadata(component)["standard_name"] = standard_name;
 }
 
 //! Gets an IceModelVec from a file `file`, interpolating onto the current grid.
@@ -950,7 +950,7 @@ AccessList::~AccessList() {
 }
 
 AccessList::AccessList(std::initializer_list<const PetscAccessible *> vecs) {
-  for (auto j : vecs) {
+  for (const auto *j : vecs) {
     assert(j != nullptr);
     add(*j);
   }
@@ -965,8 +965,8 @@ void AccessList::add(const PetscAccessible &vec) {
   m_vecs.push_back(&vec);
 }
 
-void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
-  for (auto v : vecs) {
+void AccessList::add(const std::vector<const PetscAccessible*> &vecs) {
+  for (const auto *v : vecs) {
     assert(v != nullptr);
     add(*v);
   }
@@ -1089,7 +1089,7 @@ void IceModelVec::put_on_proc0(petsc::Vec &onp0) const {
   }
 }
 
-void IceModelVec::get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) {
+void IceModelVec::get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) const {
   PetscErrorCode ierr;
 
   VecScatter scatter_to_zero = NULL;
@@ -1233,15 +1233,15 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
 
       int n = 0, e = 0, s = 0, w = 0;
       if (include_floating_ice) {
-        n = icy(M.n);
-        e = icy(M.e);
-        s = icy(M.s);
-        w = icy(M.w);
+        n = static_cast<int>(icy(M.n));
+        e = static_cast<int>(icy(M.e));
+        s = static_cast<int>(icy(M.s));
+        w = static_cast<int>(icy(M.w));
       } else {
-        n = grounded_ice(M.n);
-        e = grounded_ice(M.e);
-        s = grounded_ice(M.s);
-        w = grounded_ice(M.w);
+        n = static_cast<int>(grounded_ice(M.n));
+        e = static_cast<int>(grounded_ice(M.e));
+        s = static_cast<int>(grounded_ice(M.s));
+        w = static_cast<int>(grounded_ice(M.w));
       }
 
       if (n + e + s + w > 0) {
@@ -1278,15 +1278,15 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
 
     int n = 0, e = 0, s = 0, w = 0;
     if (include_floating_ice) {
-      n = icy(M.n);
-      e = icy(M.e);
-      s = icy(M.s);
-      w = icy(M.w);
+      n = static_cast<int>(icy(M.n));
+      e = static_cast<int>(icy(M.e));
+      s = static_cast<int>(icy(M.s));
+      w = static_cast<int>(icy(M.w));
     } else {
-      n = grounded_ice(M.n);
-      e = grounded_ice(M.e);
-      s = grounded_ice(M.s);
-      w = grounded_ice(M.w);
+      n = static_cast<int>(grounded_ice(M.n));
+      e = static_cast<int>(grounded_ice(M.e));
+      s = static_cast<int>(grounded_ice(M.s));
+      w = static_cast<int>(grounded_ice(M.w));
     }
 
     if (e + w > 0) {
