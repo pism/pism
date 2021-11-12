@@ -223,7 +223,10 @@ static double increment_date(const units::Unit &time_units,
     result = time_units.time(date, calendar);
   }
 
-  int year_length = (leap == 1) ? 366 : 365;
+  int year_length = 360;
+  if (calendar != "360_day") {
+    year_length = (leap == 1) ? 366 : 365;
+  }
 
   result += year_fraction * (year_length * day_length);
 
