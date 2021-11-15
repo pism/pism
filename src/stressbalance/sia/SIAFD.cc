@@ -31,6 +31,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/fem/FEM.hh"   // for mstar stuff below
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
@@ -127,6 +128,7 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
                    bool full_update) {
 
   const Profiling &profiling = m_grid->ctx()->profiling();
+  const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
@@ -137,16 +139,25 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   }
 
   profiling.begin("sia.gradient");
+  // FIXME if stress_balance.sia.surface_gradient_method == mstar then the
+  //   following returns the mahaffy version, thus in conflict with result
+  //   of compute_diffusive_flux_mstar() below
   compute_surface_gradient(inputs, m_h_x, m_h_y);
   profiling.end("sia.gradient");
 
   profiling.begin("sia.flux");
+  // FIXME if stress_balance.sia.surface_gradient_method == mstar then the
+  //   following generates an m_D which is ignored by compute_diffusive_flux_mstar() below
   compute_diffusivity(full_update,
                       *inputs.geometry,
                       inputs.enthalpy,
                       inputs.age,
                       m_h_x, m_h_y, m_D);
-  compute_diffusive_flux(m_h_x, m_h_y, m_D, m_diffusive_flux);
+  if (method == "mstar") {
+    compute_diffusive_flux_mstar(*inputs.geometry, m_diffusive_flux);
+  } else {
+    compute_diffusive_flux(m_h_x, m_h_y, m_D, m_diffusive_flux);
+  }
   profiling.end("sia.flux");
 
   if (full_update) {
@@ -211,7 +222,7 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
                               inputs.geometry->cell_type,
                               h_x, h_y);
 
-  } else if (method == "mahaffy") {
+  } else if (method == "mahaffy" or method == "mstar") {
 
     surface_gradient_mahaffy(inputs.geometry->ice_surface_elevation,
                              h_x, h_y);
@@ -799,6 +810,223 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
     }
     loop.check();
   } // o-loop
+}
+
+// FIXME obvious code duplication in next two functions should be removed
+
+// Compute formula (6) for W from Bueler (2016).  Returns
+//   W = - Gamma |grad s|^{n-1} grad b
+Vector2 SIAFD::W_mstar(double sx, double sy,
+                       double bx, double by) {
+  // FIXME: will break for flow laws other than isothermal_glen
+  const double
+    n        = m_flow_law->exponent(), // presumably 3.0
+    // FIXME: m_config->get_...() should not be used here (it is slow)
+    g        = m_config->get_number("constants.standard_gravity"),
+    rho      = m_config->get_number("constants.ice.density"),
+    E        = 0.0,             // FIXME
+    p        = 0.0,             // FIXME
+    A        = m_flow_law->softness(E, p),
+    Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
+    slopemag = sqrt(sx * sx + sy * sy);
+
+  return - Gamma * pow(slopemag, n - 1.0) * Vector2(bx, by);
+}
+
+// Compute the flux as in formulas (6), (29), and (30) from Bueler 2016:
+//   q = -D grad H + W Hup^{n+2}
+// where Hup is the value of H computed at an upwind point.
+Vector2 SIAFD::q_mstar(double H, double Hx, double Hy,
+                       double sx, double sy,
+                       Vector2 W, double Hup) {
+  // FIXME: will break for flow laws other than isothermal_glen
+  const double
+    n        = m_flow_law->exponent(), // presumably 3.0
+    // FIXME: m_config->get_...() should not be used here (it is slow)
+    g        = m_config->get_number("constants.standard_gravity"),
+    rho      = m_config->get_number("constants.ice.density"),
+    E        = 0.0,             // FIXME
+    p        = 0.0,             // FIXME
+    A        = m_flow_law->softness(E, p),
+    Gamma    = 2.0 * A * pow(rho * g, n) / (n + 2.0),
+    slopemag = sqrt(sx * sx + sy * sy),
+    D = Gamma * pow(slopemag, n - 1.0) * pow(H, n + 2.0);
+
+  return - D * Vector2(Hx, Hy) + W * pow(Hup, n + 2.0);
+}
+
+// A helper struct for defining quadrature point locations
+struct Quad : public fem::Quadrature {
+  Quad(std::initializer_list<fem::QuadPoint> pts) {
+    m_points  = pts;
+    m_weights = std::vector<double>(m_points.size(), 0.0);
+  }
+};
+
+// FIXME test of this new code:
+//    pismv -test B -ys 422.45 -y 1 -gradient mstar
+// compare
+//    pismv -test B -ys 422.45 -y 1 -gradient mahaffy
+
+// Figures 3 and 4 from Bueler (2016), combined:
+//    +------------------+------------------+
+//    | i-1,j (NW)       |         (NE) i,j |
+//    |                  |                  |
+//    |             +    |    +             |
+//    |        C----2----+----1----B        |
+//    |        |    +    |    +    |        |
+//    |        3         |       + 0 +      |
+//    |        |         |         |        |
+//    +--------+---------+---------+--------+
+//    |        |         |         |        |
+//    |        4         |       + 7 +      |
+//    |        |         |         |        |
+//    |        +----5----+----6----A        |
+//    |                  |                  |
+//    |                  |                  |
+//    |                  |       (SE) i,j-1 |
+//    +------------------+------------------+
+
+// At each map-plane location i,j, compute_diffusive_flux_mstar() below
+// computes SIA fluxes through control volume faces A-B and B-C in the figure.
+// Each face is split into two sub-intervals; we use the midpoint rule for each.
+// Only upper and right faces are evaluated, so only quadrature points 0,1,2,7
+// are used.  However, upwinding goes 1/4 of the way from these quadrature
+// points to the element boundary; the resulting evaluation points for H are
+// marked with "+".  Note lambda=1/4 (from Bueler 2016) is fixed.
+void SIAFD::compute_diffusive_flux_mstar(const Geometry &geometry,
+                                         IceModelVec2Stag &result) {
+  using fem::q1::n_chi;
+  using fem::Q1Element2;
+
+  IceModelVec::AccessList list{&geometry.ice_thickness,
+                               &geometry.ice_surface_elevation,
+                               &geometry.bed_elevation,
+                               &result};
+
+  auto ice_thickness = geometry.ice_thickness.array(),
+       ice_surface   = geometry.ice_surface_elevation.array(),
+       bed           = geometry.bed_elevation.array();
+
+  Q1Element2 NE(*m_grid, Quad{{0.0, -0.5, 0.0}, {-0.5, 0.0, 0.0}}), // pts 0,1
+             NE0plus(*m_grid, Quad{{0.25, -0.5, 0.0}}),
+             NE0minus(*m_grid, Quad{{-0.25, -0.5, 0.0}}),
+             NE1plus(*m_grid, Quad{{-0.5, 0.25, 0.0}}),
+             NE1minus(*m_grid, Quad{{-0.5, -0.25, 0.0}}),
+             NW(*m_grid, Quad{{0.5, 0.0, 0.0}}), // point 2
+             NW2plus(*m_grid, Quad{{0.5, 0.25, 0.0}}),
+             NW2minus(*m_grid, Quad{{0.5, -0.25, 0.0}}),
+             SE(*m_grid, Quad{{0.0, 0.5, 0.0}}), // point 7
+             SE7plus(*m_grid, Quad{{0.25, 0.5, 0.0}}),
+             SE7minus(*m_grid, Quad{{-0.25, 0.5, 0.0}});
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (PointsWithGhosts p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();  // regular grid point at (i,j)
+
+      // Ice thickness and surface elevation at element nodes
+      double H[n_chi], S[n_chi], B[n_chi], Hup[n_chi];
+
+      // Ice thickness and surface elevation (and its gradient) at quadrature
+      // points.  Note that we use at most 2 quadrature points
+      double Hq[2], Hx[2], Hy[2], sq[2], sx[2], sy[2], bq[2], bx[2], by[2],
+             Hupq;
+
+      // SE element
+      double q7{0.0};
+      Vector2 W7;
+      {
+        SE.reset(i, j - 1);
+        SE.nodal_values(ice_thickness, H);
+        SE.nodal_values(ice_surface, S);
+        SE.nodal_values(bed, B);
+        SE.evaluate(H, Hq, Hx, Hy);
+        SE.evaluate(S, sq, sx, sy);
+        SE.evaluate(B, bq, bx, by);
+        W7 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W7.u >= 0.0) {
+          SE7minus.reset(i, j - 1);
+          SE7minus.nodal_values(ice_thickness, Hup);
+          SE7minus.evaluate(Hup, &Hupq);
+        } else {
+          SE7plus.reset(i, j - 1);
+          SE7plus.nodal_values(ice_thickness, Hup);
+          SE7plus.evaluate(Hup, &Hupq);
+        }
+        q7 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W7, Hupq).u;
+      }
+
+      // NE element
+      double q0{0.0}, q1{0.0};
+      Vector2 W0, W1;
+      {
+        NE.reset(i, j);
+        NE.nodal_values(ice_thickness, H);
+        NE.nodal_values(ice_surface, S);
+        NE.nodal_values(bed, B);
+        NE.evaluate(H, Hq, Hx, Hy);
+        NE.evaluate(S, sq, sx, sy);
+        NE.evaluate(B, bq, bx, by);
+        W0 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W0.u >= 0.0) {
+          NE0minus.reset(i, j);
+          NE0minus.nodal_values(ice_thickness, Hup);
+          NE0minus.evaluate(Hup, &Hupq);
+        } else {
+          NE0plus.reset(i, j);
+          NE0plus.nodal_values(ice_thickness, Hup);
+          NE0plus.evaluate(Hup, &Hupq);
+        }
+        q0 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W0, Hupq).u;
+        W1 = W_mstar(sx[1], sy[1], bx[1], by[1]);
+        if (W1.v >= 0.0) {
+          NE1minus.reset(i, j);
+          NE1minus.nodal_values(ice_thickness, Hup);
+          NE1minus.evaluate(Hup, &Hupq);
+        } else {
+          NE1plus.reset(i, j);
+          NE1plus.nodal_values(ice_thickness, Hup);
+          NE1plus.evaluate(Hup, &Hupq);
+        }
+        q1 = q_mstar(Hq[1], Hx[1], Hy[1], sx[1], sy[1], W1, Hupq).v;
+      }
+
+      // NW element
+      double q2{0.0};
+      Vector2 W2;
+      {
+        NW.reset(i - 1, j);
+        NW.nodal_values(ice_thickness, H);
+        NW.nodal_values(ice_surface, S);
+        NW.nodal_values(bed, B);
+        NW.evaluate(H, Hq, Hx, Hy);
+        NW.evaluate(S, sq, sx, sy);
+        NW.evaluate(B, bq, bx, by);
+        W2 = W_mstar(sx[0], sy[0], bx[0], by[0]);
+        if (W2.v >= 0.0) {
+          NW2minus.reset(i - 1, j);
+          NW2minus.nodal_values(ice_thickness, Hup);
+          NW2minus.evaluate(Hup, &Hupq);
+        } else {
+          NW2plus.reset(i - 1, j);
+          NW2plus.nodal_values(ice_thickness, Hup);
+          NW2plus.evaluate(Hup, &Hupq);
+        }
+        q2 = q_mstar(Hq[0], Hx[0], Hy[0], sx[0], sy[0], W2, Hupq).v;
+      }
+
+      // Apply equations similar to (25) in Bueler 2016, but divided by dx and
+      // dy as appropriate, to top and right faces of the control rectangle
+      // centered at regular point (i,j).  result(i,j,.) is the average flux
+      // over the face.
+      result(i, j, 0) = 0.5 * (q7 + q0);
+      result(i, j, 1) = 0.5 * (q1 + q2);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
 }
 
 //! \brief Compute I.

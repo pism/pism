@@ -2121,7 +2121,7 @@ netcdf pism_config {
     pism_config:stress_balance.sia.max_diffusivity_units = "m2 s-1";
 
     pism_config:stress_balance.sia.surface_gradient_method = "haseloff";
-    pism_config:stress_balance.sia.surface_gradient_method_choices = "eta,haseloff,mahaffy";
+    pism_config:stress_balance.sia.surface_gradient_method_choices = "eta,haseloff,mahaffy,mstar";
     pism_config:stress_balance.sia.surface_gradient_method_doc = "method used for surface gradient calculation at staggered grid points";
     pism_config:stress_balance.sia.surface_gradient_method_option = "gradient";
     pism_config:stress_balance.sia.surface_gradient_method_type = "keyword";
