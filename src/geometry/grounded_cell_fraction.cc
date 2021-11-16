@@ -71,9 +71,8 @@ static inline double triangle_area(const Point &a, const Point &b, const Point &
 Point intersect_ab(double a, double b) {
   if (a != b) {
     return {a / (a - b), 0.0};
-  } else {
-    return {-1.0, -1.0};        // no intersection
   }
+  return {-1.0, -1.0};        // no intersection
 }
 
 /*!
@@ -82,9 +81,8 @@ Point intersect_ab(double a, double b) {
 Point intersect_bc(double b, double c) {
   if (b != c) {
     return {c / (c - b), b / (b - c)};
-  } else {
-    return {-1.0, -1.0};        // no intersection
   }
+  return {-1.0, -1.0};        // no intersection
 }
 
 /*!
@@ -93,9 +91,8 @@ Point intersect_bc(double b, double c) {
 Point intersect_ac(double a, double c) {
   if (a != c) {
     return {0.0, a / (a - c)};
-  } else {
-    return {-1.0, -1.0};        // no intersection
   }
+  return {-1.0, -1.0};        // no intersection
 }
 
 /*!
@@ -110,18 +107,14 @@ Point intersect_ac(double a, double c) {
  * these are easy to detect: they require only one comparison.
  */
 bool invalid(const Point &p) {
-  if (p.x < 0.0 or p.x > 1.0 or p.y < 0.0 or p.y > 1.0) {
-    return true;
-  } else {
-    return false;
-  }
+  return (p.x < 0.0 or p.x > 1.0 or p.y < 0.0 or p.y > 1.0);
 }
 
 /*!
  * Return true if two points are the same.
  */
 static bool same(const Point &a, const Point &b) {
-  double threshold = 1e-12;
+  const double threshold = 1e-12;
   return fabs(a.x - b.x) < threshold and fabs(a.y - b.y) < threshold;
 }
 
@@ -162,9 +155,8 @@ double grounded_area_fraction(double a, double b, double c) {
 
     if (a > 0.0) {
       return ratio;
-    } else {
-      return 1.0 - ratio;
     }
+    return 1.0 - ratio;
   }
 
   if (invalid(ac)) {
@@ -175,9 +167,8 @@ double grounded_area_fraction(double a, double b, double c) {
 
     if (b > 0.0) {
       return ratio;
-    } else {
-      return 1.0 - ratio;
     }
+    return 1.0 - ratio;
   }
 
   if (invalid(ab)) {
@@ -188,9 +179,8 @@ double grounded_area_fraction(double a, double b, double c) {
 
     if (c > 0.0) {
       return ratio;
-    } else {
-      return 1.0 - ratio;
     }
+    return 1.0 - ratio;
   }
 
   // Note that we know that ab, bc, and ac are all valid.
@@ -202,9 +192,8 @@ double grounded_area_fraction(double a, double b, double c) {
 
     if (b > 0.0) {
       return ratio;
-    } else {
-      return 1.0 - ratio;
     }
+    return 1.0 - ratio;
   }
 
   // the b == 0 case and the c == 0 case
@@ -214,9 +203,8 @@ double grounded_area_fraction(double a, double b, double c) {
 
     if (a > 0.0) {
       return ratio;
-    } else {
-      return 1.0 - ratio;
     }
+    return 1.0 - ratio;
   }
 
   // Note: the case of F=0 coinciding with a side of the triangle is covered by if clauses
