@@ -43,13 +43,15 @@ Reading forcing data from a file
 This ocean model component reads sub-shelf ice temperature :var:`shelfbtemp` and the
 sub-shelf mass flux :var:`shelfbmassflux` from a file.
 
-It uses the following parameters:
+Variables :var:`shelfbtemp` and :var:`shelfbmassflux` may be time-dependent. (The ``-ocean
+given`` component is very similar to ``-surface given`` and ``-atmosphere given``.)
+
+.. rubric:: Parameters
+
+Prefix: ``ocean.given.``
 
 .. pism-parameters::
    :prefix: ocean.given.
-
-Variables :var:`shelfbtemp` and :var:`shelfbmassflux` may be time-dependent. (The ``-ocean
-given`` component is very similar to ``-surface given`` and ``-atmosphere given``.)
 
 .. _sec-ocean-pik:
 
@@ -64,7 +66,9 @@ This ocean model component implements the ocean forcing setup used in
 :cite:`Martinetal2011`. The sub-shelf ice temperature is set to pressure-melting; the
 sub-shelf mass flux computation follows :cite:`BeckmannGoosse2003`.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.pik_``
 
 .. pism-parameters::
    :prefix: ocean.pik_
@@ -101,7 +105,9 @@ This implementation uses different approximations of the temperature gradient at
 of an ice shelf column depending on whether there is sub-shelf melt, sub-shelf freeze-on,
 or neither (see :cite:`HollandJenkins1999` for details).
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.th.``
 
 .. pism-parameters::
    :prefix: ocean.th.
@@ -175,7 +181,9 @@ identified, standard values are used (**Warning:** this could strongly influence
 rates computed by PICO). In regions where the PICO geometry cannot be identified,
 :cite:`BeckmannGoosse2003` is applied.
 
-PICO uses the following configuration parameters (prefix: ``ocean.pico.``):
+.. rubric:: Parameters
+
+Prefix: ``ocean.pico.``
 
 .. pism-parameters::
    :prefix: ocean.pico.
@@ -191,7 +199,9 @@ Scalar sea level offsets
 
 The ``delta_sl`` modifier implements sea level forcing using scalar offsets.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.delta_sl.``
 
 .. pism-parameters::
    :prefix: ocean.delta_sl.
@@ -208,7 +218,9 @@ Two-dimensional sea level offsets
 The ``delta_sl`` modifier implements sea level forcing using time-dependent and
 spatially-variable offsets.
 
-It uses the following configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.delta_sl_2d.``
 
 .. pism-parameters::
    :prefix: ocean.delta_sl_2d.
@@ -225,7 +237,9 @@ Scalar sub-shelf temperature offsets
 
 This modifier implements forcing using sub-shelf ice temperature offsets.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.delta_T.``
 
 .. pism-parameters::
    :prefix: ocean.delta_T.
@@ -241,7 +255,9 @@ Scalar sub-shelf mass flux offsets
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) offsets.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.delta_mass_flux.``
 
 .. pism-parameters::
    :prefix: ocean.delta_mass_flux.
@@ -257,7 +273,9 @@ Scalar sub-shelf mass flux fraction offsets
 
 This modifier implements forcing using sub-shelf mass flux (melt rate) fraction offsets.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.frac_mass_flux.``
 
 .. pism-parameters::
    :prefix: ocean.frac_mass_flux.
@@ -275,14 +293,16 @@ This modifier implements a spatially-variable version of ``-ocean ...,delta_SMB`
 applies time-dependent shelf base mass flux anomalies, as used for initMIP or LARMIP
 model intercomparisons.
 
-It uses the following parameters:
-
-.. pism-parameters::
-   :prefix: ocean.anomaly.
-
 See also to ``-atmosphere ...,anomaly`` or ``-surface ...,anomaly`` (section
 :ref:`sec-surface-anomaly`) which is similar, but applies anomalies at the atmosphere or
 surface level, respectively.
+
+.. rubric:: Parameters
+
+Prefix: ``ocean.anomaly.``
+
+.. pism-parameters::
+   :prefix: ocean.anomaly.
 
 .. _sec-ocean-delta-mbp:
 
@@ -309,7 +329,9 @@ where `H` is ice thickness.
 
 See :ref:`sec-model-melange-pressure` for details.
 
-This modifier uses the following configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.delta_MBP.``
 
 .. pism-parameters::
    :prefix: ocean.delta_MBP.
@@ -346,7 +368,9 @@ and has the meaning of `\lambda` above.
 
 Please see :ref:`sec-model-melange-pressure` for details.
 
-This modifier uses the following configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.frac_MBP.``
 
 .. pism-parameters::
    :prefix: ocean.frac_MBP.
@@ -367,7 +391,9 @@ every :config:`ocean.cache.update_interval` 365-day "years". A time-step of `1` 
 This is useful in cases when inter-annual climate variability is important, but one year
 differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``ocean.cache.``
 
 .. pism-parameters::
    :prefix: ocean.cache.

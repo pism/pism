@@ -89,6 +89,8 @@ melt rate which is, primarily, thermodynamically-determined (see :ref:`sec-energ
 Parameters
 ##########
 
+Prefix: ``stress_balance.ssa.``
+
 .. pism-parameters::
    :prefix: stress_balance.ssa.
 

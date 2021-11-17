@@ -55,7 +55,9 @@ all selected rate-based mechanisms, e.g. to introduce calving variability corres
 seasonal changes in ice melange. The file used with this option should contain the scalar
 time-dependent variable :var:`frac_calving_rate` (units: `1`).
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.rate_scaling.``
 
 .. pism-parameters::
    :prefix: calving.rate_scaling.
@@ -92,7 +94,9 @@ intended to resolve individual rifts or calving events, but it produces
 structurally-stable calving front positions which agree well with observations. Calving
 rates balance calving-front ice flow velocities on average.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.eigen_calving.``
 
 .. pism-parameters::
    :prefix: calving.eigen_calving.
@@ -135,7 +139,9 @@ Following :cite:`Morlighem2016`, `\tilde{\sigma}` is given by
 
 where `B` is the ice hardness.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.vonmises_calving.``
 
 .. pism-parameters::
    :prefix: calving.vonmises_calving.
@@ -152,7 +158,9 @@ The option :opt:`-calving hayhurst_calving` implements the parameterization desc
 
    FIXME: not documented.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.hayhurst_calving.``
 
 .. pism-parameters::
    :prefix: calving.hayhurst_calving.
@@ -173,7 +181,9 @@ To set a time-and-space dependent ice thickness threshold, set the parameter
 :config:`calving.thickness_calving.file`. This file should contain the variable
 :var:`thickness_calving_threshold` in meters.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.thickness_calving.``
 
 .. pism-parameters::
    :prefix: calving.thickness_calving.
@@ -192,7 +202,9 @@ Set :config:`calving.float_kill.margin_only` to restrict this to cells at the ic
 Sometimes it is useful to preserve a one-cell-wide shelf near the grounding line. To do
 this, set :config:`calving.float_kill.calve_near_grounding_line` to false.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``calving.float_kill.``
 
 .. pism-parameters::
    :prefix: calving.float_kill.
@@ -219,7 +231,9 @@ Changes in ice mass resulting from using this mechanism are reported as a part o
 
    This replaces the :literal:`ocean_kill` mechanism available in previous PISM versions.
 
-Configuration parameters:
+.. rubric:: Parameters
+
+Prefix: ``geometry.front_retreat.prescribed.``
 
 .. pism-parameters::
    :prefix: geometry.front_retreat.prescribed.

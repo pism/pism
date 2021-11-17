@@ -88,5 +88,7 @@ values come from :cite:`Tomkin2007`.
 Parameters
 ##########
 
+Prefix: ``stress_balance.weertman_sliding.``
+
 .. pism-parameters::
    :prefix: stress_balance.weertman_sliding.

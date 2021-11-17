@@ -140,5 +140,7 @@ The age of the ice can be used in two parameterizations in the SIA stress balanc
 Parameters
 ----------
 
+Prefix: ``stress_balance.sia.``
+
 .. pism-parameters::
    :prefix: stress_balance.sia.

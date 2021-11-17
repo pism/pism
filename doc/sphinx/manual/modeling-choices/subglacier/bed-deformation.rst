@@ -49,9 +49,13 @@ then this model will initialize so that it starts with the given uplift rate.
 All parameters (except for :config:`constants.ice.density`) controlling the Lingle-Clark
 model are listed below (they all have the prefix ``bed.deformation.``).
 
+.. rubric:: Parameters
+
+Prefix: ``bed_deformation.``
+
 .. pism-parameters::
    :prefix: bed_deformation.
-   :exclude: bed_deformation.(model|bed_)
+   :exclude: bed_deformation.(model|bed_|given)
 
 Here are minimal example runs to compare these models:
 

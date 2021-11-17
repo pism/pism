@@ -99,6 +99,8 @@ respectively. Allowed arguments are listed below.
    This flow law uses all the parameters controlling the Paterson-Budd law, plus the ones
    listed below.
 
+   Prefix: ``flow_law.gpbld.``
+
    .. pism-parameters::
       :prefix: flow_law.gpbld.
 
@@ -124,6 +126,8 @@ respectively. Allowed arguments are listed below.
 
    .. rubric:: Parameters
 
+   Prefix: ``flow_law.Paterson_Budd.``
+
    .. pism-parameters::
       :prefix: flow_law.Paterson_Budd.
 
@@ -145,6 +149,8 @@ respectively. Allowed arguments are listed below.
 
    .. rubric:: Parameters
 
+   Prefix: ``flow_law.Hooke.``
+
    .. pism-parameters::
       :prefix: flow_law.Hooke.
 
@@ -162,6 +168,8 @@ respectively. Allowed arguments are listed below.
    where `A_0` is the ice softness and `B_0=A_0^{-1/n}` is the ice hardness.
 
    .. rubric:: Parameters
+
+   Prefix: ``flow_law.isothermal_Glen.``
 
    .. pism-parameters::
       :prefix: flow_law.isothermal_Glen.

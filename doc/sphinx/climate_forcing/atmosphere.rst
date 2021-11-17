@@ -17,11 +17,6 @@ Reading boundary conditions from a file
 
 .. note:: This is the default choice.
 
-This model is controlled by the following parameters with the prefix ``atmosphere.given.``.
-
-.. pism-parameters::
-   :prefix: atmosphere.given.
-
 A file ``foo.nc`` used with ``-atmosphere given -atmosphere_given_file foo.nc`` should
 contain several records; the :var:`time` variable should describe what model time these
 records correspond to.
@@ -31,6 +26,13 @@ data, e.g. using monthly records of :var:`air_temp` and :var:`precipitation`.
 
 It can also used to drive a temperature-index (PDD) climatic mass balance computation
 (section :ref:`sec-surface-pdd`).
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.given.``
+
+.. pism-parameters::
+   :prefix: atmosphere.given.
 
 .. _sec-atmosphere-yearly-cycle:
 
@@ -65,8 +67,9 @@ Optionally a time-dependent scalar amplitude scaling `A(t)` can be used. Specify
 file to read it from using the :opt:`-atmosphere_yearly_cycle_scaling_file` command-line
 option. Without this option `A(\mathrm{time}) \equiv 1`.
 
-This model is controlled by the following parameters with the prefix
-``atmosphere.yearly_cycle.``.
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.yearly_cycle.``
 
 .. pism-parameters::
    :prefix: atmosphere.yearly_cycle.
@@ -186,12 +189,16 @@ Scalar temperature offsets
 :|implementation|: ``pism::atmosphere::Delta_T``
 
 This modifier applies scalar time-dependent air temperature offsets to the output of an
-atmosphere model. It uses the following parameters:
+atmosphere model.
+
+Please make sure that :var:`delta_T` has the units of "``Kelvin``".
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.delta_T.``
 
 .. pism-parameters::
    :prefix: atmosphere.delta_T.
-
-Please make sure that :var:`delta_T` has the units of "``Kelvin``".
 
 .. _sec-atmosphere-delta-p:
 
@@ -203,7 +210,11 @@ Scalar precipitation offsets
 :|implementation|: ``pism::atmosphere::Delta_P``
 
 This modifier applies scalar time-dependent precipitation offsets to the output of an
-atmosphere model. It uses the following parameters:
+atmosphere model.
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.delta_P.``
 
 .. pism-parameters::
    :prefix: atmosphere.delta_P.
@@ -227,7 +238,9 @@ on time only it is used as a time-dependent constant-in-space scaling factor.
 If the variable :var:`frac_P` has more than one dimension PISM tries to use it as a
 time-and-space-dependent scaling factor.
 
-See configuration parameters with the prefix ``atmosphere.frac_P.``
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.frac_P.``
 
 .. pism-parameters::
    :prefix: atmosphere.frac_P.
@@ -252,7 +265,9 @@ temperature increase, where
 
 `C =` :config:`atmosphere.precip_exponential_factor_for_temperature`.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.precip_scaling.``
 
 .. pism-parameters::
    :prefix: atmosphere.precip_scaling.
@@ -311,7 +326,9 @@ Two methods of adjusting precipitation are available:
 
   To use this method, set :opt:`-smb_adjustment shift`.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.elevation_change.``
 
 .. pism-parameters::
    :prefix: atmosphere.elevation_change.
@@ -334,7 +351,9 @@ Using climate data anomalies
 This modifier implements a spatially-variable version of ``-atmosphere
 ...,delta_T,delta_P``.
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.anomaly.``
 
 .. pism-parameters::
    :prefix: atmosphere.anomaly.
@@ -405,8 +424,11 @@ temperature cycle from ``yearly_cycle`` combined with precipitation computed usi
 model.
 
 The only spatially-variable input of this model is the surface elevation (`h` above)
-modeled by PISM. It is controlled by a number of configuration parameters. See parameters
-with the prefix ``atmosphere.orographic_precipitation.`` listed below.
+modeled by PISM.
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.orographic_precipitation.``
 
 .. pism-parameters::
    :prefix: atmosphere.orographic_precipitation.

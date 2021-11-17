@@ -43,26 +43,26 @@ PISM will stop if variables :var:`ice_surface_temp` (ice temperature at the ice 
 but below firn) and :var:`climatic_mass_balance` (top surface mass flux into the ice) are
 not present in the input file.
 
-Configuration parameters:
-
-.. pism-parameters::
-   :prefix: surface.given.
-
-A file ``foo.nc`` used with ``-surface given -surface_given_file foo.nc`` should contain
+A file ``foo.nc`` used with ``-surface given -surface_given_file foo.nc`` may contain
 several records. If this file contains one record (i.e. fields corresponding to one time
-value only), provided forcing data is interpreted as time-independent. The :var:`time`
-variable should describe what model time these records correspond to; see
-:ref:`sec-forcing-time-dependent` for details.
+value only), provided forcing data is interpreted as time-independent. Variables
+:var:`time` and :var:`time_bnds` should specify model times corresponding to individual
+records.
 
-.. FIXME!!!
-
-For example, to use monthly records and period of 1 year, create a file (say,
-"``foo.nc``") with 12 records. The :var:`time` variable may contain `0, 1, 2, 3,
-\dots, 11` and have the units of "month" [#time-units]_. Then, run
+For example, to use monthly periodic forcing with a period of 1 year starting at the
+beginning of `1980` (let's use the `360`\-day calendar for simplicity), create a file
+(say, "``foo.nc``") with 12 records. The :var:`time` variable may contain `15, 45, 75,
+\dots, 345` (mid-month for all `12` months) and have the units of "``days since
+1980-1-1``". (It is best to avoid units of "months" and "years" because their meanings
+depend on the calendar.) Next, add the :var:`time_bounds` variable for the time dimension
+with the values `0, 30, 30, 60, \dots` specifying times corresponding to beginnings and
+ends of records for each month and set the ``time:bounds`` attribute accordingly. Now run
 
 .. code-block:: none
 
     pismr -surface given -surface_given_file foo.nc -surface.given.periodic
+
+See :ref:`sec-forcing-time-dependent` for more information.
 
 .. note::
 
@@ -84,6 +84,14 @@ For example, to use monthly records and period of 1 year, create a file (say,
    
      will copy data from ``input.nc`` into ``output.nc``, changing the storage order to
      ``t,y,x`` at the same time.
+
+.. rubric:: Parameters
+
+Prefix: ``surface.given.``
+
+.. pism-parameters::
+   :prefix: surface.given.
+
 
 .. _sec-surface-elevation:
 
@@ -256,7 +264,7 @@ This code also implements latitude- and mean July temperature dependent ice and 
 factors using formulas (6) and (7) in :cite:`Faustoetal2009`; set :opt:`-pdd_fausto` to enable.
 The default standard deviation of the daily variability (option :opt:`-pdd_std_dev`) is
 2.53 degrees when :opt:`-pdd_fausto` is set :cite:`Faustoetal2009`. See also configuration
-parameters with the ``surface.pdd.fausto`` prefix:
+parameters with the prefix ``surface.pdd.fausto.``:
 
 .. pism-parameters::
    :prefix: surface.pdd.fausto.
@@ -317,11 +325,6 @@ Scalar temperature offsets
 :|variables|: :var:`delta_T`
 :|implementation|: ``pism::surface::Delta_T``
 
-Configuration parameters:
-
-.. pism-parameters::
-   :prefix: surface.delta_T.
-
 The time-dependent scalar offsets :var:`delta_T` are added to :var:`ice_surface_temp`
 computed by a surface model.
 
@@ -330,6 +333,13 @@ Please make sure that :var:`delta_T` has the units of "``Kelvin``".
 This modifier is identical to the corresponding atmosphere modifier, but applies offsets
 at a different stage in the computation of top-surface boundary conditions needed by the
 ice dynamics core.
+
+.. rubric:: Parameters
+
+Prefix: ``surface.delta_T.``
+
+.. pism-parameters::
+   :prefix: surface.delta_T.
 
 .. _sec-surface-elevation-change:
 
@@ -455,13 +465,15 @@ Using climate data anomalies
 This modifier implements a spatially-variable version of ``-surface ...,delta_T`` which
 also applies time-dependent climatic mass balance anomalies.
 
-It uses the following parameters:
+See also ``-atmosphere ...,anomaly`` (section :ref:`sec-atmosphere-anomaly`), which is
+similar but applies anomalies at the atmosphere level.
+
+.. rubric:: Parameters
+
+Prefix: ``surface.anomaly.``
 
 .. pism-parameters::
    :prefix: surface.anomaly.
-
-See also to ``-atmosphere ...,anomaly`` (section :ref:`sec-atmosphere-anomaly`), which is
-similar, but applies anomalies at the atmosphere level.
 
 .. _sec-surface-cache:
 
@@ -479,7 +491,9 @@ used every time a surface model is updated.
 This is useful in cases when inter-annual climate variability is important, but one year
 differs little from the next. (Coarse-grid paleo-climate runs, for example.)
 
-It uses the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``surface.cache.``
 
 .. pism-parameters::
    :prefix: surface.cache.
@@ -508,7 +522,3 @@ line. See :ref:`sec-tillphi-optimization` for an application.
    - This does *not* prevent grounding line retreat caused by the thinning of the ice due
      to the melt at the base. Set :config:`geometry.update.use_basal_melt_rate` to "false"
      to ensure that basal melt has no effect on the position of the grounding line
-
-.. rubric:: Footnotes
-
-.. [#time-units] You can use other time units supported by UDUNITS_.

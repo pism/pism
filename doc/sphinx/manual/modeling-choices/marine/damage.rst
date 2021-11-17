@@ -33,7 +33,9 @@ The fracture growth constant `\gamma` (:config:`fracture_density.gamma`) is igno
 
 To enable this model, set :config:`fracture_density.enabled`.
 
-This model is controlled by the following parameters:
+.. rubric:: Parameters
+
+Prefix: ``fracture_density.``
 
 .. pism-parameters::
    :prefix: fracture_density.

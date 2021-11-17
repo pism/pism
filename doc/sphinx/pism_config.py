@@ -167,8 +167,9 @@ class ParameterList(Directive):
         parameters_found = False
         for name in sorted(pism_data.keys()):
 
+            pattern = "^" + prefix
             # skip parameters that don't have the desired prefix
-            if not name.startswith(prefix):
+            if not re.match(pattern, name):
                 continue
 
             if exclude and re.match(exclude, name):
@@ -183,7 +184,7 @@ class ParameterList(Directive):
                 item += self.list_entry(name, pism_data[name])
             else:
                 item += self.compact_list_entry(name,
-                                                name.replace(prefix, ""),
+                                                re.sub(pattern, "", name),
                                                 pism_data[name])
             parameter_list += item
 
