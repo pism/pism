@@ -177,12 +177,23 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
     ice_density = config->get_number("constants.ice.density"),
     ocean_density = config->get_number("constants.sea_water.density");
 
-  compute_grounded_cell_fraction(ice_density,
-                                 ocean_density,
-                                 sea_level_elevation,
-                                 ice_thickness,
-                                 bed_elevation,
-                                 cell_grounded_fraction);
+  try {
+    compute_grounded_cell_fraction(ice_density,
+                                   ocean_density,
+                                   sea_level_elevation,
+                                   ice_thickness,
+                                   bed_elevation,
+                                   cell_grounded_fraction);
+  } catch (RuntimeError &e) {
+    e.add_context("computing the grounded cell fraction");
+
+    std::string output_file = config->get_string("output.file_name");
+    std::string o_file = filename_add_suffix(output_file,
+                                             "_grounded_cell_fraction_failed", "");
+    // save geometry to a file for debugging
+    dump(o_file.c_str());
+    throw;
+  }
 }
 
 void Geometry::dump(const char *filename) const {
