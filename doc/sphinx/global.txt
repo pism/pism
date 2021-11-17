@@ -24,8 +24,8 @@
 .. |petsc-min-version| replace:: 3.5
 
 .. |pism-email| replace:: uaf-pism@alaska.edu
-.. |pism-website| replace:: https://pism.github.io
-.. |petsc-download| replace:: https://www.mcs.anl.gov/petsc/download/index.html
+.. |pism-website| replace:: https://www.pism.io
+.. |petsc-download| replace:: https://petsc.org/release/download/
 
 .. |efischer-email| replace:: eafischer2@alaska.edu
 
@@ -80,8 +80,8 @@
 .. _NumPy: https://numpy.org/
 .. _SymPy: https://www.sympy.org
 .. _Open MPI: https://www.open-mpi.org
-.. _PETSc-installation: https://www.mcs.anl.gov/petsc/documentation/installation.html
-.. _PETSc: https://www.mcs.anl.gov/petsc/
+.. _PETSc-installation: https://petsc.org/release/install/
+.. _PETSc: https://petsc.org/release/
 .. _hypre: https://hypre.readthedocs.io/en/latest/
 .. _MUMPS: http://mumps.enseeiht.fr/
 .. _PROJ: https://proj.org/
@@ -139,10 +139,12 @@
 
 .. PISM-related external links
 
+.. _pism-releases: https://github.com/pism/pism/releases
 .. _pism-github: https://github.com/pism/pism
 .. _pism-builds: https://github.com/pism/pism-builds
-.. _PISM: https://pism.github.io
-.. _pism-browser: https://pism.github.io/doxygen
+.. _PISM: https://www.pism.io
+.. _pism-browser: https://www.pism.io/doxygen
 .. _pism-email: mailto:uaf-pism@alaska.edu
 .. _pypismtools: https://github.com/pism/pypismtools
 .. _regional-tools: https://github.com/pism/regional-tools
+.. _Slack-PISM: https://join.slack.com/t/uaf-pism/shared_invite/enQtODc3Njc1ODg0ODM5LThmOTEyNjEwN2I3ZTU4YTc5OGFhNGMzOWQ1ZmUzMWUwZDAyMzRlMzBhZDg1NDY5MmQ1YWFjNDU4MDZiNTk3YmE

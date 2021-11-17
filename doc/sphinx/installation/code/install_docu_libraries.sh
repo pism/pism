@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt-get install \
-     graphviz dvipng \
+     graphviz \
      texlive texlive-fonts-extra \
      latexmk
 
