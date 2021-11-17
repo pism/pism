@@ -18,7 +18,7 @@
  */
 
 #include <cassert>
-#include <cmath>                // fabs
+#include <cmath>                // fabs, isnan
 
 #include "grounded_cell_fraction.hh"
 
@@ -62,7 +62,7 @@ struct Point {
 static inline double triangle_area(const Point &a, const Point &b, const Point &c) {
   // note: fabs should not be needed since we traverse all triangle nodes
   // counter-clockwise, but it is good to be safe
-  return 0.5 * fabs((a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y));
+  return 0.5 * std::fabs((a.x - c.x) * (b.y - a.y) - (a.x - b.x) * (c.y - a.y));
 }
 
 /*!
@@ -115,7 +115,7 @@ bool invalid(const Point &p) {
  */
 static bool same(const Point &a, const Point &b) {
   const double threshold = 1e-12;
-  return fabs(a.x - b.x) < threshold and fabs(a.y - b.y) < threshold;
+  return std::fabs(a.x - b.x) < threshold and std::fabs(a.y - b.y) < threshold;
 }
 
 /*!
@@ -130,6 +130,10 @@ static bool same(const Point &a, const Point &b) {
  * function.
  */
 double grounded_area_fraction(double a, double b, double c) {
+
+  assert(not std::isnan(a));
+  assert(not std::isnan(b));
+  assert(not std::isnan(c));
 
   if (a > 0.0 and b > 0.0 and c > 0.0) {
     return 1.0;
