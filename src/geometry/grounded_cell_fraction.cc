@@ -131,9 +131,9 @@ static bool same(const Point &a, const Point &b) {
  */
 double grounded_area_fraction(double a, double b, double c) {
 
-  assert(not std::isnan(a));
-  assert(not std::isnan(b));
-  assert(not std::isnan(c));
+  assert(std::isfinite(a));
+  assert(std::isfinite(b));
+  assert(std::isfinite(c));
 
   if (a > 0.0 and b > 0.0 and c > 0.0) {
     return 1.0;
