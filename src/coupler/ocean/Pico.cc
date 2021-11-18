@@ -535,13 +535,13 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
     if (mask.as_int(i, j) == MASK_FLOATING and s > 0) {
       // note: shelf_mask = 0 in lakes
 
+      double N = std::max(n_shelf_cells[s], 1); // protect from division by zero
+
       // weighted input depending on the number of shelf cells in each basin
       for (int b = 1; b < m_n_basins; b++) { //Note: b=0 yields nan
         int sb = s * m_n_basins + b;
-        Toc_box0(i, j) += (basin_temperature[b] *
-                           n_shelf_cells_per_basin[sb] / (double)n_shelf_cells[s]);
-        Soc_box0(i, j) += (basin_salinity[b] *
-                           n_shelf_cells_per_basin[sb] / (double)n_shelf_cells[s]);
+        Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[sb] / N;
+        Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[sb] / N;
       }
 
       double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
