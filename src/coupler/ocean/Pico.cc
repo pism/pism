@@ -422,10 +422,20 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
   salinity    = salinityr;
   temperature = temperaturer;
 
-  for (int basin_id = 0; basin_id < m_n_basins; basin_id++) {
+  // "dummy" basin
+  {
+    temperature[0] = physics.T_dummy();
+    salinity[0]    = physics.S_dummy();
+  }
 
-    // if basin is not dummy basin 0 or there are no ocean cells in this basin to take the mean over.
-    if (basin_id > 0 && count[basin_id] == 0) {
+  for (int basin_id = 1; basin_id < m_n_basins; basin_id++) {
+
+    if (count[basin_id] != 0) {
+      salinity[basin_id] /= count[basin_id];
+      temperature[basin_id] /= count[basin_id];
+
+      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
+    } else {
       m_log->message(2, "PICO ocean WARNING: basin %d contains no cells with ocean data on continental shelf\n"
                         "(no values with ocean_contshelf_mask=2).\n"
                         "No mean salinity or temperature values are computed, instead using\n"
@@ -435,13 +445,6 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 
       temperature[basin_id] = physics.T_dummy();
       salinity[basin_id]    = physics.S_dummy();
-
-    } else {
-
-      salinity[basin_id] /= count[basin_id];
-      temperature[basin_id] /= count[basin_id];
-
-      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
     }
   }
 }
