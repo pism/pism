@@ -62,6 +62,10 @@ with open("funding.csv", "r") as f:
         except:
             continue
 
+        # skip grants for which we don't have a number (yet)
+        if number.strip() == "":
+            continue
+
         if start_year <= year and year <= end_year:
             try:
                 funding[agency].append(number)
