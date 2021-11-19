@@ -16,7 +16,7 @@ papers.
 To acknowledge PISM funding please include the statement:
 
 
-    Development of PISM is supported by NSF grants PLR-1603799 and PLR-1644277 and NASA grant NNX17AG65G.
+    Development of PISM is supported by NSF grants PLR-1644277 and PLR-1914668 and NASA grants NNX17AG65G, 20-CRYO2020-0052 and 20-CRYO2020-xxxx (as of 2021-11-19 the exact grant number is not known).
 
 
 Citing
@@ -25,8 +25,8 @@ Citing
 To cite PISM please use at least one of Bueler and Brown (2009) or Winkelmann et al.
 (2011), below, as appropriate to the application.
 
-If your results came from source code modifications to PISM then we request that your
-publication say so explicitly.
+Do not forget to specify the PISM *version* you use. If your results came from source code
+modifications to PISM then we request that your publication say so explicitly.
 
 If your study relies heavily on certain PISM sub-models (such as hydrology, calving,
 fracture mechanics, thermodynamics) please contact the corresponding author/developer for
@@ -37,7 +37,7 @@ information on additional citations.
    @misc {pism-web-page,
      AUTHOR = {the {PISM} authors},
       TITLE = {{PISM}, a {P}arallel {I}ce {S}heet {M}odel},
-        URL = {http://www.pism.io},
+        URL = {https://www.pism.io},
        YEAR = {2021},
    }
    
