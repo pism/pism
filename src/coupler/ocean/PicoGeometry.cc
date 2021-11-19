@@ -667,13 +667,13 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 
   // no GlobalSum needed here, only local:
   std::vector<int> add_shelf_instance(n_shelves * m_n_basins, 0);
-  int m_shelf_numbers_to_add = 0;
+  int n_shelf_numbers_to_add = 0;
   for (int s = 0; s < n_shelves; s++) {
     int b0 = most_shelf_cells_in_basin[s];
     for (int b = 0; b < m_n_basins; b++) {
       if (n_shelf_cells_to_split[s * m_n_basins + b] > 0) {
-        m_shelf_numbers_to_add += 1;
-        add_shelf_instance[s * m_n_basins + b] = n_shelves + m_shelf_numbers_to_add;
+        n_shelf_numbers_to_add += 1;
+        add_shelf_instance[s * m_n_basins + b] = n_shelves + n_shelf_numbers_to_add;
         m_log->message(3, "\nPICO, split ice shelf s=%d with bmax=%d "
                        "and b=%d and n=%d and si=%d\n", s, b0, b,
                        n_shelf_cells_to_split[s * m_n_basins + b],
