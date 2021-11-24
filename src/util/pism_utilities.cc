@@ -157,6 +157,10 @@ void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_MAX);
 }
 
+void GlobalMax(MPI_Comm comm, int *local, int *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MAX);
+}
+
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_SUM);
 }
