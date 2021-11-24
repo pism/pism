@@ -538,6 +538,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
     if (mask.as_int(i, j) == MASK_FLOATING and s > 0) {
       // note: shelf_mask = 0 in lakes
 
+      assert(n_shelf_cells[s] > 0);
       double N = std::max(n_shelf_cells[s], 1); // protect from division by zero
 
       // weighted input depending on the number of shelf cells in each basin

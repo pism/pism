@@ -83,8 +83,18 @@ void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
   m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
 
-  m_n_basin_neighbors.resize(2*m_n_basins);
-  get_basin_neighbors(cell_type, m_basin_mask, m_n_basin_neighbors);
+  m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
+
+  // report
+  for (const auto &p : m_basin_neighbors) {
+    std::vector<std::string> neighbors;
+    for (const auto &n : p.second) {
+      neighbors.emplace_back(pism::printf("%d", n));
+    }
+    std::string neighbor_list = pism::join(neighbors, ", ");
+    m_log->message(2, "PICO: basin %d neighbors: %s\n",
+                   p.first, neighbor_list.c_str());
+  }
 }
 
 /*!
@@ -128,7 +138,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, n_shelves,
                                       most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    split_ice_shelves(cell_type, m_basin_mask, m_n_basin_neighbors,
+    split_ice_shelves(cell_type, m_basin_mask, m_basin_neighbors,
                       most_shelf_cells_in_basin, cfs_in_basins_per_shelf, n_shelves,
                       m_ice_shelves);
 
@@ -506,63 +516,93 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
 }
 
 /*!
- * Find the two neighboring basins by checking for the basin boundaries on the ice free ocean.
- * Could there be more than two neighbors? Should we better identify the intersection at the coastline?
+ * Find neighboring basins by checking for the basin boundaries on the ice free ocean.
+ *
+ * Should we identify the intersection at the coastline instead?
+ *
+ * Returns the map from the basin index to a set of indexes of neighbors.
  */
-void PicoGeometry::get_basin_neighbors(const IceModelVec2CellType &cell_type,
-                                       const IceModelVec2Int &basin_mask,
-                                       std::vector<int> &result) {
+std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2CellType &cell_type,
+                                                           const IceModelVec2Int &basin_mask) {
+  using mask::ice_free_ocean;
 
-  // additional vectors to allreduce efficiently with IntelMPI
-  std::vector<int> result1(2 * m_n_basins, 0);
+  // Allocate the adjacency matrix. This uses twice the amount of storage necessary (the
+  // matrix is symmetric), but in known cases (i.e. with around 20 basins) we're wasting
+  // only ~200*sizeof(int) bytes, which is not that bad (and the code is a bit simpler).
+  std::vector<int> adjacency_matrix(m_n_basins * m_n_basins, 0);
+
+  // short-cuts
+  auto mark_as_neighbors = [&](int b1, int b2) {
+    adjacency_matrix[b1 * m_n_basins + b2] = 1;
+    // preserve symmetry:
+    adjacency_matrix[b2 * m_n_basins + b1] = 1;
+  };
+
+  auto adjacent = [&](int b1, int b2) {
+    return adjacency_matrix[b1 * m_n_basins + b2] > 0;
+  };
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    int b = basin_mask.as_int(i, j);
-    if (result[2 * b] == 0 or result[2 * b + 1] == 0) {
+    auto M = cell_type.star(i, j);
+    auto B = basin_mask.star(i, j);
 
-      auto B = basin_mask.star(i, j);
-      auto M = cell_type.star(i, j);
-      int bn = 0; // neighbor basin id
+    // skip the "dummy" basin and cells that are not in the "ice free ocean"
+    if (B.ij == 0 or not ice_free_ocean(M.ij)) {
+      continue;
+    }
 
-      if (M.ij == MASK_ICE_FREE_OCEAN and
-          ((M.n == MASK_ICE_FREE_OCEAN and B.n != b) or
-           (M.s == MASK_ICE_FREE_OCEAN and B.s != b) or
-           (M.e == MASK_ICE_FREE_OCEAN and B.e != b) or
-           (M.w == MASK_ICE_FREE_OCEAN and B.w != b))) {
+    // Zero out IDs of basins for cell neighbors that are outside the modeling domain.
+    //
+    // This prevents "wrap-around" at grid boundaries.
+    {
+      B.n *= static_cast<int>(j < (int)m_grid->My() - 1);
+      B.e *= static_cast<int>(i < (int)m_grid->Mx() - 1);
+      B.s *= static_cast<int>(j > 0);
+      B.w *= static_cast<int>(i > 0);
+    }
 
-        if (M.n == MASK_ICE_FREE_OCEAN and B.n != b) {
-          bn = B.n;
-        } else if (M.s == MASK_ICE_FREE_OCEAN and B.s != b) {
-          bn = B.s;
-        } else if (M.e == MASK_ICE_FREE_OCEAN and B.e != b) {
-          bn = B.e;
-        } else if (M.w == MASK_ICE_FREE_OCEAN and B.w != b) {
-          bn = B.w;
-        }
+    if (ice_free_ocean(M.n)) {
+      mark_as_neighbors(B.ij, B.n);
+    }
 
-        if (result[2 * b] == 0) {
-          result[2 * b] = bn;
-        } else if (result[2 * b + 1] == 0 and result[2 * b] != bn) {
-          result[2 * b + 1] = bn;
-        }
+    if (ice_free_ocean(M.s)) {
+      mark_as_neighbors(B.ij, B.s);
+    }
+
+    if (ice_free_ocean(M.e)) {
+      mark_as_neighbors(B.ij, B.e);
+    }
+
+    if (ice_free_ocean(M.w)) {
+      mark_as_neighbors(B.ij, B.w);
+    }
+  }
+
+  // Make a copy to allreduce efficiently with IntelMPI:
+  {
+    std::vector<int> tmp(adjacency_matrix.size(), 0);
+    GlobalMax(m_grid->com, adjacency_matrix.data(), tmp.data(),
+              static_cast<int>(tmp.size()));
+    // Copy results:
+    adjacency_matrix = tmp;
+  }
+
+  // Convert the matrix into a map "basin ID -> set of neighbors' IDs":
+  std::map<int,std::set<int> > result;
+  for (int b1 = 1; b1 < m_n_basins; ++b1) {
+    for (int b2 = b1 + 1; b2 < m_n_basins; ++b2) {
+      if (adjacent(b1, b2)) {
+        result[b1].insert(b2);
+        result[b2].insert(b1);
       }
     }
   }
 
-  GlobalSum(m_grid->com, result.data(), result1.data(), 2*m_n_basins);
-  // copy values
-  result = result1;
-
-  for (int b = 1; b < 2 * m_n_basins; ++b) {
-    if (b % 2 == 0) {
-      m_log->message(2, "PICO, get basin neighbors of b=%d: b1=%d and b2=%d \n",
-                     b / 2, result[b], result[b + 1]);
-    }
-  }
+  return result;
 }
 
 /*!
@@ -632,38 +672,45 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
  */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
                                      const IceModelVec2Int &basin_mask,
-                                     const std::vector<int> &n_basin_neighbors,
+                                     const std::map<int, std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
                                      const std::vector<int> &cfs_in_basins_per_shelf,
                                      int n_shelves,
                                      IceModelVec2Int &shelf_mask) {
-
   m_tmp.copy_from(shelf_mask);
 
   std::vector<int> n_shelf_cells_to_split(n_shelves * m_n_basins, 0);
-  std::vector<int> n_shelf_cells_to_splitr(n_shelves * m_n_basins, 0);
 
   IceModelVec::AccessList list{ &cell_type, &basin_mask, &shelf_mask, &m_tmp };
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    if (cell_type.as_int(i, j) == MASK_FLOATING) {
-      int b = basin_mask.as_int(i, j);
-      int s = shelf_mask.as_int(i, j);
-      int b0 = most_shelf_cells_in_basin[s];
-      if (b != b0 and
-          b != n_basin_neighbors[2 * b0] and
-          b != n_basin_neighbors[2 * b0 + 1] and
-          cfs_in_basins_per_shelf[s * m_n_basins + b] > 0) {
-        n_shelf_cells_to_split[s * m_n_basins + b]++;
+  ParallelSection loop(m_grid->com);
+  try {
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+      if (cell_type.as_int(i, j) == MASK_FLOATING) {
+        int b = basin_mask.as_int(i, j);
+        int s = shelf_mask.as_int(i, j);
+        int b0 = most_shelf_cells_in_basin[s];
+        // basin_neighbors.at(b) may throw
+        bool neighbors = basin_neighbors.at(b).count(b0) > 0;
+        if (b != b0 and (not neighbors) and
+            cfs_in_basins_per_shelf[s * m_n_basins + b] > 0) {
+          n_shelf_cells_to_split[s * m_n_basins + b]++;
+        }
       }
     }
+  } catch (...) {
+    loop.failed();
   }
+  loop.check();
 
-  GlobalSum(m_grid->com, n_shelf_cells_to_split.data(),
-            n_shelf_cells_to_splitr.data(), n_shelves * m_n_basins);
-  // copy values
-  n_shelf_cells_to_split = n_shelf_cells_to_splitr;
+  {
+    std::vector<int> tmp(n_shelves * m_n_basins, 0);
+    GlobalSum(m_grid->com, n_shelf_cells_to_split.data(),
+              tmp.data(), n_shelves * m_n_basins);
+    // copy values
+    n_shelf_cells_to_split = tmp;
+  }
 
   // no GlobalSum needed here, only local:
   std::vector<int> add_shelf_instance(n_shelves * m_n_basins, 0);

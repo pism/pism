@@ -20,6 +20,9 @@
 #ifndef PICOGEOMETRY_H
 #define PICOGEOMETRY_H
 
+#include <map>
+#include <set>
+
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
 
@@ -63,9 +66,8 @@ private:
                               const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
 
-  void get_basin_neighbors(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2Int &basin_mask,
-                           std::vector<int> &result);
+  std::map<int,std::set<int> > basin_neighbors(const IceModelVec2CellType &cell_type,
+                                               const IceModelVec2Int &basin_mask);
 
   void identify_calving_front_connection(const IceModelVec2CellType &cell_type,
                                          const IceModelVec2Int &basin_mask,
@@ -76,7 +78,7 @@ private:
 
   void split_ice_shelves(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Int &basin_mask,
-                         const std::vector<int> &n_basin_neighbors,
+                         const std::map<int, std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,
                          const std::vector<int> &cfs_in_basins_per_shelf,
                          int n_shelves,
@@ -119,7 +121,7 @@ private:
   std::shared_ptr<petsc::Vec> m_tmp_p0;
 
   int m_n_basins;
-  std::vector<int> m_n_basin_neighbors;
+  std::map<int, std::set<int> > m_basin_neighbors;
 };
 
 } // end of namespace ocean
