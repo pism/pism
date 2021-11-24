@@ -550,8 +550,10 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2Cel
     auto M = cell_type.star(i, j);
     auto B = basin_mask.star(i, j);
 
+    bool next_to_icefront = (ice_free_ocean(M.ij) and cell_type.next_to_ice(i,j));
+
     // skip the "dummy" basin and cells that are not in the "ice free ocean"
-    if (B.ij == 0 or not ice_free_ocean(M.ij)) {
+    if (B.ij == 0 or not ice_free_ocean(M.ij) or not next_to_icefront) {
       continue;
     }
 
