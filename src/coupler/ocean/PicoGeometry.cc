@@ -547,13 +547,12 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2Cel
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = cell_type.star(i, j);
     auto B = basin_mask.star(i, j);
 
-    bool next_to_icefront = (ice_free_ocean(M.ij) and cell_type.next_to_ice(i,j));
+    bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i,j));
 
-    // skip the "dummy" basin and cells that are not in the "ice free ocean"
-    if (B.ij == 0 or not ice_free_ocean(M.ij) or not next_to_icefront) {
+    // skip the "dummy" basin and cells that are not at the ice front
+    if (B.ij == 0 or not next_to_icefront) {
       continue;
     }
 
@@ -566,6 +565,8 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2Cel
       B.s *= static_cast<int>(j > 0);
       B.w *= static_cast<int>(i > 0);
     }
+
+    auto M = cell_type.star(i, j);
 
     if (ice_free_ocean(M.n)) {
       mark_as_neighbors(B.ij, B.n);
