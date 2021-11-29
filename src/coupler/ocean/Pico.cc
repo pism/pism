@@ -142,7 +142,7 @@ void Pico::init_impl(const Geometry &geometry) {
   m_salinity_ocean->init(opt.filename, opt.periodic);
 
   // This initializes the basin_mask
-  m_geometry.init(geometry.cell_type);
+  m_geometry.init();
 
   // FIXME: m_n_basins is a misnomer
   m_n_basins = static_cast<int>(max(m_geometry.basin_mask())) + 1;

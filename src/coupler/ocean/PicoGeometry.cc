@@ -75,26 +75,13 @@ const IceModelVec2Int &PicoGeometry::basin_mask() const {
   return m_basin_mask;
 }
 
-void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
+void PicoGeometry::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
 
   m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
-
-  m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
-
-  // report
-  for (const auto &p : m_basin_neighbors) {
-    std::vector<std::string> neighbors;
-    for (const auto &n : p.second) {
-      neighbors.emplace_back(pism::printf("%d", n));
-    }
-    std::string neighbor_list = pism::join(neighbors, ", ");
-    m_log->message(2, "PICO: basin %d neighbors: %s\n",
-                   p.first, neighbor_list.c_str());
-  }
 }
 
 /*!
@@ -105,6 +92,26 @@ void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
                           const IceModelVec2CellType &cell_type) {
+
+  // Update basin adjacency.
+  //
+  // basin_neighbors() below uses the cell type mask to find
+  // adjacent basins by iterating over the current ice front. This means that basin
+  // adjacency cannot be pre-computed during initialization.
+  {
+    m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
+
+    // report
+    for (const auto &p : m_basin_neighbors) {
+      std::vector<std::string> neighbors;
+      for (const auto &n : p.second) {
+        neighbors.emplace_back(pism::printf("%d", n));
+      }
+      std::string neighbor_list = pism::join(neighbors, ", ");
+      m_log->message(3, "PICO: basin %d neighbors: %s\n",
+                     p.first, neighbor_list.c_str());
+    }
+  }
 
   bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
 
