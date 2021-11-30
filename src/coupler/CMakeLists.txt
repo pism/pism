@@ -11,6 +11,7 @@ add_library (pismboundary OBJECT
   ./atmosphere/Delta_P.cc
   ./atmosphere/Frac_P.cc
   ./atmosphere/Paleo_precip.cc
+  ./atmosphere/PaleoPrecip2D.cc
   ./atmosphere/Anomaly.cc
   ./atmosphere/WeatherStation.cc
   ./atmosphere/Factory.cc

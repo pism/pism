@@ -27,6 +27,7 @@
 #include "Delta_P.hh"
 #include "Frac_P.hh"
 #include "Paleo_precip.hh"
+#include "PaleoPrecip2D.hh"
 #include "ConstantPIK.hh"
 #include "Anomaly.hh"
 #include "CosineYearlyCycle.hh"
@@ -50,6 +51,7 @@ Factory::Factory(IceGrid::ConstPtr g)
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<PaleoPrecip>("paleo_precip");
+  add_modifier<PaleoPrecip2D>("paleo_precip_2d");
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
   add_modifier<Delta_T>("delta_T");
