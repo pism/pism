@@ -30,32 +30,43 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, AtmosphereModel* in)
   : PGivenClimate<PAModifier,AtmosphereModel>(g, in) {
   m_option_prefix  = "-atmosphere_anomaly";
 
-  // will be de-allocated by the parent's destructor
-  m_air_temp_anomaly      = new IceModelVec2T;
-  m_precipitation_anomaly = new IceModelVec2T;
-
-  m_fields["air_temp_anomaly"]      = m_air_temp_anomaly;
-  m_fields["precipitation_anomaly"] = m_precipitation_anomaly;
-
   process_options();
 
-  std::map<std::string, std::string> standard_names;
-  set_vec_parameters(standard_names);
+  m_modify_precip = not options::Bool(m_option_prefix + "_temp_only",
+                                      "Modify air temperature only,"
+                                      " leaving precipitation unchanged");
 
-  m_air_temp_anomaly->create(m_grid, "air_temp_anomaly");
-  m_air_temp_anomaly->set_attrs("climate_forcing",
-                              "anomaly of the near-surface air temperature",
-                              "Kelvin", "");
+  // will be de-allocated by the parent's destructor
+  {
+    m_air_temp_anomaly = new IceModelVec2T;
+    m_fields["delta_T"] = m_air_temp_anomaly;
+  }
 
-  m_precipitation_anomaly->create(m_grid, "precipitation_anomaly");
-  m_precipitation_anomaly->set_attrs("climate_forcing",
-                                   "anomaly of the ice-equivalent precipitation rate",
-                                   "kg m-2 second-1", "");
-  m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  if (m_modify_precip) {
+    m_precipitation_anomaly = new IceModelVec2T;
+    m_fields["precipitation_anomaly"] = m_precipitation_anomaly;
+  }
+
+  // calls set_n_records(), so ...->create() has to be called after set_vec_parameters()
+  set_vec_parameters({});
+
+  {
+    m_air_temp_anomaly->create(m_grid, "delta_T");
+    m_air_temp_anomaly->set_attrs("climate_forcing",
+                                  "anomaly of the near-surface air temperature",
+                                  "Kelvin", "");
+  }
+
+  if (m_modify_precip) {
+    m_precipitation_anomaly->create(m_grid, "precipitation_anomaly");
+    m_precipitation_anomaly->set_attrs("climate_forcing",
+                                       "anomaly of the ice-equivalent precipitation rate",
+                                       "kg m-2 second-1", "");
+    m_precipitation_anomaly->metadata().set_string("glaciological_units", "kg m-2 year-1");
+  }
 }
 
-Anomaly::~Anomaly()
-{
+Anomaly::~Anomaly() {
   // empty
 }
 
@@ -65,28 +76,33 @@ void Anomaly::init_impl() {
   m_input_model->init();
 
   m_log->message(2,
-             "* Initializing the -atmosphere ...,anomaly code...\n");
-
-  m_log->message(2,
+             "* Initializing the -atmosphere ...,anomaly code...\n"
              "    reading anomalies from %s ...\n",
              m_filename.c_str());
 
   m_air_temp_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
-  m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+
+  if (m_modify_precip) {
+    m_precipitation_anomaly->init(m_filename, m_bc_period, m_bc_reference_time);
+  }
 }
 
 void Anomaly::update_impl(double my_t, double my_dt) {
   update_internal(my_t, my_dt);
 
-  m_precipitation_anomaly->average(m_t, m_dt);
   m_air_temp_anomaly->average(m_t, m_dt);
-}
 
+  if (m_modify_precip) {
+    m_precipitation_anomaly->average(m_t, m_dt);
+  }
+}
 
 void Anomaly::mean_precipitation_impl(IceModelVec2S &result) const {
   m_input_model->mean_precipitation(result);
 
-  result.add(1.0, *m_precipitation_anomaly);
+  if (m_modify_precip) {
+    result.add(1.0, *m_precipitation_anomaly);
+  }
 }
 
 void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) const {
@@ -98,13 +114,19 @@ void Anomaly::mean_annual_temp_impl(IceModelVec2S &result) const {
 void Anomaly::begin_pointwise_access_impl() const {
   m_input_model->begin_pointwise_access();
   m_air_temp_anomaly->begin_access();
-  m_precipitation_anomaly->begin_access();
+
+  if (m_modify_precip) {
+    m_precipitation_anomaly->begin_access();
+  }
 }
 
 void Anomaly::end_pointwise_access_impl() const {
   m_input_model->end_pointwise_access();
-  m_precipitation_anomaly->end_access();
   m_air_temp_anomaly->end_access();
+
+  if (m_modify_precip) {
+    m_precipitation_anomaly->end_access();
+  }
 }
 
 void Anomaly::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -112,7 +134,9 @@ void Anomaly::init_timeseries_impl(const std::vector<double> &ts) const {
 
   m_air_temp_anomaly->init_interpolation(ts);
 
-  m_precipitation_anomaly->init_interpolation(ts);
+  if (m_modify_precip) {
+    m_precipitation_anomaly->init_interpolation(ts);
+  }
 }
 
 void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
@@ -129,11 +153,13 @@ void Anomaly::temp_time_series_impl(int i, int j, std::vector<double> &result) c
 void Anomaly::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
-  m_mass_flux_anomaly.reserve(m_ts_times.size());
-  m_precipitation_anomaly->interp(i, j, m_mass_flux_anomaly);
+  if (m_modify_precip) {
+    m_mass_flux_anomaly.reserve(m_ts_times.size());
+    m_precipitation_anomaly->interp(i, j, m_mass_flux_anomaly);
 
-  for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    result[k] += m_mass_flux_anomaly[k];
+    for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
+      result[k] += m_mass_flux_anomaly[k];
+    }
   }
 }
 
