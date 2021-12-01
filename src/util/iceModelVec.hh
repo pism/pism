@@ -320,9 +320,10 @@ public:
   //! Uses const char[] to make it easier to call it from gdb.
   void dump(const char filename[]) const;
 
+  uint64_t fletcher64_serial() const;
   uint64_t fletcher64() const;
-  std::string checksum() const;
-  void print_checksum(const char *prefix = "") const;
+  std::string checksum(bool serial) const;
+  void print_checksum(const char *prefix = "", bool serial=false) const;
 
   typedef pism::AccessList AccessList;
 protected:

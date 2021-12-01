@@ -1134,6 +1134,37 @@ void IceModelVec::get_from_proc0(petsc::Vec &onp0) {
 }
 
 /*!
+ * Copy data to rank 0 and compute the checksum.
+ *
+ * Does not use ghosts. Results should be independent of the parallel domain
+ * decomposition.
+ */
+uint64_t IceModelVec::fletcher64_serial() const {
+
+  auto v = allocate_proc0_copy();
+  put_on_proc0(*v);
+
+  MPI_Comm com = m_impl->grid->ctx()->com();
+
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  uint64_t result = 0;
+  if (rank == 0) {
+    petsc::VecArray array(*v);
+
+    PetscInt size = 0;
+    PetscErrorCode ierr = VecGetLocalSize(*v, &size);
+    PISM_CHK(ierr, "VecGetLocalSize");
+
+    result = pism::fletcher64((uint32_t*)array.get(), size * 2);
+  }
+  MPI_Bcast(&result, 1, MPI_UINT64_T, 0, com);
+
+  return result;
+}
+
+/*!
  * Compute a checksum of a vector.
  *
  * The result depends on the number of processors used.
@@ -1184,15 +1215,19 @@ uint64_t IceModelVec::fletcher64() const {
   return sum;
 }
 
-std::string IceModelVec::checksum() const {
+std::string IceModelVec::checksum(bool serial) const {
+  if (serial) {
+  // unsigned long long is supposed to be at least 64 bit long
+    return pism::printf("%016llx", (unsigned long long int)this->fletcher64_serial());
+  }
   // unsigned long long is supposed to be at least 64 bit long
   return pism::printf("%016llx", (unsigned long long int)this->fletcher64());
 }
 
-void IceModelVec::print_checksum(const char *prefix) const {
+void IceModelVec::print_checksum(const char *prefix, bool serial) const {
   auto log = m_impl->grid->ctx()->log();
 
-  log->message(1, "%s%s: %s\n", prefix, m_impl->name.c_str(), checksum().c_str());
+  log->message(1, "%s%s: %s\n", prefix, m_impl->name.c_str(), checksum(serial).c_str());
 }
 
 void convert_vec(petsc::Vec &v, units::System::Ptr system,
