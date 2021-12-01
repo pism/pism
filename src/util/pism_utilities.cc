@@ -465,6 +465,21 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
 }
 
 /*!
+ * Call fletcher64() to compute the checksum and print it.
+ */
+void print_checksum(MPI_Comm com,
+                    const std::vector<double> &data,
+                    const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  uint64_t sum = fletcher64((uint32_t*)data.data(), data.size() * 2);
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %016llx\n",
+              rank, label, (unsigned long long int)sum);
+}
+
+/*!
  * Compute water column pressure vertically-averaged over the height of an ice cliff at a
  * margin.
  */
