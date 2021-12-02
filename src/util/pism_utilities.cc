@@ -479,6 +479,40 @@ void print_checksum(MPI_Comm com,
               rank, label, (unsigned long long int)sum);
 }
 
+void print_vector(MPI_Comm com,
+                  const std::vector<double> &data,
+                  const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  std::vector<std::string> tmp;
+  for (const auto &f : data) {
+    tmp.emplace_back(pism::printf("%f", f));
+  }
+
+  auto str = join(tmp, ",");
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
+              rank, label, str.c_str());
+}
+
+void print_vector(MPI_Comm com,
+                  const std::vector<int> &data,
+                  const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  std::vector<std::string> tmp;
+  for (const auto &f : data) {
+    tmp.emplace_back(pism::printf("%d", f));
+  }
+
+  auto str = join(tmp, ",");
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
+              rank, label, str.c_str());
+}
+
 /*!
  * Compute water column pressure vertically-averaged over the height of an ice cliff at a
  * margin.

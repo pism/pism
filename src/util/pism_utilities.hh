@@ -144,6 +144,14 @@ void print_checksum(MPI_Comm com,
                     const std::vector<double> &data,
                     const char *label);
 
+void print_vector(MPI_Comm com,
+                  const std::vector<double> &data,
+                  const char *label);
+
+void print_vector(MPI_Comm com,
+                  const std::vector<int> &data,
+                  const char *label);
+
 double parse_number(const std::string &input);
 
 long int parse_integer(const std::string &input);
