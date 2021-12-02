@@ -113,8 +113,8 @@
 .. _ccache: https://ccache.dev/
 
 .. _github-help-fork: https://docs.github.com/en/get-started/quickstart/fork-a-repo
-.. _github-pull-request-create: https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
-.. _github-pull-request-allow-edits: https://docs.github.com/en/github/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork
+.. _github-pull-request-create: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
+.. _github-pull-request-allow-edits: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork
 
 .. _git-branching-model: https://nvie.com/posts/a-successful-git-branching-model/
 .. _git-fun-with-merges: https://gitster.livejournal.com/42247.html
