@@ -17,7 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cstring>
-#include <regex>
 #include <petscsys.h>
 
 #include "IceModel.hh"
@@ -60,8 +59,7 @@ int IceModel::process_signals() {
   }
 
   if (pism_signal == SIGUSR1) {
-    auto date_without_spaces = std::regex_replace(m_time->date(m_time->current()),
-                                                  std::regex(" "), "_");
+    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
     auto file_name = pism::printf("pism-%s.nc", date_without_spaces.c_str());
     m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",

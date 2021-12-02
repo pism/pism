@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <regex>
-
 #include "IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
@@ -142,8 +140,7 @@ void IceModel::write_snapshot() {
 
   if (m_split_snapshots) {
     m_snapshots_file_is_ready = false;    // each snapshot is written to a separate file
-    auto date_without_spaces = std::regex_replace(m_time->date(saving_after),
-                                                  std::regex(" "), "_");
+    auto date_without_spaces = replace_character(m_time->date(saving_after), ' ', '_');
     filename = pism::printf("%s_%s.nc",
                             m_snapshots_filename.c_str(),
                             date_without_spaces.c_str());

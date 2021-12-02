@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <regex>
-
 #include <netcdf.h>
 #ifdef NC_HAVE_META_H
 #include <netcdf_meta.h>
@@ -302,8 +300,7 @@ void IceModel::write_extras() {
 
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    auto date_without_spaces = std::regex_replace(m_time->date(m_time->current()),
-                                                  std::regex(" "), "_");
+    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
     filename = pism::printf("%s_%s.nc",
                             m_extra_filename.c_str(),
                             date_without_spaces.c_str());
