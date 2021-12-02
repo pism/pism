@@ -326,8 +326,8 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
     // In ice shelves, replace Beckmann-Goosse values using the Olbers and Hellmer model.
     process_box1(physics,
                  ice_thickness,                             // input
-                 m_geometry.ice_shelf_mask(),              // input
-                 m_geometry.box_mask(),                    // input
+                 m_geometry.ice_shelf_mask(),               // input
+                 m_geometry.box_mask(),                     // input
                  m_Toc_box0,                                // input
                  m_Soc_box0,                                // input
                  m_basal_melt_rate,
@@ -338,7 +338,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                  m_overturning);
 
     process_other_boxes(physics,
-                        ice_thickness,                // input
+                        ice_thickness,               // input
                         m_geometry.ice_shelf_mask(), // input
                         m_geometry.box_mask(),       // input
                         m_basal_melt_rate,
@@ -812,8 +812,6 @@ void Pico::compute_box_average(int box_id,
 
   IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
 
-  std::vector<int> n_cells_per_box(m_n_shelves, 0);
-  std::vector<double> result1(m_n_shelves);
   // fill results with zeros
   result.resize(m_n_shelves);
   for (int s = 0; s < m_n_shelves; ++s) {
@@ -821,23 +819,28 @@ void Pico::compute_box_average(int box_id,
   }
 
   // compute the sum of field in each shelf's box box_id
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    int shelf_id = shelf_mask.as_int(i, j);
-
-    if (box_mask.as_int(i, j) == box_id) {
-      n_cells_per_box[shelf_id] += 1;
-      result[shelf_id] += field(i, j);
-    }
-  }
-  // compute the global sum and average
   std::vector<int> n_cells(m_n_shelves);
-  GlobalSum(m_grid->com, n_cells_per_box.data(), n_cells.data(), m_n_shelves);
-  GlobalSum(m_grid->com, result.data(), result1.data(), m_n_shelves);
+  {
+    std::vector<int> n_cells_per_box(m_n_shelves, 0);
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-  // copy data
-  result = result1;
+      int shelf_id = shelf_mask.as_int(i, j);
+
+      if (box_mask.as_int(i, j) == box_id) {
+        n_cells_per_box[shelf_id] += 1;
+        result[shelf_id] += field(i, j);
+      }
+    }
+    GlobalSum(m_grid->com, n_cells_per_box.data(), n_cells.data(), m_n_shelves);
+  }
+
+  {
+    std::vector<double> tmp(m_n_shelves);
+    GlobalSum(m_grid->com, result.data(), tmp.data(), m_n_shelves);
+    // copy data
+    result = tmp;
+  }
 
   for (int s = 0; s < m_n_shelves; ++s) {
     if (n_cells[s] > 0) {
