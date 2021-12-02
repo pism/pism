@@ -206,6 +206,10 @@ static void extend_basal_melt_rates(const IceModelVec2CellType &cell_type,
 
   auto grid = basal_melt_rate.grid();
 
+  // update ghosts of the basal melt rate so that we can use basal_melt_rate.box(i,j)
+  // below
+  basal_melt_rate.update_ghosts();
+
   IceModelVec::AccessList list{&cell_type, &basal_melt_rate};
 
   for (Points p(*grid); p; p.next()) {
