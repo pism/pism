@@ -192,6 +192,7 @@
 
 
 /* PISM header with no dependence on other PISM headers. */
+%ignore print_vector;
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
 
