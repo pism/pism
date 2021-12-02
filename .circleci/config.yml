@@ -1,4 +1,4 @@
-# Note: set the environment varible ${N} to the number of processes to use for parallel
+# Note: set the environment variable ${N} to the number of processes to use for parallel
 # builds and testing (overrides the default (4) used on CircleCI servers).
 
 version: 2
@@ -342,7 +342,7 @@ workflows:
             - build-manual-html
           filters:
             branches:
-              only: dev
+              only: main
       - build-manual-pdf
       - deploy-manual-pdf:
           requires:
@@ -353,7 +353,7 @@ workflows:
             - build-manual-pdf
           filters:
             branches:
-              only: dev
+              only: main
       - build-source-browser
       - deploy-source-browser:
           requires:
@@ -364,4 +364,4 @@ workflows:
             - build-source-browser
           filters:
             branches:
-              only: dev
+              only: main
