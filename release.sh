@@ -34,15 +34,15 @@ make -C doc/sphinx
 make -C doc
 
 # set Pism_BRANCH to "stable"
-sed -i '' -E 's/(Pism_BRANCH)[^)]+/\1 "stable"/' CMakeLists.txt
+sed -Ei 's/(Pism_BRANCH)[^)]+/\1 "stable"/' CMakeLists.txt
 git add CMakeLists.txt
 
 # update Pism_VERSION
-sed -i '' -E "s/(set +\(Pism_VERSION)[^)]+/\1 \"v${version}\"/" CMake/PISM_CMake_macros.cmake
+sed -Ei "s/(set +\(Pism_VERSION)[^)]+/\1 \"v${version}\"/" CMake/PISM_CMake_macros.cmake
 git add CMake/PISM_CMake_macros.cmake
 
 # update version in the manual
-sed -i '' -E "s/^(version|release).+/\1 = '${version}'/" doc/sphinx/conf.py
+sed -Ei "s/^(version|release).+/\1 = '${version}'/" doc/sphinx/conf.py
 git add doc/sphinx/conf.py
 
 # commit these changes
