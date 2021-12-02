@@ -72,6 +72,8 @@ std::set<std::string> set_split(const std::string &input, char separator);
 
 std::string set_join(const std::set<std::string> &input, const std::string& separator);
 
+std::string replace_character(const std::string &input, char from, char to);
+
 // set
 bool member(const std::string &string, const std::set<std::string> &set);
 

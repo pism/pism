@@ -99,6 +99,20 @@ std::string set_join(const std::set<std::string> &input, const std::string& sepa
   return join_impl(input, separator);
 }
 
+/*!
+ * Replace all occurrences of the character `from` with `to` and return the resulting string.
+ *
+ * We could use std::regex_replace(), but this will do for now.
+ */
+std::string replace_character(const std::string &input, char from, char to) {
+  std::string result;
+  for (const char &c : input) {
+    result += c == from ? to : c;
+  }
+  return result;
+}
+
+
 //! Transform a `separator`-separated list (a string) into a vector of strings.
 std::vector<std::string> split(const std::string &input, char separator) {
   std::istringstream input_list(input);
