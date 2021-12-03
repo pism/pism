@@ -89,11 +89,11 @@ class SteadyHydrology(TestCase):
 
         flux_magnitude = PISM.IceModelVec2S(grid, "flux_magnitude", PISM.WITHOUT_GHOSTS)
 
-        flux_magnitude.set_to_magnitude(self.model.flux())
+        PISM.compute_magnitude(self.model.flux(), flux_magnitude)
 
         # Compute the total input. This approximates a double integral, hence
         # the "dx dy" factor.
-        total_input = self.model.surface_input_rate().sum() * (grid.dx() * grid.dy())
+        total_input = PISM.sum(self.model.surface_input_rate()) * (grid.dx() * grid.dy())
 
         # Compute the total flux through the grounding line. This is not
         # exactly what we want, but it's close. It would be better to use the

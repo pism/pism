@@ -1,4 +1,4 @@
-// Copyright (C) 2018 PISM Authors
+// Copyright (C) 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ protected:
 
   //! Storage on rank zero. Used to pass the load to the serial orographic precipitation
   //! Model.
-  petsc::Vec::Ptr m_work0;
+  std::shared_ptr<petsc::Vec> m_work0;
 
   //! Serial orographic precipitation model.
   std::unique_ptr<OrographicPrecipitationSerial> m_serial_model;

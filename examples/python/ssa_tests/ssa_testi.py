@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -62,7 +62,7 @@ class testi(PISM.ssa.SSAExactTestCase):
         self._allocateBCs()
         vecs = self.modeldata.vecs
 
-        vecs.bc_mask.set(0)
+        vecs.vel_bc_mask.set(0)
         vecs.thk.set(H0_schoof)
         vecs.mask.set(PISM.MASK_GROUNDED)
 
@@ -81,12 +81,12 @@ class testi(PISM.ssa.SSAExactTestCase):
                 y = grid.y(j)
                 vecs.tauc[i, j] = f * (abs(y / L_schoof) ** m_schoof)
 
-        bc_mask = vecs.bc_mask
+        vel_bc_mask = vecs.vel_bc_mask
         vel_bc = vecs.vel_bc
         surface = vecs.surface_altitude
         bed = vecs.bedrock_altitude
         grid = self.grid
-        with PISM.vec.Access(comm=[surface, bed, vel_bc, bc_mask]):
+        with PISM.vec.Access(comm=[surface, bed, vel_bc, vel_bc_mask]):
             for (i, j) in grid.points():
                 p = PISM.exactI(m_schoof, grid.x(i), grid.y(j))
                 bed[i, j] = p.bed
@@ -94,7 +94,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
                 edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
                 if edge:
-                    bc_mask[i, j] = 1
+                    vel_bc_mask[i, j] = 1
                     vel_bc[i, j].u = p.u
                     vel_bc[i, j].v = p.v
 

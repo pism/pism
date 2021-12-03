@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ public:
   typedef std::shared_ptr<NCFile> Ptr;
 
   NCFile(MPI_Comm com);
-  virtual ~NCFile();
+  virtual ~NCFile() = default;
 
   // open/create/close
   void open(const std::string &filename, IO_Mode mode);
@@ -121,6 +121,8 @@ public:
   void inq_varid(const std::string &variable_name, bool &exists) const;
 
   void inq_varname(unsigned int j, std::string &result) const;
+
+  void set_compression_level(int level) const;
 
   // att
   void get_att_double(const std::string &variable_name, const std::string &att_name,
@@ -207,6 +209,8 @@ protected:
   virtual void inq_varid_impl(const std::string &variable_name, bool &exists) const = 0;
 
   virtual void inq_varname_impl(unsigned int j, std::string &result) const = 0;
+
+  virtual void set_compression_level_impl(int level) const = 0;
 
   // att
   virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const = 0;

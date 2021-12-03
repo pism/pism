@@ -15,6 +15,8 @@ code modifications; see the following sub-sections for details.
 
    input-output.rst
 
+   time-stepping.rst
+
    saving-time-series.rst
 
    saving-diagnostics.rst
@@ -28,8 +30,6 @@ code modifications; see the following sub-sections for details.
    regridding.rst
 
    signals.rst
-
-   time-stepping.rst
 
    mass-conservation.rst
 

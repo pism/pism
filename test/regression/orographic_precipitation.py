@@ -6,8 +6,8 @@ import PISM
 # silence initialization messages
 PISM.Context().log.set_threshold(1)
 
-def triangle_ridge_grid(dx=5e4, dy=5e4):
-    "Allocate the grid for the synthetic geometry test."
+def grid_square(dx=5e4, dy=5e4):
+    "Allocate a square grid for the synthetic geometry test."
     x_min, x_max   = -100e3, 100e3
     y_min, y_max   = -100e3, 100e3
 
@@ -24,6 +24,44 @@ def triangle_ridge_grid(dx=5e4, dy=5e4):
                                 x0, y0,
                                 Mx, My,
                                 PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+
+def grid_flowline_y(dy=5e4):
+    "Allocate a flow-line (y direction) grid for the synthetic geometry test."
+    dx = dy
+    y_min, y_max = -100e3, 100e3
+
+    x0 = 0.0
+    y0 = (y_max + y_min) / 2.0
+
+    Lx = 2.0 * dx
+    Ly = (y_max - y_min) / 2.0
+    Mx = 3
+    My = int((y_max - y_min) / dy)
+
+    return PISM.IceGrid_Shallow(PISM.Context().ctx,
+                                Lx, Ly,
+                                x0, y0,
+                                Mx, My,
+                                PISM.CELL_CORNER, PISM.X_PERIODIC)
+
+def grid_flowline_x(dx=5e4):
+    "Allocate flow-line (x direction) grid for the synthetic geometry test."
+    dy = dx
+    x_min, x_max = -100e3, 100e3
+
+    x0 = (x_max + x_min) / 2.0
+    y0 = 0.0
+
+    Lx = (x_max - x_min) / 2.0
+    Ly = 2.0 * dy
+    Mx = int((x_max - x_min) / dx)
+    My = 3
+
+    return PISM.IceGrid_Shallow(PISM.Context().ctx,
+                                Lx, Ly,
+                                x0, y0,
+                                Mx, My,
+                                PISM.CELL_CORNER, PISM.Y_PERIODIC)
 
 def triangle_ridge(x, A=500.0, d=50e3):
     "Create the 'triangle ridge' topography"
@@ -80,7 +118,11 @@ def run_model(grid, orography):
     # convert from kg / (m^2 s) to mm/s
     return model.mean_precipitation().numpy() / (1e-3 * water_density)
 
-def max_error(spacing, wind_direction):
+def max_error(spacing, wind_direction, flowline=True):
+    """Compute the maximum error given a grid spacing and wind direction.
+
+    Calls run_model().
+    """
     # Set conversion time to zero (we could set fallout time to zero instead: it does not
     # matter which one is zero)
 
@@ -108,7 +150,7 @@ def max_error(spacing, wind_direction):
 
     if wind_direction == 90 or wind_direction == 270:
         # east or west
-        grid = triangle_ridge_grid(dx=spacing)
+        grid = grid_square(dx=spacing) if not flowline else grid_flowline_x(spacing)
         t = np.array(grid.x())
 
         h = triangle_ridge(t)
@@ -118,7 +160,7 @@ def max_error(spacing, wind_direction):
         P = P[grid.My() // 2, :]
     else:
         # north or south
-        grid = triangle_ridge_grid(dy=spacing)
+        grid = grid_square(dy=spacing) if not flowline else grid_flowline_y(spacing)
         t = np.array(grid.y())
 
         h = triangle_ridge(t)
@@ -134,7 +176,7 @@ def max_error(spacing, wind_direction):
 
     return np.max(np.fabs(P - P_exact))
 
-def convergence_rate(dxs, error, wind_direction, plot):
+def convergence_rate(flowline, dxs, error, wind_direction, plot):
     errors = [error(dx, wind_direction) for dx in dxs]
 
     p = np.polyfit(np.log10(dxs), np.log10(errors), 1)
@@ -152,7 +194,7 @@ def convergence_rate(dxs, error, wind_direction, plot):
             plt.plot(np.log10(x), np.polyval(p, np.log10(x)), label=label)
 
         plt.figure()
-        plt.title("Precipitation errors (wind direction: {})".format(direction[wind_direction]))
+        plt.title("Precipitation errors (flow-line: {}, wind direction: {})".format(flowline, direction[wind_direction]))
         log_fit_plot(dxs, p, "polynomial fit (dx^{:1.4})".format(p[0]))
         log_plot(dxs, errors, 'o', "errors")
         plt.legend()
@@ -163,13 +205,25 @@ def convergence_rate(dxs, error, wind_direction, plot):
 
     return p[0]
 
+
+def check(flowline, dxs, plot):
+    "Orographic precipitation (triangle ridge test case)"
+
+    assert convergence_rate(flowline, dxs, max_error,   0, plot) > 1.99
+    assert convergence_rate(flowline, dxs, max_error,  90, plot) > 1.99
+    assert convergence_rate(flowline, dxs, max_error, 180, plot) > 1.99
+    assert convergence_rate(flowline, dxs, max_error, 270, plot) > 1.99
+
 def ltop_test(dxs=[2000, 1000, 500], plot=False):
     "Orographic precipitation (triangle ridge test case)"
 
-    assert convergence_rate(dxs, max_error,   0, plot) > 1.99
-    assert convergence_rate(dxs, max_error,  90, plot) > 1.99
-    assert convergence_rate(dxs, max_error, 180, plot) > 1.99
-    assert convergence_rate(dxs, max_error, 270, plot) > 1.99
+    check(flowline=False, dxs=dxs, plot=plot)
+
+def ltop_flowline_test(dxs=[2000, 1000, 500], plot=False):
+    "Orographic precipitation (triangle ridge test case) (flow-line)"
+
+    check(flowline=True, dxs=dxs, plot=plot)
 
 if __name__ == "__main__":
     ltop_test(dxs=[2000, 1000, 500, 250, 125], plot=True)
+    ltop_flowline_test(dxs=[4000, 2000, 1000, 500, 250, 125, 62.5], plot=True)

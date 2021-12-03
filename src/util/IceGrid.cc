@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,6 @@
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "Time.hh"
-#include "Time_Calendar.hh"
 #include "ConfigInterface.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
@@ -35,6 +34,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/projection.hh"
 #include "pism/pism_config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 #if (Pism_USE_PIO==1)
 // Why do I need this???
@@ -46,15 +47,15 @@ namespace pism {
 
 //! Internal structures of IceGrid.
 struct IceGrid::Impl {
-  Impl(Context::ConstPtr ctx);
+  Impl(std::shared_ptr<const Context> context);
 
-  petsc::DM::Ptr create_dm(int da_dof, int stencil_width) const;
+  std::shared_ptr<petsc::DM> create_dm(int da_dof, int stencil_width) const;
   void set_ownership_ranges(const std::vector<unsigned int> &procs_x,
                             const std::vector<unsigned int> &procs_y);
 
   void compute_horizontal_coordinates();
 
-  Context::ConstPtr ctx;
+  std::shared_ptr<const Context> ctx;
 
   MappingInfo mapping_info;
 
@@ -100,12 +101,12 @@ struct IceGrid::Impl {
   //! half width of the ice model grid in y-direction (m)
   double Ly;
 
-  std::map<int,petsc::DM::WeakPtr> dms;
+  std::map<int,std::weak_ptr<petsc::DM> > dms;
 
   // This DM is used for I/O operations and is not owned by any
   // IceModelVec (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
-  petsc::DM::Ptr dm_scalar_global;
+  std::shared_ptr<petsc::DM> dm_scalar_global;
 
   //! @brief A dictionary with pointers to IceModelVecs, for passing
   //! them from the one component to another (e.g. from IceModel to
@@ -119,25 +120,32 @@ struct IceGrid::Impl {
   std::map<int, int> io_decompositions;
 };
 
-IceGrid::Impl::Impl(Context::ConstPtr context)
+IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
   : ctx(context), mapping_info("mapping", ctx->unit_system()) {
   // empty
 }
 
 //! Convert a string to Periodicity.
 Periodicity string_to_periodicity(const std::string &keyword) {
-    if (keyword == "none") {
+  if (keyword == "none") {
     return NOT_PERIODIC;
-  } else if (keyword == "x") {
-    return X_PERIODIC;
-  } else if (keyword == "y") {
-    return Y_PERIODIC;
-  } else if (keyword == "xy") {
-    return XY_PERIODIC;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid periodicity type '%s' is invalid.",
-                                  keyword.c_str());
   }
+
+  if (keyword == "x") {
+    return X_PERIODIC;
+  }
+
+  if (keyword == "y") {
+    return Y_PERIODIC;
+  }
+
+  if (keyword == "xy") {
+    return XY_PERIODIC;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "grid periodicity type '%s' is invalid.",
+                                keyword.c_str());
 }
 
 //! Convert Periodicity to a STL string.
@@ -202,7 +210,7 @@ std::string registration_to_string(GridRegistration registration) {
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
@@ -235,7 +243,7 @@ IceGrid::Ptr IceGrid::Shallow(Context::ConstPtr ctx,
 }
 
 //! @brief Create a PISM distributed computational grid.
-IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
+IceGrid::IceGrid(std::shared_ptr<const Context> context, const GridParameters &p)
   : com(context->com()), m_impl(new Impl(context)) {
 
   try {
@@ -263,10 +271,10 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
     m_impl->compute_horizontal_coordinates();
 
     {
-      unsigned int stencil_width = (unsigned int)context->config()->get_number("grid.max_stencil_width");
+      int stencil_width = (int)context->config()->get_number("grid.max_stencil_width");
 
       try {
-        petsc::DM::Ptr tmp = this->get_dm(1, stencil_width);
+        std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
         e.add_context("distributing a %d x %d grid across %d processors.",
                       Mx(), My(), size());
@@ -294,14 +302,14 @@ IceGrid::IceGrid(Context::ConstPtr context, const GridParameters &p)
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
                                GridRegistration r) {
 
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
-  for (auto name : var_names) {
+  for (const auto &name : var_names) {
     if (file.find_variable(name)) {
       return FromFile(ctx, file, name, r);
     }
@@ -314,7 +322,7 @@ IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-IceGrid::Ptr IceGrid::FromFile(Context::ConstPtr ctx,
+IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &var_name,
                                GridRegistration r) {
@@ -426,12 +434,13 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
 
-  if (height < 0.0 - 1.0e-6) {
+  const double eps = 1.0e-6;
+  if (height < 0.0 - eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is below base of ice"
                                   " (height must be non-negative)\n", height);
   }
 
-  if (height > Lz() + 1.0e-6) {
+  if (height > Lz() + eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is above top of computational"
                                   " grid Lz = %5.4f\n", height, Lz());
   }
@@ -829,8 +838,8 @@ static int dm_hash(int dm_dof, int stencil_width) {
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-petsc::DM::Ptr IceGrid::get_dm(int da_dof, int stencil_width) const {
-  petsc::DM::Ptr result;
+std::shared_ptr<petsc::DM> IceGrid::get_dm(int da_dof, int stencil_width) const {
+  std::shared_ptr<petsc::DM> result;
 
   int j = dm_hash(da_dof, stencil_width);
 
@@ -854,13 +863,13 @@ GridRegistration IceGrid::registration() const {
 }
 
 //! Return execution context this grid corresponds to.
-Context::ConstPtr IceGrid::ctx() const {
+std::shared_ptr<const Context> IceGrid::ctx() const {
   return m_impl->ctx;
 }
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
+std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
 
   ctx->log()->message(3,
                       "* Creating a DM with dof=%d and stencil_width=%d...\n",
@@ -882,7 +891,7 @@ petsc::DM::Ptr IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
   ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
 #endif
 
-  return petsc::DM::Ptr(new petsc::DM(result));
+  return std::shared_ptr<petsc::DM>(new petsc::DM(result));
 }
 
 //! MPI rank.
@@ -1217,7 +1226,7 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void GridParameters::init_from_file(Context::ConstPtr ctx,
+void GridParameters::init_from_file(std::shared_ptr<const Context> ctx,
                                     const File &file,
                                     const std::string &variable_name,
                                     GridRegistration r) {
@@ -1239,14 +1248,14 @@ void GridParameters::init_from_file(Context::ConstPtr ctx,
   z = input_grid.z;
 }
 
-GridParameters::GridParameters(Context::ConstPtr ctx,
+GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &variable_name,
                                GridRegistration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
-GridParameters::GridParameters(Context::ConstPtr ctx,
+GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                GridRegistration r) {
@@ -1260,13 +1269,14 @@ void GridParameters::horizontal_size_from_options() {
   My = options::Integer("-My", "grid size in Y direction", My);
 }
 
-void GridParameters::horizontal_extent_from_options() {
+void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
   // Domain size
   {
-    Lx = 1000.0 * options::Real("-Lx", "Half of the grid extent in the Y direction, in km",
-                                Lx / 1000.0);
-    Ly = 1000.0 * options::Real("-Ly", "Half of the grid extent in the X direction, in km",
-                                Ly / 1000.0);
+    Lx = 1000.0 * options::Real(unit_system,
+                                "-Lx", "Half of the grid extent in the Y direction, in km",
+                                "km", Lx / 1000.0);
+    Ly = 1000.0 * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
+                                "km", Ly / 1000.0);
   }
 
   // Alternatively: domain size and extent
@@ -1336,7 +1346,7 @@ void GridParameters::validate() const {
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
+IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -1347,17 +1357,6 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
   Logger::ConstPtr log = ctx->log();
 
   if (not input_file.empty() and (not bootstrap)) {
-    // These options are ignored because we're getting *all* the grid
-    // parameters from a file.
-    options::ignored(*log, "-Mx");
-    options::ignored(*log, "-My");
-    options::ignored(*log, "-Mz");
-    options::ignored(*log, "-Mbz");
-    options::ignored(*log, "-Lx");
-    options::ignored(*log, "-Ly");
-    options::ignored(*log, "-Lz");
-    options::ignored(*log, "-z_spacing");
-
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
   } else if (not input_file.empty() and bootstrap) {
@@ -1366,13 +1365,11 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
     GridParameters input_grid(config);
 
-    std::vector<std::string> names = {"land_ice_thickness", "bedrock_altitude",
-                                      "thk", "topg"};
     bool grid_info_found = false;
 
     File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
-    for (auto name : names) {
+    for (auto name : {"land_ice_thickness", "bedrock_altitude", "thk", "topg"}) {
 
       grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
@@ -1392,9 +1389,10 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
                                     input_file.c_str());
     }
 
-    // process all possible options controlling grid parameters, overriding values read from a file
+    // process all possible options controlling grid parameters, overriding values read
+    // from a file
     input_grid.horizontal_size_from_options();
-    input_grid.horizontal_extent_from_options();
+    input_grid.horizontal_extent_from_options(ctx->unit_system());
     input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 
@@ -1416,10 +1414,17 @@ IceGrid::Ptr IceGrid::FromOptions(Context::ConstPtr ctx) {
 
     return result;
   } else {
-    // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is not set,
-    // -bootstrap is not set either".
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Please set the input file using the \"-i\" command-line option.");
+    // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is
+    // not set, -bootstrap is not set either".
+
+    // Use defaults from the configuration database
+    GridParameters P(ctx->config());
+    P.horizontal_size_from_options();
+    P.horizontal_extent_from_options(ctx->unit_system());
+    P.vertical_grid_from_options(ctx->config());
+    P.ownership_ranges_from_options(ctx->size());
+
+    return IceGrid::Ptr(new IceGrid(ctx, P));
   }
 }
 

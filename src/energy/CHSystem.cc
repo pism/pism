@@ -27,6 +27,7 @@
 #include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace energy {
@@ -62,12 +63,7 @@ CHSystem::CHSystem(IceGrid::ConstPtr grid,
 
   m_ice_enthalpy.set_name("ch_enthalpy");
   m_ice_enthalpy.metadata().set_name("ch_enthalpy");
-  m_ice_enthalpy.metadata().set_string("long_name",
-                                       "enthalpy of the cryo-hydrologic system");
-}
-
-CHSystem::~CHSystem() {
-  // empty
+  m_ice_enthalpy.metadata()["long_name"] = "enthalpy of the cryo-hydrologic system";
 }
 
 void CHSystem::restart_impl(const File &input_file, int record) {
@@ -299,6 +295,10 @@ void cryo_hydrologic_warming_flux(double k,
     loop.failed();
   }
   loop.check();
+}
+
+DiagnosticList CHSystem::diagnostics_impl() const {
+  return {{"ch_enthalpy", Diagnostic::wrap(m_ice_enthalpy)}};
 }
 
 

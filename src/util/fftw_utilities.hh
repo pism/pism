@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,9 +24,11 @@
 
 #include <fftw3.h>
 
-#include "pism/util/petscwrappers/Vec.hh"
-
 namespace pism {
+
+namespace petsc {
+class Vec;
+} // end of namespace petsc
 
 /*!
  * Template class for accessing the central part of an extended grid, i.e. PISM's grid
@@ -67,7 +69,7 @@ void copy_fftw_array(fftw_complex *source, fftw_complex *destination, int Nx, in
 /*!
  * Sets the imaginary part to zero.
  */
-void set_real_part(Vec input,
+void set_real_part(petsc::Vec &input,
                    double normalization,
                    int Mx, int My,
                    int Nx, int Ny,
@@ -83,6 +85,6 @@ void get_real_part(fftw_complex *input,
                    int Mx, int My,
                    int Nx, int Ny,
                    int i0, int j0,
-                   Vec output);
+                   petsc::Vec &output);
 
 } // end of namespace pism

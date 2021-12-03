@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -143,7 +143,7 @@ protected:
   std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
-  petsc::DM::Ptr  m_da;               // dof=2 DA
+  std::shared_ptr<petsc::DM>  m_da;               // dof=2 DA
   IceModelVec2V m_velocity_global; // global vector for solution
 
   // profiling

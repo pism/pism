@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class ElevationChange : public SurfaceModel
 {
 public:
   ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
-  virtual ~ElevationChange();
+  virtual ~ElevationChange() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -49,7 +49,7 @@ protected:
   double m_smb_exp_factor;
   double m_temp_lapse_rate;
 
-  IceModelVec2T::Ptr m_reference_surface;
+  std::shared_ptr<IceModelVec2T> m_reference_surface;
 
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;

@@ -1,5 +1,117 @@
 .. default-role:: literal
 
+Changes since v1.2
+==================
+
+- The three-equation ocean model `-ocean th` uses constant salinity (see
+  `constants.sea_water.salinity`) if `salinity_ocean` is not present in the forcing file.
+- `fill_missing_petsc.py` uses homogeneous Neumann BC at domain boundaries.
+- Support 2D precipitation scaling in `-atmosphere ...,frac_P`. If the input file set
+  using `atmosphere.frac_P.file` contains a scalar time series `frac_P`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `frac_P`, use that as a time-and-space-dependent forcing.
+- Add a new `output.format` value: `netcdf4_serial` and `output.compression_level`. Use
+  `-o_format netcdf4_serial -output.compression_level N` (`N` between 1 and 9) to write
+  compressed NetCDF from rank 0.
+- Support writing compressed NetCDF in parallel with NetCDF 4.7.4 or newer and HDF5 1.10.3
+  or newer. Set `output.compression_level` to enable compression.
+- Stop with an error message if some values of a variable read from a file match the
+  `_FillValue` attribute (PISM expects input files to contain data at all grid points
+  within the domain).
+- Add optional arguments `time_units` and `calendar` to `PISM.util.prepare_output()` in
+  the Python bindings.
+- Add surface elevation smoothing to the orographic precipitation model. High-frequency
+  modes in the surface elevation that can develop in runs with evolving ice geometry
+  (consider grounded ice margins) may cause oscillations in the computed precipitation
+  field (probably due to the Gibbs phenomenon). These oscillations may result in an even
+  rougher topography, triggering a feedback loop polluting model results. Set
+  `atmosphere.orographic_precipitation.smoothing_standard_deviation` (in meters)
+  to smooth the ice surface elevation to reduce this effect.
+- Add `sea_level.constant.value`. This sets the default sea level elevation used with
+  `-sea_level constant`.
+- Remove `ocean.always_grounded`. Set `sea_level.constant.value` to a large negative value
+  to ensure that all ice is grounded.
+- Remove `ocean.melange_back_pressure_fraction`: it is no longer needed.
+- Add a new ocean modifier: `-ocean ...,delta_MBP`. This component reads scalar
+  time-dependent melange pressure offsets (units: Pa) and uses them in the calving front
+  boundary condition for the SSA.
+- The new `-bed_def given` class reads in a prescribed bed deformation history from a file
+  (e.g. from a solid-Earth model) relative to a (high-resolution) reference topography,
+  indicated by configuration parameter `bed_deformation.given.file` and
+  `bed_deformation.given.reference_file`, respectively.
+- Implemented regularized Coulomb sliding as in Zoet & Iverson, 2020, A slip law for
+  glaciers on deformable beds, equation 3.
+- Implement a FEM solver for the first order approximation of the Stokes equations due to
+  Blatter (1995). This solver supports multigrid preconditioners (see Brown et al 2013)
+  and includes 5 verification test based on manufactured solutions.
+- Implement experiments A,B,C,D,E from the ISMIP-HOM intercomparison.
+- Adjust PICO ocean input average across covered basins, in which the ice shelf has
+  in fact a connection to the ocean. Large ice shelves, that cover across two basins,
+  that do not share an ocean boundary, are split into two separate ice shelf instances
+- Implement scaling of calving rates using a time-dependent factor. Set
+  `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
+  (units: "1").
+- Add the new command-line option `-refinement_factor N`. Use this to select a regional
+  modeling domain using `-x_range ... -y_range ...`, then use a grid that is `N` times
+  finer.
+- Fix a bug in the code managing time step restrictions (this affected the last time step
+  of runs using `-skip` and runs with `-skip` in which `-max_dt` is active).
+- Add support for automatic unit conversion in command-line options. If an option argument
+  is a number PISM assumes that it uses PISM's internal units. If it is a number followed
+  by a units string recognized by UDUNITS it is automatically converter to PISM's internal
+  units. For example, the following are equivalent: `-Lz 1000`, `-Lz 1000m`, `-Lz 1km`.
+- Command-line options `-y`, `-ys`, `-ye`, `-max_dt` and corresponding configuration
+  parameters use units of `365 days` instead of `years`. The latter has the meaning of the
+  mean tropical year, i.e. the constant used to convert from `1/s` to `1/year`. Use `-y
+  1000years`, etc to reproduce the old behavior.
+- Add a new parameter: `time_stepping.resolution`. PISM rounds time step lengths *down* to
+  a multiple of this number (default: 1 second). This reduces the influence of rounding
+  errors on time step lengths. See `issue 407`_.
+- Remove the `pisms` executable. Run `pismr -eisII X` to run EISMINT-II test `X`.
+- Ice thickness threshold read in from `calving.thickness_calving.file` can be both space-
+  and time-dependent.
+- Now PISM stops with an error message if time-dependent forcing data read from a file do
+  not span the whole length of a simulation. Set `input.forcing.time_extrapolation` to
+  "true" to disable this check.
+- Remove the configuration parameter `input.forcing.evaluations_per_year`. Now
+  the code evaluates *exact* values of time averages of time-dependent forcing inputs.
+- Major improvement in the handling of time-dependent forcing. A file containing periodic
+  forcing has to contain *exactly* one period. The start and the length of the period are
+  derived from time bounds read from this file. This makes it easier to use periodic
+  forcing and adds supports for arbitrary period lengths. See the manual section about
+  time-dependent inputs.
+- All time-dependent forcing files have to contain time bounds.
+- Now PISM always respects the reference date in input files.
+- Rename NetCDF variables `bc_mask` to `vel_bc_mask` and `u_ssa_bc` and `v_ssa_bc` to
+  `u_bc` and `v_bc`.
+- Add a new NetCDF variable `thk_bc_mask` prescribing locations where the ice thickness is
+  kept fixed. This mask is combined with `vel_bc_mask`: we keep ice thickness fixed at all
+  the locations where the sliding (usually SSA) velocity is fixed.
+- Implement the fracture density growth parameterization due to Borstad et al
+  (equation 4 in http://doi.org/10.1002/2015GL067365). Code contributed by T. Albrecht).
+- Assume that in the "ocean" areas the till at the base is saturated with water, i.e. the
+  till water amount is equal to `hydrology.tillwat_max`. This change should improve
+  grounding line movement and make the basal yield stress modification turned on with
+  `basal_yield_stress.slippery_grounding_lines` unnecessary.
+- Fix the approximation of the driving stress at floating ice margins. (This fix was
+  contributed by Ronja Reese and Torsten Albrecht.)
+- Implement a mechanism for "optimizing" the till friction angle used by the Mohr-Coulomb
+  yield stress model. The implementation is based on the code contributed by T. Albrecht.
+- Add `atmosphere.elevation_change.precipitation.temp_lapse_rate` to the `-atmosphere
+  ...,elevation_change` modifier. Now this parameter is used to compute the temperature
+  change `dT` used to scale precipitation by a factor `exp(C * dT)` with `C =
+  atmosphere.precip_exponential_factor_for_temperature`. We need a separate temperature
+  lapse rate parameter to be able to use this modifier with atmosphere models that include
+  an elevation-dependent near-surface air temperature parameterizations, e.g. `-atmosphere
+  pik,elevation_change`.
+- Improve the approximation of the grounding line flux (scalar and 2D diagnostics
+  `grounding_line_flux`): the flux *through* the grounding line should be zero if its
+  direction is parallel to the grounding line. Unfortunately this is impossible to achieve
+  for an arbitrary grounding line shape if the grounding line is approximated by a mask on
+  a uniform grid (as in PISM). This change improves the approximation for some
+  combinations of grounding line shapes and grid resolutions. (This issue was reported by
+  Ronja Reese.)
+
 Changes from v1.2.1 to v1.2.2
 =============================
 
@@ -847,7 +959,7 @@ Miscellaneous
 
 - Add numerous regression tests.
 
-.. _Sphinx: http://pism-docs.org/sphinx/
+.. _Sphinx: http://pism.io/docs
 .. _better documentation: Sphinx_
 .. _vectorized: https://en.wikipedia.org/wiki/Automatic_vectorization
 .. _VDT: https://github.com/dpiparo/vdt
@@ -890,7 +1002,8 @@ Miscellaneous
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
 .. _issue 462: https://github.com/pism/pism/issues/462
-.. _ocean models: http://pism-docs.org/sphinx/climate_forcing/ocean.html
+.. _issue 407: https://github.com/pism/pism/issues/407
+.. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 ..
    Local Variables:
    fill-column: 90

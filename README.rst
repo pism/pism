@@ -9,7 +9,7 @@ The Parallel Ice Sheet Model is an open source, parallel, high-resolution ice sh
 - polythermal, enthalpy-based conservation of energy scheme
 - extensible coupling to atmospheric and ocean models
 - verification and validation tools
-- `documentation <pism-docs_>`_ for users and developers
+- `documentation <pism-manual_>`_ for users and developers
 - uses MPI_ and PETSc_ for parallel simulations
 - reads and writes `CF-compliant <cf_>`_  NetCDF_ files
 
@@ -23,12 +23,12 @@ PISM development.
 Homepage
 --------
 
-    http://www.pism-docs.org/
+    http://www.pism.io/
 
 Download and Install
 --------------------
 
-See the `Installing PISM <pism-installation_>`_ on ``pism-docs.org``.
+See the `Installing PISM <pism-installation_>`_ on ``pism.io``.
 
 Support
 -------
@@ -48,10 +48,9 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _cipism: https://circleci.com/gh/pism/pism/tree/master
 .. _uaf: http://www.uaf.edu/
 .. _pik: http://www.pik-potsdam.de/
-.. _pism-docs: http://www.pism-docs.org/
-.. _pism-stable: http://www.pism-docs.org/wiki/doku.php?id=stable_version
-.. _pism-contributing: http://pism-docs.org/sphinx/contributing/
-.. _pism-installation: http://pism-docs.org/sphinx/installation/
+.. _pism-manual: http://www.pism.io/docs
+.. _pism-contributing: http://www.pism.io/docs/contributing
+.. _pism-installation: http://www.pism.io/docs/installation
 .. _mpi: http://www.mcs.anl.gov/research/projects/mpi/
 .. _petsc: http://www.mcs.anl.gov/petsc/
 .. _cf: http://cf-pcmdi.llnl.gov/

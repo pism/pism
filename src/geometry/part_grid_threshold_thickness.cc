@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,9 +28,9 @@ namespace pism {
 
 //! @brief Compute threshold thickness used when deciding if a
 //! partially-filled cell should be considered 'full'.
-double part_grid_threshold_thickness(StarStencil<int> M,
-                                     StarStencil<double> H,
-                                     StarStencil<double> h,
+double part_grid_threshold_thickness(stencils::Star<int> M,
+                                     stencils::Star<double> H,
+                                     stencils::Star<double> h,
                                      double bed_elevation) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells

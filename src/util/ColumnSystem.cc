@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 PISM Authors
+// Copyright (C) 2004-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <cstring>              // memset
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
@@ -48,7 +49,8 @@ Thus the index into the arrays L, D, U is always the row number.
 TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
                                      const std::string &prefix)
   : m_max_system_size(max_size), m_prefix(prefix) {
-  assert(m_max_system_size >= 1 && m_max_system_size < 1e6);
+  const unsigned int huge = 1e6;
+  assert(max_size >= 1 && max_size < huge);
 
   m_L.resize(m_max_system_size);
   m_D.resize(m_max_system_size);
@@ -99,22 +101,23 @@ We return -1.0 if the absolute value of any diagonal element is less than
 double TridiagonalSystem::ddratio(unsigned int system_size) const {
   assert(system_size <= m_max_system_size);
 
+  const double eps = 1.0e-12;
   const double scale = norm1(system_size);
 
-  if ((fabs(m_D[0]) / scale) < 1.0e-12) {
+  if ((fabs(m_D[0]) / scale) < eps) {
     return -1.0;
   }
   double z = fabs(m_U[0]) / fabs(m_D[0]);
 
   for (unsigned int k = 1; k < system_size - 1; k++) {  // k is row index (zero-based)
-    if ((fabs(m_D[k]) / scale) < 1.0e-12) {
+    if ((fabs(m_D[k]) / scale) < eps) {
       return -1.0;
     }
     const double s = fabs(m_L[k]) + fabs(m_U[k]);
     z = std::max(z, s / fabs(m_D[k]));
   }
 
-  if ((fabs(m_D[system_size - 1]) / scale) < 1.0e-12) {
+  if ((fabs(m_D[system_size - 1]) / scale) < eps) {
     return -1.0;
   }
   z = std::max(z, fabs(m_L[system_size - 1]) / fabs(m_D[system_size - 1]));
@@ -135,7 +138,7 @@ Does not stop on non-fatal errors.
 void TridiagonalSystem::save_vector(std::ostream &output,
                                     const std::vector<double> &v,
                                     unsigned int system_size,
-                                    const std::string &variable) const {
+                                    const std::string &variable) {
   assert(system_size >= 1);
 
   output << variable << " = numpy.array([";
@@ -181,15 +184,15 @@ void TridiagonalSystem::save_system(std::ostream &output,
 //! Write system matrix, right-hand-side, and (provided) solution into an already-named Python
 //! script.
 void TridiagonalSystem::save_system_with_solution(const std::string &filename,
-                                                  unsigned int M,
-                                                  const std::vector<double> &x) {
+                                                  unsigned int system_size,
+                                                  const std::vector<double> &solution) {
   std::ofstream output(filename.c_str());
   output << "import numpy" << std::endl;
-  output << "# system has 1-norm = " << norm1(M)
-         << " and diagonal-dominance ratio = " << ddratio(M) << std::endl;
+  output << "# system has 1-norm = " << norm1(system_size)
+         << " and diagonal-dominance ratio = " << ddratio(system_size) << std::endl;
 
-  save_system(output, M);
-  save_vector(output, x, M, m_prefix + "_x");
+  save_system(output, system_size);
+  save_vector(output, solution, system_size, m_prefix + "_x");
 }
 
 
@@ -231,7 +234,7 @@ void TridiagonalSystem::solve(unsigned int system_size, double *result) {
     result[k] = (m_rhs[k] - m_L[k] * result[k-1]) / b;
   }
 
-  for (int k = system_size - 2; k >= 0; --k) {
+  for (int k = static_cast<int>(system_size) - 2; k >= 0; --k) {
     result[k] -= m_work[k + 1] * result[k + 1];
   }
 }
@@ -303,7 +306,7 @@ void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {
   }
 
   size_t Mz_fine = static_cast<size_t>(ceil(Lz / m_dz) + 1);
-  m_dz = Lz / (Mz_fine - 1);
+  m_dz = Lz / static_cast<double>(Mz_fine - 1);
 
   m_z.resize(Mz_fine);
   // compute levels of the fine grid:

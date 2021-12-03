@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace rheology {
 class Hooke : public PatersonBudd {
 public:
   Hooke(const std::string &prefix, const Config &config, EnthalpyConverter::Ptr EC);
-  virtual ~Hooke();
+  virtual ~Hooke() = default;
 protected:
   virtual double softness_from_temp(double T_pa) const;
 

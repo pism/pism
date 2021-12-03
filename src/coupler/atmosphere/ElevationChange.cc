@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,6 +37,8 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
   m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.lapse_rate",
                                              "(kg m-2 / s) / m");
 
+  m_precip_temp_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.temp_lapse_rate",
+                                                  "K / m");
   m_precip_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");
 
   m_temp_lapse_rate = m_config->get_number("atmosphere.elevation_change.temperature_lapse_rate",
@@ -51,8 +53,6 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -61,8 +61,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
                                                       "usurf",
                                                       "", // no standard name
                                                       buffer_size,
-                                                      evaluations_per_year,
-                                                      periodic,
+                                                      opt.periodic,
                                                       LINEAR);
     m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
                                    "m", "m", "surface_altitude", 0);
@@ -70,10 +69,6 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
 
   m_precipitation = allocate_precipitation(grid);
   m_temperature   = allocate_temperature(grid);
-}
-
-ElevationChange::~ElevationChange() {
-  // empty
 }
 
 void ElevationChange::init_impl(const Geometry &geometry) {
@@ -94,13 +89,15 @@ void ElevationChange::init_impl(const Geometry &geometry) {
                    convert(m_sys, m_precip_lapse_rate, "(kg m-2 / s) / m", "(kg m-2 / year) / km"));
   } else {
     m_log->message(2,
-                   "   precipitation scaling factor with temperature: %3.3f Kelvin-1\n",
-                   m_precip_exp_factor);
+                   "   precipitation scaling factor with temperature: %3.3f Kelvin-1\n"
+                   "   temperature lapse rate: %3.3f K per km\n",
+                   m_precip_exp_factor,
+                   convert(m_sys, m_precip_temp_lapse_rate, "K / m", "K / km"));
   }
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.elevation_change");
 
-  m_reference_surface->init(opt.filename, opt.period, opt.reference_time);
+  m_reference_surface->init(opt.filename, opt.periodic);
 }
 
 void ElevationChange::update_impl(const Geometry &geometry, double t, double dt) {
@@ -114,11 +111,13 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   // temperature and precipitation time series
   m_surface.copy_from(geometry.ice_surface_elevation);
 
+  const auto &reference_surface = *m_reference_surface;
+
   // temperature
   {
     m_temperature->copy_from(m_input_model->mean_annual_temp());
 
-    lapse_rate_correction(m_surface, *m_reference_surface,
+    lapse_rate_correction(m_surface, reference_surface,
                           m_temp_lapse_rate, *m_temperature);
   }
 
@@ -129,16 +128,12 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
     switch (m_precip_method) {
     case SCALE:
       {
-        const IceModelVec2S &input_temperature = m_input_model->mean_annual_temp();
-
-        IceModelVec::AccessList list{m_temperature.get(),
-                                     &input_temperature,
-                                     m_precipitation.get()};
+        IceModelVec::AccessList list{&m_surface, &reference_surface, m_precipitation.get()};
 
         for (Points p(*m_grid); p; p.next()) {
           const int i = p.i(), j = p.j();
 
-          double dT = (*m_temperature)(i, j) - input_temperature(i, j);
+          double dT = -m_precip_temp_lapse_rate * (m_surface(i, j) - reference_surface(i, j));
 
           (*m_precipitation)(i, j) *= std::exp(m_precip_exp_factor * dT);
         }
@@ -185,37 +180,37 @@ void ElevationChange::init_timeseries_impl(const std::vector<double> &ts) const 
 }
 
 void ElevationChange::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
-  std::vector<double> usurf(m_ts_times.size());
+  std::vector<double> reference_surface(m_ts_times.size());
 
   m_input_model->temp_time_series(i, j, result);
 
-  m_reference_surface->interp(i, j, usurf);
+  m_reference_surface->interp(i, j, reference_surface);
 
   for (unsigned int m = 0; m < m_ts_times.size(); ++m) {
-    result[m] -= m_temp_lapse_rate * (m_surface(i, j) - usurf[m]);
+    result[m] -= m_temp_lapse_rate * (m_surface(i, j) - reference_surface[m]);
   }
 }
 
 void ElevationChange::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   auto N = m_ts_times.size();
-  std::vector<double> usurf(N);
+  std::vector<double> reference_surface(N);
 
   m_input_model->precip_time_series(i, j, result);
 
-  m_reference_surface->interp(i, j, usurf);
+  m_reference_surface->interp(i, j, reference_surface);
 
   switch (m_precip_method) {
   case SCALE:
     {
       for (unsigned int m = 0; m < N; ++m) {
-        double dT = -m_temp_lapse_rate * (m_surface(i, j) - usurf[m]);
+        double dT = -m_precip_temp_lapse_rate * (m_surface(i, j) - reference_surface[m]);
         result[m] *= std::exp(m_precip_exp_factor * dT);
       }
     }
     break;
   case SHIFT:
     for (unsigned int m = 0; m < N; ++m) {
-      result[m] -= m_precip_lapse_rate * (m_surface(i, j) - usurf[m]);
+      result[m] -= m_precip_lapse_rate * (m_surface(i, j) - reference_surface[m]);
     }
     break;
   }

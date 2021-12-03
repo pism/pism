@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -58,7 +58,7 @@ namespace stressbalance {
 class SSATestCaseConst: public SSATestCase
 {
 public:
-  SSATestCaseConst(Context::Ptr ctx, int Mx, int My, double q,
+  SSATestCaseConst(std::shared_ptr<Context> ctx, int Mx, int My, double q,
                    SSAFactory ssafactory):
     SSATestCase(ctx, Mx, My, 50e3, 50e3, CELL_CORNER, NOT_PERIODIC),
     basal_q(q)
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_test_const");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_const");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"
@@ -185,6 +185,8 @@ int main(int argc, char *argv[]) {
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");
 
+    bool write_output = config->get_string("output.size") != "none";
+
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
     if (method == "fem") {
@@ -199,7 +201,9 @@ int main(int argc, char *argv[]) {
     testcase.init();
     testcase.run();
     testcase.report("const");
-    testcase.write(output_file);
+    if (write_output) {
+      testcase.write(output_file);
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

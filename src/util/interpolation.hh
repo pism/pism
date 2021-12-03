@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,13 +21,14 @@
 #define _INTERPOLATION_H_
 
 #include <vector>
+#include <map>
 
 namespace pism {
 
-enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
+enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT};
 
 /**
- * Class encapsulating linear interpolation indexes and weights.
+ * Class encapsulating linear and piece-wise constant interpolation indexes and weights.
  *
  * Most library interpolation routines (GSL's, for example) assume that we are working with a fixed
  * function given on an input grid; these libraries support evaluating this function at arbitrary
@@ -75,26 +76,21 @@ enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT, LINEAR_PERIODIC};
  * intervals: [0, 1) and [1, x_e). Here the value x_e is irrelevant because we use
  * constant extrapolation for points outside the interval covered by input data.
  *
- *
- * Linear interpolation for periodic data (annual temperature cycles, etc).
- *
- * Input data are assumed to be periodic on the interval from 0 to `period`.
- *
  */
 class Interpolation {
 public:
   Interpolation(InterpolationType type, const std::vector<double> &input_x,
-                const std::vector<double> &output_x, double period = 0.0);
+                const std::vector<double> &output_x);
   Interpolation(InterpolationType type, const double *input_x, unsigned int input_x_size,
-                const double *output_x, unsigned int output_x_size, double period = 0.0);
+                const double *output_x, unsigned int output_x_size);
 
   const std::vector<int>& left() const;
   const std::vector<int>& right() const;
   const std::vector<double>& alpha() const;
 
-  int left(size_t i) const;
-  int right(size_t i) const;
-  double alpha(size_t i) const;
+  int left(size_t j) const;
+  int right(size_t j) const;
+  double alpha(size_t j) const;
 
   //! Return interpolated values (on the output grid) given `input_values` on the input grid.
   /** This is used for testing. (Regular code calls left(), right(), and alpha().)
@@ -106,19 +102,11 @@ public:
    */
   void interpolate(const double *input, double *output) const;
 
-  double integral(const double *input) const;
-  double integral(const std::vector<double> &input) const;
-  double interval_length() const;
 private:
   //! Interpolation indexes
   std::vector<int> m_left, m_right;
   //! Interpolation weights
   std::vector<double> m_alpha;
-
-  //! Integration weights
-  std::vector<double> m_w;
-  //! Length of the interval defined by `output_x`.
-  double m_interval_length;
 
   void init_linear(const double *input_x, unsigned int input_x_size,
                    const double *output_x, unsigned int output_x_size);
@@ -126,15 +114,18 @@ private:
                     const double *output_x, unsigned int output_x_size);
   void init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                const double *output_x, unsigned int output_x_size);
-  void init_linear_periodic(const double *input_x, unsigned int input_x_size,
-                            const double *output_x, unsigned int output_x_size,
-                            double period);
-
-  void init_weights_linear(const double *x,
-                           unsigned int x_size,
-                           const double *output_x,
-                           unsigned int output_x_size);
 };
+
+std::map<size_t, double> integration_weights(const double *x,
+                                             size_t x_size,
+                                             InterpolationType type,
+                                             double a,
+                                             double b);
+
+std::map<size_t, double> integration_weights(const std::vector<double> &x,
+                                             InterpolationType type,
+                                             double a,
+                                             double b);
 
 } // end of namespace pism
 

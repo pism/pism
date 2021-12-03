@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -79,6 +79,9 @@ void NC4_Par::set_access_mode(int varid, bool transposed) const {
   }
 }
 
+void NC4_Par::set_compression_level_impl(int level) const {
+  m_compression_level = level;
+}
 
 
 } // end of namespace io

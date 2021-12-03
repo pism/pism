@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2020 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,7 @@
 #include "pism/util/interpolation.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 

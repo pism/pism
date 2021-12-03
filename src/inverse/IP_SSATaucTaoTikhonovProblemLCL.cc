@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace inverse {
@@ -35,8 +36,19 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
                                                                  double eta,
                                                                  IPFunctional<DesignVec> &designFunctional,
                                                                  IPFunctional<StateVec> &stateFunctional)
-: m_ssaforward(ssaforward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-  m_designFunctional(designFunctional), m_stateFunctional(stateFunctional) {
+: m_ssaforward(ssaforward),
+  m_dGlobal(d0.grid(), "design variable (global)", WITHOUT_GHOSTS, d0.stencil_width()),
+  m_d0(d0),
+  m_dzeta(d0.grid(),"dzeta",WITH_GHOSTS, d0.stencil_width()),
+  m_u(d0.grid(), "state variable", WITH_GHOSTS, u_obs.stencil_width()),
+  m_du(d0.grid(), "du", WITH_GHOSTS, u_obs.stencil_width()),
+  m_u_obs(u_obs),
+  m_eta(eta),
+  m_d_Jdesign(d0.grid(), "Jdesign design variable", WITH_GHOSTS, d0.stencil_width()),
+  m_u_Jdesign(d0.grid(), "Jdesign state variable", WITH_GHOSTS, u_obs.stencil_width()),
+  m_designFunctional(designFunctional),
+  m_stateFunctional(stateFunctional)
+{
 
   PetscErrorCode ierr;
   IceGrid::ConstPtr grid = m_d0.grid();
@@ -51,22 +63,14 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   int state_stencil_width = m_u_obs.stencil_width();
   m_d.reset(new DesignVec(grid, "design variable", WITH_GHOSTS, design_stencil_width));
 
-  m_d_Jdesign.create(grid, "Jdesign design variable", WITH_GHOSTS, design_stencil_width);
-  m_dGlobal.create(grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
   m_uGlobal.reset(new StateVec(grid, "state variable (global)",
                                WITHOUT_GHOSTS, state_stencil_width));
 
-  m_u.create(grid, "state variable", WITH_GHOSTS, state_stencil_width);
-  m_du.create(grid, "du", WITH_GHOSTS, state_stencil_width);
-  m_u_Jdesign.create(grid, "Jdesign state variable", WITH_GHOSTS, state_stencil_width);
-
   m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
 
   m_d_diff.reset(new DesignVec(grid, "design residual", WITH_GHOSTS, design_stencil_width));
-
-  m_dzeta.create(grid,"dzeta",WITH_GHOSTS,design_stencil_width);
 
   m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
 
@@ -74,8 +78,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
   m_constraints.reset(new StateVec(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width));
 
-  DM da;
-  m_ssaforward.get_da(&da);
+  petsc::DM &da = m_ssaforward.get_da();
 
   ierr = DMSetMatType(da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");
@@ -98,11 +101,6 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   PISM_CHK(ierr, "MatShellSetOperation");
 
   m_x.reset(new IPTwoBlockVec(m_dGlobal.vec(),m_uGlobal->vec()));
-}
-
-IP_SSATaucTaoTikhonovProblemLCL::~IP_SSATaucTaoTikhonovProblemLCL()
-{
-  // empty
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
@@ -256,25 +254,39 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateConstraintsJacobianDesign(Tao, Vec
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesign(Vec x, Vec y) {
-  m_dzeta.copy_from_vec(x);
+
+  PetscErrorCode ierr;
+  {
+    ierr = DMGlobalToLocalBegin(*m_dzeta.dm(), x, INSERT_VALUES, m_dzeta.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_dzeta.dm(), x, INSERT_VALUES, m_dzeta.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  }
 
   m_ssaforward.set_design(m_d_Jdesign);
 
   m_ssaforward.apply_jacobian_design(m_u_Jdesign, m_dzeta, y);
 
-  PetscErrorCode ierr = VecScale(y,1./m_constraintsScale);
-  PISM_CHK(ierr, "VecScale");
+  ierr = VecScale(y, 1.0 / m_constraintsScale); PISM_CHK(ierr, "VecScale");
 }
 
 void IP_SSATaucTaoTikhonovProblemLCL::applyConstraintsJacobianDesignTranspose(Vec x, Vec y) {
-  m_du.copy_from_vec(x);
+
+  PetscErrorCode ierr;
+  {
+    ierr = DMGlobalToLocalBegin(*m_du.dm(), x, INSERT_VALUES, m_du.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_du.dm(), x, INSERT_VALUES, m_du.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  }
 
   m_ssaforward.set_design(m_d_Jdesign);
 
   m_ssaforward.apply_jacobian_design_transpose(m_u_Jdesign, m_du, y);
 
-  PetscErrorCode ierr = VecScale(y, 1.0 / m_constraintsScale);
-  PISM_CHK(ierr, "VecScale");
+  ierr = VecScale(y, 1.0 / m_constraintsScale); PISM_CHK(ierr, "VecScale");
 }
 
 PetscErrorCode IP_SSATaucTaoTikhonovProblemLCL::jacobian_design_callback(Mat A, Vec x, Vec y) {

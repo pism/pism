@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@ namespace calving {
 class EigenCalving : public StressCalving {
 public:
   EigenCalving(IceGrid::ConstPtr grid);
-  virtual ~EigenCalving();
+  virtual ~EigenCalving() = default;
 
   void init();
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -28,6 +28,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -44,21 +45,17 @@ YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
                                    "mean annual near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "K", "K",
                                    "", 0);  // no CF standard_name
-  m_air_temp_mean_annual.metadata().set_string("source", m_reference);
+  m_air_temp_mean_annual.metadata()["source"] = m_reference;
 
   m_air_temp_mean_summer.set_attrs("diagnostic",
                                    "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)",
                                    "Kelvin", "Kelvin",
                                    "", 0);  // no CF standard_name
-  m_air_temp_mean_summer.metadata().set_string("source", m_reference);
+  m_air_temp_mean_summer.metadata()["source"] = m_reference;
 
   m_precipitation.set_attrs("model_state", "precipitation rate",
                             "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
   m_precipitation.set_time_independent(true);
-}
-
-YearlyCycle::~YearlyCycle() {
-  // empty
 }
 
 //! Reads in the precipitation data from the input file.
@@ -110,7 +107,7 @@ const IceModelVec2S& YearlyCycle::mean_summer_temp() const {
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
   const double
-    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_day_fraction(m_snow_temp_summer_day);
+    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
 
   size_t N = ts.size();
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015, 2017, 2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ public:
   FlowLawFactory(const std::string &prefix,
                  Config::ConstPtr conf,
                  EnthalpyConverter::Ptr my_EC);
-  ~FlowLawFactory();
+  ~FlowLawFactory() = default;
   void set_default(const std::string &name);
   void add(const std::string &name, FlowLawCreator);
   void remove(const std::string &name);

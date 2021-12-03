@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Delta_T.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
@@ -25,7 +25,7 @@ namespace ocean {
 Delta_T::Delta_T(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(g->ctx(),
+  m_forcing.reset(new ScalarForcing(*g->ctx(),
                                     "ocean.delta_T",
                                     "delta_T",
                                     "Kelvin",
@@ -45,17 +45,13 @@ void Delta_T::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
                  "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
-
-  m_forcing->init();
 }
 
 void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_forcing->update(t, dt);
-
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
-  m_shelf_base_temperature->shift(m_forcing->value());
+  m_shelf_base_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
 const IceModelVec2S& Delta_T::shelf_base_temperature_impl() const {

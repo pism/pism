@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -40,7 +41,7 @@ Inputs::Inputs() {
   new_bed_elevation = true;
 
   basal_melt_rate       = NULL;
-  melange_back_pressure = NULL;
+  water_column_pressure = NULL;
   fracture_density      = NULL;
   basal_yield_stress    = NULL;
 
@@ -63,8 +64,8 @@ void Inputs::dump(const char *filename) const {
     return;
   }
 
-  Context::ConstPtr ctx = geometry->ice_thickness.grid()->ctx();
-  Config::ConstPtr config = ctx->config();
+  auto ctx = geometry->ice_thickness.grid()->ctx();
+  auto config = ctx->config();
 
   File output(ctx->com(), filename,
               string_to_backend(config->get_string("output.format")),
@@ -94,8 +95,8 @@ void Inputs::dump(const char *filename) const {
     basal_melt_rate->write(output);
   }
 
-  if (melange_back_pressure) {
-    melange_back_pressure->write(output);
+  if (water_column_pressure) {
+    water_column_pressure->write(output);
   }
 
   if (fracture_density) {
@@ -136,11 +137,11 @@ void Inputs::dump(const char *filename) const {
 }
 
 StressBalance::StressBalance(IceGrid::ConstPtr g,
-                             ShallowStressBalance *sb,
-                             SSB_Modifier *ssb_mod)
+                             std::shared_ptr<ShallowStressBalance> sb,
+                             std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS),
-    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS),
+    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()),
+    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
 
@@ -155,8 +156,6 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
 }
 
 StressBalance::~StressBalance() {
-  delete m_shallow_stress_balance;
-  delete m_modifier;
 }
 
 //! \brief Initialize the StressBalance object.
@@ -195,9 +194,7 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
                                              inputs.geometry->cell_type,
-                                             m_modifier->velocity_u(),
-                                             m_modifier->velocity_v(),
-                                             m_w);
+                                             u, v, m_w);
     }
 
     m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
@@ -520,7 +517,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   const IceModelVec2CellType &mask = inputs.geometry->cell_type;
 
   double
-    enhancement_factor = flow_law.enhancement_factor(),
+    enhancement_factor = m_shallow_stress_balance->flow_enhancement_factor(),
     n = flow_law.exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
@@ -646,11 +643,11 @@ std::string StressBalance::stdout_report() const {
 }
 
 const ShallowStressBalance* StressBalance::shallow() const {
-  return m_shallow_stress_balance;
+  return m_shallow_stress_balance.get();
 }
 
 const SSB_Modifier* StressBalance::modifier() const {
-  return m_modifier;
+  return m_modifier.get();
 }
 
 
@@ -683,12 +680,13 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                        const IceModelVec2CellType &mask,
-                                       IceModelVec2 &result) {
+                                       IceModelVec3 &result) {
 
   using mask::ice_free;
 
   IceGrid::ConstPtr grid = result.grid();
-  double    dx = grid->dx(), dy = grid->dy();
+  double dx = grid->dx();
+  double dy = grid->dy();
 
   if (result.ndof() != 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
@@ -705,8 +703,8 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
       continue;
     }
 
-    StarStencil<int> m = mask.int_star(i,j);
-    StarStencil<Vector2> U = V.star(i,j);
+    auto m = mask.star(i,j);
+    auto U = V.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,
@@ -769,7 +767,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
                          const IceModelVec2CellType &cell_type,
-                         IceModelVec2 &result) {
+                         IceModelVec3 &result) {
 
   using mask::ice_free;
 
@@ -780,7 +778,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     dy = grid->dy();
 
   if (result.ndof() != 3) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.get_dof() == 3 is required");
+    throw RuntimeError(PISM_ERROR_LOCATION, "result.ndof() == 3 is required");
   }
 
   IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
@@ -795,8 +793,8 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
       continue;
     }
 
-    StarStencil<int> m = cell_type.int_star(i,j);
-    StarStencil<Vector2> U = velocity.star(i,j);
+    auto m = cell_type.star(i,j);
+    auto U = velocity.star(i,j);
 
     // strain in units s-1
     double u_x = 0, u_y = 0, v_x = 0, v_y = 0,

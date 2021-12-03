@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,7 +30,7 @@ namespace stressbalance {
 class SIAFD_Regional : public SIAFD {
 public:
   SIAFD_Regional(IceGrid::ConstPtr g);
-  virtual ~SIAFD_Regional();
+  virtual ~SIAFD_Regional() = default;
   void init();
 private:
   void compute_surface_gradient(const Inputs &inputs,

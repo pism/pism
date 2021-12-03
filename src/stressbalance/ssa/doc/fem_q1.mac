@@ -1,0 +1,45 @@
+/* -*- mode: maxima -*- */
+assume(dx > 0, dy > 0);
+
+/* Coordinates of the nodes of a Q1 rectangular element aligned with
+the coordinate system (up to translations). */
+pts : [
+  [-dx/2, -dy/2],
+  [ dx/2, -dy/2],
+  [ dx/2,  dy/2],
+  [-dx/2,  dy/2]]$
+
+/* coordinates of the nodes of the reference element */
+xis  : [-1,  1,  1, -1]$
+etas : [-1, -1,  1,  1]$
+
+/* Q1 shape functions */
+chi[i](xi, eta) := (1/4) * (1 + xi*xis[i]) * (1 + eta*etas[i])$
+
+/* Map from the reference element. */
+x(xi,eta) := 'sum(x[j]*'chi[j](xi,eta), j, 1, 4)$
+y(xi,eta) := 'sum(y[j]*'chi[j](xi,eta), j, 1, 4)$
+
+/* Compute the Jacobian of the mapping from the reference element */
+J : matrix(
+  ['diff(x(xi,eta), xi), 'diff(y(xi,eta), xi)],
+  ['diff(x(xi,eta), eta),'diff(y(xi,eta), eta)])$
+
+/* Jacobian, simplified. */
+J_s : ratsimp(ev(J, nouns))$
+
+/* Coordinates of the nodes of physical Q1 elements aligned with
+coordinate axes (up to translations). */
+eqs : [
+  x[1] = pts[1][1],
+  y[1] = pts[1][2],
+  x[2] = pts[2][1],
+  y[2] = pts[2][2],
+  x[3] = pts[3][1],
+  y[3] = pts[3][2],
+  x[4] = pts[4][1],
+  y[4] = pts[4][2]
+  ]$
+
+/* Jacobian of the map from the reference P1 element to the k-th triangle */
+J_aligned : ev(J_s, eqs);

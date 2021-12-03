@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,18 +16,23 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISM_OPTIONS_H_
-#define _PISM_OPTIONS_H_
+#ifndef PISM_OPTIONS_H
+#define PISM_OPTIONS_H
 
+#include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "pism_utilities.hh"
 
 #include "options.hh"
 
 namespace pism {
+
+namespace units {
+class System;
+} // end of namespace units
 
 class Config;
 class Logger;
@@ -65,23 +70,6 @@ private:
               ArgumentFlag flag);
 };
 
-class StringList : public Option<std::vector<std::string> > {
-public:
-  StringList(const std::string& option,
-             const std::string& description,
-             const std::string& default_value);
-  std::string to_string();
-  const std::string& operator[](size_t index) const;
-};
-
-class StringSet : public Option<std::set<std::string> > {
-public:
-  StringSet(const std::string& option,
-            const std::string& description,
-            const std::string& default_value);
-  std::string to_string();
-};
-
 class Keyword : public Option<std::string> {
 public:
   Keyword(const std::string& option,
@@ -107,8 +95,10 @@ public:
 
 class Real : public Option<double> {
 public:
-  Real(const std::string& option,
+  Real(std::shared_ptr<units::System> system,
+       const std::string& option,
        const std::string& description,
+       const std::string& units,
        double default_value);
 };
 
@@ -130,4 +120,4 @@ void forbidden(const std::string &name);
 
 } // end of namespace pism
 
-#endif /* _PISM_OPTIONS_H_ */
+#endif /* PISM_OPTIONS_H */

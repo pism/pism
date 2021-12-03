@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2020 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,7 @@
 #define OROGRAPHICPRECIPITATIONSERIAL_H
 
 #include <vector>
-
 #include <fftw3.h>
-#include <petscvec.h>
-#include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
 
@@ -45,7 +42,7 @@ public:
 
   Vec precipitation() const;
 
-  void update(Vec surface_elevation);
+  void update(petsc::Vec &surface_elevation);
 
 private:
   // regularization
@@ -100,11 +97,14 @@ private:
 
   std::vector<double> m_kx, m_ky;
 
-  // orographic precipitation
+  // resulting orographic precipitation
   petsc::Vec m_precipitation;
 
   fftw_complex *m_fftw_input;
   fftw_complex *m_fftw_output;
+
+  // FFT(Gaussian) used to smooth surface elevation
+  fftw_complex *m_G_hat;
 
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ class ElevationChange : public AtmosphereModel
 {
 public:
   ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
-  virtual ~ElevationChange();
+  virtual ~ElevationChange() = default;
 
 protected:
   void init_impl(const Geometry &geometry);
@@ -50,11 +50,18 @@ protected:
   enum Method {SCALE, SHIFT};
 
   Method m_precip_method;
+
+  // parameter used when m_precip_method == SHIFT
   double m_precip_lapse_rate;
+
+  // parameters used when m_precip_method == SCALE
+  double m_precip_temp_lapse_rate;
   double m_precip_exp_factor;
+
+  // surface temperature lapse rate
   double m_temp_lapse_rate;
 
-  IceModelVec2T::Ptr m_reference_surface;
+  std::shared_ptr<IceModelVec2T> m_reference_surface;
 
   IceModelVec2S::Ptr m_precipitation;
   IceModelVec2S::Ptr m_temperature;

@@ -1,4 +1,4 @@
-// Copyright (C) 2019 PISM Authors
+// Copyright (C) 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace surface {
 class ISMIP6 : public SurfaceModel {
 public:
   ISMIP6(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~ISMIP6();
+  virtual ~ISMIP6() = default;
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -42,10 +42,10 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 protected:
   // time-dependent inputs
-  IceModelVec2T::Ptr m_mass_flux_anomaly;
-  IceModelVec2T::Ptr m_temperature_anomaly;
-  IceModelVec2T::Ptr m_mass_flux_gradient;
-  IceModelVec2T::Ptr m_temperature_gradient;
+  std::shared_ptr<IceModelVec2T> m_mass_flux_anomaly;
+  std::shared_ptr<IceModelVec2T> m_temperature_anomaly;
+  std::shared_ptr<IceModelVec2T> m_mass_flux_gradient;
+  std::shared_ptr<IceModelVec2T> m_temperature_gradient;
 
   // time-independent inputs
   IceModelVec2S m_mass_flux_reference;

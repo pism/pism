@@ -38,6 +38,7 @@ add_library (pism
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/MohrCoulombPointwise.cc
+  basalstrength/OptTillphiYieldStress.cc
   basalstrength/YieldStress.cc
   energy/BedrockColumn.cc
   energy/BTU_Full.cc
@@ -57,6 +58,7 @@ add_library (pism
   geometry/grounded_cell_fraction.cc
   geometry/part_grid_threshold_thickness.cc
   icemodel/IceModel.cc
+  icemodel/IceEISModel.cc
   icemodel/frontretreat.cc
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
@@ -81,6 +83,7 @@ add_library (pism
   $<TARGET_OBJECTS:hydrology>
   $<TARGET_OBJECTS:flowlaws>
   $<TARGET_OBJECTS:stressbalance>
+  $<TARGET_OBJECTS:blatter>
   $<TARGET_OBJECTS:util>
   $<TARGET_OBJECTS:earth>
   $<TARGET_OBJECTS:verif>
@@ -99,16 +102,11 @@ if (Pism_USE_JANSSON)
   endif()
 endif()
 
-# Main executables:
+# Main executable:
 add_executable (pismr pismr.cc)
 target_link_libraries (pismr pism)
 
-# Simplified geometry
-add_executable (pisms pisms.cc
-  icemodel/IceEISModel.cc)
-target_link_libraries (pisms pism)
-
-# Verification mode "driver".
+# Verification mode "driver":
 add_executable (pismv pismv.cc)
 target_link_libraries (pismv pism)
 
@@ -129,7 +127,7 @@ install (
 
 # Install executables.
 install (TARGETS
-  pismr pisms pismv # executables
+  pismr pismv # executables
   RUNTIME DESTINATION ${Pism_BIN_DIR})
 
 install (FILES
@@ -156,6 +154,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/src/
   FILES_MATCHING
   PATTERN "*.hh"
   PATTERN "*.h"
+  PATTERN "*_impl.hh" EXCLUDE
   PATTERN "external" EXCLUDE
   PATTERN "pythonbindings" EXCLUDE
   PATTERN "doc" EXCLUDE

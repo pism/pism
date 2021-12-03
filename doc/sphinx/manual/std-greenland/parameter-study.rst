@@ -7,7 +7,7 @@ An ice dynamics parameter study
 
 The readers of this manual should not assume the PISM authors know all the correct
 parameters for describing ice flow. While PISM must have *default* values of all
-parameters, to help users get started,\ [#]_ it has more than two hundred user-configurable
+parameters, to help users get started,\ [#]_ it has more than five hundred user-configurable
 parameters. The goal in this manual is to help the reader adjust them to their desired
 values. While "correct" values may never be known, or may not exist, examining the
 behavior of the model as it depends on parameters is both a nontrivial and an essential

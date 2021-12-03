@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -50,15 +50,19 @@ class IcebergRemover : public Component
 {
 public:
   IcebergRemover(IceGrid::ConstPtr g);
-  virtual ~IcebergRemover();
+  virtual ~IcebergRemover() = default;
 
-  virtual void init();
   void update(const IceModelVec2Int &bc_mask,
               IceModelVec2CellType &pism_mask,
               IceModelVec2S &ice_thickness);
 protected:
+  virtual void update_impl(const IceModelVec2Int &bc_mask,
+                           IceModelVec2CellType &pism_mask,
+                           IceModelVec2S &ice_thickness);
+
+
   IceModelVec2S m_iceberg_mask;
-  petsc::Vec::Ptr m_mask_p0;
+  std::shared_ptr<petsc::Vec> m_mask_p0;
 };
 
 } // end of namespace calving

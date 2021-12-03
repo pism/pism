@@ -17,14 +17,6 @@ Reading boundary conditions from a file
 
 .. note:: This is the default choice.
 
-Command-line options:
-
-- :opt:`-atmosphere_given_file` prescribes an input file
-- :opt:`-atmosphere_given_period` (*years*) makes PISM interpret data in
-  ``-atmosphere_given_file`` as periodic. See section :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_given_reference_year` sets the reference model year; see section
-  :ref:`sec-periodic-forcing`.
-
 A file ``foo.nc`` used with ``-atmosphere given -atmosphere_given_file foo.nc`` should
 contain several records; the :var:`time` variable should describe what model time these
 records correspond to.
@@ -34,6 +26,13 @@ data, e.g. using monthly records of :var:`air_temp` and :var:`precipitation`.
 
 It can also used to drive a temperature-index (PDD) climatic mass balance computation
 (section :ref:`sec-surface-pdd`).
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.given.``
+
+.. pism-parameters::
+   :prefix: atmosphere.given.
 
 .. _sec-atmosphere-yearly-cycle:
 
@@ -59,15 +58,21 @@ where `t` is the year fraction "since last July"; the summer peak of the cycle i
 :config:`atmosphere.fausto_air_temp.summer_peak_day`, which is set to day `196` by
 default (approximately July 15).
 
-Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and
-`T_{\text{mean July}}` (variable :var:`air_temp_mean_july`) are read from a file
-selected using the :opt:`-atmosphere_yearly_cycle_file` command-line option. A
-time-independent precipitation field (variable :var:`precipitation`) is read from the same
-file.
+Here `T_{\text{mean annual}}` (variable :var:`air_temp_mean_annual`) and `T_{\text{mean
+July}}` (variable :var:`air_temp_mean_july`) are read from a file selected using the
+command-line option :opt:`-atmosphere_yearly_cycle_file`. A time-independent precipitation
+field (variable :var:`precipitation`) is read from the same file.
 
 Optionally a time-dependent scalar amplitude scaling `A(t)` can be used. Specify a
 file to read it from using the :opt:`-atmosphere_yearly_cycle_scaling_file` command-line
 option. Without this option `A(\mathrm{time}) \equiv 1`.
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.yearly_cycle.``
+
+.. pism-parameters::
+   :prefix: atmosphere.yearly_cycle.
 
 .. _sec-atmosphere-searise-greenland:
 
@@ -89,10 +94,12 @@ file. To read time-independent precipitation from a different file, use the opti
 :opt:`-atmosphere_searise_greenland_file`.
 
 The air temperature parameterization is controlled by configuration parameters with the
-``snow_temp_fausto`` prefix.
+prefix ``atmosphere.fausto_air_temp``:
 
-See also the ``-atmosphere ...,precip_scaling`` modifier, section
-:ref:`sec-atmosphere-precip-scaling`, for an implementation of the SeaRISE-Greenland
+.. pism-parameters::
+   :prefix: atmosphere.fausto_air_temp.
+
+See :ref:`sec-atmosphere-precip-scaling` for an implementation of the SeaRISE-Greenland
 formula for precipitation adjustment using air temperature offsets relative to present; a
 7.3\% change of precipitation rate for every one degree Celsius of temperature change
 :cite:`Huybrechts02`.
@@ -108,8 +115,7 @@ PIK
 
 This model component reads a time-independent precipitation field from an input file
 specified by :config:`atmosphere.pik.file` and computes near-surface air temperature using
-a parameterization selected using :config:`atmosphere.pik.parameterization` (command-line
-option :opt:`-atmosphere_pik`).
+a parameterization selected using :config:`atmosphere.pik.parameterization`.
 
 .. note::
 
@@ -165,7 +171,7 @@ One weather station
 :|implementation|: ``pism::atmosphere::WeatherStation``
 
 This model component reads scalar time-series of the near-surface air temperature and
-precipitation from a file specified using the :opt:`-atmosphere_one_station_file` option
+precipitation from a file specified using :config:`atmosphere.one_station.file`
 and uses them at *all* grid points in the domain. In other words, resulting climate fields
 are constant in space but not necessarily in time.
 
@@ -183,16 +189,16 @@ Scalar temperature offsets
 :|implementation|: ``pism::atmosphere::Delta_T``
 
 This modifier applies scalar time-dependent air temperature offsets to the output of an
-atmosphere model. It takes the following command-line options.
-
-- :opt:`-atmosphere_delta_T_file` sets the name of the file PISM will read :var:`delta_T`
-  from.
-- :opt:`-atmosphere_delta_T_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_delta_T_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+atmosphere model.
 
 Please make sure that :var:`delta_T` has the units of "``Kelvin``".
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.delta_T.``
+
+.. pism-parameters::
+   :prefix: atmosphere.delta_T.
 
 .. _sec-atmosphere-delta-p:
 
@@ -204,34 +210,40 @@ Scalar precipitation offsets
 :|implementation|: ``pism::atmosphere::Delta_P``
 
 This modifier applies scalar time-dependent precipitation offsets to the output of an
-atmosphere model. It takes the following command-line options.
+atmosphere model.
 
-- :opt:`-atmosphere_delta_P_file` sets the name of the file PISM will read :var:`delta_P`
-  from.
-- :opt:`-atmosphere_delta_P_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_delta_P_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.delta_P.``
+
+.. pism-parameters::
+   :prefix: atmosphere.delta_P.
 
 .. _sec-atmosphere-frac-p:
 
-Scalar precipitation scaling
-++++++++++++++++++++++++++++
+Precipitation scaling
++++++++++++++++++++++
 
 :|options|: ``-atmosphere ...,frac_P``
-:|variables|: :var:`frac_P` [no unit]
+:|variables|: :var:`frac_P` [1]
 :|implementation|: ``pism::atmosphere::Frac_P``
 
-This modifier scales precipitation output of an atmosphere model using a scalar
-time-dependent precipitation fraction, with a value of one corresponding to no change in
-precipitation. It takes the following command-line options:
+This modifier scales precipitation output of an atmosphere model using a time-dependent
+precipitation fraction, with a value of *one* corresponding to no change in precipitation.
+It supports both 1D (scalar) and 2D (spatially-variable) factors.
 
-- :opt:`-atmosphere_frac_P_file` sets the name of the file PISM will read :var:`frac_P`
-  from.
-- :opt:`-atmosphere_frac_P_period` (*years*) sets the period of the forcing data (section
-  :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_frac_P_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+If the variable :var:`frac_P` in the input file (see :config:`atmosphere.frac_P.file`) depends
+on time only it is used as a time-dependent constant-in-space scaling factor.
+
+If the variable :var:`frac_P` has more than one dimension PISM tries to use it as a
+time-and-space-dependent scaling factor.
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.frac_P.``
+
+.. pism-parameters::
+   :prefix: atmosphere.frac_P.
 
 .. _sec-atmosphere-precip-scaling:
 
@@ -253,14 +265,12 @@ temperature increase, where
 
 `C =` :config:`atmosphere.precip_exponential_factor_for_temperature`.
 
-It takes the following command-line options.
+.. rubric:: Parameters
 
-- :opt:`-atmosphere_precip_scaling_file` sets the name of the file PISM will read
-  :var:`delta_T` from.
-- :opt:`-atmosphere_precip_scaling_period` (*years*) sets the period of the forcing data
-  (section :ref:`sec-periodic-forcing`).
-- :opt:`-atmosphere_precip_scaling_reference_year` sets the reference year (section
-  :ref:`sec-periodic-forcing`).
+Prefix: ``atmosphere.precip_scaling.``
+
+.. pism-parameters::
+   :prefix: atmosphere.precip_scaling.
 
 .. _sec-atmosphere-elevation-change:
 
@@ -280,6 +290,14 @@ The near-surface air temperature is modified using an elevation lapse rate `\gam
 .. math::
    \gamma_T = -\frac{dT}{dz}.
 
+.. warning::
+
+   Some atmosphere models (:ref:`sec-atmosphere-pik`, for example) use elevation-dependent
+   near-surface air temperature parameterizations that include an elevation lapse rate.
+
+   In most cases one should not combine such a temperature parameterization with an
+   additional elevation lapse rate for temperature.
+
 Two methods of adjusting precipitation are available:
 
 - Scaling using an exponential factor
@@ -289,8 +307,8 @@ Two methods of adjusting precipitation are available:
      \mathrm{P} = \mathrm{P_{input}} \cdot \exp(C \cdot \Delta T),
 
   where `C =` :config:`atmosphere.precip_exponential_factor_for_temperature` and `\Delta
-  T` is the temperature difference produced by applying
-  :config:`atmosphere.elevation_change.temperature_lapse_rate`.
+  T` is the temperature difference produced by applying the lapse rate
+  :config:`atmosphere.elevation_change.precipitation.temp_lapse_rate`.
 
   This mechanisms increases precipitation by `100(\exp(C) - 1)` percent for each degree of
   temperature increase.
@@ -308,23 +326,17 @@ Two methods of adjusting precipitation are available:
 
   To use this method, set :opt:`-smb_adjustment shift`.
 
-It uses the following options.
+.. rubric:: Parameters
 
-- :opt:`-temp_lapse_rate` gives the temperature lapse rate, in `K/km`. Note that we
-  use the following definition of the temperature lapse rate:
-- :opt:`-precip_adjustment` chooses the precipitation lapse rate (``shift``) or scaling
-  precipitation with an exponential factor (``scale``).
-- :opt:`-precip_lapse_rate` gives the precipitation lapse rate, in :math:`(kg / (m^{2} year)) / km`.
-  Here `\gamma_P = -\frac{dP}{dz}`.
-- :opt:`-atmosphere_elevation_change_file` specifies a file containing the reference surface
-  elevation field (standard name: :var:`surface_altitude`). This file may contain several
-  surface elevation records to use lapse rate corrections relative to a time-dependent
-  surface. If one record is provided, the reference surface elevation is assumed to be
-  time-independent.
-- :opt:`-atmosphere_elevation_change_period` gives the period, in model years; see section
-  :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_elevation_change_reference_year` specifies the reference date; see section
-  :ref:`sec-periodic-forcing`.
+Prefix: ``atmosphere.elevation_change.``
+
+.. pism-parameters::
+   :prefix: atmosphere.elevation_change.
+
+The file specified using :config:`atmosphere.elevation_change.file` may contain several
+surface elevation records to use lapse rate corrections relative to a time-dependent
+surface. If one record is provided, the reference surface elevation is assumed to be
+time-independent.
 
 .. _sec-atmosphere-anomaly:
 
@@ -339,17 +351,15 @@ Using climate data anomalies
 This modifier implements a spatially-variable version of ``-atmosphere
 ...,delta_T,delta_P``.
 
-It takes the following options:
+.. rubric:: Parameters
 
-- :opt:`-atmosphere_anomaly_file` specifies a file containing variables
-  :var:`air_temp_anomaly` and :var:`precipitation_anomaly`.
-- :opt:`-atmosphere_anomaly_period` (years) specifies the period of the forcing data, in
-  model years; section :ref:`sec-periodic-forcing`.
-- :opt:`-atmosphere_anomaly_reference_year` specifies the reference year; section
-  :ref:`sec-periodic-forcing`.
+Prefix: ``atmosphere.anomaly.``
+
+.. pism-parameters::
+   :prefix: atmosphere.anomaly.
 
 See also to ``-surface ...,anomaly`` (section :ref:`sec-surface-anomaly`), which is
-similar, but applies anomalies at the surface level.
+similar but applies anomalies at the surface level.
 
 .. _sec-orographic-precipitation:
 
@@ -377,7 +387,7 @@ where `h` is the surface elevation, `C_w = \rho_{S_{\text{ref}}} \Gamma_m / \gam
 relates the condensation rate to vertical motion (see the appendix of
 :cite:`SmithBarstad2004`), `m` is the vertical wavenumber (see equation 6 in
 :cite:`SmithBarstadBonneau2005`), and `\sigma` is the intrinsic frequency. The rest of the
-constants are defined in the table below.
+constants are defined below.
 
 The spatial pattern of precipitation is recovered using an inverse Fourier transform
 followed by post-processing:
@@ -387,6 +397,26 @@ followed by post-processing:
 
    P = \max(P_{\text{pre}} + P_{\text{LT}}, 0) \cdot S + P_{\text{post}}.
 
+.. note::
+
+   - Discontinuities in the surface gradient (e.g. at ice margins) may cause oscillations
+     in the computed precipitation field (probably due to the Gibbs phenomenon). To address
+     this our implementation includes the ability to smooth the surface topography using a
+     Gaussian filter. Set
+     :config:`atmosphere.orographic_precipitation.smoothing_standard_deviation` to a
+     positive number to enable smoothing. Values around `\dx` appear to be effective.
+
+   - The spectral method used to implement this model requires that the input (i.e.
+     surface elevation `h`) is periodic in `x` and `y`. To simulate periodic `h` the
+     implementation uses an extended grid (see
+     :config:`atmosphere.orographic_precipitation.grid_size_factor`) and pads modeled
+     surface elevation with zeros.
+
+     It is worth noting that the resulting precipitation field `P_{\text{LT}}` *is also
+     periodic* in `x` and `y` on the *extended* grid. The appropriate size of this
+     extended grid may differ depending on the spatial scale of the domain and values of
+     model parameters.
+
 It is implemented as a "modifier" that overrides the precipitation field provided by an
 input model. Use it with a model providing air temperatures to get a complete model. For
 example, ``-atmosphere yearly_cycle,orographic_precipitation ...`` would use the annual
@@ -394,59 +424,11 @@ temperature cycle from ``yearly_cycle`` combined with precipitation computed usi
 model.
 
 The only spatially-variable input of this model is the surface elevation (`h` above)
-modeled by PISM. It is controlled by a number of configuration parameters. See parameters
-with the prefix ``atmosphere.orographic_precipitation``.
+modeled by PISM.
 
-.. list-table:: Parameters controlling orographic precipitation
-   :header-rows: 1
-   :widths: 1,2
+.. rubric:: Parameters
 
-   * - Parameter
-     - Description
+Prefix: ``atmosphere.orographic_precipitation.``
 
-   * - ``background_precip_pre``
-     - Background precipitation `P_{\text{pre}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``background_precip_post``
-     - Background precipitation `P_{\text{post}}` in :eq:`eq-orographic-post-processing`
-
-   * - ``scale_factor``
-     - Scaling factor `S` in :eq:`eq-orographic-post-processing`
-
-   * - ``conversion_time``
-     - Conversion time of cloud water into hydrometeors `\tau_c`
-
-   * - ``fallout_time``
-     - Fallout time `\tau_f`
-
-   * - ``water_vapor_scale_height``
-     - Moist layer depth `H_w`
-
-   * - ``moist_stability_frequency``
-     - Moist stability frequency `N_m`
-
-   * - ``wind_speed``
-     - Wind speed
-
-   * - ``wind_direction``
-     - Wind direction. `0` corresponds to the wind from the north, `90` from the east, and
-       so on.
-
-   * - ``lapse_rate``
-     - Lapse rate `\gamma`. Note that here `\gamma < 0`.
-
-   * - ``moist_adiabatic_lapse_rate``
-     - Moist adiabatic lapse rate `\Gamma_m`. Note that here `\Gamma_m < 0`.
-
-   * - ``reference_density``
-     - Reference density `\rho_{S_{\text{ref}}}` (see equation A3 in :cite:`SmithBarstad2004`)
-
-   * - ``coriolis_latitude``
-     - Average latitude of the modeling domain used to include the influence of the
-       Coriolis force (see equation 6 in :cite:`SmithBarstadBonneau2005`)
-
-   * - ``truncate``
-     - If set, negative precipitation values are truncated as in
-       :eq:`eq-orographic-post-processing`, otherwise the post-processing formula is
-
-       `P = (P_{\text{pre}} + P_{\text{LT}}) \cdot S + P_{\text{post}}`.
+.. pism-parameters::
+   :prefix: atmosphere.orographic_precipitation.

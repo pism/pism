@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,13 +30,13 @@ namespace energy {
 
 TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
                                    stressbalance::StressBalance *stress_balance)
-  : EnergyModel(grid, stress_balance) {
+  : EnergyModel(grid, stress_balance),
+    m_ice_temperature(m_grid, "temp", WITH_GHOSTS, m_grid->z()) {
 
-  m_ice_temperature.create(m_grid, "temp", WITH_GHOSTS);
   m_ice_temperature.set_attrs("model_state",
                               "ice temperature",
                               "K", "K", "land_ice_temperature", 0);
-  m_ice_temperature.metadata().set_number("valid_min", 0.0);
+  m_ice_temperature.metadata()["valid_min"] = {0.0};
 }
 
 const IceModelVec3 & TemperatureModel::temperature() const {
@@ -353,7 +353,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   }
 
   // copy to m_ice_temperature, updating ghosts
-  m_work.update_ghosts(m_ice_temperature);
+  m_ice_temperature.copy_from(m_work);
 
   // Set ice enthalpy in place. EnergyModel::update will scatter ghosts
   compute_enthalpy_cold(m_work, ice_thickness, m_work);

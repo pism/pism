@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ namespace atmosphere {
 class CosineYearlyCycle : public YearlyCycle {
 public:
   CosineYearlyCycle(IceGrid::ConstPtr g);
-  virtual ~CosineYearlyCycle();
+  virtual ~CosineYearlyCycle() = default;
 
   virtual void init_impl(const Geometry &geometry);
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;

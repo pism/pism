@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019 PISM Authors
+// Copyright (C) 2010--2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,20 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __Diagnostic_hh
-#define __Diagnostic_hh
+#ifndef PISM_DIAGNOSTIC_HH
+#define PISM_DIAGNOSTIC_HH
 
 #include <memory>
 #include <map>
 #include <string>
 
 #include "VariableMetadata.hh"
-#include "Timeseries.hh"        // inline code and a member of TSDiagnostic
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
 #include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -59,12 +59,13 @@ namespace pism {
 class Diagnostic {
 public:
   Diagnostic(IceGrid::ConstPtr g);
-  virtual ~Diagnostic();
+  virtual ~Diagnostic() = default;
 
   typedef std::shared_ptr<Diagnostic> Ptr;
 
-  static Ptr wrap(const IceModelVec2S &input);
-  static Ptr wrap(const IceModelVec2V &input);
+  // defined below
+  template<typename T>
+  static Ptr wrap(const T &input);
 
   void update(double dt);
   void reset();
@@ -129,12 +130,14 @@ public:
       m_input(input)
   {
     for (unsigned int j = 0; j < input.ndof(); ++j) {
-      m_vars.push_back(input.metadata(j));
+      m_vars.emplace_back(input.metadata(j));
     }
   }
 protected:
+
   IceModelVec::Ptr compute_impl() const {
-    typename T::Ptr result(new T(m_input.grid(), "unnamed", WITHOUT_GHOSTS));
+    auto result = duplicate(m_input);
+
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_vars.size(); ++k) {
       result->metadata(k) = m_vars[k];
@@ -144,8 +147,14 @@ protected:
 
     return result;
   }
+
   const T &m_input;
 };
+
+template<typename T>
+Diagnostic::Ptr Diagnostic::wrap(const T &input) {
+  return Ptr(new DiagWithDedicatedStorage<T>(input));
+}
 
 //! A template derived from Diagnostic, adding a "Model".
 template <class Model>
@@ -174,17 +183,14 @@ public:
     m_input_kind(kind),
     m_accumulator(Diagnostic::m_grid, name + "_accumulator", WITHOUT_GHOSTS),
     m_interval_length(0.0),
-    m_time_since_reset(name + "_time_since_reset",
-                        Diagnostic::m_config->get_string("time.dimension_name"),
-                        Diagnostic::m_sys) {
+    m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset.set_string("units", "seconds");
-    m_time_since_reset.set_string("long_name",
-                                  "time since " + m_accumulator.get_name() +
-                                  " was reset to 0");
+    m_time_since_reset["units"] = "seconds";
+    m_time_since_reset["long_name"] =
+      "time since " + m_accumulator.get_name() + " was reset to 0";
 
-    m_accumulator.metadata().set_string("long_name",
-                                        "accumulator for the " + name + " diagnostic");
+    m_accumulator.metadata()["long_name"] =
+      "accumulator for the " + name + " diagnostic";
 
     m_accumulator.set(0.0);
   }
@@ -207,16 +213,19 @@ protected:
 
   void define_state_impl(const File &output) const {
     m_accumulator.define(output);
-    io::define_timeseries(m_time_since_reset, output, PISM_DOUBLE);
+    io::define_timeseries(m_time_since_reset,
+                          Diagnostic::m_config->get_string("time.dimension_name"),
+                          output, PISM_DOUBLE);
   }
 
   void write_state_impl(const File &output) const {
     m_accumulator.write(output);
 
-    const unsigned int
-      time_length = output.dimension_length(m_time_since_reset.get_dimension_name()),
-      t_start = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, m_interval_length, PISM_DOUBLE);
+    auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
+
+    unsigned int time_length = output.dimension_length(time_name);
+    unsigned int t_start = time_length > 0 ? time_length - 1 : 0;
+    io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length});
   }
 
   virtual void update_impl(double dt) {
@@ -249,7 +258,7 @@ protected:
 
     return result;
   }
-protected:
+
   // constants initialized in the constructor
   double m_factor;
   InputKind m_input_kind;
@@ -257,7 +266,7 @@ protected:
   IceModelVec2S m_accumulator;
   // length of the reporting interval, accumulated along with the cumulative quantity
   double m_interval_length;
-  TimeseriesMetadata m_time_since_reset;
+  VariableMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
   virtual const IceModelVec2S& model_input() {
@@ -309,10 +318,19 @@ protected:
   const units::System::Ptr m_sys;
 
   //! time series object used to store computed values and metadata
-  Timeseries m_ts;
+  std::string m_time_name;
+
+  VariableMetadata m_variable;
+  VariableMetadata m_dimension;
+  VariableMetadata m_time_bounds;
+
+  // buffer for diagnostic time series
+  std::vector<double> m_time;
+  std::vector<double> m_bounds;
+  std::vector<double> m_values;
 
   //! requested times
-  std::shared_ptr<std::vector<double>> m_times;
+  std::shared_ptr<std::vector<double>> m_requested_times;
   //! index into m_times
   unsigned int m_current_time;
 
@@ -393,4 +411,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* __Diagnostic_hh */
+#endif /* PISM_DIAGNOSTIC_HH */

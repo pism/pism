@@ -42,7 +42,7 @@ namespace pism {
 class PrescribedRetreat : public Component {
 public:
   PrescribedRetreat(IceGrid::ConstPtr grid);
-  virtual ~PrescribedRetreat();
+  virtual ~PrescribedRetreat() = default;
 
   void init();
 
@@ -53,7 +53,7 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2T::Ptr m_retreat_mask;
+  std::shared_ptr<IceModelVec2T> m_retreat_mask;
 };
 
 } // end of namespace pism

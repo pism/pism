@@ -1,4 +1,4 @@
-// Copyright (C)  2009-2018 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C)  2009-2018, 2021 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,7 @@ namespace atmosphere {
 class PIK : public YearlyCycle {
 public:
   PIK(IceGrid::ConstPtr g);
-  virtual ~PIK();
+  virtual ~PIK() = default;
 
 private:
   void init_impl(const Geometry &geometry);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,10 +31,6 @@ WeertmanSliding::WeertmanSliding(IceGrid::ConstPtr grid)
   // Use the SIA flow law.
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
   m_flow_law = ice_factory.create();
-}
-
-WeertmanSliding::~WeertmanSliding() {
-  // empty
 }
 
 void WeertmanSliding::init_impl() {
@@ -85,7 +81,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
   const IceModelVec3         &enthalpy  = *inputs.enthalpy;
 
   double n   = m_flow_law->exponent();
-  double A_s = m_config->get_number("stress_balance.weertman_sliding.A");
+  double A_s = m_config->get_number("stress_balance.weertman_sliding.A", "Pa-3 s-1 m-2");
   double k   = m_config->get_number("stress_balance.weertman_sliding.k");
 
   IceModelVec::AccessList list{&m_velocity, &H, &h, &enthalpy, &cell_type};
@@ -100,17 +96,17 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
         E_base = enthalpy(i, j, 0);
 
       if (not m_EC->is_temperate(E_base, P_o) or cell_type.ocean(i, j)) {
-        m_velocity(i, j) = {0.0, 0.0};
+        m_velocity(i, j) = 0.0;
         continue;
       }
 
       // Note: we may need to decide if we should use one-sided FD at ice margins.
-      Vector2 grad_h = {h.diff_x_p(i, j), h.diff_y_p(i, j)};
+      Vector2 grad_h = {diff_x_p(h, i, j), diff_y_p(h, i, j)};
 
       // Note: this could be optimized by computing this instead
       // 2 * A_s / (1 - k) * pow(P * P * (h_x * h_x + h_y * h_y), (n - 1) / 2) * grad_h;
       // ... but I'm not sure we need to and the current code is cleaner.
-      m_velocity(i, j) = 2.0 * A_s / (1.0 - k) * pow(P_o * grad_h.magnitude(), n - 1) * grad_h;
+      m_velocity(i, j) = - 2.0 * A_s / (1.0 - k) * pow(P_o * grad_h.magnitude(), n - 1) * grad_h;
     }
   } catch (...) {
     loop.failed();

@@ -51,4 +51,4 @@ the mass-continuity equation:
 The ``-no_`` prefix is still supported for compatibility with older scripts, but will be
 removed in a later PISM version.
 
-.. include:: parameter-list.txt
+.. pism-parameters::

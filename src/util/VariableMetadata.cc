@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include <set>
 #include <algorithm>
+#include <cmath>
 
 #include "VariableMetadata.hh"
 #include "pism/util/io/File.hh"
@@ -34,7 +35,7 @@ namespace pism {
 VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr system,
                                    unsigned int ndims)
   : m_n_spatial_dims(ndims),
-    m_unit_system(system),
+    m_unit_system(std::move(system)),
     m_short_name(name),
     m_time_independent(false),
     m_output_type(PISM_NAT) {
@@ -50,13 +51,9 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
   // valid_min and valid_max are unset
 }
 
-VariableMetadata::~VariableMetadata() {
-  // empty
-}
-
 /** Get the number of spatial dimensions.
  */
-unsigned int VariableMetadata::get_n_spatial_dimensions() const {
+unsigned int VariableMetadata::n_spatial_dimensions() const {
   return m_n_spatial_dims;
 }
 
@@ -83,7 +80,7 @@ units::System::Ptr VariableMetadata::unit_system() const {
 //! @brief Check if the range `[min, max]` is a subset of `[valid_min, valid_max]`.
 /*! Throws an exception if this check failed.
  */
-void VariableMetadata::check_range(const std::string &filename, double min, double max) {
+void VariableMetadata::check_range(const std::string &filename, double min, double max) const {
 
   auto units_string = get_string("units");
   auto name_string  = get_name();
@@ -93,9 +90,8 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     *file  = filename.c_str();
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
-    double
-      valid_min = get_number("valid_min"),
-      valid_max = get_number("valid_max");
+    double valid_min = get_number("valid_min");
+    double valid_max = get_number("valid_max");
     if ((min < valid_min) or (max > valid_max)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
@@ -121,73 +117,40 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
   }
 }
 
-//! 3D version
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name,
+SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system,
+                                                 const std::string &name,
                                                  const std::vector<double> &zlevels)
-  : VariableMetadata("unnamed", system),
+  : VariableMetadata(name, system),
     m_x("x", system),
     m_y("y", system),
-    m_z("z", system) {
+    m_z("z", system),
+    m_zlevels(zlevels) {
 
-  init_internal(name, zlevels);
-}
+  m_x["axis"]          = "X";
+  m_x["long_name"]     = "X-coordinate in Cartesian system";
+  m_x["standard_name"] = "projection_x_coordinate";
+  m_x["units"]         = "m";
 
-//! 2D version
-SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, const std::string &name)
-  : VariableMetadata("unnamed", system),
-    m_x("x", system),
-    m_y("y", system),
-    m_z("z", system) {
+  m_y["axis"]          = "Y";
+  m_y["long_name"]     = "Y-coordinate in Cartesian system";
+  m_y["standard_name"] = "projection_y_coordinate";
+  m_y["units"]         = "m";
 
-  std::vector<double> z(1, 0.0);
-  init_internal(name, z);
-}
-
-void SpatialVariableMetadata::init_internal(const std::string &name,
-                                            const std::vector<double> &z_levels) {
-  m_x.set_string("axis", "X");
-  m_x.set_string("long_name", "X-coordinate in Cartesian system");
-  m_x.set_string("standard_name", "projection_x_coordinate");
-  m_x.set_string("units", "m");
-
-  m_y.set_string("axis", "Y");
-  m_y.set_string("long_name", "Y-coordinate in Cartesian system");
-  m_y.set_string("standard_name", "projection_y_coordinate");
-  m_y.set_string("units", "m");
-
-  m_z.set_string("axis", "Z");
-  m_z.set_string("long_name", "Z-coordinate in Cartesian system");
-  m_z.set_string("units", "m");
-  m_z.set_string("positive", "up");
-
-  set_name(name);
-
-  m_zlevels = z_levels;
-
-  this->set_time_independent(false);
+  m_z["axis"]      = "Z";
+  m_z["long_name"] = "Z-coordinate in Cartesian system";
+  m_z["units"]     = "m";
+  m_z["positive"]  = "up";
 
   if (m_zlevels.size() > 1) {
-    get_z().set_name("z");      // default; can be overridden easily
+    z().set_name("z");      // default; can be overridden easily
     m_n_spatial_dims = 3;
   } else {
-    get_z().set_name("");
+    z().set_name("");
     m_n_spatial_dims = 2;
   }
 }
 
-SpatialVariableMetadata::~SpatialVariableMetadata() {
-  // empty
-}
-
-void SpatialVariableMetadata::set_levels(const std::vector<double> &levels) {
-  if (levels.size() < 1) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "argument \"levels\" has to have length 1 or greater");
-  }
-  m_zlevels = levels;
-}
-
-
-const std::vector<double>& SpatialVariableMetadata::get_levels() const {
+const std::vector<double>& SpatialVariableMetadata::levels() const {
   return m_zlevels;
 }
 
@@ -207,14 +170,14 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   if (has_attribute("standard_name")) {
 
     if (found_by_standard_name) {
-      log.message(2, 
+      log.message(2,
                   " %s / standard_name=%-10s\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
                   get_string("standard_name").c_str(), spacer.c_str(), min, max,
                   get_string("glaciological_units").c_str());
     } else {
-      log.message(2, 
+      log.message(2,
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
@@ -223,7 +186,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
     }
 
   } else {
-    log.message(2, 
+    log.message(2,
                 " %s / %-10s\n"
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                 get_name().c_str(),
@@ -232,27 +195,27 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   }
 }
 
-VariableMetadata& SpatialVariableMetadata::get_x() {
+VariableMetadata& SpatialVariableMetadata::x() {
   return m_x;
 }
 
-VariableMetadata& SpatialVariableMetadata::get_y() {
+VariableMetadata& SpatialVariableMetadata::y() {
   return m_y;
 }
 
-VariableMetadata& SpatialVariableMetadata::get_z() {
+VariableMetadata& SpatialVariableMetadata::z() {
   return m_z;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_x() const {
+const VariableMetadata& SpatialVariableMetadata::x() const {
   return m_x;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_y() const {
+const VariableMetadata& SpatialVariableMetadata::y() const {
   return m_y;
 }
 
-const VariableMetadata& SpatialVariableMetadata::get_z() const {
+const VariableMetadata& SpatialVariableMetadata::z() const {
   return m_z;
 }
 
@@ -262,22 +225,18 @@ bool VariableMetadata::has_attribute(const std::string &name) const {
 
   auto j = m_strings.find(name);
   if (j != m_strings.end()) {
-    if (name != "units" && (j->second).empty()) {
+    if (name != "units" and (j->second).empty()) {
       return false;
     }
 
     return true;
   }
 
-  if (m_doubles.find(name) != m_doubles.end()) {
-    return true;
-  }
-
-  return false;
+  return (m_doubles.find(name) != m_doubles.end());
 }
 
 bool VariableMetadata::has_attributes() const {
-  return not (this->get_all_strings().empty() and this->get_all_doubles().empty());
+  return not (this->all_strings().empty() and this->all_doubles().empty());
 }
 
 void VariableMetadata::set_name(const std::string &name) {
@@ -311,10 +270,11 @@ double VariableMetadata::get_number(const std::string &name) const {
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return (j->second)[0];
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" does not have a double attribute \"%s\"",
-                                  get_name().c_str(), name.c_str());
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "variable \"%s\" does not have a double attribute \"%s\"",
+                                get_name().c_str(), name.c_str());
 }
 
 //! Get an array-of-doubles attribute.
@@ -322,16 +282,16 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
   auto j = m_doubles.find(name);
   if (j != m_doubles.end()) {
     return j->second;
-  } else {
-    return std::vector<double>();
   }
+
+  return {};
 }
 
-const VariableMetadata::StringAttrs& VariableMetadata::get_all_strings() const {
+const VariableMetadata::StringAttrs& VariableMetadata::all_strings() const {
   return m_strings;
 }
 
-const VariableMetadata::DoubleAttrs& VariableMetadata::get_all_doubles() const {
+const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
   return m_doubles;
 }
 
@@ -347,8 +307,8 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
   } else if (name == "glaciological_units") {
     m_strings[name] = value;
 
-    units::Unit internal(m_unit_system, get_string("units")),
-      glaciological(m_unit_system, value);
+    units::Unit internal(m_unit_system, get_string("units"));
+    units::Unit glaciological(m_unit_system, value);
 
     if (not units::are_convertible(internal, glaciological)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "units \"%s\" and \"%s\" are not compatible",
@@ -373,27 +333,27 @@ std::string VariableMetadata::get_string(const std::string &name) const {
   auto j = m_strings.find(name);
   if (j != m_strings.end()) {
     return j->second;
-  } else {
-    return std::string();
   }
+
+  return {};
 }
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
-  const VariableMetadata::StringAttrs &strings = this->get_all_strings();
-  const VariableMetadata::DoubleAttrs &doubles = this->get_all_doubles();
+  const VariableMetadata::StringAttrs &strings = this->all_strings();
+  const VariableMetadata::DoubleAttrs &doubles = this->all_doubles();
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     max_name_length = std::max(max_name_length, s.first.size());
   }
-  for (auto d : doubles) {
+  for (const auto &d : doubles) {
     max_name_length = std::max(max_name_length, d.first.size());
   }
 
   // Print text attributes:
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     std::string name  = s.first;
     std::string value = s.second;
     std::string padding(max_name_length - name.size(), ' ');
@@ -407,7 +367,7 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
   }
 
   // Print double attributes:
-  for (auto d : doubles) {
+  for (const auto &d : doubles) {
     std::string name  = d.first;
     std::vector<double> values = d.second;
     std::string padding(max_name_length - name.size(), ' ');
@@ -416,7 +376,9 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
       continue;
     }
 
-    if ((fabs(values[0]) >= 1.0e7) || (fabs(values[0]) <= 1.0e-4)) {
+    const double large = 1.0e7;
+    const double small = 1.0e-4;
+    if ((std::fabs(values[0]) >= large) || (std::fabs(values[0]) <= small)) {
       // use scientific notation if a number is big or small
       log.message(verbosity_threshold, "  %s%s = %12.3e\n",
                   name.c_str(), padding.c_str(), values[0]);
@@ -428,39 +390,43 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
   }
 }
 
-bool set_contains(const std::set<std::string> &S, const VariableMetadata &variable) {
-  return member(variable.get_name(), S);
+ConstAttribute::ConstAttribute(const VariableMetadata *var, const std::string &name)
+  : m_name(name), m_var(const_cast<VariableMetadata*>(var)) {
 }
 
-TimeseriesMetadata::TimeseriesMetadata(const std::string &name, const std::string &dimension_name,
-                           units::System::Ptr system)
-  : VariableMetadata(name, system, 0) {
-  m_dimension_name = dimension_name;
+ConstAttribute::ConstAttribute(ConstAttribute&& a) noexcept
+  : m_name(std::move(a.m_name)), m_var(a.m_var) {
+  a.m_name.clear();
+  a.m_var = nullptr;
 }
 
-TimeseriesMetadata::~TimeseriesMetadata()
-{
-  // empty
+ConstAttribute::operator std::string() const {
+  return m_var->get_string(m_name);
 }
 
-std::string TimeseriesMetadata::get_dimension_name() const {
-  return m_dimension_name;
+ConstAttribute::operator double() const {
+  auto values = m_var->get_numbers(m_name);
+  if (values.size() == 1) {
+    return values[0];
+  }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "%s:%s has more than one value",
+                                m_var->get_name().c_str(), m_name.c_str());
 }
 
-/// TimeBoundsMetadata
-
-TimeBoundsMetadata::TimeBoundsMetadata(const std::string &var_name, const std::string &dim_name,
-                           units::System::Ptr system)
-  : TimeseriesMetadata(var_name, dim_name, system) {
-  m_bounds_name    = "nv";      // number of vertexes
+ConstAttribute::operator std::vector<double> () const {
+  return m_var->get_numbers(m_name);
 }
 
-TimeBoundsMetadata::~TimeBoundsMetadata() {
-  // empty
+void Attribute::operator=(const std::string &value) {
+  m_var->set_string(m_name, value);
+}
+void Attribute::operator=(const std::initializer_list<double> &value) {
+  m_var->set_numbers(m_name, value);
 }
 
-std::string TimeBoundsMetadata::get_bounds_name() const {
-  return m_bounds_name;
+void Attribute::operator=(const std::vector<double> &value) {
+  m_var->set_numbers(m_name, value);
 }
 
 } // end of namespace pism

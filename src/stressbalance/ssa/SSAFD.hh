@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ class SSAFD : public SSA
 {
 public:
   SSAFD(IceGrid::ConstPtr g);
-  virtual ~SSAFD();
+  virtual ~SSAFD() = default;
 
   const IceModelVec2Stag & integrated_viscosity() const;
 protected:
@@ -89,7 +89,23 @@ protected:
 
   // objects used internally
   IceModelVec2Stag m_hardness, m_nuH, m_nuH_old;
-  IceModelVec2 m_work;
+
+  struct Work {
+    // u_x on the i offset
+    double u_x;
+    // v_x on the i offset
+    double v_x;
+    // weight for the i offset
+    double w_i;
+    // u_y on the j offset
+    double u_y;
+    // v_y on the j offset
+    double v_y;
+    // weight for the j offset
+    double w_j;
+  };
+  IceModelVec2<Work> m_work;
+
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   IceModelVec2V m_b;            // right hand side
@@ -101,7 +117,7 @@ protected:
     m_default_pc_failure_max_count;
   
   bool m_view_nuh;
-  petsc::Viewer::Ptr m_nuh_viewer;
+  std::shared_ptr<petsc::Viewer> m_nuh_viewer;
   int m_nuh_viewer_size;
 
   class KSPFailure : public RuntimeError {

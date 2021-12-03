@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -36,15 +36,19 @@ PIK::PIK(IceGrid::ConstPtr g)
   // empty
 }
 
-PIK::~PIK() {
-  // empty
-}
-
 void PIK::init_impl(const Geometry &geometry) {
   (void) geometry;
 
   m_log->message(2,
                  "* Initializing the constant (PIK) ocean model...\n");
+
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep PIK::max_timestep_impl(double t) const {
@@ -64,7 +68,13 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
   mass_flux(H, *m_shelf_base_mass_flux);
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 /*!

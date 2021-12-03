@@ -20,7 +20,7 @@ fields which are shared between the ice dynamics core and the climate model.
 :numref:`tab-ice-dynamics-bc` lists fields which are needed as boundary conditions at the
 interfaces.
 
-All PISM ice sheet models have some kind of interface green in
+All PISM ice sheet models have some kind of interface (green in
 :numref:`fig-climate-inputs`) to a subaerial surface processes layer containing snow,
 firn, and liquid (or refrozen) runoff. The surface layer is assumed to cover the whole
 surface of the ice, and all grounded areas that the ice might occupy, including ablation

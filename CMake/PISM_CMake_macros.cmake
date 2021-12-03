@@ -54,10 +54,17 @@ macro(pism_set_revision_tag_git)
     if (EXISTS ${Pism_SOURCE_DIR}/.git)
       find_program (GIT_EXECUTABLE git DOC "Git executable")
       mark_as_advanced(GIT_EXECUTABLE)
-      execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
-        WORKING_DIRECTORY ${Pism_SOURCE_DIR}
-        OUTPUT_VARIABLE Pism_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
+      if (${Pism_BRANCH} MATCHES "stable")
+        execute_process (COMMAND ${GIT_EXECUTABLE} describe --always --match v?.?*
+          WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+          OUTPUT_VARIABLE Pism_VERSION
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+      else()
+        execute_process (COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+          WORKING_DIRECTORY ${Pism_SOURCE_DIR}
+          OUTPUT_VARIABLE Pism_VERSION
+          OUTPUT_STRIP_TRAILING_WHITESPACE)
+      endif()
       execute_process (COMMAND ${GIT_EXECUTABLE} --no-pager log -1 "--pretty=format:committed by %an on %ci"
         WORKING_DIRECTORY ${Pism_SOURCE_DIR}
         OUTPUT_VARIABLE Pism_COMMIT_INFO

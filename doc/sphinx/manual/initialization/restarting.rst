@@ -10,15 +10,15 @@ run can be loaded with ":opt:`-i`":
 
 .. code-block:: none
 
-   pisms -eisII A -y 100 -o foo.nc
-   pisms -eisII A -i foo.nc -y 100 -o bar.nc
+   pismr -eisII A -y 100 -o foo.nc
+   pismr -eisII A -i foo.nc -y 100 -o bar.nc
 
-As noted verification tests (section :ref:`sec-verif`) and simplified-geometry experiments
+As noted, verification tests (section :ref:`sec-verif`) and simplified-geometry experiments
 (section :ref:`sec-simp`) do not need input files at all because they initialize from
 formulas in the source code. They can, however, be continued from saved model states using
 :opt:`-i`. Specifying the simplified geometry experiment or verification test *is*,
 however, necessary if the run is to continue with the climate inputs for that experiment
-or test. For example, based on the above ``pisms`` runs, it is valid to do
+or test. For example, based on the above ``pismr -eisII A`` runs, it is valid to do
 
 .. code-block:: none
 
@@ -26,13 +26,6 @@ or test. For example, based on the above ``pisms`` runs, it is valid to do
 
 but the climate and other parameters use PISM default values, and thus are not
 (necessarily) the values specified in EISMINT II.
-
-As a technical note about saved states, a PISM run with :opt:`-stress_balance ssa` also
-saves the last SSA velocities to the output file in variables :var:`u_ssa` and
-:var:`v_ssa`. The presence of these velocities adds efficiency in restarting because an
-initial estimate speeds up the solution of the SSA stress balance equations. If you want
-to use :opt:`-i` but also ignore these velocities then set
-:config:`stress_balance.ssa.read_initial_guess` to *false*.
 
 .. _sec-i-format:
 
@@ -45,7 +38,7 @@ resulting file, like this:
 
 .. code-block:: none
 
-   pisms -eisII A -y 10 -o foo.nc
+   pismr -eisII A -y 10 -o foo.nc
    ncdump -h foo.nc | less
 
 Note that variables in the output file have a ``pism_intent`` attribute. When

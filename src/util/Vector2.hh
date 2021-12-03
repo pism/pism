@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _VECTOR2_H_
-#define _VECTOR2_H_
+#ifndef PISM_VECTOR2_HH
+#define PISM_VECTOR2_HH
 
 #include <cmath>                // sqrt
 
@@ -108,6 +108,14 @@ inline Vector2 operator*(const double &a, const Vector2 &v) {
   return v * a;
 }
 
+inline bool operator==(const Vector2 &a, const Vector2 &b) {
+  return a.u == b.u and a.u == b.u;
+}
+
+inline bool operator!=(const Vector2 &a, const Vector2 &b) {
+  return a.u != b.u or a.u != b.u;
+}
+
 } // end of namespace pism
 
-#endif /* _VECTOR2_H_ */
+#endif /* PISM_VECTOR2_HH */

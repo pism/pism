@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,10 +31,6 @@ SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g)
   m_h_stored      = NULL;
   m_H_stored      = NULL;
   m_no_model_mask = NULL;
-}
-
-SSAFD_Regional::~SSAFD_Regional() {
-  // empty
 }
 
 void SSAFD_Regional::init() {
@@ -91,7 +87,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = no_model_mask->int_star(i, j);
+    auto M = no_model_mask->star(i, j);
 
     if (M.ij == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
@@ -106,7 +102,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
     }
 
     auto h = m_h_stored->star(i, j);
-    auto CT = cell_type.int_star(i, j);
+    auto CT = cell_type.star(i, j);
 
     // x-derivative
     double h_x = 0.0;
@@ -146,6 +142,10 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
     result(i, j) = - pressure * Vector2(h_x, h_y);
   } // end of the loop over grid points
+}
+
+SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid) {
+  return new SSAFD_Regional(grid);
 }
 
 } // end of namespace stressbalance

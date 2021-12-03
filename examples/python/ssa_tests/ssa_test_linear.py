@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -63,15 +63,15 @@ class test_linear(PISM.ssa.SSAExactTestCase):
         vecs.tauc.set(tauc0)
 
         vel_bc = vecs.vel_bc
-        bc_mask = vecs.bc_mask
-        bc_mask.set(0)
+        vel_bc_mask = vecs.vel_bc_mask
+        vel_bc_mask.set(0)
 
         grid = self.grid
-        with PISM.vec.Access(comm=[bc_mask, vel_bc]):
+        with PISM.vec.Access(comm=[vel_bc_mask, vel_bc]):
             for (i, j) in grid.points():
                 edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
                 if edge:
-                    bc_mask[i, j] = 1
+                    vel_bc_mask[i, j] = 1
                     x = grid.x(i)
                     y = grid.y(j)
                     [u, v] = self.exactSolution(i, j, x, y)

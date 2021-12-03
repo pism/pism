@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -37,7 +37,7 @@ class AtmosphereModel : public Component {
 public:
   AtmosphereModel(IceGrid::ConstPtr g);
   AtmosphereModel(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> input);
-  virtual ~AtmosphereModel();
+  virtual ~AtmosphereModel() = default;
 
   void init(const Geometry &geometry);
 

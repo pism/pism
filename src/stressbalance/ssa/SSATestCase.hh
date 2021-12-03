@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ namespace stressbalance {
 class SSATestCase
 {
 public:
-  SSATestCase(Context::Ptr ctx, int Mx, int My,
+  SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
               double Lx, double Ly,
               GridRegistration registration,
               Periodicity periodicity);
@@ -86,16 +86,19 @@ protected:
                      double avg_v);
 
   MPI_Comm m_com;
-  const Context::Ptr m_ctx;
+  const std::shared_ptr<Context> m_ctx;
   const Config::Ptr m_config;
   IceGrid::Ptr m_grid;
   const units::System::Ptr m_sys;
+
+  //! "wide" stencil width
+  int m_stencil_width;
 
   // SSA model variables.
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S m_tauc, m_melange_back_pressure;
+  IceModelVec2S m_tauc;
   IceModelVec3 m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;

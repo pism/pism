@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018 PISM Authors
+/* Copyright (C) 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,12 @@
 #include "SSB_Modifier.hh"
 #include "pism/regional/SSAFD_Regional.hh"
 #include "pism/regional/SIAFD_Regional.hh"
+#include "blatter/Blatter.hh"
+#include "blatter/BlatterMod.hh"
+
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Context.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -33,34 +38,49 @@ namespace stressbalance {
 std::shared_ptr<StressBalance> create(const std::string &model,
                                       IceGrid::ConstPtr grid,
                                       bool regional) {
-  ShallowStressBalance *sliding = NULL;
 
+  auto config = grid->ctx()->config();
+
+  if (model == "blatter") {
+    int Mz = config->get_number("stress_balance.blatter.Mz");
+    int C = config->get_number("stress_balance.blatter.coarsening_factor");
+
+    std::shared_ptr<Blatter> blatter(new Blatter(grid, Mz, C));
+    std::shared_ptr<BlatterMod> mod(new BlatterMod(blatter));
+
+    return std::shared_ptr<StressBalance>(new StressBalance(grid, blatter, mod));
+  }
+
+  SSAFactory SSA;
+  if (config->get_string("stress_balance.ssa.method") == "fd") {
+    SSA = regional ? SSAFD_RegionalFactory : SSAFDFactory;
+  } else {
+    SSA = SSAFEMFactory;
+  }
+
+  std::shared_ptr<ShallowStressBalance> sliding;
   if (member(model, {"none", "sia"})) {
-    sliding = new ZeroSliding(grid);
+    sliding.reset(new ZeroSliding(grid));
   } else if (member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
-    sliding = new PrescribedSliding(grid);
+    sliding.reset(new PrescribedSliding(grid));
   } else if (member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
-    sliding = new WeertmanSliding(grid);
+    sliding.reset(new WeertmanSliding(grid));
   } else if (member(model, {"ssa", "ssa+sia"})) {
-    if (regional) {
-      sliding = new SSAFD_Regional(grid);
-    } else {
-      sliding = new SSAFD(grid);
-    }
+    sliding.reset(SSA(grid));
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "invalid stress balance model: %s", model.c_str());
   }
 
-  SSB_Modifier *modifier = NULL;
+  std::shared_ptr<SSB_Modifier> modifier;
 
   if (member(model, {"none", "ssa", "prescribed_sliding", "weertman_sliding"})) {
-    modifier = new ConstantInColumn(grid);
+    modifier.reset(new ConstantInColumn(grid));
   } else if (member(model, {"prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia"})) {
     if (regional) {
-      modifier = new SIAFD_Regional(grid);
+      modifier.reset(new SIAFD_Regional(grid));
     } else {
-      modifier = new SIAFD(grid);
+      modifier.reset(new SIAFD(grid));
     }
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

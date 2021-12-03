@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ class GivenTH : public CompleteOceanModel
 {
 public:
   GivenTH(IceGrid::ConstPtr g);
-  virtual ~GivenTH();
+  virtual ~GivenTH() = default;
 
   class Constants {
   public:
@@ -63,8 +63,8 @@ private:
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2T::Ptr m_theta_ocean;
-  IceModelVec2T::Ptr m_salinity_ocean;
+  std::shared_ptr<IceModelVec2T> m_theta_ocean;
+  std::shared_ptr<IceModelVec2T> m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,
                         double sea_water_salinity,

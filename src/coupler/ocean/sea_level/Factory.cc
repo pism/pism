@@ -37,10 +37,6 @@ Factory::Factory(IceGrid::ConstPtr grid)
   add_modifier<Delta_SL_2D>("delta_sl_2d");
 }
 
-Factory::~Factory() {
-  // empty
-}
-
 } // end of namespace sea_level
 } // end of namespace ocean
 } // end of namespace pism

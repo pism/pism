@@ -2,47 +2,31 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 #include "util/IceModelVec2CellType.hh"
 #include "util/iceModelVec2T.hh"
-#include "util/iceModelVec3Custom.hh"
 
 using namespace pism;
 %}
 
 %shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::IceModelVec)
-%shared_ptr(pism::IceModelVec2)
 %shared_ptr(pism::IceModelVec2S)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::IceModelVec2Int)
 %shared_ptr(pism::IceModelVec2CellType)
 %shared_ptr(pism::IceModelVec2Stag)
-%shared_ptr(pism::IceModelVec3D)
 %shared_ptr(pism::IceModelVec3)
-%shared_ptr(pism::IceModelVec3Custom)
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
 
-%ignore pism::IceModelVec2S::get_array;
-%ignore pism::IceModelVec2V::get_array;
+%ignore pism::IceModelVec2S::array;
+%ignore pism::IceModelVec2V::array;
+
+%template(Range) std::array<double,2>;
 
 %rename(_regrid) pism::IceModelVec::regrid;
 %extend pism::IceModelVec
 {
   %pythoncode "IceModelVec.py"
-}
-
-// We also make the same fix for IceModelVec2's.
-%rename(_regrid) pism::IceModelVec2::regrid;
-%extend pism::IceModelVec2
-{
-  %pythoncode {
-    def regrid(self,filename,critical=False,default_value=0.0):
-      if critical == True:
-        flag = CRITICAL
-      else:
-        flag = OPTIONAL
-      self._regrid(filename, flag, default_value)
-  }
 }
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
@@ -95,29 +79,47 @@ using namespace pism;
     %pythoncode "IceModelVec2V.py"
 };
 
-%ignore pism::IceModelVec3D::getInternalColumn(int,int) const;
-%ignore pism::IceModelVec3D::operator();
-%extend pism::IceModelVec3D
+%ignore pism::IceModelVec3::operator();
+%ignore pism::IceModelVec3::get_column(int, int);
+%ignore pism::IceModelVec3::set_column(int, int, const double*);
+%extend pism::IceModelVec3
 {
 
-  double getitem(int i, int j, int k)
-  {
-      return (*($self))(i,j,k);
+  double getitem(int i, int j, int k) const {
+    return (*($self))(i,j,k);
   }
 
-  void setitem(int i, int j, int k, double val)
-  {
-      (*($self))(i,j,k) = val;
+  void setitem(int i, int j, int k, double val) {
+    (*($self))(i,j,k) = val;
   }
 
+  std::vector<double> _get_column(int i, int j) const {
+    size_t n = $self->levels().size();
+    std::vector<double> result(n);
+    const double *data = $self->get_column(i, j);
+    for (size_t k = 0; k < n; ++k) {
+      result[k] = data[k];
+    }
+    return result;
+  }
+
+  void set_column(int i, int j, const std::vector<double> &data) {
+    assert(data.size() >= $self->levels().size());
+    $self->set_column(i, j, data.data());
+  }
 
     %pythoncode {
+    def get_column(self, i, j):
+          return self._get_column(i, j)
+
     def __getitem__(self,*args):
-        return self.getitem(args[0][0],args[0][1],args[0][2])
+          i, j, k = args[0]
+          return self.getitem(i, j, k)
 
     def __setitem__(self,*args):
         if(len(args)==2):
-            self.setitem(args[0][0],args[0][1],args[0][2],args[1])
+            i, j, k = args[0]
+            self.setitem(i, j, k, args[1])
         else:
             raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
     }
@@ -133,13 +135,18 @@ std::vector<double> interp(int i, int j) {
 }
 };
 
-%ignore pism::StarStencil::operator[];
-%include "util/StarStencil.hh"
-%template(DoubleStar) pism::StarStencil<double>;
+%ignore pism::stencils::Star::operator[];
+%include "util/stencils.hh"
+%template(DoubleStar) pism::stencils::Star<double>;
 
 %include "util/iceModelVec.hh"
+%include "util/IceModelVec2.hh"
+
+%shared_ptr(pism::IceModelVec2<Vector2>)
+%ignore pism::IceModelVec2< Vector2 >::array() const;
+%template(_IceModelVec2Vector2) pism::IceModelVec2<Vector2>;
+
+%include "util/IceModelVec2V.hh"
 %include "util/IceModelVec2CellType.hh"
 %include "util/iceModelVec2T.hh"
 %include "util/Vector2.hh"
-
-%include "util/iceModelVec3Custom.hh"

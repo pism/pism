@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 #include "IPMeanSquareFunctional.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {

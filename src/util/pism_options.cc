@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,17 +31,17 @@ namespace pism {
 //! \brief Print a usage message.
 void show_usage(const Logger &log, const std::string &execname, const std::string &usage) {
   log.message(1,
-             "%s is a PISM (http://www.pism-docs.org) executable.\n"
+             "%s is a PISM (http://www.pism.io) executable.\n"
              "Options cheat-sheet:\n",
              execname.c_str());
   log.message(1, usage);
   log.message(1,
              "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
              "For more help with PISM:\n"
-             "  1. download PDF User's Manual:\n"
-             "       http://www.pism-docs.org/wiki/lib/exe/fetch.php?media=pism_manual.pdf\n"
+             "  1. download PDF User's Manual or read the online version on the website:\n"
+             "       http://www.pism.io\n"
              "  2. read browser for technical details:\n"
-             "       http://www.pism-docs.org/doxy/html/index.html\n"
+             "       http://www.pism.io/doxygen\n"
              "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
              "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
              "  5. email for help:  uaf-pism@alaska.edu\n",
@@ -54,9 +54,8 @@ bool show_usage_check_req_opts(const Logger &log,
                                const std::string &execname,
                                const std::vector<std::string> &required_options,
                                const std::string &usage) {
-  const bool
-    keep_running = false,
-    terminate = true;
+  const bool keep_running = false;
+  const bool terminate = true;
 
   log.message(2, "%s %s\n", execname.c_str(), pism::revision);
 
@@ -72,7 +71,7 @@ bool show_usage_check_req_opts(const Logger &log,
 
   // go through list of required options, and if not given, fail
   bool req_absent = false;
-  for (auto opt : required_options) {
+  for (const auto &opt : required_options) {
     if (not options::Bool(opt, "a required option")) {
       req_absent = true;
       log.error("PISM ERROR: option %s required\n", opt.c_str());

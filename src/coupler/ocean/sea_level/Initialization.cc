@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "Initialization.hh"
 
 #include "pism/coupler/util/init_step.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
@@ -30,7 +31,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid,
   : SeaLevel(grid, in) {
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
-  m_sea_level.metadata().set_string("pism_intent", "model_state");
+  m_sea_level.metadata()["pism_intent"] = "model_state";
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {

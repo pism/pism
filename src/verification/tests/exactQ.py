@@ -170,14 +170,14 @@ climatic_mass_balance_var[:] = climatic_mass_balance
 ice_surface_temp_var = def_var(nc, "ice_surface_temp", "K", fill_value)
 ice_surface_temp_var[:] = ice_surface_temp
 
-u_ssa_bc_var = def_var(nc, "u_ssa_bc", "m s-1", fill_value)
-u_ssa_bc_var[:] = zerossabc.copy()
+u_bc_var = def_var(nc, "u_bc", "m s-1", fill_value)
+u_bc_var[:] = zerossabc.copy()
 
-v_ssa_bc_var = def_var(nc, "v_ssa_bc", "m s-1", fill_value)
-v_ssa_bc_var[:] = zerossabc.copy()
+v_bc_var = def_var(nc, "v_bc", "m s-1", fill_value)
+v_bc_var[:] = zerossabc.copy()
 
-bc_mask_var = nc.createVariable("bc_mask", "i", dimensions=("y", "x"))
-bc_mask_var[:] = ((xx == 0.0) & (yy == 0.0))
+vel_bc_mask_var = nc.createVariable("vel_bc_mask", "i", dimensions=("y", "x"))
+vel_bc_mask_var[:] = ((xx == 0.0) & (yy == 0.0))
 
 thk_exact_var = def_var(nc, "thk_exact", "m", fill_value)
 thk_exact_var[:] = thk_exact

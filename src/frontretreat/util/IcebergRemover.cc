@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace calving {
@@ -35,13 +36,6 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
   m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }
 
-IcebergRemover::~IcebergRemover() {
-  // empty
-}
-
-void IcebergRemover::init() {
-}
-
 /**
  * Use PISM's ice cover mask to update ice thickness, removing "icebergs".
  *
@@ -51,6 +45,12 @@ void IcebergRemover::init() {
 void IcebergRemover::update(const IceModelVec2Int &bc_mask,
                             IceModelVec2CellType &mask,
                             IceModelVec2S &ice_thickness) {
+  update_impl(bc_mask, mask, ice_thickness);
+}
+
+void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
+                                 IceModelVec2CellType &mask,
+                                 IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
@@ -65,9 +65,9 @@ void IcebergRemover::update(const IceModelVec2Int &bc_mask,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.grounded_ice(i,j) == true) {
+      if (mask.grounded_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (mask.floating_ice(i,j) == true) {
+      } else if (mask.floating_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>              // strncpy
-#include <cstdio>               // snprintf
+#include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
 
 #include <algorithm>
 #include <set>
@@ -40,9 +39,11 @@
 #include "pism/util/Component.hh"
 #include "pism/energy/utilities.hh"
 
+
 namespace pism {
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+                                   double resolution,
                                    const std::string &description) {
 
   const size_t N = times.size();
@@ -60,9 +61,9 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 
   dt = times[j + 1] - t;
 
-  // now make sure that we don't end up taking a time-step of less than 1
+  // now make sure that we don't end up taking a time-step of less than "resolution"
   // second long
-  if (dt < 1.0) {
+  if (dt < resolution) {
     if (j + 2 < N) {
       return MaxTimestep(times[j + 2] - t, description);
     } else {
@@ -88,7 +89,7 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     std::string old_history = file.read_text_attribute("PISM_GLOBAL", "history");
 
     tmp.set_name("PISM_GLOBAL");
-    tmp.set_string("history", tmp.get_string("history") + old_history);
+    tmp["history"] = std::string(tmp["history"]) + old_history;
 
     io::write_attributes(file, tmp, PISM_DOUBLE);
   } else {
@@ -106,9 +107,9 @@ void IceModel::save_results() {
 
     auto str = pism::printf(
       "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      m_run_stats.get_number("wall_clock_hours"),
-      m_run_stats.get_number("processor_hours"),
-      m_run_stats.get_number("model_years_per_processor_hour"));
+      (double)m_run_stats["wall_clock_hours"],
+      (double)m_run_stats["processor_hours"],
+      (double)m_run_stats["model_years_per_processor_hour"]);
 
     prepend_history(str);
   }
@@ -178,11 +179,17 @@ void IceModel::save_variables(const File &file,
                               double time,
                               IO_Type default_diagnostics_type) {
 
+  // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
+  // supports it.
+  file.set_compression_level(m_config->get_number("output.compression_level"));
+
   // define the time dimension if necessary (no-op if it is already defined)
   io::define_time(file, *m_grid->ctx());
   // define the "timestamp" (wall clock time since the beginning of the run)
   // Note: it is time-dependent, so we need to define time first.
-  io::define_timeseries(m_timestamp, file, PISM_FLOAT);
+  io::define_timeseries(m_timestamp,
+                        m_config->get_string("time.dimension_name"),
+                        file, PISM_FLOAT);
   // append to the time dimension
   io::append_time(file, *m_config, time);
 
@@ -245,7 +252,7 @@ void IceModel::save_variables(const File &file,
     unsigned int time_length = file.dimension_length(m_config->get_string("time.dimension_name"));
     size_t start = time_length > 0 ? static_cast<size_t>(time_length - 1) : 0;
     io::write_timeseries(file, m_timestamp, start,
-                         wall_clock_hours(m_grid->com, m_start_time));
+                         {wall_clock_hours(m_grid->com, m_start_time)});
   }
 }
 

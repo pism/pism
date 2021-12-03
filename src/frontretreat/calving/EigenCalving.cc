@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,10 +37,6 @@ EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to eigen-calving",
                            "m s-1", "m year-1", "", 0);
-}
-
-EigenCalving::~EigenCalving() {
-  // empty
 }
 
 void EigenCalving::init() {

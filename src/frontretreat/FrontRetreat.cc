@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,22 +24,19 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
   : Component(g),
+    m_cell_type(m_grid, "cell_type", WITH_GHOSTS, 1),
     m_tmp(m_grid, "temporary_storage", WITH_GHOSTS, 1) {
 
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "m", "", 0);
 
-  m_cell_type.create(m_grid, "cell_type", WITH_GHOSTS, 1);
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
-}
-
-FrontRetreat::~FrontRetreat() {
-  // empty
 }
 
 /*!
@@ -191,7 +188,7 @@ void FrontRetreat::update_geometry(double dt,
         Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(m_cell_type.int_star(i, j),
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.star(i, j),
                                                          ice_thickness.star(i, j),
                                                          surface_elevation.star(i, j),
                                                          bed(i, j));
@@ -214,8 +211,8 @@ void FrontRetreat::update_geometry(double dt,
         int N = 0;
         {
           auto
-            M  = m_cell_type.int_star(i, j),
-            BC = bc_mask.int_star(i, j);
+            M  = m_cell_type.star(i, j),
+            BC = bc_mask.star(i, j);
 
           auto
             b  = bed.star(i, j),

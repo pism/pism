@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include "ConfigInterface.hh"
 #include "MaxTimestep.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -82,10 +83,6 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 Component::Component(IceGrid::ConstPtr g)
   : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
     m_log(g->ctx()->log()) {
-  // empty
-}
-
-Component::~Component() {
   // empty
 }
 

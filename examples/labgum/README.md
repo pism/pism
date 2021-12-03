@@ -1,6 +1,6 @@
 # laboratory validation example
 
-This example is a validation of [PISM's](http://www.pism-docs.org) isothermal
+This example is a validation of [PISM's](http://www.pism.io) isothermal
 SIA numerical model using a laboratory experiment with a
 [Xanthan gum](http://en.wikipedia.org/wiki/Xanthan_gum) suspension in water.
 This fluid is more strongly shear-thinning than ice but it has nearly the same

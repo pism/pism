@@ -45,7 +45,7 @@ that your effort is well-directed.
 .. _github-help-fork: https://help.github.com/en/articles/fork-a-repo
 .. _github-pull-request-create: https://help.github.com/en/articles/creating-a-pull-request
 .. _github-pull-request-allow-edits: https://help.github.com/en/articles/allowing-changes-to-a-pull-request-branch-created-from-a-fork
-.. _pism-contributing: http://pism-docs.org/sphinx/contributing/
+.. _pism-contributing: http://www.pism.io/docs/contributing/
 
 .. |pism-github-url| replace:: https://github.com/pism/pism
 .. |pism-issues-url| replace:: https://github.com/pism/pism/issues

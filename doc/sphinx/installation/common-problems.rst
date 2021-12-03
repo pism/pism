@@ -13,7 +13,8 @@ Here are some issues we know about.
 
 - If you are compiling PISM on a system using a cross-compiler, you will need to disable
   CMake’s tests trying to determine if PETSc is installed properly. To do this, set
-  ``PETSC_EXECUTABLE_RUNS`` to "yes".
+  ``PETSC_EXECUTABLE_RUNS`` to "yes" by adding ``-DPETSC_EXECUTABLE_RUNS=YES`` to
+  ``cmake`` options.
 
   To tell CMake where to look for libraries for the target system, see `CMake cross
   compiling <CMake-cross-compiling_>`_ and the paragraph about ``CMAKE_FIND_ROOT_PATH``

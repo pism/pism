@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from sys import exit
+import uuid
 
 # Import all necessary modules here so that if it fails, it fails early.
 try:
@@ -11,6 +12,9 @@ except:
 import subprocess
 import numpy as np
 import os
+
+# This seems to be needed by NCO:
+os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 smb_name = "climatic_mass_balance"
 temp_name = "ice_surface_temp"
@@ -28,21 +32,18 @@ def run(commands):
 
 def preprocess_ice_velocity():
     """
-    Download and preprocess the ~332Mb Antarctic ice velocity dataset from NASA MEASURES project
-    http://nsidc.org/data/nsidc-0484.html
+    Download and preprocess the latest Antarctic ice velocity dataset from NASA MEASURES project
+    https://nsidc.org/data/NSIDC-0484/versions/2
     """
-    url = " ftp://n5eil01u.ecs.nsidc.org/SAN/MEASURES/NSIDC-0484.001/1996.01.01/"
-    input_filename = "antarctica_ice_velocity_900m.nc"
+    input_filename = "antarctica_ice_velocity_450m_v2.nc"
+
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
-    commands = ["ncrename -d nx,x -d ny,y -O %s %s" % (input_filename, input_filename)]
-
     if not os.path.exists(input_filename):
-        print("Please downlaod the InSAR velocity dataset from http://nsidc.org/data/nsidc-0484.html")
-        print("Version 1 (900m spacing) can be found here: https://n5eil01u.ecs.nsidc.org/MEASURES/NSIDC-0484.001/")
+        print("Please download the InSAR velocity dataset from https://nsidc.org/data/NSIDC-0484/versions/2")
+        print("See overview of MEaSUREs data products at https://nsidc.org/data/measures/aiv")
         exit(1)
 
-    run(commands)
 
     nc = NC.Dataset(input_filename, 'a')
 
@@ -84,9 +85,17 @@ def preprocess_ice_velocity():
         nc.close()
 
     if not os.path.exists(output_filename):
+
+        #cmd = "ncatted -O -a grid_mapping,VX,d,, -a grid_mapping,VY,d,, %s" % (input_filename)
+        #run(cmd)
+
         # modify this command to cut-out a different region
-        cmd = "ncks -d x,2200,3700 -d y,3500,4700 -O %s %s" % (input_filename, output_filename)
+        cmd = "ncks -d x,3500,7500 -d y,6000,10000 -O %s %s" % (input_filename, output_filename)
         run(cmd)
+
+        tmp_filename = "tmp-{}.nc".format(uuid.uuid4())
+        run("cdo setmisstoc,0 -setattribute,VX@_FillValue=-1.0f -setattribute,VY@_FillValue=-1.0f {} {}".format(output_filename, tmp_filename))
+        run("cdo chname,VX,vx -chname,VY,vy {} {}".format(tmp_filename, output_filename))
 
         nc = NC.Dataset(output_filename, 'a')
 
@@ -99,14 +108,10 @@ def preprocess_ice_velocity():
             vx = nc.variables['vx'][:]
             vy = nc.variables['vy'][:]
 
-            v_magnitude = np.zeros_like(vx)
-
-            v_magnitude = np.sqrt(vx ** 2 + vy ** 2)
-
             magnitude = nc.createVariable('v_magnitude', 'f8', ('y', 'x'))
             magnitude.units = "m / year"
 
-            magnitude[:] = v_magnitude
+            magnitude[:] = np.sqrt(vx ** 2 + vy ** 2)
 
         nc.close()
 
@@ -115,9 +120,9 @@ def preprocess_ice_velocity():
 
 def preprocess_albmap():
     """
-    Download and preprocess the ~16Mb ALBMAP dataset from http://doi.pangaea.de/10.1594/PANGAEA.734145
+    Download and preprocess the ~16Mb ALBMAP dataset from https://doi.pangaea.de/10.1594/PANGAEA.734145
     """
-    url = "http://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
+    url = "https://store.pangaea.de/Publications/LeBrocq_et_al_2010/ALBMAPv1.nc.zip"
     input_filename = "ALBMAPv1.nc"
     output_filename = os.path.splitext(input_filename)[0] + "_cutout.nc"
 
@@ -130,7 +135,7 @@ def preprocess_albmap():
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
     run(commands)
-
+    
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
@@ -164,7 +169,7 @@ def preprocess_albmap():
     # Remove usrf and lsrf variables:
     command = "ncks -x -v usrf,lsrf -O %s %s" % (output_filename, output_filename)
     run(command)
-
+    
     return output_filename
 
 
@@ -176,7 +181,7 @@ def final_corrections(filename):
     nc = NC.Dataset(filename, 'a')
 
     # replace missing values with zeros
-    for var in ['u_ssa_bc', 'v_ssa_bc', 'magnitude']:
+    for var in ['u_bc', 'v_bc', 'magnitude']:
         tmp = nc.variables[var][:]
         tmp[tmp.mask == True] = 0
         nc.variables[var][:] = tmp
@@ -212,7 +217,7 @@ def final_corrections(filename):
                     mask[j, i] = ocean_ice_free
 
     # compute the B.C. locations:
-    bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
+    vel_bc_mask = np.logical_or(mask == grounded_icy, mask == grounded_ice_free)
 
     # mark ocean_icy cells next to grounded_icy ones too:
     row = np.array([0, -1, 1,  0])
@@ -222,10 +227,10 @@ def final_corrections(filename):
             nearest = mask[j + row, i + col]
 
             if mask[j, i] == ocean_icy and np.any(nearest == grounded_icy):
-                bc_mask[j, i] = 1
+                vel_bc_mask[j, i] = 1
 
     # Do not prescribe SSA Dirichlet B.C. in ice-free ocean areas:
-    bc_mask[thk < 1.0] = 0
+    vel_bc_mask[thk < 1.0] = 0
 
     # modifications for the prognostic run
     # this is to avoid grounding in the ice-shelf interior to make the results comparable to the diagnostic flow field
@@ -237,10 +242,10 @@ def final_corrections(filename):
 
     nc.variables[temp_name][:] = temperature
     nc.variables['topg'][:] = topg
-    bc_mask_var = nc.createVariable('bc_mask', 'i', ('y', 'x'))
-    bc_mask_var[:] = bc_mask
+    vel_bc_mask_var = nc.createVariable('vel_bc_mask', 'i', ('y', 'x'))
+    vel_bc_mask_var[:] = vel_bc_mask
 
-    bad_bc_mask_mask = np.logical_and(thk < 1.0, bc_mask == 1)
+    bad_bc_mask_mask = np.logical_and(thk < 1.0, vel_bc_mask == 1)
     bad_bc_mask_var = nc.createVariable('bad_bc_mask', 'i', ('y', 'x'))
     bad_bc_mask_var[:] = bad_bc_mask_mask
 
@@ -257,12 +262,12 @@ if __name__ == "__main__":
     albmap_velocity = os.path.splitext(albmap)[0] + "_velocity.nc"  # ice velocity on the ALBMAP grid
     output = "Ross_combined.nc"
 
-    commands = ["nc2cdo.py %s" % velocity,
-                "nc2cdo.py %s" % albmap,
+    commands = ["./nc2cdo.py %s" % velocity,
+                "./nc2cdo.py %s" % albmap,
                 "cdo remapbil,%s %s %s" % (albmap, velocity, albmap_velocity),
                 "ncks -x -v mask -O %s %s" % (albmap, output),
                 "ncks -v vx,vy,v_magnitude -A %s %s" % (albmap_velocity, output),
-                "ncrename -v vx,u_ssa_bc -v vy,v_ssa_bc -v v_magnitude,magnitude -O %s" % output]
+                "ncrename -v vx,u_bc -v vy,v_bc -v v_magnitude,magnitude -O %s" % output]
     run(commands)
 
     final_corrections(output)

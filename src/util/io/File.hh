@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -122,6 +122,8 @@ public:
                                const IceGrid &grid,
                                unsigned int z_count,
                                const double *input) const;
+
+  void set_compression_level(int level) const;
 
   // attributes
 

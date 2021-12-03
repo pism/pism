@@ -51,11 +51,11 @@ x = get('x')
 y = get('y')
 velsurf_mag = get('velsurf_mag')
 mask = get('mask')
-u = floating(get('u_ssa'))
-v = floating(get('v_ssa'))
+u = floating(get('u_ssa'))*seconds_per_year
+v = floating(get('v_ssa'))*seconds_per_year
 # B.C.s are observations, so a PISM output file contains everything we need
-u_bc = floating(get('u_ssa_bc'))
-v_bc = floating(get('v_ssa_bc'))
+u_bc = floating(get('u_bc'))
+v_bc = floating(get('v_bc'))
 
 plt.clf()
 
@@ -82,7 +82,6 @@ a0.set_title("Ross ice velocity (m/year)\nwhite=observed, black=model")
 # do the scatter plot
 magnitude = np.sqrt(np.abs(u[::s, ::s]) ** 2 + np.abs(v[::s, ::s]) ** 2)
 bc_magnitude = np.sqrt(np.abs(u_bc[::s, ::s]) ** 2 + np.abs(v_bc[::s, ::s]) ** 2)
-
 max_velocity = np.maximum(magnitude.max(), bc_magnitude.max())
 
 a1.scatter(magnitude, bc_magnitude, marker=".")
@@ -95,7 +94,6 @@ a1.set_title("Observed versus modeled speed (m/year)\nat points in quiver plot")
 output_filename = plotname + '.png'
 
 f.tight_layout()
-
 f.savefig(output_filename, dpi=300)
 
 print("saving figure %s" % output_filename)

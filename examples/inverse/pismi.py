@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -316,7 +316,10 @@ def run():
     do_plotting = PISM.OptionBool("-inv_plot", "perform visualization during the computation")
     do_final_plot = PISM.OptionBool("-inv_final_plot",
                                      "perform visualization at the end of the computation")
-    Vmax = PISM.OptionReal("-inv_plot_vmax", "maximum velocity for plotting residuals", 30)
+    Vmax = PISM.OptionReal(context.unit_system, "-inv_plot_vmax",
+                           "maximum velocity for plotting residuals",
+                           "m / year",
+                           30)
 
     design_var = PISM.OptionKeyword("-inv_ssa",
                                     "design variable for inversion",
@@ -400,16 +403,14 @@ def run():
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
     # Convert design_prior -> zeta_prior
-    zeta_prior = PISM.IceModelVec2S()
-    zeta_prior.create(grid, "zeta_prior", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta_prior = PISM.IceModelVec2S(grid, "zeta_prior", PISM.WITH_GHOSTS, WIDE_STENCIL)
     design_param.convertFromDesignVariable(design_prior, zeta_prior)
     vecs.add(zeta_prior, writing=True)
 
     # Determine the initial guess for zeta.  If we are restarting, load it from
     # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
     # If none of the above, copy from 'zeta_prior'.
-    zeta = PISM.IceModelVec2S()
-    zeta.create(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta = PISM.IceModelVec2S(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
     zeta.set_attrs("diagnostic", "zeta_inv", "1", "1", "zeta_inv", 0)
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
@@ -461,7 +462,11 @@ def run():
     if PISM.util.fileHasVariable(inv_data_filename, "%s_true" % design_var):
         design_true = createDesignVec(grid, design_var, '%s_true' % design_var)
         design_true.regrid(inv_data_filename, True)
-        design_true.read_attributes(inv_data_filename)
+        try:
+            f = PISM.File(com, inv_data_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+            PISM.read_attributes(f, design_true.get_name(), design_true.metadata())
+        finally:
+            f.close()
         vecs.add(design_true, writing=saving_inv_data)
 
     # Establish a logger which will save logging messages to the output file.
@@ -555,8 +560,7 @@ def run():
     residual.copy_from(u)
     residual.add(-1, vel_ssa_observed)
 
-    r_mag = PISM.IceModelVec2S()
-    r_mag.create(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
+    r_mag = PISM.IceModelVec2S(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
 
     r_mag.set_attrs("diagnostic",
                     "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",
@@ -564,14 +568,14 @@ def run():
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 
-    r_mag.set_to_magnitude(residual)
-    r_mag.mask_by(vecs.land_ice_thickness)
+    PISM.compute_magnitude(residual, r_mag)
+    PISM.apply_mask(vecs.land_ice_thickness, 0.0, r_mag)
 
     vecs.add(residual, writing=True)
     vecs.add(r_mag, writing=True)
 
-    # Write solution out to netcdf file
-    forward_run.write(output_filename, append=append_mode)
+    # Write solution out to netcdf file (always append because the file was created already)
+    forward_run.write(output_filename, append=True)
     # If we're not in append mode, the previous command just nuked
     # the output file.  So we rewrite the siple log.
     if not append_mode:

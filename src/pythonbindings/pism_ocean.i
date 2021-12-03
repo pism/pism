@@ -92,3 +92,6 @@
 %shared_ptr(pism::ocean::sea_level::Factory)
 %rename(SeaLevelFactory) pism::ocean::sea_level::Factory;
 %include "coupler/ocean/sea_level/Factory.hh"
+
+%rename(OceanDeltaMBP) pism::ocean::Delta_MBP;
+pism_class(pism::ocean::Delta_MBP, "pism/coupler/ocean/Delta_MBP.hh")

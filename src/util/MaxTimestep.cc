@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,8 @@
 
 #include "MaxTimestep.hh"
 
+#include <cassert>
+
 namespace pism {
 
 // Time step restrictions
@@ -29,17 +31,17 @@ MaxTimestep::MaxTimestep()
 
 MaxTimestep::MaxTimestep(double v)
   : m_finite(true), m_value(v) {
-  // empty
+  assert(v > 0.0);
 }
 
-MaxTimestep::MaxTimestep(const std::string &new_description)
-  : m_finite(false), m_value(0.0), m_description(new_description) {
-  // empty
+MaxTimestep::MaxTimestep(const std::string &description)
+  : MaxTimestep() {
+  m_description = description;
 }
 
-MaxTimestep::MaxTimestep(double v, const std::string &new_description)
-  : m_finite(true), m_value(v), m_description(new_description) {
-  // empty
+MaxTimestep::MaxTimestep(double v, const std::string &description)
+  : MaxTimestep(v) {
+  m_description = description;
 }
 
 bool MaxTimestep::finite() const {
@@ -61,23 +63,17 @@ std::string MaxTimestep::description() const {
 bool operator==(const MaxTimestep &a, const MaxTimestep &b) {
   if (a.finite() and b.finite()) {
     return a.value() == b.value();
-  } else if (a.infinite() and b.infinite()) {
-    return true;
-  } else {
-    return false;
   }
+
+  return (a.infinite() and b.infinite());
 }
 
 bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
   if (a.finite() and b.finite()) {
     return a.value() < b.value();
-  } else if (a.finite()) {
-    return true;
-  } else if (b.finite()) {
-    return false;
-  } else {
-    return false;
   }
+
+  return a.finite();
 }
 
 bool operator>(const MaxTimestep &a, const MaxTimestep &b) {

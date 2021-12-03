@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -81,16 +81,16 @@ void RuntimeError::add_context(const char format[], ...) {
 
 void RuntimeError::print(MPI_Comm com) {
   PetscErrorCode ierr = 0;
-  std::string error = "PISM ERROR: ",
-    message = this->what();
+  std::string error = "PISM ERROR: ";
+  std::string message = this->what();
 
   std::string padding = std::string(error.size(), ' ');
 
   // replace newlines with newlines plus padding
-  size_t k = message.find("\n", 0);
+  size_t k = message.find('\n', 0);
   while (k != std::string::npos) {
     message.insert(k+1, padding);
-    k = message.find("\n", k+1);
+    k = message.find('\n', k+1);
   }
 
   // print the error message with "PISM ERROR:" in front:
@@ -102,14 +102,14 @@ void RuntimeError::print(MPI_Comm com) {
   padding = std::string(while_str.size() + 1, ' '); // 1 extra space
 
   // loop over "context" messages
-  for (auto j : m_context) {
+  for (const auto &j : m_context) {
     message = j;
 
     // replace newlines with newlines plus padding
-    k = message.find("\n", 0);
+    k = message.find('\n', 0);
     while (k != std::string::npos) {
       message.insert(k+1, padding);
-      k = message.find("\n", k+1);
+      k = message.find('\n', k+1);
     }
 
     // print a "context" message
@@ -175,10 +175,6 @@ void check_petsc_call(int errcode,
 
 ParallelSection::ParallelSection(MPI_Comm com)
   : m_failed(false), m_com(com) {
-  // empty
-}
-
-ParallelSection::~ParallelSection() {
   // empty
 }
 

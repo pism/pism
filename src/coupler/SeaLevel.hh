@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,7 +36,7 @@ public:
   // "model" constructor
   SeaLevel(IceGrid::ConstPtr g);
 
-  virtual ~SeaLevel();
+  virtual ~SeaLevel() = default;
 
   void init(const Geometry &geometry);
 

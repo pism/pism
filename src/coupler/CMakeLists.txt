@@ -1,6 +1,5 @@
 # Boundary models (surface, atmosphere, ocean, frontalmelt).
 add_library (boundary OBJECT
-  ./util/ScalarForcing.cc
   ./util/options.cc
   ./util/lapse_rates.cc
   ./atmosphere/AtmosphereModel.cc
@@ -37,6 +36,7 @@ add_library (boundary OBJECT
   ./ocean/Anomaly.cc
   ./ocean/Delta_T.cc
   ./ocean/Delta_SMB.cc
+  ./ocean/Delta_MBP.cc
   ./ocean/Frac_MBP.cc
   ./ocean/Frac_SMB.cc
   ./ocean/Factory.cc
@@ -44,6 +44,7 @@ add_library (boundary OBJECT
   ./ocean/Pico.cc
   ./ocean/PicoPhysics.cc
   ./ocean/PicoGeometry.cc
+  ./ocean/Runoff_SMB.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/Delta_SL.cc
@@ -66,4 +67,5 @@ add_library (boundary OBJECT
   ./surface/Factory.cc
   ./surface/Formulas.cc
   ./surface/EISMINTII.cc
+  ./surface/NoGLRetreat.cc
   )

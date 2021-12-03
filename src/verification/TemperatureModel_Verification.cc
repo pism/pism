@@ -25,6 +25,7 @@
 #include "pism/verification/tests/exactTestO.h"
 #include "pism/energy/utilities.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace energy {

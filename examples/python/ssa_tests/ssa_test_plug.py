@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -61,13 +61,13 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         vecs.tauc.set(tauc0)
         vecs.mask.set(PISM.MASK_GROUNDED)
 
-        bc_mask = vecs.bc_mask
+        vel_bc_mask = vecs.vel_bc_mask
         vel_bc = vecs.vel_bc
         bed = vecs.bedrock_altitude
         surface = vecs.surface_altitude
 
         grid = self.grid
-        with PISM.vec.Access(comm=[bc_mask, vel_bc, bed, surface]):
+        with PISM.vec.Access(comm=[vel_bc_mask, vel_bc, bed, surface]):
             for (i, j) in grid.points():
                 x = grid.x(i)
                 y = grid.y(j)
@@ -77,7 +77,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
 
                 edge = ((j == 0) or (j == grid.My() - 1)) or ((i == 0) or (i == grid.Mx() - 1))
                 if edge:
-                    bc_mask[i, j] = 1
+                    vel_bc_mask[i, j] = 1
                     [u, v] = self.exactSolution(i, j, x, y)
                     vel_bc(i, j).u = u
                     vel_bc(i, j).v = v

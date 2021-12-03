@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -70,7 +70,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
       double
         xx = grid.x(i),
         yy = grid.y(j),
-        r  = sqrt(PetscSqr(xx) + PetscSqr(yy));
+        r  = sqrt(pow(xx, 2) + pow(yy, 2));
 
       if ((r >= 1.0) && (r <= LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central
@@ -121,7 +121,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
-      r = sqrt(PetscSqr(xx) + PetscSqr(yy));
+      r = sqrt(pow(xx, 2) + pow(yy, 2));
     if ((r >= 1.0) && (r <= LforFG - 1.0)) {  // only evaluate error if inside sheet
       // and not at central singularity
       const double H = ice_thickness(i, j);
@@ -130,13 +130,13 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
       const double uex = (xx/r) * F.U[0];
       const double vex = (yy/r) * F.U[0];
-      // note that because getValZ does linear interpolation and H is not exactly at
+      // note that because interpolate does linear interpolation and H is not exactly at
       // a grid point, this causes nonzero errors
-      const double Uerr = sqrt(PetscSqr(u3.getValZ(i,j,H) - uex) +
-                               PetscSqr(v3.getValZ(i,j,H) - vex));
+      const double Uerr = sqrt(pow(u3.interpolate(i,j,H) - uex, 2) +
+                               pow(v3.interpolate(i,j,H) - vex, 2));
       maxUerr = std::max(maxUerr,Uerr);
       avUerr += Uerr;
-      const double Werr = fabs(w3.getValZ(i,j,H) - F.w[0]);
+      const double Werr = fabs(w3.interpolate(i,j,H) - F.w[0]);
       maxWerr = std::max(maxWerr,Werr);
       avWerr += Werr;
     }
@@ -272,18 +272,18 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
   petsc::Initializer petsc(argc, argv, help);
 
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     // set default verbosity
-    Context::Ptr ctx = context_from_options(com, "siafd_test");
+    std::shared_ptr<Context> ctx = context_from_options(com, "siafd_test");
     Config::Ptr config = ctx->config();
 
     config->set_flag("stress_balance.sia.grain_size_age_coupling", false);
     config->set_string("stress_balance.sia.flow_law", "arr");
 
-    set_config_from_options(*config);
+    set_config_from_options(ctx->unit_system(), *config);
 
     std::string usage = "\n"
       "usage of SIAFD_TEST:\n"
@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
     const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
     IceModelVec3
-      enthalpy(grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL),
-      age(grid, "age", WITHOUT_GHOSTS);
+      enthalpy(grid, "enthalpy", WITH_GHOSTS, grid->z(), WIDE_STENCIL),
+      age(grid, "age", WITHOUT_GHOSTS, grid->z());
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);
@@ -340,8 +340,8 @@ int main(int argc, char *argv[]) {
     // We use SIA_Nonsliding and not SIAFD here because we need the z-component
     // of the ice velocity, which is computed using incompressibility of ice in
     // StressBalance::compute_vertical_velocity().
-    SIAFD *sia = new SIAFD(grid);
-    ZeroSliding *no_sliding = new ZeroSliding(grid);
+    std::shared_ptr<SIAFD> sia(new SIAFD(grid));
+    std::shared_ptr<ZeroSliding> no_sliding(new ZeroSliding(grid));
 
     // stress_balance will de-allocate no_sliding and sia.
     StressBalance stress_balance(grid, no_sliding, sia);
@@ -359,17 +359,11 @@ int main(int argc, char *argv[]) {
     // Initialize the SIA solver:
     stress_balance.init();
 
-    IceModelVec2S melange_back_pressure;
-    melange_back_pressure.create(grid, "melange_back_pressure", WITHOUT_GHOSTS);
-    melange_back_pressure.set_attrs("boundary_condition",
-                                    "melange back pressure fraction", "", "", "", 0);
-    melange_back_pressure.set(0.0);
-
     bool full_update = true;
 
     stressbalance::Inputs inputs;
     inputs.geometry              = &geometry;
-    inputs.melange_back_pressure = &melange_back_pressure;
+    inputs.water_column_pressure = nullptr;
     inputs.enthalpy              = &enthalpy;
     inputs.age                   = &age;
 

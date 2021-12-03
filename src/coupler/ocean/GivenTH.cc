@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,22 +42,19 @@ GivenTH::Constants::Constants(const Config &config) {
   b[1] =  0.0921;
   b[2] = -7.85e-4;
 
-  // turbulent heat transfer coefficient
-  gamma_T = 1.00e-4;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
-  // turbulent salt transfer coefficient
-  gamma_S = 5.05e-7;   // [m/s] RG3417 Default value from Hellmer and Olbers 89
-
   // FIXME: this should not be hard-wired. Eventually we should be able
   // to use the spatially-variable top-of-the-ice temperature.
   shelf_top_surface_temperature    = -20.0; // degrees Celsius
 
+  gamma_T                          = config.get_number("ocean.th.gamma_T");  
+  gamma_S                          = config.get_number("ocean.th.gamma_S");  
   water_latent_heat_fusion         = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   sea_water_density                = config.get_number("constants.sea_water.density");
   sea_water_specific_heat_capacity = config.get_number("constants.sea_water.specific_heat_capacity");
   ice_density                      = config.get_number("constants.ice.density");
   ice_specific_heat_capacity       = config.get_number("constants.ice.specific_heat_capacity");
   ice_thermal_diffusivity          = config.get_number("constants.ice.thermal_conductivity") / (ice_density * ice_specific_heat_capacity);
-  limit_salinity_range             = config.get_flag("ocean.three_equation_model_clip_salinity");
+  limit_salinity_range             = config.get_flag("ocean.th.clip_salinity");
 }
 
 GivenTH::GivenTH(IceGrid::ConstPtr g)
@@ -67,8 +64,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -77,8 +72,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
-                                                evaluations_per_year,
-                                                periodic,
+                                                opt.periodic,
                                                 LINEAR);
 
     m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
@@ -86,8 +80,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                    "salinity_ocean",
                                                    "", // no standard name
                                                    buffer_size,
-                                                   evaluations_per_year,
-                                                   periodic,
+                                                   opt.periodic,
                                                    LINEAR);
   }
 
@@ -100,10 +93,6 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                               "g/kg", "g/kg", "", 0);
 }
 
-GivenTH::~GivenTH() {
-  // empty
-}
-
 void GivenTH::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
@@ -112,13 +101,39 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
-  m_theta_ocean->init(opt.filename, opt.period, opt.reference_time);
-  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+  // potential temperature is required
+  m_theta_ocean->init(opt.filename, opt.periodic);
+
+  // read ocean salinity from a file if present, otherwise use a constant
+  {
+    File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+
+    auto variable_name = m_salinity_ocean->metadata().get_name();
+
+    if (input.find_variable(variable_name)) {
+      m_salinity_ocean->init(opt.filename, opt.periodic);
+    } else {
+      double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
+
+      m_salinity_ocean = IceModelVec2T::Constant(m_grid, variable_name, salinity);
+
+      m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
+                     variable_name.c_str(), salinity);
+    }
+  }
 
   // read time-independent data right away:
-  if (m_theta_ocean->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
+  if (m_theta_ocean->buffer_size() == 1 && m_salinity_ocean->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
@@ -161,6 +176,14 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   // convert mass flux from [m s-1] to [kg m-2 s-1]:
   m_shelf_base_mass_flux->scale(m_config->get_number("constants.ice.density"));
+
+  const double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep GivenTH::max_timestep_impl(double t) const {
@@ -194,140 +217,7 @@ static double shelf_base_melt_rate(GivenTH::Constants c,
 /** @brief Compute temperature and melt rate at the base of the shelf.
  * Based on [@ref HellmerOlbers1989] and [@ref HollandJenkins1999].
  *
- * We use equations for the heat and salt flux balance at the base of
- * the shelf to compute the temperature at the base of the shelf and
- * the sub-shelf melt rate.
- *
- * @note The linearized equation for the freezing point of seawater as
- * a function of salinity and pressure (ice thickness) is only valid
- * for salinity ranges from 4 to 40 psu (see [@ref
- * HollandJenkins1999]).
- *
- * Following [@ref HellmerOlbers1989], let @f$ Q_T @f$ be the total heat
- * flux crossing the interface between the shelf base and the ocean,
- * @f$ Q_T^B @f$ be the amount of heat lost by the ocean due to
- * melting of glacial ice, and @f$ Q_T^I @f$ be the conductive flux
- * into the ice column.
- *
- * @f$ Q_{T} @f$ is parameterized by (see [@ref HellmerOlbers1989], equation
- * 10):
- *
- * @f[ Q_{T} = \rho_W\, c_{pW}\, \gamma_{T}\, (T^B - T^W),@f]
- *
- * where @f$ \rho_{W} @f$ is the sea water density, @f$ c_{pW} @f$ is
- * the heat capacity of sea water, and @f$ \gamma_{T} @f$ is a
- * turbulent heat exchange coefficient.
- *
- * We assume that the difference between the basal temperature and
- * adjacent ocean temperature @f$ T^B - T^W @f$ is well approximated
- * by @f$ \Theta_B - \Theta_W, @f$ where @f$ \Theta_{\cdot} @f$ is the
- * corresponding potential temperature.
- *
- * @f$ Q_T^B @f$ is (see [@ref HellmerOlbers1989], equation 11):
- *
- * @f[ Q_T^B = \rho_I\, L\, \frac{\partial h}{\partial t}, @f]
- *
- * where @f$ \rho_I @f$ is the ice density, @f$ L @f$ is the latent
- * heat of fusion, and @f$ \frac{\partial h}{\partial t} @f$ is the ice thickening rate
- * (equal to minus the melt rate).
- *
- * The conductive flux into the ice column is ([@ref Hellmeretal1998],
- * equation 7):
- *
- * @f[ Q_T^I = \rho_I\, c_{pI}\, \kappa\, T_{\text{grad}}, @f]
- *
- * where @f$ \rho_I @f$ is the ice density, @f$ c_{pI} @f$ is the heat
- * capacity of ice, @f$ \kappa @f$ is the ice thermal diffusivity, and
- * @f$ T_{\text{grad}} @f$ is the vertical temperature gradient at the
- * base of a column of ice.
- *
- * Now, the heat flux balance implies
- *
- * @f[ Q_T = Q_T^B + Q_T^I. @f]
- *
- * For the salt flux balance, we have
- *
- * @f[ Q_S = Q_S^B + Q_S^I, @f]
- *
- * where @f$ Q_S @f$ is the total salt flux across the interface, @f$
- * Q_S^B @f$ is the basal salt flux (negative for melting), @f$ Q_S^I = 0
- * @f$ is the salt flux due to molecular diffusion of salt through
- * ice.
- *
- * @f$ Q_S @f$ is parameterized by ([@ref Hellmeretal1998], equation 13)
- *
- * @f[ Q_S = \rho_W\, \gamma_S\, (S^B - S^W), @f]
- *
- * where @f$ \gamma_S @f$ is a turbulent salt exchange coefficient,
- * @f$ S^B @f$ is salinity at the shelf base, and @f$ S^W @f$ is the
- * salinity of adjacent ocean.
- *
- * The basal salt flux @f$ Q_S^B @f$ is ([@ref
- * Hellmeretal1998], equation 10)
- *
- * @f[ Q_S^B = \rho_I\, S^B\, {\frac{\partial h}{\partial t}}. @f]
- *
- * To avoid converting shelf base temperature to shelf base potential
- * temperature and back, we use two linearizations of the freezing point equation
- * for sea water for in-situ and for potential temperature, respectively:
- *
- * @f[ T^{B}(S,h) = a_0\cdot S + a_1 + a_2\cdot h, @f]
- *
- * @f[ \Theta^{B}(S,h) = b_0\cdot S + b_1 + b_2\cdot h, @f]
- *
- * where @f$ S @f$ is salinity and @f$ h @f$ is ice shelf thickness.
- *
- * The linearization coefficients for the basal temperature @f$ T^B(S,h) @f$ are
- * taken from [@ref Hellmeretal1998], going back to [@ref FoldvikKvinge1974].
- *
- * Given @f$ T^B(S,h) @f$ and a function @f$ \Theta_T^B(T)
- * @f$ one can define @f$ \Theta^B_{*}(S,h) = \Theta_T^B\left(T^B(S,h)\right) @f$.
- *
- * The parameterization @f$ \Theta^B(S,h) @f$ used here was produced
- * by linearizing @f$ \Theta^B_{*}(S,h) @f$ near the melting point.
- * (The definition of @f$ \Theta_T^B(T) @f$, converting in situ
- * temperature into potential temperature, was adopted from FESOM
- * [@ref Wangetal2013]).
- *
- * Treating ice thickness, sea water salinity, and sea water potential
- * temperature as "known" and choosing an approximation of the
- * temperature gradient at the base @f$ T_{\text{grad}} @f$ (see
- * subshelf_salinity_melt(), subshelf_salinity_freeze_on(),
- * subshelf_salinity_diffusion_only()) we can write down a system of
- * equations
- *
- * @f{align*}{
- * Q_T &= Q_T^B + Q_T^I,\\
- * Q_S &= Q_S^B + Q_S^I,\\
- * T^{B}(S,h) &= a_0\cdot S + a_1 + a_2\cdot h,\\
- * \Theta^{B}(S,h) &= b_0\cdot S + b_1 + b_2\cdot h\\
- * @f}
- *
- * and simplify it to produce a quadratic equation for the salinity at the shelf base, @f$ S^B @f$:
- *
- * @f[ A\cdot (S^B)^2 + B\cdot S^B + C = 0 @f]
- *
- * The coefficients @f$ A, @f$ @f$ B, @f$ and @f$ C @f$ depend on the
- * basal temperature gradient approximation for the sub-shelf melt,
- * sub-shelf freeze-on, and diffusion-only cases.
- *
- * One remaining problem is that we cannot compute the basal melt rate
- * without making an assumption about whether there is basal melt or
- * not, and cannot pick one of the three cases without computing the
- * basal melt rate first.
- *
- * This method tries to compute basal salinity that is consistent with
- * the corresponding basal melt rate. See the code for details.
- *
- * Once @f$ S_B @f$ is found by solving this quadratic equation, we can
- * compute the basal temperature using the parameterization for @f$
- * T^{B}(S,h) @f$.
- *
- * To find the basal melt rate, we solve the salt flux balance
- * equation for @f$ {\frac{\partial h}{\partial t}}, @f$ obtaining
- *
- * @f[ w_b = -\frac{\partial h}{\partial t} = \frac{\gamma_S\, \rho_W\, (S^W - S^B)}{\rho_I\, S^B}. @f]
- *
+ * See the manual for details.
  *
  * @param[in] constants model constants
  * @param[in] sea_water_salinity sea water salinity

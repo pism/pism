@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
     Mx = m_grid->Mx(),
     My = m_grid->My(),
     Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
-    Nx = Z * (Mx - 1) + 1,
-    Ny = Z * (My - 1) + 1;
+    Nx = m_grid->periodicity() & X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
+    Ny = m_grid->periodicity() & Y_PERIODIC ? My : Z * (My - 1) + 1;
 
   ParallelSection rank0(m_grid->com);
   try {
@@ -76,7 +76,7 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
   m_reference = "R. B. Smith and I. Barstad, 2004.\n"
                 "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";
 
-  m_precipitation->metadata().set_string("source", m_reference);
+  m_precipitation->metadata()["source"] = m_reference;
 }
 
 

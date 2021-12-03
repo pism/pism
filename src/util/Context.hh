@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _CONTEXT_H_
-#define _CONTEXT_H_
+#ifndef PISM_CONTEXT_H
+#define PISM_CONTEXT_H
 
 #include <memory>
 #include <string>
@@ -47,9 +47,6 @@ public:
   typedef std::shared_ptr<const Time> ConstTimePtr;
   typedef std::shared_ptr<Logger> LoggerPtr;
   typedef std::shared_ptr<const Logger> ConstLoggerPtr;
-
-  typedef std::shared_ptr<Context> Ptr;
-  typedef std::shared_ptr<const Context> ConstPtr;
 
   Context(MPI_Comm c, UnitsSystemPtr sys,
           ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
@@ -83,8 +80,10 @@ private:
 };
 
 //! Create a default context using options.
-Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix);
+std::shared_ptr<Context> context_from_options(MPI_Comm com,
+                                              const std::string &prefix,
+                                              bool print = false);
 
 } // end of namespace pism
 
-#endif /* _CONTEXT_H_ */
+#endif /* PISM_CONTEXT_H */

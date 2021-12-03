@@ -12,7 +12,7 @@ rm -f $files
 
 set -e -x
 
-$PISM_PATH/pisms -eisII A -y 1000 -view velsurf,thk -Mbz 11 -Lbz 1000 -o_size small -o simp_exper-27.nc
+$PISM_PATH/pismr -eisII A -eisII A -y 1000 -view velsurf,thk -Mbz 11 -Lbz 1000 -o_size small -o simp_exper-27.nc
 
 if [ $? != 0 ];
 then

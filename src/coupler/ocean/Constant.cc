@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,6 @@
 
 #include "Constant.hh"
 
-#include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -34,10 +33,6 @@ Constant::Constant(IceGrid::ConstPtr g)
   // empty
 }
 
-Constant::~Constant() {
-  // empty
-}
-
 void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
@@ -45,26 +40,34 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   const IceModelVec2S &ice_thickness = geometry.ice_thickness;
 
   const double
-    melt_rate   = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
-    ice_density = m_config->get_number("constants.ice.density"),
-    mass_flux   = melt_rate * ice_density;
+    melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity"),
+    mass_flux     = melt_rate * ice_density;
 
   melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 void Constant::init_impl(const Geometry &geometry) {
   (void) geometry;
 
-  if (not m_config->get_flag("ocean.always_grounded")) {
-    m_log->message(2, "* Initializing the constant ocean model...\n");
-    m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
-                   m_config->get_number("ocean.constant.melt_rate", "m year-1"));
+  m_log->message(2, "* Initializing the constant ocean model...\n");
+  m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
+                 m_config->get_number("ocean.constant.melt_rate", "m year-1"));
 
-  }
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
+
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                           *m_water_column_pressure);
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {

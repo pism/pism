@@ -19,6 +19,9 @@
 
 #include "Poisson.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -197,7 +200,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
         col[m].j = J[m];
       }
 
-      auto M = mask.int_star(i, j);
+      auto M = mask.star(i, j);
 
       if (M.ij == 1) {
         // Regular location: use coefficients of the discretization of the Laplacian
@@ -211,10 +214,10 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 
         // Use zero Neumann BC at edges of the computational domain
         {
-          N = j == My - 1 ? 0.0 : 1.0;
-          E = i == Mx - 1 ? 0.0 : 1.0;
-          W = i == 0      ? 0.0 : 1.0;
-          S = j == 0      ? 0.0 : 1.0;
+          N = j == My - 1 ? 0.0 : N;
+          E = i == Mx - 1 ? 0.0 : E;
+          W = i == 0      ? 0.0 : W;
+          S = j == 0      ? 0.0 : S;
         }
 
         // discretization of the Laplacian

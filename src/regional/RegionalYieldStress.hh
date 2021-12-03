@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ namespace pism {
 class RegionalYieldStress : public YieldStress {
 public:
   RegionalYieldStress(std::shared_ptr<YieldStress> input);
-  virtual ~RegionalYieldStress();
+  virtual ~RegionalYieldStress() = default;
 private:
   void restart_impl(const File &input_file, int record);
 

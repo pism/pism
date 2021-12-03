@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2009, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,7 @@
 #define LINGLECLARKSERIAL_H
 
 #include <vector>
-
-#include <petscvec.h>
 #include <fftw3.h>
-#include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
@@ -64,28 +61,28 @@ public:
                     int Nx, int Ny);
   ~LingleClarkSerial();
 
-  void init(Vec viscous_displacement,
-            Vec elastic_displacement);
+  void init(petsc::Vec &viscous_displacement,
+            petsc::Vec &elastic_displacement);
 
-  void bootstrap(Vec thickness, Vec uplift);
+  void bootstrap(petsc::Vec &thickness, petsc::Vec &uplift);
 
-  void step(double dt_seconds, Vec H);
+  void step(double dt_seconds, petsc::Vec &H);
 
-  Vec total_displacement() const;
+  const petsc::Vec &total_displacement() const;
 
-  Vec viscous_displacement() const;
+  const petsc::Vec &viscous_displacement() const;
 
-  Vec elastic_displacement() const;
+  const petsc::Vec &elastic_displacement() const;
 
   void compute_load_response_matrix(fftw_complex *output);
 private:
-  void compute_elastic_response(Vec H, Vec dE);
+  void compute_elastic_response(petsc::Vec &H, petsc::Vec &dE);
 
-  void uplift_problem(Vec load_thickness, Vec bed_uplift, Vec output);
+  void uplift_problem(petsc::Vec &load_thickness, petsc::Vec &bed_uplift, petsc::Vec &output);
 
   void precompute_coefficients();
 
-  void update_displacement(Vec V, Vec dE, Vec dU);
+  void update_displacement(petsc::Vec &V, petsc::Vec &dE, petsc::Vec &dU);
 
   bool m_include_elastic;
   // grid size
@@ -138,7 +135,7 @@ private:
   fftw_plan m_dft_forward;
   fftw_plan m_dft_inverse;
 
-  void tweak(Vec load_thickness, Vec U, int Nx, int Ny, double time);
+  void tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx, int Ny, double time);
 
   Logger::ConstPtr m_log;
 };

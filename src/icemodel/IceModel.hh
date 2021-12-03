@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,6 +42,7 @@
 // IceModel owns a bunch of fields, so we have to include this.
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
@@ -103,18 +104,19 @@ class IceModelVec2T;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;
+class ScalarForcing;
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
 class IceModel {
 public:
-  IceModel(IceGrid::Ptr g, Context::Ptr context);
+  IceModel(const IceGrid::Ptr &grid, const std::shared_ptr<Context> &context);
 
   // the destructor must be virtual merely because some members are virtual
   virtual ~IceModel();
 
   IceGrid::Ptr grid() const;
-  Context::Ptr ctx() const;
+  std::shared_ptr<Context> ctx() const;
 
   void init();
 
@@ -122,7 +124,7 @@ public:
   virtual void run();
 
   /** Advance the current PISM run to a specific time */
-  virtual void run_to(double time);
+  virtual void run_to(double run_end);
 
   virtual void save_results();
 
@@ -143,7 +145,6 @@ public:
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
   const frontalmelt::FrontalMelt* frontalmelt_model() const;
-  const bed::BedDef* bed_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
 
@@ -231,13 +232,15 @@ protected:
   //! Configuration flags and parameters
   const Config::Ptr m_config;
   //! Execution context
-  const Context::Ptr m_ctx;
+  const std::shared_ptr<Context> m_ctx;
   //! Unit system
   const units::System::Ptr m_sys;
   //! Logger
   const Logger::Ptr m_log;
   //! Time manager
   const Time::Ptr m_time;
+
+  const int m_wide_stencil;
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
@@ -266,6 +269,10 @@ protected:
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
+  // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
+  // calving, or Hayhurst calving
+  std::unique_ptr<ScalarForcing> m_calving_rate_factor;
+
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
   std::shared_ptr<surface::SurfaceModel>      m_surface;
@@ -273,7 +280,7 @@ protected:
   std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
-  bed::BedDef *m_beddef;
+  std::shared_ptr<bed::BedDef> m_beddef;
 
   // state variables and some diagnostics/internals
 
@@ -290,10 +297,13 @@ protected:
 
   std::shared_ptr<FractureDensity> m_fracture;
 
-  //! mask to determine Dirichlet boundary locations
-  IceModelVec2Int m_ssa_dirichlet_bc_mask;
+  //! mask to determine Dirichlet boundary locations for the sliding velocity
+  IceModelVec2Int m_velocity_bc_mask;
   //! Dirichlet boundary velocities
-  IceModelVec2V m_ssa_dirichlet_bc_values;
+  IceModelVec2V m_velocity_bc_values;
+
+  //! Mask prescribing locations where ice thickness is held constant
+  IceModelVec2Int m_ice_thickness_bc_mask;
 
   // parameters
   //! mass continuity time step, s
@@ -312,8 +322,14 @@ protected:
   // see iceModel.cc
   virtual void allocate_storage();
 
+  struct TimesteppingInfo {
+    double dt;
+    std::string reason;
+    unsigned int skip_counter;
+  };
+  virtual TimesteppingInfo max_timestep(unsigned int counter);
+
   virtual MaxTimestep max_timestep_diffusivity();
-  virtual void max_timestep(double &dt_result, unsigned int &skip_counter);
   virtual unsigned int skip_counter(double input_dt, double input_dt_diffusivity);
 
   // see energy.cc
@@ -362,12 +378,12 @@ protected:
 
   // working space (a convenience)
   static const int m_n_work2d = 3;
-  mutable IceModelVec2S m_work2d[m_n_work2d];
+  mutable std::vector<std::shared_ptr<IceModelVec2S> > m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
   struct ThicknessChanges {
-    ThicknessChanges(IceGrid::ConstPtr grid);
+    ThicknessChanges(const IceGrid::ConstPtr &grid);
 
     // calving during the last time step
     IceModelVec2S calving;
@@ -419,7 +435,7 @@ protected:
   unsigned int m_next_extra;
   double m_last_extra;
   std::set<std::string> m_extra_vars;
-  TimeBoundsMetadata m_extra_bounds;
+  VariableMetadata m_extra_bounds;
   std::unique_ptr<File> m_extra_file;
   void init_extras();
   void write_extras();
@@ -439,14 +455,17 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual void update_viewers();
   virtual void view_field(const IceModelVec *field);
-  std::map<std::string,petsc::Viewer::Ptr> m_viewers;
+  std::map<std::string,
+           std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 
 private:
-  TimeseriesMetadata m_timestamp;
+  VariableMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time backup code
 };
 
-MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
+MaxTimestep reporting_max_timestep(const std::vector<double> &times,
+                                   double t,
+                                   double eps,
                                    const std::string &description);
 
 void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);

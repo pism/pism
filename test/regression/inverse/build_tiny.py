@@ -7,8 +7,6 @@ PISM.set_abort_on_sigint(True)
 context = PISM.Context()
 config = PISM.Context().config
 
-config.set_string("output.file_name", "tiny.nc")
-
 # Default constants that  may get overridden later.
 
 Ly = 25e3  # 25 km
@@ -81,7 +79,7 @@ if __name__ == '__main__':
     vecs.add(PISM.model.createEnthalpyVec(grid), 'enthalpy')
     vecs.add(PISM.model.createIceMaskVec(grid))
     vecs.add(PISM.model.createNoModelMaskVec(grid), 'no_model_mask')
-    vecs.add(PISM.model.create2dVelocityVec(grid,  name='_ssa_bc', desc='SSA Dirichlet BC'))
+    vecs.add(PISM.model.create2dVelocityVec(grid,  name='_bc', desc='SSA Dirichlet BC'))
     vecs.add(PISM.model.createSeaLevelVec(grid))
 
     # Set constant coefficients.
@@ -110,7 +108,7 @@ if __name__ == '__main__':
         for (i, j) in grid.points():
             tauc[i, j] = stream_tauc(grid.x(i), grid.y(j))
 
-    vecs.vel_ssa_bc.set(0.0)
+    vecs.vel_bc.set(0.0)
     no_model_mask = vecs.no_model_mask
     no_model_mask.set(0)
     with PISM.vec.Access(comm=[no_model_mask]):

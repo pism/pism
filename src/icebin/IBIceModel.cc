@@ -17,12 +17,19 @@ namespace icebin {
 
 // ================================
 
-IBIceModel::IBIceModel(IceGrid::Ptr g, Context::Ptr context, IBIceModel::Params const &_params)
-    : pism::IceModel(g, context), params(_params) {
-  // empty
-}
-
-IBIceModel::~IBIceModel() {
+IBIceModel::IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceModel::Params const &_params)
+    : pism::IceModel(g, context),
+      params(_params),
+      base(m_grid, "", WITHOUT_GHOSTS),
+      cur(m_grid, "", WITHOUT_GHOSTS),
+      rate(m_grid, "", WITHOUT_GHOSTS),
+      M1(m_grid, "M1", pism::WITHOUT_GHOSTS),
+      M2(m_grid, "M2", pism::WITHOUT_GHOSTS),
+      H1(m_grid, "H1", pism::WITHOUT_GHOSTS),
+      H2(m_grid, "H2", pism::WITHOUT_GHOSTS),
+      V1(m_grid, "V1", pism::WITHOUT_GHOSTS),
+      V2(m_grid, "V2", pism::WITHOUT_GHOSTS)
+{
   // empty
 }
 
@@ -76,17 +83,7 @@ void IBIceModel::allocate_storage() {
   super::allocate_storage();
 
   printf("BEGIN IBIceModel::allocate_storage()\n");
-  base.create(m_grid, "", WITHOUT_GHOSTS);
-  cur.create(m_grid, "", WITHOUT_GHOSTS);
-  rate.create(m_grid, "", WITHOUT_GHOSTS);
   printf("END IBIceModel::allocate_storage()\n");
-
-  M1.create(m_grid, "M1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "M2", pism::WITHOUT_GHOSTS);
-  M1.create(m_grid, "H1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "H2", pism::WITHOUT_GHOSTS);
-  M1.create(m_grid, "V1", pism::WITHOUT_GHOSTS);
-  M2.create(m_grid, "V2", pism::WITHOUT_GHOSTS);
 
   std::cout << "IBIceModel Conservation Formulas:" << std::endl;
   cur.print_formulas(std::cout);
@@ -132,7 +129,7 @@ void IBIceModel::energy_step() {
   // strain_heating_sum += my_dt * sum_columns(strainheating3p)
   const IceModelVec3 &strain_heating3(m_stress_balance->volumetric_strain_heating());
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
-  strain_heating3.sumColumns(cur.strain_heating, 1.0, my_dt);
+  sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 
   printf("END IBIceModel::energy_step(time=%f)\n", t_TempAge);
 }
@@ -249,7 +246,7 @@ void IBIceModel::prepare_nc(std::string const &fname, std::unique_ptr<File> &nc)
                     m_grid->ctx()->pio_iosys_id()));
 
   io::define_time(*nc, m_grid->ctx()->config()->get_string("time.dimension_name"), m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(), m_grid->ctx()->unit_system());
+                  m_grid->ctx()->time()->units_string(), m_grid->ctx()->unit_system());
 
   // These are in iMtimseries, but not listed as required in iceModelVec.hh
   //    nc->write_attribute(m_config.get_string("time.dimension_name"),
@@ -384,8 +381,8 @@ void IBIceModel::time_setup() {
   m_time->set_start(params.time_start_s);
   m_time->set(params.time_start_s);
 
-  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n", m_time->start_date().c_str(),
-                 m_time->end_date().c_str(), m_time->run_length().c_str(), m_time->calendar().c_str());
+  m_log->message(2, "* Run time: [%s, %s]  (%s years, using the '%s' calendar)\n", m_time->date(m_time->start()).c_str(),
+                 m_time->date(m_time->end()).c_str(), m_time->run_length().c_str(), m_time->calendar().c_str());
 }
 
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,8 +33,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -43,8 +41,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                      "air_temp_anomaly",
                                                      "", // no standard name
                                                      buffer_size,
-                                                     evaluations_per_year,
-                                                     periodic,
+                                                     opt.periodic,
                                                      LINEAR);
 
     m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
@@ -52,8 +49,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                           "precipitation_anomaly",
                                                           "", // no standard name
                                                           buffer_size,
-                                                          evaluations_per_year,
-                                                          periodic);
+                                                          opt.periodic);
   }
 
   m_air_temp_anomaly->set_attrs("climate_forcing",
@@ -68,11 +64,6 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
   m_temperature   = allocate_temperature(g);
 }
 
-Anomaly::~Anomaly()
-{
-  // empty
-}
-
 void Anomaly::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
@@ -85,8 +76,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
                  "    reading anomalies from %s ...\n",
                  opt.filename.c_str());
 
-  m_air_temp_anomaly->init(opt.filename, opt.period, opt.reference_time);
-  m_precipitation_anomaly->init(opt.filename, opt.period, opt.reference_time);
+  m_air_temp_anomaly->init(opt.filename, opt.periodic);
+  m_precipitation_anomaly->init(opt.filename, opt.periodic);
 }
 
 void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {

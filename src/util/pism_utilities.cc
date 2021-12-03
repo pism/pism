@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,11 @@
 #include <cstdarg>              // va_list, va_start(), va_end()
 #include <sstream>              // istringstream, ostringstream
 #include <cstdio>               // vsnprintf
+#include <cassert>              // assert
 
 #include <mpi.h>                // MPI_Get_library_version
 #include <fftw3.h>              // fftw_version
-#include <gsl/gsl_version.h>
+#include <gsl/gsl_version.h>    // GSL_VERSION
 
 #include "pism/pism_config.hh"  // Pism_USE_XXX, version info
 
@@ -46,9 +47,27 @@
 
 #include <petsctime.h>          // PetscTime
 
+#include <cstdlib>              // strtol(), strtod()
+
 #include "error_handling.hh"
 
 namespace pism {
+
+std::string string_strip(const std::string &input) {
+  if (input.empty()) {
+    return "";
+  }
+
+  std::string tmp = input;
+
+  // strip leading spaces
+  tmp.erase(0, tmp.find_first_not_of(" \t"));
+
+  // strip trailing spaces
+  tmp.substr(tmp.find_last_not_of(" \t"));
+
+  return tmp;
+}
 
 //! Returns true if `str` ends with `suffix` and false otherwise.
 bool ends_with(const std::string &str, const std::string &suffix) {
@@ -56,11 +75,7 @@ bool ends_with(const std::string &str, const std::string &suffix) {
     return false;
   }
 
-  if (str.rfind(suffix) + suffix.size() == str.size()) {
-    return true;
-  }
-
-  return false;
+  return (str.rfind(suffix) + suffix.size() == str.size());
 }
 
 template <class T>
@@ -84,6 +99,20 @@ std::string set_join(const std::set<std::string> &input, const std::string& sepa
   return join_impl(input, separator);
 }
 
+/*!
+ * Replace all occurrences of the character `from` with `to` and return the resulting string.
+ *
+ * We could use std::regex_replace(), but this will do for now.
+ */
+std::string replace_character(const std::string &input, char from, char to) {
+  std::string result;
+  for (const char &c : input) {
+    result += c == from ? to : c;
+  }
+  return result;
+}
+
+
 //! Transform a `separator`-separated list (a string) into a vector of strings.
 std::vector<std::string> split(const std::string &input, char separator) {
   std::istringstream input_list(input);
@@ -92,7 +121,7 @@ std::vector<std::string> split(const std::string &input, char separator) {
 
   while (getline(input_list, token, separator)) {
     if (not token.empty()) {
-      result.push_back(token);
+      result.emplace_back(token);
     }
   }
   return result;
@@ -100,14 +129,9 @@ std::vector<std::string> split(const std::string &input, char separator) {
 
 //! Transform a `separator`-separated list (a string) into a set of strings.
 std::set<std::string> set_split(const std::string &input, char separator) {
-  std::istringstream input_list(input);
-  std::string token;
   std::set<std::string> result;
-
-  while (getline(input_list, token, separator)) {
-    if (not token.empty()) {
-      result.insert(token);
-    }
+  for (const auto &token : split(input, separator)) {
+    result.insert(token);
   }
   return result;
 }
@@ -128,7 +152,14 @@ bool member(const std::string &string, const std::set<std::string> &set) {
 }
 
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op) {
+  assert(local != result);
   int err = MPI_Allreduce(local, result, count, MPI_DOUBLE, op, comm);
+  PISM_C_CHK(err, 0, "MPI_Allreduce");
+}
+
+void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op) {
+  assert(local != result);
+  int err = MPI_Allreduce(local, result, count, MPI_INT, op, comm);
   PISM_C_CHK(err, 0, "MPI_Allreduce");
 }
 
@@ -140,7 +171,15 @@ void GlobalMax(MPI_Comm comm, double *local, double *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_MAX);
 }
 
+void GlobalMax(MPI_Comm comm, int *local, int *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_MAX);
+}
+
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count) {
+  GlobalReduce(comm, local, result, count, MPI_SUM);
+}
+
+void GlobalSum(MPI_Comm comm, int *local, int *result, int count) {
   GlobalReduce(comm, local, result, count, MPI_SUM);
 }
 
@@ -182,56 +221,42 @@ std::string version() {
   char buffer[TEMPORARY_STRING_LENGTH];
   std::string result;
 
-  snprintf(buffer, sizeof(buffer), "PISM (%s)\n", pism::revision);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "CMake %s.\n", pism::cmake_version);
-  result += buffer;
+  result += pism::printf("PISM (%s)\n", pism::revision);
+  result += pism::printf("CMake %s.\n", pism::cmake_version);
 
   PetscGetVersion(buffer, TEMPORARY_STRING_LENGTH);
   result += buffer;
   result += "\n";
-
-  snprintf(buffer, sizeof(buffer), "PETSc configure: %s\n",
-           pism::petsc_configure_flags);
-  result += buffer;
+  result += pism::printf("PETSc configure: %s\n", pism::petsc_configure_flags);
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
-  snprintf(buffer, TEMPORARY_STRING_LENGTH, "OpenMPI %d.%d.%d\n",
-           OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION, OMPI_RELEASE_VERSION);
+  result += pism::printf("OpenMPI %d.%d.%d\n",
+                         OMPI_MAJOR_VERSION,
+                         OMPI_MINOR_VERSION,
+                         OMPI_RELEASE_VERSION);
 #else
   // Assume that other MPI libraries implement this part of the MPI-3 standard...
   int string_length = TEMPORARY_STRING_LENGTH;
   MPI_Get_library_version(buffer, &string_length);
+  result += buffer;
 #endif
-  result += buffer;
 
-  snprintf(buffer, sizeof(buffer), "NetCDF %s.\n", nc_inq_libvers());
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "FFTW %s.\n", fftw_version);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "GSL %s.\n", GSL_VERSION);
-  result += buffer;
+  result += pism::printf("NetCDF %s.\n", nc_inq_libvers());
+  result += pism::printf("FFTW %s.\n", fftw_version);
+  result += pism::printf("GSL %s.\n", GSL_VERSION);
 
 #if (Pism_USE_PROJ==1)
-  snprintf(buffer, sizeof(buffer), "PROJ %s.\n", pj_release);
-  result += buffer;
+  result += pism::printf("PROJ %s.\n", pj_release);
 #endif
 
 #if (Pism_USE_JANSSON==1)
-  snprintf(buffer, sizeof(buffer), "Jansson %s.\n", JANSSON_VERSION);
-  result += buffer;
+  result += pism::printf("Jansson %s.\n", JANSSON_VERSION);
 #endif
 
 #if (Pism_BUILD_PYTHON_BINDINGS==1)
-  snprintf(buffer, sizeof(buffer), "SWIG %s.\n", pism::swig_version);
-  result += buffer;
-
-  snprintf(buffer, sizeof(buffer), "petsc4py %s.\n", pism::petsc4py_version);
-  result += buffer;
+  result += pism::printf("SWIG %s.\n", pism::swig_version);
+  result += pism::printf("petsc4py %s.\n", pism::petsc4py_version);
 #endif
 
   return result;
@@ -248,7 +273,8 @@ double wall_clock_hours(MPI_Comm com, double start_time) {
   ParallelSection rank0(com);
   try {
     if (rank == 0) {
-      result = (get_time() - start_time) / 3600.0;
+      const double seconds_per_hour = 3600.0;
+      result = (get_time() - start_time) / seconds_per_hour;
     }
   } catch (...) {
     rank0.failed();
@@ -314,12 +340,13 @@ std::string args_string() {
   PetscErrorCode ierr = PetscGetArgs(&argc, &argv);
   PISM_CHK(ierr, "PetscGetArgs");
 
-  std::string cmdstr, argument;
+  std::string cmdstr;
+  std::string argument;
   for (int j = 0; j < argc; j++) {
     argument = argv[j];
 
     // enclose arguments containing spaces with double quotes:
-    if (argument.find(" ") != std::string::npos) {
+    if (argument.find(' ') != std::string::npos) {
       argument = "\"" + argument + "\"";
     }
 
@@ -340,7 +367,8 @@ std::string args_string() {
 std::string filename_add_suffix(const std::string &filename,
                                      const std::string &separator,
                                      const std::string &suffix) {
-  std::string basename = filename, result;
+  std::string basename = filename;
+  std::string result;
 
   // find where the separator begins:
   std::string::size_type j = basename.rfind(separator);
@@ -397,7 +425,7 @@ void validate_format_string(const std::string &format) {
                                   format.c_str());
   }
 
-  if (format.find("%") != format.rfind("%")) {
+  if (format.find('%') != format.rfind('%')) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "format string %s contains more than one %%",
                                   format.c_str());
   }
@@ -432,7 +460,8 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
   // This constant is found by solving n * (n + 1) / 2 * (2^32 - 1) < (2^64 - 1).
   static const size_t block_size = 92681;
 
-  uint64_t c0 = 0, c1 = 0;
+  uint64_t c0 = 0;
+  uint64_t c1 = 0;
   while (length != 0) {
     size_t block = std::min(block_size, length);
 
@@ -447,6 +476,94 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
     length = length > block_size ? length - block_size : 0;
   }
   return (c1 << 32 | c0);
+}
+
+/*!
+ * Call fletcher64() to compute the checksum and print it.
+ */
+void print_checksum(MPI_Comm com,
+                    const std::vector<double> &data,
+                    const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  uint64_t sum = fletcher64((uint32_t*)data.data(), data.size() * 2);
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %016llx\n",
+              rank, label, (unsigned long long int)sum);
+}
+
+void print_vector(MPI_Comm com,
+                  const std::vector<double> &data,
+                  const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  std::vector<std::string> tmp;
+  for (const auto &f : data) {
+    tmp.emplace_back(pism::printf("%f", f));
+  }
+
+  auto str = join(tmp, ",");
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
+              rank, label, str.c_str());
+}
+
+void print_vector(MPI_Comm com,
+                  const std::vector<int> &data,
+                  const char *label) {
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
+  std::vector<std::string> tmp;
+  for (const auto &f : data) {
+    tmp.emplace_back(pism::printf("%d", f));
+  }
+
+  auto str = join(tmp, ",");
+
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
+              rank, label, str.c_str());
+}
+
+/*!
+ * Compute water column pressure vertically-averaged over the height of an ice cliff at a
+ * margin.
+ */
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level, double rho_ice,
+                                     double rho_water, double g) {
+
+  double ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness);
+  double water_column_height = std::max(floatation_level - ice_bottom, 0.0);
+
+  if (ice_thickness > 0.0) {
+    return 0.5 * rho_water * g * pow(water_column_height, 2.0) / ice_thickness;
+  }
+  return 0.0;
+}
+
+double parse_number(const std::string &input) {
+  char *endptr = NULL;
+  double result = strtod(input.c_str(), &endptr);
+  if (*endptr != '\0') {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't parse %s (expected a floating point number)",
+                                  input.c_str());
+  }
+  return result;
+}
+
+long int parse_integer(const std::string &input) {
+  char *endptr = NULL;
+  long int result = strtol(input.c_str(), &endptr, 10);
+  if (*endptr != '\0') {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't parse %s (expected an integer)",
+                                  input.c_str());
+  }
+  return result;
 }
 
 } // end of namespace pism

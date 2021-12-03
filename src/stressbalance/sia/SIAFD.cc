@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2021 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,27 +35,31 @@
 #include "pism/stressbalance/StressBalance.hh"
 
 #include "pism/util/Time.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {
 
 SIAFD::SIAFD(IceGrid::ConstPtr g)
-  : SSB_Modifier(g),
+  : SSB_Modifier(std::move(g)),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
     m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
     m_h_x(m_grid, "h_x", WITH_GHOSTS),
     m_h_y(m_grid, "h_y", WITH_GHOSTS),
     m_D(m_grid, "diffusivity", WITH_GHOSTS),
-    m_delta_0(m_grid, "delta_0", WITH_GHOSTS),
-    m_delta_1(m_grid, "delta_1", WITH_GHOSTS),
-    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS),
-    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS)
+    m_delta_0(m_grid, "delta_0", WITH_GHOSTS, m_grid->z()),
+    m_delta_1(m_grid, "delta_1", WITH_GHOSTS, m_grid->z()),
+    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS, m_grid->z()),
+    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS, m_grid->z())
 {
   // bed smoother
   m_bed_smoother = new BedSmoother(m_grid, m_stencil_width);
 
   m_seconds_per_year = units::convert(m_sys, 1, "second", "years");
+
+  m_e_factor = m_config->get_number("stress_balance.sia.enhancement_factor");
+  m_e_factor_interglacial = m_config->get_number("stress_balance.sia.enhancement_factor_interglacial");
 
   {
     rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
@@ -112,8 +116,7 @@ void SIAFD::init() {
                    "  using age-dependent enhancement factor:\n"
                    "  e=%f for ice accumulated during interglacial periods\n"
                    "  e=%f for ice accumulated during glacial periods\n",
-                   m_flow_law->enhancement_factor_interglacial(),
-                   m_flow_law->enhancement_factor());
+                   m_e_factor_interglacial, m_e_factor);
   }
 }
 
@@ -562,8 +565,6 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   const double
     current_time                    = m_grid->ctx()->time()->current(),
-    enhancement_factor              = m_flow_law->enhancement_factor(),
-    enhancement_factor_interglacial = m_flow_law->enhancement_factor_interglacial(),
     D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool
@@ -610,7 +611,7 @@ void SIAFD::compute_diffusivity(bool full_update,
   std::vector<double> depth(Mz), stress(Mz), pressure(Mz), E(Mz), flow(Mz);
   std::vector<double> delta_ij(Mz);
   std::vector<double> A(Mz), ice_grain_size(Mz, m_config->get_number("constants.ice.grain_size", "m"));
-  std::vector<double> e_factor(Mz, enhancement_factor);
+  std::vector<double> e_factor(Mz, m_e_factor);
 
   double D_max = 0.0;
   int high_diffusivity_counter = 0;
@@ -666,9 +667,9 @@ void SIAFD::compute_diffusivity(bool full_update,
             for (int k = 0; k <= ks; ++k) {
               const double accumulation_time = current_time - A[k];
               if (interglacial(accumulation_time)) {
-                e_factor[k] = enhancement_factor_interglacial;
+                e_factor[k] = m_e_factor_interglacial;
               } else {
-                e_factor[k] = enhancement_factor;
+                e_factor[k] = m_e_factor;
               }
             }
           }
@@ -716,9 +717,15 @@ void SIAFD::compute_diffusivity(bool full_update,
         // this adjustment lets us avoid taking very small time-steps
         // because of the possible thickness and bed elevation
         // "discontinuities" at the boundary.)
-        if (i < 0 || i >= (int)Mx - 1 ||
-            j < 0 || j >= (int)My - 1) {
-          D = 0.0;
+        {
+          if ((i < 0 or i >= (int)Mx - 1) and
+              not (m_grid->periodicity() & X_PERIODIC)) {
+            D = 0.0;
+          }
+          if ((j < 0 or j >= (int)My - 1) and
+              not (m_grid->periodicity() & Y_PERIODIC)) {
+            D = 0.0;
+          }
         }
 
         if (limit_diffusivity and D >= D_limit) {
@@ -759,7 +766,9 @@ void SIAFD::compute_diffusivity(bool full_update,
                                   "too rough.\n"
                                   "Increase stress_balance.sia.max_diffusivity to suppress this message.", m_D_max);
 
-  } else if (high_diffusivity_counter > 0) {
+  }
+
+  if (high_diffusivity_counter > 0) {
     // This can happen only if stress_balance.sia.limit_diffusivity is true and this
     // limiting mechanism was active (high_diffusivity_counter is incremented only if
     // limit_diffusivity is true).
@@ -948,16 +957,16 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
 }
 
 //! Determine if `accumulation_time` corresponds to an interglacial period.
-bool SIAFD::interglacial(double accumulation_time) {
+bool SIAFD::interglacial(double accumulation_time) const {
   if (accumulation_time < m_eemian_start) {
     return false;
-  } else if (accumulation_time < m_eemian_end) {
-    return true;
-  } else if (accumulation_time < m_holocene_start) {
-    return false;
-  } else {
+  }
+
+  if (accumulation_time < m_eemian_end) {
     return true;
   }
+
+  return (accumulation_time >= m_holocene_start);
 }
 
 const IceModelVec2Stag& SIAFD::surface_gradient_x() const {

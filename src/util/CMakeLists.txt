@@ -1,9 +1,13 @@
 # Create a list of files making up libpismutil so that we can add to it later:
 set(PISMUTIL_SRC
+  fem/DirichletData.cc
+  fem/Element.cc
+  fem/ElementIterator.cc
+  fem/FEM.cc
+  fem/Quadrature.cc
   ColumnInterpolation.cc
   Context.cc
   EnthalpyConverter.cc
-  FETools.cc
   IceGrid.cc
   Logger.cc
   Mask.cc
@@ -13,12 +17,10 @@ set(PISMUTIL_SRC
   ConfigInterface.cc
   Diagnostic.cc
   Time.cc
-  Time_Calendar.cc
   Units.cc
   Vars.cc
   Profiling.cc
   TerminationReason.cc
-  Timeseries.cc
   VariableMetadata.cc
   error_handling.cc
   iceModelVec.cc
@@ -26,11 +28,11 @@ set(PISMUTIL_SRC
   iceModelVec2T.cc
   iceModelVec2V.cc
   iceModelVec3.cc
-  iceModelVec3Custom.cc
   interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc
-  io/NC3File.cc
+  io/NC_Serial.cc
+  io/NC4_Serial.cc
   io/NC4File.cc
   io/NCFile.cc
   io/io_helpers.cc
@@ -53,6 +55,7 @@ set(PISMUTIL_SRC
   Poisson.cc
   label_components.cc
   connected_components.cc
+  ScalarForcing.cc
   )
 
 if(Pism_USE_JANSSON)

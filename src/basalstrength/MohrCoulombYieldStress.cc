@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 PISM Authors
+// Copyright (C) 2004--2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/iceModelVec2T.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 
@@ -116,8 +117,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
     ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -126,15 +125,10 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
                                           "mohr_coulomb_delta",
                                           "", // no standard name
                                           buffer_size,
-                                          evaluations_per_year,
-                                          periodic, LINEAR);
+                                          opt.periodic, LINEAR);
     m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
                        "1", "1", "", 0);
   }
-}
-
-MohrCoulombYieldStress::~MohrCoulombYieldStress() {
-  // empty
 }
 
 void MohrCoulombYieldStress::restart_impl(const File &input_file, int record) {
@@ -201,7 +195,7 @@ void MohrCoulombYieldStress::finish_initialization(const YieldStressInputs &inpu
   if (m_delta) {
     ForcingOptions opt(*m_grid->ctx(), "basal_yield_stress.mohr_coulomb.delta");
 
-    m_delta->init(opt.filename, opt.period, opt.reference_time);
+    m_delta->init(opt.filename, opt.periodic);
   }
 
   // We use a short time step length because we can get away with it here, but we can

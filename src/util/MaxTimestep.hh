@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016 PISM Authors
+/* Copyright (C) 2015, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _MAXTIMESTEP_H_
-#define _MAXTIMESTEP_H_
+#ifndef PISM_MAXTIMESTEP_HH
+#define PISM_MAXTIMESTEP_HH
 
 #include <string>
 
@@ -64,4 +64,4 @@ bool operator==(const MaxTimestep &a, const MaxTimestep &b);
 
 } // end of namespace pism
 
-#endif /* _MAXTIMESTEP_H_ */
+#endif /* PISM_MAXTIMESTEP_HH */

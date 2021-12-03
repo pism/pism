@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -73,26 +73,24 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 
 SSA::SSA(IceGrid::ConstPtr g)
-  : ShallowStressBalance(g)
+  : ShallowStressBalance(g),
+    m_mask(m_grid, "ssa_mask", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_taud(m_grid, "taud", WITHOUT_GHOSTS),
+    m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
 {
+
+  m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
+
   strength_extension = new SSAStrengthExtension(*m_config);
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
-
   // grounded_dragging_floating integer mask
-  m_mask.create(m_grid, "ssa_mask", WITH_GHOSTS, WIDE_STENCIL);
   m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                    "", "", "", 0);
-  std::vector<double> mask_values(4);
-  mask_values[0] = MASK_ICE_FREE_BEDROCK;
-  mask_values[1] = MASK_GROUNDED;
-  mask_values[2] = MASK_FLOATING;
-  mask_values[3] = MASK_ICE_FREE_OCEAN;
-  m_mask.metadata().set_numbers("flag_values", mask_values);
-  m_mask.metadata().set_string("flag_meanings",
-                              "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  m_mask.metadata()["flag_values"] =
+    {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  m_mask.metadata()["flag_meanings"] =
+    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
-  m_taud.create(m_grid, "taud", WITHOUT_GHOSTS);
   m_taud.set_attrs("diagnostic",
                    "X-component of the driving shear stress at the base of ice",
                    "Pa", "Pa", "", 0);
@@ -100,15 +98,12 @@ SSA::SSA(IceGrid::ConstPtr g)
                    "Y-component of the driving shear stress at the base of ice",
                    "Pa", "Pa", "", 1);
 
-
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
-  m_velocity.metadata(0).set_string("long_name", "SSA model ice velocity in the X direction");
+  m_velocity.metadata(0)["long_name"] = "SSA model ice velocity in the X direction";
 
   m_velocity.metadata(1).set_name("v_ssa");
-  m_velocity.metadata(1).set_string("long_name", "SSA model ice velocity in the Y direction");
-
-  m_velocity_global.create(m_grid, "bar", WITHOUT_GHOSTS);
+  m_velocity.metadata(1)["long_name"] = "SSA model ice velocity in the Y direction";
 
   m_da = m_velocity_global.dm();
 
@@ -238,20 +233,15 @@ static int weight(bool margin_bc,
 /*!
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
-
-If configuration parameter `sia.surface_gradient_method` = `eta` then the surface
-gradient \f$\nabla h\f$ is computed by the gradient of the transformed variable
-\f$\eta= H^{(2n+2)/n}\f$ (frequently, \f$\eta= H^{8/3}\f$). The idea is that
-this quantity is more regular at ice sheet margins, and so we get a better
-surface gradient. When the thickness at a grid point is very small (below \c
-minThickEtaTransform in the procedure), the formula is slightly modified to
-give a lower driving stress. The transformation is not used in floating ice.
  */
 void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &surface_elevation,
                                  const IceModelVec2CellType &cell_type,
                                  const IceModelVec2Int *no_model_mask,
                                  IceModelVec2V &result) const {
+
+  using mask::ice_free_ocean;
+  using mask::floating_ice;
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
   bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
@@ -278,8 +268,8 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     // Special case for verification tests.
     if (surface_gradient_inward) {
       double
-        h_x = surface_elevation.diff_x_p(i, j),
-        h_y = surface_elevation.diff_y_p(i, j);
+        h_x = diff_x_p(surface_elevation, i, j),
+        h_y = diff_y_p(surface_elevation, i, j);
       result(i, j) = - pressure * Vector2(h_x, h_y);
       continue;
     }
@@ -301,12 +291,12 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     //
     // The y derivative is handled the same way.
 
-    auto M = cell_type.int_star(i, j);
+    auto M = cell_type.star(i, j);
     auto h = surface_elevation.star(i, j);
-    StarStencil<int> N(0);
+    stencils::Star<int> N(0);
 
     if (no_model_mask) {
-      N = no_model_mask->int_star(i, j);
+      N = no_model_mask->star(i, j);
     }
 
     // x-derivative
@@ -318,6 +308,11 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
       if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+        if (floating_ice(M.ij) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent (see the notes in the manual)
+          h_x /= 2.0;
+        }
       } else {
         h_x = 0.0;
       }
@@ -332,6 +327,11 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
 
       if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
+        if (floating_ice(M.ij) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
+          // at the ice front: use constant extrapolation to approximate the value outside
+          // the ice extent
+          h_y /= 2.0;
+        }
       } else {
         h_y = 0.0;
       }
@@ -387,8 +387,7 @@ SSA_taud::SSA_taud(const SSA *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this is the driving stress used by the SSA solver");
+    v["comment"] = "this is the driving stress used by the SSA solver";
   }
 }
 
@@ -411,8 +410,8 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
 
   set_attrs("magnitude of the driving shear stress at the base of ice", "",
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                     "this is the magnitude of the driving stress used by the SSA solver");
+  m_vars[0]["comment"] =
+    "this is the magnitude of the driving stress used by the SSA solver";
 }
 
 IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
@@ -421,7 +420,7 @@ IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
 
-  result->set_to_magnitude(model->driving_stress());
+  compute_magnitude(model->driving_stress(), *result);
 
   return result;
 }

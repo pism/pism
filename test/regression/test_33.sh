@@ -15,7 +15,7 @@ set -e
 set -x
 
 # prepare input files with temp and liqfrac and with temp only
-$PISM_PATH/pisms -y 100 -o in.nc
+$PISM_PATH/pismr -eisII A -y 100 -o in.nc
 
 $PISM_SOURCE_DIR/examples/python/sia_forward.py -i in.nc -o out.nc
 

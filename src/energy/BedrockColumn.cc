@@ -40,10 +40,6 @@ BedrockColumn::BedrockColumn(const std::string& prefix,
   m_D   = m_k / (rho * c);
 }
 
-BedrockColumn::~BedrockColumn() {
-  // empty
-}
-
 /*!
  * Advance the heat equation in time.
  *

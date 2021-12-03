@@ -5,6 +5,8 @@ Technical notes
    :caption: Contents
    :titlesonly:
 
+   release_checklist.rst
+
    cf-standard-names.rst
 
    vertchange.rst
@@ -13,8 +15,12 @@ Technical notes
 
    ssafd-cfbc.rst
 
+   ssafd-flow-line.rst
+
    bombproof.rst
 
    steady-hydrology.rst
 
-   release_checklist.rst
+   ocean-th.rst
+
+   blatter-pattyn.rst

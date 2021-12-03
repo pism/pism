@@ -18,7 +18,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_File.i
     pism_SIA.i
     pism_SSA.i
-    pism_Timeseries.i
+    pism_blatter.i
     pism_VariableMetadata.i
     pism_Vars.i
     pism_Vec.i

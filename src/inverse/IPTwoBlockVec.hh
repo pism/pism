@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2017 David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2017, 2021 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@ namespace inverse {
 class IPTwoBlockVec {
 public:
   IPTwoBlockVec(Vec a, Vec b);
-  ~IPTwoBlockVec();
+  ~IPTwoBlockVec() = default;
 
   IS blockAIndexSet();
   IS blockBIndexSet();

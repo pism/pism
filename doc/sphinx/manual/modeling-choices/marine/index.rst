@@ -26,3 +26,5 @@ through interpolation.
    calving.rst
 
    melange.rst
+
+   damage.rst

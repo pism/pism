@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018, 2020, 2021 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,6 +43,8 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_strain_heating3(strain_heating3),
   m_EC(EC) {
 
+  using std::pow;
+
   // set some values so we can check if init was called
   m_R_cold   = -1.0;
   m_R_temp   = -1.0;
@@ -82,7 +84,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
     K     = m_ice_k / m_ice_c,
     K0    = (ratio * m_ice_k) / m_ice_c;
 
-  m_R_factor = m_dt / (PetscSqr(m_dz) * m_ice_density);
+  m_R_factor = m_dt / (pow(m_dz, 2) * m_ice_density);
   m_R_cold = K * m_R_factor;
   m_R_temp = K0 * m_R_factor;
 
@@ -207,10 +209,11 @@ static inline double upwind(double u, double E_m, double E, double E_p, double d
 /** @param[in] heat_flux prescribed heat flux (positive means flux into the ice)
  */
 void enthSystemCtx::set_surface_heat_flux(double heat_flux) {
+  using std::pow;
   // extract K from R[ks], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K = (m_ice_density * PetscSqr(m_dz) * m_R[m_ks]) / m_dt,
+    K = (m_ice_density * pow(m_dz, 2) * m_R[m_ks]) / m_dt,
     G = heat_flux / K;
 
   this->set_surface_neumann_bc(G);
@@ -326,10 +329,11 @@ is already set.
 
  */
 void enthSystemCtx::set_basal_heat_flux(double heat_flux) {
+  using std::pow;
   // extract K from R[0], so this code works even if K=K(T)
   // recall:   R = (ice_K / ice_density) * dt / PetscSqr(dz)
   const double
-    K = (m_ice_density * PetscSqr(m_dz) * m_R[0]) / m_dt,
+    K = (m_ice_density * pow(m_dz, 2) * m_R[0]) / m_dt,
     G = - heat_flux / K;
 
   this->set_basal_neumann_bc(G);

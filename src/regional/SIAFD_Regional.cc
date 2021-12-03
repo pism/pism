@@ -32,10 +32,6 @@ SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr grid)
   // empty
 }
 
-SIAFD_Regional::~SIAFD_Regional() {
-  // empty
-}
-
 void SIAFD_Regional::init() {
 
   SIAFD::init();
@@ -62,7 +58,7 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = no_model.int_box(i, j);
+    auto M = no_model.box(i, j);
 
     // x-component, i-offset
     if (M.ij > 0.5 or M.e > 0.5) {

@@ -39,7 +39,8 @@ Release checklist
       make manual_html manual_pdf browser.tgz
 
 #. Upload these docs.
-#. Write a news item for ``pism-docs.org``.
-#. Update the current PISM version on ``pism-docs.org``.
+#. Write a news item for ``pism.github.io``.
+#. Update the current PISM version on ``pism.github.io``.
 #. Send an e-mail to CRYOLIST.
 #. Tell more people, if desired.
+#. Create a new "release" on https://github.com/pism/pism/releases

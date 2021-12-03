@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ namespace hydrology {
 class Distributed : public Routing {
 public:
   Distributed(IceGrid::ConstPtr g);
-  virtual ~Distributed();
+  virtual ~Distributed() = default;
 
   const IceModelVec2S& subglacial_water_pressure() const;
 

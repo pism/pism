@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,9 +49,9 @@ void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 
-  IceModelVec2S &bedtoptemp              = m_work2d[1];
-  IceModelVec2S &basal_enthalpy          = m_work2d[2];
-  m_energy_model->enthalpy().getHorSlice(basal_enthalpy, 0.0);
+  IceModelVec2S &bedtoptemp              = *m_work2d[1];
+  IceModelVec2S &basal_enthalpy          = *m_work2d[2];
+  extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
                               m_geometry.cell_type,
@@ -251,9 +251,9 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   if (my_btu == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Verification is required");
   }
-  const IceModelVec3Custom &bedrock_temp = my_btu->temperature();
+  auto &bedrock_temp = my_btu->temperature();
 
-  std::vector<double> zblevels = bedrock_temp.levels();
+  auto zblevels = bedrock_temp.levels();
   unsigned int Mbz = (unsigned int)zblevels.size();
   std::vector<double> Tbex(Mbz);
 
@@ -474,13 +474,15 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
         const double
           uex = (x/r) * P.U[0],
           vex = (y/r) * P.U[0];
-        // note that because getValZ does linear interpolation and H(i, j) is not exactly at
+        // note that because interpolate does linear interpolation and H(i, j) is not exactly at
         // a grid point, this causes nonzero errors
-        const double Uerr = sqrt(PetscSqr(u3.getValZ(i, j, H) - uex) +
-                                 PetscSqr(v3.getValZ(i, j, H) - vex));
+        double
+          u_err = u3.interpolate(i, j, H) - uex,
+          v_err = v3.interpolate(i, j, H) - vex,
+          Uerr  = sqrt(u_err * u_err + v_err * v_err);
         maxUerr = std::max(maxUerr, Uerr);
         avUerr += Uerr;
-        const double Werr = fabs(w3.getValZ(i, j, H) - P.w[0]);
+        const double Werr = fabs(w3.interpolate(i, j, H) - P.w[0]);
         maxWerr = std::max(maxWerr, Werr);
         avWerr += Werr;
       }

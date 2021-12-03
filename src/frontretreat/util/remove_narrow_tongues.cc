@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,9 +48,9 @@ namespace pism {
  * cells if the center cell has grounded ice, and uses `ice_free()` if the
  * center cell has floating ice.
  *
- * @note We use `pism_mask` (and not ice_thickness) to make decisions.
- * This means that we can update `ice_thickness` in place without
- * introducing a dependence on the grid traversal order.
+ * @note We use `geometry.cell_type` (and not `ice_thickness`) to make decisions. This
+ * means that we can update `ice_thickness` in place without introducing a dependence on
+ * the grid traversal order.
  *
  * @param[in,out] mask cell type mask
  * @param[in,out] ice_thickness modeled ice thickness
@@ -70,65 +70,63 @@ void remove_narrow_tongues(const Geometry &geometry,
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (mask.ice_free(i,j) or
-        (mask.grounded_ice(i,j) and bed(i,j) >= sea_level(i, j))) {
+    if (mask.ice_free(i, j) or
+        (mask.grounded_ice(i, j) and bed(i, j) >= sea_level(i, j))) {
       continue;
     }
 
-    bool
-      ice_free_N  = false, ice_free_E  = false,
-      ice_free_S  = false, ice_free_W  = false,
-      ice_free_NE = false, ice_free_NW = false,
-      ice_free_SE = false, ice_free_SW = false;
+    stencils::Box<bool> ice_free;
+    auto M = mask.box(i, j);
 
-    if (mask.grounded_ice(i,j)) {
+    if (mask::grounded_ice(M.ij)) {
+      using mask::ice_free_ocean;
       // if (i,j) is grounded ice then we will remove it if it has
       // exclusively ice-free ocean neighbors
-      ice_free_N  = mask.ice_free_ocean(i, j + 1);
-      ice_free_E  = mask.ice_free_ocean(i + 1, j);
-      ice_free_S  = mask.ice_free_ocean(i, j - 1);
-      ice_free_W  = mask.ice_free_ocean(i - 1, j);
-      ice_free_NE = mask.ice_free_ocean(i + 1, j + 1);
-      ice_free_NW = mask.ice_free_ocean(i - 1, j + 1);
-      ice_free_SE = mask.ice_free_ocean(i + 1, j - 1);
-      ice_free_SW = mask.ice_free_ocean(i - 1, j - 1);
+      ice_free.n  = ice_free_ocean(M.n);
+      ice_free.e  = ice_free_ocean(M.e);
+      ice_free.s  = ice_free_ocean(M.s);
+      ice_free.w  = ice_free_ocean(M.w);
+      ice_free.ne = ice_free_ocean(M.ne);
+      ice_free.nw = ice_free_ocean(M.nw);
+      ice_free.se = ice_free_ocean(M.se);
+      ice_free.sw = ice_free_ocean(M.sw);
     } else if (mask.floating_ice(i,j)) {
       // if (i,j) is floating then we will remove it if its neighbors are
       // ice-free, whether ice-free ocean or ice-free ground
-      ice_free_N  = mask.ice_free(i, j + 1);
-      ice_free_E  = mask.ice_free(i + 1, j);
-      ice_free_S  = mask.ice_free(i, j - 1);
-      ice_free_W  = mask.ice_free(i - 1, j);
-      ice_free_NE = mask.ice_free(i + 1, j + 1);
-      ice_free_NW = mask.ice_free(i - 1, j + 1);
-      ice_free_SE = mask.ice_free(i + 1, j - 1);
-      ice_free_SW = mask.ice_free(i - 1, j - 1);
+      ice_free.n  = mask::ice_free(M.n);
+      ice_free.e  = mask::ice_free(M.e);
+      ice_free.s  = mask::ice_free(M.s);
+      ice_free.w  = mask::ice_free(M.w);
+      ice_free.ne = mask::ice_free(M.ne);
+      ice_free.nw = mask::ice_free(M.nw);
+      ice_free.se = mask::ice_free(M.se);
+      ice_free.sw = mask::ice_free(M.sw);
     }
 
-    if ((not ice_free_W and
-         ice_free_NW    and
-         ice_free_SW    and
-         ice_free_N     and
-         ice_free_S     and
-         ice_free_E)    or
-        (not ice_free_N and
-         ice_free_NW    and
-         ice_free_NE    and
-         ice_free_W     and
-         ice_free_E     and
-         ice_free_S)    or
-        (not ice_free_E and
-         ice_free_NE    and
-         ice_free_SE    and
-         ice_free_W     and
-         ice_free_S     and
-         ice_free_N)    or
-        (not ice_free_S and
-         ice_free_SW    and
-         ice_free_SE    and
-         ice_free_W     and
-         ice_free_E     and
-         ice_free_N)) {
+    if ((not ice_free.w and
+         ice_free.nw    and
+         ice_free.sw    and
+         ice_free.n     and
+         ice_free.s     and
+         ice_free.e)    or
+        (not ice_free.n and
+         ice_free.nw    and
+         ice_free.ne    and
+         ice_free.w     and
+         ice_free.e     and
+         ice_free.s)    or
+        (not ice_free.e and
+         ice_free.ne    and
+         ice_free.se    and
+         ice_free.w     and
+         ice_free.s     and
+         ice_free.n)    or
+        (not ice_free.s and
+         ice_free.sw    and
+         ice_free.se    and
+         ice_free.w     and
+         ice_free.e     and
+         ice_free.n)) {
       ice_thickness(i, j) = 0.0;
     }
   }

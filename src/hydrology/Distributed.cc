@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,16 +40,12 @@ Distributed::Distributed(IceGrid::ConstPtr g)
   m_P.set_attrs("model_state",
                 "pressure of transportable water in subglacial layer",
                 "Pa", "Pa", "", 0);
-  m_P.metadata().set_number("valid_min", 0.0);
+  m_P.metadata()["valid_min"] = {0.0};
 
   m_Pnew.set_attrs("internal",
                    "new transportable subglacial water pressure during update",
                    "Pa", "Pa", "", 0);
-  m_Pnew.metadata().set_number("valid_min", 0.0);
-}
-
-Distributed::~Distributed() {
-  // empty
+  m_Pnew.metadata()["valid_min"] = {0.0};
 }
 
 void Distributed::initialization_message() const {
@@ -318,19 +314,16 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     hdt = 0.0;
 
   const double
-    t_final = t + dt,
-    dt_max  = m_config->get_number("hydrology.maximum_time_step", "seconds"),
-    phi0    = m_config->get_number("hydrology.regularizing_porosity");
+    t_final     = t + dt,
+    dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
+    phi0        = m_config->get_number("hydrology.regularizing_porosity"),
+    tillwat_max = m_config->get_number("hydrology.tillwat_max");
 
   m_Qstag_average.set(0.0);
 
   // make sure W,P have valid ghosts before starting hydrology steps
   m_W.update_ghosts();
   m_P.update_ghosts();
-
-#if (Pism_DEBUG==1)
-  double tillwat_max = m_config->get_number("hydrology.tillwat_max");
-#endif
 
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
@@ -393,7 +386,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     // remove water in ice-free areas and account for changes
     enforce_bounds(inputs.geometry->cell_type,
                    inputs.no_model_mask,
-                   0.0,        // do not limit maximum thickness
+                   0.0,           // do not limit maximum thickness
+                   tillwat_max,   // till water thickness under the ocean
                    m_Wtillnew,
                    m_grounded_margin_change,
                    m_grounding_line_change,
@@ -423,7 +417,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     // remove water in ice-free areas and account for changes
     enforce_bounds(inputs.geometry->cell_type,
                    inputs.no_model_mask,
-                   0.0, // do  not limit maximum thickness
+                   0.0, // do not limit maximum thickness
+                   0.0, // transportable water layer thickness under the ocean
                    m_Wnew,
                    m_grounded_margin_change,
                    m_grounding_line_change,

@@ -1,6 +1,6 @@
 # Run "make all" to update lists of diagnostics and configuration parameters.
 
-all: update_diagnostics update_parameters installation/code/install_libraries.sh
+all: update_diagnostics installation/code/install_libraries.sh
 
 INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 
@@ -9,7 +9,7 @@ INTERMEDIATE=diag.json diag-2.json dummy.nc pism_config.nc surface_input.nc
 dummy.nc:
 	# use a thermal bedrock layer model and run for 1 year to complete the
 	# bootstrapping
-	pisms -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
+	pismr -eisII A -y 1 -Mbz 5 -Lbz 1000 -Mz 5 -Mx 5 -My 5 -o $@ -verbose 1
 
 	# rename climatic_mass_balance: we need precipitation for an atmosphere model
 	ncrename -v climatic_mass_balance,precipitation -O $@ $@
@@ -65,16 +65,13 @@ diag.json: dummy.nc surface_input.nc
 # entries from diag-2.json will override ones in diag.json (in other words, the order
 # matters here)
 update_diagnostics: diag.json diag-2.json
-	python ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
+	python3 ./list_diagnostics.py $^ > manual/diagnostics/diagnostics-list.txt
 
 pism_config.nc: ../../src/pism_config.cdl
 	ncgen -o $@ $^
 
-update_parameters: pism_config.nc
-	python ./list_parameters.py $^ > manual/parameters/parameter-list.txt
-
 installation/code/install_libraries.sh: installation/debian-packages.csv Makefile
-	/bin/echo -n "sudo apt-get install -y " > $@
+	/bin/echo -n "apt-get install -y " > $@
 	cut -f1 -d, $< | sed "s/\`//g" | xargs >> $@
 
 clean:

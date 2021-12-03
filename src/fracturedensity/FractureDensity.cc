@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,27 +37,26 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_age_new(grid, "new_fracture_age", WITHOUT_GHOSTS),
     m_toughness(grid, "fracture_toughness", WITHOUT_GHOSTS),
     m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS,
-                   2,           // stencil width
-                   2),          // dof
-    m_deviatoric_stresses(grid, "sigma", WITHOUT_GHOSTS,
-                          0, // stencil width
-                          3), // dof
+                   2,           // dof
+                   2),          // stencil width
+    m_deviatoric_stresses(grid, "sigma",
+                          WITHOUT_GHOSTS, 3),
     m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
     m_flow_law(flow_law) {
 
   m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);
-  m_density.metadata().set_number("valid_max", 1.0);
-  m_density.metadata().set_number("valid_min", 0.0);
+  m_density.metadata()["valid_max"] = {1.0};
+  m_density.metadata()["valid_min"] = {0.0};
 
   m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
-  m_growth_rate.metadata().set_number("valid_min", 0.0);
+  m_growth_rate.metadata()["valid_min"] = {0.0};
 
   m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
 
   m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
 
   m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
-  m_age.metadata().set_string("glaciological_units", "years");
+  m_age.metadata()["glaciological_units"] = "years";
 
   m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
 
@@ -85,10 +84,6 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
   m_deviatoric_stresses.set_attrs("internal",
                                   "deviatoric shear stress",
                                   "Pa", "Pa", "", 2);
-}
-
-FractureDensity::~FractureDensity() {
-  // empty
 }
 
 void FractureDensity::restart(const File &input_file, int record) {
@@ -136,6 +131,8 @@ void FractureDensity::update(double dt,
                              const IceModelVec2V &velocity,
                              const IceModelVec2S &hardness,
                              const IceModelVec2S &bc_mask) {
+  using std::pow;
+
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();
@@ -164,41 +161,41 @@ void FractureDensity::update(double dt,
   IceModelVec::AccessList list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
                                &D, &D_new, &geometry.cell_type, &bc_mask, &A, &A_new,
                                &m_growth_rate, &m_healing_rate, &m_flow_enhancement,
-                               &m_toughness};
+                               &m_toughness, &hardness, &geometry.ice_thickness};
 
   D_new.copy_from(D);
 
   //options
   /////////////////////////////////////////////////////////
-  double soft_residual = options::Real("-fracture_softening", "soft_residual", 1.0);
+  double soft_residual = m_config->get_number("fracture_density.softening_lower_limit");
   // assume linear response function: E_fr = (1-(1-soft_residual)*phi) -> 1-phi
   //
-  // more: T. Albrecht, A. Levermann; Fracture-induced softening for
-  // large-scale ice dynamics; (2013), The Cryosphere Discussions 7;
-  // 4501-4544; DOI:10.5194/tcd-7-4501-2013
-
+  // See the following article for more:
+  //
+  // Albrecht, T. / Levermann, A.
+  // Fracture-induced softening for large-scale ice dynamics
+  // 2014-04
+  //
+  // The Cryosphere , Vol. 8, No. 2
+  // Copernicus GmbH
+  // p. 587-605
+  //
+  // doi:10.5194/tc-8-587-2014
+  //
   // get four options for calculation of fracture density.
   // 1st: fracture growth constant gamma
   // 2nd: fracture initiation stress threshold sigma_cr
   // 3rd: healing rate constant gamma_h
   // 4th: healing strain rate threshold
+  //
   // more: T. Albrecht, A. Levermann; Fracture field for large-scale
   // ice dynamics; (2012), Journal of Glaciology, Vol. 58, No. 207,
   // 165-176, DOI: 10.3189/2012JoG11J191.
 
-  double gamma = 1.0, initThreshold = 7.0e4, gammaheal = 0.0, healThreshold = 2.0e-10;
-  {
-    options::RealList fractures("-fracture_parameters",
-                                "gamma, initThreshold, gammaheal, healThreshold",
-                                {gamma, initThreshold, gammaheal, healThreshold});
-    if (fractures->size() != 4) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "option -fracture_parameters requires exactly 4 arguments");
-    }
-    gamma         = fractures[0];
-    initThreshold = fractures[1];
-    gammaheal     = fractures[2];
-    healThreshold = fractures[3];
-  }
+  double gamma         = m_config->get_number("fracture_density.gamma");
+  double initThreshold = m_config->get_number("fracture_density.initiation_threshold");
+  double gammaheal     = m_config->get_number("fracture_density.gamma_h");
+  double healThreshold = m_config->get_number("fracture_density.healing_threshold");
 
   m_log->message(3, "PISM-PIK INFO: fracture density is found with parameters:\n"
                     " gamma=%.2f, sigma_cr=%.2f, gammah=%.2f, healing_cr=%.1e and soft_res=%f \n",
@@ -219,6 +216,12 @@ void FractureDensity::update(double dt,
   bool constant_fd = m_config->get_flag("fracture_density.constant_fd");
 
   bool fd2d_scheme = m_config->get_flag("fracture_density.fd2d_scheme");
+
+  double glen_exponent = m_flow_law->exponent();
+
+  bool borstad_limit = m_config->get_flag("fracture_density.borstad_limit");
+
+  double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -263,9 +266,9 @@ void FractureDensity::update(double dt,
       txx    = m_deviatoric_stresses(i, j, 0),
       tyy    = m_deviatoric_stresses(i, j, 1),
       txy    = m_deviatoric_stresses(i, j, 2),
-      T1     = 0.5 * (txx + tyy) + sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
-      T2     = 0.5 * (txx + tyy) - sqrt(0.25 * PetscSqr(txx - tyy) + PetscSqr(txy)), //Pa
-      sigmat = sqrt(PetscSqr(T1) + PetscSqr(T2) - T1 * T2);
+      T1     = 0.5 * (txx + tyy) + sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
+      T2     = 0.5 * (txx + tyy) - sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
+      sigmat = sqrt(pow(T1, 2) + pow(T2, 2) - T1 * T2);
 
 
     ///max shear stress criterion (more stringent than von mises)
@@ -311,7 +314,7 @@ void FractureDensity::update(double dt,
         if (Ktwo == 0.0) {
           sigmatetanull = 0.0;
         } else { //eq15 in hulbe_ledoux10 or eq15 shayam_wu90
-          sigmatetanull = -2.0 * atan((sqrt(PetscSqr(Kone) + 8.0 * PetscSqr(Ktwo)) - Kone) / (4.0 * Ktwo));
+          sigmatetanull = -2.0 * atan((sqrt(pow(Kone, 2) + 8.0 * pow(Ktwo, 2)) - Kone) / (4.0 * Ktwo));
         }
 
         KSI = cos(0.5 * sigmatetanull) *
@@ -325,14 +328,47 @@ void FractureDensity::update(double dt,
 
     //////////////////////////////////////////////////////////////////////////////
 
-    //fracture density
-    double fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
-    if (sigmat > initThreshold) {
-      D_new(i, j) += fdnew * dt;
+    // fracture density
+    double fdnew = 0.0;
+    if (borstad_limit) {
+      if (geometry.ice_thickness(i, j) > minH) {
+        // mean parameters from paper
+        double t0    = initThreshold;
+        double kappa = 2.8;
+
+        // effective strain rate
+        double e1 = m_strain_rates(i, j, 0);
+        double e2 = m_strain_rates(i, j, 1);
+        double ee = sqrt(pow(e1, 2.0) + pow(e2, 2.0) - e1 * e2);
+
+        // threshold for unfractured ice
+        double e0 = pow((t0 / hardness(i, j)), glen_exponent);
+
+        // threshold for fractured ice (exponential law)
+        double ex = exp((e0 - ee) / (e0 * (kappa - 1)));
+
+        // stress threshold for fractures ice
+        double te = t0 * ex;
+
+        // actual effective stress
+        double ts = hardness(i, j) * pow(ee, 1.0 / glen_exponent) * (1 - D_new(i, j));
+
+        // fracture formation if threshold is hit
+        if (ts > te and ee > e0) {
+          // new fracture density:
+          fdnew       = 1.0 - (ex * pow((ee / e0), -1 / glen_exponent));
+          D_new(i, j) = fdnew;
+        }
+      }
+    } else {
+      fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+      if (sigmat > initThreshold) {
+        D_new(i, j) += fdnew * dt;
+      }
     }
 
     //healing
-    double fdheal = gammaheal * (m_strain_rates(i, j, 0) - healThreshold);
+    double fdheal = gammaheal * std::min(0.0,(m_strain_rates(i, j, 0) - healThreshold));
     if (geometry.cell_type.icy(i, j)) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);
@@ -390,10 +426,9 @@ void FractureDensity::update(double dt,
       }
 
       // additional flow enhancement due to fracture softening
-      double phi_exp   = 3.0; //flow_law->exponent();
-      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -phi_exp);
+      double softening = pow((1.0 - (1.0 - soft_residual) * D_new(i, j)), -glen_exponent);
       if (geometry.cell_type.icy(i, j)) {
-        m_flow_enhancement(i, j) = 1.0 / pow(softening, 1 / 3.0);
+        m_flow_enhancement(i, j) = 1.0 / pow(softening, 1 / glen_exponent);
       } else {
         m_flow_enhancement(i, j) = 1.0;
       }
@@ -434,8 +469,8 @@ void FractureDensity::update(double dt,
     }
   }
 
-  A_new.update_ghosts(A);
-  D_new.update_ghosts(D);
+  A.copy_from(A_new);
+  D.copy_from(D_new);
 }
 
 DiagnosticList FractureDensity::diagnostics_impl() const {

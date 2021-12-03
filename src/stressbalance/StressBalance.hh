@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 #ifndef _PISMSTRESSBALANCE_H_
 #define _PISMSTRESSBALANCE_H_
+
+#include <memory>               // std::shared_ptr
 
 #include "pism/util/Component.hh"     // derives from Component
 #include "pism/util/iceModelVec.hh"
@@ -47,7 +49,7 @@ public:
 
   const IceModelVec2S *basal_melt_rate;
   const IceModelVec2S *basal_yield_stress;
-  const IceModelVec2S *melange_back_pressure;
+  const IceModelVec2S *water_column_pressure;
   const IceModelVec2S *fracture_density;
 
   const IceModelVec3  *enthalpy;
@@ -68,7 +70,7 @@ public:
 /*!
   Generally all the nontrivial fields are updated by a call to update().  The rest
   of the methods generally provide access to precomputed results.  The following
-  diagram shows where these results are generally used in the rest of PISM.  (It 
+  diagram shows where these results are generally used in the rest of PISM.  (It
   does not show the call graph, as would doxygen.)
 
   \image html stressbalance-out.png "\b Methods of StressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the StressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
@@ -78,7 +80,9 @@ public:
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid::ConstPtr g, ShallowStressBalance *sb, SSB_Modifier *ssb_mod);
+  StressBalance(IceGrid::ConstPtr g,
+                std::shared_ptr<ShallowStressBalance> sb,
+                std::shared_ptr<SSB_Modifier> ssb_mod);
   virtual ~StressBalance();
 
   //! \brief Initialize the StressBalance object.
@@ -138,8 +142,8 @@ protected:
 
   IceModelVec3 m_w, m_strain_heating;
 
-  ShallowStressBalance *m_shallow_stress_balance;
-  SSB_Modifier *m_modifier;
+  std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
+  std::shared_ptr<SSB_Modifier> m_modifier;
 };
 
 std::shared_ptr<StressBalance> create(const std::string &model_name,
@@ -148,16 +152,15 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
 
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const IceModelVec2CellType &mask,
-                                       IceModelVec2 &result);
+                                       IceModelVec3 &result);
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
                          const IceModelVec2CellType &cell_type,
-                         IceModelVec2 &result);
+                         IceModelVec3 &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism
 
 #endif /* _PISMSTRESSBALANCE_H_ */
-

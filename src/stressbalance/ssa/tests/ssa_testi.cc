@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -50,7 +50,7 @@ const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
 
 class SSATestCaseI: public SSATestCase {
 public:
-  SSATestCaseI(Context::Ptr ctx, int Mx, int My, SSAFactory ssafactory)
+  SSATestCaseI(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
     : SSATestCase(ctx,
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
@@ -91,40 +91,27 @@ void SSATestCaseI::initializeSSACoefficients() {
 
   IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
-  double standard_gravity = m_config->get_number("constants.standard_gravity"),
-    ice_rho = m_config->get_number("constants.ice.density");
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double y = m_grid->y(j);
-    const double theta = atan(0.001);   /* a slope of 1/1000, a la Siple streams */
-    const double f = ice_rho * standard_gravity * H0_schoof * tan(theta);
-    m_tauc(i,j) = f * pow(fabs(y / L_schoof), m_schoof);
-  }
-  m_tauc.update_ghosts();
+    // Evaluate the exact solution and yield stress. Exact u, v will only be used at the
+    // grid edge.
+    auto I = exactI(m_schoof, m_grid->x(i), m_grid->y(j));
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    m_geometry.bed_elevation(i, j) = I.bed;
 
-    const double myx = m_grid->x(i), myy=m_grid->y(j);
-    // eval exact solution; will only use exact vels if at edge
-    struct TestIParameters I_parameters = exactI(m_schoof, myx, myy);
-    m_geometry.bed_elevation(i, j) = I_parameters.bed;
-    m_geometry.ice_surface_elevation(i,j) = m_geometry.bed_elevation(i,j) + H0_schoof;
+    m_tauc(i,j) = I.tauc;
 
-    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
-                 (i == 0) || (i == (int)m_grid->Mx() - 1));
-    if (edge) {
+    if (grid_edge(*m_grid, i, j)) {
       m_bc_mask(i,j) = 1;
-      m_bc_values(i,j).u = I_parameters.u;
-      m_bc_values(i,j).v = I_parameters.v;
+      m_bc_values(i,j).u = I.u;
+      m_bc_values(i,j).v = I.v;
     }
   }
 
-  // communicate what we have set
-  m_geometry.ice_surface_elevation.update_ghosts();
-  m_geometry.bed_elevation.update_ghosts();
+  m_geometry.ensure_consistency(0.0);
+
+  m_tauc.update_ghosts();
   m_bc_mask.update_ghosts();
   m_bc_values.update_ghosts();
 }
@@ -133,9 +120,9 @@ void SSATestCaseI::initializeSSACoefficients() {
 void SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
                                  double x, double y,
                                  double *u, double *v) {
-  struct TestIParameters I_parameters = exactI(m_schoof, x, y);
-  *u = I_parameters.u;
-  *v = I_parameters.v;
+  auto I = exactI(m_schoof, x, y);
+  *u = I.u;
+  *v = I.v;
 }
 
 } // end of namespace stressbalance
@@ -153,7 +140,7 @@ int main(int argc, char *argv[]) {
 
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = context_from_options(com, "ssa_testi");
+    std::shared_ptr<Context> ctx = context_from_options(com, "ssa_testi");
     Config::Ptr config = ctx->config();
 
     std::string usage = "\n"
@@ -174,6 +161,8 @@ int main(int argc, char *argv[]) {
     auto method = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file_name");
 
+    bool write_output = config->get_string("output.size") != "none";
+
     // Determine the kind of solver to use.
     SSAFactory ssafactory = NULL;
     if (method == "fem") {
@@ -188,7 +177,9 @@ int main(int argc, char *argv[]) {
     testcase.init();
     testcase.run();
     testcase.report("I");
-    testcase.write(output_file);
+    if (write_output) {
+      testcase.write(output_file);
+    }
   }
   catch (...) {
     handle_fatal_errors(com);

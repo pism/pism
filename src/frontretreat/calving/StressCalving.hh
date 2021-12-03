@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,14 +31,14 @@ namespace calving {
 class StressCalving : public Component {
 public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
-  virtual ~StressCalving();
+  virtual ~StressCalving() = default;
 
   const IceModelVec2S &calving_rate() const;
 
 protected:
   const int m_stencil_width;
 
-  IceModelVec2 m_strain_rates;
+  IceModelVec3 m_strain_rates;
 
   IceModelVec2S m_calving_rate;
 

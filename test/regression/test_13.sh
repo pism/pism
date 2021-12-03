@@ -4,13 +4,13 @@ PISM_PATH=$1
 MPIEXEC=$2
 
 # Test name:
-echo "Test #13: enthalpy symmetry near the base (pisms -energy enthalpy)."
+echo "Test #13: enthalpy symmetry near the base (pismr -eisII A -energy enthalpy)."
 # The list of files to delete when done.
 files="simp_exper-13.nc"
 
 rm -f $files
-# run pisms
-$MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc
+# run pismr -eisII A
+$MPIEXEC -n 2 $PISM_PATH/pismr -eisII A -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energy enthalpy -o simp_exper-13.nc
 
 ncpdq -a z,y,x -O simp_exper-13.nc simp_exper-13.nc
 

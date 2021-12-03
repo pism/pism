@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,16 +27,10 @@
 namespace pism {
 namespace frontalmelt {
 
-Given::Given(IceGrid::ConstPtr g)
-  : FrontalMelt(g, nullptr) {
+Given::Given(IceGrid::ConstPtr grid)
+  : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
 
-  m_frontal_melt_rate.reset(new IceModelVec2T(g, "frontal_melt_rate", 1, 1));
-
-  m_frontal_melt_rate->init_constant(0.0);
-}
-
-Given::~Given() {
-  // empty
+  m_frontal_melt_rate = IceModelVec2T::Constant(grid, "frontal_melt_rate", 0.0);
 }
 
 void Given::init_impl(const Geometry &geometry) {
@@ -50,8 +44,6 @@ void Given::init_impl(const Geometry &geometry) {
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -60,14 +52,13 @@ void Given::init_impl(const Geometry &geometry) {
                                                       "frontal_melt_rate",
                                                       "", // no standard name
                                                       buffer_size,
-                                                      evaluations_per_year,
-                                                      periodic);
+                                                      opt.periodic);
   }
 
   m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate",
                                  "m s-1", "m year-1", "", 0);
 
-  m_frontal_melt_rate->init(opt.filename, opt.period, opt.reference_time);
+  m_frontal_melt_rate->init(opt.filename, opt.periodic);
 }
 
 void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {

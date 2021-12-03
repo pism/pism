@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ class Geometry;
 class FrontRetreat : public Component {
 public:
   FrontRetreat(IceGrid::ConstPtr g);
-  ~FrontRetreat();
+  ~FrontRetreat() = default;
 
   void update_geometry(double dt,
                        const Geometry &geometry,

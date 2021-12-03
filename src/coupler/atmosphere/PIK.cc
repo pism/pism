@@ -54,10 +54,6 @@ PIK::PIK(IceGrid::ConstPtr g)
   m_parameterization = models[parameterization];
 }
 
-PIK::~PIK() {
-  // empty
-}
-
 void PIK::init_impl(const Geometry &geometry) {
 
   m_log->message(2,

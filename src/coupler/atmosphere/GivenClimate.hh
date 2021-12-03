@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,7 @@ class Given : public AtmosphereModel
 {
 public:
   Given(IceGrid::ConstPtr g);
-  virtual ~Given();
+  virtual ~Given() = default;
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -47,8 +47,8 @@ private:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  IceModelVec2T::Ptr m_precipitation;
-  IceModelVec2T::Ptr m_air_temp;
+  std::shared_ptr<IceModelVec2T> m_precipitation;
+  std::shared_ptr<IceModelVec2T> m_air_temp;
 };
 
 } // end of namespace atmosphere

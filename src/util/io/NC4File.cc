@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,10 +18,7 @@
 
 #include "NC4File.hh"
 
-#include <cstring>              // memset
-#include <cstdio>               // stderr, fprintf
-
-// The ing is a stupid kludge necessary to make NetCDF 4.x work in
+// The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1
@@ -44,10 +41,6 @@ static void check(const ErrorLocation &where, int return_code) {
 
 NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
   : NCFile(c), m_compression_level(compression_level) {
-  // empty
-}
-
-NC4File::~NC4File() {
   // empty
 }
 
@@ -141,6 +134,12 @@ void NC4File::def_var_impl(const std::string &name,
   if (m_compression_level > 0 and dims.size() > 1) {
     stat = nc_inq_varid(m_file_id, name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
     stat = nc_def_var_deflate(m_file_id, varid, 0, 1, m_compression_level);
+
+    // The NetCDF version used by PISM may not support compression.
+    if (stat == NC_EINVAL) {
+      stat = NC_NOERR;
+    }
+
     check(PISM_ERROR_LOCATION, stat);
   }
 }

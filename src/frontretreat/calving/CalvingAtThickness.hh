@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,9 @@
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
+
+class IceModelVec2T;
+
 namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
@@ -33,15 +36,19 @@ class CalvingAtThickness : public Component
 {
 public:
   CalvingAtThickness(IceGrid::ConstPtr g);
-  virtual ~CalvingAtThickness();
+  virtual ~CalvingAtThickness() = default;
 
-  virtual void init();
-  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  void init();
+  void update(double t,
+              double dt,
+              IceModelVec2CellType &pism_mask,
+              IceModelVec2S &ice_thickness);
+
   const IceModelVec2S& threshold() const;
 
 protected:
-  virtual DiagnosticList diagnostics_impl() const;
-  IceModelVec2S m_calving_threshold;
+  DiagnosticList diagnostics_impl() const;
+  std::shared_ptr<IceModelVec2T> m_calving_threshold;
   IceModelVec2CellType m_old_mask;
 };
 

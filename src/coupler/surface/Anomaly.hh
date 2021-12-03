@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,7 @@ class Anomaly : public SurfaceModel
 {
 public:
   Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
-  virtual ~Anomaly();
+  virtual ~Anomaly() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -45,8 +45,8 @@ protected:
   IceModelVec2S::Ptr m_mass_flux;
   IceModelVec2S::Ptr m_temperature;
 
-  IceModelVec2T::Ptr m_climatic_mass_balance_anomaly;
-  IceModelVec2T::Ptr m_ice_surface_temp_anomaly;
+  std::shared_ptr<IceModelVec2T> m_climatic_mass_balance_anomaly;
+  std::shared_ptr<IceModelVec2T> m_ice_surface_temp_anomaly;
 };
 
 } // end of namespace surface

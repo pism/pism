@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017 Constantine Khroulev
+// Copyright (C) 2009--2017, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,71 +16,45 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <memory>
-using std::dynamic_pointer_cast;
+#include <memory>               // std::dynamic_pointer_cast
 
-#include "iceModelVec.hh"
+#include "IceModelVec2V.hh"
+#include "IceModelVec_impl.hh"
+
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
 
-#include "error_handling.hh"
-#include "iceModelVec_helpers.hh"
-#include "ConfigInterface.hh"
+#include "error_handling.hh"    // RuntimeError
+
+#include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
-IceModelVec2V::IceModelVec2V() : IceModelVec2() {
-  m_dof = 2;
-  m_begin_end_access_use_dof = false;
-}
-
 IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                              IceModelVecKind ghostedp, unsigned int stencil_width)
-  : IceModelVec2() {
-  m_dof = 2;
-  m_begin_end_access_use_dof = false;
+  : IceModelVec2<Vector2>(grid, short_name, ghostedp, stencil_width) {
 
-  create(grid, short_name, ghostedp, stencil_width);
-}
+  auto sys = m_impl->grid->ctx()->unit_system();
 
-IceModelVec2V::Ptr IceModelVec2V::ToVector(IceModelVec::Ptr input) {
-  IceModelVec2V::Ptr result = dynamic_pointer_cast<IceModelVec2V,IceModelVec>(input);
-  if (not (bool)result) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
+  m_impl->metadata.clear();
+  for (const auto* prefix : {"u", "v"}) {
+    m_impl->metadata.emplace_back(SpatialVariableMetadata{sys, prefix + short_name});
   }
+
+  set_name("vel" + short_name);
+}
+
+std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source) {
+
+  auto result = std::make_shared<IceModelVec2V>(source.grid(),
+                                                source.get_name(),
+                                                WITHOUT_GHOSTS,
+                                                1);
+  result->metadata(0) = source.metadata(0);
+  result->metadata(1) = source.metadata(1);
+
   return result;
-}
-
-void IceModelVec2V::create(IceGrid::ConstPtr grid, const std::string &short_name,
-                           IceModelVecKind ghostedp,
-                           unsigned int stencil_width) {
-
-  IceModelVec2::create(grid, short_name, ghostedp,
-                       stencil_width, m_dof);
-
-  units::System::Ptr sys = m_grid->ctx()->unit_system();
-
-  m_metadata[0] = SpatialVariableMetadata(sys, "u" + short_name);
-  m_metadata[1] = SpatialVariableMetadata(sys, "v" + short_name);
-
-  m_name = "vel" + short_name;
-}
-
-Vector2** IceModelVec2V::get_array() {
-  begin_access();
-  return static_cast<Vector2**>(m_array);
-}
-
-void IceModelVec2V::add(double alpha, const IceModelVec &x) {
-  return add_2d<IceModelVec2V>(this, alpha, &x, this);
-}
-
-void IceModelVec2V::add(double alpha, const IceModelVec &x, IceModelVec &result) const {
-  return add_2d<IceModelVec2V>(this, alpha, &x, &result);
-}
-
-void IceModelVec2V::copy_from(const IceModelVec &source) {
-  return copy_2d<IceModelVec2V>(&source, this);
 }
 
 } // end of namespace pism

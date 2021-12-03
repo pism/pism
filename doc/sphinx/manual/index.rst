@@ -7,7 +7,7 @@ PISM User's Manual
 
 Welcome!  All information about PISM is online at the home page
 
-    |pism-docs|
+    |pism-website|
 
 Please see the extensive lists of PISM publications and applications at that page.
 
@@ -33,7 +33,7 @@ class/object structure of the PISM source code.
    PISM is an ongoing research project. Ice sheet modeling requires many choices. Please
    don't trust the results of PISM or any other ice sheet model without a fair amount of
    exploration. Also, please don't expect all your questions to be answered here. `Write to
-   us <pism-email_>`_ with questions.
+   us <pism-email_>`_ with questions or join the `PISM workspace on Slack <Slack-PISM_>`_.
 
 .. toctree::
    :caption: Contents

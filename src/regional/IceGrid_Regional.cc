@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,6 +27,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Component.hh" // process_input_options
+#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -81,7 +82,7 @@ static void subset_extent(const std::string& axis,
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
+IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
 
   auto options = process_input_options(ctx->com(), ctx->config());
 
@@ -89,6 +90,9 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
                                   "range of X coordinates in the selected subset", {});
   const options::RealList y_range("-y_range",
                                   "range of Y coordinates in the selected subset", {});
+
+  const options::Integer refinement_factor("-refinement_factor",
+                                           "Grid refinement factor (applies to the horizontal grid)", 1);
 
   if (options.type == INIT_BOOTSTRAP and x_range.is_set() and y_range.is_set()) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
@@ -142,6 +146,11 @@ IceGrid::Ptr regional_grid_from_options(Context::Ptr ctx) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "no geometry information found in '%s'",
                                     options.filename.c_str());
+    }
+
+    if (refinement_factor > 1) {
+      input_grid.Mx = (input_grid.Mx - 1) * refinement_factor + 1;
+      input_grid.My = (input_grid.My - 1) * refinement_factor + 1;
     }
 
     // process options controlling vertical grid parameters, overriding values read from a file

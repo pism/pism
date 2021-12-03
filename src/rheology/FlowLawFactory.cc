@@ -89,10 +89,6 @@ FlowLawFactory::FlowLawFactory(const std::string &prefix,
   set_default(m_config->get_string(prefix + "flow_law"));
 }
 
-FlowLawFactory::~FlowLawFactory() {
-  // empty
-}
-
 void FlowLawFactory::add(const std::string &name, FlowLawCreator icreate) {
   m_flow_laws[name] = icreate;
 }

@@ -206,10 +206,10 @@ class File(TestCase):
         for backend in backends:
             f = PISM.File(ctx.com(), self.file_with_time, backend, PISM.PISM_READONLY,
                           ctx.pio_iosys_id())
-            f.dimension_length("time") == 1
-            f.dimension_length("x") == 3
-            f.dimension_length("y") == 5
-            f.dimension_length("z") == 0
+            assert f.dimension_length("time") == 1
+            assert f.dimension_length("x") == 3
+            assert f.dimension_length("y") == 5
+            assert f.dimension_length("z") == 0
             f.close()
 
     def test_dimensions(self):
@@ -506,7 +506,7 @@ class File(TestCase):
         self.file_inconsistent = "test_file_inconsistent.nc"
         self.file_dim_types = "test_file_dim_types.nc"
 
-        self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent]
+        self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent, self.file_dim_types]
 
         grid = PISM.testing.shallow_grid()
         vec = PISM.IceModelVec2S(grid, "v", PISM.WITHOUT_GHOSTS)

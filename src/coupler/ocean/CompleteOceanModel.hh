@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ public:
   // "model" constructor
   CompleteOceanModel(IceGrid::ConstPtr g);
 
-  virtual ~CompleteOceanModel();
+  virtual ~CompleteOceanModel() = default;
 protected:
   virtual const IceModelVec2S& shelf_base_temperature_impl() const;
   virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;

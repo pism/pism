@@ -164,10 +164,6 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
   m_tau = m_config->get_number("hydrology.steady.input_rate_scaling");
 }
 
-EmptyingProblem::~EmptyingProblem() {
-  // empty
-}
-
 /*!
  * Compute steady state water flux.
  *
@@ -425,7 +421,7 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
         result(i, j, o) = - K(psi_x, psi_y, m_speed, m_eps_gradient) * psi_y;
       }
 
-      auto M = domain_mask.int_star(i, j);
+      auto M = domain_mask.star(i, j);
 
       if (M.ij == 0 and M.e == 0) {
         result(i, j, 0) = 0.0;

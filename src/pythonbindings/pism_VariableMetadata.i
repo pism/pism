@@ -3,6 +3,8 @@
    is wrapped properly. */
 %feature("valuewrapper") pism::VariableMetadata;
 %feature("valuewrapper") pism::SpatialVariableMetadata;
-%feature("valuewrapper") pism::TimeseriesMetadata;
+
+%ignore pism::Attribute::operator=;
+%ignore pism::VariableMetadata::operator[];
 
 %include "util/VariableMetadata.hh"

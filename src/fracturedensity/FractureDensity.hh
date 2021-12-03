@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,13 +26,12 @@
 namespace pism {
 
 class IceModelVec2S;
-class IceModelVec2;
 class Geometry;
 
 class FractureDensity : public Component {
 public:
   FractureDensity(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
-  virtual ~FractureDensity();
+  virtual ~FractureDensity() = default;
 
   void restart(const File &input_file, int record);
   void bootstrap(const File &input_file);
@@ -69,10 +68,10 @@ private:
   IceModelVec2S m_toughness;
 
   //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
-  IceModelVec2 m_strain_rates;
+  IceModelVec3 m_strain_rates;
 
   //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  IceModelVec2 m_deviatoric_stresses;
+  IceModelVec3 m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
   IceModelVec2V m_velocity;

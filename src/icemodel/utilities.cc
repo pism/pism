@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,19 +52,18 @@ int IceModel::process_signals() {
        "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
 
     prepend_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
-                                 m_time->date().c_str()));
+                                 m_time->date(m_time->current()).c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
     return 1;
   }
 
   if (pism_signal == SIGUSR1) {
-    char file_name[PETSC_MAX_PATH_LEN];
-    snprintf(file_name, PETSC_MAX_PATH_LEN, "pism-%s.nc",
-             m_time->date().c_str());
+    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
+    auto file_name = pism::printf("pism-%s.nc", date_without_spaces.c_str());
     m_log->message(1,
        "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
-       file_name);
+                   file_name.c_str());
     pism_signal = 0;
 
     File file(m_grid->com,
@@ -101,9 +100,9 @@ void IceModel::update_run_stats() {
     model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
                                       "seconds", "years");
 
-  m_run_stats.set_number("wall_clock_hours", wall_clock_hours);
-  m_run_stats.set_number("processor_hours", proc_hours);
-  m_run_stats.set_number("model_years_per_processor_hour", model_years / proc_hours);
+  m_run_stats["wall_clock_hours"]               = {wall_clock_hours};
+  m_run_stats["processor_hours"]                = {proc_hours};
+  m_run_stats["model_years_per_processor_hour"] = {model_years / proc_hours};
 }
 
 //! Get time and user/host name and add it to the given string.
@@ -145,7 +144,7 @@ IceGrid::Ptr IceModel::grid() const {
 }
 
 //! Return the context this model is running in.
-Context::Ptr IceModel::ctx() const {
+std::shared_ptr<Context> IceModel::ctx() const {
   return m_ctx;
 }
 

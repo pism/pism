@@ -35,7 +35,7 @@ namespace calving {
 class vonMisesCalving : public StressCalving {
 public:
   vonMisesCalving(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
-  virtual ~vonMisesCalving();
+  virtual ~vonMisesCalving() = default;
 
   void init();
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <sstream>
+#include <cstring> // memset
+
 #include <petscsys.h>
 
-#include "pism_options.hh"
 #include "error_handling.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Units.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism_options.hh"
 
 namespace pism {
 namespace options {
@@ -53,36 +55,32 @@ int String::process(const std::string& option,
                     const std::string& default_value,
                     ArgumentFlag argument_flag) {
 
-  char tmp[TEMPORARY_STRING_LENGTH];
+  char string[TEMPORARY_STRING_LENGTH];
+  memset(string, 0, TEMPORARY_STRING_LENGTH);
+
   PetscBool flag = PETSC_FALSE;
 
-  memset(tmp, 0, TEMPORARY_STRING_LENGTH);
-
   PetscErrorCode ierr;
-  ierr = PetscOptionsBegin(MPI_COMM_SELF, "", "", "");
-  PISM_CHK(ierr, "PetscOptionsBegin");
+  ierr = PetscOptionsGetString(NULL, // default option database
+                               NULL, // no prefix
+                               option.c_str(),
+                               string,
+                               TEMPORARY_STRING_LENGTH,
+                               &flag);
+  PISM_CHK(ierr, "PetscOptionsGetString");
 
-  ierr = PetscOptionsString(option.c_str(),
-                            description.c_str(),
-                            "", // manual page
-                            default_value.c_str(), // default value
-                            tmp,                   // output
-                            TEMPORARY_STRING_LENGTH, // max. length of the output
-                            &flag);                  // PETSC_TRUE if found, else PETSC_FALSE
-  PISM_CHK(ierr, "PetscOptionsString");
-
-  ierr = PetscOptionsEnd();
-  PISM_CHK(ierr, "PetscOptionsEnd");
-
-  std::string result = tmp;
+  std::string result = string;
 
   if (flag == PETSC_TRUE) {
     if (result.empty()) {
       if (argument_flag == ALLOW_EMPTY) {
         this->set("", true);
       } else {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command line option '%s' requires an argument.",
-                                      option.c_str());
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "command line option '%s'\n"
+                                      "(%s)\n"
+                                      "requires an argument.",
+                                      option.c_str(), description.c_str());
       }
     } else {
       this->set(result, true);
@@ -92,39 +90,6 @@ int String::process(const std::string& option,
   }
 
   return 0;
-}
-
-StringList::StringList(const std::string& option,
-                       const std::string& description,
-                       const std::string& default_value) {
-  String input(option, description, default_value, DONT_ALLOW_EMPTY);
-
-  this->set(split(input, ','), input.is_set());
-}
-
-const std::string& StringList::operator[](size_t index) const {
-  return m_value[index];
-}
-
-std::string StringList::to_string() {
-  return join(m_value, ",");
-}
-
-StringSet::StringSet(const std::string& option,
-                     const std::string& description,
-                     const std::string& default_value) {
-  StringList input(option, description, default_value);
-  std::set<std::string> result;
-
-  for (auto s : input.value()) {
-    result.insert(s);
-  }
-
-  this->set(result, input.is_set());
-}
-
-std::string StringSet::to_string() {
-  return set_join(m_value, ",");
 }
 
 Keyword::Keyword(const std::string& option,
@@ -140,7 +105,7 @@ Keyword::Keyword(const std::string& option,
   std::string long_description = description + " Choose one of " + list;
 
   String input(option, long_description, default_value, DONT_ALLOW_EMPTY);
-  
+
   // use the default value if the option was not set
   if (not input.is_set()) {
     this->set(input, input.is_set());
@@ -149,7 +114,7 @@ Keyword::Keyword(const std::string& option,
 
   std::string word = input;
   // find ":" and discard everything that goes after
-  size_t n = word.find(":");
+  size_t n = word.find(':');
   if (n != std::string::npos) {
     word.resize(n);
   }
@@ -169,15 +134,26 @@ Keyword::Keyword(const std::string& option,
 }
 
 Integer::Integer(const std::string& option,
-                const std::string& description,
-                int default_value) {
-  Real input(option, description, default_value);
-  double result = input;
-  if (fabs(result - floor(result)) > 1e-6) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't process '%s': (%f is not an integer).",
-                                  option.c_str(), result);
+                 const std::string& description,
+                 int default_value) {
+
+  String input(option, description,
+               pism::printf("%d", default_value),
+               DONT_ALLOW_EMPTY);
+
+  if (input.is_set()) {
+    long int result = 0;
+    try {
+      result = parse_integer(input);
+    } catch (RuntimeError &e) {
+      e.add_context("processing command-line option '%s %s'",
+                    option.c_str(), input->c_str());
+      throw;
+    }
+    this->set(static_cast<int>(result), true);
+  } else {
+    this->set(static_cast<int>(default_value), false);
   }
-  this->set(static_cast<int>(result), input.is_set());
 }
 
 
@@ -193,15 +169,16 @@ IntegerList::IntegerList(const std::string& option,
   RealList input(option, description, default_value);
   std::vector<int> result;
 
+  const double eps = 1e-6;
   for (auto v : input.value()) {
-    if (fabs(v - floor(v)) > 1e-6) {
+    if (fabs(v - floor(v)) > eps) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "Can't process '%s': (%f is not an integer).",
                                     option.c_str(), v);
     }
     result.push_back(static_cast<int>(v));
   }
-  
+
   this->set(result, input.is_set());
 }
 
@@ -209,22 +186,30 @@ const int& IntegerList::operator[](size_t index) const {
   return m_value[index];
 }
 
-Real::Real(const std::string& option,
+Real::Real(std::shared_ptr<units::System> system,
+           const std::string& option,
            const std::string& description,
+           const std::string& units,
            double default_value) {
 
-  std::stringstream buffer;
-  // NB! This may round default_value.
-  buffer << default_value;
+  std::string buffer = pism::printf("%f", default_value);
 
-  String input(option, description, buffer.str(), DONT_ALLOW_EMPTY);
+  String input(option, description, buffer, DONT_ALLOW_EMPTY);
 
   if (input.is_set()) {
     char *endptr = NULL;
     double result = strtod(input->c_str(), &endptr);
     if (*endptr != '\0') {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse '%s %s': (%s is not a number).",
-                                    option.c_str(), input->c_str(), input->c_str());
+      // assume that "input" contains units and try converting to "units":
+      try {
+        result = units::convert(system, 1.0, input.value(), units);
+      } catch (RuntimeError &e) {
+        e.add_context("trying to convert '%s' to '%s'",
+                      input->c_str(), units.c_str());
+        e.add_context("processing the command-line option %s",
+                      option.c_str());
+        throw;
+      }
     }
     this->set(result, true);
   } else {
@@ -240,21 +225,9 @@ RealList::RealList(const std::string& option,
   std::vector<double> result = default_value;
 
   if (input.is_set()) {
-    std::istringstream arg(input);
-    std::string tmp;
-
     result.clear();
-    while(getline(arg, tmp, ',')) {
-      double d;
-      char *endptr;
-
-      d = strtod(tmp.c_str(), &endptr);
-      if (*endptr != '\0') {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse %s (%s is not a number).",
-                                      tmp.c_str(), tmp.c_str());
-      } else {
-        result.push_back(d);
-      }
+    for (const auto &p : split(input, ',')) {
+      result.push_back(parse_number(p));
     }
   }
   this->set(result, input.is_set());

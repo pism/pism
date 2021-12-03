@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,7 @@ public:
   IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
                               IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
 
-  ~IP_SSATaucTikhonovGNSolver();
+  ~IP_SSATaucTikhonovGNSolver() = default;
   
   virtual StateVec::Ptr stateSolution() {
     return m_ssaforward.solution();
@@ -112,7 +112,6 @@ protected:
   IP_SSATaucForwardProblem &m_ssaforward;
 
   DesignVec m_x;
-  DesignVec m_y;
 
   DesignVec m_tmp_D1Global;
   DesignVec m_tmp_D2Global;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,132 +18,150 @@
  */
 
 #include <vector>
-#include <cmath>
+#include <algorithm>            // min, max, abs
 
-void run_union(std::vector<unsigned int> &parent, unsigned int run1, unsigned int run2) {
-  if (parent[run1] == run2 || parent[run2] == run1) {
-    return;
+int resolve_label(const std::vector<int> &labels, int provisional_label) {
+  int final_label = provisional_label;
+
+  while (final_label != labels[final_label]) {
+    final_label = labels[final_label];
   }
 
-  while (parent[run1] != 0) {
-    run1 = parent[run1];
-  }
-
-  while (parent[run2] != 0) {
-    run2 = parent[run2];
-  }
-
-  if (run1 > run2) {
-    parent[run1] = run2;
-  } else if (run1 < run2) {
-    parent[run2] = run1;
-  } else {
-    return;
-  }
-
+  return final_label;
 }
 
-//! In-place labeling of connected components using a 2-scan algorithm with run-length encoding.
-void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded) {
-  unsigned int max_runs = 2*n_rows;
-  const double eps = 1e-6;
+struct Run {
+  int row, col, length, label;
+};
 
-  std::vector<unsigned int> parents(max_runs), lengths(max_runs),
-    rows(max_runs), columns(max_runs), mask(max_runs);
+/*!
+ * Label connected components. Modifies `image` in place.
+ */
+void label_connected_components(double *image, int nrows, int ncols, bool identify_icebergs, int mask_grounded, int first_label) {
 
-  unsigned int run_number = 0, r, c, parent;
+  // storage for labels assigned to pixels in the row above the current one
+  std::vector<int> row_above(ncols, 0);
 
-  // First scan
-  for (r = 0; r < n_rows; ++r) {
-    for (c = 0; c < n_cols; ++c) {
+  // Labels: the "grounded" label should be the smallest one.
+  int grounded_label = 1;
+  int provisional_label = 2;
+  // This array encodes equivalences between labels: label k is
+  // equivalent to labels[k], which is equivalent to
+  // labels[labels[k]], etc. The smallest label from a set of
+  // equivalent ones is used as a "representative" label for the set.
+  // By design labels[k] <= k.
+  std::vector<int> labels = {0, grounded_label};
 
-      if (image[r*n_cols + c] > 0.0) {
-        // looking at a foreground pixel
-        if (c > 0 && image[r*n_cols + (c-1)] > 0.0) {
-          // one to the left is also a foreground pixel; continue the run
-          lengths[run_number] += 1;
-        } else {
-          // one to the left is a background pixel (or this is column 0); start a new run
+  std::vector<Run> runs;
 
-          // set the run just above as a parent (if present)
-          if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
-            parent = (unsigned int)image[(r-1)*n_cols + c];
-          } else {
-            parent = 0;
+  for (int r = 0; r < nrows; ++r) {
+    const double *row = &image[r * ncols];
+
+    int c = 0;
+    while (c < ncols) {
+      if (row[c] > 0) {
+        // we're looking at a foreground pixel that must be the
+        // beginning of a run
+        int L = provisional_label;
+        int c_start = c;
+
+        runs.push_back({r, c_start, 0, L});
+        Run &current_run = runs.back();
+
+        // Iterate over all the pixels in this run
+        while (c < ncols and row[c] > 0) {
+
+          if (identify_icebergs and (int)row[c] == mask_grounded) {
+            // looking at a "grounded" pixel
+            if (L != provisional_label) {
+              labels[L] = grounded_label;
+            }
+            L = grounded_label;
           }
 
-          run_number += 1;
+          int T = row_above[c];
+          c += 1;
 
-          // allocate more storage (if needed)
-          if (run_number == max_runs) {
-            max_runs += n_rows;
-            parents.resize(max_runs);
-            lengths.resize(max_runs);
-            rows.resize(max_runs);
-            columns.resize(max_runs);
-            mask.resize(max_runs);
+          if (T > 0) {
+            // foreground pixel in the row above
+            if (T < L) {
+              if (L != provisional_label) {
+                labels[L] = T;
+              }
+              L = T;
+            } else if (T > L) {
+              labels[T] = L;
+            }
           }
+        } // end of the loop over pixels in a run
 
-          // Record this run
-          rows[run_number]    = r;
-          columns[run_number] = c;
-          lengths[run_number] = 1;
-          parents[run_number] = parent;
-          mask[run_number]    = 0;
+        if (L == provisional_label) {
+          // Failed to assign a label by looking at the row above: we
+          // need to add this label to the array encoding
+          // equivalences.
+          labels.push_back(L);
+          provisional_label += 1;
         }
 
-        if (r > 0 && image[(r-1)*n_cols + c] > 0.0) {
-          run_union(parents, (unsigned int)image[(r-1)*n_cols + c], run_number);
-        }
+        // Done with a run: record the length and the label.
+        current_run.length = c - c_start;
+        current_run.label = L;
 
-        if (mask[run_number] == 0 && fabs(image[r*n_cols + c] - mask_grounded) < eps) {
-          mask[run_number] = 1;
+        // Record pixel labels in the row above.
+        for (int n = 0; n < current_run.length; ++n) {
+          row_above[c_start + n] = L;
         }
+      } else {
+        // background pixel
+        row_above[c] = 0;
+        c += 1;
+      }
+    } // end of the loop over columns
+  } // end of the loop over rows
 
-        image[r*n_cols + c] = run_number;
+  int N_labels = labels.size();
+
+  // Flatten the table of equivalences
+  {
+    for (int k = 0; k < N_labels; ++k) {
+      labels[k] = resolve_label(labels, k);
+    }
+  }
+
+  // Rename labels to make them consecutive
+  {
+    int L = first_label;
+    for (int k = 1; k < N_labels; ++k) {
+      if (labels[k] == k) {
+        labels[k] = L;
+        L += 1;
+      } else {
+        labels[k] = labels[labels[k]];
       }
     }
   }
 
-  // Assign labels to runs.
-  // This uses the fact that children always follow parents,
-  // so we can do just one sweep: by the time we get to a node (run),
-  // its parent already has a final label.
-  //
-  // We use "parents" to store labels here, because once a run's label is computed
-  // we don't need to know its parent run any more.
-
-  unsigned int label = 0;
-  std::vector<unsigned int> grounded(run_number + 1);
-  for (r = 0; r <= run_number; ++r) {
-    if (parents[r] == 0) {
-      parents[r] = label;
-      label += 1;
-    } else {
-      parents[r] = parents[parents[r]];
-    }
-
-    // remember current blob (parents[r]) as "grounded" if the current run is
-    // "grounded"
-    if (mask[r] == 1) {
-      grounded[parents[r]] = 1;
-    }
-  }
-
-  // Second scan (re-label)
   if (identify_icebergs) {
-    for (r = 0; r <= run_number; ++r) {
-      for (c = 0; c < lengths[r]; ++c) {
-        image[rows[r]*n_cols + columns[r] + c] = 1 - grounded[parents[r]];
-      }
+    // Blobs connected to grounded areas have the label "1", icebergs
+    // have labels 2 and greater.
+    for (int k = 1; k < N_labels; ++k) {
+      labels[k] = static_cast<bool>(labels[k] > 1);
     }
   } else {
-    for (r = 0; r <= run_number; ++r) {
-      for (c = 0; c < lengths[r]; ++c) {
-        image[rows[r]*n_cols + columns[r] + c] = parents[r];
-      }
+    // Here we subtract 1 because provisional labels start at 2 (1 is
+    // a special label used to identify blobs connected to "grounded"
+    // areas).
+    for (int k = 1; k < N_labels; ++k) {
+      labels[k] -= 1;
     }
   }
 
-  // Done!
+  // Second scan: assign labels
+  for (int k = 0; k < (int)runs.size(); ++k) {
+    auto &r = runs[k];
+    int run_start = r.row * ncols + r.col;
+    for (int n = 0; n < r.length; ++n) {
+      image[run_start + n] = labels[r.label];
+    }
+  }
 }

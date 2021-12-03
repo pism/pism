@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -77,15 +77,16 @@ class FlowLaw {
 public:
   FlowLaw(const std::string &prefix, const Config &config,
           EnthalpyConverter::Ptr EC);
-  virtual ~FlowLaw();
+  virtual ~FlowLaw() = default;
 
   void effective_viscosity(double hardness, double gamma,
                            double *nu, double *dnu) const;
 
+  void effective_viscosity(double hardness, double gamma, double eps,
+                           double *nu, double *dnu) const;
+
   std::string name() const;
   double exponent() const;
-  double enhancement_factor() const;
-  double enhancement_factor_interglacial() const;
 
   EnthalpyConverter::Ptr EC() const;
 
@@ -114,17 +115,17 @@ protected:
 protected:
   std::string m_name;
 
-  double m_rho,          //!< ice density
-    m_beta_CC_grad, //!< Clausius-Clapeyron gradient
-    m_melting_point_temp;  //!< for water, 273.15 K
+  //! ice density
+  double m_rho;
+  //! Clausius-Clapeyron gradient
+  double m_beta_CC_grad;
+  //! melting point temperature (for water, 273.15 K)
+  double m_melting_point_temp;
+
   EnthalpyConverter::Ptr m_EC;
 
   double softness_paterson_budd(double T_pa) const;
 
-  //! regularizing length
-  double m_schoofLen;
-  //! regularizing velocity
-  double m_schoofVel;
   //! regularization parameter for @f$ \gamma @f$
   double m_schoofReg;
 
@@ -148,10 +149,6 @@ protected:
   double m_standard_gravity;
   //! ideal gas constant
   double m_ideal_gas_constant;
-  //! flow enhancement factor
-  double m_e;
-  //! flow enhancement factor for interglacial periods
-  double m_e_interglacial;
   //! power law exponent
   double m_n;
 };
@@ -167,7 +164,6 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            const IceModelVec3  &enthalpy,
                            IceModelVec2S &result);
 
-// Helper functions:
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 
 } // end of namespace rheology

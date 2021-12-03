@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,7 +48,7 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
   int auth_len = 5;             // length of "epsg:"
   std::string::size_type position = std::string::npos;
-  for (auto &auth : {"epsg:", "EPSG:"}) {
+  for (const auto &auth : {"epsg:", "EPSG:"}) {
     position = proj_string.find(auth);
     if (position != std::string::npos) {
       break;
@@ -75,54 +75,54 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
   switch (epsg) {
   case 3413:
-    mapping.set_number("latitude_of_projection_origin", 90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", -45.0);
-    mapping.set_number("standard_parallel", 70.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 0.0);
+    mapping["latitude_of_projection_origin"]         = {90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {-45.0};
+    mapping["standard_parallel"]                     = {70.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {0.0};
     break;
   case 3031:
-    mapping.set_number("latitude_of_projection_origin", -90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", 0.0);
-    mapping.set_number("standard_parallel", -71.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 0.0);
+    mapping["latitude_of_projection_origin"]         = {-90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {0.0};
+    mapping["standard_parallel"]                     = {-71.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {0.0};
     break;
   case 3057:
-    mapping.set_string("grid_mapping_name", "lambert_conformal_conic") ;
-    mapping.set_number("longitude_of_central_meridian", -19.) ;
-    mapping.set_number("false_easting", 500000.) ;
-    mapping.set_number("false_northing", 500000.) ;
-    mapping.set_number("latitude_of_projection_origin", 65.) ;
-    mapping.set_numbers("standard_parallel", {64.25, 65.75}) ;
-    mapping.set_string("long_name", "CRS definition") ;
-    mapping.set_number("longitude_of_prime_meridian", 0.) ;
-    mapping.set_number("semi_major_axis", 6378137.) ;
-    mapping.set_number("inverse_flattening", 298.257222101) ;
+    mapping["grid_mapping_name"]                     = "lambert_conformal_conic" ;
+    mapping["longitude_of_central_meridian"]         = {-19.} ;
+    mapping["false_easting"]                         = {500000.} ;
+    mapping["false_northing"]                        = {500000.} ;
+    mapping["latitude_of_projection_origin"]         = {65.} ;
+    mapping["standard_parallel"]                     = {64.25, 65.75} ;
+    mapping["long_name"]                             = "CRS definition" ;
+    mapping["longitude_of_prime_meridian"]           = {0.} ;
+    mapping["semi_major_axis"]                       = {6378137.} ;
+    mapping["inverse_flattening"]                    = {298.257222101} ;
     break;
   case 5936:
-    mapping.set_number("latitude_of_projection_origin", 90.0);
-    mapping.set_number("scale_factor_at_projection_origin", 1.0);
-    mapping.set_number("straight_vertical_longitude_from_pole", -150.0);
-    mapping.set_number("standard_parallel", 90.0);
-    mapping.set_number("false_northing", 2000000.0);
-    mapping.set_string("grid_mapping_name", "polar_stereographic");
-    mapping.set_number("false_easting", 2000000.0);
+    mapping["latitude_of_projection_origin"]         = {90.0};
+    mapping["scale_factor_at_projection_origin"]     = {1.0};
+    mapping["straight_vertical_longitude_from_pole"] = {-150.0};
+    mapping["standard_parallel"]                     = {90.0};
+    mapping["false_northing"]                        = {2000000.0};
+    mapping["grid_mapping_name"]                     = "polar_stereographic";
+    mapping["false_easting"]                         = {2000000.0};
     break;
   case 26710:
-    mapping.set_number("longitude_of_central_meridian", -123.0);
-    mapping.set_number("false_easting", 500000.0);
-    mapping.set_number("false_northing", 0.0);
-    mapping.set_string("grid_mapping_name", "transverse_mercator");
-    mapping.set_number("inverse_flattening", 294.978698213898);
-    mapping.set_number("latitude_of_projection_origin", 0.0);
-    mapping.set_number("scale_factor_at_central_meridian", 0.9996);
-    mapping.set_number("semi_major_axis", 6378206.4);
-    mapping.set_string("unit", "metre");
+    mapping["longitude_of_central_meridian"]         = {-123.0};
+    mapping["false_easting"]                         = {500000.0};
+    mapping["false_northing"]                        = {0.0};
+    mapping["grid_mapping_name"]                     = "transverse_mercator";
+    mapping["inverse_flattening"]                    = {294.978698213898};
+    mapping["latitude_of_projection_origin"]         = {0.0};
+    mapping["scale_factor_at_central_meridian"]      = {0.9996};
+    mapping["semi_major_axis"]                       = {6378206.4};
+    mapping["unit"]                                  = "metre";
     break;
   default:
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ string '%s'",
@@ -145,7 +145,7 @@ void check_consistency_epsg(const MappingInfo &info) {
   } else {
     // Check if the "info.mapping" variable in the input file matches the EPSG code.
     // Check strings.
-    for (auto s : epsg_mapping.get_all_strings()) {
+    for (const auto &s : epsg_mapping.all_strings()) {
       if (not info.mapping.has_attribute(s.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "PROJ string \"%s\" requires %s = \"%s\",\n"
@@ -169,7 +169,7 @@ void check_consistency_epsg(const MappingInfo &info) {
     }
 
     // Check doubles
-    for (auto d : epsg_mapping.get_all_doubles()) {
+    for (auto d : epsg_mapping.all_doubles()) {
       if (not info.mapping.has_attribute(d.first)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
@@ -201,7 +201,7 @@ MappingInfo get_projection_info(const File &input_file, const std::string &mappi
   result.proj = input_file.read_text_attribute("PISM_GLOBAL", "proj");
 
   bool proj_is_epsg = false;
-  for (auto &auth : {"epsg:", "EPSG:"}) {
+  for (const auto &auth : {"epsg:", "EPSG:"}) {
     if (result.proj.find(auth) != std::string::npos) {
       proj_is_epsg = true;
       break;
@@ -241,16 +241,17 @@ enum LonLat {LONGITUDE, LATITUDE};
 #if (Pism_USE_PROJ==1)
 
 //! Computes the area of a triangle using vector cross product.
-static double triangle_area(double *A, double *B, double *C) {
+static double triangle_area(const double *A, const double *B, const double *C) {
   double V1[3], V2[3];
   for (int j = 0; j < 3; ++j) {
     V1[j] = B[j] - A[j];
     V2[j] = C[j] - A[j];
   }
-
-  return 0.5*sqrt(PetscSqr(V1[1]*V2[2] - V2[1]*V1[2]) +
-                  PetscSqr(V1[0]*V2[2] - V2[0]*V1[2]) +
-                  PetscSqr(V1[0]*V2[1] - V2[0]*V1[1]));
+  using std::pow;
+  using std::sqrt;
+  return 0.5*sqrt(pow(V1[1]*V2[2] - V2[1]*V1[2], 2) +
+                  pow(V1[0]*V2[2] - V2[0]*V1[2], 2) +
+                  pow(V1[0]*V2[1] - V2[0]*V1[1], 2));
 }
 
 void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
@@ -345,7 +346,7 @@ static void compute_lon_lat(const std::string &projection,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3D &result) {
+                                   IceModelVec3 &result) {
 
   Proj crs(projection, "EPSG:4326");
 
@@ -403,7 +404,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3D &result) {
+                                   IceModelVec3 &result) {
   (void) projection;
   (void) which;
   (void) result;
@@ -421,11 +422,11 @@ void compute_latitude(const std::string &projection, IceModelVec2S &result) {
   compute_lon_lat(projection, LATITUDE, result);
 }
 
-void compute_lon_bounds(const std::string &projection, IceModelVec3D &result) {
+void compute_lon_bounds(const std::string &projection, IceModelVec3 &result) {
   compute_lon_lat_bounds(projection, LONGITUDE, result);
 }
 
-void compute_lat_bounds(const std::string &projection, IceModelVec3D &result) {
+void compute_lat_bounds(const std::string &projection, IceModelVec3 &result) {
   compute_lon_lat_bounds(projection, LATITUDE, result);
 }
 

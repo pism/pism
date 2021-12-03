@@ -7,26 +7,40 @@
 Spatial grid
 ------------
 
-The PISM grid covering the computational box is equally spaced in horizontal (`x`
-and `y`) directions. Vertical spacing in the ice is quadratic by default but
-optionally equal spacing can be chosen; choose with options :opt:`-z_spacing`
-[``quadratic``, ``equal``\] at bootstrapping. The grid read from a "``-i``" input file is
-used as is. The bedrock thermal layer model always uses equal vertical spacing.
+The PISM grid covering the computational box is equally spaced in horizontal (`x` and `y`)
+directions. Vertical spacing in the ice is quadratic by default but optionally equal
+spacing can be chosen; set using :config:`grid.ice_vertical_spacing` at bootstrapping. The
+bedrock thermal layer model always uses equal vertical spacing.
 
-The grid is described by four numbers, namely the number of grid points ``Mx`` in the
-`x` direction, the number ``My`` in the `y` direction, the number ``Mz`` in
-the `z` direction within the ice, and the number ``Mbz`` in the `z` direction
-within the bedrock thermal layer. These are specified by options :opt:`-Mx`, :opt:`-My`,
-:opt:`-Mz`, and :opt:`-Mbz`, respectively. The defaults are 61, 61, 31, and 1,
-respectively. Note that ``Mx``, ``My``, ``Mz``, and ``Mbz`` all indicate the number of
-grid *points* so the number of grid *spaces* are one less, thus 60, 60, 30, and 0 in the
-default case.
+The grid is described by four numbers, namely the number of grid points :config:`grid.Mx`
+in the `x` direction, the number :config:`grid.My` in the `y` direction, the number
+:config:`grid.Mz` in the `z` direction within the ice, and the number :config:`grid.Mbz`
+in the `z` direction within the bedrock thermal layer. These are specified by options
+:opt:`-Mx`, :opt:`-My`, :opt:`-Mz`, and :opt:`-Mbz`, respectively. Note that ``Mx``,
+``My``, ``Mz``, and ``Mbz`` all indicate the number of grid *points* so the number of grid
+*spaces* are one less.
 
-The lowest grid point in a column of ice, at `z=0`, coincides with the highest grid point
-in the bedrock, so ``Mbz`` must always be at least one. Choosing ``Mbz`` `>1` is required
-to use the bedrock thermal model. When a thermal bedrock layer is used, the distance
-``Lbz`` is controlled by the :opt:`-Lbz` option. Note that ``Mbz`` is unrelated to the bed
-deformation model (glacial isostasy model); see section :ref:`sec-beddef`.
+The lowest grid point in a grounded column of ice, at `z=0`, coincides with the highest
+grid point in the bedrock, so :config:`grid.Mbz` must always be at least one.
+
+.. figure:: figures/grid-vertical-pism.png
+   :name: fig-grid-vertical-pism
+
+   PISM's vertical grid with uniform `z` spacing. See :ref:`sec-vertchange` for details.
+
+Some PISM components (currently: the Blatter stress balance solver) use a
+geometry-following vertical grid with uniform vertical spacing withing each column.
+See :numref:`fig-grid-vertical-sigma`.
+
+.. figure:: figures/grid-vertical-sigma.png
+   :name: fig-grid-vertical-sigma
+
+   The "sigma" vertical grid used by PISM's Blatter solver
+
+Choosing ``Mbz`` `>1` is required to use the bedrock thermal model. When a thermal bedrock
+layer is used, the distance ``Lbz`` is controlled by the :opt:`-Lbz` option. Note that
+:config:`grid.Mbz` is unrelated to the bed deformation model (glacial isostasy model); see
+section :ref:`sec-beddef`.
 
 In the quadratically-spaced case the vertical spacing near the ice/bedrock interface is
 about four times finer than it would be with equal spacing for the same value of ``Mz``,
@@ -66,7 +80,7 @@ This is not the only possible interpretation, but it is consistent with the fini
 handling of mass (ice thickness) evolution is PISM.
 
 Consider a grid with minimum and maximum `x` coordinates `x_\text{min}` and `x_\text{max}`
-and the spacing `\Delta x`. The cell-centered interpretation implies that the domain
+and the spacing `\dx`. The cell-centered interpretation implies that the domain
 extends *past* |xmin| and |xmax| by one half of the grid spacing, see
 :numref:`fig-cell-center`.
 
@@ -87,9 +101,9 @@ as follows:
 
 .. math::
 
-   \Delta x &= x_1 - x_0
+   \dx &= x_1 - x_0
 
-   L_x &= \frac12 ((x_\text{max} - x_\text{min}) + \Delta x).
+   L_x &= \frac12 ((x_\text{max} - x_\text{min}) + \dx).
 
 This is not an issue when re-starting from a PISM output file but can cause confusion when
 specifying grid parameters at bootstrapping and reading in fields using "regridding."
@@ -98,7 +112,7 @@ For example:
 
 .. code-block:: bash
 
-   > pisms -grid.registration center \
+   > pismr -eisII A -grid.registration center \
            -Lx 10 -Mx 4 \
            -y 0 -verbose 1 \
            -o grid-test.nc
@@ -114,11 +128,11 @@ In summary, with the default (center) grid registration
 .. math::
    :label: eq-grid-center
 
-   \Delta x &= \frac{2 L_x}{M_x},
+   \dx &= \frac{2 L_x}{M_x},
 
-   x_\text{min} &= x_c - L_x + \frac12 \Delta x,
+   x_\text{min} &= x_c - L_x + \frac12 \dx,
 
-   x_\text{max} &= x_c + L_x - \frac12 \Delta x,
+   x_\text{max} &= x_c + L_x - \frac12 \dx,
 
 where `x_c` is the `x`\-coordinate of the domain center.
 
@@ -134,7 +148,7 @@ Compare this to
 
 .. code-block:: bash
 
-   > pisms -grid.registration corner \
+   > pismr -eisII A -grid.registration corner \
            -Lx 10 -Mx 5 \
            -y 0 -verbose 1 \
            -o grid-test.nc
@@ -149,7 +163,7 @@ With the "corner" grid registration
 .. math::
    :label: eq-grid-corner
 
-   \Delta x &= \frac{2 L_x}{M_x - 1},
+   \dx &= \frac{2 L_x}{M_x - 1},
 
    x_\text{min} &= x_c - L_x,
 
@@ -254,7 +268,7 @@ For example,
 
 .. code-block:: none
 
-   mpiexec -n 3 pisms -Mx 101 -My 101 \
+   mpiexec -n 3 pismr -eisII A -Mx 101 -My 101 \
                       -Nx 1 -procs_x 101 \
                       -Ny 3 -procs_y 20,61,20
 

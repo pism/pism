@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,6 +20,7 @@
 #define _PISMHYDROLOGY_H_
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec2T.hh"
 
@@ -113,7 +114,7 @@ public:
 class Hydrology : public Component {
 public:
   Hydrology(IceGrid::ConstPtr g);
-  virtual ~Hydrology();
+  virtual ~Hydrology() = default;
 
   void restart(const File &input_file, int record);
 
@@ -204,6 +205,7 @@ protected:
   void enforce_bounds(const IceModelVec2CellType &cell_type,
                       const IceModelVec2Int *no_model_mask,
                       double max_thickness,
+                      double ocean_water_thickness,
                       IceModelVec2S &water_thickness,
                       IceModelVec2S &grounded_margin_change,
                       IceModelVec2S &grounding_line_change,

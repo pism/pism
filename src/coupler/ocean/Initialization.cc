@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/coupler/util/init_step.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
@@ -30,26 +31,26 @@ namespace ocean {
 InitializationHelper::InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
-  m_melange_back_pressure_fraction->set_name("effective_melange_back_pressure_fraction");
-  m_melange_back_pressure_fraction->metadata().set_string("pism_intent", "model_state");
+  m_water_column_pressure = allocate_water_column_pressure(g);
+  m_water_column_pressure->set_name("effective_water_column_pressure");
+  m_water_column_pressure->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_temperature->set_name("effective_shelf_base_temperature");
-  m_shelf_base_temperature->metadata().set_string("pism_intent", "model_state");
+  m_shelf_base_temperature->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
   // use internal units when saving
   auto units = m_shelf_base_mass_flux->metadata().get_string("units");
-  m_shelf_base_mass_flux->metadata().set_string("glaciological_units", units);
-  m_shelf_base_mass_flux->metadata().set_string("pism_intent", "model_state");
+  m_shelf_base_mass_flux->metadata()["glaciological_units"] = units;
+  m_shelf_base_mass_flux->metadata()["pism_intent"] = "model_state";
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
   OceanModel::update_impl(geometry, t, dt);
 
-  m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
+  m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
   m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
   m_shelf_base_mass_flux->copy_from(m_input_model->shelf_base_mass_flux());
 }
@@ -67,7 +68,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
-    m_melange_back_pressure_fraction->read(file, last_record);
+    m_water_column_pressure->read(file, last_record);
     m_shelf_base_mass_flux->read(file, last_record);
     m_shelf_base_temperature->read(file, last_record);
 
@@ -81,7 +82,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
   // "-i ... -bootstrap -regrid_file ..."
   {
-    regrid("ocean model initialization helper", *m_melange_back_pressure_fraction,
+    regrid("ocean model initialization helper", *m_water_column_pressure,
            REGRID_WITHOUT_REGRID_VARS);
     regrid("ocean model initialization helper", *m_shelf_base_mass_flux,
            REGRID_WITHOUT_REGRID_VARS);
@@ -91,7 +92,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_melange_back_pressure_fraction->define(output);
+  m_water_column_pressure->define(output);
   m_shelf_base_mass_flux->define(output);
   m_shelf_base_temperature->define(output);
 
@@ -99,7 +100,7 @@ void InitializationHelper::define_model_state_impl(const File &output) const {
 }
 
 void InitializationHelper::write_model_state_impl(const File &output) const {
-  m_melange_back_pressure_fraction->write(output);
+  m_water_column_pressure->write(output);
   m_shelf_base_mass_flux->write(output);
   m_shelf_base_temperature->write(output);
 
@@ -114,8 +115,8 @@ const IceModelVec2S& InitializationHelper::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& InitializationHelper::melange_back_pressure_fraction_impl() const {
-  return *m_melange_back_pressure_fraction;
+const IceModelVec2S& InitializationHelper::average_water_column_pressure_impl() const {
+  return *m_water_column_pressure;
 }
 
 } // end of namespace ocean

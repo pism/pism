@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace stressbalance {
 class WeertmanSliding : public ShallowStressBalance {
 public:
   WeertmanSliding(IceGrid::ConstPtr g);
-  virtual ~WeertmanSliding();
+  virtual ~WeertmanSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:
   void init_impl();

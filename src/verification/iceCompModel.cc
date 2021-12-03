@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,8 +56,13 @@ namespace pism {
 
 using units::convert;
 
-IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
-  : IceModel(g, context), m_testname(mytest), m_bedrock_is_ice_forK(false) {
+IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
+  : IceModel(grid, context),
+    m_testname(test),
+    m_HexactL(m_grid, "HexactL", WITHOUT_GHOSTS),
+    m_strain_heating3_comp(m_grid, "strain_heating_comp", WITHOUT_GHOSTS, m_grid->z()),
+    m_bedrock_is_ice_forK(false)
+{
 
   m_log->message(2, "starting Test %c ...\n", m_testname);
 
@@ -121,7 +126,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
     m_config->set_flag("energy.enabled", false);
   }
 
-  m_config->set_flag("ocean.always_grounded", true);
+  // set sea level to -1e4 to ensure that all ice is grounded
+  m_config->set_number("sea_level.constant.value", -1e4);
 
   // special considerations for K and O wrt thermal bedrock and pressure-melting
   if ((m_testname == 'K') || (m_testname == 'O')) {
@@ -141,8 +147,8 @@ IceCompModel::IceCompModel(IceGrid::Ptr g, Context::Ptr context, int mytest)
     // use the SSA solver
     m_config->set_string("stress_balance_model", "ssa");
 
-    // this certainly is not a "dry simulation"
-    m_config->set_flag("ocean.always_grounded", false);
+    // set sea level to 0.0
+    m_config->set_number("sea_level.constant.value", 0.0);
 
     m_config->set_flag("stress_balance.ssa.dirichlet_bc", true);
   }
@@ -154,9 +160,7 @@ void IceCompModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-  m_HexactL.create(m_grid, "HexactL", WITH_GHOSTS, 2);
 
-  m_strain_heating3_comp.create(m_grid,"strain_heating_comp", WITHOUT_GHOSTS);
   m_strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
                                    "W m-3", "W m-3", "", 0);
 }
@@ -594,6 +598,21 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
   IceModel::print_summary(true);
 }
 
+static void write(units::System::Ptr sys,
+                  const File &file,
+                  size_t start,
+                  const char *name,
+                  const char *units,
+                  const char *long_name,
+                  double value,
+                  IO_Type type=PISM_DOUBLE) {
+  VariableMetadata v(name, sys);
+  v["units"] = units;
+  v["long_name"] = long_name;
+
+  io::define_timeseries(v, "N", file, type);
+  io::write_timeseries(file, v, start, {value});
+}
 
 void IceCompModel::reportErrors() {
   // geometry errors to report (for all tests except K and O):
@@ -733,135 +752,65 @@ void IceCompModel::reportErrors() {
   IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
 
   if (report_file.is_set()) {
-    unsigned int start;
-    TimeseriesMetadata err("N", "N", m_sys);
-
-    err.set_string("units", "1");
 
     m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
     File file(m_grid->com, report_file, PISM_NETCDF3, mode); // OK to use netcdf3
 
-    start = file.dimension_length("N");
+    size_t start = file.dimension_length("N");
 
     io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE);
 
     // Write the dimension variable:
-    io::write_timeseries(file, err, (size_t)start, (double)(start + 1), PISM_INT);
+    write(m_sys, file, start, "N", "1", "run number", start + 1);
 
     // Always write grid parameters:
-    err.set_name("dx");
-    err.set_string("units", "meters");
-    io::write_timeseries(file, err, (size_t)start, m_grid->dx());
-    err.set_name("dy");
-    io::write_timeseries(file, err, (size_t)start, m_grid->dy());
-    err.set_name("dz");
-    io::write_timeseries(file, err, (size_t)start, m_grid->dz_max());
+    write(m_sys, file, start, "dx", "meter", "grid spacing", m_grid->dx());
+    write(m_sys, file, start, "dy", "meter", "grid spacing", m_grid->dy());
+    write(m_sys, file, start, "dz", "meter", "grid spacing", m_grid->dz_max());
 
     // Always write the test name:
-    err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-    err.set_name("test");
-    io::write_timeseries(file, err, (size_t)start, (double)m_testname, PISM_BYTE);
+    write(m_sys, file, start, "test", "", "test name", m_testname);
 
     if ((m_testname != 'K') && (m_testname != 'O')) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("relative_volume");
-      err.set_string("units", "percent");
-      err.set_string("long_name", "relative ice volume error");
-      io::write_timeseries(file, err, (size_t)start, 100*volerr/volexact);
-
-      err.set_name("relative_max_eta");
-      err.set_string("units", "1");
-      err.set_string("long_name", "relative $\\eta$ error");
-      io::write_timeseries(file, err, (size_t)start, maxetaerr/pow(domeHexact,m));
-
-      err.set_name("maximum_thickness");
-      err.set_string("units", "meters");
-      err.set_string("long_name", "maximum ice thickness error");
-      io::write_timeseries(file, err, (size_t)start, maxHerr);
-
-      err.set_name("average_thickness");
-      err.set_string("units", "meters");
-      err.set_string("long_name", "average ice thickness error");
-      io::write_timeseries(file, err, (size_t)start, avHerr);
+      write(m_sys, file, start, "relative_volume", "1", "relative volume error", 100*volerr/volexact);
+      write(m_sys, file, start, "relative_max_eta", "1", "relative $\\eta$ error", maxetaerr/pow(domeHexact,m));
+      write(m_sys, file, start, "maximum_thickness", "meters", "maximum ice thickness error", maxHerr);
+      write(m_sys, file, start, "average_thickness", "meters", "average ice thickness error", avHerr);
     }
 
     if ((m_testname == 'F') || (m_testname == 'G')) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_temperature");
-      err.set_string("units", "Kelvin");
-      err.set_string("long_name", "maximum ice temperature error");
-      io::write_timeseries(file, err, (size_t)start, maxTerr);
+      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_basal_temperature", "Kelvin", "maximum basal temperature error", basemaxTerr);
+      write(m_sys, file, start, "average_basal_temperature", "Kelvin", "average basal temperature error", baseavTerr);
 
-      err.set_name("average_temperature");
-      err.set_string("long_name", "average ice temperature error");
-      io::write_timeseries(file, err, (size_t)start, avTerr);
+      {
+        units::Converter c(m_sys, "J s-1 m-3", "1e6 J s-1 m-3");
+        write(m_sys, file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
+        write(m_sys, file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
+      }
 
-      err.set_name("maximum_basal_temperature");
-      err.set_string("long_name", "maximum basal temperature error");
-      io::write_timeseries(file, err, (size_t)start, basemaxTerr);
-      err.set_name("average_basal_temperature");
-      err.set_string("long_name", "average basal temperature error");
-      io::write_timeseries(file, err, (size_t)start, baseavTerr);
-
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_sigma");
-      err.set_string("units", "J s-1 m-3");
-      err.set_string("glaciological_units", "1e6 J s-1 m-3");
-      err.set_string("long_name", "maximum strain heating error");
-      io::write_timeseries(file, err, (size_t)start, max_strain_heating_error);
-
-      err.set_name("average_sigma");
-      err.set_string("long_name", "average strain heating error");
-      io::write_timeseries(file, err, (size_t)start, av_strain_heating_error);
-
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_surface_velocity");
-      err.set_string("long_name", "maximum ice surface horizontal velocity error");
-      err.set_string("units", "m second-1");
-      err.set_string("glaciological_units", "meters year-1");
-      io::write_timeseries(file, err, (size_t)start, maxUerr);
-
-      err.set_name("average_surface_velocity");
-      err.set_string("long_name", "average ice surface horizontal velocity error");
-      io::write_timeseries(file, err, (size_t)start, avUerr);
-
-      err.set_name("maximum_surface_w");
-      err.set_string("long_name", "maximum ice surface vertical velocity error");
-      io::write_timeseries(file, err, (size_t)start, maxWerr);
-
-      err.set_name("average_surface_w");
-      err.set_string("long_name", "average ice surface vertical velocity error");
-      io::write_timeseries(file, err, (size_t)start, avWerr);
+      {
+        units::Converter c(m_sys, "m second-1", "m year-1");
+        write(m_sys, file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
+        write(m_sys, file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
+        write(m_sys, file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
+        write(m_sys, file, start, "average_surface_w", "m year-1", "average ice surface vertical velocity error", c(avWerr));
+      }
     }
 
     if ((m_testname == 'K') || (m_testname == 'O')) {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_temperature");
-      err.set_string("units", "Kelvin");
-      err.set_string("long_name", "maximum ice temperature error");
-      io::write_timeseries(file, err, (size_t)start, maxTerr);
-
-      err.set_name("average_temperature");
-      err.set_string("long_name", "average ice temperature error");
-      io::write_timeseries(file, err, (size_t)start, avTerr);
-
-      err.set_name("maximum_bedrock_temperature");
-      err.set_string("long_name", "maximum bedrock temperature error");
-      io::write_timeseries(file, err, (size_t)start, maxTberr);
-
-      err.set_name("average_bedrock_temperature");
-      err.set_string("long_name", "average bedrock temperature error");
-      io::write_timeseries(file, err, (size_t)start, avTberr);
+      write(m_sys, file, start, "maximum_temperature", "Kelvin", "maximum ice temperature error", maxTerr);
+      write(m_sys, file, start, "average_temperature", "Kelvin", "average ice temperature error", avTerr);
+      write(m_sys, file, start, "maximum_bedrock_temperature", "Kelvin", "maximum bedrock temperature error", maxTberr);
+      write(m_sys, file, start, "average_bedrock_temperature", "Kelvin", "average bedrock temperature error", avTberr);
     }
 
     if (m_testname == 'O') {
-      err.clear_all_strings(); err.clear_all_doubles(); err.set_string("units", "1");
-      err.set_name("maximum_basal_melt_rate");
-      err.set_string("units", "m second-1");
-      err.set_string("glaciological_units", "meters year-1");
-      io::write_timeseries(file, err, (size_t)start, maxbmelterr);
+      units::Converter c(m_sys, "m second-1", "m year-1");
+      write(m_sys, file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
     }
   }
 
@@ -910,26 +859,29 @@ void IceCompModel::test_V_init() {
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_ssa_dirichlet_bc_mask,
-      &m_ssa_dirichlet_bc_values};
+  IceModelVec::AccessList list
+    {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
+     &m_velocity_bc_mask, &m_velocity_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {
-      m_ssa_dirichlet_bc_mask(i,j) = 1;
-      m_ssa_dirichlet_bc_values(i,j)  = Vector2(upstream_velocity, 0.0);
+      m_velocity_bc_mask(i,j) = 1;
+      m_velocity_bc_values(i,j)  = {upstream_velocity, 0.0};
       m_geometry.ice_thickness(i, j) = upstream_thk;
+      m_ice_thickness_bc_mask(i, j) = 1;
     } else {
-      m_ssa_dirichlet_bc_mask(i,j) = 0;
-      m_ssa_dirichlet_bc_values(i,j)  = Vector2(0.0, 0.0);
+      m_velocity_bc_mask(i,j) = 0;
+      m_velocity_bc_values(i,j)  = Vector2(0.0, 0.0);
       m_geometry.ice_thickness(i, j) = 0;
+      m_ice_thickness_bc_mask(i, j) = 0;
     }
   }
 
-  m_ssa_dirichlet_bc_mask.update_ghosts();
+  m_velocity_bc_mask.update_ghosts();
 
-  m_ssa_dirichlet_bc_values.update_ghosts();
+  m_velocity_bc_values.update_ghosts();
 
   m_geometry.ice_thickness.update_ghosts();
 }

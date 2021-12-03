@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,10 @@ MaxTimestep IceModel::extras_max_timestep(double my_t) {
     return MaxTimestep("reporting (-extra_times)");
   }
 
-  return reporting_max_timestep(m_extra_times, my_t, "reporting (-extra_times)");
+  double eps = m_config->get_number("time_stepping.resolution");
+
+  return reporting_max_timestep(m_extra_times, my_t, eps,
+                                "reporting (-extra_times)");
 }
 
 static std::set<std::string> process_extra_shortcuts(const Config &config,
@@ -236,28 +239,29 @@ void IceModel::write_extras() {
                                  // is only used if save_now == true, and in
                                  // this case saving_after is guaranteed to be
                                  // initialized. See the code below.
-  char filename[PETSC_MAX_PATH_LEN];
+  std::string filename;
   unsigned int current_extra;
   // determine if the user set the -save_at and -save_to options
   if (not m_save_extra) {
     return;
   }
 
+  const double time_resolution = m_config->get_number("time_stepping.resolution");
   double current_time = m_time->current();
 
   // do we need to save *now*?
   if (m_next_extra < m_extra_times.size() and
       (current_time >= m_extra_times[m_next_extra] or
-       fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
+       fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
     // the condition above is "true" if we passed a requested time or got to
-    // within 1 second from it
+    // within time_resolution seconds from it
 
     current_extra = m_next_extra;
 
     // update next_extra
     while (m_next_extra < m_extra_times.size() and
            (m_extra_times[m_next_extra] <= current_time or
-            fabs(current_time - m_extra_times[m_next_extra]) < 1.0)) {
+            fabs(current_time - m_extra_times[m_next_extra]) < time_resolution)) {
       m_next_extra++;
     }
 
@@ -296,15 +300,17 @@ void IceModel::write_extras() {
 
   if (m_split_extra) {
     m_extra_file_is_ready = false;        // each time-series record is written to a separate file
-    snprintf(filename, PETSC_MAX_PATH_LEN, "%s_%s.nc",
-             m_extra_filename.c_str(), m_time->date().c_str());
+    auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
+    filename = pism::printf("%s_%s.nc",
+                            m_extra_filename.c_str(),
+                            date_without_spaces.c_str());
   } else {
-    strncpy(filename, m_extra_filename.c_str(), PETSC_MAX_PATH_LEN);
+    filename = m_extra_filename;
   }
 
   m_log->message(3,
                  "saving spatial time-series to %s at %s\n",
-                 filename, m_time->date().c_str());
+                 filename.c_str(), m_time->date(m_time->current()).c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
   bool append = m_config->get_flag("output.extra.append");
@@ -328,7 +334,8 @@ void IceModel::write_extras() {
       io::define_time(*m_extra_file, *m_ctx);
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
-      io::define_time_bounds(m_extra_bounds, *m_extra_file);
+      io::define_time_bounds(m_extra_bounds,
+                             time_name, "nv", *m_extra_file);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 

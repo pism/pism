@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ static char help[] =
 using namespace pism;
 
 //! Allocate the PISMV (verification) context. Uses ColdEnthalpyConverter.
-Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -48,19 +48,18 @@ Context::Ptr pismv_context(MPI_Comm com, const std::string &prefix) {
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
 
-  config->set_string("time.calendar", "none");
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
 
-  set_config_from_options(*config);
+  set_config_from_options(sys, *config);
 
   print_config(*logger, 3, *config);
 
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 GridParameters pismv_grid_defaults(Config::Ptr config,
@@ -133,13 +132,13 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   return P;
 }
 
-IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
+IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
 
   if (config->get_flag("input.bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pisms does not support bootstrapping");
+    throw RuntimeError(PISM_ERROR_LOCATION, "pismv does not support bootstrapping");
   }
 
   if (not input_file.empty()) {
@@ -151,7 +150,7 @@ IceGrid::Ptr pismv_grid(Context::Ptr ctx, char testname) {
     // use defaults set by pismv_grid_defaults()
     GridParameters P = pismv_grid_defaults(ctx->config(), testname);
     P.horizontal_size_from_options();
-    P.horizontal_extent_from_options();
+    P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
     P.ownership_ranges_from_options(ctx->size());
 
@@ -163,11 +162,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm com = MPI_COMM_WORLD;
 
   petsc::Initializer petsc(argc, argv, help);
-  com = PETSC_COMM_WORLD;
+  com = MPI_COMM_WORLD;
       
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
-    Context::Ptr ctx = pismv_context(com, "pismv");
+    std::shared_ptr<Context> ctx = pismv_context(com, "pismv");
     Logger::Ptr log = ctx->log();
 
     std::string usage =
@@ -199,7 +198,9 @@ int main(int argc, char *argv[]) {
     m.run();
     log->message(2, "done with run\n");
 
-    m.reportErrors();
+    if (not options::Bool("-no_report", "do not print the error report")) {
+      m.reportErrors();
+    }
 
     // provide a default output file name if no -o option is given.
     m.save_results();

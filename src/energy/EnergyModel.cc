@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,6 +30,7 @@
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace energy {
@@ -128,36 +129,31 @@ void EnergyModelStats::sum(MPI_Comm com) {
 
 EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
                          stressbalance::StressBalance *stress_balance)
-  : Component(grid), m_stress_balance(stress_balance) {
+  : Component(grid),
+    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
+    m_work(m_grid, "work_vector", WITHOUT_GHOSTS, m_grid->z()),
+    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS),
+    m_stress_balance(stress_balance) {
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+  // POSSIBLE standard name = land_ice_enthalpy
+  m_ice_enthalpy.set_attrs("model_state",
+                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
+                           "J kg-1", "J kg-1", "", 0);
 
   {
-    m_ice_enthalpy.create(m_grid, "enthalpy", WITH_GHOSTS, WIDE_STENCIL);
-    // POSSIBLE standard name = land_ice_enthalpy
-    m_ice_enthalpy.set_attrs("model_state",
-                             "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                             "J kg-1", "J kg-1", "", 0);
-  }
-
-  {
-    m_basal_melt_rate.create(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS);
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
                                 "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
                                 "m s-1", "m year-1", "", 0);
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
-    m_basal_melt_rate.metadata().set_string("comment", "positive basal melt rate corresponds to ice loss");
+    m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   }
 
   // a 3d work vector
-  {
-    m_work.create(m_grid, "work_vector", WITHOUT_GHOSTS);
-    m_work.set_attrs("internal",
-                     "usually new values of temperature or enthalpy during time step",
-                     "", "", "", 0);
-  }
+  m_work.set_attrs("internal",
+                   "usually new values of temperature or enthalpy during time step",
+                   "", "", "", 0);
 }
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
@@ -283,14 +279,12 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
-    m_work.update_ghosts(m_ice_enthalpy);
+    m_ice_enthalpy.copy_from(m_work);
   }
   profiling.end("ice_energy");
 
   // globalize m_stats and update m_stdout_flags
   {
-    char buffer[50] = "";
-
     m_stats.sum(m_grid->com);
 
     if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
@@ -298,15 +292,15 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
       const double reporting_threshold = 5.0; // only report if above 5%
 
       if (reduced_accuracy_percentage > reporting_threshold and m_log->get_threshold() > 2) {
-        snprintf(buffer, 50, "  [BPsacr=%.4f%%] ", reduced_accuracy_percentage);
-        m_stdout_flags = buffer + m_stdout_flags;
+        m_stdout_flags = (pism::printf("  [BPsacr=%.4f%%] ", reduced_accuracy_percentage) +
+                          m_stdout_flags);
       }
     }
 
     if (m_stats.bulge_counter > 0) {
       // count of when advection bulges are limited; frequently it is identically zero
-      snprintf(buffer, 50, " BULGE=%d ", m_stats.bulge_counter);
-      m_stdout_flags = buffer + m_stdout_flags;
+      m_stdout_flags = (pism::printf(" BULGE=%d ", m_stats.bulge_counter) +
+                        m_stdout_flags);
     }
   }
 }
@@ -348,11 +342,10 @@ public:
     : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
     set_units("m3 / second", "m3 / year");
-    m_ts.variable().set_string("long_name",
-                               "rate of ice loss due to liquefaction,"
-                               " averaged over the reporting interval");
-    m_ts.variable().set_string("comment", "positive means ice loss");
-    m_ts.variable().set_string("cell_methods", "time: mean");
+    m_variable["long_name"] =
+      "rate of ice loss due to liquefaction, averaged over the reporting interval";
+    m_variable["comment"]      = "positive means ice loss";
+    m_variable["cell_methods"] = "time: mean";
   }
 protected:
   double compute() {
@@ -361,50 +354,10 @@ protected:
   }
 };
 
-namespace diagnostics {
-/*! @brief Report ice enthalpy. */
-class Enthalpy : public Diag<EnergyModel>
-{
-public:
-  Enthalpy(const EnergyModel *m)
-    : Diag<EnergyModel>(m) {
-    m_vars = {model->enthalpy().metadata()};
-  }
-
-protected:
-  IceModelVec::Ptr compute_impl() const {
-
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "enthalpy", WITHOUT_GHOSTS));
-    result->metadata(0) = m_vars[0];
-
-    const IceModelVec3 &input = model->enthalpy();
-
-    // FIXME: implement IceModelVec3::copy_from()
-
-    IceModelVec::AccessList list {result.get(), &input};
-    ParallelSection loop(m_grid->com);
-    try {
-      for (Points p(*m_grid); p; p.next()) {
-        const int i = p.i(), j = p.j();
-
-        result->set_column(i, j, input.get_column(i, j));
-      }
-    } catch (...) {
-      loop.failed();
-    }
-    loop.check();
-
-
-    return result;
-  }
-};
-
-} // end of namespace diagnostics
-
 DiagnosticList EnergyModel::diagnostics_impl() const {
   DiagnosticList result;
   result = {
-    {"enthalpy",                 Diagnostic::Ptr(new diagnostics::Enthalpy(this))},
+    {"enthalpy",                 Diagnostic::wrap(m_ice_enthalpy)},
     {"basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate)}
   };
   return result;

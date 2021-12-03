@@ -15,7 +15,8 @@ import PISM.testing
 import sys
 import os
 import numpy as np
-from unittest import TestCase
+from unittest import TestCase, SkipTest
+from PISM.testing import filename
 
 ctx = PISM.Context()
 ctx.log.set_threshold(0)
@@ -146,23 +147,40 @@ def create_modeldata_test():
 
 
 def grid_from_file_test():
-    "Intiialize a grid from a file"
+    "Intiialize a grid from a file (test 1)"
     grid = create_dummy_grid()
 
     enthalpy = PISM.model.createEnthalpyVec(grid)
     enthalpy.set(80e3)
 
-    output_file = "test_grid_from_file.nc"
+    file_name = filename("grid_from_file")
     try:
-        pio = PISM.util.prepare_output(output_file)
+        pio = PISM.util.prepare_output(file_name)
 
         enthalpy.write(pio)
 
-        pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
+        pio = PISM.File(grid.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
         grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
     finally:
-        os.remove(output_file)
+        os.remove(file_name)
+
+def grid_from_file_test_2():
+    "Intiialize a grid from a file (test 2)"
+    grid = create_dummy_grid()
+
+    enthalpy = PISM.model.createEnthalpyVec(grid)
+    enthalpy.set(80e3)
+
+    file_name = filename("grid_from_file")
+    try:
+        pio = PISM.util.prepare_output(file_name)
+
+        enthalpy.write(pio)
+
+        grid2 = PISM.IceGrid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+    finally:
+        os.remove(file_name)
 
 def create_special_vecs_test():
     "Test helpers used to create standard PISM fields"
@@ -306,7 +324,7 @@ def modelvecs_test():
     vecs.markForWriting("thk")
 
     # test write()
-    output_file = "test_ModelVecs.nc"
+    output_file = filename("test_ModelVecs")
     try:
         pio = PISM.util.prepare_output(output_file)
         pio.close()
@@ -367,7 +385,7 @@ def util_test():
     "Test the PISM.util module"
     grid = create_dummy_grid()
 
-    output_file = "test_pism_util.nc"
+    output_file = filename("test_pism_util")
     try:
         pio = PISM.File(grid.com, output_file, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         pio.close()
@@ -392,7 +410,7 @@ def logging_test():
 
     import PISM.logging as L
 
-    log_filename = "log.nc"
+    log_filename = filename("log")
     try:
         PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c = L.CaptureLogger(log_filename)
@@ -419,7 +437,7 @@ def logging_test():
     finally:
         os.remove(log_filename)
 
-    log_filename = "other_log.nc"
+    log_filename = filename("other_log")
     try:
         PISM.File(grid.com, log_filename, PISM.PISM_NETCDF3, PISM.PISM_READWRITE_MOVE)
         c.write(log_filename, "other_log")  # non-default arguments
@@ -583,7 +601,7 @@ def pism_context_test():
 
     EC = PISM.EnthalpyConverter(config)
 
-    time = PISM.Time(config, "360_day", system)
+    time = PISM.Time(com, config, logger, system)
 
     ctx = PISM.cpp.Context(com, system, config, EC, time, logger, "greenland")
 
@@ -703,7 +721,7 @@ def ssa_trivial_test():
 
             # zero Dirichler B.C. everywhere
             vecs.vel_bc.set(0.0)
-            vecs.bc_mask.set(1.0)
+            vecs.vel_bc_mask.set(1.0)
 
         def _initSSA(self):
             # The following ensure that the strength extension is used everywhere
@@ -717,7 +735,7 @@ def ssa_trivial_test():
         def exactSolution(self, i, j, x, y):
             return [0, 0]
 
-    output_file = "ssa_trivial.nc"
+    output_file = filename("ssa_trivial")
     try:
         Mx = 11
         My = 11
@@ -786,21 +804,22 @@ def regridding_test():
             F_x = (x[i] - x_min) / (x_max - x_min)
             F_y = (y[j] - y_min) / (y_max - y_min)
             thk1[i, j] = (F_x + F_y) / 2.0
-    thk1.dump("thk1.nc")
 
-    thk2.regrid("thk1.nc", critical=True)
+    file_name = filename("thickness")
+    try:
+        thk1.dump(file_name)
 
-    with PISM.vec.Access(nocomm=[thk1, thk2]):
-        for (i, j) in grid.points():
-            v1 = thk1[i, j]
-            v2 = thk2[i, j]
-            if np.abs(v1 - v2) > 1e-12:
-                raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
+        thk2.regrid(file_name, critical=True)
 
-    import os
-    os.remove("thk1.nc")
+        with PISM.vec.Access(nocomm=[thk1, thk2]):
+            for (i, j) in grid.points():
+                v1 = thk1[i, j]
+                v2 = thk2[i, j]
+                if np.abs(v1 - v2) > 1e-12:
+                    raise AssertionError("mismatch at {},{}: {} != {}".format(i, j, v1, v2))
 
-
+    finally:
+        os.remove(file_name)
 
 def interpolation_weights_test():
     "Test 2D interpolation weights."
@@ -866,8 +885,7 @@ def vertical_extrapolation_during_regridding_test():
     grid = PISM.IceGrid(ctx.ctx, params)
 
     # create an IceModelVec that uses this grid
-    v = PISM.IceModelVec3()
-    v.create(grid, "test", PISM.WITHOUT_GHOSTS)
+    v = PISM.IceModelVec3(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
     # set a column
@@ -875,50 +893,49 @@ def vertical_extrapolation_during_regridding_test():
         v.set_column(1, 1, z)
 
     # save to a file
-    v.dump("test.nc")
-
-    # create a taller grid (to 2000m):
-    params.Lz = 2000
-    params.Mz = 41
-    z_tall = np.linspace(0, params.Lz, params.Mz)
-    params.z[:] = z_tall
-
-    tall_grid = PISM.IceGrid(ctx.ctx, params)
-
-    # create an IceModelVec that uses this grid
-    v_tall = PISM.IceModelVec3()
-    v_tall.create(tall_grid, "test", PISM.WITHOUT_GHOSTS)
-
-    # Try regridding without extrapolation. This should fail.
+    file_name = filename("regridding")
     try:
+        v.dump(file_name)
+
+        # create a taller grid (to 2000m):
+        params.Lz = 2000
+        params.Mz = 41
+        z_tall = np.linspace(0, params.Lz, params.Mz)
+        params.z[:] = z_tall
+
+        tall_grid = PISM.IceGrid(ctx.ctx, params)
+
+        # create an IceModelVec that uses this grid
+        v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
+
+        # Try regridding without extrapolation. This should fail.
+        try:
+            ctx.ctx.log().disable()
+            v_tall.regrid(file_name, PISM.CRITICAL)
+            ctx.ctx.log().enable()
+            raise AssertionError("Should not be able to regrid without extrapolation")
+        except RuntimeError as e:
+            pass
+
+        # allow extrapolation during regridding
+        ctx.config.set_flag("grid.allow_extrapolation", True)
+
+        # regrid from test.nc
         ctx.ctx.log().disable()
-        v_tall.regrid("test.nc", PISM.CRITICAL)
+        v_tall.regrid(file_name, PISM.CRITICAL)
         ctx.ctx.log().enable()
-        raise AssertionError("Should not be able to regrid without extrapolation")
-    except RuntimeError as e:
-        pass
 
-    # allow extrapolation during regridding
-    ctx.config.set_flag("grid.allow_extrapolation", True)
+        # get a column
+        with PISM.vec.Access(nocomm=[v_tall]):
+            column = np.array(v_tall.get_column(1, 1))
 
-    # regrid from test.nc
-    ctx.ctx.log().disable()
-    v_tall.regrid("test.nc", PISM.CRITICAL)
-    ctx.ctx.log().enable()
+        # compute the desired result
+        desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
 
-    # get a column
-    with PISM.vec.Access(nocomm=[v_tall]):
-        column = np.array(v_tall.get_column_vector(1, 1))
-
-    # compute the desired result
-    desired = np.r_[np.linspace(0, 1000, 21), np.zeros(20) + 1000]
-
-    # compare
-    np.testing.assert_almost_equal(column, desired)
-
-    # clean up
-    import os
-    os.remove("test.nc")
+        # compare
+        np.testing.assert_almost_equal(column, desired)
+    finally:
+        os.remove(file_name)
 
 class PrincipalStrainRates(TestCase):
     def u_exact(self, x, y):
@@ -970,7 +987,8 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.IceModelVec2(grid, "strain_rates", PISM.WITHOUT_GHOSTS, 0, 2)
+        strain_rates = PISM.IceModelVec3(grid, "strain_rates",
+                                         PISM.WITHOUT_GHOSTS, 2)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()
@@ -1004,68 +1022,18 @@ class PrincipalStrainRates(TestCase):
     def tearDown(self):
         pass
 
-def test_constant_interpolation():
-    "Piecewise-constant interpolation in Timeseries"
-
-    ctx = PISM.Context()
-    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
-
-    t = [0, 1, 2, 3]
-    y = [2, 3, 1]
-    N = len(y)
-
-    for k in range(N):
-        ts.append(y[k], t[k], t[k + 1])
-
-    # extrapolation on the left
-    assert ts(t[0] - 1) == y[0]
-    # extrapolation on the right
-    assert ts(t[-1] + 1) == y[-1]
-    # interior intervals
-    for k in range(N):
-        T = 0.5 * (t[k] + t[k + 1])
-
-        assert ts(T) == y[k], (ts(T), y[k])
-
-def test_timeseries_linear_interpolation():
-    "Linear interpolation in Timeseries"
-
-    ctx = PISM.Context()
-    ts = PISM.Timeseries(ctx.com, ctx.unit_system, "test", "time")
-
-    def f(x):
-        "a linear function that can be reproduced exactly"
-        return 2.0 * x - 3.0
-
-    N = 4
-    t = np.arange(N + 1, dtype=np.float64)
-
-    for k in range(N):
-        # use right end point
-        ts.append(f(t[k + 1]), t[k], t[k + 1])
-
-    ts.set_use_bounds(False)
-
-    # extrapolation on the left (note that t[0] is not used)
-    assert ts(t[1] - 1) == f(t[1])
-
-    # extrapolation on the right
-    assert ts(t[-1] + 1) == f(t[-1])
-
-    # interior intervals
-    for k in range(1, N):
-        dt = t[k + 1] - t[k]
-        T = t[k] + 0.25 * dt    # *not* the midpoint of the interval
-
-        assert ts(T) == f(T), (T, ts(T), f(T))
-
 def test_trapezoid_integral():
     "Linear integration weights"
     x = [0.0, 0.5, 1.0, 2.0]
     y = [2.0, 2.5, 3.0, 2.0]
 
     def f(a, b):
-        return PISM.Interpolation(PISM.LINEAR, x, [a, b]).integral(y)
+        weights = PISM.integration_weights(x, PISM.LINEAR, a, b)
+
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
     assert f(0, 2) == 5.0
     assert f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2) == f(0, 2)
@@ -1078,25 +1046,61 @@ def test_trapezoid_integral():
     assert f(2, 5) == 3 * y[-1]
     assert f(3, 4) == 1 * y[-1]
 
-def test_linear_periodic():
-    "Linear (periodic) interpolation"
 
-    period = 1.0
-    x_p = np.linspace(0, 0.9, 10) + 0.05
-    y_p = np.sin(2 * np.pi * x_p)
+def test_piece_wise_constant_integral():
+    "Linear integration weights"
+    x = [0.0, 0.5, 1.0, 2.0]
+    y = [2.0, 2.5, 3.0, 2.0]
 
-    # grid with end points added (this makes periodic interpolation unnecessary)
-    x = np.r_[0, x_p, 1]
-    y = np.sin(2 * np.pi * x)
+    def f(a, b):
+        weights = PISM.integration_weights(x, PISM.PIECEWISE_CONSTANT, a, b)
 
-    # target grid
-    xx = np.linspace(0, 1, 21)
+        result = 0.0
+        for k, w in weights.items():
+            result += w * y[k]
+        return result
 
-    yy_p = PISM.Interpolation(PISM.LINEAR_PERIODIC, x_p, xx, period).interpolate(y_p)
+    np.testing.assert_almost_equal(f(0, 2), 5.25)
+    np.testing.assert_almost_equal(f(0.25, 0.35), 0.2)
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1) + f(1, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.5) + f(0.5, 1.5) + f(1.5, 2), f(0, 2))
+    np.testing.assert_almost_equal(f(0, 0.25) + f(0.25, 1.75) + f(1.75, 2), f(0, 2))
 
-    yy = PISM.Interpolation(PISM.LINEAR, x, xx).interpolate(y)
+    # constant extrapolation:
+    np.testing.assert_almost_equal(f(-2, -1), 1 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0), 2 * y[0])
+    np.testing.assert_almost_equal(f(-2, 0.5), 2 * y[0] + 0.5 * 2)
+    np.testing.assert_almost_equal(f(2, 5), 3 * y[-1])
+    np.testing.assert_almost_equal(f(3, 4), 1 * y[-1])
 
-    np.testing.assert_almost_equal(yy, yy_p)
+def test_interpolation_other():
+    x = [0.0, 10.0]
+
+    try:
+        PISM.Interpolation(PISM.PIECEWISE_CONSTANT, [2, 1], [2, 1])
+        assert False, "failed to detect non-increasing times"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        W = PISM.integration_weights(x, PISM.NEAREST, 1, 2)
+        assert False, "failed to detect an unsupported interpolation type"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    try:
+        W = PISM.integration_weights(x, PISM.LINEAR, 1, 1)
+        assert False, "failed to catch a >= b"
+    except RuntimeError as e:
+        print(e)
+        pass
+
+    I = PISM.Interpolation(PISM.LINEAR, [0, 1, 2], [0.5, 1.5])
+    np.testing.assert_almost_equal(I.left(), [0, 1])
+    np.testing.assert_almost_equal(I.right(), [1, 2])
+    np.testing.assert_almost_equal(I.alpha(), [0.5, 0.5])
 
 def test_nearest_neighbor():
     "Nearest neighbor interpolation"
@@ -1112,7 +1116,7 @@ def test_nearest_neighbor():
 
 class AgeModel(TestCase):
     def setUp(self):
-        self.output_file = "age.nc"
+        self.output_file = filename("age")
         self.grid = self.create_dummy_grid()
 
     def create_dummy_grid(self):
@@ -1125,9 +1129,9 @@ class AgeModel(TestCase):
         "Check if AgeModel runs"
         ice_thickness = PISM.model.createIceThicknessVec(self.grid)
 
-        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS)
-        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS)
-        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS)
+        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
+        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
+        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
 
         ice_thickness.set(4000.0)
         u.set(0.0)
@@ -1156,14 +1160,14 @@ def checksum_test():
     v = PISM.IceModelVec2S(grid, "dummy", PISM.WITHOUT_GHOSTS)
     v.set(1e15)
 
-    old_checksum = v.checksum()
+    old_checksum = v.checksum(serial=False)
 
     with PISM.vec.Access(nocomm=v):
         for (i, j) in grid.points():
             if i == 0 and j == 0:
                 v[i, j] += 1
 
-    assert old_checksum != v.checksum()
+    assert old_checksum != v.checksum(serial=False)
 
 class ForcingOptions(TestCase):
     def setUp(self):
@@ -1172,7 +1176,7 @@ class ForcingOptions(TestCase):
         self.config.init_with_default(ctx.log)
         self.config.import_from(ctx.config)
 
-        self.filename = "forcing-options-input.nc"
+        self.filename = filename("forcing-options-input")
         PISM.util.prepare_output(self.filename)
 
     def test_without_file(self):
@@ -1182,8 +1186,7 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_with_file(self):
         "ForcingOptions: xxx.file is set"
@@ -1192,8 +1195,7 @@ class ForcingOptions(TestCase):
         opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
 
         assert opt.filename == self.filename
-        assert opt.period == 0
-        assert opt.reference_time == 0
+        assert opt.periodic == False
 
     def test_without_file_and_without_input_file(self):
         "ForcingOptions: xxx.file is not set and -i is not set"
@@ -1203,19 +1205,387 @@ class ForcingOptions(TestCase):
         except RuntimeError:
             pass
 
-    def test_negative_period(self):
-        "ForcingOptions: negative period"
-        ctx.config.set_string("input.file", self.filename)
-        ctx.config.set_number("surface.given.period", -1)
-
-        try:
-            opt = PISM.ForcingOptions(ctx.ctx, "surface.given")
-            assert False, "failed to catch negative xxx.period"
-        except RuntimeError:
-            pass
-
     def tearDown(self):
         # reset configuration parameters
         ctx.config.import_from(self.config)
 
         os.remove(self.filename)
+
+def test_bq2():
+    "2-point boundary quadrature"
+    raise SkipTest("not implemented")
+    dx = 1.0
+    dy = dx
+    Q = PISM.BoundaryQuadrature2(1, 1, 1)
+    for q in [0, 1]:
+        for s in [0, 1, 2, 3]:
+            psi = [Q.germ(s, q, k).val for k in [0, 1]]
+            assert sum(psi) == 1.0, "side = {}, q = {}, psi = {}".format(s, q, psi)
+
+class ScalarForcing(TestCase):
+    def setUp(self):
+        suffix = filename("-scalar-forcing-")
+        self.filename              = "input" + suffix
+        self.filename_decreasing   = "decreasing" + suffix
+        self.filename_wrong_bounds = "wrong-bounds" + suffix
+        self.filename_2d           = "2d" + suffix
+        self.filename_1            = "one-value" + suffix
+        self.filename_no_bounds    = "no-bounds" + suffix
+
+        def f(x):
+            return np.sin(2 * np.pi / 12 * x)
+
+        dt = 1.0
+        self.times = (0.5 + np.arange(12)) * dt
+        self.values = f(self.times)
+
+        self.times_long = (0.5 + np.arange(24)) * dt
+        self.values_long = f(self.times_long)
+
+        self.ts = np.linspace(0 + dt, 24 - dt, 1001)
+
+        time_bounds = np.vstack((self.times - 0.5 * dt, self.times + 0.5 * dt)).T.flatten()
+
+        ctx.time.set_start(0)
+        ctx.time.set_end(4)
+
+        # good input
+        PISM.testing.create_scalar_forcing(self.filename,
+                                           "delta_T", "Kelvin",
+                                           self.values, self.times, time_bounds)
+
+        # non-increasing times
+        PISM.testing.create_scalar_forcing(self.filename_decreasing,
+                                           "delta_T", "Kelvin",
+                                           [0, 1], [1, 0], time_bounds=[1, 2, 0, 1])
+
+        # wrong time bounds
+        PISM.testing.create_scalar_forcing(self.filename_wrong_bounds,
+                                           "delta_T", "Kelvin",
+                                           [0, 1], [0, 1], time_bounds=[0, 2, 2, 3])
+        # invalid number of dimensions
+        grid = create_dummy_grid()
+        PISM.testing.create_forcing(grid,
+                                    self.filename_2d,
+                                    "delta_T",
+                                    "Kelvin",
+                                    [0, 1],
+                                    "seconds since 1-1-1",
+                                    times=[0, 1])
+
+        # only one value
+        PISM.testing.create_scalar_forcing(self.filename_1,
+                                           "delta_T", "Kelvin",
+                                           [1], [0], time_bounds=[0, 4])
+
+        # no time bounds
+        PISM.testing.create_scalar_forcing(self.filename_no_bounds,
+                                           "delta_T", "Kelvin",
+                                           [1], [0], time_bounds=None)
+
+    def tearDown(self):
+        try:
+            os.remove(self.filename)
+            os.remove(self.filename_decreasing)
+            os.remove(self.filename_wrong_bounds)
+            os.remove(self.filename_2d)
+            os.remove(self.filename_1)
+            os.remove(self.filename_no_bounds)
+        except:
+            pass
+
+    def create(self, filename=None, periodic=False):
+        if filename is not None:
+            return PISM.ScalarForcing(ctx.ctx,
+                                      filename,
+                                      "delta_T",
+                                      "K",
+                                      "K",
+                                      "temperature offsets", periodic)
+
+        return PISM.ScalarForcing(ctx.ctx,
+                                  "surface.delta_T",
+                                  "delta_T",
+                                  "K",
+                                  "K",
+                                  "temperature offsets")
+
+    def test_file_not_set(self):
+        try:
+            ctx.config.set_string("surface.delta_T.file", "")
+            self.create()
+            assert False, "failed to stop if prefix.file is empty"
+        except RuntimeError:
+            pass
+
+    def test_decreasing_time(self):
+        try:
+            self.create(self.filename_decreasing, False)
+            assert False, "failed to stop if times are non-increasing"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_wrong_bounds(self):
+        try:
+            self.create(self.filename_wrong_bounds, False)
+            assert False, "failed to stop if time bounds are wrong"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_invalid_dimensions(self):
+        try:
+            self.create(self.filename_2d, False)
+            assert False, "failed to stop if the variable is not scalar"
+        except RuntimeError as e:
+            print(e)
+            pass
+
+    def test_no_time_bounds(self):
+        try:
+            self.create(self.filename_no_bounds, False)
+            assert False, "failed to stop if time bounds are missing"
+        except RuntimeError:
+            pass
+
+    def test_run_duration(self):
+        end = ctx.time.end()
+        try:
+            ctx.time.set_end(100)
+            self.create(self.filename, False)
+            assert False, "failed to stop because forcing does not span model time"
+        except RuntimeError as e:
+            print(e)
+            pass
+        finally:
+            ctx.time.set_end(end)
+
+    def test_periodic_interpolation(self):
+        F = self.create(self.filename, True)
+
+        Y_numpy = np.interp(self.ts, self.times_long, self.values_long)
+        Y = [F.value(t) for t in self.ts]
+
+        np.testing.assert_almost_equal(Y, Y_numpy)
+
+    def test_interpolation(self):
+        ctx.config.set_string("surface.delta_T.file", self.filename)
+        ctx.config.set_flag("surface.delta_T.periodic", False)
+
+        F = self.create()
+
+        # two outside and one inside
+        T = [-1, 13, 5.123]
+
+        Y_numpy = np.interp(T, self.times, self.values)
+        Y = [F.value(t) for t in T]
+
+        np.testing.assert_almost_equal(Y, Y_numpy)
+
+    def test_one_value(self):
+        F = self.create(self.filename_1, False)
+
+        T = [1, 2]
+
+        Y_ref = [1, 1]
+        Y = [F.value(t) for t in T]
+
+        np.testing.assert_almost_equal(Y, Y_ref)
+
+    def test_average_scalar_forcing(self):
+        """Test ScalarForcing::average(t, dt)"""
+
+        def compute_average(times, time_bounds, values, t, dt, periodic=False):
+            filename = PISM.testing.filename("forcing-")
+            try:
+                PISM.testing.create_scalar_forcing(filename, "delta_T", "Kelvin",
+                                                   values, times, time_bounds)
+
+                F = self.create(filename, periodic)
+
+                return F.average(t, dt)
+            finally:
+                os.remove(filename)
+
+        times       = [0.5, 1.5, 2.5, 3.5]
+        time_bounds = [0, 1, 1, 2, 2, 3, 3, 4]
+        values      = [1, 1, -1, -1]
+
+        def f(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=True)
+
+        def g(a, b):
+            return compute_average(times, time_bounds, values,
+                                   a, b - a, periodic=False)
+
+        # both points are outside on the left
+        np.testing.assert_equal(g(-2, -1), 1.0)
+        # both are outside on the right
+        np.testing.assert_equal(g(4.5, 5.5), -1.0)
+        # one too far left, one too far right
+        np.testing.assert_equal(g(-0.5, 4.5), 0.0)
+        # same sub-interval
+        np.testing.assert_equal(g(0, 0.25), 1.0)
+        # dt == 0.0
+        np.testing.assert_equal(g(0, 0), 1.0)
+
+        try:
+            np.testing.assert_equal(g(1, 0), 1.0)
+            assert False, "failed to catch negative dt"
+        except RuntimeError:
+            pass
+
+        # one full period
+        np.testing.assert_equal(f(0, 4), 0.0)
+        # two periods
+        np.testing.assert_equal(f(0, 8), 0.0)
+        # one period, but starting from 4
+        np.testing.assert_equal(f(4, 8), 0.0)
+        # part of a period
+        np.testing.assert_equal(f(4, 6), 0.75)
+        # part of a period (check if shifting affects results)
+        np.testing.assert_equal(f(4, 6), f(0, 2))
+
+def thickness_calving_test():
+    "Test the time-dependent thickness calving threshold"
+
+    grid = PISM.testing.shallow_grid(Mx=5, My=5)
+
+    geometry = PISM.Geometry(grid)
+
+    # set ice thickness
+    H = geometry.ice_thickness
+    with PISM.vec.Access(H):
+        for i,j in grid.points():
+            if i >= 3 and j >= 3:
+                H[i, j] = 0
+            elif i > 2 and j == 2:
+                H[i, j] = 100
+            elif i >= 1 and j >= 1:
+                H[i, j] = 150
+            else:
+                H[i, j] = 200
+
+    # set bed elevation low enough to ensure that all ice is floating
+    geometry.bed_elevation.set(-1000)
+
+    geometry.ensure_consistency(0.0)
+
+    config = PISM.Context().config
+
+    filename = PISM.testing.filename("threshold_thickness_")
+    day = 86400.0
+    times = [0, 30, 60]
+    time_bounds = [-15, 15, 45, 75]
+    time_units = "days since 1-1-1"
+    values = [100, 150, 200]
+    try:
+        # create the time-dependent thickness threshold
+        PISM.testing.create_forcing(grid,
+                                    filename,
+                                    "thickness_calving_threshold",
+                                    "m",
+                                    values,
+                                    time_units,
+                                    times=times,
+                                    time_bounds=time_bounds)
+
+        config.set_string("calving.thickness_calving.file", filename)
+        calving = PISM.CalvingAtThickness(grid)
+        calving.init()
+
+        # run the calving model
+        calving.update(0*day, 30*day, geometry.cell_type, geometry.ice_thickness)
+
+        ref1 = np.array([[200., 200., 200., 200., 200.],
+                         [200., 150., 150., 150., 150.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150., 150.,   0.,   0.]])
+
+        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref1)
+
+        calving.update(30*day, 60*day, geometry.cell_type, geometry.ice_thickness)
+
+        ref2 = np.array([[200., 200., 200., 200., 200.],
+                         [200., 150., 150.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.],
+                         [200., 150.,   0.,   0.,   0.]])
+
+        np.testing.assert_almost_equal(geometry.ice_thickness.numpy(), ref2)
+
+    finally:
+        # clean up
+        os.remove(filename)
+
+        # restore default values
+        config.set_string("calving.thickness_calving.file", "")
+
+def grounding_line_flux_test():
+    """Test that the grounding line flux approximation
+
+    The grounding line flux should be zero if the direction of the flux is parallel to the
+    grounding line.
+
+    """
+
+    # Mx and My have to be odd
+    Mx = 51
+    My = 51
+    Lx = 1e5
+    Ly = 1e5
+    grid = PISM.testing.shallow_grid(Mx=Mx, My=My, Lx=Lx, Ly=Ly)
+
+    geometry = PISM.Geometry(grid)
+
+    with PISM.vec.Access([geometry.bed_elevation, geometry.ice_thickness]):
+        for i,j in grid.points():
+            x = grid.x(i)
+            y = grid.y(j)
+            C = 0.25 * (Lx + Ly)
+
+            if x - y <= 0.0:
+                geometry.bed_elevation[i, j] = 10.0
+            elif x + y >= C:
+                geometry.bed_elevation[i, j] = 10.0
+            else:
+                geometry.bed_elevation[i, j] = -10.0
+
+            if i == 0 or j == 0 or i == Mx-1 or j == My-1:
+                geometry.ice_thickness[i, j] = 0.0
+            elif x + y < C:
+                geometry.ice_thickness[i, j] = 10.0
+            else:
+                geometry.ice_thickness[i, j] = 0.0
+
+    geometry.ensure_consistency(0)
+
+    velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
+    thk_bc_mask = PISM.IceModelVec2Int(grid, "thk_bc_mask", PISM.WITHOUT_GHOSTS)
+    thk_bc_mask.set(0)
+    sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
+    sia_flux.set(0)
+
+    dt = 365 * 86400
+    V = 1.0 / dt
+    with PISM.vec.Access(velocity):
+        for i,j in grid.points():
+            velocity[i, j].u = V
+            velocity[i, j].v = V
+
+    geometry_evolution = PISM.GeometryEvolution(grid)
+
+    geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
+
+    gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux", PISM.WITHOUT_GHOSTS)
+    PISM.grounding_line_flux(geometry.cell_type,
+                             geometry_evolution.flux_staggered(),
+                             dt,
+                             False, # replace values instead of adding
+                             gl_flux)
+
+    NORM_INFINITY = 3
+    np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)

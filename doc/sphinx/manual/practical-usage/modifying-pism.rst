@@ -9,7 +9,7 @@ Managing source code modifications
 PISM.
 
 We provide both user-level (this manual) and developer-level documentation. Please see
-source code browsers at |pism-docs| for the latter.
+source code browsers at |pism-website| for the latter.
 
 - To use your (modified) version of PISM, you will need to follow the compilation from
   sources instructions in the :ref:`Installation Manual <sec-installation>`.

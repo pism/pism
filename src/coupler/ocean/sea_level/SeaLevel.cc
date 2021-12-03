@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,10 +44,6 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr g)
   // empty
 }
 
-SeaLevel::~SeaLevel() {
-  // empty
-}
-
 void SeaLevel::init(const Geometry &geometry) {
   init_impl(geometry);
 }
@@ -56,9 +52,9 @@ void SeaLevel::init_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->init(geometry);
   } else {
-    // set the default value
-    m_sea_level.set(0.0);
-    m_log->message(2, "* Using constant (zero) sea level...\n");
+    double z_s = m_config->get_number("sea_level.constant.value");
+    m_sea_level.set(z_s);
+    m_log->message(2, "* Using constant sea level at %f meters...\n", z_s);
   }
 }
 
@@ -70,7 +66,8 @@ void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
   if (m_input_model) {
     m_input_model->update(geometry, t, dt);
   } else {
-    m_sea_level.set(0.0);
+    double z_s = m_config->get_number("sea_level.constant.value");
+    m_sea_level.set(z_s);
   }
 }
 

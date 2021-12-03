@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,13 +18,14 @@
 
 #include <pnetcdf.h>
 #include <sstream>
-#include <string.h>
+#include <cstring>              // memset
 
 #include "PNCFile.hh"
 
 #include "pism_type_conversion.hh" // has to go after pnetcdf.h
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace io {
@@ -429,12 +430,7 @@ void PNCFile::get_var_double(const std::string &variable_name,
 void PNCFile::init_hints() {
 
   for (auto hint : m_mpi_io_hints) {
-    std::istringstream arg(hint);
-    std::vector<std::string> words;
-    std::string word;
-    while (getline(arg, word, ':')) {
-      words.push_back(word);
-    }
+    auto words = split(hint, ':');
 
     if (words.size() == 2) {
       // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",
@@ -452,6 +448,11 @@ void PNCFile::init_hints() {
       }
     }
   }
+}
+
+void PNCFile::set_compression_level_impl(int level) const {
+  (void) level;
+  // NetCDF-3 does not support compression.
 }
 
 } // end of namespace io

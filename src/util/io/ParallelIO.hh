@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@ namespace io {
 class ParallelIO : public NCFile {
 public:
   ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype);
-  virtual ~ParallelIO();
+  virtual ~ParallelIO() = default;
 
   static IO_Backend best_iotype(bool netcdf3);
 protected:
@@ -35,6 +35,8 @@ protected:
   void create_impl(const std::string &filename);
   void sync_impl() const;
   void close_impl();
+
+  void set_compression_level_impl(int level) const;
 
   // redef/enddef
   void enddef_impl() const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2021 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -51,7 +51,7 @@ class Config;
 class EnthalpyConverter {
 public:
   EnthalpyConverter(const Config &config);
-  virtual ~EnthalpyConverter();
+  virtual ~EnthalpyConverter() = default;
 
   typedef std::shared_ptr<EnthalpyConverter> Ptr;
 
@@ -70,7 +70,7 @@ public:
   double enthalpy_permissive(double T, double omega, double P) const;
 
   double c() const;
-  double L(double T_m) const;
+  double L(double T_pm) const;
 
   double pressure(double depth) const;
   void pressure(const std::vector<double> &depth,
@@ -134,7 +134,7 @@ protected:
 class ColdEnthalpyConverter : public EnthalpyConverter {
 public:
   ColdEnthalpyConverter(const Config &config);
-  virtual ~ColdEnthalpyConverter();
+  virtual ~ColdEnthalpyConverter() = default;
 };
 
 } // end of namespace pism

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,8 +21,7 @@
 #define EMPTYINGPROBLEM_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/petscwrappers/KSP.hh"
-#include "pism/util/petscwrappers/Mat.hh"
+#include "pism/util/IceModelVec2V.hh"
 
 namespace pism {
 
@@ -33,7 +32,7 @@ namespace hydrology {
 class EmptyingProblem : public Component {
 public:
   EmptyingProblem(IceGrid::ConstPtr g);
-  virtual ~EmptyingProblem();
+  virtual ~EmptyingProblem() = default;
 
   void update(const Geometry &geometry,
               const IceModelVec2Int *no_model_mask,

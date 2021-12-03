@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2020 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2021 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,6 @@
 #include "util/node_types.hh"
 
 #include "util/Time.hh"
-#include "util/Time_Calendar.hh"
 #include "util/Poisson.hh"
 #include "util/label_components.hh"
 %}
@@ -86,6 +85,7 @@
 // Automatic conversions between std::string and python string arguments and return values
 %include std_string.i
 // Conversions between python lists and certain STL vectors
+%include std_array.i
 %include std_vector.i
 %include std_set.i
 %include std_map.i
@@ -111,6 +111,7 @@
 %template(BoolMap) std::map<std::string, bool >;
 %template(StringMap) std::map<std::string, std::string>;
 %template(DiagnosticMap) std::map<std::string, std::shared_ptr<pism::Diagnostic> >;
+%template(SizeDoubleMap) std::map<size_t, double>;
 
 // Why did I include this?
 %include "cstring.i"
@@ -191,6 +192,7 @@
 
 
 /* PISM header with no dependence on other PISM headers. */
+%ignore print_vector;
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
 
@@ -236,8 +238,6 @@
 
 %shared_ptr(pism::Time);
 %include "util/Time.hh"
-%shared_ptr(pism::Time_Calendar);
-%include "util/Time_Calendar.hh"
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -250,9 +250,6 @@
 
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
-
-/* Timeseries uses IceGrid and VariableMetadata so they have to be wrapped first. */
-%include pism_Timeseries.i
 
 /* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
 %include pism_IceModelVec.i
@@ -300,6 +297,8 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %include pism_SIA.i
 
+%include pism_blatter.i
+
 %include pism_BedDef.i
 
 %include AgeModel.i
@@ -319,24 +318,38 @@ pism_class(pism::RegionalYieldStress, "pism/regional/RegionalYieldStress.hh")
 
 %include "util/projection.hh"
 
+%rename(linear_chi) pism::fem::linear::chi;
+%rename(linear_n_chi) pism::fem::linear::n_chi;
+%rename(q0_chi) pism::fem::q0::chi;
+%rename(q0_n_chi) pism::fem::q0::n_chi;
+%rename(q0_n_sides) pism::fem::q0::n_sides;
+%rename(q1_chi) pism::fem::q1::chi;
+%rename(q1_n_chi) pism::fem::q1::n_chi;
+%rename(q1_n_sides) pism::fem::q1::n_sides;
+%rename(Q1ElementGeometry) pism::fem::q1::ElementGeometry;
+%rename(Q1BoundaryQuadrature2) pism::fem::q1::BoundaryQuadrature2;
+%rename(p1_chi) pism::fem::p1::chi;
+%rename(p1_n_chi) pism::fem::p1::n_chi;
+%rename(p1_n_sides) pism::fem::p1::n_sides;
+%rename(P1ElementGeometry) pism::fem::p1::ElementGeometry;
+%rename(P1BoundaryQuadrature2) pism::fem::p1::BoundaryQuadrature2;
+%rename(q13d_chi) pism::fem::q13d::chi;
 
-%ignore pism::fem::q1::chi;
-%ignore pism::fem::q1::n_chi;
-%ignore pism::fem::q1::n_sides;
-%ignore pism::fem::q1::incident_nodes;
-%ignore pism::fem::p1::chi;
-%ignore pism::fem::p1::n_sides;
-%ignore pism::fem::p1::incident_nodes;
-%include "util/FETools.hh"
+%include "util/fem/FEM.hh"
+%include "util/fem/DirichletData.hh"
+%include "util/fem/Element.hh"
+%include "util/fem/ElementIterator.hh"
+%include "util/fem/Quadrature.hh"
+
 %include "util/node_types.hh"
 
 %include pism_inverse.i
 
 %include "coupler/util/PCFactory.hh"
-%{
-#include "coupler/util/options.hh"
-%}
-%include "coupler/util/options.hh"
+
+pism_class(pism::ForcingOptions, "pism/coupler/util/options.hh")
+
+pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %shared_ptr(pism::PCFactory< pism::surface::SurfaceModel >)
 %template(_SurfaceFactoryBase) pism::PCFactory<pism::surface::SurfaceModel>;

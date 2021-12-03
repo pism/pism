@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -94,7 +94,7 @@ std::string Config::filename() const {
 void Config::import_from(const Config &other) {
   auto parameters = this->keys();
 
-  for (auto p : other.all_doubles()) {
+  for (const auto &p : other.all_doubles()) {
     if (member(p.first, parameters)) {
       this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
@@ -104,7 +104,7 @@ void Config::import_from(const Config &other) {
     }
   }
 
-  for (auto p : other.all_strings()) {
+  for (const auto &p : other.all_strings()) {
     if (member(p.first, parameters)) {
       this->set_string(p.first, p.second, CONFIG_USER);
     } else {
@@ -114,7 +114,7 @@ void Config::import_from(const Config &other) {
     }
   }
 
-  for (auto p : other.all_flags()) {
+  for (const auto &p : other.all_flags()) {
     if (member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
@@ -282,7 +282,7 @@ void Config::set_flag(const std::string& name, bool value,
 }
 
 static bool special_parameter(const std::string &name) {
-  for (auto suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
+  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices"}) {
     if (ends_with(name, suffix)) {
       return true;
     }
@@ -290,11 +290,7 @@ static bool special_parameter(const std::string &name) {
 
   // The NetCDF-based configuration database stores parameters as attributes of a variable
   // and CF conventions require that all variables have a "long name."
-  if (name == "long_name") {
-    return true;
-  }
-
-  return false;
+  return (name == "long_name");
 }
 
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
@@ -308,7 +304,7 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 
   // find max. name size
   size_t max_name_size = 0;
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     if (special_parameter(s.first)) {
       continue;
     }
@@ -316,7 +312,7 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   }
 
   // print strings
-  for (auto s : strings) {
+  for (const auto &s : strings) {
     std::string name  = s.first;
     std::string value = s.second;
 
@@ -341,7 +337,7 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 
   // find max. name size
   max_name_size = 0;
-  for (auto d : config.all_doubles()) {
+  for (const auto &d : config.all_doubles()) {
     max_name_size = std::max(max_name_size, d.first.size());
   }
   // print doubles
@@ -352,7 +348,9 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     std::string units = config.units(name); // will be empty if not set
     std::string padding(max_name_size - name.size(), ' ');
 
-    if (fabs(value) >= 1.0e7 or fabs(value) <= 1.0e-4) {
+    const double large = 1.0e7;
+    const double small = 1.0e-4;
+    if (fabs(value) >= large or fabs(value) <= small) {
       // use scientific notation if a number is big or small
       log.message(v, "  %s%s = %13.3e (%s)\n", name.c_str(), padding.c_str(), value, units.c_str());
     } else {
@@ -366,12 +364,12 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
 
   // find max. name size
   max_name_size = 0;
-  for (auto b : config.all_flags()) {
+  for (const auto &b : config.all_flags()) {
     max_name_size = std::max(max_name_size, b.first.size());
   }
 
   // print flags
-  for (auto b : config.all_flags()) {
+  for (const auto &b : config.all_flags()) {
     std::string name  = b.first;
     std::string value = b.second ? "true" : "false";
     std::string padding(max_name_size - name.size(), ' ');
@@ -393,7 +391,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
     verbosity_threshhold = log.get_threshold();
   }
 
-  for (auto p : parameters_set) {
+  for (const auto &p : parameters_set) {
 
     if (special_parameter(p)) {
       continue;
@@ -443,18 +441,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
   if (opt.is_set()) {
-    if (opt.value() == ""     or
-        opt.value() == "on"   or
-        opt.value() == "yes"  or
-        opt.value() == "true" or
-        opt.value() == "True") { // Python's "True"
+    if (member(opt.value(), {"", "on", "yes", "true", "True"})) {
 
       value = true;
 
-    } else if (opt.value() == "off"   or
-               opt.value() == "no"    or
-               opt.value() == "false" or
-               opt.value() == "False") { // Python's "False"
+    } else if (member(opt.value(), {"off", "no", "false", "False"})) {
 
       value = false;
 
@@ -474,9 +465,9 @@ void set_flag_from_option(Config &config, const std::string &option,
                                       "Inconsistent command-line options:"
                                       " both -%s and -no_%s are set.\n",
                                       option.c_str(), option.c_str());
-      } else {
-        value = false;
       }
+
+      value = false;
     }
   }
 
@@ -493,8 +484,11 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(Config &config, const std::string &name, const std::string &parameter) {
-  options::Real option("-" + name, config.doc(parameter),
+void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name, const std::string &parameter) {
+  options::Real option(unit_system,
+                       "-" + name,
+                       config.doc(parameter),
+                       config.units(parameter),
                        config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_number(parameter, option, CONFIG_USER);
@@ -563,7 +557,7 @@ void set_integer_list_from_option(Config &config, const std::string &option,
 
 void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
   options::Integer option("-" + name, config.doc(parameter),
-                          config.get_number(parameter, Config::FORGET_THIS_USE));
+                          (int)config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_number(parameter, option, CONFIG_USER);
   }
@@ -596,7 +590,8 @@ void set_keyword_from_option(Config &config, const std::string &name,
   }
 }
 
-void set_parameter_from_options(Config &config, const std::string &name) {
+void set_parameter_from_options(units::System::Ptr unit_system,
+                                Config &config, const std::string &name) {
 
   // skip special parameters ("attributes" of parameters)
   if (special_parameter(name)) {
@@ -608,9 +603,8 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   std::string option = name;
 
   if (not config.option(name).empty()) { // there is a short version of the command-line option
-    std::string
-      short_option = config.option(name),
-      description  = config.doc(name);
+    std::string short_option = config.option(name);
+    std::string description  = config.doc(name);
 
     if (options::Bool("-" + short_option, description) or
         options::Bool("-no_" + short_option, description)) { // short option is set
@@ -632,7 +626,7 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   } else if (type == "flag") {
     set_flag_from_option(config, option, name);
   } else if (type == "number") {
-    set_number_from_option(config, option, name);
+    set_number_from_option(unit_system, config, option, name);
   } else if (type == "integer") {
     set_integer_from_option(config, option, name);
   } else if (type == "keyword") {
@@ -642,17 +636,18 @@ void set_parameter_from_options(Config &config, const std::string &name) {
   }
 }
 
-void set_config_from_options(Config &config) {
-  for (auto d : config.all_doubles()) {
-    set_parameter_from_options(config, d.first);
+void set_config_from_options(units::System::Ptr unit_system,
+                             Config &config) {
+  for (const auto &d : config.all_doubles()) {
+    set_parameter_from_options(unit_system, config, d.first);
   }
 
-  for (auto s : config.all_strings()) {
-    set_parameter_from_options(config, s.first);
+  for (const auto &s : config.all_strings()) {
+    set_parameter_from_options(unit_system, config, s.first);
   }
 
-  for (auto b : config.all_flags()) {
-    set_parameter_from_options(config, b.first);
+  for (const auto &b : config.all_flags()) {
+    set_parameter_from_options(unit_system, config, b.first);
   }
 
   // Energy modeling
@@ -757,34 +752,17 @@ void set_config_from_options(Config &config) {
     // use MKS units in ISMIP6 mode
     config.set_flag("output.use_MKS", true);
   }
-
-  // old options
-  options::deprecated("-sliding_scale_brutal",
-                      "-brutal_sliding' and '-brutal_sliding_scale");
-  options::deprecated("-ssa_sliding", "-stress_balance ...");
-  options::deprecated("-ssa_floating_only", "-stress_balance ...");
-  options::deprecated("-sia", "-stress_balance ...");
-  options::deprecated("-no_sia", "-stress_balance ...");
-  options::deprecated("-hold_tauc", "-yield_stress constant");
-  options::deprecated("-ocean_kill_file", "-front_retreat_file");
-  options::deprecated("-eigen_calving", "-calving eigen_calving -eigen_calving_K XXX");
-  options::deprecated("-calving_at_thickness",
-                      "-calving thickness_calving -thickness_calving_threshold XXX");
-  options::deprecated("-float_kill", "-calving float_kill");
-  options::deprecated("-no_energy", "-energy none");
-  options::deprecated("-cold", "-energy cold");
-  options::deprecated("-boot_file", "-bootstrap -i");
 }
 
 //! Create a configuration database using command-line options.
-Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr sys) {
+Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
 
-  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", sys)),
-    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", sys));
+  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
+    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
   overrides->init(log);
   config->init_with_default(log);
   config->import_from(*overrides);
-  set_config_from_options(*config);
+  set_config_from_options(unit_system, *config);
 
   return config;
 }
@@ -817,15 +795,15 @@ void ConfigWithPrefix::reset_prefix(const std::string &prefix) {
 std::set<std::string> Config::keys() const {
   std::set<std::string> result;
 
-  for (auto p : all_doubles()) {
+  for (const auto &p : all_doubles()) {
     result.insert(p.first);
   }
 
-  for (auto p : all_strings()) {
+  for (const auto &p : all_strings()) {
     result.insert(p.first);
   }
 
-  for (auto p : all_flags()) {
+  for (const auto &p : all_flags()) {
     result.insert(p.first);
   }
 
@@ -847,9 +825,9 @@ std::string Config::type(const std::string &parameter) const {
 std::string Config::option(const std::string &parameter) const {
   if (this->is_set(parameter + "_option")) {
     return this->get_string(parameter + "_option", Config::FORGET_THIS_USE);
-  } else {
-    return "";
   }
+
+  return "";
 }
 
 std::string Config::choices(const std::string &parameter) const {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020 The PISM Authors
+# Copyright (C) 2009-2015, 2017, 2018, 2019, 2020, 2021 The PISM Authors
 
 # PISM Greenland spinup using either constant present-day climate or modeled
 # paleoclimate.  See README.md.
@@ -250,6 +250,9 @@ else
   echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
 
+# Append "/" to PISM_BIN *except* if it already ends in "/" or is empty or unset:
+PISM_BIN=${PISM_BIN:+${PISM_BIN%/}/}
+
 # set PISM_EXEC if using different executables, for example:
 #  $ export PISM_EXEC="pismr -energy cold"
 if [ -n "${PISM_EXEC:+1}" ] ; then  # check if env var is already set
@@ -293,8 +296,9 @@ else
   regridcommand=""
 fi
 
+# Append PISM_BIN abd PISM_EXEC. Note that PISM_BIN ends in "/".
+PISM="${PISM_BIN}${PISM_EXEC}"
 # show remaining setup options:
-PISM="${PISM_BIN}/${PISM_EXEC}"
 echo "$SCRIPTNAME      executable = '$PISM'"
 echo "$SCRIPTNAME         coupler = '$COUPLER'"
 echo "$SCRIPTNAME        dynamics = '$PHYS'"

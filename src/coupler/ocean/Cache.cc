@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,6 +28,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
@@ -35,24 +36,26 @@ namespace ocean {
 Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
-  m_next_update_time = m_grid->ctx()->time()->current();
-  m_update_interval_years = m_config->get_number("ocean.cache.update_interval");
+  auto time = m_grid->ctx()->time();
 
-  if (m_update_interval_years < 1) {
+  m_next_update_time = time->current();
+  m_update_interval_years = m_config->get_number("ocean.cache.update_interval", "seconds");
+
+  // use the current year length (according to the selected calendar) to convert update
+  // interval length into years
+  m_update_interval_years = time->convert_time_interval(m_update_interval_years, "years");
+
+  if (m_update_interval_years <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "ocean.cache.update_interval has to be strictly positive (got %d)",
+                                  "ocean.cache.update_interval has to be strictly positive (got %f)",
                                   m_update_interval_years);
   }
 
   {
-    m_shelf_base_temperature         = allocate_shelf_base_temperature(g);
-    m_shelf_base_mass_flux           = allocate_shelf_base_mass_flux(g);
-    m_melange_back_pressure_fraction = allocate_melange_back_pressure(g);
+    m_shelf_base_temperature = allocate_shelf_base_temperature(g);
+    m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
+    m_water_column_pressure  = allocate_water_column_pressure(g);
   }
-}
-
-Cache::~Cache() {
-  // empty
 }
 
 void Cache::init_impl(const Geometry &geometry) {
@@ -69,8 +72,10 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   // an input model
   (void) dt;
 
+  double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
+
   if (t >= m_next_update_time or
-      fabs(t - m_next_update_time) < 1.0) {
+      fabs(t - m_next_update_time) < time_resolution) {
 
     double
       one_year_from_now = m_grid->ctx()->time()->increment_date(t, 1.0),
@@ -83,7 +88,7 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
     m_next_update_time = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                m_update_interval_years);
 
-    m_melange_back_pressure_fraction->copy_from(m_input_model->melange_back_pressure_fraction());
+    m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
     m_shelf_base_temperature->copy_from(m_input_model->shelf_base_temperature());
 
@@ -94,9 +99,11 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
 MaxTimestep Cache::max_timestep_impl(double t) const {
   double dt = m_next_update_time - t;
 
+  double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
+
   // if we got very close to the next update time, set time step
   // length to the interval between updates
-  if (dt < 1.0) {
+  if (dt < time_resolution) {
     double update_time_after_next = m_grid->ctx()->time()->increment_date(m_next_update_time,
                                                                 m_update_interval_years);
 
@@ -122,8 +129,8 @@ const IceModelVec2S& Cache::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& Cache::melange_back_pressure_fraction_impl() const {
-  return *m_melange_back_pressure_fraction;
+const IceModelVec2S& Cache::average_water_column_pressure_impl() const {
+  return *m_water_column_pressure;
 }
 
 

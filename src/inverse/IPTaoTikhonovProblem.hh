@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016,2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017,2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,8 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
@@ -297,10 +299,16 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
                                                            double eta,
                                                            IPFunctional<DesignVec> &designFunctional,
                                                            IPFunctional<StateVec> &stateFunctional)
-  : m_forward(forward), m_d0(d0), m_u_obs(u_obs), m_eta(eta),
-    m_designFunctional(designFunctional), m_stateFunctional(stateFunctional) {
-
-  m_grid = m_d0.grid();
+  : m_grid(d0.grid()),
+    m_forward(forward),
+    m_dGlobal(d0.grid(), "design variable (global)", WITHOUT_GHOSTS, d0.stencil_width()),
+    m_d0(d0),
+    m_u_obs(u_obs),
+    m_adjointRHS(d0.grid(), "work vector", WITHOUT_GHOSTS),
+    m_eta(eta),
+    m_designFunctional(designFunctional),
+    m_stateFunctional(stateFunctional)
+{
 
   m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
   m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
@@ -308,28 +316,20 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   int design_stencil_width = m_d0.stencil_width();
   int state_stencil_width = m_u_obs.stencil_width();
 
-  m_d.reset(new DesignVec);
-  m_d->create(m_grid, "design variable", WITH_GHOSTS, design_stencil_width);
+  m_d.reset(new DesignVec(m_grid, "design variable", WITH_GHOSTS, design_stencil_width));
 
-  m_dGlobal.create(m_grid, "design variable (global)", WITHOUT_GHOSTS, design_stencil_width);
   m_dGlobal.copy_from(m_d0);
 
-  m_u_diff.reset(new StateVec);
-  m_u_diff->create(m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
+  m_u_diff.reset(new StateVec(m_grid, "state residual", WITH_GHOSTS, state_stencil_width));
 
-  m_d_diff.reset(new DesignVec);
-  m_d_diff->create(m_grid, "design residual", WITH_GHOSTS, design_stencil_width);
+  m_d_diff.reset(new DesignVec(m_grid, "design residual", WITH_GHOSTS, design_stencil_width));
 
-  m_grad_state.reset(new DesignVec);
-  m_grad_state->create(m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_state.reset(new DesignVec(m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width));
 
-  m_grad_design.reset(new DesignVec);
-  m_grad_design->create(m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad_design.reset(new DesignVec(m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width));
 
-  m_grad.reset(new DesignVec);
-  m_grad->create(m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width);
+  m_grad.reset(new DesignVec(m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width));
 
-  m_adjointRHS.create(m_grid,"work vector", WITHOUT_GHOSTS, design_stencil_width);
 }
 
 template<class ForwardProblem>
@@ -384,9 +384,9 @@ template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::conver
   dWeight = 1/m_eta;
   sWeight = 1;
   
-  designNorm = m_grad_design->norm(NORM_2);
-  stateNorm  = m_grad_state->norm(NORM_2);
-  sumNorm    = m_grad->norm(NORM_2);
+  designNorm = m_grad_design->norm(NORM_2)[0];
+  stateNorm  = m_grad_state->norm(NORM_2)[0];
+  sumNorm    = m_grad->norm(NORM_2)[0];
 
   designNorm *= dWeight;    
   stateNorm  *= sWeight;
@@ -405,7 +405,13 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
                                                                         double *value, Vec gradient) {
   PetscErrorCode ierr;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
-  m_d->copy_from_vec(x);
+  {
+    ierr = DMGlobalToLocalBegin(*m_d->dm(), x, INSERT_VALUES, m_d->vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_d->dm(), x, INSERT_VALUES, m_d->vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  }
 
   TerminationReason::Ptr reason = m_forward.linearize_at(*m_d);
   if (reason->failed()) {

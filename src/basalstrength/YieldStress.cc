@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,15 +42,11 @@ YieldStress::YieldStress(IceGrid::ConstPtr g)
                                  "Pa", "Pa", "", 0);
 }
 
-YieldStress::~YieldStress() {
-  // empty
-}
-
 /*!
  * Restart a yield stress model from an input file.
  */
 void YieldStress::restart(const File &input_file, int record) {
-  m_log->message(2, "Initializing the %s...\n", name().c_str());
+  m_log->message(2, "* Initializing the %s...\n", name().c_str());
 
   this->restart_impl(input_file, record);
 }

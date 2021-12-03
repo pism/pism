@@ -42,7 +42,7 @@ private:
 
   IceGrid::ConstPtr m_grid;
   Logger::ConstPtr m_log;
-  petsc::DM::Ptr m_da;         // dof=1 DA used by the KSP solver
+  std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   IceModelVec2S m_b;

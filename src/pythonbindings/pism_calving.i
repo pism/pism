@@ -29,3 +29,12 @@
 %shared_ptr(pism::calving::vonMisesCalving)
 %rename(CalvingvonMisesCalving) pism::calving::vonMisesCalving;
 %include "frontretreat/calving/vonMisesCalving.hh"
+
+pism_class(pism::FrontRetreat,
+           "pism/frontretreat/FrontRetreat.hh")
+
+pism_class(pism::calving::IcebergRemover,
+           "pism/frontretreat/util/IcebergRemover.hh")
+
+pism_class(pism::calving::IcebergRemoverFEM,
+           "pism/frontretreat/util/IcebergRemoverFEM.hh")

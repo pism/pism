@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,9 @@
 #ifndef PICOGEOMETRY_H
 #define PICOGEOMETRY_H
 
+#include <map>
+#include <set>
+
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec.hh"
 
@@ -38,14 +41,16 @@ void eikonal_equation(IceModelVec2Int &mask);
 class PicoGeometry : public Component {
 public:
   PicoGeometry(IceGrid::ConstPtr grid);
-  virtual ~PicoGeometry();
+  virtual ~PicoGeometry() = default;
 
+  void init();
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
   const IceModelVec2Int &continental_shelf_mask() const;
   const IceModelVec2Int &box_mask() const;
   const IceModelVec2Int &ice_shelf_mask() const;
   const IceModelVec2Int &ice_rise_mask() const;
+  const IceModelVec2Int &basin_mask() const;
 
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
@@ -53,17 +58,47 @@ private:
   void compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises, IceModelVec2Int &result);
   void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
   void compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
-  void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation, const IceModelVec2Int &ice_rises_mask,
-                                      double bed_elevation_threshold, IceModelVec2Int &result);
-  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rises_mask, const IceModelVec2Int &lake_mask,
+  void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
+                                      const IceModelVec2Int &ice_rise_mask,
+                                      double bed_elevation_threshold,
+                                      IceModelVec2Int &result);
+  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
+                              const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
-  void compute_distances_cf(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
-                            IceModelVec2Int &dist_cf);
-  void compute_distances_gl(const IceModelVec2Int &ocean_mask, const IceModelVec2Int &ice_rises, bool exclude_ice_rises,
-                            IceModelVec2Int &dist_gl);
 
-  void compute_box_mask(const IceModelVec2Int &D_gl, const IceModelVec2Int &D_cf, const IceModelVec2Int &shelf_mask,
-                        int n_boxes, IceModelVec2Int &result);
+  std::map<int,std::set<int> > basin_neighbors(const IceModelVec2CellType &cell_type,
+                                               const IceModelVec2Int &basin_mask);
+
+  void identify_calving_front_connection(const IceModelVec2CellType &cell_type,
+                                         const IceModelVec2Int &basin_mask,
+                                         const IceModelVec2Int &shelf_mask,
+                                         int n_shelves,
+                                         std::vector<int> &most_shelf_cells_in_basin,
+                                         std::vector<int> &cfs_in_basins_per_shelf);
+
+  void split_ice_shelves(const IceModelVec2CellType &cell_type,
+                         const IceModelVec2Int &basin_mask,
+                         const std::map<int, std::set<int> > &basin_neighbors,
+                         const std::vector<int> &most_shelf_cells_in_basin,
+                         const std::vector<int> &cfs_in_basins_per_shelf,
+                         int n_shelves,
+                         IceModelVec2Int &shelf_mask);
+ 
+  void compute_distances_cf(const IceModelVec2Int &ocean_mask,
+                            const IceModelVec2Int &ice_rises,
+                            bool exclude_ice_rises,
+                            IceModelVec2Int &result);
+
+  void compute_distances_gl(const IceModelVec2Int &ocean_mask,
+                            const IceModelVec2Int &ice_rises,
+                            bool exclude_ice_rises,
+                            IceModelVec2Int &result);
+
+  void compute_box_mask(const IceModelVec2Int &D_gl,
+                        const IceModelVec2Int &D_cf,
+                        const IceModelVec2Int &shelf_mask,
+                        int max_number_of_boxes,
+                        IceModelVec2Int &result);
 
   void label_tmp();
   void relabel_by_size(IceModelVec2Int &mask);
@@ -72,6 +107,7 @@ private:
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
+  IceModelVec2Int m_basin_mask;
 
   // storage for intermediate fields
   IceModelVec2Int m_distance_gl;
@@ -82,7 +118,10 @@ private:
 
   // temporary storage
   IceModelVec2Int m_tmp;
-  petsc::Vec::Ptr m_tmp_p0;
+  std::shared_ptr<petsc::Vec> m_tmp_p0;
+
+  int m_n_basins;
+  std::map<int, std::set<int> > m_basin_neighbors;
 };
 
 } // end of namespace ocean

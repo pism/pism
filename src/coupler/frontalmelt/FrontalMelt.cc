@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -89,7 +89,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
-        auto M = cell_type.int_star(i, j);
+        auto M = cell_type.star(i, j);
 
         double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 
@@ -112,9 +112,10 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
 // "modifier" constructor
 FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
-  : Component(g), m_input_model(input) {
-
-  m_retreat_rate.create(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS);
+  : Component(g),
+    m_input_model(input),
+    m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS)
+{
   m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt",
                            "m s-1", "m day-1", "", 0);
 
@@ -124,10 +125,6 @@ FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input
 // "model" constructor
 FrontalMelt::FrontalMelt(IceGrid::ConstPtr g)
   : FrontalMelt(g, nullptr) {
-  // empty
-}
-
-FrontalMelt::~FrontalMelt() {
   // empty
 }
 
@@ -199,13 +196,13 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
-    m_accumulator.metadata().set_string("units", "m");
+    m_accumulator.metadata()["units"] = "m";
 
     set_attrs("frontal melt rate", "",
               "m second-1", "m day-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
 protected:
@@ -222,14 +219,14 @@ public:
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
-    m_accumulator.metadata().set_string("units", "m");
+    m_accumulator.metadata()["units"] = "m";
 
     set_attrs("retreat rate due to frontal melt", "",
               "m second-1", "m year-1", 0);
-    m_vars[0].set_string("cell_methods", "time: mean");
+    m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
-    m_vars[0].set_string("comment", "takes into account what part of the front is submerged");
+    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["comment"] = "takes into account what part of the front is submerged";
   }
 
 protected:

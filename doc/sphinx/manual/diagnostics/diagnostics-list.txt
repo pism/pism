@@ -340,8 +340,8 @@ Spatially-variable fields
 
 #. ``ice_margin_pressure_difference``
 
-   :Units: Pa m
-   :Description: vertically-integrated pressure difference at ice margins (including calving fronts)
+   :Units: Pa
+   :Description: vertically-averaged pressure difference at ice margins (including calving fronts)
 
 #. ``ice_mass``
 
@@ -380,11 +380,6 @@ Spatially-variable fields
 
    :Units: ---
    :Description: ice-type (ice-free/grounded/floating/ocean) integer mask
-
-#. ``melange_back_pressure_fraction``
-
-   :Units: 1
-   :Description: dimensionless pressure fraction at calving fronts due to presence of melange 
 
 #. ``nuH``
 
@@ -455,23 +450,6 @@ Spatially-variable fields
 
    :Units: m
    :Description: snow cover depth (set to zero once a year)
-
-#. ``ssa_bc_mask``
-
-   :Units: ---
-   :Description: Dirichlet boundary mask
-
-#. ``ssa_bc_vel``
-
-   - ``u_ssa_bc``
-
-     :Units: m year-1
-     :Description: X-component of the SSA velocity boundary conditions
-
-   - ``v_ssa_bc``
-
-     :Units: m year-1
-     :Description: Y-component of the SSA velocity boundary conditions
 
 #. ``steady_state_hydraulic_potential``
 
@@ -781,6 +759,11 @@ Spatially-variable fields
    :Description: land ice thickness
    :Standard name: ``land_ice_thickness``
 
+#. ``thk_bc_mask``
+
+   :Units: ---
+   :Description: Mask specifying locations where ice thickness is held constant
+
 #. ``thksmooth``
 
    :Units: m
@@ -823,6 +806,23 @@ Spatially-variable fields
    :Units: m year-1
    :Description: horizontal velocity of ice in the X direction
    :Standard name: ``land_ice_x_velocity``
+
+#. ``vel_bc_mask``
+
+   :Units: ---
+   :Description: Mask prescribing Dirichlet boundary locations for the sliding velocity
+
+#. ``vel_bc_values``
+
+   - ``u_bc``
+
+     :Units: m year-1
+     :Description: X-component of the SSA velocity boundary conditions
+
+   - ``v_bc``
+
+     :Units: m year-1
+     :Description: Y-component of the SSA velocity boundary conditions
 
 #. ``velbar``
 
@@ -1069,10 +1069,10 @@ Scalar time-series
    :Units: m2 s-1
    :Description: maximum diffusivity
 
-#. ``max_hor_vel``
+#. ``max_sliding_vel``
 
    :Units: m year-1
-   :Description: maximum abs component of horizontal ice velocity over grid in last time step during time-series reporting interval
+   :Description: max(max(abs(u)), max(abs(v))) for the sliding velocity of ice over grid in last time step during time-series reporting interval
 
 #. ``sea_level_rise_potential``
 

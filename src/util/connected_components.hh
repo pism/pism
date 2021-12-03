@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2016 PISM Authors
+/* Copyright (C) 2013, 2016, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,4 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-void label_connected_components(double *image, unsigned int n_rows, unsigned int n_cols, bool identify_icebergs, double mask_grounded);
+#ifndef CONNECTED_COMPONENTS_H
+#define CONNECTED_COMPONENTS_H
+
+void label_connected_components(double *image, int nrows, int ncols, bool identify_icebergs, int mask_grounded, int first_label = 1);
+
+#endif /* CONNECTED_COMPONENTS_H */

@@ -14,7 +14,6 @@ rm -f $files
 set -e
 
 mpi="$MPIEXEC -n 3"
-pisms="$PISM_PATH/pisms"
 pismr="$PISM_PATH/pismr"
 
 # time step length
@@ -22,12 +21,14 @@ dt=100
 # use a non-square grid
 Mx=41
 My=61
-options="-bed_def lc -extra_times 0,100,200,300 -extra_vars dbdt,topg,thk -stress_balance none -energy none -calendar none -bed_deformation.lc.update_interval ${dt} -max_dt ${dt}"
+options="-bed_def lc -extra_times 0,100,200,300 -extra_vars dbdt,topg,thk -stress_balance none -energy none -bed_deformation.lc.update_interval ${dt} -max_dt ${dt}"
 
 grid="-Lz 5000 -Mz 3 -Mx ${Mx} -My ${My}"
 
 # create the input file
-${mpi} ${pisms} ${grid} -y 1000 -o out0.nc -verbose 1
+${mpi} ${pismr} -eisII A ${grid} -y 1000 -o out0.nc -verbose 1
+
+set -x
 
 # Run with re-starting
 #
@@ -38,13 +39,15 @@ ${mpi} ${pismr} ${options} -i out0.nc -o out1.nc -extra_file ex1.nc -ys 0 -ye 15
 # bed at years 200 and 300.
 ${mpi} ${pismr} ${options} -i out1.nc -o out2.nc -extra_file ex2.nc -ye 300
 
-# combine output files
-ncrcat -O ex1.nc ex2.nc ex-restart.nc
-
 # run straight
 #
 # This run updates bed elevation at years 100, 200, and 300.
 ${mpi} ${pismr} ${options} -bootstrap ${grid} -i out0.nc -o out3.nc -extra_file ex.nc -ys 0 -ye 300
+
+set +x
+
+# combine output files
+ncrcat -O ex1.nc ex2.nc ex-restart.nc
 
 set +e
 

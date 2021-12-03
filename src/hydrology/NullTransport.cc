@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,9 @@ namespace pism {
 namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
-  : Hydrology(g) {
+  : Hydrology(g),
+    m_Wtill_old(m_grid, "Wtill_old", WITH_GHOSTS) {
+
   m_diffuse_tillwat    = m_config->get_flag("hydrology.null_diffuse_till_water");
   m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");
   m_diffusion_distance = m_config->get_number("hydrology.null_diffusion_distance", "meters");
@@ -39,14 +41,6 @@ NullTransport::NullTransport(IceGrid::ConstPtr g)
                        "hydrology::NullTransport: hydrology.tillwat_max is negative.\n"
                        "This is not allowed.");
   }
-
-  if (m_diffuse_tillwat) {
-    m_Wtill_old.create(m_grid, "Wtill_old", WITH_GHOSTS);
-  }
-}
-
-NullTransport::~NullTransport() {
-  // empty
 }
 
 void NullTransport::initialization_message() const {
@@ -172,7 +166,8 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   // remove water in ice-free areas and account for changes
   enforce_bounds(inputs.geometry->cell_type,
                  inputs.no_model_mask,
-                 m_tillwat_max,
+                 m_tillwat_max, // global maximum till water thickness
+                 m_tillwat_max, // till water thickness under the ocean
                  m_Wtill,
                  m_grounded_margin_change,
                  m_grounding_line_change,

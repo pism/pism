@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,19 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PISM_UTILITIES_H_
-#define _PISM_UTILITIES_H_
+#ifndef PISM_UTILITIES_H
+#define PISM_UTILITIES_H
 
-#include <cstdint>              // uint16_t, uint32_t
+#include <cstdint>              // uint32_t
 
 #include <algorithm>            // std::min, std::max
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include <mpi.h>
 
 namespace pism {
+
+/*!
+ * Compute vertically-integrated water column pressure.
+ */
+double average_water_column_pressure(double ice_thickness, double bed,
+                                     double floatation_level,
+                                     double rho_ice, double rho_water, double g);
 
 // Utilities that do not expose PETSc's or PISM's API.
 
@@ -54,6 +61,9 @@ bool is_increasing(const std::vector<double> &a);
 // string
 bool ends_with(const std::string &str, const std::string &suffix);
 
+// remove leading and trailing whitespace
+std::string string_strip(const std::string &input);
+
 std::string join(const std::vector<std::string> &strings, const std::string &separator);
 
 std::vector<std::string> split(const std::string &input, char separator);
@@ -61,6 +71,8 @@ std::vector<std::string> split(const std::string &input, char separator);
 std::set<std::string> set_split(const std::string &input, char separator);
 
 std::string set_join(const std::set<std::string> &input, const std::string& separator);
+
+std::string replace_character(const std::string &input, char from, char to);
 
 // set
 bool member(const std::string &string, const std::set<std::string> &set);
@@ -88,7 +100,8 @@ T combine(const T &a, const T&b) {
   return result;
 }
 
-inline double clip(double x, double a, double b) {
+template<typename T>
+inline T clip(T x, T a, T b) {
   return std::min(std::max(a, x), b);
 }
 
@@ -99,11 +112,17 @@ double vector_max(const std::vector<double> &input);
 // parallel
 void GlobalReduce(MPI_Comm comm, double *local, double *result, int count, MPI_Op op);
 
+void GlobalReduce(MPI_Comm comm, int *local, int *result, int count, MPI_Op op);
+
 void GlobalMin(MPI_Comm comm, double *local, double *result, int count);
 
 void GlobalMax(MPI_Comm comm, double *local, double *result, int count);
 
+void GlobalMax(MPI_Comm comm, int *local, int *result, int count);
+
 void GlobalSum(MPI_Comm comm, double *local, double *result, int count);
+
+void GlobalSum(MPI_Comm comm, int *local, int *result, int count);
 
 double GlobalMin(MPI_Comm comm, double local);
 
@@ -123,7 +142,23 @@ void validate_format_string(const std::string &format);
 
 uint64_t fletcher64(const uint32_t *data, size_t len);
 
+void print_checksum(MPI_Comm com,
+                    const std::vector<double> &data,
+                    const char *label);
+
+void print_vector(MPI_Comm com,
+                  const std::vector<double> &data,
+                  const char *label);
+
+void print_vector(MPI_Comm com,
+                  const std::vector<int> &data,
+                  const char *label);
+
+double parse_number(const std::string &input);
+
+long int parse_integer(const std::string &input);
+
 } // end of namespace pism
 
 
-#endif /* _PISM_UTILITIES_H_ */
+#endif /* PISM_UTILITIES_H */

@@ -31,10 +31,6 @@ RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
   m_name = "regional " + m_input->name();
 }
 
-RegionalYieldStress::~RegionalYieldStress() {
-  // empty
-}
-
 /*!
  * Set `basal_yield_stress` to `tauc` in areas indicated using `mask`.
  */

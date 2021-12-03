@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
  */
 
 #include <cassert>
+#include <cstring>              // memset
 
 // Why do I need this???
 #define _NETCDF
@@ -80,8 +81,9 @@ ParallelIO::ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype)
   }
 }
 
-ParallelIO::~ParallelIO() {
-  // empty
+void ParallelIO::set_compression_level_impl(int level) const {
+  (void) level;
+  // FIXME: it may make sense to implement this for PIO IO types using HDF5.
 }
 
 void ParallelIO::open_impl(const std::string &filename, IO_Mode mode) {

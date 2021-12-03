@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2020  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,13 +37,20 @@ namespace inverse {
 */
 class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
-  IP_H1NormFunctional2S(IceGrid::ConstPtr grid, ///< computational grid
-                        double cL2, ///< The constant \f$c_{L^2}\f$.
-                        double cH1, ///< The constant \f$c_{H^1}\f$.
-                        IceModelVec2Int *dirichletLocations=NULL ///< Nodes where the function will be set to zero prior to integration.
-                        ) :
-    IPInnerProductFunctional<IceModelVec2S>(grid),
-    m_cL2(cL2), m_cH1(cH1), m_dirichletIndices(dirichletLocations) {};
+  /*!
+   * @param[in] grid computational grid
+   * @param[in] cL2 The constant \f$c_{L^2}\f$.
+   * @param[in] cH1 The constant \f$c_{H^1}\f$.
+   * @param[in] dirichletLocations Nodes where the function will be set to zero prior to integration.
+   */
+  IP_H1NormFunctional2S(IceGrid::ConstPtr grid,
+                        double cL2,
+                        double cH1,
+                        IceModelVec2Int *dirichletLocations=NULL)
+    : IPInnerProductFunctional<IceModelVec2S>(grid),
+      m_cL2(cL2),
+      m_cH1(cH1),
+      m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
   
   virtual void valueAt(IceModelVec2S &x, double *OUTPUT);

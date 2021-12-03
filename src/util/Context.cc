@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -168,7 +168,9 @@ int Context::pio_iosys_id() const {
   return m_impl->pio_iosys_id;
 }
 
-Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
+std::shared_ptr<Context> context_from_options(MPI_Comm com,
+                                              const std::string &prefix,
+                                              bool print) {
   // unit system
   units::System::Ptr sys(new units::System);
 
@@ -177,15 +179,18 @@ Context::Ptr context_from_options(MPI_Comm com, const std::string &prefix) {
 
   // configuration parameters
   Config::Ptr config = config_from_options(com, *logger, sys);
-  print_config(*logger, 3, *config);
+
+  if (print) {
+    print_config(*logger, 3, *config);
+  }
 
   // time manager
-  Time::Ptr time = time_from_options(com, config, sys);
+  Time::Ptr time = std::make_shared<Time>(com, config, *logger, sys);
 
   // enthalpy converter
   EnthalpyConverter::Ptr EC(new EnthalpyConverter(*config));
 
-  return Context::Ptr(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
 }
 
 

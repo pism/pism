@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@ using std::dynamic_pointer_cast;
 #include "VariableMetadata.hh"
 #include "iceModelVec.hh"
 #include "IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "error_handling.hh"
 
 namespace pism {
@@ -203,11 +204,11 @@ std::set<std::string> Vars::keys() const {
 
   std::set<std::string> result;
 
-  for (auto v : m_variables) {
+  for (const auto &v : m_variables) {
     result.insert(v.first);
   }
 
-  for (auto v : m_variables_shared) {
+  for (const auto &v : m_variables_shared) {
     result.insert(v.first);
   }
 
@@ -248,7 +249,7 @@ void Vars::add_shared(VecPtr variable, const std::string &name) {
                                   " was added already.",
                                   name.c_str());
   }
-  m_variables_shared[name] = variable;
+  m_variables_shared[name] = std::move(variable);
 }
 
 
@@ -259,17 +260,11 @@ bool Vars::is_available_shared(const std::string &name) const {
     std::string short_name = m_standard_names[name];
     // return true if the corresponding short name is one of a
     // "shared" variable
-    if (m_variables_shared.find(short_name) != m_variables_shared.end()) {
-      return true;
-    }
-    return false;
+    return (m_variables_shared.find(short_name) != m_variables_shared.end());
   }
 
   // check if "name" is a short name of a "shared" variable
-  if (m_variables_shared.find(name) != m_variables_shared.end()) {
-    return true;
-  }
-  return false;
+  return (m_variables_shared.find(name) != m_variables_shared.end());
 }
 
 
@@ -329,7 +324,7 @@ IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
 std::set<std::string> Vars::keys_shared() const {
 
   std::set<std::string> result;
-  for (auto v : m_variables_shared) {
+  for (const auto &v : m_variables_shared) {
     result.insert(v.first);
   }
 
@@ -345,9 +340,9 @@ IceModelVec::Ptr Vars::get_internal_shared(const std::string &name) const {
     auto k = m_variables_shared.find(short_name);
     if (k != m_variables_shared.end()) {
       return k->second;
-    } else {
-      return IceModelVec::Ptr();
     }
+
+    return IceModelVec::Ptr();
   }
 
   auto k = m_variables_shared.find(name);

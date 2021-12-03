@@ -5,50 +5,6 @@ Calving front stress boundary condition
 
 .. contents::
 
-.. only:: html
-
-   .. math::
-
-      \newcommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
-      \newcommand{\n}{\mathbf{n}}
-      \newcommand{\nx}{\n_{x}}
-      \newcommand{\ny}{\n_{y}}
-      \newcommand{\nz}{\n_{z}}
-      \newcommand{\psw}{p_{\text{ocean}}}
-      \newcommand{\pmelange}{p_{\text{melange}}}
-      \newcommand{\pice}{p_{\text{ice}}}
-      \newcommand{\rhoi}{\rho_{\text{ice}}}
-      \newcommand{\rhosw}{\rho_{\text{ocean}}}
-      \newcommand{\zs}{z_{\text{s}}}
-      \newcommand{\td}[1]{t^{D}_{#1}}
-      \newcommand{\D}{\displaystyle}
-      \newcommand{\dx}{\Delta x}
-      \newcommand{\dy}{\Delta y}
-      \newcommand{\viscosity}{\nu}
-      \newcommand{\partI}{(2\tilde N_{xx} + \tilde N_{yy})}
-      \newcommand{\partII}{(\tilde N_{xy})}
-
-.. raw:: latex
-
-   \providecommand{\diff}[2]{\frac{\partial #1}{\partial #2}}
-   \providecommand{\n}{\mathbf{n}}
-   \providecommand{\nx}{\n_{x}}
-   \providecommand{\ny}{\n_{y}}
-   \providecommand{\nz}{\n_{z}}
-   \providecommand{\psw}{p_{\text{ocean}}}
-   \providecommand{\pmelange}{p_{\text{melange}}}
-   \providecommand{\pice}{p_{\text{ice}}}
-   \providecommand{\rhoi}{\rho_{\text{ice}}}
-   \providecommand{\rhosw}{\rho_{\text{ocean}}}
-   \providecommand{\zs}{z_{\text{s}}}
-   \providecommand{\td}[1]{t^{D}_{#1}}
-   \providecommand{\D}{\displaystyle}
-   \providecommand{\dx}{\Delta x}
-   \providecommand{\dy}{\Delta y}
-   \providecommand{\viscosity}{\nu}
-   \providecommand{\partI}{(2\tilde N_{xx} + \tilde N_{yy})}
-   \providecommand{\partII}{(\tilde N_{xy})}
-
 Notation
 --------
 
@@ -59,15 +15,10 @@ Notation
    `h`,          ice top surface elevation
    `b`,          ice bottom surface elevation
    `H = h - b`,  ice thickness
-   `\zs`,        sea level elevation
    `g`,          acceleration due to gravity
-   `\rhoi`,      ice density
-   `\rhosw`,     sea water density
    `\viscosity`, vertically-averaged viscosity of ice
    `\n`,         normal vector
    `B(T)`,       ice hardness
-   `\pice`,      pressure due to the weight of a column of ice
-   `\psw`,       pressure due to the weight of a column of seawater
    `D`,          strain rate tensor
    `d_{e}`,      effective strain rate
    `t`,          Cauchy stress tensor
@@ -214,85 +165,3 @@ right-hand side, we get
 
 
 The second equation and other cases (`\n = (-1,0)`, etc) are treated similarly.
-
-Evaluating the "pressure difference term"
------------------------------------------
-
-For `z \in [b, h]` the modeled pressures are
-
-.. math::
-
-   \begin{array}{ll}
-   \psw &=
-     \begin{cases}
-       0, & z > \zs,\\
-       \rhosw\, g (\zs - z), & z \le \zs,
-     \end{cases}\\
-   \pice &= \rhoi\, g (h - z).
-   \end{array}
-
-Depending on the local geometry `b` is either prescribed (grounded case) or is a function
-of the ice thickness and sea level elevation.
-
-Floating case
-^^^^^^^^^^^^^
-
-Using the flotation thickness relation `\rhoi H = \rhosw (\zs - b)`, which applies to
-floating ice given that `b` here denotes the base elevation of the floating ice, we have
-
-.. math::
-
-   \int_{b}^{h}(\pice - \psw) dz =
-   \frac{1}{2}\, g\, \rhoi \left(H^2 - \frac{\rhoi}{\rhosw} H^2\right)
-
-Grounded below sea level
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Because `b` denotes both the base elevation of the grounded ice, and the bedrock
-elevation, here `\rhoi H \ge \rhosw (\zs - b)`. The integral simplifies to
-
-.. math::
-
-   \int_{b}^{h}(\pice - \psw) dz =
-   \frac{1}{2}\, g\, \rhoi \left(H^2-\frac{\rhosw}{\rhoi}\, \left(\zs-b\right)^2\right)
-
-
-This, in fact, applies in both floating and grounded-below-sea-level cases.
-
-Grounded above sea level
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-In this case `\psw = 0`, so
-
-.. math::
-
-   \int_{b}^{h}(\pice - \psw) dz = \frac{1}{2}\, g\, \rhoi\, H^2
-
-
-Modeling melange back-pressure
-------------------------------
-
-Let `\pmelange` be the additional melange back-pressure. Then `\psw \le \psw + \pmelange
-\le \pice`. Put another way,
-
-.. math::
-   :label: ssafd-cfbc-13
-
-   0 \le \pmelange \le \pice - \psw.
-
-Let `\lambda` be the "melange back-pressure fraction" (or "relative melange pressure")
-ranging from `0` to `1`, so that
-
-.. math::
-   :label: ssafd-cfbc-14
-
-   \pmelange = \lambda \cdot (\pice - \psw).
-
-Then the modified pressure difference term is
-
-.. math::
-   :label: ssafd-cfbc-15
-
-   \int_{b}^{h}(\pice - (\psw + \pmelange)) dz &= \int_{b}^{h}(\pice - (\psw + \lambda(\pice - \psw)))\, dz
-
-   &= (1 - \lambda) \int_{b}^{h} (\pice - \psw)\, dz.

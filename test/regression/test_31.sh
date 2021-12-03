@@ -16,7 +16,7 @@ set -e
 set -x
 
 # prepare input files with temp and liqfrac and with temp only
-$PISM_PATH/pisms -Mx 3 -My 3 -energy enthalpy -y 10 -o temp-liqfrac.nc -o_size big
+$PISM_PATH/pismr -eisII A -Mx 3 -My 3 -energy enthalpy -y 10 -o temp-liqfrac.nc -o_size big
 ncks -x -v enthalpy -O temp-liqfrac.nc temp-liqfrac.nc
 ncks -x -v liqfrac -O temp-liqfrac.nc temp.nc
 

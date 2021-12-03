@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019 PISM Authors
+// Copyright (C) 2012-2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -82,7 +82,7 @@ class Routing : public Hydrology {
 public:
 
   Routing(IceGrid::ConstPtr g);
-  virtual ~Routing();
+  virtual ~Routing() = default;
 
   const IceModelVec2S& subglacial_water_pressure() const;
   const IceModelVec2Stag& velocity_staggered() const;

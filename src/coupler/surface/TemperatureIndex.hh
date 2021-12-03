@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ namespace surface {
 class TemperatureIndex : public SurfaceModel {
 public:
   TemperatureIndex(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~TemperatureIndex();
+  virtual ~TemperatureIndex() = default;
 
   // diagnostics (for the last time step)
   const IceModelVec2S& firn_depth() const;
@@ -95,7 +95,7 @@ protected:
   IceModelVec2S m_snow_depth;
 
   //! standard deviation of the daily variability of the air temperature
-  IceModelVec2T::Ptr m_air_temp_sd;
+  std::shared_ptr<IceModelVec2T> m_air_temp_sd;
 
   //! total accumulation during the last time step
   IceModelVec2S::Ptr m_accumulation;
@@ -107,7 +107,6 @@ protected:
   IceModelVec2S::Ptr m_runoff;
 
   bool m_sd_use_param, m_sd_file_set;
-  int m_sd_period;
   double m_sd_param_a, m_sd_param_b;
 };
 

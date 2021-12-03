@@ -14,7 +14,7 @@ correctly.
 
       mpiexec -n 4 pismv -test G -y 200
 
-   If you see some output and a final ``Writing model state`` ``to file ’unnamed.nc’``
+   If you see some output and a final ``Writing model state to file ’unnamed.nc’``
    then PISM completed successfully. At the end of this run you get measurements of the
    difference between the numerical result and the exact solution. See :ref:`sec-verif`
    for more on PISM verification.
@@ -28,14 +28,14 @@ correctly.
 
    .. code-block:: none
 
-      pisms -y 5000 -view thk,temppabase,velsurf_mag
+      pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag
 
    When using such viewers and ``mpiexec`` the additional final option ``-display :0`` is
    sometimes required to enable MPI to use X, like this:
 
    .. code-block:: none
 
-       mpiexec -n 2 pisms -y 5000 -view thk,temppabase,velsurf_mag -display :0
+       mpiexec -n 2 pismr -eisII A -y 5000 -view thk,temppabase,velsurf_mag -display :0
 
    Also ``-drawpause 0.1`` or similar may be needed if the figures are refreshing too fast.
 

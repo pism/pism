@@ -85,17 +85,15 @@ def prepare_output_file(nc, x, y, include_vel_bc=True):
         return
 
     attrs = {'long_name': "Dirichlet boundary condition locations",
-             "units": "1",
-             "_FillValue": 0}
-    nc.define_2d_field("bc_mask", attrs=attrs)
+             "units": "1"}
+    nc.define_2d_field("vel_bc_mask", attrs=attrs)
 
     attrs = {'long_name': "X-component of the SSA velocity boundary conditions",
-             "units": "m/year",
-             "_FillValue": 0.0}
-    nc.define_2d_field("u_ssa_bc", attrs=attrs)
+             "units": "m/year"}
+    nc.define_2d_field("u_bc", attrs=attrs)
 
     attrs['long_name'] = "Y-component of the SSA velocity boundary conditions"
-    nc.define_2d_field("v_ssa_bc", attrs=attrs)
+    nc.define_2d_field("v_bc", attrs=attrs)
 
 
 def write_data(nc, variables):

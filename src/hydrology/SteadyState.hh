@@ -34,7 +34,7 @@ class EmptyingProblem;
 class SteadyState : public NullTransport {
 public:
   SteadyState(IceGrid::ConstPtr g);
-  virtual ~SteadyState();
+  virtual ~SteadyState() = default;
 
 protected:
   void initialization_message() const;

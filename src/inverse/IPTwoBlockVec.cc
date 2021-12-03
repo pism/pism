@@ -71,10 +71,6 @@ IPTwoBlockVec::IPTwoBlockVec(Vec a, Vec b) {
                           m_scatter_b.rawptr()); PISM_CHK(ierr, "VecScatterCreate");
 }
 
-IPTwoBlockVec::~IPTwoBlockVec() {
-  // empty
-}
-
 IS IPTwoBlockVec::blockAIndexSet() {
   return m_a_in_ab;
 }

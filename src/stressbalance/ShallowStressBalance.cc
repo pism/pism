@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -25,53 +25,38 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Context.hh"
 
 #include "SSB_diagnostics.hh"
 
 namespace pism {
 namespace stressbalance {
 
-//! Evaluate the margin pressure difference term in the calving-front BC.
-//
-// Units: (kg / m3) * (m / s2) * m2 = Pa m
-double margin_pressure_difference(bool shelf, bool dry_mode, double H, double bed,
-                                  double sea_level, double rho_ice, double rho_ocean,
-                                  double g) {
-  if (shelf) {
-    // floating shelf
-    return 0.5 * rho_ice * g * (1.0 - (rho_ice / rho_ocean)) * H * H;
-  } else {
-    // grounded terminus
-    if (bed >= sea_level or dry_mode) {
-      return 0.5 * rho_ice * g * H * H;
-    } else {
-      return 0.5 * rho_ice * g * (H * H - (rho_ocean / rho_ice) * pow(sea_level - bed, 2.0));
-    }
-  }
-}
-
-using pism::mask::ice_free;
-
 ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
-  : Component(g), m_basal_sliding_law(NULL), m_flow_law(NULL), m_EC(g->ctx()->enthalpy_converter()) {
-
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+  : Component(g),
+    m_basal_sliding_law(NULL),
+    m_flow_law(NULL),
+    m_EC(g->ctx()->enthalpy_converter()),
+    m_velocity(m_grid, "bar", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_basal_frictional_heating(m_grid, "bfrict", WITHOUT_GHOSTS),
+    m_e_factor(1.0)
+{
 
   if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
+  } else if (m_config->get_flag("basal_resistance.regularized_coulomb.enabled") == true) {
+    m_basal_sliding_law = new IceBasalResistanceRegularizedLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
 
-  m_velocity.create(m_grid, "bar", WITH_GHOSTS, WIDE_STENCIL); // components ubar, vbar
   m_velocity.set_attrs("model_state",
-                       "thickness-advective ice velocity (x-component)", 
+                       "thickness-advective ice velocity (x-component)",
                        "m s-1", "m s-1", "", 0);
   m_velocity.set_attrs("model_state",
                        "thickness-advective ice velocity (y-component)",
                        "m s-1", "m s-1", "", 1);
 
-  m_basal_frictional_heating.create(m_grid, "bfrict", WITHOUT_GHOSTS);
   m_basal_frictional_heating.set_attrs("diagnostic",
                                        "basal frictional heating",
                                        "W m-2", "mW m-2", "", 0);
@@ -95,6 +80,10 @@ std::string ShallowStressBalance::stdout_report() const {
 
 std::shared_ptr<const rheology::FlowLaw> ShallowStressBalance::flow_law() const {
   return m_flow_law;
+}
+
+double ShallowStressBalance::flow_enhancement_factor() const {
+  return m_e_factor;
 }
 
 EnthalpyConverter::Ptr ShallowStressBalance::enthalpy_converter() const {
@@ -139,10 +128,6 @@ ZeroSliding::ZeroSliding(IceGrid::ConstPtr g)
   // Use the SIA flow law.
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
   m_flow_law = ice_factory.create();
-}
-
-ZeroSliding::~ZeroSliding() {
-  // empty
 }
 
 //! \brief Update the trivial shallow stress balance object.
@@ -200,8 +185,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this field is purely diagnostic (not used by the model)");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
 
@@ -212,8 +196,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  */
 IceModelVec::Ptr SSB_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -233,8 +216,8 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
       (*result)(i,j).u = 0.0;
       (*result)(i,j).v = 0.0;
     } else {
-      (*result)(i,j).u = - pressure * surface->diff_x_p(i,j);
-      (*result)(i,j).v = - pressure * surface->diff_y_p(i,j);
+      (*result)(i,j).u = - pressure * diff_x_p(*surface, i,j);
+      (*result)(i,j).v = - pressure * diff_y_p(*surface, i,j);
     }
   }
 
@@ -249,17 +232,16 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
 
   set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                     "this field is purely diagnostic (not used by the model)");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
 IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taud = IceModelVec2V::ToVector(SSB_taud(model).compute());
+  IceModelVec2V::Ptr taud = IceModelVec::cast<IceModelVec2V>(SSB_taud(model).compute());
 
-  result->set_to_magnitude(*taud);
+  compute_magnitude(*taud, *result);
 
   return result;
 }
@@ -276,16 +258,14 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
             "Pa", "Pa", 1);
 
   for (auto &v : m_vars) {
-    v.set_string("comment",
-                 "this field is purely diagnostic (not used by the model)");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
 
 
 IceModelVec::Ptr SSB_taub::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V);
-  result->create(m_grid, "result", WITHOUT_GHOSTS);
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -300,12 +280,10 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j)) {
-      double beta = basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
-      (*result)(i,j).u = - beta * velocity(i,j).u;
-      (*result)(i,j).v = - beta * velocity(i,j).v;
+      double beta = basal_sliding_law->drag((*tauc)(i, j), velocity(i, j).u, velocity(i, j).v);
+      (*result)(i, j) = - beta * velocity(i, j);
     } else {
-      (*result)(i,j).u = 0.0;
-      (*result)(i,j).v = 0.0;
+      (*result)(i, j) = 0.0;
     }
   }
 
@@ -323,17 +301,16 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   set_attrs("magnitude of the basal shear stress at the base of ice",
             "land_ice_basal_drag", // ISMIP6 "standard" name
             "Pa", "Pa", 0);
-  m_vars[0].set_string("comment",
-                       "this field is purely diagnostic (not used by the model)");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taub_mag", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taub = IceModelVec2V::ToVector(SSB_taub(model).compute());
+  IceModelVec2V::Ptr taub = IceModelVec::cast<IceModelVec2V>(SSB_taub(model).compute());
 
-  result->set_to_magnitude(*taub);
+  compute_magnitude(*taub, *result);
 
   return result;
 }
@@ -346,10 +323,6 @@ IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
  */
 PrescribedSliding::PrescribedSliding(IceGrid::ConstPtr g)
   : ZeroSliding(g) {
-  // empty
-}
-
-PrescribedSliding::~PrescribedSliding() {
   // empty
 }
 

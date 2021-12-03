@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,8 +32,6 @@ Given::Given(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -42,8 +40,7 @@ Given::Given(IceGrid::ConstPtr g)
                                              "air_temp",
                                              "", // no standard name
                                              buffer_size,
-                                             evaluations_per_year,
-                                             periodic,
+                                             opt.periodic,
                                              LINEAR);
 
     m_precipitation = IceModelVec2T::ForcingField(m_grid,
@@ -51,23 +48,18 @@ Given::Given(IceGrid::ConstPtr g)
                                                   "precipitation",
                                                   "", // no standard name
                                                   buffer_size,
-                                                  evaluations_per_year,
-                                                  periodic);
+                                                  opt.periodic);
   }
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "Kelvin", "", 0);
-    m_air_temp->metadata(0).set_numbers("valid_range", {0.0, 323.15}); // (0 C, 50 C)
+    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",
                                "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
   }
-}
-
-Given::~Given() {
-  // empty
 }
 
 void Given::init_impl(const Geometry &geometry) {
@@ -77,11 +69,11 @@ void Given::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
-  m_air_temp->init(opt.filename, opt.period, opt.reference_time);
-  m_precipitation->init(opt.filename, opt.period, opt.reference_time);
+  m_air_temp->init(opt.filename, opt.periodic);
+  m_precipitation->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
-  if (m_air_temp->n_records() == 1 && m_precipitation->n_records() == 1) {
+  if (m_air_temp->buffer_size() == 1 && m_precipitation->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }

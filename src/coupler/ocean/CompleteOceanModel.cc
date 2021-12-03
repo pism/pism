@@ -36,10 +36,6 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
   // empty
 }
 
-CompleteOceanModel::~CompleteOceanModel() {
-  // empty
-}
-
 const IceModelVec2S& CompleteOceanModel::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }

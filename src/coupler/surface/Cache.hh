@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace surface {
 class Cache : public SurfaceModel {
 public:
   Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
-  virtual ~Cache();
+  virtual ~Cache() = default;
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -50,7 +50,7 @@ protected:
   IceModelVec2S::Ptr m_temperature;
 
   double m_next_update_time;
-  unsigned int m_update_interval_years;
+  double m_update_interval_years;
 };
 
 } // end of namespace surface

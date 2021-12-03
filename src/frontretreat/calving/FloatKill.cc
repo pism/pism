@@ -34,10 +34,6 @@ FloatKill::FloatKill(IceGrid::ConstPtr g)
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
 }
 
-FloatKill::~FloatKill() {
-  // empty
-}
-
 void FloatKill::init() {
   m_log->message(2,
                  "* Initializing calving using the floatation criterion (float_kill)...\n");

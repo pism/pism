@@ -5,6 +5,7 @@
 #include <pism/util/io/File.hh>
 #include <pism/util/io/io_helpers.hh>
 #include <pism/icebin/VecBundleWriter.hh>
+#include "pism/util/Context.hh"
 
 using namespace pism;
 
@@ -26,7 +27,7 @@ void VecBundleWriter::init() {
   io::define_time(file,
                   m_grid->ctx()->config()->get_string("time.dimension_name"),
                   m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->CF_units_string(),
+                  m_grid->ctx()->time()->units_string(),
                   m_grid->ctx()->unit_system());
 
   for (pism::IceModelVec const *vec : vecs) {

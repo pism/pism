@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,12 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace calving {
@@ -33,7 +35,9 @@ namespace calving {
 vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
-    m_flow_law(flow_law) {
+    m_calving_threshold(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS),
+    m_flow_law(flow_law)
+{
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
     EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -46,18 +50,12 @@ vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                            "horizontal calving rate due to von Mises calving",
                            "m s-1", "m year-1", "", 0);
 
-  m_calving_threshold.create(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS);
-
   m_calving_threshold.set_attrs("diagnostic",
                                 "threshold used by the 'von Mises' calving method",
                                 "Pa", "Pa",
                                 "", 0); // no standard name
   m_calving_threshold.set_time_independent(true);
 
-}
-
-vonMisesCalving::~vonMisesCalving() {
-  // empty
 }
 
 void vonMisesCalving::init() {
@@ -102,6 +100,8 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec3 &ice_enthalpy) {
 
   using std::max;
+  using std::sqrt;
+  using std::pow;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -175,8 +175,8 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
       }
 
       // [\ref Morlighem2016] equation 6
-      const double effective_tensile_strain_rate = sqrt(0.5 * (PetscSqr(max(0.0, eigen1)) +
-                                                               PetscSqr(max(0.0, eigen2))));
+      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
+                                                               pow(max(0.0, eigen2), 2)));
       // [\ref Morlighem2016] equation 7
       const double sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
                                                             1.0 / glen_exponent);

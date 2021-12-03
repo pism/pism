@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Constantine Khroulev
+// Copyright (C) 2009--2021 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,7 @@
 
 #include "iceModelVec.hh"
 #include "MaxTimestep.hh"
+#include "interpolation.hh"     // InterpolationType
 
 namespace pism {
 
@@ -42,26 +43,28 @@ namespace pism {
 */
 class IceModelVec2T : public IceModelVec2S {
 public:
-  typedef std::shared_ptr<IceModelVec2T> Ptr;
+  static std::shared_ptr<IceModelVec2T>
+  ForcingField(IceGrid::ConstPtr grid,
+               const File &file,
+               const std::string &short_name,
+               const std::string &standard_name,
+               int max_buffer_size,
+               bool periodic,
+               InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
-  static Ptr ForcingField(IceGrid::ConstPtr grid,
-                          const File &file,
-                          const std::string &short_name,
-                          const std::string &standard_name,
-                          int max_buffer_size,
-                          int evaluations_per_year,
-                          bool periodic,
-                          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
+  static std::shared_ptr<IceModelVec2T> Constant(IceGrid::ConstPtr grid,
+                                                 const std::string &short_name,
+                                                 double value);
 
-  IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name, unsigned int n_records,
-                unsigned int n_evaluations_per_year,
+  IceModelVec2T(IceGrid::ConstPtr grid,
+                const std::string &short_name,
+                unsigned int buffer_size,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
   virtual ~IceModelVec2T();
 
-  unsigned int n_records();
+  unsigned int buffer_size();
 
-  void init(const std::string &filename, unsigned int period, double reference_time);
-  void init_constant(double value);
+  void init(const std::string &filename, bool periodic);
 
   void update(double t, double dt);
   MaxTimestep max_timestep(double t) const;
@@ -77,37 +80,15 @@ public:
   void init_interpolation(const std::vector<double> &ts);
 
 private:
-  std::vector<double> m_time,             //!< all the times available in filename
-    m_time_bounds;                //!< time bounds
-  std::string m_filename;         //!< file to read (regrid) from
-  petsc::DM::Ptr m_da3;
-  petsc::Vec m_v3;                       //!< a 3D Vec used to store records
-  mutable void ***m_array3;
+  struct Data;
 
-  //! maximum number of records to store in memory
-  unsigned int m_n_records;
+  Data *m_data;
 
-  //! number of records kept in memory
-  unsigned int m_N;
-
-  //! number of evaluations per year used to compute temporal averages
-  unsigned int m_n_evaluations_per_year;
-
-  //! in-file index of the first record stored in memory ("int" to allow first==-1 as an
-  //! "invalid" first value)
-  int m_first;
-
-  InterpolationType m_interp_type;
-  std::shared_ptr<Interpolation> m_interp;
-  unsigned int m_period;        // in years
-  double m_reference_time;      // in seconds
-
-  double*** get_array3();
+  double*** array3();
   void update(unsigned int start);
   void discard(int N);
-  double average(int i, int j);
   void set_record(int n);
-  void get_record(int n);
+  void init_periodic_data(const File &file);
 };
 
 

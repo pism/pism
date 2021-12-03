@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ class Inputs;
 class SSB_Modifier : public Component {
 public:
   SSB_Modifier(IceGrid::ConstPtr g);
-  virtual ~SSB_Modifier();
+  virtual ~SSB_Modifier() = default;
 
   virtual void init();
 
@@ -48,16 +48,14 @@ public:
                       bool full_update) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  virtual const IceModelVec2Stag& diffusive_flux();
+  const IceModelVec2Stag& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  virtual double max_diffusivity() const;
+  double max_diffusivity() const;
 
   const IceModelVec3& velocity_u() const;
 
   const IceModelVec3& velocity_v() const;
-
-  const IceModelVec3& volumetric_strain_heating() const;
 
   virtual std::string stdout_report() const;
 
@@ -68,7 +66,7 @@ protected:
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
   IceModelVec2Stag m_diffusive_flux;
-  IceModelVec3 m_u, m_v, m_strain_heating;
+  IceModelVec3 m_u, m_v;
 };
 
 
@@ -76,7 +74,7 @@ protected:
 class ConstantInColumn : public SSB_Modifier {
 public:
   ConstantInColumn(IceGrid::ConstPtr g);
-  virtual ~ConstantInColumn();
+  virtual ~ConstantInColumn() = default;
 
   virtual void init();
 

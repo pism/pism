@@ -32,8 +32,12 @@ experiment A. Experiments I and J are similar to experiment A but with non-flat 
 bed topography. Experiments K and L are similar to experiment C but with non-flat "mound"
 bed topography.
 
-See :numref:`tab-eisII` for how to run all EISMINT II experiments in PISM.
+See :numref:`tab-eisII` for how to run supported EISMINT II experiments in PISM.
 Experiments E -- L are only documented in :cite:`EISIIdescribe`.
+
+.. note::
+
+   Experiments G and H are not supported.
 
 .. list-table:: Running the EISMINT II experiments in PISM. Use ``-skip -skip_max 5``, on
                 the `61\times 61` default grid, for significant speedup.
@@ -41,7 +45,7 @@ Experiments E -- L are only documented in :cite:`EISIIdescribe`.
    :header-rows: 1
    :widths: 5,2
 
-   * - Command: "``pisms +``"
+   * - Command: "``pismr +``"
      - Relation to experiment A
 
    * - ``-eisII A -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIIA.nc``
@@ -54,10 +58,6 @@ Experiments E -- L are only documented in :cite:`EISIIdescribe`.
      - smaller area of accumulation
    * - ``-eisII F -Mx 61 -My 61 -Mz 81 -Lz 6000 -y 2e5 -o eisIIF.nc``
      - colder; famous spokes :cite:`BBL`
-   * - ``-eisII G -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIG.nc``
-     - sliding (regardless of temperature)
-   * - ``-eisII H -Mx 61 -My 61 -Mz 201 -Lz 5000 -y 2e5 -o eisIIH.nc``
-     - melt-temperature activated sliding
    * - ``-eisII E -i eisIIA.nc -y 2e5 -o eisIIE.nc``
      - shifted climate maps
    * - ``-eisII I -Mx 61 -My 61 -Mz 61 -Lz 5000 -y 2e5 -o eisIII.nc``
@@ -110,14 +110,14 @@ EISMINT II experiments.
        experiment. See :numref:`tab-eisII`.
 
    * - :opt:`-Mmax`
-     - 0.5 [ABDEFGHIK],
+     - 0.5 [ABDEFIK],
 
        0.25 [CJL]
      - `m / year`
      - max value of accumulation rate
 
    * - :opt:`-Rel`
-     - 450 [ABEFGHIK],
+     - 450 [ABEFIK],
 
        425 [CDJL]
      - km
@@ -134,7 +134,7 @@ EISMINT II experiments.
      - radial gradient of surface temperature
 
    * - :opt:`-Tmin`
-     - 238.15 [ACDEGHIJKL],
+     - 238.15 [ACDEIJKL],
        
        243.15 [B],
        

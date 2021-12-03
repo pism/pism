@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017, 2021 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -67,18 +67,14 @@ EnthalpyConverter::EnthalpyConverter(const Config &config) {
   m_do_cold_ice_methods  = config.get_flag("energy.temperature_based");
 }
 
-EnthalpyConverter::~EnthalpyConverter() {
-  // empty
-}
-
 //! Return `true` if ice at `(E, P)` is temperate.
 //! Determines if E >= E_s(p), that is, if the ice is at the pressure-melting point.
 bool EnthalpyConverter::is_temperate(double E, double P) const {
   if (m_do_cold_ice_methods) {
     return is_temperate_relaxed(E, P);
-  } else {
-    return (E >= enthalpy_cts(P));
   }
+
+  return (E >= enthalpy_cts(P));
 }
 
 //! A relaxed version of `is_temperate()`.
@@ -96,13 +92,14 @@ void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) con
   if (T <= 0.0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T = %f <= 0 is not a valid absolute temperature",T);
   }
-  if ((omega < 0.0 - 1.0e-6) || (1.0 + 1.0e-6 < omega)) {
+  const double eps = 1.0e-6;
+  if ((omega < 0.0 - eps) || (1.0 + eps < omega)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water fraction omega=%f not in range [0,1]",omega);
   }
-  if (T > T_melting + 1.0e-6) {
+  if (T > T_melting + eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T=%f exceeds T_melting=%f; not allowed",T,T_melting);
   }
-  if ((T < T_melting - 1.0e-6) && (omega > 0.0 + 1.0e-6)) {
+  if ((T < T_melting - eps) && (omega > 0.0 + eps)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T < T_melting AND omega > 0 is contradictory;"
                                   " got T=%f, T_melting=%f, omega=%f",
                                   T, T_melting, omega);
@@ -137,9 +134,9 @@ be negative, representing a position above the surface of the ice.
 double EnthalpyConverter::pressure(double depth) const {
   if (depth >= 0.0) {
     return m_p_air + m_rho_i * m_g * depth;
-  } else {
-    return m_p_air; // at or above surface of ice
   }
+
+  return m_p_air; // at or above surface of ice
 }
 
 //! Compute pressure in a column of ice. Does not check validity of `depth`.
@@ -182,9 +179,9 @@ double EnthalpyConverter::temperature(double E, double P) const {
 
   if (E < enthalpy_cts(P)) {
     return temperature_cold(E);
-  } else {
-    return melting_temperature(P);
   }
+
+  return melting_temperature(P);
 }
 
 
@@ -217,9 +214,9 @@ double EnthalpyConverter::water_fraction(double E, double P) const {
   double E_s = enthalpy_cts(P);
   if (E <= E_s) {
     return 0.0;
-  } else {
-    return (E - E_s) / L(melting_temperature(P));
   }
+
+  return (E - E_s) / L(melting_temperature(P));
 }
 
 
@@ -245,9 +242,9 @@ double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
 
   if (T < T_melting) {
     return enthalpy_cold(T);
-  } else {
-    return enthalpy_cts(P) + omega * L(T_melting);
   }
+
+  return enthalpy_cts(P) + omega * L(T_melting);
 }
 
 
@@ -279,9 +276,10 @@ double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) 
 
   if (T < T_m) {
     return enthalpy(T, 0.0, P);
-  } else { // T >= T_m(P) replaced with T = T_m(P)
-    return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), P);
   }
+
+  // T >= T_m(P) replaced with T = T_m(P)
+  return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), P);
 }
 
 ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
@@ -293,10 +291,6 @@ ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
   // disable pressure-dependence of the melting temperature by setting Clausius-Clapeyron beta to
   // zero
   m_beta = 0.0;
-}
-
-ColdEnthalpyConverter::~ColdEnthalpyConverter() {
-  // empty
 }
 
 //! Latent heat of fusion of water as a function of pressure melting

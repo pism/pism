@@ -1,4 +1,4 @@
-// Copyright (C) 2019 PISM Authors
+// Copyright (C) 2019, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ class BedrockColumn {
 public:
   BedrockColumn(const std::string &prefix, const Config &config,
                 double dz, unsigned int M);
-  ~BedrockColumn();
+  ~BedrockColumn() = default;
 
   void solve(double dt, double Q_bottom, double T_top,
              const double *T_old, double *result);

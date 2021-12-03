@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@ namespace pism {
 
    A node is can be *interior*, *boundary*, or *exterior*.
 
-   An element is considered *icy* if all four of its nodes have ice thickness above
+   An element is considered *icy* if at least three of its nodes have ice thickness above
    `thickness_threshold`.
 
    A node is considered *interior* if all of the elements it belongs to are icy.
@@ -64,50 +64,44 @@ void compute_node_types(const IceModelVec2S &ice_thickness,
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
-  const IceModelVec2S &H     = ice_thickness;
-  const double        &H_min = thickness_threshold;
+  const double &H_min = thickness_threshold;
 
-  IceModelVec::AccessList list{&H, &result};
+  IceModelVec::AccessList list{&ice_thickness, &result};
 
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // indexing shortcuts (to reduce chances of making typos below)
-      const int
-        N = j + 1,
-        E = i + 1,
-        S = j - 1,
-        W = i - 1;
+      auto H = ice_thickness.box(i, j);
 
       // flags indicating whether the current node and its neighbors are "icy"
-      const bool
-        icy_ij = H(i, j) >= H_min,
-        icy_nw = H(W, N) >= H_min,
-        icy_n  = H(i, N) >= H_min,
-        icy_ne = H(E, N) >= H_min,
-        icy_e  = H(E, j) >= H_min,
-        icy_se = H(E, S) >= H_min,
-        icy_s  = H(i, S) >= H_min,
-        icy_sw = H(W, S) >= H_min,
-        icy_w  = H(W, j) >= H_min;
+      stencils::Box<int> icy;
 
-      // flags indicating whether neighboring elements are "icy" (and element is icy if all its
-      // nodes are icy)
+      icy.ij = static_cast<int>(H.ij >= H_min);
+      icy.nw = static_cast<int>(H.nw >= H_min);
+      icy.n  = static_cast<int>(H.n  >= H_min);
+      icy.ne = static_cast<int>(H.ne >= H_min);
+      icy.e  = static_cast<int>(H.e  >= H_min);
+      icy.se = static_cast<int>(H.se >= H_min);
+      icy.s  = static_cast<int>(H.s  >= H_min);
+      icy.sw = static_cast<int>(H.sw >= H_min);
+      icy.w  = static_cast<int>(H.w  >= H_min);
+
+      // flags indicating whether neighboring elements are "icy" (an element is icy if at
+      // least three of its nodes are icy)
       const bool
-        ne_element_is_icy = (icy_ij and icy_e and icy_ne and icy_n),
-        nw_element_is_icy = (icy_ij and icy_n and icy_nw and icy_w),
-        sw_element_is_icy = (icy_ij and icy_w and icy_sw and icy_s),
-        se_element_is_icy = (icy_ij and icy_s and icy_se and icy_e);
+        ne_element_is_icy = (icy.ij + icy.e + icy.ne + icy.n) >= 3,
+        nw_element_is_icy = (icy.ij + icy.n + icy.nw + icy.w) >= 3,
+        sw_element_is_icy = (icy.ij + icy.w + icy.sw + icy.s) >= 3,
+        se_element_is_icy = (icy.ij + icy.s + icy.se + icy.e) >= 3;
 
       if (ne_element_is_icy and nw_element_is_icy and
           sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (ne_element_is_icy or nw_element_is_icy or
-                 sw_element_is_icy or se_element_is_icy) {
-        // at least one element is icy: we are at a boundary node
+      } else if (icy.ij != 0) {
+        // the current node is icy: we are at a boundary
         result(i, j) = NODE_BOUNDARY;
       } else {
         // all elements are ice-free: we are at an exterior node

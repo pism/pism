@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cmath>
+#include <petsc.h>
 
 #include "pism/util/iceModelVec.hh"
 #include "IPDesignVariableParameterization.hh"

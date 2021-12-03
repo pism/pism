@@ -1,16 +1,18 @@
+# Note: set the environment variable ${N} to the number of processes to use for parallel
+# builds and testing (overrides the default (4) used on CircleCI servers).
+
 version: 2
 
 jobs:
   build-gcc:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
-      PYTHONPATH: /home/builder/project/build/site-packages
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -25,9 +27,8 @@ jobs:
           # CMAKE_BUILD_TYPE=Debug enables pedantic compiler warnings and one or two extra
           # tests.
           #
-          # CMAKE_CXX_FLAGS is set to a) disable warnings caused by OpenMPI internals and
-          # b) treat all warnings as errors except for the one about the "noreturn"
-          # attribute.
+          # CMAKE_CXX_FLAGS is set to treat all warnings as errors except for the one
+          # about the "noreturn" attribute.
           #
           # We need Python bindings and extra executables for many regression tests.
           #
@@ -37,9 +38,12 @@ jobs:
           # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
           command: >-
             cmake -B build -S .
+            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
@@ -50,24 +54,27 @@ jobs:
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j4 all
-      - run:
-          name: Run regression tests
-          command: cd build && ctest -j 4 --output-on-failure
+          command: make --no-print-directory -C build -j ${N:-4} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
+      - run:
+          name: Run regression tests
+          command: >-
+            cd build &&
+            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N:-4} --output-on-failure
 
   build-gcc-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CC: ccache mpicc
       CXX: ccache mpicxx
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -82,11 +89,11 @@ jobs:
           command: >-
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
-            -DCMAKE_CXX_FLAGS="-Wno-cast-function-type -Werror -Wno-error=suggest-attribute=noreturn -Wno-error=undef"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Build PISM using GCC
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N:-4} all
       - save_cache:
           key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
           paths:
@@ -94,12 +101,13 @@ jobs:
 
   build-clang:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
-      PYTHONPATH: /home/builder/project/build/site-packages
+      CC: ccache mpicc -cc=clang
+      CXX: ccache mpicxx -cxx=clang++
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -112,13 +120,13 @@ jobs:
       - run:
           name: Configure PISM
           command: >-
-            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
-            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf;$HOME/local/pnetcdf;$HOME/local/parallelio"
-            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
-            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
+            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DPism_USE_PROJ=Yes
             -DPism_USE_PARALLEL_NETCDF4=Yes
             -DPism_USE_PNETCDF=Yes
@@ -128,23 +136,34 @@ jobs:
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
       - run:
-          name: Build PISM using Clang
-          command: make --no-print-directory -C build -j4 all
+          name: Reset ccache stats
+          command: ccache -z
       - run:
-          name: Run regression tests
-          command: cd build && ctest -j 4 --output-on-failure
+          name: Build PISM using Clang
+          command: make --no-print-directory -C build -j ${N:-4} all
+      - run:
+          name: Print ccache stats
+          command: ccache -s
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
+      - run:
+          name: Run regression tests
+          command: >-
+            cd build &&
+            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
+            ctest -j ${N:-4} --output-on-failure
 
   build-clang-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     environment:
       CCACHE_COMPRESS: 1
-      PETSC_DIR: /usr/lib/petsc/
+      CC: ccache mpicc -cc=clang
+      CXX: ccache mpicxx -cxx=clang++
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
@@ -157,36 +176,153 @@ jobs:
       - run:
           name: Configure PISM
           command: >-
-            CC="ccache $(mpicc -show | sed s/gcc/clang/)"
-            CXX="ccache $(mpicxx -show | sed s/g++/clang++/)"
             cmake -B build -S .
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_FIND_ROOT_PATH="$HOME/local/hdf5;$HOME/local/netcdf"
-            -DCMAKE_C_FLAGS="-Werror -Wno-unused-command-line-argument"
-            -DCMAKE_CXX_FLAGS="-Werror -Wno-unused-command-line-argument"
+            -DCMAKE_C_FLAGS="-Werror"
+            -DCMAKE_CXX_FLAGS="-Werror"
+            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
+      - run:
+          name: Reset ccache stats
+          command: ccache -z
       - run:
           name: Build PISM using Clang
-          command: make --no-print-directory -C build -j4 all
+          command: make --no-print-directory -C build -j ${N:-4} all
+      - run:
+          name: Print ccache stats
+          command: ccache -s
       - save_cache:
           key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
           paths:
             - ~/.ccache
 
-  build-manual:
+  build-manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1
+      - image: ckhrulev/pism-ubuntu:0.1.3
 
     steps:
       - checkout
       - run:
-          name: Build the manual
+          name: Build the HTML version of the manual
           command: |
             mkdir -p build
-            cmake -B build -S doc/ -DCMAKE_INSTALL_PREFIX=/tmp/pism -DPism_DOC_DIR="manual"
-            make -C build install
-            tar -czf pism-manual.tgz -C /tmp/pism/manual/html .
-      - store_artifacts:
-          path: pism-manual.tgz
+            cmake -B build -S doc/
+            make -C build manual_html
+      - persist_to_workspace:
+          root: build/sphinx
+          paths: html
+
+  deploy-manual-html:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: manual
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "0a:88:9e:95:a9:35:1b:54:f6:0e:4a:f8:3d:34:ef:30"
+      - run:
+          name: Deploy the HTML version of the manual to GitHub Pages
+          command: >-
+            gh-pages
+            --repo git@github.com:pism/docs.git
+            --dotfiles
+            --message "Update the manual"
+            --dist manual/html
+
+  build-manual-pdf:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.3
+
+    steps:
+      - checkout
+      - run:
+          name: Build the PDF version of the manual
+          command: |
+            mkdir -p build
+            cmake -B build -S doc/
+            make -C build manual_pdf
+      - persist_to_workspace:
+          root: build/sphinx/
+          paths: pism_manual.pdf
+
+  deploy-manual-pdf:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: manual
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "84:ac:e8:7c:d0:24:f7:51:dd:e6:89:dc:59:bc:9a:b7"
+      - run:
+          name: Deploy the PDF version of the manual to GitHub
+          command: >-
+            gh-pages
+            --repo git@github.com:pism/docs-pdf.git
+            --branch main
+            --message "Update the manual"
+            --dist manual/
+
+  build-source-browser:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.3
+
+    steps:
+      - checkout
+      - run:
+          name: Build the source code browser
+          command: |
+            mkdir -p build
+            cmake -B build -S doc/
+            make -C build browser
+            rm -f build/browser/html/*.md5
+            touch build/browser/html/.nojekyll
+            du -sh build/browser/html/
+      - persist_to_workspace:
+          root: build/browser/
+          paths: html
+
+  deploy-source-browser:
+    docker:
+      - image: node:8.10.0
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: browser
+      - run:
+          name: Install and configure dependencies
+          command: |
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "ckhroulev@alaska.edu"
+            git config user.name "CI Builder (PISM manual)"
+      - add_ssh_keys:
+          fingerprints:
+            - "fd:20:f4:23:95:b7:99:85:e9:e2:d9:78:75:22:fb:6c"
+      - run:
+          name: Deploy the source code browser to GitHub Pages
+          command: >-
+            gh-pages
+            --repo git@github.com:pism/doxygen.git
+            --dotfiles
+            --message "Update the source code browser"
+            --dist browser/html
 
 workflows:
   version: 2
@@ -196,4 +332,36 @@ workflows:
       - build-gcc-minimal
       - build-clang
       - build-clang-minimal
-      - build-manual
+      - build-manual-html
+      - deploy-manual-html:
+          requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
+            - build-manual-html
+          filters:
+            branches:
+              only: main
+      - build-manual-pdf
+      - deploy-manual-pdf:
+          requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
+            - build-manual-pdf
+          filters:
+            branches:
+              only: main
+      - build-source-browser
+      - deploy-source-browser:
+          requires:
+            - build-gcc
+            - build-gcc-minimal
+            - build-clang
+            - build-clang-minimal
+            - build-source-browser
+          filters:
+            branches:
+              only: main

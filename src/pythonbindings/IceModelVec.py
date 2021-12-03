@@ -12,7 +12,7 @@ def regrid(self, filename, critical=False, default_value=0.0):
 def numpy(self):
     "Return a NumPy array containing data from this field (on rank 0)."
     tmp = self.allocate_proc0_copy()
-    self.put_on_proc0(tmp.get())
+    self.put_on_proc0(tmp)
     import numpy
 
     if self.grid().ctx().rank() == 0:

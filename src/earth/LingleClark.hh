@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -70,7 +70,7 @@ protected:
 
   //! Storage on rank zero. Used to pass the load to the serial deformation model and get
   //! bed displacement back.
-  petsc::Vec::Ptr m_work0;
+  std::shared_ptr<petsc::Vec> m_work0;
 
   //! Bed relief relative to the bed displacement.
   IceModelVec2S m_relief;
@@ -85,14 +85,14 @@ protected:
   IceGrid::Ptr m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
-  IceModelVec2S m_viscous_displacement;
+  std::shared_ptr<IceModelVec2S> m_viscous_displacement;
   //! rank 0 storage using the extended grid
-  petsc::Vec::Ptr m_viscous_displacement0;
+  std::shared_ptr<petsc::Vec> m_viscous_displacement0;
 
   //! Elastic bed displacement (part of the model state)
   IceModelVec2S m_elastic_displacement;
   //! rank 0 storage for the elastic displacement
-  petsc::Vec::Ptr m_elastic_displacement0;
+  std::shared_ptr<petsc::Vec> m_elastic_displacement0;
 
   //! time of the last bed deformation update
   double m_t_last;

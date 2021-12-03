@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,7 +29,7 @@ namespace ocean {
 class Constant : public CompleteOceanModel {
 public:
   Constant(IceGrid::ConstPtr g);
-  virtual ~Constant();
+  virtual ~Constant() = default;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,10 +19,13 @@
 
 #include "SteadyState.hh"
 
+#include <gsl/gsl_interp.h>     // gsl_interp_bsearch
+
 #include "EmptyingProblem.hh"
 
 #include "pism/util/Time.hh"    // m_grid->ctx()->time()->current()
 #include "pism/util/Profiling.hh"
+#include "pism/util/Context.hh"
 
 /* FIXMEs
  *
@@ -71,10 +74,6 @@ SteadyState::SteadyState(IceGrid::ConstPtr grid)
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "'steady' hydrology requires hydrology.surface_input.file");
   }
-}
-
-SteadyState::~SteadyState() {
-  // empty
 }
 
 void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
@@ -195,7 +194,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
     output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->CF_units_string());
+    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
   }
 
   m_Q.define(output);
@@ -305,11 +304,10 @@ void SteadyState::init_time(const std::string &input_file) {
   }
 
   // read time bounds data from a file
-  TimeBoundsMetadata tb(bounds_name, time_name, m_grid->ctx()->unit_system());
-  tb.set_string("units", m_grid->ctx()->time()->units_string());
+  VariableMetadata tb(bounds_name, m_grid->ctx()->unit_system());
+  tb["units"] = m_grid->ctx()->time()->units_string();
 
-  io::read_time_bounds(file, tb, *m_grid->ctx()->time(),
-                       *m_log, m_time_bounds);
+  io::read_time_bounds(file, tb, *m_log, m_time_bounds);
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval

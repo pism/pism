@@ -35,6 +35,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace surface {
@@ -50,10 +51,6 @@ const double Verification::ApforG = 200; // m
 Verification::Verification(IceGrid::ConstPtr g,
                            EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
-  // empty
-}
-
-Verification::~Verification() {
   // empty
 }
 

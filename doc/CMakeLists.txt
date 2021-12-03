@@ -2,7 +2,7 @@
 project(PISM_Documentation "NONE")
 cmake_minimum_required (VERSION 2.8.0)
 
-find_package(LATEX)
+find_package(LATEX COMPONENTS PDFLATEX)
 find_package(Doxygen)
 
 if (NOT Pism_SOURCE_DIR)
@@ -19,7 +19,7 @@ endif()
 # User's Manual, Climate Forcing, Installation:
 add_subdirectory(sphinx)
 
-if (PDFLATEX_COMPILER)
+if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   # Source code browser:
   add_subdirectory (browser EXCLUDE_FROM_ALL)
-endif ()                        # if PDFLATEX_COMPILER
+endif ()

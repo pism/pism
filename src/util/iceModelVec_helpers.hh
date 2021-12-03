@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,84 +21,55 @@
 
 namespace pism {
 
+namespace vec {
+
+namespace details {
+
 void compute_params(const IceModelVec* const x, const IceModelVec* const y,
                     const IceModelVec* const z, int &ghosts, bool &scatter);
+
+} // end of namespace details
 
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
 //! IceModelVecs (scalar or vector).
 /*!
- * This implementation tries to be smart about handling IceModelVecs with and
- * without ghosts and with different stencil widths.
- *
- * This template function was written to re-use this code for both
- * IceModelVec2S and IceModel2V.
- *
- * This cannot go into a protected member IceModelVec because
- * IceModelVec2S::operator() and IceModelVec2V::operator() return different
- * types.
- *
- * Note: this code uses overloaded operators (Vector2::operator*, etc).
  */
 template<class V>
-void add_2d(const IceModelVec* const x_in, double alpha,
-            const IceModelVec* const y_in,
-            IceModelVec* const result) {
-  const V *x = dynamic_cast<const V*>(x_in),
-    *y = dynamic_cast<const V*>(y_in);
+void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
 
-  V *z = dynamic_cast<V*>(result);
-
-  if (x == NULL || y == NULL || z == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "incompatible arguments");
-  }
-
-  int stencil = 0;
-  bool scatter = false;
-  compute_params(x, y, z, stencil, scatter);
-
-  IceModelVec::AccessList list{x, y, z};
-  for (PointsWithGhosts p(*z->grid(), stencil); p; p.next()) {
+  IceModelVec::AccessList list{&x, &y, &result};
+  for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    (*z)(i, j) = (*x)(i, j) + (*y)(i, j) * alpha;
+    result(i, j) = x(i, j) + y(i, j) * alpha;
   }
 
   if (scatter) {
-    z->update_ghosts();
+    result.update_ghosts();
   }
 
-  result->inc_state_counter();
+  result.inc_state_counter();
 }
 
 template<class V>
-void copy_2d(const IceModelVec* const source,
-             IceModelVec* const destination) {
-  const V *x = dynamic_cast<const V*>(source);
+void copy(const V& source, V& destination, bool scatter=true) {
 
-  V *z = dynamic_cast<V*>(destination);
+  IceModelVec::AccessList list{&source, &destination};
 
-  if (x == NULL || z == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "incompatible arguments");
-  }
-
-  int stencil = 0;
-  bool scatter = false;
-  compute_params(x, x, z, stencil, scatter);
-
-  IceModelVec::AccessList list{x, z};
-
-  for (PointsWithGhosts p(*z->grid(), stencil); p; p.next()) {
+  for (Points p(*destination.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    (*z)(i, j) = (*x)(i, j);
+    destination(i, j) = source(i, j);
   }
 
   if (scatter) {
-    z->update_ghosts();
+    destination.update_ghosts();
   }
 
-  destination->inc_state_counter();
+  destination.inc_state_counter();
 }
+
+} // end of namespace vec
 
 } // end of namespace pism
 

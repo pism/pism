@@ -1,62 +1,49 @@
 #!/usr/bin/env python3
 
-from sys import exit, argv, stderr
-from os import system
-from numpy import squeeze, abs, diff
+import sys
+import os
+import subprocess
+import shlex
+import numpy as np
+import netCDF4
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+def run(cmd):
+    sys.stderr.write(cmd + "\n")
+    if subprocess.call(shlex.split(cmd)) != 0:
+        sys.exit(1)
 
-pism_path = argv[1]
-mpiexec = argv[2]
+pism_path = sys.argv[1]
+mpiexec = sys.argv[2]
 
-stderr.write("Testing: temperature continuity at ice-bed interface (polythermal case).\n")
+cmd = "{path}/pismv -test F -y 10 -verbose 1 -o_size small -no_report -o in-temp-continuity.nc".format(path=pism_path)
 
-cmd = "%s %s/pismv -test F -y 10 -verbose 1 -o bar-temp-continuity.nc" % (mpiexec, pism_path)
-stderr.write(cmd + '\n')
-
-e = system(cmd)
-if e != 0:
-    exit(1)
+run(cmd)
 
 deltas = []
-dts = [200, 100]                # FIXME: this is fragile and the test fails if I add smaller dt like 50 here
+dts = [100, 50]
 for dt in dts:
-    cmd = "%s %s/pisms -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file bar-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt %f -o foo-temp-continuity.nc -o_size big" % (
-        mpiexec, pism_path, dt)
-    stderr.write(cmd + '\n')
+    try:
+        cmd = "{path}/pismr -eisII B -y 2400 -Mx 16 -My 16 -Mz 21 -Lbz 1000 -Mbz 11 -energy enthalpy -regrid_file in-temp-continuity.nc -regrid_vars thk -verbose 1 -max_dt {dt} -o out-temp-continuity.nc -output.sizes.medium temp -gradient mahaffy".format(path=pism_path, dt=dt)
 
-    e = system(cmd)
-    if e != 0:
-        exit(1)
+        run(cmd)
 
-    e = system("ncks -O -v temp -d z,0 foo-temp-continuity.nc temp-temp-continuity.nc")
-    if e != 0:
-        exit(1)
-
-    e = system("ncks -O -v litho_temp -d zb,10 foo-temp-continuity.nc litho_temp-temp-continuity.nc")
-    if e != 0:
-        exit(1)
-
-    nc1 = NC("temp-temp-continuity.nc")
-    nc2 = NC("litho_temp-temp-continuity.nc")
-
-    temp = squeeze(nc1.variables['temp'][:])
-    litho_temp = squeeze(nc2.variables['litho_temp'][:])
-
-    deltas.append(abs(temp - litho_temp).max())
+        with netCDF4.Dataset("out-temp-continuity.nc") as f:
+            # note: this file stores 3D variables in the time,y,x,(z|zb) order
+            temp = f.variables["temp"][0, :, :, 0]              # pick the bottom layer
+            litho_temp = f.variables["litho_temp"][0, :, :, -1] # pick the top layer
+            deltas.append(np.abs(temp - litho_temp).max())
+    finally:
+        os.remove("out-temp-continuity.nc")
 
 # these deltas are observed to decrease O(dt^1) approximately, which is expected from theory
 for (dt, delta) in zip(dts, deltas):
-    stderr.write("dt = %f, delta = %f\n" % (dt, delta))
+    sys.stderr.write("dt = %f, delta = %f\n" % (dt, delta))
 
 # the only test is whether they decrease; no rate measured
-if any(diff(deltas) > 0):
-    print(diff(deltas))
-    exit(1)
+if any(np.diff(deltas) >= 0):
+    print(np.diff(deltas))
+    sys.exit(1)
 
-system("rm foo-temp-continuity.nc foo-temp-continuity.nc~ bar-temp-continuity.nc temp-temp-continuity.nc litho_temp-temp-continuity.nc")
-exit(0)
+os.remove("in-temp-continuity.nc")
+
+sys.exit(0)

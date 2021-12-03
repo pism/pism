@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,9 +28,9 @@ namespace pism {
 
 class Geometry {
 private:
-  const unsigned int m_stencil_width;
+  const int m_stencil_width;
 public:
-  Geometry(IceGrid::ConstPtr grid);
+  Geometry(const IceGrid::ConstPtr &grid);
 
   /*!
    * Ensures consistency of ice geometry by re-computing cell type, cell grounded fraction, and ice
@@ -57,6 +57,8 @@ public:
   IceModelVec2CellType cell_type;
   IceModelVec2S cell_grounded_fraction;
   IceModelVec2S ice_surface_elevation;
+
+  void dump(const char *filename) const;
 };
 
 void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);

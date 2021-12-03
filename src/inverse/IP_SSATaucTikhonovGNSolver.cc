@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -21,6 +21,8 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
@@ -115,10 +117,6 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   m_log = d0.grid()->ctx()->log();
 }
 
-IP_SSATaucTikhonovGNSolver::~IP_SSATaucTikhonovGNSolver() {
-  // empty
-}
-
 TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {
   return m_ssaforward.linearize_at(m_d0);
 }
@@ -134,8 +132,15 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   DesignVec &tmp_gD = m_tmp_D1Global;
   DesignVec &GNx    = m_tmp_D2Global;
 
+  PetscErrorCode ierr;
   // FIXME: Needless copies for now.
-  m_x.copy_from_vec(x);
+  {
+    ierr = DMGlobalToLocalBegin(*m_x.dm(), x, INSERT_VALUES, m_x.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalBegin");
+
+    ierr = DMGlobalToLocalEnd(*m_x.dm(), x, INSERT_VALUES, m_x.vec());
+    PISM_CHK(ierr, "DMGlobalToLocalEnd");
+  }
 
   m_ssaforward.apply_linearization(m_x,Tx);
   Tx.update_ghosts();
@@ -147,7 +152,7 @@ void  IP_SSATaucTikhonovGNSolver::apply_GN(Vec x, Vec y) {
   m_designFunctional.interior_product(m_x,tmp_gD);
   GNx.add(m_alpha,tmp_gD);
 
-  PetscErrorCode ierr = VecCopy(GNx.vec(), y); PISM_CHK(ierr, "VecCopy");
+  ierr = VecCopy(GNx.vec(), y); PISM_CHK(ierr, "VecCopy");
 }
 
 void IP_SSATaucTikhonovGNSolver::assemble_GN_rhs(DesignVec &rhs) {
@@ -209,13 +214,13 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::check_convergence() {
   dWeight = m_alpha;
   sWeight = 1;
 
-  designNorm = m_grad_design.norm(NORM_2);
-  stateNorm  = m_grad_state.norm(NORM_2);
+  designNorm = m_grad_design.norm(NORM_2)[0];
+  stateNorm  = m_grad_state.norm(NORM_2)[0];
 
   designNorm *= dWeight;
   stateNorm  *= sWeight;
 
-  sumNorm = m_gradient.norm(NORM_2);
+  sumNorm = m_gradient.norm(NORM_2)[0];
 
   m_log->message(2,
              "----------------------------------------------------------\n");

@@ -8,4 +8,6 @@
                 (add-to-list 'grep-find-ignored-files "*TAGS" )
                 (ws-butler-mode))
             (error nil)))
-  (eval . (c-set-offset 'innamespace 0))))
+  (eval . (progn
+            (c-set-offset 'innamespace 0)
+            (c-set-offset 'inlambda 0)))))

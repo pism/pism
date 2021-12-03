@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,13 +24,17 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
-Geometry::Geometry(IceGrid::ConstPtr grid)
+Geometry::Geometry(const IceGrid::ConstPtr &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(grid->ctx()->config()->get_number("grid.max_stencil_width")),
+  : m_stencil_width(static_cast<int>(grid->ctx()->config()->get_number("grid.max_stencil_width"))),
     latitude(grid, "lat", WITHOUT_GHOSTS),
     longitude(grid, "lon", WITHOUT_GHOSTS),
     bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),
@@ -43,13 +47,13 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
   latitude.set_time_independent(true);
-  latitude.metadata().set_string("grid_mapping", "");
-  latitude.metadata().set_numbers("valid_range", {-90.0, 90.0});
+  latitude.metadata()["grid_mapping"] = "";
+  latitude.metadata()["valid_range"] = {-90.0, 90.0};
 
   longitude.set_attrs("mapping", "longitude", "degree_east", "degree_east", "longitude", 0);
   longitude.set_time_independent(true);
-  longitude.metadata().set_string("grid_mapping", "");
-  longitude.metadata().set_numbers("valid_range", {-180.0, 180.0});
+  longitude.metadata()["grid_mapping"] = "";
+  longitude.metadata()["valid_range"] = {-180.0, 180.0};
 
   bed_elevation.set_attrs("model_state", "bedrock surface elevation",
                           "m", "m", "bedrock_altitude", 0);
@@ -60,23 +64,20 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
 
   ice_thickness.set_attrs("model_state", "land ice thickness",
                           "m", "m", "land_ice_thickness", 0);
-  ice_thickness.metadata().set_number("valid_min", 0.0);
+  ice_thickness.metadata()["valid_min"] = {0.0};
 
   ice_area_specific_volume.set_attrs("model_state",
                                      "ice-volume-per-area in partially-filled grid cells",
                                      "m3/m2", "m3/m2", "", 0);
-  ice_area_specific_volume.metadata().set_string("comment",
-                                                 "this variable represents the amount of ice "
-                                                 "in a partially-filled cell and not "
-                                                 "the corresponding geometry, so thinking "
-                                                 "about it as 'thickness' is not helpful");
+  ice_area_specific_volume.metadata()["comment"] =
+    "this variable represents the amount of ice in a partially-filled cell and not "
+    "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
   cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                       "", "", "", 0);
-  cell_type.metadata().set_numbers("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
-                                                   MASK_FLOATING, MASK_ICE_FREE_OCEAN});
-  cell_type.metadata().set_string("flag_meanings",
-                                  "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
+  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  cell_type.metadata()["flag_meanings"] =
+    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
   cell_type.metadata().set_output_type(PISM_INT);
 
   cell_grounded_fraction.set_attrs("internal",
@@ -176,12 +177,45 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
     ice_density = config->get_number("constants.ice.density"),
     ocean_density = config->get_number("constants.sea_water.density");
 
-  compute_grounded_cell_fraction(ice_density,
-                                 ocean_density,
-                                 sea_level_elevation,
-                                 ice_thickness,
-                                 bed_elevation,
-                                 cell_grounded_fraction);
+  try {
+    compute_grounded_cell_fraction(ice_density,
+                                   ocean_density,
+                                   sea_level_elevation,
+                                   ice_thickness,
+                                   bed_elevation,
+                                   cell_grounded_fraction);
+  } catch (RuntimeError &e) {
+    e.add_context("computing the grounded cell fraction");
+
+    std::string output_file = config->get_string("output.file_name");
+    std::string o_file = filename_add_suffix(output_file,
+                                             "_grounded_cell_fraction_failed", "");
+    // save geometry to a file for debugging
+    dump(o_file.c_str());
+    throw;
+  }
+}
+
+void Geometry::dump(const char *filename) const {
+  auto grid = ice_thickness.grid();
+
+  File file(grid->com, filename,
+            string_to_backend(grid->ctx()->config()->get_string("output.format")),
+            PISM_READWRITE_CLOBBER,
+            grid->ctx()->pio_iosys_id());
+
+  io::define_time(file, *grid->ctx());
+  io::append_time(file, *grid->ctx()->config(), 0.0);
+
+  latitude.write(file);
+  longitude.write(file);
+  bed_elevation.write(file);
+  sea_level_elevation.write(file);
+  ice_thickness.write(file);
+  ice_area_specific_volume.write(file);
+  cell_type.write(file);
+  cell_grounded_fraction.write(file);
+  ice_surface_elevation.write(file);
 }
 
 /*! Compute the elevation of the bottom surface of the ice.
