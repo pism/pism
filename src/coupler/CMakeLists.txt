@@ -39,12 +39,12 @@ add_library (boundary OBJECT
   ./ocean/Delta_MBP.cc
   ./ocean/Frac_MBP.cc
   ./ocean/Frac_SMB.cc
+  ./ocean/Runoff_SMB.cc
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
   ./ocean/Pico.cc
   ./ocean/PicoPhysics.cc
   ./ocean/PicoGeometry.cc
-  ./ocean/Runoff_SMB.cc
   ./ocean/sea_level/Initialization.cc
   ./ocean/sea_level/SeaLevel.cc
   ./ocean/sea_level/Delta_SL.cc
