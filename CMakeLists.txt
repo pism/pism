@@ -50,7 +50,7 @@ endif()
 include ("CMake/PISM_CMake_macros.cmake")
 list (APPEND CMAKE_MODULE_PATH "${Pism_SOURCE_DIR}/CMake")
 
-set (Pism_BRANCH "development")
+set (Pism_BRANCH "stable")
 
 # Set Pism_REVISION_TAG
 pism_set_revision_tag()
