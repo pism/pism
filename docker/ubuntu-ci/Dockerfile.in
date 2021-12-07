@@ -38,9 +38,8 @@ RUN set -eux; \
         python3-netcdf4 \
         python3-nose \
         python3-numpy \
+        python3-pip \
         python3-scipy \
-        python3-sphinx \
-        python3-sphinxcontrib.bibtex \
         swig \
         wget \
         doxygen \
@@ -50,6 +49,9 @@ RUN set -eux; \
         texlive-latex-extra \
         ; \
         rm -rf /var/lib/apt/lists/*
+
+# Install newer versions of Sphinx and sphinxcontrib-bibtex:
+RUN pip3 install -U sphinx==4.3.1 sphinxcontrib-bibtex==2.4.1
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
