@@ -100,8 +100,11 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
     DM  da;
     Vec parameters;
     int dof = 1;
-
+#if PETSC_VERSION_LE(3,10,0)
+    ierr = DMDAGetReducedDMDA(dm, dof, &da); CHKERRQ(ierr);
+#else
     ierr = DMDACreateCompatibleDMDA(dm, dof, &da); CHKERRQ(ierr);
+#endif
 
     ierr = DMSetUp(da); CHKERRQ(ierr);
 
