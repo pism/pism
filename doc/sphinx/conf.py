@@ -146,7 +146,12 @@ latex_documents = [
 
 latex_elements = {
     'releasename': "version",
-    'preamble': r'\usepackage{txfonts}'
+    'preamble': r'''
+     \usepackage{txfonts}
+     % work-around for a bug in sphinxcontrib-bibtex (https://github.com/mcmtroffaes/sphinxcontrib-bibtex/issues/276)
+     \usepackage{etoolbox}
+     \AtBeginEnvironment{figure}{\pretocmd{\hyperlink}{\protect}{}{}}
+'''
 }
 
 # -- Add custom math definitions ----------------
