@@ -78,9 +78,9 @@ echo
 
 # get locally-generated or pre-computed PISM result
 echo "checking for locally-generated, or fetching, pre-computed PISM whole ice-sheet result on 5km grid"
-URL=https://www.pism-docs.org/download
+URL=https://raw.githubusercontent.com/pism/example-inputs/main/jako/
 WHOLE=g5km_gridseq.nc
-wget --no-check-certificate -nc ${URL}/$WHOLE
+wget -nc ${URL}/$WHOLE
 BCFILE=g5km_bc.nc
 echo "creating PISM-readable boundary conditions file $BCFILE from whole ice sheet result ..."
 ncks -O -v u_ssa,v_ssa,bmelt,tillwat,enthalpy,litho_temp $WHOLE $BCFILE
