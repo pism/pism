@@ -392,7 +392,20 @@ void IceModelVec2T::init_periodic_data(const File &file) {
 
   // add two more records to m_data->time
   {
-    m_data->time.insert(m_data->time.begin(), t0);
+    if (m_data->time[0] - t0 > 0.0) {
+      m_data->time.insert(m_data->time.begin(), t0);
+    } else {
+      // The first time record is at the beginning of the time interval covered by
+      // forcing. This means that the first record we added (set_record(0) above) is the
+      // same as the second one (at index 1). Only one of them is needed.
+      //
+      // Here we use an arbitrary time *before* the beginning of the forcing time interval
+      // to ensure that m_data->time is strictly increasing.
+      //
+      // Note: this time will not be used.
+      const double dt = 1.0; // arbitrary; could be any positive number
+      m_data->time.insert(m_data->time.begin(), t0 - dt);
+    }
     m_data->time.push_back(t1);
   }
 }
