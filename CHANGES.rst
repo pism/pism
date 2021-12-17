@@ -1,5 +1,15 @@
 .. default-role:: literal
 
+Changes since v2.0
+==================
+
+- Update the minimum PETSc version supported by PISM to 3.7.
+- Remove the last mention of the old website.
+- Fix a bug in the code building the manual.
+- Fix a minor bug in Python bindings.
+- Fix a bug in the code reading in periodic time-dependent inputs that are interpreted as
+  piece-wise linear in time (reported by Guillaume Jouvet).
+
 Changes since v1.2
 ==================
 
