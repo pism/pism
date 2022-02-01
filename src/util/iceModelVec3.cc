@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -234,9 +234,7 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      for (size_t k = 0; k < N; ++k) {
-        (*this)(i, j, k) = input(i, j, k);
-      }
+      PetscArraymove(this->get_column(i, j), input.get_column(i, j), N);
     }
   } catch (...) {
     loop.failed();
