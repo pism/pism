@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015 PISM Authors
+/* Copyright (C) 2014, 2015, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,6 +52,7 @@ private:
   // Similarly for other arrays below.
   std::vector<unsigned int> m_coarse2fine, m_fine2coarse;
   bool m_use_linear_interpolation;
+  bool m_identical_grids;
 
   void init_interpolation();
   void coarse_to_fine_linear(const double *input, unsigned int ks, double *result) const;

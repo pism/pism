@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,13 +19,17 @@
 
 #include "ColumnInterpolation.hh"
 
+#include <petscsys.h>
 #include <cmath>
 
 namespace pism {
 
 ColumnInterpolation::ColumnInterpolation(const std::vector<double> &new_z_coarse,
                                          const std::vector<double> &new_z_fine)
-  : m_z_fine(new_z_fine), m_z_coarse(new_z_coarse) {
+  : m_z_fine(new_z_fine),
+    m_z_coarse(new_z_coarse),
+    m_use_linear_interpolation(false),
+    m_identical_grids(false) {
   init_interpolation();
 }
 
@@ -37,11 +41,17 @@ std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double
 }
 
 void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int ks, double *result) const {
+  if (m_identical_grids) {
+    PetscArraymove(result, input, Mz_fine());
+    return;
+  }
+
   if (m_use_linear_interpolation) {
     coarse_to_fine_linear(input, ks, result);
-  } else {
-    coarse_to_fine_quadratic(input, ks, result);
+    return;
   }
+
+  coarse_to_fine_quadratic(input, ks, result);
 }
 
 void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned int ks,
@@ -127,6 +137,11 @@ std::vector<double> ColumnInterpolation::fine_to_coarse(const std::vector<double
 }
 
 void ColumnInterpolation::fine_to_coarse(const double *input, double *result) const {
+  if (m_identical_grids) {
+    PetscArraymove(result, input, Mz_fine());
+    return;
+  }
+
   const unsigned int N = Mz_coarse();
 
   for (unsigned int k = 0; k < N - 1; ++k) {
@@ -202,6 +217,17 @@ static std::vector<unsigned int> init_interpolation_indexes(const std::vector<do
 }
 
 void ColumnInterpolation::init_interpolation() {
+
+  if (m_z_coarse.size() == m_z_fine.size()) {
+
+    PetscBool identical = PETSC_FALSE;
+    PetscArraycmp(m_z_coarse.data(), m_z_fine.data(), m_z_fine.size(), &identical);
+
+    if (identical == PETSC_TRUE) {
+      m_identical_grids = static_cast<bool>(identical);
+      return;
+    }
+  }
 
   // coarse -> fine
   m_coarse2fine = init_interpolation_indexes(m_z_coarse, m_z_fine);
