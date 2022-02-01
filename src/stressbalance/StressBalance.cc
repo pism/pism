@@ -627,8 +627,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
-        ierr = PetscMemzero(&Sigma[ks+1],
-                            remaining_levels*sizeof(double));
+        ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
         PISM_CHK(ierr, "PetscMemzero");
       }
     }
