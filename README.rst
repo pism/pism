@@ -42,9 +42,6 @@ Contributing
 
 Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 
-.. image:: 
-   :target: https://doi.org/10.5281/zenodo.5966037
-
 .. URLs
 
 .. |doi| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1199019.svg
