@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -89,12 +89,13 @@ public:
 
   std::vector<double> parse_times(const std::string &spec) const;
 
-  //! \brief Internal time units.
-  /*!
-   * May or may not contain a reference date. (The base class Time does not
-   * use the reference date, while Time_Calendar does.)
-   */
+  //! Internal time units as a string.
   std::string units_string() const;
+
+  /*!
+   * Internal time units.
+   */
+  units::Unit units() const;
 
   //! \brief Returns the fraction of a year passed since the last beginning of
   //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
@@ -150,6 +151,10 @@ protected:
   const Config::ConstPtr m_config;
   const units::System::Ptr m_unit_system;
   units::Unit m_time_units;
+
+  //! Time resolution, in seconds.
+  double m_t_eps;
+
   //! number of seconds in a year, for "mod" and "year fraction"
   double m_year_length;
 

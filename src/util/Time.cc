@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2021 Constantine Khroulev
+// Copyright (C) 2011-2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -477,6 +477,10 @@ std::string Time::units_string() const {
   return m_time_units.format();
 }
 
+units::Unit Time::units() const {
+  return m_time_units;
+}
+
 //! \brief Returns the calendar string.
 std::string Time::calendar() const {
   return m_calendar_string;
@@ -485,11 +489,10 @@ std::string Time::calendar() const {
 void Time::step(double delta_t) {
   m_time_in_seconds += delta_t;
 
-  const double eps = 1e-3;
-  // If we are less than 0.001 second from the end of the run, reset
+  // If we are less than m_t_eps seconds from the end of the run, reset
   // m_time_in_seconds to avoid taking a very small (and useless) time step.
   if (m_run_end > m_time_in_seconds and
-      m_run_end - m_time_in_seconds < eps) {
+      m_run_end - m_time_in_seconds < m_t_eps) {
     m_time_in_seconds = m_run_end;
   }
 }
@@ -687,6 +690,8 @@ Time::Time(MPI_Comm com, Config::ConstPtr config,
   : m_config(config),
     m_unit_system(unit_system),
     m_time_units(unit_system, "seconds since 1-1-1") {
+
+  m_t_eps = config->get_number("time_stepping.resolution", "seconds");
 
   auto input_file = config->get_string("input.file");
 
