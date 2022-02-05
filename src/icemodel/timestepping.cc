@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -195,24 +195,26 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   double resolution = m_config->get_number("time_stepping.resolution", "seconds");
 
-  // Hit multiples of X years, if requested.
+  // Hit all multiples of X years, if requested.
   {
-    int timestep_hit_multiples = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
-    if (timestep_hit_multiples > 0) {
-      double
-        epsilon = resolution, // tolerance: usually 1 second
-        next_time = m_timestep_hit_multiples_last_time;
+    int year_increment = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
+    if (year_increment > 0) {
+      auto next_time = m_time->increment_date(m_timestep_hit_multiples_last_time,
+                                              year_increment);
 
-      while (m_time->increment_date(next_time, timestep_hit_multiples) <= current_time + result.dt + epsilon) {
-        next_time = m_time->increment_date(next_time, timestep_hit_multiples);
+      if (std::fabs(current_time - next_time) < resolution) {
+        // the current time is a multiple of year_increment
+        m_timestep_hit_multiples_last_time = current_time;
+        next_time = m_time->increment_date(current_time, year_increment);
       }
 
-      if (next_time > current_time and next_time <= current_time + result.dt + epsilon) {
-        result.dt = next_time - current_time;
-        result.reason = pism::printf("hit multiples of %d years (overrides %s)",
-                                     timestep_hit_multiples, dt_max.description().c_str());
+      auto dt = next_time - current_time;
+      assert(dt > resolution);
 
-        m_timestep_hit_multiples_last_time = next_time;
+      if (dt < result.dt) {
+        result.dt = dt;
+        result.reason = pism::printf("hit multiples of %d years (overrides %s)",
+                                     year_increment, dt_max.description().c_str());
       }
     }
   }
