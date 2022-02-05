@@ -160,7 +160,25 @@ void IceModel::reset_counters() {
   m_dt             = 0.0;
   m_skip_countdown = 0;
 
-  m_timestep_hit_multiples_last_time = m_time->current();
+  {
+    int year_increment = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
+
+    if (year_increment > 0) {
+      // start year:
+      auto year = m_time->units().date(m_time->current(), m_time->calendar()).year;
+
+      int last_multiple = year - year % year_increment;
+      // correct last_multiple if 'year' is negative
+      // and not a multiple of year_increment:
+      last_multiple -= year_increment * (year % year_increment < 0);
+
+      units::DateTime last_date{last_multiple, 1, 1, 0, 0, 0.0};
+
+      m_timestep_hit_multiples_last_time = m_time->units().time(last_date, m_time->calendar());
+    } else {
+      m_timestep_hit_multiples_last_time = m_time->current();
+    }
+  }
 }
 
 
