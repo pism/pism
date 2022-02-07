@@ -18,7 +18,7 @@ Release checklist
 
    ::
 
-      git tag -a v1.X -m "The v1.X release. See CHANGES.rst for the list of changes since v1.X-1."
+      git tag -a v2.X -m "The v2.X release. See CHANGES.rst for the list of changes since v2.X-1."
 
 #. Push.
 
@@ -32,15 +32,8 @@ Release checklist
 
       git push --tags
 
-#. Re-build docs.
-
-   ::
-
-      make manual_html manual_pdf browser.tgz
-
-#. Upload these docs.
-#. Write a news item for ``pism.github.io``.
-#. Update the current PISM version on ``pism.github.io``.
+#. Write a news item for ``pism.io``.
+#. Update the current PISM version on ``pism.io``.
 #. Send an e-mail to CRYOLIST.
 #. Tell more people, if desired.
 #. Create a new "release" on https://github.com/pism/pism/releases
