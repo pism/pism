@@ -24,6 +24,7 @@ import time
 # The main code for a run follows:
 if __name__ == '__main__':
     context = PISM.Context()
+    config = context.config
     com = context.com
 
     PISM.set_abort_on_sigint(True)
