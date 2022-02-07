@@ -1,5 +1,14 @@
 .. default-role:: literal
 
+Changes since v2.0.1
+====================
+
+- Fix a bug in IceModelVec2T::average() that affected periodic climate inputs and made
+  PISM stop with an error message saying "invalid integration interval (a >= b)" (reported
+  by Guillaume Jouvet).
+- Fix the implementation of `time_stepping.hit_multiples`.
+- Very minor performance improvements.
+
 Changes since v2.0
 ==================
 
