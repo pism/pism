@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Constantine Khroulev
+// Copyright (C) 2009--2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -673,17 +673,41 @@ void IceModelVec2T::average(double t, double dt) {
     double t0 = m_data->period_start;
     double P = m_data->period;
 
-    double N = std::floor((a - t0) / P);
-    double M = std::floor((b - t0) / P);
-    double delta = a - t0 - P * N;
-    double gamma = b - t0 - P * M;
+    // N_periods is the number of complete periods in the *middle* of the integration
+    // interval
+    //
+    // Note that the total number of complete periods is equal to (N_periods + 1) *if*
+    // delta == 0.0.
+    double N_periods = 0.0;
+    double delta = 0.0;
+    double gamma = 0.0;
+    {
+      double N = std::floor((a - t0) / P);
+      double M = std::floor((b - t0) / P);
 
-    double N_periods = M - (N + 1);
+      N_periods = M - (N + 1);
+      delta = (a - t0) - P * N;
+      gamma = (b - t0) - P * M;
+    }
 
     if (N_periods >= 0.0) {
+      assert(t0 + delta < t0 + P);
       auto W1 = integration_weights(data, data_size, type, t0 + delta, t0 + P);
-      auto W2 = integration_weights(data, data_size, type, t0, t0 + P);
-      auto W3 = integration_weights(data, data_size, type, t0, t0 + gamma);
+
+      std::map<size_t, double> W2{};
+      if (N_periods > 0) {
+        // note: we know that t0 < t0 + P because P > 0
+        W2 = integration_weights(data, data_size, type, t0, t0 + P);
+      } else {
+        W2 = {};
+      }
+
+      std::map<size_t, double> W3{};
+      if (gamma > 0.0) {
+        W3 = integration_weights(data, data_size, type, t0, t0 + gamma);
+      } else {
+        W3 = {};
+      }
 
       // before the first complete period:
       weights = W1;
@@ -696,9 +720,11 @@ void IceModelVec2T::average(double t, double dt) {
         weights[w.first] += w.second;
       }
     } else {
+      assert(t0 + delta < t0 + gamma);
       weights = integration_weights(data, data_size, type, t0 + delta, t0 + gamma);
     }
   } else {
+    assert(dt > 0.0);
     weights = integration_weights(data, data_size, type, t, t + dt);
   }
 
