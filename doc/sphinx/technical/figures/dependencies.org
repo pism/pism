@@ -1,0 +1,77 @@
+#+BEGIN_SRC dot :file dependencies.png :tangle update.dot :cache yes
+  digraph {
+  graph [layout=dot ranksep=0.5 nodesep=0.5];
+  node [fontname=Arial fontsize=12 shape=circle fixedsize=yes width=1];
+  edge [fontname=Arial fontsize=12]
+
+  {
+  rank=same
+  sea_level [label="Sea\nlevel" group=L]
+  geometry [label="Geometry\nevolution" color=green4 fontcolor=green4 group=C]
+  surface [label="Surface\nprocesses" group=R]
+  }
+
+  {
+  rank=same
+  ocean [label="Ice-ocean\ninterface" ]
+  bed [label="Bed\ndeformation" group=L]
+  }
+
+  {
+  rank=same
+  age [label="Age" group=L]
+  energy [label="Energy\nbalance" color=red fontcolor=red group=R]
+  stress [label="Stress\nbalance" color=blue2 fontcolor=blue2 group=C]
+  }
+
+  {
+  rank=same
+  hydrology [label="Subglacial\nhydrology" group=R]
+  yield_stress [label="Basal\nyield\nstress" group=L]
+  }
+
+  {
+  edge [color=green4 fontcolor=green4]
+  geometry -> bed [xlabel="bed elevation" constraint=no]
+  geometry -> stress [xlabel="ice flux"]
+  geometry -> surface [label="surface mass balance"]
+  geometry -> energy [label="basal\nmelt rate"]
+  geometry -> ocean [label="sub-shelf\nmelt rate"]
+  geometry -> sea_level [label="sea level elevation" constraint=no]
+  }
+
+  {
+  edge [color=blue2 fontcolor=blue2]
+  stress -> yield_stress [label="basal yield stress"]
+  stress -> ocean [xlabel="melange back pressure" constraint=no]
+  stress -> energy [label="ice enthalpy (3D)"]
+  stress -> age [label="ice age (3D)" constraint=no]
+  }
+
+  yield_stress -> hydrology [label="water thickness"]
+
+  {
+  edge [color=red fontcolor=red]
+  energy -> stress [label="ice velocity (3D)\nstrain heating (3D)\nbasal frictional heating" constraint=no]
+  energy -> ocean [xlabel="sub-shelf\ntemperature" constraint=no]
+  energy -> hydrology [label="till water\nthickness"]
+  energy -> surface [xlabel=" surface\ntemperature"]
+  }
+
+  {
+  hydrology -> energy [xlabel="basal melt rate" constraint=no]
+  hydrology -> stress [xlabel="sliding speed"]
+  }
+
+  age -> stress [label="ice velocity (3D)" constraint=no]
+
+  {
+  edge [style=invis weight=10]
+  sea_level -> bed -> age -> yield_stress [style=invis]
+  ocean -> {stress energy}
+  }
+  }
+#+END_SRC
+
+#+RESULTS[e002a97764d86e1832762442a69bd836f05686ea]:
+[[file:dependencies.png]]
