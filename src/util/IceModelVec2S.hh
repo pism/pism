@@ -20,35 +20,19 @@
 #ifndef PISM_ICEMODELVEC2S_H
 #define PISM_ICEMODELVEC2S_H
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2.hh"
 
 namespace pism {
 
 /** A class for storing and accessing scalar 2D fields.
     IceModelVec2S is just IceModelVec2 with "dof == 1" */
-class IceModelVec2S : public IceModelVec {
+class IceModelVec2S : public IceModelVec2<double> {
 public:
   IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
                 IceModelVecKind ghostedp, int width = 1);
 
   typedef std::shared_ptr<IceModelVec2S> Ptr;
   typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
-
-  // does not need a copy constructor, because it does not add any new data members
-  void copy_from(const IceModelVec2S &source);
-  double** array();
-  double const* const* array() const;
-  void add(double alpha, const IceModelVec2S &x);
-  void add(double alpha, const IceModelVec2S &x, IceModelVec2S &result) const;
-
-  //! Provides access (both read and write) to the internal double array.
-  /*!
-    Note that i corresponds to the x direction and j to the y.
-  */
-  inline double& operator() (int i, int j);
-  inline const double& operator()(int i, int j) const;
-  inline stencils::Star<double> star(int i, int j) const;
-  inline stencils::Box<double> box(int i, int j) const;
 };
 
 std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source);
@@ -72,45 +56,6 @@ void apply_mask(const IceModelVec2S &M, double fill, IceModelVec2S &result);
 void compute_magnitude(const IceModelVec2S &v_x,
                        const IceModelVec2S &v_y,
                        IceModelVec2S &result);
-
-inline double& IceModelVec2S::operator() (int i, int j) {
-#if (Pism_DEBUG==1)
-  check_array_indices(i, j, 0);
-#endif
-  return static_cast<double**>(m_array)[j][i];
-}
-
-inline const double& IceModelVec2S::operator()(int i, int j) const {
-#if (Pism_DEBUG==1)
-  check_array_indices(i, j, 0);
-#endif
-  return static_cast<double**>(m_array)[j][i];
-}
-
-inline stencils::Star<double> IceModelVec2S::star(int i, int j) const {
-  const IceModelVec2S &self = *this;
-
-  stencils::Star<double> result;
-  result.ij = self(i,j);
-  result.e =  self(i+1,j);
-  result.w =  self(i-1,j);
-  result.n =  self(i,j+1);
-  result.s =  self(i,j-1);
-
-  return result;
-}
-
-inline stencils::Box<double> IceModelVec2S::box(int i, int j) const {
-  const IceModelVec2S &x = *this;
-
-  const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
-
-  return {x(i, j), x(i, N), x(W, N), x(W, j), x(W, S), x(i, S), x(E, S), x(E, j), x(E, N)};
-}
 
 } // end of namespace pism
 

@@ -147,6 +147,10 @@ std::vector<double> interp(int i, int j) {
 
 %include "util/iceModelVec.hh"
 %include "util/IceModelVec2.hh"
+
+%shared_ptr(pism::IceModelVec2<double>)
+%ignore pism::IceModelVec2< double >::array() const;
+%template(_IceModelVec2double) pism::IceModelVec2<double>;
 %include "util/IceModelVec2S.hh"
 %include "util/IceModelVec2Int.hh"
 %include "util/IceModelVec2CellType.hh"

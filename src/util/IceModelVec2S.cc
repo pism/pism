@@ -27,8 +27,8 @@ namespace pism {
 
 IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
                              IceModelVecKind ghostedp, int width)
-  : IceModelVec(grid, name, ghostedp, 1, width, {0.0}) {
-  set_begin_access_use_dof(false);
+  : IceModelVec2<double>(grid, name, ghostedp, width) {
+  // empty
 }
 
 std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source) {
@@ -39,14 +39,6 @@ std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source) {
   result->metadata() = source.metadata();
 
   return result;
-}
-
-double** IceModelVec2S::array() {
-  return static_cast<double**>(m_array);
-}
-
-double const* const* IceModelVec2S::array() const {
-  return static_cast<double const* const*>(m_array);
 }
 
 //! Sets an IceModelVec2 to the magnitude of a 2D vector field with components `v_x` and `v_y`.
@@ -205,18 +197,6 @@ double min(const IceModelVec2S &input) {
   }
 
   return GlobalMin(grid->com, result);
-}
-
-void IceModelVec2S::add(double alpha, const IceModelVec2S &x) {
-  vec::add(*this, alpha, x, *this);
-}
-
-void IceModelVec2S::add(double alpha, const IceModelVec2S &x, IceModelVec2S &result) const {
-  vec::add(*this, alpha, x, result);
-}
-
-void IceModelVec2S::copy_from(const IceModelVec2S &source) {
-  vec::copy(source, *this);
 }
 
 } // end of namespace pism
