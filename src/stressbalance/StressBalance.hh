@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,14 @@
 #include <memory>               // std::shared_ptr
 
 #include "pism/util/Component.hh"     // derives from Component
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec3.hh"
 #include "pism/stressbalance/timestepping.hh"
 
 namespace pism {
 
 class IceModelVec2CellType;
+class IceModelVec2Int;
+class IceModelVec2Stag;
 class Geometry;
 
 namespace rheology {

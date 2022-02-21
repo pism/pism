@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,10 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec3.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

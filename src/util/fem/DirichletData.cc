@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "DirichletData.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2Int.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"

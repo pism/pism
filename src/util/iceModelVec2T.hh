@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Constantine Khroulev
+// Copyright (C) 2009--2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef __IceModelVec2T_hh
 #define __IceModelVec2T_hh
 
-#include "iceModelVec.hh"
+#include "IceModelVec2S.hh"
 #include "MaxTimestep.hh"
 #include "interpolation.hh"     // InterpolationType
 

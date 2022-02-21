@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021 PISM Authors
+/* Copyright (C) 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,12 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Component.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/IceModelVec3.hh"
 
 namespace pism {
 
-class IceModelVec2S;
 class Geometry;
 
 class FractureDensity : public Component {

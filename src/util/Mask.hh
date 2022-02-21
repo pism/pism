@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,8 @@
 #define _MASK_H_
 
 // the following three includes are needed here because of inlined code
-#include "iceModelVec.hh"
+#include "IceModelVec2S.hh"
+#include "IceModelVec2Int.hh"
 #include "ConfigInterface.hh"
 #include "error_handling.hh"
 

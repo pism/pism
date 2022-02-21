@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2020, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "IPFunctional.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2V.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 PISM Authors
+// Copyright (C) 2004-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // fabs()
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <cstring>              // memset
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec3.hh"
 #include "ColumnSystem.hh"
 
 #include "pism/util/error_handling.hh"

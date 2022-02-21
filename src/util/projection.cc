@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,8 @@
 #include "io/File.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec3.hh"
 
 #include "pism/pism_config.hh"
 

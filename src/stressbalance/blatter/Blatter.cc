@@ -36,6 +36,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/util/IceModelVec3.hh"
 
 namespace pism {
 namespace stressbalance {

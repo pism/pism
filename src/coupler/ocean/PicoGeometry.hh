@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,12 +24,13 @@
 #include <set>
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2Int.hh"
 
 namespace pism {
 
 class IceModelVec2S;
 class IceModelVec2CellType;
+
 
 namespace ocean {
 

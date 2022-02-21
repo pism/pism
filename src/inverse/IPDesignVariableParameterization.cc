@@ -19,7 +19,7 @@
 #include <cmath>
 #include <petsc.h>
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"

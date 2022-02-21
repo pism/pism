@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #include "RegionalYieldStress.hh"
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/IceModelVec2Int.hh"
 
 namespace pism {
 

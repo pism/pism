@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 
 #include <gsl/gsl_rng.h>
 
-#include "pism/util/iceModelVec.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/IceModelVec2S.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
 namespace surface {
@@ -222,8 +222,8 @@ public:
   virtual ~FaustoGrevePDDObject() = default;
 
   void update_temp_mj(const IceModelVec2S &surfelev,
-                              const IceModelVec2S &lat,
-                              const IceModelVec2S &lon);
+                      const IceModelVec2S &lat,
+                      const IceModelVec2S &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
     for IceModelVec2S temp_mj. */

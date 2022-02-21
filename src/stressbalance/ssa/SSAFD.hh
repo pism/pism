@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
+#include "pism/util/IceModelVec2Stag.hh"
 
 namespace pism {
 namespace stressbalance {

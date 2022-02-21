@@ -19,7 +19,10 @@
 
 #include "GeometryEvolution.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec2Stag.hh"
+#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 

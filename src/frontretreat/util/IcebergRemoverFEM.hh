@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,6 +20,7 @@
 #define ICEBERGREMOVERFEM_H
 
 #include "IcebergRemover.hh"
+#include "pism/util/IceModelVec2Int.hh"
 
 namespace pism {
 namespace calving {

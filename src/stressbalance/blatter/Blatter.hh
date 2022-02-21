@@ -27,6 +27,8 @@
 
 namespace pism {
 
+class IceModelVec3;
+
 namespace fem {
 class Element3;
 class Q1Element3Face;
@@ -41,8 +43,8 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  IceModelVec3::Ptr velocity_u_sigma() const;
-  IceModelVec3::Ptr velocity_v_sigma() const;
+  std::shared_ptr<IceModelVec3> velocity_u_sigma() const;
+  std::shared_ptr<IceModelVec3> velocity_v_sigma() const;
 
   /*!
    * 2D input parameters
@@ -65,7 +67,7 @@ public:
 
 protected:
   // u and v components of ice velocity on the fine sigma grid
-  IceModelVec3::Ptr m_u_sigma, m_v_sigma;
+  std::shared_ptr<IceModelVec3> m_u_sigma, m_v_sigma;
 
   // 3D dof=2 DM used by m_snes
   petsc::DM m_da;

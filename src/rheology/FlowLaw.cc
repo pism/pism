@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,8 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec3.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"

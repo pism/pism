@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021, 2022 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,7 @@
 namespace pism {
 
 class IceModelVec2S;
+class IceModelVec2CellType;
 class Geometry;
   
 class FrontalMeltInputs {

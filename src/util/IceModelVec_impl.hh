@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,6 +28,7 @@
 
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 

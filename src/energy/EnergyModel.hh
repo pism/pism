@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,9 @@
 
 #include "pism/util/Component.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec3.hh"
 
 namespace pism {
 

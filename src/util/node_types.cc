@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,8 @@
 
 #include "node_types.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec2Int.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2022 PISM Authors
+/* Copyright (C) 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,29 +17,15 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // fabs
-
-#include "pism/util/IceModelVec2S.hh"
+#include "IceModelVec2Int.hh"
+#include "IceModelVec_impl.hh"
 
 namespace pism {
 
-void lapse_rate_correction(const IceModelVec2S &surface,
-                           const IceModelVec2S &reference_surface,
-                           double lapse_rate,
-                           IceModelVec2S &result) {
-  IceGrid::ConstPtr grid = result.grid();
-
-  if (fabs(lapse_rate) < 1e-12) {
-    return;
-  }
-
-  IceModelVec::AccessList list{&surface, &reference_surface, &result};
-
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));
-  }
+IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
+                                 IceModelVecKind ghostedp, int width)
+  : IceModelVec2S(grid, name, ghostedp, width) {
+  m_impl->interpolation_type = NEAREST;
 }
 
 } // end of namespace pism

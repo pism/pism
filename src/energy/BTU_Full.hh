@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,6 +24,9 @@
 #include "pism/util/Context.hh"
 
 namespace pism {
+
+class IceModelVec3;
+
 namespace energy {
 
 class BedrockColumn;
@@ -108,7 +111,7 @@ protected:
 protected:
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
-  IceModelVec3::Ptr m_temp;
+  std::shared_ptr<IceModelVec3> m_temp;
 
   //! bedrock thermal conductivity
   double m_k;

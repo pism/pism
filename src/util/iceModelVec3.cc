@@ -19,19 +19,15 @@
 #include <cstring>
 #include <cstdlib>
 #include <cassert>
-
 #include <memory>
 
-#include <petscdmda.h>
-
-#include "iceModelVec.hh"
+#include "IceModelVec3.hh"
 #include "IceGrid.hh"
-#include "ConfigInterface.hh"
 
 #include "error_handling.hh"
-#include "pism/util/Context.hh"
 #include "pism/util/IceModelVec_impl.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/IceModelVec2S.hh"
 
 namespace pism {
 

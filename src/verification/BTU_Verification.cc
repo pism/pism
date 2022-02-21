@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
 #include "pism/util/error_handling.hh"
+#include "pism/util/IceModelVec3.hh"
 
 namespace pism {
 namespace energy {

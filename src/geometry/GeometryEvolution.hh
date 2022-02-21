@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,8 +22,13 @@
 
 #include "Geometry.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/IceModelVec2Int.hh"
 
 namespace pism {
+
+class IceModelVec2Stag;
+class IceModelVec2S;
+class IceModelVec2V;
 
 /*!
  * NB! Write this in a way that does not use ghosts of input fields (copy to temp. storage and

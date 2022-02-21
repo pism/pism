@@ -1,7 +1,13 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */
+
 #include "util/IceModelVec2CellType.hh"
+#include "util/IceModelVec2Int.hh"
+#include "util/IceModelVec2S.hh"
 #include "util/iceModelVec2T.hh"
+#include "util/IceModelVec2V.hh"
+#include "util/IceModelVec3.hh"
+#include "util/IceModelVec2Stag.hh"
 
 using namespace pism;
 %}
@@ -141,12 +147,17 @@ std::vector<double> interp(int i, int j) {
 
 %include "util/iceModelVec.hh"
 %include "util/IceModelVec2.hh"
+%include "util/IceModelVec2S.hh"
+%include "util/IceModelVec2Int.hh"
+%include "util/IceModelVec2CellType.hh"
+%include "util/iceModelVec2T.hh"
 
 %shared_ptr(pism::IceModelVec2<Vector2>)
 %ignore pism::IceModelVec2< Vector2 >::array() const;
 %template(_IceModelVec2Vector2) pism::IceModelVec2<Vector2>;
-
 %include "util/IceModelVec2V.hh"
-%include "util/IceModelVec2CellType.hh"
-%include "util/iceModelVec2T.hh"
+
+%include "util/IceModelVec3.hh"
+%include "util/IceModelVec2Stag.hh"
+
 %include "util/Vector2.hh"

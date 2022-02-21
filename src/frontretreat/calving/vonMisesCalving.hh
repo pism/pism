@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,6 +25,7 @@
 namespace pism {
 
 class Geometry;
+class IceModelVec2V;
 
 namespace rheology {
 class FlowLaw;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,7 +24,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh" // clip
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/IceModelVec2S.hh"
 
 namespace pism {
 

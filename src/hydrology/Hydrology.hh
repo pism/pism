@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/iceModelVec2T.hh"
@@ -27,6 +26,7 @@
 namespace pism {
 
 class IceModelVec2CellType;
+class IceModelVec2Int;
 class Geometry;
 
 //! @brief Sub-glacial hydrology models and related diagnostics.

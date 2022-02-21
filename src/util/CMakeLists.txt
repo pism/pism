@@ -24,10 +24,12 @@ set(PISMUTIL_SRC
   VariableMetadata.cc
   error_handling.cc
   iceModelVec.cc
-  iceModelVec2.cc
   iceModelVec2T.cc
+  IceModelVec2Int.cc
   iceModelVec2V.cc
   iceModelVec3.cc
+  IceModelVec2S.cc
+  IceModelVec2Stag.cc
   interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 namespace pism {
 
 class Geometry;
+class IceModelVec2Int;
 
 class YieldStressInputs {
 public:

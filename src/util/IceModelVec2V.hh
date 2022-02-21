@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,8 +20,11 @@
 #define PISM_ICEMODELVEC2V_H
 
 #include "pism/util/IceModelVec2.hh"
+#include "pism/util/Vector2.hh"
 
 namespace pism {
+
+class IceModelVec2S;
 
 /** Class for storing and accessing 2D vector fields
 */
@@ -36,6 +39,8 @@ public:
 };
 
 std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source);
+
+void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result);
 
 } // end of namespace pism
 

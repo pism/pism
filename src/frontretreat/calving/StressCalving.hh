@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,8 @@
 #define STRESSCALVING_H
 
 #include "pism/util/Component.hh"
+#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/IceModelVec3.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
