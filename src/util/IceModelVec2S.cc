@@ -31,11 +31,14 @@ IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
   // empty
 }
 
+IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec2<double>(grid, name, WITHOUT_GHOSTS, 1) {
+  // empty
+}
+
 std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source) {
   auto result = std::make_shared<IceModelVec2S>(source.grid(),
-                                                source.get_name(),
-                                                WITHOUT_GHOSTS,
-                                                1);
+                                                source.get_name());
   result->metadata() = source.metadata();
 
   return result;

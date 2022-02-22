@@ -30,21 +30,40 @@ namespace pism {
     IceModelVec2S is just IceModelVec2 with "dof == 1" */
 class IceModelVec2S : public IceModelVec2<double> {
 public:
-  IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
-                IceModelVecKind ghostedp, int width = 1);
-
   typedef std::shared_ptr<IceModelVec2S> Ptr;
   typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
+
+  IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name);
 
   inline int as_int(int i, int j) const;
   inline stencils::Star<int> star_int(int i, int j) const;
   inline stencils::Box<int> box_int(int i, int j) const;
+
+protected:
+  IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
+                IceModelVecKind ghostedp, int width = 1);
 };
 
 inline int IceModelVec2S::as_int(int i, int j) const {
   const double &value = (*this)(i, j);
   return static_cast<int>(floor(value + 0.5));
 }
+
+template<int width>
+class Array2SGhosted : public IceModelVec2S {
+public:
+  Array2SGhosted(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec2S(grid, name, WITH_GHOSTS, width) {
+    // empty
+  }
+
+  // Allow implicit casting to a reference to an array with a smaller stencil width:
+  template <int smaller_width>
+  operator Array2SGhosted<smaller_width>&() {
+    static_assert(smaller_width < width, "insufficient stencil width");
+    return *this;
+  }
+};
 
 inline stencils::Star<int> IceModelVec2S::star_int(int i, int j) const {
   stencils::Star<int> result;

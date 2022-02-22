@@ -32,8 +32,7 @@ public:
   typedef std::shared_ptr<IceModelVec2CellType> Ptr;
   typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
 
-  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
-                       IceModelVecKind ghostedp, int width = 1);
+  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name);
 
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
@@ -96,6 +95,25 @@ public:
   inline bool next_to_ice_free_ocean(int i, int j) const {
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
+  }
+protected:
+  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
+                       int width);
+};
+
+template<int width>
+class Array2CTGhosted : public IceModelVec2CellType {
+public:
+  Array2CTGhosted(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec2CellType(grid, name, width) {
+    // empty
+  }
+
+  // Allow implicit casting to a reference to an array with a smaller stencil width:
+  template <int smaller_width>
+  operator Array2CTGhosted<smaller_width>&() {
+    static_assert(smaller_width < width, "cannot increase stencil width");
+    return *this;
   }
 };
 
