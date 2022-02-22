@@ -37,8 +37,8 @@ public:
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
 
   inline int as_int(int i, int j) const;
-  inline stencils::Star<int> star(int i, int j) const;
-  inline stencils::Box<int> box(int i, int j) const;
+  inline stencils::Star<int> star_int(int i, int j) const;
+  inline stencils::Box<int> box_int(int i, int j) const;
 };
 
 inline int IceModelVec2Int::as_int(int i, int j) const {
@@ -46,7 +46,7 @@ inline int IceModelVec2Int::as_int(int i, int j) const {
   return static_cast<int>(floor(value + 0.5));
 }
 
-inline stencils::Star<int> IceModelVec2Int::star(int i, int j) const {
+inline stencils::Star<int> IceModelVec2Int::star_int(int i, int j) const {
   stencils::Star<int> result;
 
   result.ij = as_int(i,j);
@@ -58,17 +58,15 @@ inline stencils::Star<int> IceModelVec2Int::star(int i, int j) const {
   return result;
 }
 
-inline stencils::Box<int> IceModelVec2Int::box(int i, int j) const {
-  const IceModelVec2Int &x = *this;
-
+inline stencils::Box<int> IceModelVec2Int::box_int(int i, int j) const {
   const int
       E = i + 1,
       W = i - 1,
       N = j + 1,
       S = j - 1;
 
-  return {x.as_int(i, j), x.as_int(i, N), x.as_int(W, N), x.as_int(W, j), x.as_int(W, S),
-          x.as_int(i, S), x.as_int(E, S), x.as_int(E, j), x.as_int(E, N)};
+  return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
+          as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
 }
 
 } // end of namespace pism

@@ -88,7 +88,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
-        auto M = cell_type.star(i, j);
+        auto M = cell_type.star_int(i, j);
 
         double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
 

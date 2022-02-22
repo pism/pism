@@ -1997,7 +1997,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
         double H_reference = do_part_grid ? Href(i, j) : 0.0;
 
         if (H_reference > 0.0) {
-          const double H_threshold = part_grid_threshold_thickness(cell_type.star(i, j),
+          const double H_threshold = part_grid_threshold_thickness(cell_type.star_int(i, j),
                                                                    thickness.star(i, j),
                                                                    surface_elevation.star(i, j),
                                                                    bed_topography(i,j));

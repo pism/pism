@@ -717,7 +717,7 @@ void GeometryEvolution::update_in_place(double dt,
           // Add the flow contribution to this partially filled cell.
           area_specific_volume(i, j) += -divQ * dt;
 
-          double threshold = part_grid_threshold_thickness(m_impl->cell_type.star(i, j),
+          double threshold = part_grid_threshold_thickness(m_impl->cell_type.star_int(i, j),
                                                            m_impl->thickness.star(i, j),
                                                            m_impl->surface_elevation.star(i, j),
                                                            bed_topography(i, j));
@@ -899,7 +899,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
         continue;
       }
 
-      double threshold = part_grid_threshold_thickness(cell_type.star(i, j),
+      double threshold = part_grid_threshold_thickness(cell_type.star_int(i, j),
                                                        m_impl->thickness.star(i, j),
                                                        ice_surface_elevation.star(i, j),
                                                        bed_topography(i, j));

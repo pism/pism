@@ -296,7 +296,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     stencils::Star<int> N(0);
 
     if (no_model_mask) {
-      N = no_model_mask->star(i, j);
+      N = no_model_mask->star_int(i, j);
     }
 
     // x-derivative
