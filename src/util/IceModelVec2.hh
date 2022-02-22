@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,8 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef PISM_ICEMODELVEC2_STRUCT_H
-#define PISM_ICEMODELVEC2_STRUCT_H
+#ifndef PISM_ICEMODELVEC2_H
+#define PISM_ICEMODELVEC2_H
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/iceModelVec_helpers.hh"
@@ -97,9 +97,8 @@ public:
   void copy_from(const IceModelVec2<T> &source) {
     return vec::copy(source, *this);
   }
-
 };
 
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC2_STRUCT_H */
+#endif /* PISM_ICEMODELVEC2_H */

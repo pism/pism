@@ -42,7 +42,7 @@ public:
 };
 
 inline int IceModelVec2Int::as_int(int i, int j) const {
-  auto value = (*this)(i, j);
+  const double &value = (*this)(i, j);
   return static_cast<int>(floor(value + 0.5));
 }
 

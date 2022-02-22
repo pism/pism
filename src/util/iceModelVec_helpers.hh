@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,13 +22,6 @@
 namespace pism {
 
 namespace vec {
-
-namespace details {
-
-void compute_params(const IceModelVec* const x, const IceModelVec* const y,
-                    const IceModelVec* const z, int &ghosts, bool &scatter);
-
-} // end of namespace details
 
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
 //! IceModelVecs (scalar or vector).

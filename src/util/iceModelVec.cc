@@ -717,53 +717,6 @@ void IceModelVec::check_array_indices(int i, int j, unsigned int k) const {
   }
 }
 
-namespace vec {
-namespace details {
-//! \brief Compute parameters for 2D loop computations involving 3
-//! IceModelVecs.
-/*!
- * Here we assume that z is updated using a local (point-wise) computation
- * involving x and y.
- *
- * "ghosts" is the width of the stencil that can be updated locally.
- * "scatter" is false if all ghosts can be updated locally.
- */
-void compute_params(const IceModelVec* const x, const IceModelVec* const y,
-		    const IceModelVec* const z, int &ghosts, bool &scatter) {
-
-  // We have 2^3=8 cases here (x,y,z having or not having ghosts).
-  if (z->stencil_width() == 0) {
-    // z has no ghosts; we can update everything locally
-    // (This covers 4 cases.)
-    ghosts = 0;
-    scatter = false;
-  } else if (x->stencil_width() == 0 ||
-             y->stencil_width() == 0) {
-    // z has ghosts, but at least one of x and y does not. we have to scatter
-    // ghosts.
-    // (This covers 3 cases.)
-    ghosts = 0;
-    scatter = true;
-  } else {
-    // all of x, y, z have ghosts
-    // (The remaining 8-th case.)
-    if (z->stencil_width() <= x->stencil_width() &&
-        z->stencil_width() <= y->stencil_width()) {
-      // x and y have enough ghosts to update ghosts of z locally
-      ghosts = z->stencil_width();
-      scatter = false;
-    } else {
-      // z has ghosts, but at least one of x and y doesn't have a wide enough
-      // stencil
-      ghosts = 0;
-      scatter = true;
-    }
-  }
-}
-
-} // end of namespace details
-} // end of namespace vec
-
 //! Computes the norm of all the components of an IceModelVec.
 /*!
 See comment for range(); because local Vecs are VECSEQ, needs a reduce operation.
