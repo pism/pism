@@ -35,39 +35,7 @@ public:
 
   typedef std::shared_ptr<IceModelVec2Int> Ptr;
   typedef std::shared_ptr<const IceModelVec2Int> ConstPtr;
-
-  inline int as_int(int i, int j) const;
-  inline stencils::Star<int> star_int(int i, int j) const;
-  inline stencils::Box<int> box_int(int i, int j) const;
 };
-
-inline int IceModelVec2Int::as_int(int i, int j) const {
-  const double &value = (*this)(i, j);
-  return static_cast<int>(floor(value + 0.5));
-}
-
-inline stencils::Star<int> IceModelVec2Int::star_int(int i, int j) const {
-  stencils::Star<int> result;
-
-  result.ij = as_int(i,j);
-  result.e =  as_int(i+1,j);
-  result.w =  as_int(i-1,j);
-  result.n =  as_int(i,j+1);
-  result.s =  as_int(i,j-1);
-
-  return result;
-}
-
-inline stencils::Box<int> IceModelVec2Int::box_int(int i, int j) const {
-  const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
-
-  return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
-          as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
-}
 
 } // end of namespace pism
 

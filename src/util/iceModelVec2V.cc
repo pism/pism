@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2009--2017, 2020, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,15 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <memory>               // std::dynamic_pointer_cast
-
 #include "IceModelVec2V.hh"
 #include "IceModelVec_impl.hh"
 
 #include "pism_utilities.hh"
 #include "IceGrid.hh"
-
-#include "error_handling.hh"    // RuntimeError
 
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"

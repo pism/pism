@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,24 +20,21 @@
 #ifndef ICEMODELVEC2CELLTYPE_H
 #define ICEMODELVEC2CELLTYPE_H
 
-#include "iceModelVec.hh"
+#include "IceModelVec2S.hh"
 #include "Mask.hh"
 
 namespace pism {
 
-//! "Cell type" mask. Adds convenience methods to IceModelVec2Int.
-class IceModelVec2CellType : public IceModelVec2Int {
+//! "Cell type" mask. Adds convenience methods to IceModelVec2S.
+class IceModelVec2CellType : public IceModelVec2S {
 public:
 
   typedef std::shared_ptr<IceModelVec2CellType> Ptr;
   typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
 
   IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
-                       IceModelVecKind ghostedp, int width = 1)
-    : IceModelVec2Int(grid, name, ghostedp, width) {
-    // empty
-  }
-  
+                       IceModelVecKind ghostedp, int width = 1);
+
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
   }

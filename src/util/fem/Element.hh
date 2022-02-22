@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,7 @@
 namespace pism {
 
 class IceGrid;
-class IceModelVec2Int;
+class IceModelVec2S;
 
 struct Vector3 {
   double x, y, z;
@@ -207,7 +207,7 @@ public:
   }
 
   /*! @brief Get nodal values of an integer mask. */
-  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
+  void nodal_values(const IceModelVec2S &x_global, int *result) const;
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
     into the element-local array `result`.

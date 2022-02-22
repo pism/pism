@@ -25,6 +25,7 @@ set(PISMUTIL_SRC
   error_handling.cc
   iceModelVec.cc
   iceModelVec2T.cc
+  IceModelVec2CellType.cc
   IceModelVec2Int.cc
   iceModelVec2V.cc
   iceModelVec3.cc

@@ -85,10 +85,10 @@ public:
   }
 
   void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-               IceModelVec2Int &out_mask, IceModelVec2S &out_surface) const;
+               IceModelVec2S &out_mask, IceModelVec2S &out_surface) const;
 
   void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
-                    const IceModelVec2S& thickness, IceModelVec2Int& result) const;
+                    const IceModelVec2S& thickness, IceModelVec2S& result) const;
 
   void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
                        const IceModelVec2S& thickness, IceModelVec2S& result) const;

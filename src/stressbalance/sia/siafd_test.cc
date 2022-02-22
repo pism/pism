@@ -180,7 +180,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 static void setInitStateF(IceGrid &grid,
                           EnthalpyConverter &EC,
                           IceModelVec2S &bed,
-                          IceModelVec2Int &mask,
+                          IceModelVec2S &mask,
                           IceModelVec2S &surface,
                           IceModelVec2S &thickness,
                           IceModelVec3 &enthalpy) {
