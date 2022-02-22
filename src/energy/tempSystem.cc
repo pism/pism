@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #include <cassert>
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
 #include "tempSystem.hh"
 #include "pism/util/Mask.hh"
 

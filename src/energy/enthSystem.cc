@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018, 2020, 2021 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018, 2020, 2021, 2022 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #include "enthSystem.hh"
 #include <gsl/gsl_math.h>       // GSL_NAN, gsl_isnan()
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 #include "pism/util/error_handling.hh"

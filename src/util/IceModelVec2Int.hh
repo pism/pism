@@ -42,10 +42,7 @@ public:
 };
 
 inline int IceModelVec2Int::as_int(int i, int j) const {
-#if (Pism_DEBUG==1)
-  check_array_indices(i, j, 0);
-#endif
-  auto value = static_cast<double**>(m_array)[j][i];
+  auto value = (*this)(i, j);
   return static_cast<int>(floor(value + 0.5));
 }
 

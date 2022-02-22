@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -32,7 +32,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"

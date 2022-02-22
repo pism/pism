@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -21,7 +21,6 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"

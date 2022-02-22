@@ -21,7 +21,6 @@
 #include <petscdraw.h>
 
 #include "iceModelVec.hh"
-#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/IceModelVec_impl.hh"
 
 #include "Time.hh"

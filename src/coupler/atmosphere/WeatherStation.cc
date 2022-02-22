@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #include "WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"

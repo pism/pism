@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,7 +18,6 @@
 
 #include "Elevation.hh"
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"

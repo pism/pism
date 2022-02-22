@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Copyright (C) 2012-2019, 2021, 2022 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
 // Albrecht, and Matthias Mengel
 //
 // This file is part of PISM.
@@ -39,7 +39,6 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/iceModelVec.hh"
 
 #include "Pico.hh"
 #include "PicoGeometry.hh"

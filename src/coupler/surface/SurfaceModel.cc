@@ -27,7 +27,6 @@
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"

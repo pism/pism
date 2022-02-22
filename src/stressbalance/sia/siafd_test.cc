@@ -35,7 +35,6 @@ static char help[] =
 #include "pism/util/Time.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"

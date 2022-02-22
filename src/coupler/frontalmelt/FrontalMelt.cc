@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,6 @@
  */
 
 #include "pism/coupler/FrontalMelt.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh" // combine()
 #include "pism/geometry/Geometry.hh"

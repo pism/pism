@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,6 @@
 
 #include "Geometry.hh"
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
