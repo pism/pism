@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,9 +30,9 @@ namespace bed {
 BedDef::BedDef(IceGrid::ConstPtr grid)
   : Component(grid),
     m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
-    m_topg(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
-    m_topg_last(m_grid, "topg", WITH_GHOSTS, m_wide_stencil),
-    m_uplift(m_grid, "dbdt", WITHOUT_GHOSTS)
+    m_topg(m_grid, "topg"),
+    m_topg_last(m_grid, "topg"),
+    m_uplift(m_grid, "dbdt")
 {
 
   m_topg.set_attrs("model_state", "bedrock surface elevation",
@@ -164,7 +164,7 @@ void BedDef::apply_topg_offset(const std::string &filename) {
   m_log->message(2, "  Adding a bed topography correction read in from %s...\n",
                  filename.c_str());
 
-  IceModelVec2S topg_delta(m_grid, "topg_delta", WITHOUT_GHOSTS);
+  IceModelVec2S topg_delta(m_grid, "topg_delta");
   topg_delta.set_attrs("internal", "bed topography correction",
                        "meters", "meters", "", 0);
 

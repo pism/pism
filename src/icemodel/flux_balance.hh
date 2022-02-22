@@ -34,7 +34,7 @@ public:
   TendencyOfIceAmount(const IceModel *m, AmountKind kind)
     : Diag<IceModel>(m),
     m_kind(kind),
-    m_last_amount(m_grid, "last_ice_amount", WITHOUT_GHOSTS),
+    m_last_amount(m_grid, "last_ice_amount"),
     m_interval_length(0.0) {
 
     std::string
@@ -69,7 +69,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "", WITHOUT_GHOSTS));
+    auto result = std::make_shared<IceModelVec2S>(m_grid, "");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
@@ -77,8 +77,8 @@ protected:
 
       auto cell_area = m_grid->cell_area();
 
-      const IceModelVec2S& thickness = model->geometry().ice_thickness;
-      const IceModelVec2S& area_specific_volume = model->geometry().ice_area_specific_volume;
+      const auto& thickness = model->geometry().ice_thickness;
+      const auto& area_specific_volume = model->geometry().ice_area_specific_volume;
 
       IceModelVec::AccessList list{result.get(),
           &thickness, &area_specific_volume, &m_last_amount};

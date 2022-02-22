@@ -31,16 +31,16 @@ namespace ocean {
 
 PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     : Component(grid),
-      m_continental_shelf(grid, "pico_contshelf_mask", WITHOUT_GHOSTS),
-      m_boxes(grid, "pico_box_mask", WITHOUT_GHOSTS),
-      m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
-      m_basin_mask(m_grid, "basins", WITH_GHOSTS),
-      m_distance_gl(grid, "pico_distance_gl", WITH_GHOSTS),
-      m_distance_cf(grid, "pico_distance_cf", WITH_GHOSTS),
-      m_ocean_mask(grid, "pico_ocean_mask", WITH_GHOSTS),
-      m_lake_mask(grid, "pico_lake_mask", WITHOUT_GHOSTS),
-      m_ice_rises(grid, "pico_ice_rise_mask", WITH_GHOSTS),
-      m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS) {
+      m_continental_shelf(grid, "pico_contshelf_mask"),
+      m_boxes(grid, "pico_box_mask"),
+      m_ice_shelves(grid, "pico_shelf_mask"),
+      m_basin_mask(m_grid, "basins"),
+      m_distance_gl(grid, "pico_distance_gl"),
+      m_distance_cf(grid, "pico_distance_cf"),
+      m_ocean_mask(grid, "pico_ocean_mask"),
+      m_lake_mask(grid, "pico_lake_mask"),
+      m_ice_rises(grid, "pico_ice_rise_mask"),
+      m_tmp(grid, "temporary_storage") {
 
   m_boxes.metadata()["_FillValue"] = {0.0};
 

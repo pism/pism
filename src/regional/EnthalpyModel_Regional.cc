@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@ namespace energy {
 EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
                                                stressbalance::StressBalance *stress_balance)
   : EnthalpyModel(grid, stress_balance),
-    m_basal_melt_rate_stored(m_grid, "bmr_stored", WITHOUT_GHOSTS)
+    m_basal_melt_rate_stored(m_grid, "bmr_stored")
 {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.

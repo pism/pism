@@ -55,7 +55,7 @@ namespace stressbalance {
  */
 void Blatter::compute_node_type(double min_thickness) {
 
-  IceModelVec2S node_type(m_grid, "node_type", WITH_GHOSTS);
+  Array2SGhosted<1> node_type(m_grid, "node_type");
   node_type.set(0.0);
 
   DMDALocalInfo info;

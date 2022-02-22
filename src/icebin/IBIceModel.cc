@@ -20,15 +20,15 @@ namespace icebin {
 IBIceModel::IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceModel::Params const &_params)
     : pism::IceModel(g, context),
       params(_params),
-      base(m_grid, "", WITHOUT_GHOSTS),
-      cur(m_grid, "", WITHOUT_GHOSTS),
-      rate(m_grid, "", WITHOUT_GHOSTS),
-      M1(m_grid, "M1", pism::WITHOUT_GHOSTS),
-      M2(m_grid, "M2", pism::WITHOUT_GHOSTS),
-      H1(m_grid, "H1", pism::WITHOUT_GHOSTS),
-      H2(m_grid, "H2", pism::WITHOUT_GHOSTS),
-      V1(m_grid, "V1", pism::WITHOUT_GHOSTS),
-      V2(m_grid, "V2", pism::WITHOUT_GHOSTS)
+      base(m_grid, ""),
+      cur(m_grid, ""),
+      rate(m_grid, ""),
+      M1(m_grid, "M1"),
+      M2(m_grid, "M2"),
+      H1(m_grid, "H1"),
+      H2(m_grid, "H2"),
+      V1(m_grid, "V1"),
+      V2(m_grid, "V2")
 {
   // empty
 }

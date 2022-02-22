@@ -38,7 +38,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
     m_flow_law(NULL),
     m_EC(g->ctx()->enthalpy_converter()),
     m_velocity(m_grid, "bar", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
-    m_basal_frictional_heating(m_grid, "bfrict", WITHOUT_GHOSTS),
+    m_basal_frictional_heating(m_grid, "bfrict"),
     m_e_factor(1.0)
 {
 
@@ -236,7 +236,7 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
 }
 
 IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag"));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2V::Ptr taud = IceModelVec::cast<IceModelVec2V>(SSB_taud(model).compute());
@@ -305,7 +305,7 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
 }
 
 IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taub_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taub_mag"));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2V::Ptr taub = IceModelVec::cast<IceModelVec2V>(SSB_taub(model).compute());
@@ -355,7 +355,7 @@ SSB_beta::SSB_beta(const ShallowStressBalance *m)
 }
 
 IceModelVec::Ptr SSB_beta::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "beta", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "beta"));
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2S *tauc = m_grid->variables().get_2d_scalar("tauc");

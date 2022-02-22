@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016,2017,2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017,2020,2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -168,6 +168,9 @@ public:
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;
 
+  typedef typename ForwardProblem::DesignVecGhosted DesignVecGhosted;
+  typedef typename ForwardProblem::DesignVecGhosted::Ptr DesignVecGhostedPtr;
+
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
   typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
 
@@ -239,18 +242,18 @@ protected:
   ForwardProblem &m_forward;
 
   /// Current iterate of design parameter
-  DesignVecPtr m_d;
+  DesignVecGhostedPtr m_d;             // ghosted
   /// Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
   DesignVec m_dGlobal;
   /// A-priori estimate of design parameter
   DesignVec &m_d0;
   /// Storage for (m_d-m_d0)
-  DesignVecPtr m_d_diff;
+  DesignVecPtr m_d_diff;        // ghosted
 
   /// State parameter to match via F(d)=u_obs
   StateVec &m_u_obs;
   /// Storage for F(d)-u_obs
-  StateVecPtr m_u_diff;
+  StateVecPtr m_u_diff;         // ghosted
 
   /// Temporary storage used in gradient computation.
   StateVec m_adjointRHS;
@@ -301,7 +304,7 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
                                                            IPFunctional<StateVec> &stateFunctional)
   : m_grid(d0.grid()),
     m_forward(forward),
-    m_dGlobal(d0.grid(), "design variable (global)", WITHOUT_GHOSTS, d0.stencil_width()),
+    m_dGlobal(d0.grid(), "design variable (global)"),
     m_d0(d0),
     m_u_obs(u_obs),
     m_adjointRHS(d0.grid(), "work vector", WITHOUT_GHOSTS),
@@ -313,22 +316,21 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
   m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
 
-  int design_stencil_width = m_d0.stencil_width();
   int state_stencil_width = m_u_obs.stencil_width();
 
-  m_d.reset(new DesignVec(m_grid, "design variable", WITH_GHOSTS, design_stencil_width));
+  m_d = std::make_shared<DesignVecGhosted>(m_grid, "design variable");
 
   m_dGlobal.copy_from(m_d0);
 
-  m_u_diff.reset(new StateVec(m_grid, "state residual", WITH_GHOSTS, state_stencil_width));
+  m_u_diff = std::make_shared<StateVec>(m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
 
-  m_d_diff.reset(new DesignVec(m_grid, "design residual", WITH_GHOSTS, design_stencil_width));
+  m_d_diff = std::make_shared<DesignVecGhosted>(m_grid, "design residual");
 
-  m_grad_state.reset(new DesignVec(m_grid, "state gradient", WITHOUT_GHOSTS, design_stencil_width));
+  m_grad_state = std::make_shared<DesignVec>(m_grid, "state gradient");
 
-  m_grad_design.reset(new DesignVec(m_grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width));
+  m_grad_design = std::make_shared<DesignVec>(m_grid, "design gradient");
 
-  m_grad.reset(new DesignVec(m_grid, "gradient", WITHOUT_GHOSTS, design_stencil_width));
+  m_grad = std::make_shared<DesignVec>(m_grid, "gradient");
 
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,8 +29,8 @@ namespace surface {
 NoGLRetreat::NoGLRetreat(IceGrid::ConstPtr grid,
                          std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(grid, input),
-    m_smb_adjustment(grid, "smb_adjustment", WITHOUT_GHOSTS),
-    m_min_ice_thickness(grid, "minimum_ice_thickness", WITHOUT_GHOSTS) {
+    m_smb_adjustment(grid, "smb_adjustment"),
+    m_min_ice_thickness(grid, "minimum_ice_thickness") {
 
   m_smb_adjustment.metadata()["units"] = "kg m-2 s-1";
 

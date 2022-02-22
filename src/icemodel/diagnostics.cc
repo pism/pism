@@ -79,15 +79,15 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
 
 IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_margin_pressure_difference", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid,
+                                                "ice_margin_pressure_difference");
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2CellType mask(m_grid, "mask", WITH_GHOSTS);
+  Array2CTGhosted<1> mask(m_grid, "mask");
 
-  auto
-    &H         = model->geometry().ice_thickness,
-    &bed       = model->geometry().bed_elevation,
-    &sea_level = model->geometry().sea_level_elevation;
+  auto &H         = model->geometry().ice_thickness;
+  auto &bed       = model->geometry().bed_elevation;
+  auto &sea_level = model->geometry().sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
@@ -236,7 +236,7 @@ IceModelVec::Ptr HardnessAverage::compute_impl() const {
     }
   }
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hardav", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -287,7 +287,7 @@ Rank::Rank(const IceModel *m)
 
 IceModelVec::Ptr Rank::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "rank", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "rank");
   result->metadata() = m_vars[0];
 
   IceModelVec::AccessList list{result.get()};
@@ -477,7 +477,7 @@ IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "temp_pa_base", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "temp_pa_base");
   result->metadata() = m_vars[0];
 
   const IceModelVec2S &thickness = model->geometry().ice_thickness;
@@ -539,7 +539,7 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
 
 IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpysurf", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "enthalpysurf");
   result->metadata() = m_vars[0];
 
   // compute levels corresponding to 1 m below the ice surface:
@@ -590,7 +590,7 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
 
 IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpybase", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "enthalpybase");
   result->metadata() = m_vars[0];
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
@@ -641,7 +641,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
 
 IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "basal_temperature", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "basal_temperature");
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2S &thickness = model->geometry().ice_thickness;
@@ -798,7 +798,7 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
 
 IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "tempicethk");
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -872,7 +872,7 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
  */
 IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk_basal", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "tempicethk_basal");
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
@@ -1831,7 +1831,7 @@ class ThicknessRateOfChange : public Diag<IceModel>
 public:
   ThicknessRateOfChange(const IceModel *m)
     : Diag<IceModel>(m),
-    m_last_thickness(m_grid, "last_ice_thickness", WITHOUT_GHOSTS),
+    m_last_thickness(m_grid, "last_ice_thickness"),
     m_interval_length(0.0) {
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
@@ -1856,7 +1856,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "dHdt", WITHOUT_GHOSTS));
+    auto result = std::make_shared<IceModelVec2S>(m_grid, "dHdt");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
@@ -1963,7 +1963,7 @@ IceAreaFraction::IceAreaFraction(const IceModel *m)
 
 IceModelVec::Ptr IceAreaFraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, land_ice_area_fraction_name);
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2S
@@ -2041,17 +2041,16 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
 }
 
 IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, grounded_ice_sheet_area_fraction_name);
   result->metadata() = m_vars[0];
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
     ocean_density = m_config->get_number("constants.sea_water.density");
 
-  auto
-    &ice_thickness  = model->geometry().ice_thickness,
-    &sea_level      = model->geometry().sea_level_elevation,
-    &bed_topography = model->geometry().bed_elevation;
+  auto &ice_thickness  = model->geometry().ice_thickness;
+  auto &sea_level      = model->geometry().sea_level_elevation;
+  auto &bed_topography = model->geometry().bed_elevation;
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
 
@@ -2133,7 +2132,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
 
 IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "height_above_flotation", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "height_above_flotation");
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -2142,10 +2141,9 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
     ice_density   = m_config->get_number("constants.ice.density"),
     ocean_density = m_config->get_number("constants.sea_water.density");
 
-  auto
-    &sea_level      = model->geometry().sea_level_elevation,
-    &ice_thickness  = model->geometry().ice_thickness,
-    &bed_topography = model->geometry().bed_elevation;
+  auto &sea_level      = model->geometry().sea_level_elevation;
+  auto &ice_thickness  = model->geometry().ice_thickness;
+  auto &bed_topography = model->geometry().bed_elevation;
 
   IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level};
 
@@ -2197,7 +2195,7 @@ IceMass::IceMass(const IceModel *m)
 
 IceModelVec::Ptr IceMass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_mass", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "ice_mass");
   result->metadata(0) = m_vars[0];
 
   const IceModelVec2CellType &cell_type = model->geometry().cell_type;
@@ -2268,12 +2266,11 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
 
 IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "topg_sl_adjusted");
   result->metadata(0) = m_vars[0];
 
-  auto
-    &bed       = model->geometry().bed_elevation,
-    &sea_level = model->geometry().sea_level_elevation;
+  auto &bed       = model->geometry().bed_elevation;
+  auto &sea_level = model->geometry().sea_level_elevation;
 
   IceModelVec::AccessList list{&bed, &sea_level, result.get()};
 
@@ -2557,7 +2554,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thk", WITHOUT_GHOSTS));
+    auto result = std::make_shared<IceModelVec2S>(m_grid, "thk");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_thickness);
@@ -2584,7 +2581,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_base_elevation", WITHOUT_GHOSTS));
+    auto result = std::make_shared<IceModelVec2S>(m_grid, "ice_base_elevation");
     result->metadata(0) = m_vars[0];
 
     ice_bottom_surface(model->geometry(), *result);
@@ -2611,7 +2608,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "usurf", WITHOUT_GHOSTS));
+    auto result = std::make_shared<IceModelVec2S>(m_grid, "usurf");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_surface_elevation);

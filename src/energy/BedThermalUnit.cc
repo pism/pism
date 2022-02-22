@@ -96,8 +96,8 @@ BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
 
 BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   : Component(g),
-    m_bottom_surface_flux(m_grid, "bheatflx", WITHOUT_GHOSTS),
-    m_top_surface_flux(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS) {
+    m_bottom_surface_flux(m_grid, "bheatflx"),
+    m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {
 
   {
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
@@ -231,7 +231,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hfgeoubed", WITHOUT_GHOSTS));
+  auto result = std::make_shared<IceModelVec2S>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 
   result->copy_from(model->flux_through_top_surface());

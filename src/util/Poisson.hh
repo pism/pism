@@ -48,7 +48,7 @@ private:
   petsc::Mat m_A;
   IceModelVec2S m_b;
   IceModelVec2S m_x;
-  IceModelVec2Int m_mask;
+  Array2IGhosted<1> m_mask;
 };
 
 } // end of namespace pism

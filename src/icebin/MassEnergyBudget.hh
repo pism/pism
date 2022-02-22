@@ -21,8 +21,7 @@ struct MassEnthVec2S : public pism::PetscAccessible
 
     ~MassEnthVec2S() {}
 
-    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name,
-                  pism::IceModelVecKind ghostedp, int width = 1);
+    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name);
 
     void set_attrs(
         const std::string &my_pism_intent,
@@ -170,8 +169,7 @@ protected:
 
 public:
 
-    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix,
-                     pism::IceModelVecKind ghostedp, unsigned int width = 1);
+    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix);
 
     void set_epsilon(pism::IceGrid::ConstPtr grid);
 };

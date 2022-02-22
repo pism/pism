@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,9 +41,9 @@ namespace pism {
 
 IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
   : IceModel(g, c),
-    m_no_model_mask(m_grid, "no_model_mask", WITH_GHOSTS, 2),
-    m_usurf_stored(m_grid, "usurfstore", WITH_GHOSTS, 2),
-    m_thk_stored(m_grid, "thkstore", WITH_GHOSTS, 1)
+    m_no_model_mask(m_grid, "no_model_mask"),
+    m_usurf_stored(m_grid, "usurfstore"),
+    m_thk_stored(m_grid, "thkstore")
 {
   // empty
 

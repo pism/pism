@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -57,7 +57,7 @@ private:
   IceModelVec2S m_Soc, m_Soc_box0;
   IceModelVec2S m_Toc, m_Toc_box0, m_T_star;
   IceModelVec2S m_overturning;
-  IceModelVec2S m_basal_melt_rate;
+  Array2SGhosted<1> m_basal_melt_rate;
 
   PicoGeometry m_geometry;
 

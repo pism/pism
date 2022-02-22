@@ -43,9 +43,9 @@ namespace surface {
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                    std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g, input),
-    m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
-    m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS) {
+    m_mass_flux(m_grid, "climatic_mass_balance"),
+    m_firn_depth(m_grid, "firn_depth"),
+    m_snow_depth(m_grid, "snow_depth") {
 
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");

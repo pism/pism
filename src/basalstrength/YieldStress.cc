@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,8 +33,7 @@ YieldStressInputs::YieldStressInputs() {
 
 YieldStress::YieldStress(IceGrid::ConstPtr g)
   : Component(g),
-  m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS,
-                       m_config->get_number("grid.max_stencil_width")) {
+  m_basal_yield_stress(m_grid, "tauc") {
 
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   m_basal_yield_stress.set_attrs("model_state",

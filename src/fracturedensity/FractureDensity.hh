@@ -60,12 +60,12 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2S m_density;
+  Array2SGhosted<1> m_density;
   IceModelVec2S m_density_new;
   IceModelVec2S m_growth_rate;
   IceModelVec2S m_healing_rate;
   IceModelVec2S m_flow_enhancement;
-  IceModelVec2S m_age;
+  Array2SGhosted<1> m_age;
   IceModelVec2S m_age_new;
   IceModelVec2S m_toughness;
 

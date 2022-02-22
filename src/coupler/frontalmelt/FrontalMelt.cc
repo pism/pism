@@ -34,22 +34,6 @@ FrontalMeltInputs::FrontalMeltInputs() {
 
 namespace frontalmelt {
 
-IceModelVec2S::Ptr FrontalMelt::allocate_frontal_melt_rate(IceGrid::ConstPtr g,
-                                                           int stencil_width) {
-  IceModelVec2S::Ptr result;
-
-  if (stencil_width > 0) {
-    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITH_GHOSTS, stencil_width));
-  } else {
-    result.reset(new IceModelVec2S(g, "frontal_melt_rate", WITHOUT_GHOSTS));
-  }
-
-  result->set_attrs("diagnostic", "frontal melt rate",
-                    "m s-1", "m day-1", "", 0);
-
-  return result;
-}
-
 /*!
  * Compute retreat rate corresponding to a given frontal melt rate.
  *
@@ -113,7 +97,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
   : Component(g),
     m_input_model(input),
-    m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt", WITHOUT_GHOSTS)
+    m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt")
 {
   m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt",
                            "m s-1", "m day-1", "", 0);

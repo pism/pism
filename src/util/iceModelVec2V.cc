@@ -41,6 +41,10 @@ IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_na
   set_name("vel" + short_name);
 }
 
+IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name)
+  : IceModelVec2V(grid, short_name, WITHOUT_GHOSTS, 1) {
+}
+
 std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source) {
 
   auto result = std::make_shared<IceModelVec2V>(source.grid(),

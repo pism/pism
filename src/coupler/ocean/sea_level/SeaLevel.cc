@@ -31,7 +31,7 @@ namespace sea_level {
 SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
   : Component(grid),
     m_input_model(input),
-    m_sea_level(grid, "sea_level", WITHOUT_GHOSTS) {
+    m_sea_level(grid, "sea_level") {
 
   m_sea_level.set_attrs("diagnostic",
                         "sea level elevation, relative to the geoid",
@@ -110,7 +110,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "sea_level"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->elevation());

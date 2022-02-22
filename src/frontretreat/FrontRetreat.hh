@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,10 +58,10 @@ private:
   //
   // We make a copy here because frontal retreat code uses a modified mask if
   // geometry.front_retreat.wrap_around is false.
-  IceModelVec2CellType m_cell_type;
+  Array2CTGhosted<1> m_cell_type;
   // Temporary storage for distributing ice loss to "full" (as opposed to "partially
   // filled") cells near the front
-  IceModelVec2S m_tmp;
+  Array2SGhosted<1> m_tmp;
 };
 
 } // end of namespace pism

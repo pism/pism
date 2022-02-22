@@ -127,12 +127,12 @@ protected:
   IceModelVec2S m_Wnew, m_Wtillnew;
 
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
-  mutable IceModelVec2S m_R;
+  mutable Array2SGhosted<1> m_R;
 
   double m_dx, m_dy;
   double m_rg;
 
-  IceModelVec2S m_bottom_surface;
+  Array2SGhosted<1> m_bottom_surface;
 
   void water_thickness_staggered(const IceModelVec2S &W,
                                  const IceModelVec2CellType &mask,

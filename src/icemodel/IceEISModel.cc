@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,7 +134,7 @@ void IceEISModel::initialize_2d() {
   m_geometry.sea_level_elevation.set(0.0);
 
   // set uplift
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  IceModelVec2S bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
   // start with zero ice

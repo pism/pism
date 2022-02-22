@@ -29,7 +29,7 @@ namespace pism {
 namespace ocean {
 
 IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp"));
   result->set_attrs("diagnostic",
                     "ice temperature at the bottom of floating ice",
                     "Kelvin", "Kelvin", "", 0);
@@ -37,7 +37,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr
 }
 
 IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux"));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
                     "kg m-2 s-1", "kg m-2 year-1", "", 0);
@@ -47,8 +47,7 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
 
 IceModelVec2S::Ptr OceanModel::allocate_water_column_pressure(IceGrid::ConstPtr g) {
   IceModelVec2S::Ptr result(new IceModelVec2S(g,
-                                              "average_water_column_pressure",
-                                              WITHOUT_GHOSTS));
+                                              "average_water_column_pressure"));
   result->set_attrs("diagnostic",
                     "vertically-averaged water column pressure",
                     "Pa", "Pa", "", 0);
@@ -182,7 +181,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_temperature());
@@ -209,7 +208,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_mass_flux());

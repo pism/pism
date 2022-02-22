@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,14 +28,14 @@ namespace pism {
 FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : Component(grid),
-    m_density(grid, "fracture_density", WITH_GHOSTS, 1),
-    m_density_new(grid, "new_fracture_density", WITHOUT_GHOSTS),
-    m_growth_rate(grid, "fracture_growth_rate", WITHOUT_GHOSTS),
-    m_healing_rate(grid, "fracture_healing_rate", WITHOUT_GHOSTS),
-    m_flow_enhancement(grid, "fracture_flow_enhancement", WITHOUT_GHOSTS),
-    m_age(grid, "fracture_age", WITH_GHOSTS, 1),
-    m_age_new(grid, "new_fracture_age", WITHOUT_GHOSTS),
-    m_toughness(grid, "fracture_toughness", WITHOUT_GHOSTS),
+    m_density(grid, "fracture_density"),
+    m_density_new(grid, "new_fracture_density"),
+    m_growth_rate(grid, "fracture_growth_rate"),
+    m_healing_rate(grid, "fracture_healing_rate"),
+    m_flow_enhancement(grid, "fracture_flow_enhancement"),
+    m_age(grid, "fracture_age"),
+    m_age_new(grid, "new_fracture_age"),
+    m_toughness(grid, "fracture_toughness"),
     m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS,
                    2,           // dof
                    2),          // stencil width

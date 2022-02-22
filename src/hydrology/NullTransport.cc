@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,7 +28,7 @@ namespace hydrology {
 
 NullTransport::NullTransport(IceGrid::ConstPtr g)
   : Hydrology(g),
-    m_Wtill_old(m_grid, "Wtill_old", WITH_GHOSTS) {
+    m_Wtill_old(m_grid, "Wtill_old") {
 
   m_diffuse_tillwat    = m_config->get_flag("hydrology.null_diffuse_till_water");
   m_diffusion_time     = m_config->get_number("hydrology.null_diffusion_time", "seconds");

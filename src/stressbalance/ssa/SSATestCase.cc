@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -40,10 +40,10 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
     m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
     m_sys(ctx->unit_system()),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
-    m_tauc(m_grid, "tauc", WITH_GHOSTS, m_stencil_width),
+    m_tauc(m_grid, "tauc"),
     m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_stencil_width),
     m_bc_values(m_grid, "_bc", WITH_GHOSTS, m_stencil_width), // u_bc and v_bc
-    m_bc_mask(m_grid, "bc_mask", WITH_GHOSTS, m_stencil_width),
+    m_bc_mask(m_grid, "bc_mask"),
     m_geometry(m_grid),
     m_ssa(NULL)
 {

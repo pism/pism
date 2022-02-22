@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ using units::convert;
 IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
   : IceModel(grid, context),
     m_testname(test),
-    m_HexactL(m_grid, "HexactL", WITHOUT_GHOSTS),
+    m_HexactL(m_grid, "HexactL"),
     m_strain_heating3_comp(m_grid, "strain_heating_comp", WITHOUT_GHOSTS, m_grid->z()),
     m_bedrock_is_ice_forK(false)
 {
@@ -266,7 +266,7 @@ void IceCompModel::initialize_2d() {
   m_geometry.bed_elevation.set(0.0);
   m_geometry.sea_level_elevation.set(0.0);
 
-  IceModelVec2S uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  IceModelVec2S uplift(m_grid, "uplift");
   uplift.set(0.0);
 
   m_beddef->bootstrap(m_geometry.bed_elevation,
@@ -344,7 +344,7 @@ void IceCompModel::initTestABCDH() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
 
     if (m_testname == 'H') {
@@ -405,7 +405,7 @@ void IceCompModel::initTestL() {
   ExactLParameters L = exactL(rr);
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift");
 
     IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
 
@@ -847,7 +847,7 @@ void IceCompModel::reportErrors() {
 void IceCompModel::test_V_init() {
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
     m_geometry.bed_elevation.set(-1000);
 

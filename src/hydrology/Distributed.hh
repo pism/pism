@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -90,7 +90,7 @@ protected:
                 const IceModelVec2Stag &Q,
                 IceModelVec2S &P_new) const;
 protected:
-  IceModelVec2S m_P;
+  Array2SGhosted<1> m_P;
   IceModelVec2S m_Pnew;
 private:
   void initialization_message() const;

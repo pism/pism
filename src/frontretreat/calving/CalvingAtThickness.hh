@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,7 +49,7 @@ public:
 protected:
   DiagnosticList diagnostics_impl() const;
   std::shared_ptr<IceModelVec2T> m_calving_threshold;
-  IceModelVec2CellType m_old_mask;
+  Array2CTGhosted<1> m_old_mask;
 };
 
 } // end of namespace calving

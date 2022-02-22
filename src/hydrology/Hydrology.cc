@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -111,7 +111,7 @@ class SubglacialWaterFlux : public DiagAverageRate<Hydrology>
 public:
   SubglacialWaterFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
-      m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
+      m_flux_magnitude(m_grid, "flux_magnitude"){
 
     m_vars = {{m_sys, "subglacial_water_flux"}};
     m_accumulator.metadata()["units"] = "m2";
@@ -275,19 +275,19 @@ Inputs::Inputs() {
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g),
     m_Q(m_grid, "water_flux", WITHOUT_GHOSTS),
-    m_Wtill(m_grid, "tillwat", WITHOUT_GHOSTS),
-    m_W(m_grid, "bwat", WITH_GHOSTS, 1),
-    m_Pover(m_grid, "overburden_pressure", WITHOUT_GHOSTS),
-    m_surface_input_rate(m_grid, "water_input_rate_from_surface", WITHOUT_GHOSTS),
-    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt", WITHOUT_GHOSTS),
-    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS),
-    m_conservation_error_change(m_grid, "conservation_error_change", WITHOUT_GHOSTS),
-    m_grounded_margin_change(m_grid, "grounded_margin_change", WITHOUT_GHOSTS),
-    m_grounding_line_change(m_grid, "grounding_line_change", WITHOUT_GHOSTS),
-    m_input_change(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS),
-    m_no_model_mask_change(m_grid, "no_model_mask_change", WITHOUT_GHOSTS),
-    m_total_change(m_grid, "water_mass_change", WITHOUT_GHOSTS),
-    m_flow_change(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS) {
+    m_Wtill(m_grid, "tillwat"),
+    m_W(m_grid, "bwat"),
+    m_Pover(m_grid, "overburden_pressure"),
+    m_surface_input_rate(m_grid, "water_input_rate_from_surface"),
+    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt"),
+    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow"),
+    m_conservation_error_change(m_grid, "conservation_error_change"),
+    m_grounded_margin_change(m_grid, "grounded_margin_change"),
+    m_grounding_line_change(m_grid, "grounding_line_change"),
+    m_input_change(m_grid, "water_mass_change_due_to_input"),
+    m_no_model_mask_change(m_grid, "no_model_mask_change"),
+    m_total_change(m_grid, "water_mass_change"),
+    m_flow_change(m_grid, "water_mass_change_due_to_flow") {
 
   m_surface_input_rate.set_attrs("internal",
                                  "hydrology model workspace for water input rate from the ice surface",

@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -38,14 +38,13 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
   : SSAFEM(g),
     m_stencil_width(1),
     m_zeta(NULL),
-    m_dzeta_local(m_grid, "d_zeta_local", WITH_GHOSTS, m_stencil_width),
+    m_dzeta_local(m_grid, "d_zeta_local"),
     m_fixed_design_locations(NULL),
     m_design_param(tp),
-    m_du_global(m_grid, "linearization work vector (sans ghosts)",
-                WITHOUT_GHOSTS, m_stencil_width),
+    m_du_global(m_grid, "linearization work vector (sans ghosts)"),
     m_du_local(m_grid, "linearization work vector (with ghosts)",
                WITH_GHOSTS, m_stencil_width),
-    m_hardav(m_grid, "hardav", WITH_GHOSTS, m_stencil_width),
+    m_hardav(m_grid, "hardav"),
     m_element_index(*m_grid),
     m_element(*m_grid, fem::Q1Quadrature4()),
     m_rebuild_J_state(true)

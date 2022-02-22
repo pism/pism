@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,8 +35,8 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(g),
     m_zeta(NULL),
-    m_dzeta_local(m_grid, "d_zeta_local", WITH_GHOSTS, 1),
-    m_tauc_copy(m_grid, "tauc", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_dzeta_local(m_grid, "d_zeta_local"),
+    m_tauc_copy(m_grid, "tauc"),
     m_fixed_tauc_locations(NULL),
     m_tauc_param(tp),
     m_du_global(m_grid, "linearization work vector (sans ghosts)", WITHOUT_GHOSTS),

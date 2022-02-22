@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2022 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,11 +44,11 @@ namespace stressbalance {
  */
 SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
   : SSA(grid),
-    m_bc_mask(grid, "bc_mask", WITH_GHOSTS),
+    m_bc_mask(grid, "bc_mask"),
     m_bc_values(grid, "_bc", WITH_GHOSTS),
     m_gc(*m_config),
     m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
-    m_node_type(m_grid, "node_type", WITH_GHOSTS, 1),
+    m_node_type(m_grid, "node_type"),
     m_boundary_integral(m_grid, "boundary_integral", WITH_GHOSTS, 1),
     m_element_index(*grid),
     m_q1_element(*grid, fem::Q1Quadrature4())

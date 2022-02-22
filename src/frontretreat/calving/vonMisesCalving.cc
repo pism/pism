@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ namespace calving {
 vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
-    m_calving_threshold(m_grid, "vonmises_calving_threshold", WITHOUT_GHOSTS),
+    m_calving_threshold(m_grid, "vonmises_calving_threshold"),
     m_flow_law(flow_law)
 {
 

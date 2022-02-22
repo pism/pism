@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018, 2021 PISM Authors
+// Copyright (C) 2012-2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ private:
   double m_tillwat_max;
   double m_tillwat_decay_rate;
 
-  IceModelVec2S m_Wtill_old;
+  Array2SGhosted<1> m_Wtill_old;
 
   void initialization_message() const;
 };

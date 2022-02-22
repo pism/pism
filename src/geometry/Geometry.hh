@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,8 +27,6 @@
 namespace pism {
 
 class Geometry {
-private:
-  const int m_stencil_width;
 public:
   Geometry(const IceGrid::ConstPtr &grid);
 
@@ -46,17 +44,17 @@ public:
   // Part of ice geometry, but managed by the bed model and the ocean model. From the point of view
   // of the code updating ice geometry, these are inputs. These fields should be filled in before
   // passing a Geometry instance to the code that uses it.
-  IceModelVec2S bed_elevation;
-  IceModelVec2S sea_level_elevation;
+  Array2SGhosted<2> bed_elevation;
+  Array2SGhosted<1> sea_level_elevation;
 
   // the minimal "state"
-  IceModelVec2S ice_thickness;
-  IceModelVec2S ice_area_specific_volume; // previously known as Href
+  Array2SGhosted<2> ice_thickness;
+  Array2SGhosted<1> ice_area_specific_volume;
 
   // redundant fields (can be computed using the ones above)
-  IceModelVec2CellType cell_type;
+  Array2CTGhosted<2> cell_type;
   IceModelVec2S cell_grounded_fraction;
-  IceModelVec2S ice_surface_elevation;
+  Array2SGhosted<2> ice_surface_elevation;
 
   void dump(const char *filename) const;
 };

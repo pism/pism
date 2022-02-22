@@ -24,7 +24,7 @@ namespace bed {
 
 Given::Given(IceGrid::ConstPtr grid)
   : BedDef(grid),
-    m_topg_reference(grid, "topg", WITHOUT_GHOSTS) {
+    m_topg_reference(grid, "topg") {
 
   m_topg_reference.set_attrs("bed_deformation", "reference bed elevation",
                              "meters",

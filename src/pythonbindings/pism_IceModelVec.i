@@ -146,14 +146,30 @@ std::vector<double> interp(int i, int j) {
 %template(DoubleStar) pism::stencils::Star<double>;
 
 %include "util/iceModelVec.hh"
-%include "util/IceModelVec2.hh"
 
+%include "util/IceModelVec2.hh"
 %shared_ptr(pism::IceModelVec2<double>)
 %ignore pism::IceModelVec2< double >::array() const;
 %template(_IceModelVec2double) pism::IceModelVec2<double>;
+
 %include "util/IceModelVec2S.hh"
+%shared_ptr(pism::Array2SGhosted<1>)
+%template(Array2SGhosted1) pism::Array2SGhosted<1>;
+%shared_ptr(pism::Array2SGhosted<2>)
+%template(Array2SGhosted2) pism::Array2SGhosted<2>;
+
 %include "util/IceModelVec2Int.hh"
+%shared_ptr(pism::Array2IGhosted<1>)
+%template(Array2IGhosted1) pism::Array2IGhosted<1>;
+%shared_ptr(pism::Array2IGhosted<2>)
+%template(Array2IGhosted2) pism::Array2IGhosted<2>;
+
 %include "util/IceModelVec2CellType.hh"
+%shared_ptr(pism::Array2CTGhosted<1>)
+%template(Array2CTGhosted1) pism::Array2CTGhosted<1>;
+%shared_ptr(pism::Array2CTGhosted<2>)
+%template(Array2CTGhosted2) pism::Array2CTGhosted<2>;
+
 %include "util/iceModelVec2T.hh"
 
 %shared_ptr(pism::IceModelVec2<Vector2>)

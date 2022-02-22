@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 David Maxwell and Constantine Khroulev
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 David Maxwell and Constantine Khroulev
 #
 # This file is part of PISM.
 #
@@ -259,7 +259,7 @@ def run():
     com = context.com
     PISM.set_abort_on_sigint(True)
 
-    WIDE_STENCIL = int(config.get_number("grid.max_stencil_width"))
+    WIDE_STENCIL = 2
 
     usage = \
         """  pismi.py [-i IN.nc [-o OUT.nc]]/[-a INOUT.nc] [-inv_data inv_data.nc] [-inv_forward model]
@@ -403,14 +403,14 @@ def run():
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
     # Convert design_prior -> zeta_prior
-    zeta_prior = PISM.IceModelVec2S(grid, "zeta_prior", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta_prior = PISM.Array2SGhosted2(grid, "zeta_prior")
     design_param.convertFromDesignVariable(design_prior, zeta_prior)
     vecs.add(zeta_prior, writing=True)
 
     # Determine the initial guess for zeta.  If we are restarting, load it from
     # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
     # If none of the above, copy from 'zeta_prior'.
-    zeta = PISM.IceModelVec2S(grid, "zeta_inv", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta = PISM.Array2SGhosted2(grid, "zeta_inv")
     zeta.set_attrs("diagnostic", "zeta_inv", "1", "1", "zeta_inv", 0)
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
@@ -560,7 +560,7 @@ def run():
     residual.copy_from(u)
     residual.add(-1, vel_ssa_observed)
 
-    r_mag = PISM.IceModelVec2S(grid, "inv_ssa_residual", PISM.WITHOUT_GHOSTS, 0)
+    r_mag = PISM.IceModelVec2S(grid, "inv_ssa_residual")
 
     r_mag.set_attrs("diagnostic",
                     "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",

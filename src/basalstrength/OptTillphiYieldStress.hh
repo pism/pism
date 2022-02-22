@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2021 PISM Authors
+// Copyright (C) 2011--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,9 +53,9 @@ private:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  IceModelVec2S m_mask;
-  IceModelVec2S m_usurf_difference;
-  IceModelVec2S m_usurf_target;
+  Array2SGhosted<1> m_mask;
+  Array2SGhosted<1> m_usurf_difference;
+  Array2SGhosted<1> m_usurf_target;
 
   double m_dphi_scale;
 

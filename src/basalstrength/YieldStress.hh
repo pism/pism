@@ -73,7 +73,7 @@ protected:
 
   DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2S m_basal_yield_stress;
+  Array2SGhosted<2> m_basal_yield_stress;
 
   std::string m_name;
 };

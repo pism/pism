@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,9 +28,9 @@ namespace pism {
 Poisson::Poisson(IceGrid::ConstPtr grid)
   : m_grid(grid),
     m_log(grid->ctx()->log()),
-    m_b(grid, "poisson_rhs", WITHOUT_GHOSTS),
-    m_x(grid, "poisson_x", WITHOUT_GHOSTS),
-    m_mask(grid, "poisson_mask", WITH_GHOSTS){
+    m_b(grid, "poisson_rhs"),
+    m_x(grid, "poisson_x"),
+    m_mask(grid, "poisson_mask"){
 
   m_da = m_x.dm();
 

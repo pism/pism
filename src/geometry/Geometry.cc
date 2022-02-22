@@ -33,16 +33,15 @@ namespace pism {
 Geometry::Geometry(const IceGrid::ConstPtr &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(static_cast<int>(grid->ctx()->config()->get_number("grid.max_stencil_width"))),
-    latitude(grid, "lat", WITHOUT_GHOSTS),
-    longitude(grid, "lon", WITHOUT_GHOSTS),
-    bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),
-    sea_level_elevation(grid, "sea_level", WITH_GHOSTS),
-    ice_thickness(grid, "thk", WITH_GHOSTS, m_stencil_width),
-    ice_area_specific_volume(grid, "ice_area_specific_volume", WITH_GHOSTS),
-    cell_type(grid, "mask", WITH_GHOSTS, m_stencil_width),
-    cell_grounded_fraction(grid, "cell_grounded_fraction", WITHOUT_GHOSTS),
-    ice_surface_elevation(grid, "usurf", WITH_GHOSTS, m_stencil_width) {
+  : latitude(grid, "lat"),
+    longitude(grid, "lon"),
+    bed_elevation(grid, "topg"),
+    sea_level_elevation(grid, "sea_level"),
+    ice_thickness(grid, "thk"),
+    ice_area_specific_volume(grid, "ice_area_specific_volume"),
+    cell_type(grid, "mask"),
+    cell_grounded_fraction(grid, "cell_grounded_fraction"),
+    ice_surface_elevation(grid, "usurf") {
 
   latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
   latitude.set_time_independent(true);

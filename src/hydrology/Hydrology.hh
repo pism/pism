@@ -175,7 +175,7 @@ protected:
   IceModelVec2S m_Wtill;
 
   //! effective thickness of transportable basal water
-  IceModelVec2S m_W;
+  Array2SGhosted<1> m_W;
 
   //! overburden pressure
   IceModelVec2S m_Pover;

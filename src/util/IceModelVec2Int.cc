@@ -22,6 +22,11 @@
 
 namespace pism {
 
+IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec2S(grid, name) {
+  m_impl->interpolation_type = NEAREST;
+}
+
 IceModelVec2Int::IceModelVec2Int(IceGrid::ConstPtr grid, const std::string &name,
                                  IceModelVecKind ghostedp, int width)
   : IceModelVec2S(grid, name, ghostedp, width) {

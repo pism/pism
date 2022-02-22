@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021 PISM Authors
+// Copyright (C) 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -28,9 +28,9 @@ namespace surface {
 
 ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid),
-    m_mass_flux_reference(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_temperature_reference(m_grid, "ice_surface_temp", WITHOUT_GHOSTS),
-    m_surface_reference(m_grid, "usurf", WITHOUT_GHOSTS)
+    m_mass_flux_reference(m_grid, "climatic_mass_balance"),
+    m_temperature_reference(m_grid, "ice_surface_temp"),
+    m_surface_reference(m_grid, "usurf")
 {
   (void) input;
 

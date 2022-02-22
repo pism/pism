@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -132,7 +132,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
   : Component(grid),
     m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
     m_work(m_grid, "work_vector", WITHOUT_GHOSTS, m_grid->z()),
-    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded", WITHOUT_GHOSTS),
+    m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
     m_stress_balance(stress_balance) {
 
   // POSSIBLE standard name = land_ice_enthalpy

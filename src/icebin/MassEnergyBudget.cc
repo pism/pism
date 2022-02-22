@@ -5,11 +5,10 @@
 namespace pism{
 namespace icebin{
 
-
-MassEnthVec2S::MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name,
-                             pism::IceModelVecKind ghostedp, int width)
-  : mass(my_grid, my_name + ".mass", ghostedp, width),
-    enth(my_grid, my_name + ".enth", ghostedp, width)
+MassEnthVec2S::MassEnthVec2S(pism::IceGrid::ConstPtr my_grid,
+                             const std::string &my_name)
+  : mass(my_grid, my_name + ".mass"),
+    enth(my_grid, my_name + ".enth")
 {
   // empty
 }
@@ -28,23 +27,22 @@ void MassEnthVec2S::set_attrs(
                  energy_units, energy_units, standard_name + ".enth", 0);
 }
 
-MassEnergyBudget::MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix,
-                                   pism::IceModelVecKind ghostedp, unsigned int width)
-  : total(grid, prefix+"total", ghostedp, width),
-    basal_frictional_heating(grid, prefix+"basal_frictional_heating", ghostedp, width),
-    strain_heating(grid, prefix+"strain_heating", ghostedp, width),
-    geothermal_flux(grid, prefix+"geothermal_flux", ghostedp, width),
-    upward_geothermal_flux(grid, prefix+"upward_geothermal_flux", ghostedp, width),
-    calving(grid, prefix+"calving", ghostedp, width),
-    icebin_xfer(grid, prefix+"icebin_xfer", ghostedp, width),
-    icebin_deltah(grid, prefix+"icebin_deltah", ghostedp, width),
-    pism_smb(grid, prefix+"pism_smb", ghostedp, width),
-    href_to_h(grid, prefix+"href_to_h", ghostedp, width),
-    nonneg_rule(grid, prefix+"nonneg_rule", ghostedp, width),
-    melt_grounded(grid, prefix+"melt_grounded", ghostedp, width),
-    melt_floating(grid, prefix+"melt_floating", ghostedp, width),
-    internal_advection(grid, prefix+"internal_advection", ghostedp, width),
-    epsilon(grid, prefix+"epsilon", ghostedp, width)
+MassEnergyBudget::MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix)
+  : total(grid, prefix+"total"),
+    basal_frictional_heating(grid, prefix+"basal_frictional_heating"),
+    strain_heating(grid, prefix+"strain_heating"),
+    geothermal_flux(grid, prefix+"geothermal_flux"),
+    upward_geothermal_flux(grid, prefix+"upward_geothermal_flux"),
+    calving(grid, prefix+"calving"),
+    icebin_xfer(grid, prefix+"icebin_xfer"),
+    icebin_deltah(grid, prefix+"icebin_deltah"),
+    pism_smb(grid, prefix+"pism_smb"),
+    href_to_h(grid, prefix+"href_to_h"),
+    nonneg_rule(grid, prefix+"nonneg_rule"),
+    melt_grounded(grid, prefix+"melt_grounded"),
+    melt_floating(grid, prefix+"melt_floating"),
+    internal_advection(grid, prefix+"internal_advection"),
+    epsilon(grid, prefix+"epsilon")
 {
 	printf("MassEnergyBudget(%p)::create()\n", (void*)this);
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -32,15 +32,14 @@
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
-    :
-  m_grid(g),
+BedSmoother::BedSmoother(IceGrid::ConstPtr g)
+    : m_grid(g),
       m_config(g->ctx()->config()),
-      m_topgsmooth(m_grid, "topgsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_maxtl(m_grid, "maxtl", WITH_GHOSTS, MAX_GHOSTS),
-      m_C2(m_grid, "C2bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C3(m_grid, "C3bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C4(m_grid, "C4bedsmooth", WITH_GHOSTS, MAX_GHOSTS)
+      m_topgsmooth(m_grid, "topgsmooth"),
+      m_maxtl(m_grid, "maxtl"),
+      m_C2(m_grid, "C2bedsmooth"),
+      m_C3(m_grid, "C3bedsmooth"),
+      m_C4(m_grid, "C3bedsmooth")
 {
 
   const Logger &log = *m_grid->ctx()->log();

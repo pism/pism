@@ -1642,7 +1642,7 @@ void SSAFD::update_nuH_viewers() {
     return;
   }
 
-  IceModelVec2S tmp(m_grid, "nuH", WITHOUT_GHOSTS);
+  IceModelVec2S tmp(m_grid, "nuH");
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "Pa s m", "", 0);

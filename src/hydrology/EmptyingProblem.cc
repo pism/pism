@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -114,17 +114,17 @@ static void effective_water_velocity(const Geometry &geometry,
 
 EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
   : Component(grid),
-    m_potential(grid, "hydraulic_potential", WITH_GHOSTS, 1),
-    m_tmp(grid, "temporary_storage", WITHOUT_GHOSTS),
-    m_bottom_surface(grid, "ice_bottom_surface", WITHOUT_GHOSTS),
-    m_W(grid, "remaining_water_thickness", WITH_GHOSTS, 1),
+    m_potential(grid, "hydraulic_potential"),
+    m_tmp(grid, "temporary_storage"),
+    m_bottom_surface(grid, "ice_bottom_surface"),
+    m_W(grid, "remaining_water_thickness"),
     m_Vstag(grid, "V_staggered", WITH_GHOSTS),
     m_Qsum(grid, "flux_total", WITH_GHOSTS, 1),
-    m_domain_mask(grid, "domain_mask", WITH_GHOSTS, 1),
+    m_domain_mask(grid, "domain_mask"),
     m_Q(grid, "_water_flux", WITHOUT_GHOSTS),
     m_q_sg(grid, "_effective_water_velocity", WITHOUT_GHOSTS),
-    m_adjustment(grid, "hydraulic_potential_adjustment", WITHOUT_GHOSTS),
-    m_sinks(grid, "sinks", WITHOUT_GHOSTS) {
+    m_adjustment(grid, "hydraulic_potential_adjustment"),
+    m_sinks(grid, "sinks") {
 
   m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential in the steady hydrology model",
                         "Pa", "Pa", "", 0);

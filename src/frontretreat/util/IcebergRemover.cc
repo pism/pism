@@ -31,7 +31,7 @@ namespace calving {
 
 IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
   : Component(g),
-    m_iceberg_mask(m_grid, "iceberg_mask", WITHOUT_GHOSTS){
+    m_iceberg_mask(m_grid, "iceberg_mask"){
 
   m_mask_p0 = m_iceberg_mask.allocate_proc0_copy();
 }

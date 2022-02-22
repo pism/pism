@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,13 +121,13 @@ void IceCompModel::initTestFG() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+    IceModelVec2S bed_topography(m_grid, "topg");
     bed_topography.set(0.0);
 
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    IceModelVec2S bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
 
-    IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+    IceModelVec2S sea_level(m_grid, "sea_level");
     sea_level.set(0.0);
 
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
@@ -137,13 +137,13 @@ void IceCompModel::initTestFG() {
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+  IceModelVec2S bed_topography(m_grid, "topg");
   bed_topography.set(0.0);
 
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  IceModelVec2S bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
-  IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+  IceModelVec2S sea_level(m_grid, "sea_level");
   sea_level.set(0.0);
 
   m_geometry.ice_thickness.set(3000.0);

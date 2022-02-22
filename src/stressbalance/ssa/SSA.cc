@@ -74,7 +74,7 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 SSA::SSA(IceGrid::ConstPtr g)
   : ShallowStressBalance(g),
-    m_mask(m_grid, "ssa_mask", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_mask(m_grid, "ssa_mask"),
     m_taud(m_grid, "taud", WITHOUT_GHOSTS),
     m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
 {
@@ -417,7 +417,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
 IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag"));
   result->metadata() = m_vars[0];
 
   compute_magnitude(model->driving_stress(), *result);

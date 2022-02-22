@@ -364,7 +364,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
   : m_grid(grid), m_config(grid->ctx()->config()),
-    m_temp_mj(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS)
+    m_temp_mj(grid, "temp_mj_faustogreve")
 {
 
   m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");

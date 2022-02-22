@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace calving {
 
 HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
   : Component(grid),
-    m_calving_rate(grid, "hayhurst_calving_rate", WITH_GHOSTS)
+    m_calving_rate(grid, "hayhurst_calving_rate")
 {
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to Hayhurst calving",

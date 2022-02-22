@@ -74,12 +74,12 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
-    m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
-    m_basal_melt_rate(m_grid, "bmelt", WITHOUT_GHOSTS),
-    m_bedtoptemp(m_grid, "bedtoptemp", WITHOUT_GHOSTS),
-    m_velocity_bc_mask(m_grid, "vel_bc_mask", WITH_GHOSTS, m_wide_stencil),
+    m_basal_yield_stress(m_grid, "tauc"),
+    m_basal_melt_rate(m_grid, "bmelt"),
+    m_bedtoptemp(m_grid, "bedtoptemp"),
+    m_velocity_bc_mask(m_grid, "vel_bc_mask"),
     m_velocity_bc_values(m_grid, "_bc", WITH_GHOSTS, m_wide_stencil), // u_bc and v_bc
-    m_ice_thickness_bc_mask(grid, "thk_bc_mask", WITH_GHOSTS),
+    m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
@@ -124,10 +124,8 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
   {
     // 2d work vectors
     for (int j = 0; j < m_n_work2d; j++) {
-      std::shared_ptr<IceModelVec2S> ptr(new IceModelVec2S(m_grid,
-                                                           pism::printf("work_vector_%d", j),
-                                                           WITH_GHOSTS, m_wide_stencil));
-      m_work2d.push_back(ptr);
+      m_work2d.push_back(std::make_shared<Array2SGhosted<2>>(m_grid,
+                                                             pism::printf("work_vector_%d", j)));
     }
   }
 
@@ -706,6 +704,16 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
+int test_bar(Array2SGhosted<1>& input) {
+  return input.grid()->Mx();
+}
+
+void test_foo(IceGrid::ConstPtr grid) {
+  Array2SGhosted<2> foo(grid, "test");
+
+  test_bar(foo);
+}
+
 /*!
  * Note: don't forget to update IceRegionalModel::hydrology_step() if necessary.
  */
@@ -1086,9 +1094,9 @@ void IceModel::reset_diagnostics() {
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const IceGrid::ConstPtr &grid)
-  : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
-    frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
-    forced_retreat(grid, "thickness_change_due_to_forced_retreat", WITHOUT_GHOSTS) {
+  : calving(grid, "thickness_change_due_to_calving"),
+    frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
+    forced_retreat(grid, "thickness_change_due_to_forced_retreat") {
   // empty
 }
 

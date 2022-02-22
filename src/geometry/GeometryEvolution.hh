@@ -154,7 +154,7 @@ protected:
                                               IceModelVec2S              &effective_SMB,
                                               IceModelVec2S              &effective_BMB);
 private:
-  IceModelVec2Int m_no_model_mask;
+  Array2IGhosted<1> m_no_model_mask;
 };
 
 /*!

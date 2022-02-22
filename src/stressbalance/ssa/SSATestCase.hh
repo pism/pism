@@ -101,11 +101,11 @@ protected:
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S m_tauc;
+  Array2SGhosted<1> m_tauc;
   IceModelVec3 m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;
-  IceModelVec2Int m_bc_mask;
+  Array2IGhosted<2> m_bc_mask;
 
   Geometry m_geometry;
 

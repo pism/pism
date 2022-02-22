@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -106,8 +106,8 @@ protected:
   const unsigned int m_stencil_width;
 
   //! temporary storage for eta, theta and the smoothed thickness
-  IceModelVec2S m_work_2d_0;
-  IceModelVec2S m_work_2d_1;
+  Array2SGhosted<1> m_work_2d_0;
+  Array2SGhosted<1> m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
   IceModelVec2Stag m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid

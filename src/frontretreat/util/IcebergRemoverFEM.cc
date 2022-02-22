@@ -34,7 +34,7 @@ namespace calving {
 
 IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
   : IcebergRemover(grid),
-    m_mask(grid, "temporary_mask", WITHOUT_GHOSTS) {
+    m_mask(grid, "temporary_mask") {
   // empty
 }
 

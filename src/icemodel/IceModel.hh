@@ -290,7 +290,7 @@ protected:
   bool m_new_bed_elevation;
 
   //! ghosted
-  IceModelVec2S m_basal_yield_stress;
+  Array2SGhosted<2> m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   IceModelVec2S m_basal_melt_rate;
   //! temperature at the top surface of the bedrock thermal layer
@@ -299,12 +299,12 @@ protected:
   std::shared_ptr<FractureDensity> m_fracture;
 
   //! mask to determine Dirichlet boundary locations for the sliding velocity
-  IceModelVec2Int m_velocity_bc_mask;
+  Array2IGhosted<2> m_velocity_bc_mask;
   //! Dirichlet boundary velocities
   IceModelVec2V m_velocity_bc_values;
 
   //! Mask prescribing locations where ice thickness is held constant
-  IceModelVec2Int m_ice_thickness_bc_mask;
+  Array2IGhosted<1> m_ice_thickness_bc_mask;
 
   // parameters
   //! mass continuity time step, s
@@ -379,7 +379,7 @@ protected:
 
   // working space (a convenience)
   static const int m_n_work2d = 3;
-  mutable std::vector<std::shared_ptr<IceModelVec2S> > m_work2d;
+  mutable std::vector<std::shared_ptr<Array2SGhosted<2>>> m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 

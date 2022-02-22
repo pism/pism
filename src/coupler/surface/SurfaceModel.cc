@@ -35,7 +35,7 @@ namespace pism {
 namespace surface {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass"));
 
   result->set_attrs("climate_forcing", "mass held in the surface layer",
                     "kg", "kg", "", 0);
@@ -47,7 +47,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_thickness", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_thickness"));
 
   result->set_attrs("climate_forcing",
                     "thickness of the surface process layer at the top surface of the ice",
@@ -61,7 +61,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid
 IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPtr grid) {
 
   IceModelVec2S::Ptr result(new IceModelVec2S(grid,
-                                              "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
+                                              "ice_surface_liquid_water_fraction"));
 
   result->set_attrs("climate_forcing",
                     "liquid water fraction of the ice at the top surface",
@@ -74,7 +74,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
 
 IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "climatic_mass_balance", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "climatic_mass_balance"));
 
   result->set_attrs("climate_forcing",
                     "surface mass balance (accumulation/ablation) rate",
@@ -91,7 +91,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "ice_surface_temp", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "ice_surface_temp"));
 
   result->set_attrs("climate_forcing",
                     "temperature of the ice at the ice surface but below firn processes",
@@ -104,7 +104,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux"));
 
   result->set_attrs("diagnostic",
                     "surface accumulation (precipitation minus rain)",
@@ -115,7 +115,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux"));
 
   result->set_attrs("diagnostic",
                     "surface melt",
@@ -126,7 +126,7 @@ IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
 
 IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux"));
 
   result->set_attrs("diagnostic",
                     "surface meltwater runoff",
@@ -467,7 +467,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "climatic_mass_balance"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->mass_flux());
@@ -492,7 +492,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_temp", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_temp"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->temperature());
@@ -512,7 +512,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_liquid_water_fraction", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_liquid_water_fraction"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->liquid_water_fraction());
@@ -532,7 +532,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_mass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_mass", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_mass"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_mass());
@@ -552,7 +552,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_thickness", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_thickness"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_thickness());
@@ -572,7 +572,7 @@ public:
                                         ? "surface_melt_flux"
                                         : "surface_melt_rate",
                                         TOTAL_CHANGE),
-      m_melt_mass(m_grid, "melt_mass", WITHOUT_GHOSTS),
+      m_melt_mass(m_grid, "melt_mass"),
       m_kind(kind)
   {
 
@@ -634,7 +634,7 @@ public:
                                         : "surface_runoff_rate",
                                         TOTAL_CHANGE),
       m_kind(kind),
-      m_runoff_mass(m_grid, "runoff_mass", WITHOUT_GHOSTS) {
+      m_runoff_mass(m_grid, "runoff_mass") {
 
     std::string
       name              = "surface_runoff_flux",
@@ -694,7 +694,7 @@ public:
                                         : "surface_accumulation_rate",
                                         TOTAL_CHANGE),
       m_kind(kind),
-      m_accumulation_mass(m_grid, "accumulation_mass", WITHOUT_GHOSTS) {
+      m_accumulation_mass(m_grid, "accumulation_mass") {
 
     // possible standard name: surface_accumulation_flux
     std::string

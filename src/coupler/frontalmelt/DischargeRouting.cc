@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,9 +27,11 @@ namespace pism {
 namespace frontalmelt {
   
 DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
-  : FrontalMelt(grid, nullptr) {
+  : FrontalMelt(grid, nullptr),
+    m_frontal_melt_rate(grid, "frontal_melt_rate") {
 
-  m_frontal_melt_rate = allocate_frontal_melt_rate(grid, 1);
+  m_frontal_melt_rate.set_attrs("diagnostic", "frontal melt rate",
+                                "m s-1", "m day-1", "", 0);
 
   m_log->message(2,
                  "* Initializing the frontal melt model\n"
@@ -87,7 +89,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
-     &water_flux, m_theta_ocean.get(), m_frontal_melt_rate.get()};
+     &water_flux, m_theta_ocean.get(), &m_frontal_melt_rate};
 
   double
     seconds_per_day = 86400,
@@ -115,11 +117,11 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       double Q_sg = water_flux(i, j) * grid_spacing;
       double q_sg = Q_sg / submerged_front_area * seconds_per_day;
 
-      (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
+      m_frontal_melt_rate(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s
-      (*m_frontal_melt_rate)(i, j) /= seconds_per_day;
+      m_frontal_melt_rate(i, j) /= seconds_per_day;
     } else {
-      (*m_frontal_melt_rate)(i, j) = 0.0;
+      m_frontal_melt_rate(i, j) = 0.0;
     }
   } // end of the loop over grid points
 
@@ -127,7 +129,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   // neighbors: front retreat code uses values at these locations (the rest is for
   // visualization).
 
-  m_frontal_melt_rate->update_ghosts();
+  m_frontal_melt_rate.update_ghosts();
 
   const Direction dirs[] = {North, East, South, West};
 
@@ -136,7 +138,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
-      auto R = m_frontal_melt_rate->star(i, j);
+      auto R = m_frontal_melt_rate.star(i, j);
       auto M = cell_type.star(i, j);
 
       int N = 0;
@@ -151,14 +153,14 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       }
 
       if (N > 0) {
-        (*m_frontal_melt_rate)(i, j) = R_sum / N;
+        m_frontal_melt_rate(i, j) = R_sum / N;
       }
     }
   }
 }
 
 const IceModelVec2S& DischargeRouting::frontal_melt_rate_impl() const {
-  return *m_frontal_melt_rate;
+  return m_frontal_melt_rate;
 }
 
 MaxTimestep DischargeRouting::max_timestep_impl(double t) const {

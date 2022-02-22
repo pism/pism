@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,8 +33,8 @@ namespace hydrology {
 
 Distributed::Distributed(IceGrid::ConstPtr g)
   : Routing(g),
-    m_P(m_grid, "bwp", WITH_GHOSTS, 1),
-    m_Pnew(m_grid, "Pnew_internal", WITHOUT_GHOSTS) {
+    m_P(m_grid, "bwp"),
+    m_Pnew(m_grid, "Pnew_internal") {
 
   // additional variables beyond hydrology::Routing
   m_P.set_attrs("model_state",
@@ -78,7 +78,7 @@ void Distributed::bootstrap_impl(const File &input_file,
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
-    IceModelVec2S sliding_speed(m_grid, "velbase_mag", WITHOUT_GHOSTS);
+    IceModelVec2S sliding_speed(m_grid, "velbase_mag");
     sliding_speed.set_attrs("internal", "basal sliding speed",
                             "m s-1", "m s-1", "", 0);
 

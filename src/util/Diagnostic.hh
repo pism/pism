@@ -181,7 +181,7 @@ public:
     : Diag<M>(m),
     m_factor(1.0),
     m_input_kind(kind),
-    m_accumulator(Diagnostic::m_grid, name + "_accumulator", WITHOUT_GHOSTS),
+    m_accumulator(Diagnostic::m_grid, name + "_accumulator"),
     m_interval_length(0.0),
     m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
@@ -246,7 +246,7 @@ protected:
 
   virtual IceModelVec::Ptr compute_impl() const {
     IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
-                                                "diagnostic", WITHOUT_GHOSTS));
+                                                "diagnostic"));
     result->metadata(0) = Diagnostic::m_vars.at(0);
 
     if (m_interval_length > 0.0) {

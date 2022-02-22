@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,8 +37,8 @@ namespace surface {
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
-    m_target_thickness(m_grid, "thk", WITHOUT_GHOSTS),
-    m_ftt_mask(m_grid, "ftt_mask", WITHOUT_GHOSTS)
+    m_target_thickness(m_grid, "thk"),
+    m_ftt_mask(m_grid, "ftt_mask")
 {
 
   m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");

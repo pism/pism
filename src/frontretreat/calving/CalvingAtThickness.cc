@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,7 +33,7 @@ namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g),
-    m_old_mask(m_grid, "old_mask", WITH_GHOSTS, 1) {
+    m_old_mask(m_grid, "old_mask") {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
   {

@@ -35,9 +35,9 @@ namespace atmosphere {
 
 YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
   : AtmosphereModel(g),
-    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual", WITHOUT_GHOSTS),
-    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS),
-    m_precipitation(m_grid, "precipitation", WITHOUT_GHOSTS) {
+    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
+    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),
+    m_precipitation(m_grid, "precipitation") {
 
   m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
@@ -165,7 +165,7 @@ public:
 private:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_summer", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_summer"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->mean_summer_temp());

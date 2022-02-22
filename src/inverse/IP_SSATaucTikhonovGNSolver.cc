@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,28 +34,28 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   : m_design_stencil_width(d0.stencil_width()),
     m_state_stencil_width(u_obs.stencil_width()),
     m_ssaforward(ssaforward),
-    m_x(d0.grid(), "x", WITH_GHOSTS, m_design_stencil_width),
-    m_tmp_D1Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
-    m_tmp_D2Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
-    m_tmp_D1Local(d0.grid(), "work vector", WITH_GHOSTS, m_design_stencil_width),
-    m_tmp_D2Local(d0.grid(), "work vector", WITH_GHOSTS, m_design_stencil_width),
-    m_tmp_S1Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
-    m_tmp_S2Global(d0.grid(), "work vector", WITHOUT_GHOSTS, 0),
+    m_x(d0.grid(), "x"),
+    m_tmp_D1Global(d0.grid(), "work vector"),
+    m_tmp_D2Global(d0.grid(), "work vector"),
+    m_tmp_D1Local(d0.grid(), "work vector"),
+    m_tmp_D2Local(d0.grid(), "work vector"),
+    m_tmp_S1Global(d0.grid(), "work vector"),
+    m_tmp_S2Global(d0.grid(), "work vector"),
     m_tmp_S1Local(d0.grid(), "work vector", WITH_GHOSTS, m_state_stencil_width),
     m_tmp_S2Local(d0.grid(), "work vector", WITH_GHOSTS, m_state_stencil_width),
-    m_GN_rhs(d0.grid(), "GN_rhs", WITHOUT_GHOSTS, 0),
+    m_GN_rhs(d0.grid(), "GN_rhs"),
     m_d0(d0),
-    m_dGlobal(d0.grid(), "d (sans ghosts)", WITHOUT_GHOSTS, 0),
-    m_d_diff(d0.grid(), "d_diff", WITH_GHOSTS, m_design_stencil_width),
-    m_d_diff_lin(d0.grid(), "d_diff linearized", WITH_GHOSTS, m_design_stencil_width),
-    m_h(d0.grid(), "h", WITH_GHOSTS, m_design_stencil_width),
-    m_hGlobal(d0.grid(), "h (sans ghosts)", WITHOUT_GHOSTS),
-    m_dalpha_rhs(d0.grid(), "dalpha rhs", WITHOUT_GHOSTS),
-    m_dh_dalpha(d0.grid(), "dh_dalpha", WITH_GHOSTS, m_design_stencil_width),
-    m_dh_dalphaGlobal(d0.grid(), "dh_dalpha", WITHOUT_GHOSTS),
-    m_grad_design(d0.grid(), "grad design", WITHOUT_GHOSTS),
-    m_grad_state(d0.grid(), "grad design", WITHOUT_GHOSTS),
-    m_gradient(d0.grid(), "grad design", WITHOUT_GHOSTS),
+    m_dGlobal(d0.grid(), "d (sans ghosts)"),
+    m_d_diff(d0.grid(), "d_diff"),
+    m_d_diff_lin(d0.grid(), "d_diff linearized"),
+    m_h(d0.grid(), "h"),
+    m_hGlobal(d0.grid(), "h (sans ghosts)"),
+    m_dalpha_rhs(d0.grid(), "dalpha rhs"),
+    m_dh_dalpha(d0.grid(), "dh_dalpha"),
+    m_dh_dalphaGlobal(d0.grid(), "dh_dalpha"),
+    m_grad_design(d0.grid(), "grad design"),
+    m_grad_state(d0.grid(), "grad design"),
+    m_gradient(d0.grid(), "grad design"),
     m_u_obs(u_obs),
     m_u_diff(d0.grid(), "du", WITH_GHOSTS, m_state_stencil_width),
     m_eta(eta),
@@ -67,7 +67,7 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
   IceGrid::ConstPtr grid = m_d0.grid();
   m_comm = grid->com;
 
-  m_d.reset(new DesignVec(grid, "d", WITH_GHOSTS, m_design_stencil_width));
+  m_d = std::make_shared<DesignVecGhosted>(grid, "d");
 
   ierr = KSPCreate(grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");

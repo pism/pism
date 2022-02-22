@@ -29,7 +29,7 @@ namespace pism {
 namespace atmosphere {
 
 IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp"));
 
   result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
                     "Kelvin", "Kelvin", "", 0);
@@ -38,7 +38,7 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
 }
 
 IceModelVec2S::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation"));
   result->set_attrs("climate_forcing", "precipitation rate",
                     "kg m-2 second-1", "kg m-2 year-1",
                     "precipitation_flux", 0);
@@ -113,7 +113,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_snapshot", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_snapshot"));
     result->metadata(0) = m_vars[0];
 
     std::vector<double> current_time(1, m_grid->ctx()->time()->current());
@@ -159,7 +159,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->air_temperature());
@@ -184,7 +184,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->precipitation());

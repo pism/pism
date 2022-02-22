@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,8 +28,8 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
     m_stencil_width(stencil_width),
     m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS, 2,
                    m_stencil_width),
-    m_calving_rate(m_grid, "calving_rate", WITHOUT_GHOSTS),
-    m_cell_type(m_grid, "cell_type", WITH_GHOSTS)
+    m_calving_rate(m_grid, "calving_rate"),
+    m_cell_type(m_grid, "cell_type")
 {
 
   m_strain_rates.metadata(0).set_name("eigen1");

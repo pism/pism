@@ -137,7 +137,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 
 IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbar_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbar_mag"));
   result->metadata(0) = m_vars[0];
 
   // compute vertically-averaged horizontal velocity:
@@ -286,7 +286,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velbase_mag"));
   result->metadata(0) = m_vars[0];
 
   compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velbase(model).compute()), *result);
@@ -323,7 +323,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
 IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "velsurf_mag"));
   result->metadata(0) = m_vars[0];
 
   compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
@@ -376,8 +376,8 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2S u_surf(m_grid, "u_surf", WITHOUT_GHOSTS);
-  IceModelVec2S v_surf(m_grid, "v_surf", WITHOUT_GHOSTS);
+  IceModelVec2S u_surf(m_grid, "u_surf");
+  IceModelVec2S v_surf(m_grid, "v_surf");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -522,7 +522,7 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
 IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelsurf", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelsurf"));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
@@ -568,7 +568,7 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
 IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelbase", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wvelbase"));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
@@ -624,8 +624,8 @@ IceModelVec::Ptr PSB_velbase::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2S u_base(m_grid, "u_base", WITHOUT_GHOSTS);
-  IceModelVec2S v_base(m_grid, "v_base", WITHOUT_GHOSTS);
+  IceModelVec2S u_base(m_grid, "u_base");
+  IceModelVec2S v_base(m_grid, "v_base");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -664,7 +664,7 @@ PSB_bfrict::PSB_bfrict(const StressBalance *m)
 
 IceModelVec::Ptr PSB_bfrict::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bfrict", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bfrict"));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->basal_frictional_heating());
@@ -851,7 +851,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
   const IceModelVec3         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2S        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec2S hardness(m_grid, "hardness", WITHOUT_GHOSTS);
+  IceModelVec2S hardness(m_grid, "hardness");
   IceModelVec2V velocity(m_grid, "velocity", WITH_GHOSTS);
 
   averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy,
@@ -1046,7 +1046,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   using std::sqrt;
   using std::pow;
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "vonmises_stress", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "vonmises_stress"));
   result->metadata(0) = m_vars[0];
 
   IceModelVec2S &vonmises_stress = *result;

@@ -73,13 +73,13 @@ protected:
                     const IceModelVec2Int *no_model_mask,
                     IceModelVec2Int &result) const;
 
-  IceModelVec2S m_potential;
+  Array2SGhosted<1> m_potential;
   IceModelVec2S m_tmp;
   IceModelVec2S m_bottom_surface;
-  IceModelVec2S m_W;
+  Array2SGhosted<1> m_W;
   IceModelVec2Stag m_Vstag;
   IceModelVec2Stag m_Qsum;
-  IceModelVec2Int m_domain_mask;
+  Array2IGhosted<1> m_domain_mask;
 
   IceModelVec2V m_Q;
   IceModelVec2V m_q_sg;

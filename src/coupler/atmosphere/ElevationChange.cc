@@ -32,7 +32,7 @@ namespace atmosphere {
 
 ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
-  m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
+  m_surface(grid, "ice_surface_elevation") {
 
   m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.lapse_rate",
                                              "(kg m-2 / s) / m");

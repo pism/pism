@@ -49,7 +49,7 @@ public:
 
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp"));
     result->metadata() = m_vars[0];
     result->copy_from(model->subglacial_water_pressure());
     return result;
@@ -75,7 +75,7 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const {
     double fill_value = m_fill_value;
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel"));
     result->metadata(0) = m_vars[0];
 
     const IceModelVec2S
@@ -114,7 +114,7 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp"));
     result->metadata() = m_vars[0];
 
     const IceModelVec2S
@@ -149,7 +149,7 @@ public:
 
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt"));
     result->metadata() = m_vars[0];
 
     const IceModelVec2S &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
@@ -237,7 +237,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential"));
     result->metadata(0) = m_vars[0];
 
     const IceModelVec2S        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
@@ -264,12 +264,12 @@ Routing::Routing(IceGrid::ConstPtr grid)
     m_Vstag(grid, "water_velocity", WITHOUT_GHOSTS),
     m_Wstag(grid, "W_staggered", WITH_GHOSTS, 1),
     m_Kstag(grid, "K_staggered", WITH_GHOSTS, 1),
-    m_Wnew(grid, "W_new", WITHOUT_GHOSTS),
-    m_Wtillnew(grid, "Wtill_new", WITHOUT_GHOSTS),
-    m_R(grid, "potential_workspace", WITH_GHOSTS, 1), /* box stencil used */
+    m_Wnew(grid, "W_new"),
+    m_Wtillnew(grid, "Wtill_new"),
+    m_R(grid, "potential_workspace"), /* box stencil used */
     m_dx(grid->dx()),
     m_dy(grid->dy()),
-    m_bottom_surface(grid, "ice_bottom_surface_elevation", WITH_GHOSTS) {
+    m_bottom_surface(grid, "ice_bottom_surface_elevation") {
 
   m_W.metadata()["pism_intent"] = "model_state";
 
@@ -565,13 +565,13 @@ void wall_melt(const Routing &model,
                                   "alpha = %f < 1 which is not allowed", alpha);
   }
 
-  IceModelVec2S R(grid, "R", WITH_GHOSTS);
+  Array2SGhosted<1> R(grid, "R");
 
   // R  <-- P + rhow g b
   model.subglacial_water_pressure().add(rg, bed_elevation, R);
   // yes, it updates ghosts
 
-  IceModelVec2S W(grid, "W", WITH_GHOSTS);
+  Array2SGhosted<1> W(grid, "W");
   W.copy_from(model.subglacial_water_thickness());
 
   IceModelVec::AccessList list{&R, &W, &result};

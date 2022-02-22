@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 PISM Authors
+// Copyright (C) 2004--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -89,7 +89,7 @@ read-in-from-file state or with a default constant value from the config file.
 */
 MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
   : YieldStress(grid),
-  m_till_phi(m_grid, "tillphi", WITHOUT_GHOSTS) {
+  m_till_phi(m_grid, "tillphi") {
 
   m_name = "Mohr-Coulomb yield stress model";
 

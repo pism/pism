@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,9 +58,9 @@ protected:
   void init_diagnostics();
 
 private:
-  IceModelVec2Int m_no_model_mask;
-  IceModelVec2S   m_usurf_stored;
-  IceModelVec2S   m_thk_stored;
+  Array2IGhosted<2> m_no_model_mask;
+  Array2SGhosted<2>   m_usurf_stored;
+  Array2SGhosted<1>   m_thk_stored;
 
   std::shared_ptr<energy::CHSystem> m_ch_system;
   IceModelVec3::Ptr m_ch_warming_flux;

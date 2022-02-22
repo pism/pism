@@ -108,7 +108,7 @@ class TestXY(TestCase):
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.IceModelVec2S(grid, "tauc")
         yield_stress.set(0.0)
 
         geometry.bed_elevation.set(0.0)
@@ -326,7 +326,7 @@ class TestXZ(TestCase):
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.IceModelVec2S(grid, "tauc")
 
         yield_stress.set(self.beta)
 
@@ -524,7 +524,7 @@ class TestCFBC(TestCase):
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.IceModelVec2S(grid, "tauc")
         # this value is not important: we use a compensatory term at the base instead of
         # the sliding law
         yield_stress.set(0.0)
@@ -689,7 +689,7 @@ class TestXZvanderVeen(TestCase):
         return grid
 
     def compute(self, grid):
-        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc = PISM.IceModelVec2S(grid, "tauc")
         tauc.set(0.0)
 
         enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
@@ -828,7 +828,7 @@ class TestXZHalfar(TestCase):
         return PISM.IceGrid(ctx.ctx, P)
 
     def compute(self, grid, Mz, coarsening_factor):
-        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc = PISM.IceModelVec2S(grid, "tauc")
         tauc.set(0.0)
 
         enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())

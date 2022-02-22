@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 PISM Authors
+// Copyright (C) 2004--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,9 +36,9 @@ namespace pism {
 */
 OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
   : MohrCoulombYieldStress(grid),
-    m_mask(m_grid, "diff_mask", WITH_GHOSTS),
-    m_usurf_difference(m_grid, "usurf_difference", WITH_GHOSTS),
-    m_usurf_target(m_grid, "usurf", WITH_GHOSTS)
+    m_mask(m_grid, "diff_mask"),
+    m_usurf_difference(m_grid, "usurf_difference"),
+    m_usurf_target(m_grid, "usurf")
 {
   // In this model tillphi is NOT time-independent.
   m_till_phi.set_time_independent(false);

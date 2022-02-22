@@ -79,7 +79,7 @@ namespace stressbalance {
 */
 class BedSmoother {
 public:
-  BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS);
+  BedSmoother(IceGrid::ConstPtr g);
   virtual ~BedSmoother() = default;
 
   void preprocess_bed(const IceModelVec2S &topg);
@@ -97,9 +97,9 @@ protected:
   const Config::ConstPtr m_config;
 
   //! smoothed bed elevation; set by calling preprocess_bed()
-  IceModelVec2S m_topgsmooth;
+  Array2SGhosted<2> m_topgsmooth;
 
-  IceModelVec2S m_maxtl, m_C2, m_C3, m_C4;
+  Array2SGhosted<2> m_maxtl, m_C2, m_C3, m_C4;
 
   /* number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note
     Nx>=1 and Ny>=1 always, unless lambda<=0

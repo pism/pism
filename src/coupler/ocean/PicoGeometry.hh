@@ -108,14 +108,14 @@ private:
   IceModelVec2Int m_continental_shelf;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
-  IceModelVec2Int m_basin_mask;
+  Array2IGhosted<1> m_basin_mask;
 
   // storage for intermediate fields
-  IceModelVec2Int m_distance_gl;
-  IceModelVec2Int m_distance_cf;
-  IceModelVec2Int m_ocean_mask;
+  Array2IGhosted<1> m_distance_gl;
+  Array2IGhosted<1> m_distance_cf;
+  Array2IGhosted<1> m_ocean_mask;
   IceModelVec2Int m_lake_mask;
-  IceModelVec2Int m_ice_rises;
+  Array2IGhosted<1> m_ice_rises;
 
   // temporary storage
   IceModelVec2Int m_tmp;

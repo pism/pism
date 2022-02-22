@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -106,6 +106,8 @@ public:
 
   /// The function space for the design variable, i.e. \f$\tau_c\f$.
   typedef IceModelVec2S DesignVec;
+  typedef Array2SGhosted<1> DesignVecGhosted;
+
   /// The function space for the state variable, \f$u_{\rm SSA}\f$.
   typedef IceModelVec2V StateVec;
 
@@ -175,7 +177,7 @@ protected:
   /// Current value of zeta, provided from caller.
   IceModelVec2S   *m_zeta;
   /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
-  IceModelVec2S   m_dzeta_local;
+  Array2SGhosted<1>   m_dzeta_local;
 
   /// Locations where \f$\tau_c\f$ should not be adjusted.
   IceModelVec2Int *m_fixed_design_locations;
@@ -190,7 +192,7 @@ protected:
   /// Temporary storage when state vectors need to be used with ghosts.
   IceModelVec2V  m_du_local;
   /// Vertically-averaged ice hardness.
-  IceModelVec2S  m_hardav;
+  Array2SGhosted<1>  m_hardav;
 
   fem::ElementIterator m_element_index;
   fem::Q1Element2       m_element;

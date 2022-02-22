@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -78,10 +78,10 @@ protected:
 protected:
   const int m_wide_stencil;
   //! current bed elevation
-  IceModelVec2S m_topg;
+  Array2SGhosted<2> m_topg;
 
   //! bed elevation at the time of the last update
-  IceModelVec2S m_topg_last;
+  Array2SGhosted<2> m_topg_last;
 
   //! bed uplift rate
   IceModelVec2S m_uplift;

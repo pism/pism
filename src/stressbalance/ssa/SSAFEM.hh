@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020, 2021, 2022 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -66,7 +66,7 @@ protected:
     Vector2 driving_stress;
   };
 
-  IceModelVec2Int m_bc_mask;
+  Array2IGhosted<1> m_bc_mask;
   IceModelVec2V m_bc_values;
 
   GeometryCalculator m_gc;
@@ -128,7 +128,7 @@ protected:
   petsc::SNES m_snes;
 
   //! Storage for node types (interior, boundary, exterior).
-  IceModelVec2Int m_node_type;
+  Array2IGhosted<1> m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
   IceModelVec2V m_boundary_integral;
 

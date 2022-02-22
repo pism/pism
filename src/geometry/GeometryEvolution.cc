@@ -79,36 +79,36 @@ struct GeometryEvolution::Impl {
   IceModelVec2Stag flux_staggered;
 
   // Work space
-  IceModelVec2V        input_velocity;       // ghosted copy; not modified
-  IceModelVec2S        bed_elevation;        // ghosted copy; not modified
-  IceModelVec2S        sea_level;            // ghosted copy; not modified
-  IceModelVec2S        ice_thickness;        // ghosted; updated in place
-  IceModelVec2S        area_specific_volume; // ghosted; updated in place
-  IceModelVec2S        surface_elevation;    // ghosted; updated to maintain consistency
-  IceModelVec2CellType cell_type;            // ghosted; updated to maintain consistency
-  IceModelVec2S        residual;             // ghosted; temporary storage
-  IceModelVec2S        thickness;            // ghosted; temporary storage
+  IceModelVec2V      input_velocity;       // a ghosted copy; not modified
+  Array2SGhosted<1>  bed_elevation;        // a copy; not modified
+  Array2SGhosted<1>  sea_level;            // a copy; not modified
+  Array2SGhosted<1>  ice_thickness;        // updated in place
+  Array2SGhosted<1>  area_specific_volume; // updated in place
+  Array2SGhosted<1>  surface_elevation;    // updated to maintain consistency
+  Array2CTGhosted<1> cell_type;            // updated to maintain consistency
+  Array2SGhosted<1>  residual;             // temporary storage
+  Array2SGhosted<1>  thickness;            // temporary storage
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   : profile(grid->ctx()->profiling()),
     gc(*grid->ctx()->config()),
-    flux_divergence(grid, "flux_divergence", WITHOUT_GHOSTS),
-    conservation_error(grid, "conservation_error", WITHOUT_GHOSTS),
-    effective_SMB(grid, "effective_SMB", WITHOUT_GHOSTS),
-    effective_BMB(grid, "effective_BMB", WITHOUT_GHOSTS),
-    thickness_change(grid, "thickness_change", WITHOUT_GHOSTS),
-    ice_area_specific_volume_change(grid, "ice_area_specific_volume_change", WITHOUT_GHOSTS),
+    flux_divergence(grid, "flux_divergence"),
+    conservation_error(grid, "conservation_error"),
+    effective_SMB(grid, "effective_SMB"),
+    effective_BMB(grid, "effective_BMB"),
+    thickness_change(grid, "thickness_change"),
+    ice_area_specific_volume_change(grid, "ice_area_specific_volume_change"),
     flux_staggered(grid, "flux_staggered", WITH_GHOSTS),
     input_velocity(grid, "input_velocity", WITH_GHOSTS),
-    bed_elevation(grid, "bed_elevation", WITH_GHOSTS),
-    sea_level(grid, "sea_level", WITH_GHOSTS),
-    ice_thickness(grid, "ice_thickness", WITH_GHOSTS),
-    area_specific_volume(grid, "area_specific_volume", WITH_GHOSTS),
-    surface_elevation(grid, "surface_elevation", WITH_GHOSTS),
-    cell_type(grid, "cell_type", WITH_GHOSTS),
-    residual(grid, "residual", WITH_GHOSTS),
-    thickness(grid, "thickness", WITH_GHOSTS) {
+    bed_elevation(grid, "bed_elevation"),
+    sea_level(grid, "sea_level"),
+    ice_thickness(grid, "ice_thickness"),
+    area_specific_volume(grid, "area_specific_volume"),
+    surface_elevation(grid, "surface_elevation"),
+    cell_type(grid, "cell_type"),
+    residual(grid, "residual"),
+    thickness(grid, "thickness") {
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -1072,7 +1072,7 @@ public:
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence", WITHOUT_GHOSTS));
+    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "flux_divergence"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->flux_divergence());
@@ -1136,7 +1136,7 @@ DiagnosticList GeometryEvolution::diagnostics_impl() const {
 
 RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid),
-    m_no_model_mask(m_grid, "no_model_mask", WITH_GHOSTS) {
+    m_no_model_mask(m_grid, "no_model_mask") {
 
   m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "", "", 0);
 }

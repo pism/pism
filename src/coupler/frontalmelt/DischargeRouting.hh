@@ -46,7 +46,7 @@ private:
   std::shared_ptr<IceModelVec2T> m_theta_ocean;
 
   // output
-  IceModelVec2S::Ptr m_frontal_melt_rate;
+  Array2SGhosted<1> m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

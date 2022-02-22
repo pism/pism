@@ -35,10 +35,10 @@ namespace bed {
 
 LingleClark::LingleClark(IceGrid::ConstPtr grid)
   : BedDef(grid),
-    m_total_displacement(m_grid, "bed_displacement", WITHOUT_GHOSTS),
-    m_relief(m_grid, "bed_relief", WITHOUT_GHOSTS),
-    m_load_thickness(grid, "load_thickness", WITHOUT_GHOSTS),
-    m_elastic_displacement(grid, "elastic_bed_displacement", WITHOUT_GHOSTS) {
+    m_total_displacement(m_grid, "bed_displacement"),
+    m_relief(m_grid, "bed_relief"),
+    m_load_thickness(grid, "load_thickness"),
+    m_elastic_displacement(grid, "elastic_bed_displacement") {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
   m_t_last = m_grid->ctx()->time()->current();
@@ -89,7 +89,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
                                      Nx, Ny, CELL_CORNER, NOT_PERIODIC);
 
   m_viscous_displacement.reset(new IceModelVec2S(m_extended_grid,
-                                                 "viscous_bed_displacement", WITHOUT_GHOSTS));
+                                                 "viscous_bed_displacement"));
   m_viscous_displacement->set_attrs("model state",
                                     "bed displacement in the viscous half-space "
                                     "bed deformation model; "
@@ -188,7 +188,7 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
  * This method is used for testing only.
  */
 IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_extended_grid, "lrm", WITHOUT_GHOSTS));
+  IceModelVec2S::Ptr result(new IceModelVec2S(m_extended_grid, "lrm"));
 
   int
     Nx = m_extended_grid->Mx(),
