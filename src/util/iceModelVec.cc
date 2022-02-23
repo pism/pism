@@ -181,6 +181,13 @@ void IceModelVec::set_begin_access_use_dof(bool flag) {
   m_impl->begin_access_use_dof = flag;
 }
 
+void IceModelVec::set_interpolation_type(InterpolationType type) {
+  if (not (type == LINEAR or type == NEAREST)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid interpolation type: %d", (int)type);
+  }
+  m_impl->interpolation_type = type;
+}
 
 //! Result: min <- min(v[j]), max <- max(v[j]).
 /*!

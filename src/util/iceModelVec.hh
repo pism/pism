@@ -31,6 +31,7 @@
 
 namespace pism {
 
+enum InterpolationType : int;
 class IceGrid;
 class File;
 class SpatialVariableMetadata;
@@ -272,6 +273,7 @@ public:
   int state_counter() const;
   void inc_state_counter();
   void set_time_independent(bool flag);
+  void set_interpolation_type(InterpolationType type);
 
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
 
