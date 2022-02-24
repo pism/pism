@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021 PISM Authors
+/* Copyright (C) 2018, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,10 +75,10 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
 
   (void) full_update;
 
-  const IceModelVec2S        &H         = inputs.geometry->ice_thickness;
-  const IceModelVec2S        &h         = inputs.geometry->ice_surface_elevation;
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
-  const IceModelVec3         &enthalpy  = *inputs.enthalpy;
+  const IceModelVec2S &H         = inputs.geometry->ice_thickness;
+  const IceModelVec2S &h         = inputs.geometry->ice_surface_elevation;
+  const auto          &cell_type = inputs.geometry->cell_type;
+  const IceModelVec3  &enthalpy  = *inputs.enthalpy;
 
   double n   = m_flow_law->exponent();
   double A_s = m_config->get_number("stress_balance.weertman_sliding.A", "Pa-3 s-1 m-2");

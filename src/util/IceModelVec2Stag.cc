@@ -52,7 +52,7 @@ std::array<double,2> absmax(const IceModelVec2Stag &input) {
   return {result[0], result[1]};
 }
 
-void staggered_to_regular(const IceModelVec2CellType &cell_type,
+void staggered_to_regular(const CellTypeArray1 &cell_type,
                           const IceModelVec2Stag &input,
                           bool include_floating_ice,
                           IceModelVec2S &result) {
@@ -99,7 +99,7 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
   }
 }
 
-void staggered_to_regular(const IceModelVec2CellType &cell_type,
+void staggered_to_regular(const CellTypeArray1 &cell_type,
                           const IceModelVec2Stag &input,
                           bool include_floating_ice,
                           IceModelVec2V &result) {

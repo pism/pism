@@ -25,7 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
 class IceModelVec2S;
 
 namespace calving {
@@ -54,11 +53,11 @@ public:
   virtual ~IcebergRemover() = default;
 
   void update(const IceModelVec2S &bc_mask,
-              IceModelVec2CellType &pism_mask,
+              CellTypeArray1 &cell_type,
               IceModelVec2S &ice_thickness);
 protected:
   virtual void update_impl(const IceModelVec2S &bc_mask,
-                           IceModelVec2CellType &pism_mask,
+                           CellTypeArray1 &cell_type,
                            IceModelVec2S &ice_thickness);
 
 

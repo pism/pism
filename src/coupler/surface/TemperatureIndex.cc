@@ -260,8 +260,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     m_air_temp_sd->init_interpolation(ts);
   }
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
-  const IceModelVec2S        &H    = geometry.ice_thickness;
+  const auto &mask = geometry.cell_type;
+  const auto &H    = geometry.ice_thickness;
 
   IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
                                &m_firn_depth, &m_snow_depth,

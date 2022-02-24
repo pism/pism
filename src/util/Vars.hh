@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2009, 2010, 2013, 2014, 2015, 2016, 2017, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,8 +30,8 @@ class IceModelVec;
 class IceModelVec2S;
 class IceModelVec2V;
 class IceModelVec2S;
-class IceModelVec2CellType;
 class IceModelVec3;
+using CellTypeArray0 = class CellTypeArray;
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
@@ -45,18 +45,18 @@ public:
 
   const IceModelVec* get(const std::string &name) const;
   const IceModelVec2S* get_2d_scalar(const std::string &name) const;
-  const IceModelVec2V* get_2d_vector(const std::string &name) const;
   const IceModelVec2S* get_2d_mask(const std::string &name) const;
-  const IceModelVec2CellType* get_2d_cell_type(const std::string &name) const;
+  const IceModelVec2V* get_2d_vector(const std::string &name) const;
+  const CellTypeArray0* get_2d_cell_type(const std::string &name) const;
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
 
   typedef std::shared_ptr<IceModelVec> VecPtr;
   typedef std::shared_ptr<IceModelVec2S> Vec2SPtr;
-  typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
   typedef std::shared_ptr<IceModelVec2S> Vec2IntPtr;
-  typedef std::shared_ptr<IceModelVec2CellType> Vec2CellTypePtr;
+  typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
+  typedef std::shared_ptr<CellTypeArray0> Vec2CellTypePtr;
   typedef std::shared_ptr<IceModelVec3> Vec3Ptr;
 
   void add_shared(VecPtr);

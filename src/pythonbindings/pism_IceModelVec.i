@@ -16,7 +16,6 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec2S)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
-%shared_ptr(pism::IceModelVec2CellType)
 %shared_ptr(pism::IceModelVec2Stag)
 %shared_ptr(pism::IceModelVec3)
 
@@ -156,11 +155,10 @@ std::vector<double> interp(int i, int j) {
 %shared_ptr(pism::Array2SGhosted<2>)
 %template(Array2SGhosted2) pism::Array2SGhosted<2>;
 
+%shared_ptr(pism::CellTypeArray)
+%shared_ptr(pism::CellTypeArray1)
+%shared_ptr(pism::CellTypeArray2)
 %include "util/IceModelVec2CellType.hh"
-%shared_ptr(pism::Array2CTGhosted<1>)
-%template(Array2CTGhosted1) pism::Array2CTGhosted<1>;
-%shared_ptr(pism::Array2CTGhosted<2>)
-%template(Array2CTGhosted2) pism::Array2CTGhosted<2>;
 
 %include "util/iceModelVec2T.hh"
 

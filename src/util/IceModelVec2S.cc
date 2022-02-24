@@ -25,12 +25,15 @@
 
 namespace pism {
 
+// protected constructor
 IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
-                             IceModelVecKind ghostedp, int width)
-  : IceModelVec2<double>(grid, name, ghostedp, width) {
+                             int width)
+  : IceModelVec2<double>(grid, name,
+                         width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS, width) {
   // empty
 }
 
+// public constructor
 IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name)
   : IceModelVec2<double>(grid, name, WITHOUT_GHOSTS, 1) {
   // empty

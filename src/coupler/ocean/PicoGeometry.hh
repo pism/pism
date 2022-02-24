@@ -29,8 +29,6 @@
 namespace pism {
 
 class IceModelVec2S;
-class IceModelVec2CellType;
-
 
 namespace ocean {
 
@@ -45,7 +43,8 @@ public:
   virtual ~PicoGeometry() = default;
 
   void init();
-  void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
+  void update(const IceModelVec2S &bed_elevation,
+              const CellTypeArray1 &cell_type);
 
   const IceModelVec2S &continental_shelf_mask() const;
   const IceModelVec2S &box_mask() const;
@@ -56,9 +55,10 @@ public:
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
 private:
-  void compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises, IceModelVec2S &result);
-  void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2S &result);
-  void compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2S &result);
+  void compute_ice_rises(const CellTypeArray0 &cell_type,
+                         bool exclude_ice_rises, IceModelVec2S &result);
+  void compute_lakes(const CellTypeArray0 &cell_type, IceModelVec2S &result);
+  void compute_ocean_mask(const CellTypeArray0 &cell_type, IceModelVec2S &result);
   void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
                                       const IceModelVec2S &ice_rise_mask,
                                       double bed_elevation_threshold,
@@ -67,17 +67,17 @@ private:
                               const IceModelVec2S &lake_mask,
                               IceModelVec2S &result);
 
-  std::map<int,std::set<int> > basin_neighbors(const IceModelVec2CellType &cell_type,
+  std::map<int,std::set<int> > basin_neighbors(const CellTypeArray1 &cell_type,
                                                const IceModelVec2S &basin_mask);
 
-  void identify_calving_front_connection(const IceModelVec2CellType &cell_type,
+  void identify_calving_front_connection(const CellTypeArray1 &cell_type,
                                          const IceModelVec2S &basin_mask,
                                          const IceModelVec2S &shelf_mask,
                                          int n_shelves,
                                          std::vector<int> &most_shelf_cells_in_basin,
                                          std::vector<int> &cfs_in_basins_per_shelf);
 
-  void split_ice_shelves(const IceModelVec2CellType &cell_type,
+  void split_ice_shelves(const CellTypeArray0 &cell_type,
                          const IceModelVec2S &basin_mask,
                          const std::map<int, std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,

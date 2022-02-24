@@ -120,7 +120,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_basal_melt_rate,
       &m_conservation_error_change};

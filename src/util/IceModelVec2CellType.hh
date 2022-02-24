@@ -22,17 +22,31 @@
 
 #include "IceModelVec2S.hh"
 #include "Mask.hh"
+#include "interpolation.hh"
+#include "VariableMetadata.hh"
 
 namespace pism {
 
 //! "Cell type" mask. Adds convenience methods to IceModelVec2S.
-class IceModelVec2CellType : public IceModelVec2S {
+/*!
+ * We could achieve this with one template parameter (stencil width), but SWIG can't handle
+ * `class CellTypeArray2 : public std::conditional<width != 0, CellTypeArray2<width-1>, IceModelVec2S>::type ...`
+
+ */
+class CellTypeArray : public IceModelVec2S {
+protected:
+  CellTypeArray(IceGrid::ConstPtr grid, const std::string &name, int w)
+    : IceModelVec2S(grid, name, w) {
+    // empty
+  }
 public:
+  typedef std::shared_ptr<CellTypeArray> Ptr;
+  typedef std::shared_ptr<const CellTypeArray> ConstPtr;
 
-  typedef std::shared_ptr<IceModelVec2CellType> Ptr;
-  typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
-
-  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name);
+  CellTypeArray(IceGrid::ConstPtr grid, const std::string &name)
+    : IceModelVec2S(grid, name) {
+    IceModelVec2S::set_interpolation_type(NEAREST);
+  }
 
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
@@ -96,28 +110,35 @@ public:
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
-protected:
-  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
-                       int width);
 };
 
-template<int width>
-class Array2CTGhosted : public IceModelVec2CellType {
+class CellTypeArray1 : public CellTypeArray {
 public:
-  Array2CTGhosted(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec2CellType(grid, name, width) {
+  CellTypeArray1(IceGrid::ConstPtr grid, const std::string &name)
+    : CellTypeArray(grid, name, 1) {
     // empty
   }
-
-  // Allow implicit casting to a reference to an array with a smaller stencil width:
-  template <int smaller_width>
-  operator Array2CTGhosted<smaller_width>&() {
-    static_assert(smaller_width < width, "cannot increase stencil width");
-    return *this;
+protected:
+  CellTypeArray1(IceGrid::ConstPtr grid, const std::string &name, int width)
+    : CellTypeArray(grid, name, width) {
+    // empty
   }
 };
 
-} // end of namespace pism
+class CellTypeArray2 : public CellTypeArray1 {
+public:
+  CellTypeArray2(IceGrid::ConstPtr grid, const std::string &name)
+    : CellTypeArray1(grid, name, 2) {
+    // empty
+  }
+};
 
+using CellTypeArray0 = class CellTypeArray;
+
+std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray0 &source);
+std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray1 &source);
+std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray2 &source);
+
+} // end of namespace pism
 
 #endif /* ICEMODELVEC2CELLTYPE_H */

@@ -63,7 +63,7 @@ void Given::init_impl(const Geometry &geometry) {
 
 void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   // fill m_frontal_melt_rate with values read from an file
   m_frontal_melt_rate->update(t, dt);

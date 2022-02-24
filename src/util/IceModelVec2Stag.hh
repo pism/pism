@@ -25,6 +25,7 @@
 namespace pism {
 
 class IceModelVec2V;
+class CellTypeArray1;
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
@@ -60,8 +61,6 @@ inline stencils::Star<double> IceModelVec2Stag::star(int i, int j) const {
 
 std::array<double,2> absmax(const IceModelVec2Stag &input);
 
-class IceModelVec2CellType;
-
 /*!
  * Average a scalar field from the staggered grid onto the regular grid by considering
  * only ice-covered grid.
@@ -69,7 +68,7 @@ class IceModelVec2CellType;
  * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
  * icy cells only.
  */
-void staggered_to_regular(const IceModelVec2CellType &cell_type,
+void staggered_to_regular(const CellTypeArray1 &cell_type,
                           const IceModelVec2Stag &input,
                           bool include_floating_ice,
                           IceModelVec2S &result);
@@ -81,7 +80,7 @@ void staggered_to_regular(const IceModelVec2CellType &cell_type,
  * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
  * icy cells only.
  */
-void staggered_to_regular(const IceModelVec2CellType &cell_type,
+void staggered_to_regular(const CellTypeArray1 &cell_type,
                           const IceModelVec2Stag &input,
                           bool include_floating_ice,
                           IceModelVec2V &result);

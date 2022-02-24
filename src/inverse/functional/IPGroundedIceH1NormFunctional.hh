@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,9 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
+using CellTypeArray0 = class CellTypeArray;
+class CellTypeArray1;
+class CellTypeArray2;
 
 namespace inverse {
 
@@ -44,7 +46,7 @@ namespace inverse {
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IPGroundedIceH1NormFunctional2S(IceGrid::ConstPtr grid, double cL2, 
-                                  double cH1, IceModelVec2CellType &ice_mask,
+                                  double cH1, CellTypeArray1 &ice_mask,
                                   IceModelVec2S *dirichletLocations=NULL)
     : IPInnerProductFunctional<IceModelVec2S>(grid),
     m_cL2(cL2),
@@ -63,7 +65,7 @@ protected:
 
   double m_cL2, m_cH1;
   IceModelVec2S *m_dirichletIndices;
-  IceModelVec2CellType &m_ice_mask;
+  CellTypeArray1 &m_ice_mask;
 
 private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);

@@ -37,7 +37,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   (void) t;
   (void) dt;
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   const double
     melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");

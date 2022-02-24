@@ -36,7 +36,7 @@ public:
   IcebergRemoverFEM(IceGrid::ConstPtr g);
 private:
   void update_impl(const IceModelVec2S &bc_mask,
-                   IceModelVec2CellType &pism_mask,
+                   CellTypeArray1 &cell_type,
                    IceModelVec2S &ice_thickness);
   IceModelVec2S m_mask;
 };

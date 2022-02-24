@@ -57,7 +57,7 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::update(const IceModelVec2CellType &cell_type,
+void EigenCalving::update(const CellTypeArray0 &cell_type,
                           const IceModelVec2V &ice_velocity) {
 
   // make a copy with a wider stencil

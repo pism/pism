@@ -32,7 +32,7 @@
 namespace pism {
 
 class IceGrid;
-class IceModelVec2S;
+template<typename T> class IceModelVec2;
 
 struct Vector3 {
   double x, y, z;
@@ -207,7 +207,7 @@ public:
   }
 
   /*! @brief Get nodal values of an integer mask. */
-  void nodal_values(const IceModelVec2S &x_global, int *result) const;
+  void nodal_values(const IceModelVec2<double> &x_global, int *result) const;
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
     into the element-local array `result`.

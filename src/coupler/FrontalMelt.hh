@@ -26,9 +26,8 @@
 namespace pism {
 
 class IceModelVec2S;
-class IceModelVec2CellType;
 class Geometry;
-  
+
 class FrontalMeltInputs {
 public:
   FrontalMeltInputs();
@@ -81,7 +80,7 @@ protected:
 protected:
   std::shared_ptr<FrontalMelt> m_input_model;
 
-  bool apply(const IceModelVec2CellType &M, int i, int j);
+  bool apply(const CellTypeArray0 &M, int i, int j);
 
   IceModelVec2S m_retreat_rate;
   bool m_include_floating_ice;

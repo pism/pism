@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,6 @@ class FlowLaw;
 
 class IceGrid;
 class IceBasalResistancePlasticLaw;
-class IceModelVec2CellType;
 
 namespace stressbalance {
 
@@ -57,7 +56,7 @@ public:
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
-                                        const IceModelVec2CellType &mask,
+                                        const CellTypeArray0 &mask,
                                         IceModelVec2S &result) const;
   // helpers:
 

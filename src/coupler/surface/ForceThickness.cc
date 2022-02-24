@@ -225,7 +225,7 @@ a factor of five smaller than the default, and one with a forcing at a higher al
  */
 void ForceThickness::adjust_mass_flux(double time,
                                       const IceModelVec2S &ice_thickness,
-                                      const IceModelVec2CellType &cell_type,
+                                      const CellTypeArray0 &cell_type,
                                       IceModelVec2S &result) const {
 
   if (time < m_start_time) {

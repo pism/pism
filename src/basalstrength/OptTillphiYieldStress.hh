@@ -25,8 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
-
 //! Iterative optimization of the till friction angle.
 class OptTillphiYieldStress : public MohrCoulombYieldStress {
 public:
@@ -38,7 +36,7 @@ private:
 
   void update_tillphi(const IceModelVec2S &ice_surface_elevation,
                       const IceModelVec2S &bed_topography,
-                      const IceModelVec2CellType &mask);
+                      const CellTypeArray0 &mask);
 
   void init_t_last(const File &input_file);
   void init_usurf_target(const File &input_file);

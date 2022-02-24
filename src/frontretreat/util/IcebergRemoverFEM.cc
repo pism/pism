@@ -64,19 +64,19 @@ IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
  *
  */
 void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
-                                    IceModelVec2CellType &pism_mask,
+                                    CellTypeArray1 &cell_type,
                                     IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
     mask_floating_ice = 2;
 
   int bc_mask_nodal[fem::q1::n_chi];
-  int pism_mask_nodal[fem::q1::n_chi];
+  int cell_type_nodal[fem::q1::n_chi];
 
   assert(bc_mask.stencil_width() >= 1);
-  assert(pism_mask.stencil_width() >= 1);
+  assert(cell_type.stencil_width() >= 1);
 
-  IceModelVec::AccessList list{&bc_mask, &pism_mask, &m_iceberg_mask};
+  IceModelVec::AccessList list{&bc_mask, &cell_type, &m_iceberg_mask};
 
   fem::Q1Element2 element(*m_grid, fem::Q1Quadrature1());
 
@@ -90,12 +90,12 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
       element.reset(i, j);
       // the following two calls use ghost values
       element.nodal_values(bc_mask, bc_mask_nodal);
-      element.nodal_values(pism_mask, pism_mask_nodal);
+      element.nodal_values(cell_type, cell_type_nodal);
 
       // check if all nodes are icy
       bool icy = true;
       for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-        icy &= mask::icy(pism_mask_nodal[n]);
+        icy &= mask::icy(cell_type_nodal[n]);
       }
 
       if (icy) {
@@ -103,7 +103,7 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
         // set of Dirichlet nodes
         bool grounded = true;
         for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-          grounded &= (mask::grounded(pism_mask_nodal[n]) or bc_mask_nodal[n] == 1);
+          grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
         }
 
         m_iceberg_mask(i, j) = grounded ? mask_grounded_ice : mask_floating_ice;
@@ -159,19 +159,19 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
 
         // the following two calls use ghost values
         element.nodal_values(bc_mask, bc_mask_nodal);
-        element.nodal_values(pism_mask, pism_mask_nodal);
+        element.nodal_values(cell_type, cell_type_nodal);
 
         // check if all nodes are icy
         bool icy = true;
         for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-          icy &= mask::icy(pism_mask_nodal[n]);
+          icy &= mask::icy(cell_type_nodal[n]);
         }
 
         if (icy) {
           // check if all nodes are grounded or are a part of the set of Dirichlet nodes
           bool grounded = true;
           for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-            grounded &= (mask::grounded(pism_mask_nodal[n]) or bc_mask_nodal[n] == 1);
+            grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
           }
 
           if (m_iceberg_mask(i, j) == 1) {
@@ -194,14 +194,14 @@ void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
 
       if (m_mask(i, j) > 0) {
         ice_thickness(i,j) = 0.0;
-        pism_mask(i,j)          = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)          = MASK_ICE_FREE_OCEAN;
       }
     }
   }
 
   // update ghosts of the mask and the ice thickness (then surface
   // elevation can be updated redundantly)
-  pism_mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

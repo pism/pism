@@ -473,7 +473,7 @@ void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
 bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
 
 void bedrock_surface_temperature(const IceModelVec2S &sea_level,
-                                 const IceModelVec2CellType &cell_type,
+                                 const CellTypeArray0 &cell_type,
                                  const IceModelVec2S &bed_topography,
                                  const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &basal_enthalpy,

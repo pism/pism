@@ -131,13 +131,13 @@ protected:
 
   virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
                                       const IceModelVec2S &surface_elevation,
-                                      const IceModelVec2CellType &cell_type,
+                                      const CellTypeArray1 &cell_type,
                                       const IceModelVec2S *no_model_mask,
                                       IceModelVec2V &result) const;
 
   virtual void solve(const Inputs &inputs) = 0;
 
-  Array2CTGhosted<2> m_mask;
+  CellTypeArray2 m_mask;
   IceModelVec2V m_taud;
 
   std::string m_stdout_ssa;

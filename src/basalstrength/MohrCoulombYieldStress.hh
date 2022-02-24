@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,13 +21,9 @@
 
 #include "YieldStress.hh"
 
-#include "pism/util/iceModelVec.hh"
-
 namespace pism {
 
 class IceModelVec2T;
-
-class IceModelVec2CellType;
 
 //! @brief PISM's default basal yield stress model which applies the
 //! Mohr-Coulomb model of deformable, pressurized till.
@@ -62,7 +58,7 @@ private:
   void till_friction_angle(const IceModelVec2S &basal_yield_stress,
                            const IceModelVec2S &till_water_thickness,
                            const IceModelVec2S &ice_thickness,
-                           const IceModelVec2CellType &cell_type,
+                           const CellTypeArray0 &cell_type,
                            IceModelVec2S &result);
 };
 

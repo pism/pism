@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ public:
   virtual void init();
   virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
                                       const IceModelVec2S &surface_elevation,
-                                      const IceModelVec2CellType &cell_type,
+                                      const CellTypeArray1 &cell_type,
                                       const IceModelVec2S *no_model_mask,
                                       IceModelVec2V &result) const;
 

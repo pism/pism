@@ -81,11 +81,11 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &ice_thickness       = inputs.geometry->ice_thickness;
-  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
-  const IceModelVec2S        &water_flux          = *inputs.subglacial_water_flux;
+  const auto          &cell_type           = inputs.geometry->cell_type;
+  const IceModelVec2S &bed_elevation       = inputs.geometry->bed_elevation;
+  const IceModelVec2S &ice_thickness       = inputs.geometry->ice_thickness;
+  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const IceModelVec2S &water_flux          = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,

@@ -94,7 +94,7 @@ void vonMisesCalving::init() {
 /*!
   See equation (4) in [@ref Morlighem2016].
 */
-void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
+void vonMisesCalving::update(const CellTypeArray1 &cell_type,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2V &ice_velocity,
                              const IceModelVec3 &ice_enthalpy) {

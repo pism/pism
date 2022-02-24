@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2022 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -374,7 +374,7 @@ void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
  * mask, and bed fields.)
  */
 void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                      const IceModelVec2CellType &cell_type,
+                                      const CellTypeArray2 &cell_type,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double
     dx = m_grid->dx(),
@@ -385,7 +385,7 @@ void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
-  const IceModelVec2CellType &mask = cell_type;
+  const auto &mask = cell_type;
 
   IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
 
@@ -558,7 +558,7 @@ void SIAFD::compute_diffusivity(bool full_update,
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
+  const auto &mask = geometry.cell_type;
   IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
 
   result.set(0.0);
@@ -823,7 +823,7 @@ void SIAFD::compute_I(const Geometry &geometry) {
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
+  const auto &mask = geometry.cell_type;
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 

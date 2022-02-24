@@ -83,7 +83,7 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
                                                 "ice_margin_pressure_difference");
   result->metadata(0) = m_vars[0];
 
-  Array2CTGhosted<1> mask(m_grid, "mask");
+  CellTypeArray1 mask(m_grid, "mask");
 
   auto &H         = model->geometry().ice_thickness;
   auto &bed       = model->geometry().bed_elevation;
@@ -174,7 +174,7 @@ protected:
   AreaType m_kind;
   void update_impl(double dt) {
     const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const auto &cell_type = model->geometry().cell_type;
 
     double ice_density = m_config->get_number("constants.ice.density");
 
@@ -239,7 +239,7 @@ IceModelVec::Ptr HardnessAverage::compute_impl() const {
   auto result = std::make_shared<IceModelVec2S>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
@@ -651,7 +651,7 @@ IceModelVec::Ptr TemperatureBasal::compute_impl() const {
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   IceModelVec::AccessList list{&cell_type, result.get(), &thickness};
 
@@ -801,7 +801,7 @@ IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
   auto result = std::make_shared<IceModelVec2S>(m_grid, "tempicethk");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
 
@@ -877,7 +877,7 @@ IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
   const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
 
@@ -1407,7 +1407,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const auto &cell_type = model->geometry().cell_type;
 
     const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
 
@@ -1445,7 +1445,7 @@ public:
   }
 
   double compute() {
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const auto &cell_type = model->geometry().cell_type;
 
     const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
 
@@ -1566,7 +1566,7 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
     ice_density = config.get_number("constants.ice.density"),
     cell_area   = grid.cell_area();
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const IceModelVec2S *thickness_change = nullptr;
 
@@ -1971,7 +1971,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
     &surface_elevation = model->geometry().ice_surface_elevation,
     &bed_topography    = model->geometry().bed_elevation;
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   IceModelVec::AccessList list{&thickness, &surface_elevation, &bed_topography, &cell_type,
       result.get()};
@@ -2052,7 +2052,7 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   auto &sea_level      = model->geometry().sea_level_elevation;
   auto &bed_topography = model->geometry().bed_elevation;
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                                  ice_thickness, bed_topography,
@@ -2135,7 +2135,7 @@ IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
   auto result = std::make_shared<IceModelVec2S>(m_grid, "height_above_flotation");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -2198,7 +2198,7 @@ IceModelVec::Ptr IceMass::compute_impl() const {
   auto result = std::make_shared<IceModelVec2S>(m_grid, "ice_mass");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const double
     ice_density = m_config->get_number("constants.ice.density");
@@ -2403,7 +2403,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
     dy = m_grid->dy();
   const std::vector<double> &z = m_grid->z();
 
-  const IceModelVec2CellType &mask = model->geometry().cell_type;
+  const CellTypeArray1 &mask = model->geometry().cell_type;
 
   IceModelVec::AccessList list{&U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get()};
 
@@ -2436,7 +2436,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
         *w_s = W.get_column(i, j - 1),
         *w_w = W.get_column(i - 1, j);
 
-      auto m = mask.star(i, j);
+      auto m = mask.star_int(i, j);
       const unsigned int
         east  = ice_free(m.e) ? 0 : 1,
         west  = ice_free(m.w) ? 0 : 1,

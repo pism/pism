@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -151,7 +151,7 @@ void ZeroSliding::update(const Inputs &inputs, bool full_update) {
  */
 void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &V,
                                                             const IceModelVec2S &tauc,
-                                                            const IceModelVec2CellType &mask,
+                                                            const CellTypeArray0 &mask,
                                                             IceModelVec2S &result) const {
 
   IceModelVec::AccessList list{&V, &result, &tauc, &mask};
@@ -269,9 +269,9 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2V        &velocity = model->velocity();
-  const IceModelVec2S        *tauc     = m_grid->variables().get_2d_scalar("tauc");
-  const IceModelVec2CellType &mask     = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &velocity = model->velocity();
+  const auto *tauc     = m_grid->variables().get_2d_scalar("tauc");
+  const auto &mask     = *m_grid->variables().get_2d_cell_type("mask");
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 

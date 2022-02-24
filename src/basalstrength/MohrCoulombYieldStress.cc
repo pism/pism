@@ -285,9 +285,9 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
     &W_subglacial  = *inputs.subglacial_water_thickness,
     &ice_thickness = inputs.geometry->ice_thickness;
 
-  const IceModelVec2CellType &cell_type      = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_topography = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &sea_level      = inputs.geometry->sea_level_elevation;
+  const auto &cell_type      = inputs.geometry->cell_type;
+  const auto &bed_topography = inputs.geometry->bed_elevation;
+  const auto &sea_level      = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
                                &bed_topography, &sea_level, &ice_thickness};
@@ -405,7 +405,7 @@ void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &bed_topogr
 void MohrCoulombYieldStress::till_friction_angle(const IceModelVec2S &basal_yield_stress,
                                                  const IceModelVec2S &till_water_thickness,
                                                  const IceModelVec2S &ice_thickness,
-                                                 const IceModelVec2CellType &cell_type,
+                                                 const CellTypeArray0 &cell_type,
                                                  IceModelVec2S &result) {
 
   MohrCoulombPointwise mc(m_config);

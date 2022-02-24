@@ -977,7 +977,7 @@ class PrincipalStrainRates(TestCase):
         return velocity
 
     def create_cell_type(self, grid):
-        cell_type = PISM.Array2CTGhosted1(grid, "cell_type")
+        cell_type = PISM.CellTypeArray1(grid, "cell_type")
         cell_type.set(PISM.MASK_GROUNDED)
         cell_type.update_ghosts()
 
@@ -1582,6 +1582,7 @@ def grounding_line_flux_test():
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
     gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux")
+    print(geometry.cell_type)
     PISM.grounding_line_flux(geometry.cell_type,
                              geometry_evolution.flux_staggered(),
                              dt,

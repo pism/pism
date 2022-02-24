@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -35,6 +35,11 @@ namespace pism {
 class MaxTimestep;
 class File;
 class IceModelVec;
+
+//class CellTypeArray;
+using CellTypeArray0 = class CellTypeArray;
+class CellTypeArray1;
+class CellTypeArray2;
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
 

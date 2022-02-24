@@ -67,10 +67,10 @@ static void effective_water_velocity(const Geometry &geometry,
 
   IceGrid::ConstPtr grid = result.grid();
 
-  const IceModelVec2CellType &cell_type           = geometry.cell_type;
-  const IceModelVec2S        &bed_elevation       = geometry.bed_elevation;
-  const IceModelVec2S        &ice_thickness       = geometry.ice_thickness;
-  const IceModelVec2S        &sea_level_elevation = geometry.sea_level_elevation;
+  const auto &cell_type           = geometry.cell_type;
+  const auto &bed_elevation       = geometry.bed_elevation;
+  const auto &ice_thickness       = geometry.ice_thickness;
+  const auto &sea_level_elevation = geometry.sea_level_elevation;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
@@ -441,7 +441,7 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
 /*!
  * Compute the mask that defines the domain: ones in the domain, zeroes elsewhere.
  */
-void EmptyingProblem::compute_mask(const IceModelVec2CellType &cell_type,
+void EmptyingProblem::compute_mask(const CellTypeArray0 &cell_type,
                                    const IceModelVec2S *no_model_mask,
                                    IceModelVec2S &result) const {
 

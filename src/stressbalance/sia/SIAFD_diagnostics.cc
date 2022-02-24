@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "SIAFD_diagnostics.hh"
 #include "BedSmoother.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -90,14 +91,19 @@ SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
 
-  const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
+  const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+
+  CellTypeArray2 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
 
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth"));
   result->metadata(0) = m_vars[0];
 
-  model->bed_smoother().smoothed_thk(surface, thickness, mask,
+  model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
                                      *result);
   return result;
 }
@@ -118,8 +124,11 @@ IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity"));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
-
+  CellTypeArray1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
   bool include_floating_ice = true;
   staggered_to_regular(cell_type, model->diffusivity(), include_floating_ice, *result);
 

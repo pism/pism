@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -128,7 +128,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const auto &cell_type = *inputs.cell_type;
 
   const IceModelVec2S
     &basal_frictional_heating = *inputs.basal_frictional_heating,

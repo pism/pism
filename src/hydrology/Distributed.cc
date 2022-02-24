@@ -219,7 +219,7 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
 }
 
 void Distributed::update_P(double dt,
-                           const IceModelVec2CellType &cell_type,
+                           const CellTypeArray0 &cell_type,
                            const IceModelVec2S &sliding_speed,
                            const IceModelVec2S &surface_input_rate,
                            const IceModelVec2S &basal_melt_rate,

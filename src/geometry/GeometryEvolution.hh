@@ -92,12 +92,12 @@ protected:
                                          const IceModelVec2S& sea_level,
                                          IceModelVec2S& ice_surface_elevation,
                                          IceModelVec2S& ice_thickness,
-                                         IceModelVec2CellType& cell_type,
+                                         CellTypeArray1& cell_type,
                                          IceModelVec2S& Href,
                                          IceModelVec2S& H_residual,
                                          bool &done);
 
-  virtual void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+  virtual void compute_interface_fluxes(const CellTypeArray1 &cell_type,
                                         const IceModelVec2S        &ice_thickness,
                                         const IceModelVec2V        &velocity,
                                         const IceModelVec2Stag     &diffusive_flux,
@@ -122,7 +122,7 @@ protected:
   virtual void compute_surface_and_basal_mass_balance(double dt,
                                                       const IceModelVec2S      &thickness_bc_mask,
                                                       const IceModelVec2S        &ice_thickness,
-                                                      const IceModelVec2CellType &cell_type,
+                                                      const CellTypeArray0 &cell_type,
                                                       const IceModelVec2S        &surface_mass_flux,
                                                       const IceModelVec2S        &basal_melt_rate,
                                                       IceModelVec2S              &effective_SMB,
@@ -139,7 +139,7 @@ public:
 protected:
   void set_no_model_mask_impl(const IceModelVec2S &mask);
 
-  void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
+  void compute_interface_fluxes(const CellTypeArray1 &cell_type,
                                 const IceModelVec2S        &ice_thickness,
                                 const IceModelVec2V        &velocity,
                                 const IceModelVec2Stag     &diffusive_flux,
@@ -148,7 +148,7 @@ protected:
   void compute_surface_and_basal_mass_balance(double dt,
                                               const IceModelVec2S      &thickness_bc_mask,
                                               const IceModelVec2S        &ice_thickness,
-                                              const IceModelVec2CellType &cell_type,
+                                              const CellTypeArray0 &cell_type,
                                               const IceModelVec2S        &surface_mass_flux,
                                               const IceModelVec2S        &basal_melt_rate,
                                               IceModelVec2S              &effective_SMB,
@@ -166,13 +166,13 @@ private:
  * This convention makes it easier to compare this quantity to the surface mass balance or
  * calving fluxes.
  */
-void grounding_line_flux(const IceModelVec2CellType &cell_type,
+void grounding_line_flux(const CellTypeArray1 &cell_type,
                          const IceModelVec2Stag &flux,
                          double dt,
                          bool add_values,
                          IceModelVec2S &result);
 
-double total_grounding_line_flux(const IceModelVec2CellType &cell_type,
+double total_grounding_line_flux(const CellTypeArray1 &cell_type,
                                  const IceModelVec2Stag &flux,
                                  double dt);
 } // end of namespace pism

@@ -76,7 +76,7 @@ protected:
                                     const IceModelVec2S &bed_elevation,
                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual void surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                         const IceModelVec2CellType &cell_type,
+                                         const CellTypeArray2 &cell_type,
                                          IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);
   virtual void surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
                                         IceModelVec2Stag &h_x, IceModelVec2Stag &h_y);

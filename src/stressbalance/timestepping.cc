@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
 CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
+                            const CellTypeArray0 &cell_type,
                             const IceModelVec3 &u3,
                             const IceModelVec3 &v3,
                             const IceModelVec3 &w3) {
@@ -115,7 +115,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
   sliding case we have a CFL condition.
  */
 CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
-                            const IceModelVec2CellType &cell_type,
+                            const CellTypeArray0 &cell_type,
                             const IceModelVec2V &velocity) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();

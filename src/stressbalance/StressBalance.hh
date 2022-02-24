@@ -27,7 +27,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
 class IceModelVec2S;
 class IceModelVec2Stag;
 class Geometry;
@@ -133,7 +132,7 @@ protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
-  virtual void compute_vertical_velocity(const IceModelVec2CellType &mask,
+  virtual void compute_vertical_velocity(const CellTypeArray1 &mask,
                                          const IceModelVec3 &u,
                                          const IceModelVec3 &v,
                                          const IceModelVec2S *bmr,
@@ -153,13 +152,13 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
                                       bool regional);
 
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
-                                       const IceModelVec2CellType &mask,
+                                       const CellTypeArray1 &mask,
                                        IceModelVec3 &result);
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
-                         const IceModelVec2CellType &cell_type,
+                         const CellTypeArray1 &cell_type,
                          IceModelVec3 &result);
 
 } // end of namespace stressbalance

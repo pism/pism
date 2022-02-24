@@ -41,7 +41,7 @@ public:
 
 protected:
   IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
-                IceModelVecKind ghostedp, int width = 1);
+                int width);
 };
 
 inline int IceModelVec2S::as_int(int i, int j) const {
@@ -53,7 +53,7 @@ template<int width>
 class Array2SGhosted : public IceModelVec2S {
 public:
   Array2SGhosted(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec2S(grid, name, WITH_GHOSTS, width) {
+  : IceModelVec2S(grid, name, width) {
     // empty
   }
 

@@ -23,16 +23,14 @@
 #include "pism/util/Component.hh"
 
 #include "pism/util/IceModelVec2S.hh"
-#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec3.hh"
+#include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
 namespace stressbalance {
 class StressBalance;
 }
-
-class IceModelVec2CellType;
 
 namespace energy {
 
@@ -41,7 +39,7 @@ public:
   Inputs();
   void check() const;
 
-  const IceModelVec2CellType *cell_type;
+  const CellTypeArray0 *cell_type;
   const IceModelVec2S *basal_frictional_heating;
   const IceModelVec2S *basal_heat_flux;
   const IceModelVec2S *ice_thickness;

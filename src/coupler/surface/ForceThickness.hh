@@ -25,8 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
-
 namespace surface {
 
 //! A class implementing a modified surface mass balance which forces
@@ -52,7 +50,7 @@ protected:
 private:
   void adjust_mass_flux(double time,
                         const IceModelVec2S &ice_thickness,
-                        const IceModelVec2CellType &cell_type,
+                        const CellTypeArray0 &cell_type,
                         IceModelVec2S &result) const;
 
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;

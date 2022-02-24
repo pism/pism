@@ -46,19 +46,19 @@ public:
                        IceModelVec2S &Href,
                        IceModelVec2S &ice_thickness);
 
-  MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
+  MaxTimestep max_timestep(const CellTypeArray1 &cell_type,
                            const IceModelVec2S &bc_mask,
                            const IceModelVec2S &retreat_rate) const;
 private:
 
-  void compute_modified_mask(const IceModelVec2CellType &input,
-                             IceModelVec2CellType &output) const;
+  void compute_modified_mask(const CellTypeArray1 &input,
+                             CellTypeArray1 &output) const;
 
   // Ghosted cell type mask
   //
   // We make a copy here because frontal retreat code uses a modified mask if
   // geometry.front_retreat.wrap_around is false.
-  Array2CTGhosted<1> m_cell_type;
+  CellTypeArray1 m_cell_type;
   // Temporary storage for distributing ice loss to "full" (as opposed to "partially
   // filled") cells near the front
   Array2SGhosted<1> m_tmp;

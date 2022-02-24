@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -236,7 +236,7 @@ Computes the gravitational driving stress at the base of the ice:
  */
 void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &surface_elevation,
-                                 const IceModelVec2CellType &cell_type,
+                                 const CellTypeArray1 &cell_type,
                                  const IceModelVec2S *no_model_mask,
                                  IceModelVec2V &result) const {
 

@@ -51,7 +51,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
     &surface_elevation   = geometry.ice_surface_elevation,
     &ice_thickness       = geometry.ice_thickness,
     &sea_level_elevation = geometry.sea_level_elevation;
-  const IceModelVec2CellType &cell_type = geometry.cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const double
     ice_density = m_config->get_number("constants.ice.density"),
@@ -242,7 +242,7 @@ TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   }
 }
 
-bool FrontalMelt::apply(const IceModelVec2CellType &M, int i, int j) {
+bool FrontalMelt::apply(const CellTypeArray0 &M, int i, int j) {
   // icy and grounded_ice cells are included for visualization only (values at these
   // locations have no effect)
   if (m_include_floating_ice) {

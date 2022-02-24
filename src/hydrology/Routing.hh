@@ -135,7 +135,7 @@ protected:
   Array2SGhosted<1> m_bottom_surface;
 
   void water_thickness_staggered(const IceModelVec2S &W,
-                                 const IceModelVec2CellType &mask,
+                                 const CellTypeArray1 &mask,
                                  IceModelVec2Stag &result);
 
   void compute_conductivity(const IceModelVec2Stag &W,

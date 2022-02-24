@@ -164,7 +164,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int buffer_size,
                              InterpolationType interpolation_type)
-  : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
+  : IceModelVec2S(grid, short_name, 0),
     m_data(new Data())
 {
   m_impl->report_range = false;

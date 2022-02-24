@@ -28,7 +28,9 @@ namespace pism {
 
 class IceGrid;
 class Config;
-class IceModelVec2CellType;
+using CellTypeArray0 = class CellTypeArray;
+class CellTypeArray1;
+class CellTypeArray2;
 
 namespace stressbalance {
 
@@ -86,7 +88,7 @@ public:
 
   void smoothed_thk(const IceModelVec2S &usurf,
                     const IceModelVec2S &thk,
-                    const IceModelVec2CellType &mask,
+                    const CellTypeArray2 &mask,
                     IceModelVec2S &thksmooth) const;
 
   void theta(const IceModelVec2S &usurf, IceModelVec2S &result) const;

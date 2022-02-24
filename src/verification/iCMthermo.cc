@@ -67,7 +67,7 @@ void IceCompModel::energy_step() {
   {
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;              // geometry
+    inputs.cell_type                = &m_geometry.cell_type;
     inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
     inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
     inputs.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model

@@ -42,8 +42,8 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
  * Compute the modified mask to avoid "wrapping around" of front retreat at domain
  * boundaries.
  */
-void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
-                                         IceModelVec2CellType &output) const {
+void FrontRetreat::compute_modified_mask(const CellTypeArray1 &input,
+                                         CellTypeArray1 &output) const {
 
   IceModelVec::AccessList list{&input, &output};
 
@@ -70,7 +70,7 @@ void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
 /*!
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
-MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
+MaxTimestep FrontRetreat::max_timestep(const CellTypeArray1 &cell_type,
                                        const IceModelVec2S &bc_mask,
                                        const IceModelVec2S &retreat_rate) const {
 
@@ -209,9 +209,8 @@ void FrontRetreat::update_geometry(double dt,
         // termini.
         int N = 0;
         {
-          auto
-            M  = m_cell_type.star(i, j),
-            BC = bc_mask.star(i, j);
+          auto M  = m_cell_type.star(i, j);
+          auto BC = bc_mask.star_int(i, j);
 
           auto
             b  = bed.star(i, j),

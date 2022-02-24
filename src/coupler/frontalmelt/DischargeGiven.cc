@@ -99,9 +99,9 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const auto          &cell_type           = inputs.geometry->cell_type;
+  const IceModelVec2S &bed_elevation       = inputs.geometry->bed_elevation;
+  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list
     {&bed_elevation, &cell_type, &sea_level_elevation,

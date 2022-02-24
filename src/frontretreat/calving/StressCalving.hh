@@ -44,7 +44,7 @@ protected:
 
   IceModelVec2S m_calving_rate;
 
-  Array2CTGhosted<1> m_cell_type;
+  CellTypeArray1 m_cell_type;
 };
 
 

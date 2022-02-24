@@ -27,8 +27,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
-
 namespace ocean {
 
 class PicoPhysics;
@@ -73,7 +71,7 @@ private:
 
   void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
-                              const IceModelVec2CellType &mask,
+                              const CellTypeArray1 &mask,
                               const IceModelVec2S &basin_mask,
                               const IceModelVec2S &shelf_mask,
                               const std::vector<double> &basin_temperature,
@@ -107,7 +105,7 @@ private:
   void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,
                        const IceModelVec2S &shelf_mask,
-                       const IceModelVec2CellType &cell_type,
+                       const CellTypeArray0 &cell_type,
                        const IceModelVec2S &Toc_box0,
                        const IceModelVec2S &Soc_box0,
                        IceModelVec2S &basal_melt_rate,

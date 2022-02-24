@@ -30,7 +30,7 @@ def check(version):
 
     grid = PISM.testing.shallow_grid(11, 11, Lx=1e4, Ly=1e4)
 
-    cell_type     = PISM.Array2CTGhosted1(grid, "cell_type")
+    cell_type     = PISM.CellTypeArray1(grid, "cell_type")
     vel_bc_mask   = PISM.Array2SGhosted1(grid, "vel_bc_mask")
     ice_thickness = PISM.IceModelVec2S(grid, "thk")
 

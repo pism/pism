@@ -43,13 +43,13 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
  * @param[in,out] ice_thickness ice thickness
  */
 void IcebergRemover::update(const IceModelVec2S &bc_mask,
-                            IceModelVec2CellType &mask,
+                            CellTypeArray1 &cell_type,
                             IceModelVec2S &ice_thickness) {
-  update_impl(bc_mask, mask, ice_thickness);
+  update_impl(bc_mask, cell_type, ice_thickness);
 }
 
 void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
-                                 IceModelVec2CellType &mask,
+                                 CellTypeArray1 &cell_type,
                                  IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,
@@ -60,14 +60,14 @@ void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list{&mask, &m_iceberg_mask, &bc_mask};
+    IceModelVec::AccessList list{&cell_type, &m_iceberg_mask, &bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (mask.grounded_ice(i,j)) {
+      if (cell_type.grounded_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (mask.floating_ice(i,j)) {
+      } else if (cell_type.floating_ice(i,j)) {
         m_iceberg_mask(i,j) = mask_floating_ice;
       }
     }
@@ -76,7 +76,7 @@ void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (bc_mask(i, j) > 0.5 and mask.icy(i, j)) {
+      if (bc_mask(i, j) > 0.5 and cell_type.icy(i, j)) {
         m_iceberg_mask(i, j) = mask_grounded_ice;
       }
     }
@@ -103,21 +103,21 @@ void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    IceModelVec::AccessList list{&ice_thickness, &mask, &m_iceberg_mask, &bc_mask};
+    IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
         ice_thickness(i,j) = 0.0;
-        mask(i,j)     = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)     = MASK_ICE_FREE_OCEAN;
       }
     }
   }
 
-  // update ghosts of the mask and the ice thickness (then surface
+  // update ghosts of the cell_type and the ice thickness (then surface
   // elevation can be updated redundantly)
-  mask.update_ghosts();
+  cell_type.update_ghosts();
   ice_thickness.update_ghosts();
 }
 

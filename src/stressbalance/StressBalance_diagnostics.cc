@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -293,7 +293,7 @@ IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
 
   double fill_value = to_internal(m_fill_value);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, result.get()};
 
@@ -328,7 +328,7 @@ IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
 
   compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, result.get()};
 
@@ -388,7 +388,7 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() const {
   extract_surface(u3, *thickness, u_surf);
   extract_surface(v3, *thickness, v_surf);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, &u_surf, &v_surf, result.get()};
 
@@ -428,7 +428,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   uplift = m_grid->variables().get_2d_scalar("tendency_of_bedrock_altitude");
 
   const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
   const IceModelVec3
     &u3 = model->velocity_u(),
@@ -532,7 +532,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
 
   extract_surface(*w3, *thickness, *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, result.get()};
 
@@ -576,7 +576,7 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
 
   extract_surface(*w3, 0.0, *result);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, result.get()};
 
@@ -634,7 +634,7 @@ IceModelVec::Ptr PSB_velbase::compute_impl() const {
   extract_surface(u3, 0.0, u_base);
   extract_surface(v3, 0.0, v_base);
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   IceModelVec::AccessList list{&mask, &u_base, &v_base, result.get()};
 
@@ -815,14 +815,18 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
-
   IceModelVec2V velbar_with_ghosts(m_grid, "velbar", WITH_GHOSTS);
 
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  compute_2D_principal_strain_rates(velbar_with_ghosts, mask, *result);
+  CellTypeArray1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
+
+  compute_2D_principal_strain_rates(velbar_with_ghosts, cell_type, *result);
 
   return result;
 }
@@ -847,7 +851,6 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
   const IceModelVec3         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
   const IceModelVec2S        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -859,6 +862,12 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
   // copy_from updates ghosts
   velocity.copy_from(*IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute()));
+
+  CellTypeArray1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
 
   stressbalance::compute_2D_stresses(*model->shallow()->flow_law(),
                                      velocity, hardness, cell_type, *result);
@@ -1059,7 +1068,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   const IceModelVec2S &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
-  const IceModelVec2CellType &mask = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   std::shared_ptr<const rheology::FlowLaw> flow_law;
 

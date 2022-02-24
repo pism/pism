@@ -41,7 +41,7 @@ public:
   void init();
   void update(double t,
               double dt,
-              IceModelVec2CellType &pism_mask,
+              CellTypeArray0 &pism_mask,
               IceModelVec2S &ice_thickness);
 
   const IceModelVec2S& threshold() const;
@@ -49,7 +49,7 @@ public:
 protected:
   DiagnosticList diagnostics_impl() const;
   std::shared_ptr<IceModelVec2T> m_calving_threshold;
-  Array2CTGhosted<1> m_old_mask;
+  CellTypeArray1 m_old_mask;
 };
 
 } // end of namespace calving
