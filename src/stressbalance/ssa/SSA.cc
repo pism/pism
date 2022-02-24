@@ -237,7 +237,7 @@ Computes the gravitational driving stress at the base of the ice:
 void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                  const IceModelVec2S &surface_elevation,
                                  const IceModelVec2CellType &cell_type,
-                                 const IceModelVec2Int *no_model_mask,
+                                 const IceModelVec2S *no_model_mask,
                                  IceModelVec2V &result) const {
 
   using mask::ice_free_ocean;

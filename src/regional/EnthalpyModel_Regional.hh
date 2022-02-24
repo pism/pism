@@ -47,7 +47,7 @@ protected:
 
   void update_impl(double t, double dt, const Inputs &inputs);
 
-  IceModelVec2Int *m_no_model_mask;
+  IceModelVec2S *m_no_model_mask;
   IceModelVec2S m_basal_melt_rate_stored;
 };
 

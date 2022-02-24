@@ -45,7 +45,7 @@ IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
     m_usurf_stored(m_grid, "usurfstore"),
     m_thk_stored(m_grid, "thkstore")
 {
-  // empty
+  m_no_model_mask.set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
     m_ch_warming_flux.reset(new IceModelVec3(m_grid, "ch_warming_flux", WITHOUT_GHOSTS, m_grid->z()));

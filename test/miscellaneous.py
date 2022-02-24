@@ -1565,7 +1565,7 @@ def grounding_line_flux_test():
     geometry.ensure_consistency(0)
 
     velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-    thk_bc_mask = PISM.IceModelVec2Int(grid, "thk_bc_mask")
+    thk_bc_mask = PISM.IceModelVec2S(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
     sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
     sia_flux.set(0)

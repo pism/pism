@@ -22,6 +22,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -30,9 +31,10 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
     m_log(grid->ctx()->log()),
     m_b(grid, "poisson_rhs"),
     m_x(grid, "poisson_x"),
-    m_mask(grid, "poisson_mask"){
+    m_mask(grid, "poisson_mask") {
 
   m_da = m_x.dm();
+  m_mask.set_interpolation_type(NEAREST);
 
   // PETSc objects and settings
   {
@@ -62,7 +64,7 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
  *
  * Set the mask to 2 to use zero Neumann BC.
  */
-int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
+int Poisson::solve(const IceModelVec2S& mask, const IceModelVec2S& bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
@@ -154,7 +156,7 @@ const IceModelVec2S& Poisson::solution() const {
 // b : rhs(eq2);
 //
 // print(''out)$
-void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
+void Poisson::assemble_matrix(const IceModelVec2S &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
   const double
@@ -255,7 +257,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 }
 
 void Poisson::assemble_rhs(double rhs,
-                           const IceModelVec2Int &mask,
+                           const IceModelVec2S &mask,
                            const IceModelVec2S &bc,
                            IceModelVec2S &b) {
   IceModelVec::AccessList list{&mask, &bc, &b};

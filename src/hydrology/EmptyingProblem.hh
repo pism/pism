@@ -23,7 +23,7 @@
 #include "pism/util/Component.hh"
 #include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec2Stag.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec2V.hh"
 
 namespace pism {
@@ -38,7 +38,7 @@ public:
   virtual ~EmptyingProblem() = default;
 
   void update(const Geometry &geometry,
-              const IceModelVec2Int *no_model_mask,
+              const IceModelVec2S *no_model_mask,
               const IceModelVec2S &water_input_rate,
               bool recompute_potential = true);
 
@@ -50,7 +50,7 @@ public:
   const IceModelVec2V& effective_water_velocity() const;
   const IceModelVec2S& potential() const;
   const IceModelVec2S& adjustment() const;
-  const IceModelVec2Int& sinks() const;
+  const IceModelVec2S& sinks() const;
 
   DiagnosticList diagnostics() const;
 
@@ -62,16 +62,16 @@ protected:
 
   void compute_potential(const IceModelVec2S &ice_thickness,
                          const IceModelVec2S &ice_bottom_surface,
-                         const IceModelVec2Int &domain_mask,
+                         const IceModelVec2S &domain_mask,
                          IceModelVec2S &result);
 
   void compute_velocity(const IceModelVec2S &hydraulic_potential,
-                        const IceModelVec2Int &mask,
+                        const IceModelVec2S &mask,
                         IceModelVec2Stag &result) const;
 
   void compute_mask(const IceModelVec2CellType &cell_type,
-                    const IceModelVec2Int *no_model_mask,
-                    IceModelVec2Int &result) const;
+                    const IceModelVec2S *no_model_mask,
+                    IceModelVec2S &result) const;
 
   Array2SGhosted<1> m_potential;
   IceModelVec2S m_tmp;
@@ -79,12 +79,12 @@ protected:
   Array2SGhosted<1> m_W;
   IceModelVec2Stag m_Vstag;
   IceModelVec2Stag m_Qsum;
-  Array2IGhosted<1> m_domain_mask;
+  Array2SGhosted<1> m_domain_mask;
 
   IceModelVec2V m_Q;
   IceModelVec2V m_q_sg;
   IceModelVec2S m_adjustment;
-  IceModelVec2Int m_sinks;
+  IceModelVec2S m_sinks;
 
   double m_dx;
   double m_dy;

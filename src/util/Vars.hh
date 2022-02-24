@@ -29,7 +29,7 @@ namespace pism {
 class IceModelVec;
 class IceModelVec2S;
 class IceModelVec2V;
-class IceModelVec2Int;
+class IceModelVec2S;
 class IceModelVec2CellType;
 class IceModelVec3;
 
@@ -46,7 +46,7 @@ public:
   const IceModelVec* get(const std::string &name) const;
   const IceModelVec2S* get_2d_scalar(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
-  const IceModelVec2Int* get_2d_mask(const std::string &name) const;
+  const IceModelVec2S* get_2d_mask(const std::string &name) const;
   const IceModelVec2CellType* get_2d_cell_type(const std::string &name) const;
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
@@ -55,7 +55,7 @@ public:
   typedef std::shared_ptr<IceModelVec> VecPtr;
   typedef std::shared_ptr<IceModelVec2S> Vec2SPtr;
   typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
-  typedef std::shared_ptr<IceModelVec2Int> Vec2IntPtr;
+  typedef std::shared_ptr<IceModelVec2S> Vec2IntPtr;
   typedef std::shared_ptr<IceModelVec2CellType> Vec2CellTypePtr;
   typedef std::shared_ptr<IceModelVec3> Vec3Ptr;
 

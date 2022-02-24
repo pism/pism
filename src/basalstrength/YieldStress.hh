@@ -25,7 +25,7 @@
 namespace pism {
 
 class Geometry;
-class IceModelVec2Int;
+class IceModelVec2S;
 
 class YieldStressInputs {
 public:
@@ -38,7 +38,7 @@ public:
   const IceModelVec2S *subglacial_water_thickness;
 
   // inputs used by regional models
-  const IceModelVec2Int *no_model_mask;
+  const IceModelVec2S *no_model_mask;
 };
 
 //! \brief The PISM basal yield stress model interface (virtual base class)

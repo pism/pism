@@ -629,7 +629,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
                                const IceModelVec2S &pressure,
                                const IceModelVec2S &bed,
                                const IceModelVec2Stag &K,
-                               const IceModelVec2Int *no_model_mask,
+                               const IceModelVec2S *no_model_mask,
                                IceModelVec2Stag &result) const {
   IceModelVec2S &P = m_R;
   P.copy_from(pressure);  // yes, it updates ghosts

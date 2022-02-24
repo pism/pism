@@ -34,7 +34,7 @@ namespace diagnostics {
  * filling dips to eliminate sinks (and get a better estimate of the steady state flow
  * direction).
  */
-static void compute_sinks(const IceModelVec2Int &domain_mask,
+static void compute_sinks(const IceModelVec2S &domain_mask,
                           const IceModelVec2S &psi,
                           IceModelVec2S &result) {
 
@@ -126,6 +126,9 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
     m_adjustment(grid, "hydraulic_potential_adjustment"),
     m_sinks(grid, "sinks") {
 
+  m_domain_mask.set_interpolation_type(NEAREST);
+  m_sinks.set_interpolation_type(NEAREST);
+
   m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential in the steady hydrology model",
                         "Pa", "Pa", "", 0);
 
@@ -172,7 +175,7 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
  * @param[in] water_input_rate water input rate in m/s
  */
 void EmptyingProblem::update(const Geometry &geometry,
-                             const IceModelVec2Int *no_model_mask,
+                             const IceModelVec2S *no_model_mask,
                              const IceModelVec2S &water_input_rate,
                              bool recompute_potential) {
 
@@ -330,7 +333,7 @@ void EmptyingProblem::compute_raw_potential(const IceModelVec2S &H,
 
 void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
                                         const IceModelVec2S &ice_bottom_surface,
-                                        const IceModelVec2Int &domain_mask,
+                                        const IceModelVec2S &domain_mask,
                                         IceModelVec2S &result) {
   IceModelVec2S &psi_new = m_tmp;
 
@@ -401,7 +404,7 @@ static double K(double psi_x, double psi_y, double speed, double epsilon) {
  * Compute water velocity on the staggered grid.
  */
 void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
-                                       const IceModelVec2Int &domain_mask,
+                                       const IceModelVec2S &domain_mask,
                                        IceModelVec2Stag &result) const {
 
   IceModelVec::AccessList list{&psi, &result, &domain_mask};
@@ -439,8 +442,8 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
  * Compute the mask that defines the domain: ones in the domain, zeroes elsewhere.
  */
 void EmptyingProblem::compute_mask(const IceModelVec2CellType &cell_type,
-                                   const IceModelVec2Int *no_model_mask,
-                                   IceModelVec2Int &result) const {
+                                   const IceModelVec2S *no_model_mask,
+                                   IceModelVec2S &result) const {
 
   IceModelVec::AccessList list{&cell_type, &result};
 
@@ -510,7 +513,7 @@ const IceModelVec2S& EmptyingProblem::potential() const {
 /*!
  * Map of sinks.
  */
-const IceModelVec2Int& EmptyingProblem::sinks() const {
+const IceModelVec2S& EmptyingProblem::sinks() const {
   return m_sinks;
 }
 

@@ -148,7 +148,7 @@ protected:
                         const IceModelVec2S &P,
                         const IceModelVec2S &bed,
                         const IceModelVec2Stag &K,
-                        const IceModelVec2Int *no_model_mask,
+                        const IceModelVec2S *no_model_mask,
                         IceModelVec2Stag &result) const;
 
   void advective_fluxes(const IceModelVec2Stag &V,

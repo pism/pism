@@ -64,7 +64,7 @@ v_mag = PISM.IceModelVec2S(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
 
 v_mag.set_to_magnitude(ssa.velocity())
 
-node_type = PISM.IceModelVec2Int(grid, "node_type", PISM.WITHOUT_GHOSTS)
+node_type = PISM.IceModelVec2S(grid, "node_type")
 
 PISM.compute_node_types(geometry.ice_thickness, 1.0, node_type)
 

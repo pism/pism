@@ -75,7 +75,7 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
 
   EnthalpyModel::update_impl(t, dt, inputs);
 
-  const IceModelVec2Int &no_model_mask = *inputs.no_model_mask;
+  const IceModelVec2S &no_model_mask = *inputs.no_model_mask;
 
   // The update_impl() call above sets m_work; ghosts are communicated
   // later (in EnergyModel::update()).

@@ -128,7 +128,7 @@ public:
     having the desired values in the fixed locations, and using set_tauc_fixed_locations()
     to indicated the nodes that should not be changed.
   */
-  virtual void set_design_fixed_locations(IceModelVec2Int &locations)
+  virtual void set_design_fixed_locations(IceModelVec2S &locations)
   {
     m_fixed_design_locations = &locations;
   }
@@ -180,7 +180,7 @@ protected:
   Array2SGhosted<1>   m_dzeta_local;
 
   /// Locations where \f$\tau_c\f$ should not be adjusted.
-  IceModelVec2Int *m_fixed_design_locations;
+  IceModelVec2S *m_fixed_design_locations;
 
   /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
   IPDesignVariableParameterization &m_design_param;

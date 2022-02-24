@@ -47,6 +47,8 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
     m_geometry(m_grid),
     m_ssa(NULL)
 {
+  m_bc_mask.set_interpolation_type(NEAREST);
+
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)",

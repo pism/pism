@@ -26,7 +26,7 @@
 namespace pism {
 
 class IceModelVec2CellType;
-class IceModelVec2Int;
+class IceModelVec2S;
 class Geometry;
 
 //! @brief Sub-glacial hydrology models and related diagnostics.
@@ -37,7 +37,7 @@ public:
   Inputs();
 
   // modeling domain (set to NULL in whole-ice-sheet configurations)
-  const IceModelVec2Int      *no_model_mask;
+  const IceModelVec2S      *no_model_mask;
   // geometry
   const Geometry *geometry;
   // hydrological inputs
@@ -203,7 +203,7 @@ protected:
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
   void enforce_bounds(const IceModelVec2CellType &cell_type,
-                      const IceModelVec2Int *no_model_mask,
+                      const IceModelVec2S *no_model_mask,
                       double max_thickness,
                       double ocean_water_thickness,
                       IceModelVec2S &water_thickness,

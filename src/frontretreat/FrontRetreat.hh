@@ -41,13 +41,13 @@ public:
 
   void update_geometry(double dt,
                        const Geometry &geometry,
-                       const IceModelVec2Int &bc_mask,
+                       const IceModelVec2S &bc_mask,
                        const IceModelVec2S &retreat_rate,
                        IceModelVec2S &Href,
                        IceModelVec2S &ice_thickness);
 
   MaxTimestep max_timestep(const IceModelVec2CellType &cell_type,
-                           const IceModelVec2Int &bc_mask,
+                           const IceModelVec2S &bc_mask,
                            const IceModelVec2S &retreat_rate) const;
 private:
 

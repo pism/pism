@@ -33,14 +33,14 @@ namespace inverse {
 */
 class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
 public:
-  IPTotalVariationFunctional2S(IceGrid::ConstPtr grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid::ConstPtr grid, double c, double q, double eps, IceModelVec2S *dirichletLocations=NULL);
 
   virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
   virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
 
 protected:
 
-  IceModelVec2Int *m_dirichletIndices;
+  IceModelVec2S *m_dirichletIndices;
   double m_c; // scale parameter.
   double m_lebesgue_exp;
   double m_epsilon_sq; // Regularization parameter.

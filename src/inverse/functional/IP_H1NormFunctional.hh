@@ -46,7 +46,7 @@ public:
   IP_H1NormFunctional2S(IceGrid::ConstPtr grid,
                         double cL2,
                         double cH1,
-                        IceModelVec2Int *dirichletLocations=NULL)
+                        IceModelVec2S *dirichletLocations=NULL)
     : IPInnerProductFunctional<IceModelVec2S>(grid),
       m_cL2(cL2),
       m_cH1(cH1),
@@ -61,7 +61,7 @@ public:
 protected:
 
   double m_cL2, m_cH1;
-  IceModelVec2Int *m_dirichletIndices;
+  IceModelVec2S *m_dirichletIndices;
 
 private:
   IP_H1NormFunctional2S(IP_H1NormFunctional2S const &);

@@ -20,7 +20,7 @@
 #include "RegionalYieldStress.hh"
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 
 namespace pism {
 
@@ -36,7 +36,7 @@ RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
  * Set `basal_yield_stress` to `tauc` in areas indicated using `mask`.
  */
 static void set_no_model_yield_stress(double tauc,
-                                      const IceModelVec2Int &mask,
+                                      const IceModelVec2S &mask,
                                       IceModelVec2S &basal_yield_stress) {
   auto grid = mask.grid();
 
@@ -58,7 +58,8 @@ void RegionalYieldStress::restart_impl(const File &input_file, int record) {
   // call above should read it in.
   m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
 
-  IceModelVec2Int no_model_mask(m_grid, "no_model_mask");
+  IceModelVec2S no_model_mask(m_grid, "no_model_mask");
+  no_model_mask.set_interpolation_type(NEAREST);
   no_model_mask.set_attrs("model_state",
                           "mask: zeros (modeling domain) and ones"
                           " (no-model buffer near grid edges)",

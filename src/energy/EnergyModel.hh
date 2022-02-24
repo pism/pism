@@ -23,7 +23,7 @@
 #include "pism/util/Component.hh"
 
 #include "pism/util/IceModelVec2S.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec3.hh"
 
 namespace pism {
@@ -56,7 +56,7 @@ public:
   const IceModelVec3 *w3;
 
   // inputs used by regional models
-  const IceModelVec2Int *no_model_mask;
+  const IceModelVec2S *no_model_mask;
 };
 
 class EnergyModelStats {

@@ -58,8 +58,6 @@ PISM uses the following classes to manage 2D and 3D fields, their I/O and metada
      - scalar 2D fields
    * - `IceModelVec2V`
      - vector 2D fields such as horizontal velocities; corresponds to 2 NetCDF variables
-   * - `IceModelVec2Int`
-     - 2D masks, such as the grounded/floating mask
    * - `IceModelVec2T`
      - 2D time-dependent fields (used to read and store forcing data)
    * - `IceModelVec3`

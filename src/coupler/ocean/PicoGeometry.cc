@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,6 +42,17 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
       m_ice_rises(grid, "pico_ice_rise_mask"),
       m_tmp(grid, "temporary_storage") {
 
+  m_continental_shelf.set_interpolation_type(NEAREST);
+  m_boxes.set_interpolation_type(NEAREST);
+  m_ice_shelves.set_interpolation_type(NEAREST);
+  m_basin_mask.set_interpolation_type(NEAREST);
+  m_distance_gl.set_interpolation_type(NEAREST);
+  m_distance_cf.set_interpolation_type(NEAREST);
+  m_ocean_mask.set_interpolation_type(NEAREST);
+  m_lake_mask.set_interpolation_type(NEAREST);
+  m_ice_rises.set_interpolation_type(NEAREST);
+  m_tmp.set_interpolation_type(NEAREST);
+
   m_boxes.metadata()["_FillValue"] = {0.0};
 
   m_ice_rises.metadata()["flag_values"] = {OCEAN, RISE, CONTINENTAL, FLOATING};
@@ -55,23 +66,23 @@ PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
   m_tmp_p0 = m_tmp.allocate_proc0_copy();
 }
 
-const IceModelVec2Int &PicoGeometry::continental_shelf_mask() const {
+const IceModelVec2S &PicoGeometry::continental_shelf_mask() const {
   return m_continental_shelf;
 }
 
-const IceModelVec2Int &PicoGeometry::box_mask() const {
+const IceModelVec2S &PicoGeometry::box_mask() const {
   return m_boxes;
 }
 
-const IceModelVec2Int &PicoGeometry::ice_shelf_mask() const {
+const IceModelVec2S &PicoGeometry::ice_shelf_mask() const {
   return m_ice_shelves;
 }
 
-const IceModelVec2Int &PicoGeometry::ice_rise_mask() const {
+const IceModelVec2S &PicoGeometry::ice_rise_mask() const {
   return m_ice_rises;
 }
 
-const IceModelVec2Int &PicoGeometry::basin_mask() const {
+const IceModelVec2S &PicoGeometry::basin_mask() const {
   return m_basin_mask;
 }
 
@@ -174,7 +185,7 @@ enum RelabelingType {BY_AREA, AREA_THRESHOLD};
  */
 static void relabel(RelabelingType type,
                     double threshold,
-                    IceModelVec2Int &mask) {
+                    IceModelVec2S &mask) {
 
   IceGrid::ConstPtr grid = mask.grid();
 
@@ -294,7 +305,7 @@ void PicoGeometry::label_tmp() {
  * 1 - floating ice not connected to the open ocean
  * 2 - floating ice or ice-free ocean connected to the open ocean
  */
-void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result) {
+void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
   const int
@@ -350,7 +361,7 @@ void PicoGeometry::compute_lakes(const IceModelVec2CellType &cell_type, IceModel
  * 3 - floating ice
  */
 void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises,
-                                     IceModelVec2Int &result) {
+                                     IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
   // mask of zeros and ones: one if grounded ice, zero otherwise
@@ -394,9 +405,9 @@ void PicoGeometry::compute_ice_rises(const IceModelVec2CellType &cell_type, bool
  * 2 - ice-free areas with bed elevation > threshold, connected to the continental ice sheet
  */
 void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
-                                                  const IceModelVec2Int &ice_rise_mask,
+                                                  const IceModelVec2S &ice_rise_mask,
                                                   double bed_elevation_threshold,
-                                                  IceModelVec2Int &result) {
+                                                  IceModelVec2S &result) {
   IceModelVec::AccessList list{ &bed_elevation, &ice_rise_mask, &m_tmp };
 
   for (Points p(*m_grid); p; p.next()) {
@@ -461,8 +472,8 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
  * Floating ice cells that are not connected to the ocean ("subglacial lakes") are
  * excluded.
  */
-void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask, const IceModelVec2Int &lake_mask,
-                                          IceModelVec2Int &result) {
+void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2S &ice_rise_mask, const IceModelVec2S &lake_mask,
+                                          IceModelVec2S &result) {
   IceModelVec::AccessList list{ &ice_rise_mask, &lake_mask, &m_tmp };
 
   for (Points p(*m_grid); p; p.next()) {
@@ -501,7 +512,7 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask, 
  * - 2 - open ocean
  *
  */
-void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2Int &result) {
+void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
   // mask of zeros and ones: one if ice-free ocean, zero otherwise
@@ -530,7 +541,7 @@ void PicoGeometry::compute_ocean_mask(const IceModelVec2CellType &cell_type, Ice
  * Returns the map from the basin index to a set of indexes of neighbors.
  */
 std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2CellType &cell_type,
-                                                           const IceModelVec2Int &basin_mask) {
+                                                           const IceModelVec2S &basin_mask) {
   using mask::ice_free_ocean;
 
   // Allocate the adjacency matrix. This uses twice the amount of storage necessary (the
@@ -620,8 +631,8 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const IceModelVec2Cel
  *  Find the basin bmax, in which the ice shelf s has the most cells
  */
 void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType &cell_type,
-                                                     const IceModelVec2Int &basin_mask,
-                                                     const IceModelVec2Int &shelf_mask,
+                                                     const IceModelVec2S &basin_mask,
+                                                     const IceModelVec2S &shelf_mask,
                                                      int n_shelves,
                                                      std::vector<int> &most_shelf_cells_in_basin,
                                                      std::vector<int> &cfs_in_basins_per_shelf) {
@@ -681,12 +692,12 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
  * Find all ice shelves s that spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number.
  */
 void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
-                                     const IceModelVec2Int &basin_mask,
+                                     const IceModelVec2S &basin_mask,
                                      const std::map<int, std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
                                      const std::vector<int> &cfs_in_basins_per_shelf,
                                      int n_shelves,
-                                     IceModelVec2Int &shelf_mask) {
+                                     IceModelVec2S &shelf_mask) {
   m_tmp.copy_from(shelf_mask);
 
   std::vector<int> n_shelf_cells_to_split(n_shelves * m_n_basins, 0);
@@ -756,10 +767,10 @@ void PicoGeometry::split_ice_shelves(const IceModelVec2CellType &cell_type,
 /*!
  * Compute distance to the grounding line.
  */
-void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
-                                        const IceModelVec2Int &ice_rises,
+void PicoGeometry::compute_distances_gl(const IceModelVec2S &ocean_mask,
+                                        const IceModelVec2S &ice_rises,
                                         bool exclude_ice_rises,
-                                        IceModelVec2Int &result) {
+                                        IceModelVec2S &result) {
 
   IceModelVec::AccessList list{ &ice_rises, &ocean_mask, &result };
 
@@ -811,10 +822,10 @@ void PicoGeometry::compute_distances_gl(const IceModelVec2Int &ocean_mask,
 /*!
  * Compute distance to the calving front.
  */
-void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
-                                        const IceModelVec2Int &ice_rises,
+void PicoGeometry::compute_distances_cf(const IceModelVec2S &ocean_mask,
+                                        const IceModelVec2S &ice_rises,
                                         bool exclude_ice_rises,
-                                        IceModelVec2Int &result) {
+                                        IceModelVec2S &result) {
 
   IceModelVec::AccessList list{ &ice_rises, &ocean_mask, &result };
 
@@ -870,7 +881,7 @@ void PicoGeometry::compute_distances_cf(const IceModelVec2Int &ocean_mask,
  *
  * FIXME: replace this with a better algorithm.
  */
-void eikonal_equation(IceModelVec2Int &mask) {
+void eikonal_equation(IceModelVec2S &mask) {
 
   assert(mask.stencil_width() > 0);
 
@@ -911,9 +922,9 @@ void eikonal_equation(IceModelVec2Int &mask) {
  * Compute the mask identifying ice shelf "boxes" using distances to the grounding line
  * and the calving front.
  */
-void PicoGeometry::compute_box_mask(const IceModelVec2Int &D_gl, const IceModelVec2Int &D_cf,
-                                    const IceModelVec2Int &shelf_mask, int max_number_of_boxes,
-                                    IceModelVec2Int &result) {
+void PicoGeometry::compute_box_mask(const IceModelVec2S &D_gl, const IceModelVec2S &D_cf,
+                                    const IceModelVec2S &shelf_mask, int max_number_of_boxes,
+                                    IceModelVec2S &result) {
 
   IceModelVec::AccessList list{ &D_gl, &D_cf, &shelf_mask, &result };
 

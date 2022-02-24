@@ -26,7 +26,6 @@ set(PISMUTIL_SRC
   iceModelVec.cc
   iceModelVec2T.cc
   IceModelVec2CellType.cc
-  IceModelVec2Int.cc
   iceModelVec2V.cc
   iceModelVec3.cc
   IceModelVec2S.cc

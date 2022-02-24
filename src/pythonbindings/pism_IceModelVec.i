@@ -2,7 +2,6 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 
 #include "util/IceModelVec2CellType.hh"
-#include "util/IceModelVec2Int.hh"
 #include "util/IceModelVec2S.hh"
 #include "util/iceModelVec2T.hh"
 #include "util/IceModelVec2V.hh"
@@ -17,7 +16,6 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec2S)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
-%shared_ptr(pism::IceModelVec2Int)
 %shared_ptr(pism::IceModelVec2CellType)
 %shared_ptr(pism::IceModelVec2Stag)
 %shared_ptr(pism::IceModelVec3)
@@ -157,12 +155,6 @@ std::vector<double> interp(int i, int j) {
 %template(Array2SGhosted1) pism::Array2SGhosted<1>;
 %shared_ptr(pism::Array2SGhosted<2>)
 %template(Array2SGhosted2) pism::Array2SGhosted<2>;
-
-%include "util/IceModelVec2Int.hh"
-%shared_ptr(pism::Array2IGhosted<1>)
-%template(Array2IGhosted1) pism::Array2IGhosted<1>;
-%shared_ptr(pism::Array2IGhosted<2>)
-%template(Array2IGhosted2) pism::Array2IGhosted<2>;
 
 %include "util/IceModelVec2CellType.hh"
 %shared_ptr(pism::Array2CTGhosted<1>)

@@ -246,7 +246,7 @@ const IceModelVec2S& GeometryEvolution::conservation_error() const {
 void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                                   const IceModelVec2V    &advective_velocity,
                                   const IceModelVec2Stag &diffusive_flux,
-                                  const IceModelVec2Int  &thickness_bc_mask) {
+                                  const IceModelVec2S  &thickness_bc_mask) {
 
   m_impl->profile.begin("ge.update_ghosted_copies");
   {
@@ -329,7 +329,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
 }
 
 void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
-                                         const IceModelVec2Int  &thickness_bc_mask,
+                                         const IceModelVec2S  &thickness_bc_mask,
                                          const IceModelVec2S    &surface_mass_balance_rate,
                                          const IceModelVec2S    &basal_melt_rate) {
 
@@ -626,7 +626,7 @@ void GeometryEvolution::compute_interface_fluxes(const IceModelVec2CellType &cel
  */
 void GeometryEvolution::compute_flux_divergence(double dt,
                                                 const IceModelVec2Stag &flux,
-                                                const IceModelVec2Int &thickness_bc_mask,
+                                                const IceModelVec2S &thickness_bc_mask,
                                                 IceModelVec2S &conservation_error,
                                                 IceModelVec2S &output) {
   const double
@@ -1013,7 +1013,7 @@ static inline double effective_change(double H, double dH) {
  * This computation is purely local.
  */
 void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
-                                                               const IceModelVec2Int      &thickness_bc_mask,
+                                                               const IceModelVec2S      &thickness_bc_mask,
                                                                const IceModelVec2S        &ice_thickness,
                                                                const IceModelVec2CellType &cell_type,
                                                                const IceModelVec2S        &smb_flux,
@@ -1138,10 +1138,12 @@ RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
   : GeometryEvolution(grid),
     m_no_model_mask(m_grid, "no_model_mask") {
 
+  m_no_model_mask.set_interpolation_type(NEAREST);
+
   m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "", "", 0);
 }
 
-void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
+void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2S &mask) {
   m_no_model_mask.copy_from(mask);
 }
 
@@ -1191,7 +1193,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const IceModelVec2CellT
  * Set surface and basal mass balance to zero in "no model" areas.
  */
 void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
-                                                                       const IceModelVec2Int      &thickness_bc_mask,
+                                                                       const IceModelVec2S      &thickness_bc_mask,
                                                                        const IceModelVec2S        &ice_thickness,
                                                                        const IceModelVec2CellType &cell_type,
                                                                        const IceModelVec2S        &surface_mass_flux,
@@ -1225,11 +1227,11 @@ void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt
   loop.check();
 }
 
-void GeometryEvolution::set_no_model_mask(const IceModelVec2Int &mask) {
+void GeometryEvolution::set_no_model_mask(const IceModelVec2S &mask) {
   this->set_no_model_mask_impl(mask);
 }
 
-void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2Int &mask) {
+void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2S &mask) {
   (void) mask;
   // the default implementation is a no-op
 }

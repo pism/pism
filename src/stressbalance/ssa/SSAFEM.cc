@@ -53,6 +53,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
     m_element_index(*grid),
     m_q1_element(*grid, fem::Q1Quadrature4())
 {
+  m_bc_mask.set_interpolation_type(NEAREST);
+  m_node_type.set_interpolation_type(NEAREST);
 
   const double ice_density = m_config->get_number("constants.ice.density");
   m_alpha = 1 - ice_density / m_config->get_number("constants.sea_water.density");

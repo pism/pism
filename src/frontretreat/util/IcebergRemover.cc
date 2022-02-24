@@ -42,13 +42,13 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-void IcebergRemover::update(const IceModelVec2Int &bc_mask,
+void IcebergRemover::update(const IceModelVec2S &bc_mask,
                             IceModelVec2CellType &mask,
                             IceModelVec2S &ice_thickness) {
   update_impl(bc_mask, mask, ice_thickness);
 }
 
-void IcebergRemover::update_impl(const IceModelVec2Int &bc_mask,
+void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
                                  IceModelVec2CellType &mask,
                                  IceModelVec2S &ice_thickness) {
   const int

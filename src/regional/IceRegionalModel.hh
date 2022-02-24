@@ -58,7 +58,7 @@ protected:
   void init_diagnostics();
 
 private:
-  Array2IGhosted<2> m_no_model_mask;
+  Array2SGhosted<2> m_no_model_mask;
   Array2SGhosted<2>   m_usurf_stored;
   Array2SGhosted<1>   m_thk_stored;
 

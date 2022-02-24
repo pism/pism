@@ -256,7 +256,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *dirichletLocations = &m_bc_mask;
+  const IceModelVec2S *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
@@ -439,7 +439,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   double dzeta_e[Nk];
 
   // Aliases to help with notation consistency.
-  const IceModelVec2Int *dirichletLocations = &m_bc_mask;
+  const IceModelVec2S *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
@@ -621,7 +621,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2Int *dirichletLocations = &m_bc_mask;
+  const IceModelVec2S *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 

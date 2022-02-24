@@ -71,7 +71,7 @@ void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
 MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
-                                       const IceModelVec2Int &bc_mask,
+                                       const IceModelVec2S &bc_mask,
                                        const IceModelVec2S &retreat_rate) const {
 
   IceGrid::ConstPtr grid = retreat_rate.grid();
@@ -144,7 +144,7 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
  */
 void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
-                                   const IceModelVec2Int &bc_mask,
+                                   const IceModelVec2S &bc_mask,
                                    const IceModelVec2S &retreat_rate,
                                    IceModelVec2S &Href,
                                    IceModelVec2S &ice_thickness) {

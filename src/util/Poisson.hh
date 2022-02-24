@@ -19,7 +19,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec2S.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
@@ -30,14 +30,14 @@ class Poisson {
 public:
   Poisson(IceGrid::ConstPtr grid);
 
-  int solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
+  int solve(const IceModelVec2S& mask, const IceModelVec2S& bc, double rhs,
             bool reuse_matrix = false);
 
   const IceModelVec2S &solution() const;
 private:
-  void assemble_matrix(const IceModelVec2Int &mask, Mat A);
+  void assemble_matrix(const IceModelVec2S &mask, Mat A);
   void assemble_rhs(double rhs,
-                    const IceModelVec2Int &mask,
+                    const IceModelVec2S &mask,
                     const IceModelVec2S &bc,
                     IceModelVec2S &b);
 
@@ -48,7 +48,7 @@ private:
   petsc::Mat m_A;
   IceModelVec2S m_b;
   IceModelVec2S m_x;
-  Array2IGhosted<1> m_mask;
+  Array2SGhosted<1> m_mask;
 };
 
 } // end of namespace pism

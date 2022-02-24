@@ -91,8 +91,8 @@ class MassTransport(object):
 
         self.v = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
         self.Q = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-        self.v_bc_mask = PISM.IceModelVec2Int(grid, "v_bc_mask", PISM.WITHOUT_GHOSTS)
-        self.H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+        self.v_bc_mask = PISM.IceModelVec2S(grid, "v_bc_mask")
+        self.H_bc_mask = PISM.IceModelVec2S(grid, "H_bc_mask")
 
         self.ge = PISM.GeometryEvolution(grid)
 

@@ -26,7 +26,7 @@
 namespace pism {
 
 class IceModelVec;
-class IceModelVec2Int;
+class IceModelVec2S;
 class IceModelVec2S;
 class IceModelVec2V;
 
@@ -45,17 +45,17 @@ protected:
   DirichletData();
   ~DirichletData();
 
-  void init(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
+  void init(const IceModelVec2S *indices, const IceModelVec *values, double weight = 1.0);
   void finish(const IceModelVec *values);
 
-  const IceModelVec2Int *m_indices;
+  const IceModelVec2S *m_indices;
   double m_indices_e[q1::n_chi];
   double m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values,
+  DirichletData_Scalar(const IceModelVec2S *indices, const IceModelVec2S *values,
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
@@ -70,7 +70,7 @@ protected:
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values,
+  DirichletData_Vector(const IceModelVec2S *indices, const IceModelVec2V *values,
                        double weight);
   ~DirichletData_Vector();
 

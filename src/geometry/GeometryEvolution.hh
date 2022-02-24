@@ -22,7 +22,7 @@
 
 #include "Geometry.hh"
 #include "pism/util/Component.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 
 namespace pism {
 
@@ -52,10 +52,10 @@ public:
   void flow_step(const Geometry &ice_geometry, double dt,
                  const IceModelVec2V    &advective_velocity,
                  const IceModelVec2Stag &diffusive_flux,
-                 const IceModelVec2Int  &thickness_bc_mask);
+                 const IceModelVec2S  &thickness_bc_mask);
 
   void source_term_step(const Geometry &geometry, double dt,
-                        const IceModelVec2Int &thickness_bc_mask,
+                        const IceModelVec2S &thickness_bc_mask,
                         const IceModelVec2S   &surface_mass_flux,
                         const IceModelVec2S   &basal_melt_rate);
 
@@ -75,7 +75,7 @@ public:
   const IceModelVec2S& flux_divergence() const;
 
   // "regional" setup
-  virtual void set_no_model_mask(const IceModelVec2Int &mask);
+  virtual void set_no_model_mask(const IceModelVec2S &mask);
 protected:
   std::map<std::string,Diagnostic::Ptr> diagnostics_impl() const;
 
@@ -105,7 +105,7 @@ protected:
 
   virtual void compute_flux_divergence(double dt,
                                        const IceModelVec2Stag &flux_staggered,
-                                       const IceModelVec2Int &thickness_bc_mask,
+                                       const IceModelVec2S &thickness_bc_mask,
                                        IceModelVec2S &conservation_error,
                                        IceModelVec2S &flux_fivergence);
 
@@ -115,12 +115,12 @@ protected:
                                     IceModelVec2S &area_specific_volume_change,
                                     IceModelVec2S &conservation_error);
 
-  virtual void set_no_model_mask_impl(const IceModelVec2Int &mask);
+  virtual void set_no_model_mask_impl(const IceModelVec2S &mask);
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
   virtual void compute_surface_and_basal_mass_balance(double dt,
-                                                      const IceModelVec2Int      &thickness_bc_mask,
+                                                      const IceModelVec2S      &thickness_bc_mask,
                                                       const IceModelVec2S        &ice_thickness,
                                                       const IceModelVec2CellType &cell_type,
                                                       const IceModelVec2S        &surface_mass_flux,
@@ -137,7 +137,7 @@ public:
   RegionalGeometryEvolution(IceGrid::ConstPtr grid);
 
 protected:
-  void set_no_model_mask_impl(const IceModelVec2Int &mask);
+  void set_no_model_mask_impl(const IceModelVec2S &mask);
 
   void compute_interface_fluxes(const IceModelVec2CellType &cell_type,
                                 const IceModelVec2S        &ice_thickness,
@@ -146,7 +146,7 @@ protected:
                                 IceModelVec2Stag           &output);
 
   void compute_surface_and_basal_mass_balance(double dt,
-                                              const IceModelVec2Int      &thickness_bc_mask,
+                                              const IceModelVec2S      &thickness_bc_mask,
                                               const IceModelVec2S        &ice_thickness,
                                               const IceModelVec2CellType &cell_type,
                                               const IceModelVec2S        &surface_mass_flux,
@@ -154,7 +154,7 @@ protected:
                                               IceModelVec2S              &effective_SMB,
                                               IceModelVec2S              &effective_BMB);
 private:
-  Array2IGhosted<1> m_no_model_mask;
+  Array2SGhosted<1> m_no_model_mask;
 };
 
 /*!

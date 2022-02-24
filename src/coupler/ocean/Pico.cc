@@ -376,8 +376,8 @@ MaxTimestep Pico::max_timestep_impl(double t) const {
 
 
 void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
-                                         const IceModelVec2Int &basin_mask,
-                                         const IceModelVec2Int &continental_shelf_mask,
+                                         const IceModelVec2S &basin_mask,
+                                         const IceModelVec2S &continental_shelf_mask,
                                          const IceModelVec2S &salinity_ocean,
                                          const IceModelVec2S &theta_ocean,
                                          std::vector<double> &temperature,
@@ -462,8 +462,8 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const IceModelVec2S &ice_thickness,
                                   const IceModelVec2CellType &mask,
-                                  const IceModelVec2Int &basin_mask,
-                                  const IceModelVec2Int &shelf_mask,
+                                  const IceModelVec2S &basin_mask,
+                                  const IceModelVec2S &shelf_mask,
                                   const std::vector<double> &basin_temperature,
                                   const std::vector<double> &basin_salinity,
                                   IceModelVec2S &Toc_box0,
@@ -581,7 +581,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
  */
 void Pico::beckmann_goosse(const PicoPhysics &physics,
                            const IceModelVec2S &ice_thickness,
-                           const IceModelVec2Int &shelf_mask,
+                           const IceModelVec2S &shelf_mask,
                            const IceModelVec2CellType &cell_type,
                            const IceModelVec2S &Toc_box0,
                            const IceModelVec2S &Soc_box0,
@@ -626,8 +626,8 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
 
 void Pico::process_box1(const PicoPhysics &physics,
                         const IceModelVec2S &ice_thickness,
-                        const IceModelVec2Int &shelf_mask,
-                        const IceModelVec2Int &box_mask,
+                        const IceModelVec2S &shelf_mask,
+                        const IceModelVec2S &box_mask,
                         const IceModelVec2S &Toc_box0,
                         const IceModelVec2S &Soc_box0,
                         IceModelVec2S &basal_melt_rate,
@@ -693,8 +693,8 @@ void Pico::process_box1(const PicoPhysics &physics,
 
 void Pico::process_other_boxes(const PicoPhysics &physics,
                                const IceModelVec2S &ice_thickness,
-                               const IceModelVec2Int &shelf_mask,
-                               const IceModelVec2Int &box_mask,
+                               const IceModelVec2S &shelf_mask,
+                               const IceModelVec2S &box_mask,
                                IceModelVec2S &basal_melt_rate,
                                IceModelVec2S &basal_temperature,
                                IceModelVec2S &T_star,
@@ -805,8 +805,8 @@ DiagnosticList Pico::diagnostics_impl() const {
  */
 void Pico::compute_box_average(int box_id,
                                const IceModelVec2S &field,
-                               const IceModelVec2Int &shelf_mask,
-                               const IceModelVec2Int &box_mask,
+                               const IceModelVec2S &shelf_mask,
+                               const IceModelVec2S &box_mask,
                                std::vector<double> &result) const {
 
   IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
@@ -857,8 +857,8 @@ void Pico::compute_box_average(int box_id,
  * Note: shelf and box indexes start from 1.
  */
 void Pico::compute_box_area(int box_id,
-                            const IceModelVec2Int &shelf_mask,
-                            const IceModelVec2Int &box_mask,
+                            const IceModelVec2S &shelf_mask,
+                            const IceModelVec2S &box_mask,
                             std::vector<double> &result) const {
   result.resize(m_n_shelves);
   IceModelVec::AccessList list{ &shelf_mask, &box_mask };

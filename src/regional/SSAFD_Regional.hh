@@ -36,7 +36,7 @@ public:
   virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
                                       const IceModelVec2S &surface_elevation,
                                       const IceModelVec2CellType &cell_type,
-                                      const IceModelVec2Int *no_model_mask,
+                                      const IceModelVec2S *no_model_mask,
                                       IceModelVec2V &result) const;
 
 private:
@@ -44,7 +44,7 @@ private:
 
   const IceModelVec2S   *m_h_stored;
   const IceModelVec2S   *m_H_stored;
-  const IceModelVec2Int *m_no_model_mask;
+  const IceModelVec2S *m_no_model_mask;
 };
 
 SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid);

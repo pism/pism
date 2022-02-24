@@ -37,11 +37,11 @@ enum NodeType {
 };
 
 class IceModelVec2S;
-class IceModelVec2Int;
+class IceModelVec2S;
 
 void compute_node_types(const IceModelVec2S &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2Int &result);
+                        IceModelVec2S &result);
 
 } // end of namespace pism
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,7 +35,7 @@ namespace calving {
 IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
   : IcebergRemover(grid),
     m_mask(grid, "temporary_mask") {
-  // empty
+  m_mask.set_interpolation_type(NEAREST);
 }
 
 /*! Remove "icebergs" using the finite element notion of connectivity: two elements are
@@ -63,7 +63,7 @@ IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
  * 4. Now loop over all nodes and remove nodes with positive mask values.
  *
  */
-void IcebergRemoverFEM::update_impl(const IceModelVec2Int &bc_mask,
+void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
                                     IceModelVec2CellType &pism_mask,
                                     IceModelVec2S &ice_thickness) {
   const int

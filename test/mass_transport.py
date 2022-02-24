@@ -83,7 +83,7 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     v         = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
     Q         = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-    H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask")
+    H_bc_mask = PISM.IceModelVec2S(grid, "H_bc_mask")
 
     ge = PISM.GeometryEvolution(grid)
 

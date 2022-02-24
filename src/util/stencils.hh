@@ -72,7 +72,7 @@ struct Star {
 };
 
 // NB: Do not change the order of elements in this struct. IceModelVec2S::box() and
-// IceModelVec2Int::box() depend on it.
+// IceModelVec2S::box() depend on it.
 template <typename T>
 struct Box {
   T ij, n, nw, w, sw, s, se, e, ne;

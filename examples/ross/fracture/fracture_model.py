@@ -42,11 +42,11 @@ data = PISM.max_timestep_cfl_2d(geometry.ice_thickness, geometry.cell_type, velo
 dt = data.dt_max.value()
 
 # read in the BC mask
-vel_bc_mask = PISM.IceModelVec2Int(grid, "vel_bc_mask", PISM.WITHOUT_GHOSTS)
+vel_bc_mask = PISM.IceModelVec2S(grid, "vel_bc_mask")
 vel_bc_mask.regrid(filename)
 
 # Set hardness to a constant corresponding to -30C at 0 Pa
-hardness = PISM.IceModelVec2S(grid, "hardness", PISM.WITHOUT_GHOSTS)
+hardness = PISM.IceModelVec2S(grid, "hardness")
 T = -30
 P = 0.0
 E = ctx.enthalpy_converter.enthalpy(T + 273.15, 0.0, P)

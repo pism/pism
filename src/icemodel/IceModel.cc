@@ -85,6 +85,9 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
     m_extra_bounds("time_bounds", m_sys),
     m_timestamp("timestamp", m_sys) {
 
+  m_velocity_bc_mask.set_interpolation_type(NEAREST);
+  m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
+
   // time-independent info
   {
     m_run_stats["source"] = std::string("PISM ") + pism::revision;

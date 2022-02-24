@@ -24,7 +24,7 @@
 #include <set>
 
 #include "pism/util/Component.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 
 namespace pism {
 
@@ -34,7 +34,7 @@ class IceModelVec2CellType;
 
 namespace ocean {
 
-void eikonal_equation(IceModelVec2Int &mask);
+void eikonal_equation(IceModelVec2S &mask);
 
 /*!
  * This class isolates geometric computations performed by the PICO ocean model.
@@ -47,78 +47,78 @@ public:
   void init();
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
-  const IceModelVec2Int &continental_shelf_mask() const;
-  const IceModelVec2Int &box_mask() const;
-  const IceModelVec2Int &ice_shelf_mask() const;
-  const IceModelVec2Int &ice_rise_mask() const;
-  const IceModelVec2Int &basin_mask() const;
+  const IceModelVec2S &continental_shelf_mask() const;
+  const IceModelVec2S &box_mask() const;
+  const IceModelVec2S &ice_shelf_mask() const;
+  const IceModelVec2S &ice_rise_mask() const;
+  const IceModelVec2S &basin_mask() const;
 
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
 private:
-  void compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises, IceModelVec2Int &result);
-  void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
-  void compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2Int &result);
+  void compute_ice_rises(const IceModelVec2CellType &cell_type, bool exclude_ice_rises, IceModelVec2S &result);
+  void compute_lakes(const IceModelVec2CellType &cell_type, IceModelVec2S &result);
+  void compute_ocean_mask(const IceModelVec2CellType &cell_type, IceModelVec2S &result);
   void compute_continental_shelf_mask(const IceModelVec2S &bed_elevation,
-                                      const IceModelVec2Int &ice_rise_mask,
+                                      const IceModelVec2S &ice_rise_mask,
                                       double bed_elevation_threshold,
-                                      IceModelVec2Int &result);
-  void compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
-                              const IceModelVec2Int &lake_mask,
-                              IceModelVec2Int &result);
+                                      IceModelVec2S &result);
+  void compute_ice_shelf_mask(const IceModelVec2S &ice_rise_mask,
+                              const IceModelVec2S &lake_mask,
+                              IceModelVec2S &result);
 
   std::map<int,std::set<int> > basin_neighbors(const IceModelVec2CellType &cell_type,
-                                               const IceModelVec2Int &basin_mask);
+                                               const IceModelVec2S &basin_mask);
 
   void identify_calving_front_connection(const IceModelVec2CellType &cell_type,
-                                         const IceModelVec2Int &basin_mask,
-                                         const IceModelVec2Int &shelf_mask,
+                                         const IceModelVec2S &basin_mask,
+                                         const IceModelVec2S &shelf_mask,
                                          int n_shelves,
                                          std::vector<int> &most_shelf_cells_in_basin,
                                          std::vector<int> &cfs_in_basins_per_shelf);
 
   void split_ice_shelves(const IceModelVec2CellType &cell_type,
-                         const IceModelVec2Int &basin_mask,
+                         const IceModelVec2S &basin_mask,
                          const std::map<int, std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,
                          const std::vector<int> &cfs_in_basins_per_shelf,
                          int n_shelves,
-                         IceModelVec2Int &shelf_mask);
+                         IceModelVec2S &shelf_mask);
  
-  void compute_distances_cf(const IceModelVec2Int &ocean_mask,
-                            const IceModelVec2Int &ice_rises,
+  void compute_distances_cf(const IceModelVec2S &ocean_mask,
+                            const IceModelVec2S &ice_rises,
                             bool exclude_ice_rises,
-                            IceModelVec2Int &result);
+                            IceModelVec2S &result);
 
-  void compute_distances_gl(const IceModelVec2Int &ocean_mask,
-                            const IceModelVec2Int &ice_rises,
+  void compute_distances_gl(const IceModelVec2S &ocean_mask,
+                            const IceModelVec2S &ice_rises,
                             bool exclude_ice_rises,
-                            IceModelVec2Int &result);
+                            IceModelVec2S &result);
 
-  void compute_box_mask(const IceModelVec2Int &D_gl,
-                        const IceModelVec2Int &D_cf,
-                        const IceModelVec2Int &shelf_mask,
+  void compute_box_mask(const IceModelVec2S &D_gl,
+                        const IceModelVec2S &D_cf,
+                        const IceModelVec2S &shelf_mask,
                         int max_number_of_boxes,
-                        IceModelVec2Int &result);
+                        IceModelVec2S &result);
 
   void label_tmp();
-  void relabel_by_size(IceModelVec2Int &mask);
+  void relabel_by_size(IceModelVec2S &mask);
 
   // storage for outputs
-  IceModelVec2Int m_continental_shelf;
-  IceModelVec2Int m_boxes;
-  IceModelVec2Int m_ice_shelves;
-  Array2IGhosted<1> m_basin_mask;
+  IceModelVec2S m_continental_shelf;
+  IceModelVec2S m_boxes;
+  IceModelVec2S m_ice_shelves;
+  Array2SGhosted<1> m_basin_mask;
 
   // storage for intermediate fields
-  Array2IGhosted<1> m_distance_gl;
-  Array2IGhosted<1> m_distance_cf;
-  Array2IGhosted<1> m_ocean_mask;
-  IceModelVec2Int m_lake_mask;
-  Array2IGhosted<1> m_ice_rises;
+  Array2SGhosted<1> m_distance_gl;
+  Array2SGhosted<1> m_distance_cf;
+  Array2SGhosted<1> m_ocean_mask;
+  IceModelVec2S m_lake_mask;
+  Array2SGhosted<1> m_ice_rises;
 
   // temporary storage
-  IceModelVec2Int m_tmp;
+  IceModelVec2S m_tmp;
   std::shared_ptr<petsc::Vec> m_tmp_p0;
 
   int m_n_basins;

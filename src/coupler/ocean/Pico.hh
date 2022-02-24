@@ -64,8 +64,8 @@ private:
   std::shared_ptr<IceModelVec2T> m_theta_ocean, m_salinity_ocean;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
-                                     const IceModelVec2Int &basin_mask,
-                                     const IceModelVec2Int &continental_shelf_mask,
+                                     const IceModelVec2S &basin_mask,
+                                     const IceModelVec2S &continental_shelf_mask,
                                      const IceModelVec2S &salinity_ocean,
                                      const IceModelVec2S &theta_ocean,
                                      std::vector<double> &temperature,
@@ -74,8 +74,8 @@ private:
   void set_ocean_input_fields(const PicoPhysics &physics,
                               const IceModelVec2S &ice_thickness,
                               const IceModelVec2CellType &mask,
-                              const IceModelVec2Int &basin_mask,
-                              const IceModelVec2Int &shelf_mask,
+                              const IceModelVec2S &basin_mask,
+                              const IceModelVec2S &shelf_mask,
                               const std::vector<double> &basin_temperature,
                               const std::vector<double> &basin_salinity,
                               IceModelVec2S &Toc_box0,
@@ -83,8 +83,8 @@ private:
 
   void process_box1(const PicoPhysics &physics,
                     const IceModelVec2S &ice_thickness,
-                    const IceModelVec2Int &shelf_mask,
-                    const IceModelVec2Int &box_mask,
+                    const IceModelVec2S &shelf_mask,
+                    const IceModelVec2S &box_mask,
                     const IceModelVec2S &Toc_box0,
                     const IceModelVec2S &Soc_box0,
                     IceModelVec2S &basal_melt_rate,
@@ -96,8 +96,8 @@ private:
 
   void process_other_boxes(const PicoPhysics &physics,
                            const IceModelVec2S &ice_thickness,
-                           const IceModelVec2Int &shelf_mask,
-                           const IceModelVec2Int &box_mask,
+                           const IceModelVec2S &shelf_mask,
+                           const IceModelVec2S &box_mask,
                            IceModelVec2S &basal_melt_rate,
                            IceModelVec2S &basal_temperature,
                            IceModelVec2S &T_star,
@@ -106,7 +106,7 @@ private:
 
   void beckmann_goosse(const PicoPhysics &physics,
                        const IceModelVec2S &ice_thickness,
-                       const IceModelVec2Int &shelf_mask,
+                       const IceModelVec2S &shelf_mask,
                        const IceModelVec2CellType &cell_type,
                        const IceModelVec2S &Toc_box0,
                        const IceModelVec2S &Soc_box0,
@@ -117,13 +117,13 @@ private:
 
   void compute_box_average(int box_id,
                            const IceModelVec2S &field,
-                           const IceModelVec2Int &shelf_mask,
-                           const IceModelVec2Int &box_mask,
+                           const IceModelVec2S &shelf_mask,
+                           const IceModelVec2S &box_mask,
                            std::vector<double> &result) const;
 
   void compute_box_area(int box_id,
-                        const IceModelVec2Int &shelf_mask,
-                        const IceModelVec2Int &box_mask,
+                        const IceModelVec2S &shelf_mask,
+                        const IceModelVec2S &box_mask,
                         std::vector<double> &result) const;
 
   int m_n_basins, m_n_boxes, m_n_shelves;

@@ -41,6 +41,8 @@ ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel
     m_ftt_mask(m_grid, "ftt_mask")
 {
 
+  m_ftt_mask.set_interpolation_type(NEAREST);
+
   m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
   m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
   m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");

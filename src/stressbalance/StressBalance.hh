@@ -28,7 +28,7 @@
 namespace pism {
 
 class IceModelVec2CellType;
-class IceModelVec2Int;
+class IceModelVec2S;
 class IceModelVec2Stag;
 class Geometry;
 
@@ -57,11 +57,11 @@ public:
   const IceModelVec3  *enthalpy;
   const IceModelVec3  *age;
 
-  const IceModelVec2Int *bc_mask;
+  const IceModelVec2S *bc_mask;
   const IceModelVec2V *bc_values;
 
   // inputs used by regional stress balance models
-  const IceModelVec2Int *no_model_mask;
+  const IceModelVec2S *no_model_mask;
   const IceModelVec2S *no_model_ice_thickness;
   const IceModelVec2S *no_model_surface_elevation;
 

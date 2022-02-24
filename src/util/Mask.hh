@@ -21,7 +21,7 @@
 
 // the following three includes are needed here because of inlined code
 #include "IceModelVec2S.hh"
-#include "IceModelVec2Int.hh"
+#include "IceModelVec2S.hh"
 #include "ConfigInterface.hh"
 #include "error_handling.hh"
 

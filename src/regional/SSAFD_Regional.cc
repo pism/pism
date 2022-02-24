@@ -69,7 +69,7 @@ static int weight(int M_ij, int M_n, double h_ij, double h_n) {
 void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
                                             const IceModelVec2S &surface_elevation,
                                             const IceModelVec2CellType &cell_type,
-                                            const IceModelVec2Int *no_model_mask,
+                                            const IceModelVec2S *no_model_mask,
                                             IceModelVec2V &result) const {
 
   SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);

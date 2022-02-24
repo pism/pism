@@ -66,7 +66,7 @@ protected:
     Vector2 driving_stress;
   };
 
-  Array2IGhosted<1> m_bc_mask;
+  Array2SGhosted<1> m_bc_mask;
   IceModelVec2V m_bc_values;
 
   GeometryCalculator m_gc;
@@ -128,7 +128,7 @@ protected:
   petsc::SNES m_snes;
 
   //! Storage for node types (interior, boundary, exterior).
-  Array2IGhosted<1> m_node_type;
+  Array2SGhosted<1> m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
   IceModelVec2V m_boundary_integral;
 

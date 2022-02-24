@@ -671,7 +671,7 @@ void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
 void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
-                               const IceModelVec2Int *no_model_mask,
+                               const IceModelVec2S *no_model_mask,
                                double max_thickness,
                                double ocean_water_thickness,
                                IceModelVec2S &water_thickness,
@@ -735,7 +735,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
   }
 
   if (no_model_mask) {
-    const IceModelVec2Int &M = *no_model_mask;
+    const IceModelVec2S &M = *no_model_mask;
 
     list.add(M);
 

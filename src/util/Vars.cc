@@ -168,8 +168,8 @@ const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
   return tmp;
 }
 
-const IceModelVec2Int* Vars::get_2d_mask(const std::string &name) const {
-  const IceModelVec2Int *tmp = dynamic_cast<const IceModelVec2Int*>(this->get_internal(name));
+const IceModelVec2S* Vars::get_2d_mask(const std::string &name) const {
+  const IceModelVec2S *tmp = dynamic_cast<const IceModelVec2S*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D mask variable '%s' is not available", name.c_str());
   }
@@ -295,8 +295,8 @@ IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
 }
 
 
-IceModelVec2Int::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
-  IceModelVec2Int::Ptr tmp = dynamic_pointer_cast<IceModelVec2Int,IceModelVec>(this->get_internal_shared(name));
+IceModelVec2S::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
+  IceModelVec2S::Ptr tmp = dynamic_pointer_cast<IceModelVec2S,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D mask variable '%s' is not available", name.c_str());
   }

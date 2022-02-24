@@ -27,7 +27,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec2Int.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec3.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -105,7 +105,7 @@ protected:
   IceModelVec3 m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;
-  Array2IGhosted<2> m_bc_mask;
+  Array2SGhosted<2> m_bc_mask;
 
   Geometry m_geometry;
 
