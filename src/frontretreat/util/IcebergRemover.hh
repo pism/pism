@@ -21,7 +21,6 @@
 #define _PISMICEBERGREMOVER_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 

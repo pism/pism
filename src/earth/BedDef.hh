@@ -20,7 +20,6 @@
 #define __BedDef_hh
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 

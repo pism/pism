@@ -25,6 +25,7 @@
 #include "functional/IPFunctional.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
+#include "pism/util/iceModelVec.hh" //
 #include "pism/util/Logger.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/Vec.hh"

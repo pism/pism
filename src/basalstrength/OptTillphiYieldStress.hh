@@ -21,8 +21,6 @@
 
 #include "MohrCoulombYieldStress.hh"
 
-#include "pism/util/iceModelVec.hh"
-
 namespace pism {
 
 //! Iterative optimization of the till friction angle.

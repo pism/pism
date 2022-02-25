@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PISMBEDTHERMALUNIT_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 #include "pism/util/Diagnostic.hh"
 

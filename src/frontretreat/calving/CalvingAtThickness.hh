@@ -21,7 +21,6 @@
 #define _PISMCALVINGATTHICKNESS_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {

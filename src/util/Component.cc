@@ -23,7 +23,6 @@
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
-#include "iceModelVec.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "ConfigInterface.hh"

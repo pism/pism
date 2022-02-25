@@ -22,7 +22,6 @@
 #include "IP_SSATaucForwardProblem.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "functional/IPFunctional.hh"
 

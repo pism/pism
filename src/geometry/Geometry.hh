@@ -21,7 +21,6 @@
 #define GEOMETRY_H
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {

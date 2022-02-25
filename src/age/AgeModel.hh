@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #ifndef AGEMODEL_H
 #define AGEMODEL_H
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/Component.hh"
 #include "pism/stressbalance/StressBalance.hh"
 

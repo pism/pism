@@ -26,7 +26,6 @@
 #include "VariableMetadata.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
-#include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/IceModelVec2S.hh"

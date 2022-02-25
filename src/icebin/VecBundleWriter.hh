@@ -3,7 +3,6 @@
 // --------------------------------
 // PISM Includes... want to be included first
 #include <petsc.h>
-#include <pism/util/iceModelVec.hh>
 #include <pism/util/IceGrid.hh>
 // --------------------------------
 
@@ -11,6 +10,9 @@
 #include <vector>
 
 namespace pism {
+
+class IceModelVec;
+
 namespace icebin {
 
 

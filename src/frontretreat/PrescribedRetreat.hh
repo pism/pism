@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,6 @@
 #define PRESCRIBED_RETREAT_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/util/MaxTimestep.hh"
 

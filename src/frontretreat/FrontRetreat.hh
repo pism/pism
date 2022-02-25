@@ -21,7 +21,6 @@
 #define FRONTRETREAT_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 

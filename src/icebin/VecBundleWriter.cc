@@ -6,6 +6,7 @@
 #include <pism/util/io/io_helpers.hh>
 #include <pism/icebin/VecBundleWriter.hh>
 #include "pism/util/Context.hh"
+#include "pism/util/iceModelVec.hh"
 
 using namespace pism;
 
