@@ -19,7 +19,7 @@
 
 #include "Geometry.hh"
 
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"

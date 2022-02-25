@@ -20,7 +20,7 @@
 #ifndef ICEMODELVEC2CELLTYPE_H
 #define ICEMODELVEC2CELLTYPE_H
 
-#include "IceModelVec2S.hh"
+#include "pism/util/IceModelVec2S.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {

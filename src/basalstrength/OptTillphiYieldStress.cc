@@ -21,7 +21,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"

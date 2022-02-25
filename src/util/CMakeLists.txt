@@ -23,7 +23,7 @@ set(PISMUTIL_SRC
   TerminationReason.cc
   VariableMetadata.cc
   error_handling.cc
-  CellTypeArray2.cc
+  array/CellType.cc
   iceModelVec.cc
   iceModelVec2T.cc
   iceModelVec2V.cc

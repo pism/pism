@@ -30,7 +30,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 

@@ -20,7 +20,7 @@
 #define _SSA_H_
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 

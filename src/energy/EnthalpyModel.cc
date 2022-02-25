@@ -22,7 +22,7 @@
 #include "DrainageCalculator.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/energy/enthSystem.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"

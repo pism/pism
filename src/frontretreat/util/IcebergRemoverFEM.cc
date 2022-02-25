@@ -26,7 +26,7 @@
 #include "IcebergRemoverFEM.hh"
 
 #include "pism/util/fem/Element.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {

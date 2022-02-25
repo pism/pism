@@ -19,7 +19,7 @@
 #include "SIAFD_diagnostics.hh"
 #include "BedSmoother.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace stressbalance {

@@ -23,7 +23,7 @@
 #include "pism/util/Component.hh"
 #include "pism/util/IceModelVec2S.hh"
 #include "pism/util/IceModelVec3.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 

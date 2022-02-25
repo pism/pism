@@ -21,7 +21,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

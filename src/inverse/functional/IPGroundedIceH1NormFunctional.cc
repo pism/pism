@@ -20,7 +20,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace inverse {

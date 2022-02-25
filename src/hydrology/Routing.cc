@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include "Routing.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/MaxTimestep.hh"
 

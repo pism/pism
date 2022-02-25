@@ -21,7 +21,7 @@ using std::dynamic_pointer_cast;
 
 #include "Vars.hh"
 #include "VariableMetadata.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/IceModelVec3.hh"
 #include "error_handling.hh"

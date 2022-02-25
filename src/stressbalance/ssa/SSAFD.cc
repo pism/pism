@@ -28,7 +28,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"

@@ -34,7 +34,7 @@
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"

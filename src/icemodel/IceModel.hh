@@ -40,7 +40,7 @@
 #include <memory>
 
 // IceModel owns a bunch of fields, so we have to include this.
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"

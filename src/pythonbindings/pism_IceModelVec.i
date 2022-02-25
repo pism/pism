@@ -1,7 +1,7 @@
 %{
 /* Using directives needed to compile IceModelVec wrappers. */
 
-#include "util/IceModelVec2CellType.hh"
+#include "util/array/CellType.hh"
 #include "util/IceModelVec2S.hh"
 #include "util/iceModelVec2T.hh"
 #include "util/IceModelVec2V.hh"
@@ -161,7 +161,7 @@ std::vector<double> interp(int i, int j) {
 %ignore pism::array::duplicate(const pism::array::CellType &);
 %ignore pism::array::duplicate(const pism::array::CellType1 &);
 %ignore pism::array::duplicate(const pism::array::CellType2 &);
-%include "util/IceModelVec2CellType.hh"
+%include "util/array/CellType.hh"
 
 %include "util/iceModelVec2T.hh"
 

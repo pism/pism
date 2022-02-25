@@ -24,7 +24,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Context.hh"

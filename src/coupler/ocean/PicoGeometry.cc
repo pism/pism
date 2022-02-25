@@ -20,7 +20,7 @@
 #include <algorithm> // max_element
 #include "PicoGeometry.hh"
 #include "pism/util/connected_components.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
