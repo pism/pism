@@ -64,7 +64,7 @@ IcebergRemoverFEM::IcebergRemoverFEM(IceGrid::ConstPtr grid)
  *
  */
 void IcebergRemoverFEM::update_impl(const IceModelVec2S &bc_mask,
-                                    CellTypeArray1 &cell_type,
+                                    array::CellType1 &cell_type,
                                     IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,

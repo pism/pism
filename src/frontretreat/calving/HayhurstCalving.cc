@@ -62,7 +62,7 @@ void HayhurstCalving::init() {
 
 }
 
-void HayhurstCalving::update(const CellTypeArray1 &cell_type,
+void HayhurstCalving::update(const array::CellType1 &cell_type,
                              const IceModelVec2S &ice_thickness,
                              const IceModelVec2S &sea_level,
                              const IceModelVec2S &bed_elevation) {

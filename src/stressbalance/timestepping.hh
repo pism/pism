@@ -27,9 +27,11 @@ namespace pism {
 class IceModelVec2S;
 class IceModelVec2V;
 class IceModelVec3;
-using CellTypeArray0 = class CellTypeArray;
-class CellTypeArray1;
-class CellTypeArray2;
+namespace array {
+using CellType0 = class CellType;
+class CellType1;
+class CellType2;
+} // end of namespace array
 
 struct CFLData {
   CFLData();
@@ -46,7 +48,7 @@ struct CFLData {
  * The maximum of the speed along the z axis is computed for reporting.
  */
 CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
-                            const CellTypeArray0 &cell_type,
+                            const array::CellType0 &cell_type,
                             const IceModelVec3 &u3,
                             const IceModelVec3 &v3,
                             const IceModelVec3 &w3);
@@ -57,7 +59,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
  * ice.
  */
 CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
-                            const CellTypeArray0 &cell_type,
+                            const array::CellType0 &cell_type,
                             const IceModelVec2V &velocity);
 
 } // end of namespace pism

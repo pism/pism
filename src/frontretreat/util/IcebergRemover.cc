@@ -43,13 +43,13 @@ IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
  * @param[in,out] ice_thickness ice thickness
  */
 void IcebergRemover::update(const IceModelVec2S &bc_mask,
-                            CellTypeArray1 &cell_type,
+                            array::CellType1 &cell_type,
                             IceModelVec2S &ice_thickness) {
   update_impl(bc_mask, cell_type, ice_thickness);
 }
 
 void IcebergRemover::update_impl(const IceModelVec2S &bc_mask,
-                                 CellTypeArray1 &cell_type,
+                                 array::CellType1 &cell_type,
                                  IceModelVec2S &ice_thickness) {
   const int
     mask_grounded_ice = 1,

@@ -85,7 +85,7 @@ struct GeometryEvolution::Impl {
   Array2SGhosted<1>  ice_thickness;        // updated in place
   Array2SGhosted<1>  area_specific_volume; // updated in place
   Array2SGhosted<1>  surface_elevation;    // updated to maintain consistency
-  CellTypeArray1 cell_type;            // updated to maintain consistency
+  array::CellType1 cell_type;            // updated to maintain consistency
   Array2SGhosted<1>  residual;             // temporary storage
   Array2SGhosted<1>  thickness;            // temporary storage
 };
@@ -537,7 +537,7 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
  *
  * Limits the diffusive flux to prevent SIA-driven flow in the ocean and ice-free areas.
  */
-void GeometryEvolution::compute_interface_fluxes(const CellTypeArray1 &cell_type,
+void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                  const IceModelVec2S        &ice_thickness,
                                                  const IceModelVec2V        &velocity,
                                                  const IceModelVec2Stag     &diffusive_flux,
@@ -810,7 +810,7 @@ void GeometryEvolution::residual_redistribution_iteration(const IceModelVec2S  &
                                                           const IceModelVec2S  &sea_level,
                                                           IceModelVec2S        &ice_surface_elevation,
                                                           IceModelVec2S        &ice_thickness,
-                                                          CellTypeArray1 &cell_type,
+                                                          array::CellType1 &cell_type,
                                                           IceModelVec2S        &area_specific_volume,
                                                           IceModelVec2S        &residual,
                                                           bool &done) {
@@ -1015,7 +1015,7 @@ static inline double effective_change(double H, double dH) {
 void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
                                                                const IceModelVec2S      &thickness_bc_mask,
                                                                const IceModelVec2S        &ice_thickness,
-                                                               const CellTypeArray0 &cell_type,
+                                                               const array::CellType0 &cell_type,
                                                                const IceModelVec2S        &smb_flux,
                                                                const IceModelVec2S        &basal_melt_rate,
                                                                IceModelVec2S              &effective_SMB,
@@ -1150,7 +1150,7 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const IceModelVec2S &mask
 /*!
  * Disable ice flow in "no model" areas.
  */
-void RegionalGeometryEvolution::compute_interface_fluxes(const CellTypeArray1 &cell_type,
+void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                          const IceModelVec2S        &ice_thickness,
                                                          const IceModelVec2V        &velocity,
                                                          const IceModelVec2Stag     &diffusive_flux,
@@ -1195,7 +1195,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const CellTypeArray1 &c
 void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
                                                                        const IceModelVec2S      &thickness_bc_mask,
                                                                        const IceModelVec2S        &ice_thickness,
-                                                                       const CellTypeArray0 &cell_type,
+                                                                       const array::CellType0 &cell_type,
                                                                        const IceModelVec2S        &surface_mass_flux,
                                                                        const IceModelVec2S        &basal_melt_rate,
                                                                        IceModelVec2S              &effective_SMB,
@@ -1236,7 +1236,7 @@ void GeometryEvolution::set_no_model_mask_impl(const IceModelVec2S &mask) {
   // the default implementation is a no-op
 }
 
-void grounding_line_flux(const CellTypeArray1 &cell_type,
+void grounding_line_flux(const array::CellType1 &cell_type,
                          const IceModelVec2Stag &flux,
                          double dt,
                          bool add_values,
@@ -1302,7 +1302,7 @@ void grounding_line_flux(const CellTypeArray1 &cell_type,
 /*!
  * Compute the total grounding line flux over a time step, in kg.
  */
-double total_grounding_line_flux(const CellTypeArray1 &cell_type,
+double total_grounding_line_flux(const array::CellType1 &cell_type,
                                  const IceModelVec2Stag &flux,
                                  double dt) {
   using mask::grounded;

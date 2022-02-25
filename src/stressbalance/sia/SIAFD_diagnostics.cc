@@ -94,7 +94,7 @@ IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
   const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
   const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  CellTypeArray2 cell_type(m_grid, "cell_type");
+  array::CellType2 cell_type(m_grid, "cell_type");
   {
     const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
     cell_type.copy_from(mask);
@@ -124,7 +124,7 @@ IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
   IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity"));
   result->metadata() = m_vars[0];
 
-  CellTypeArray1 cell_type(m_grid, "cell_type");
+  array::CellType1 cell_type(m_grid, "cell_type");
   {
     const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
     cell_type.copy_from(mask);

@@ -282,7 +282,7 @@ Call preprocess_bed() first.
  */
 void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
                                const IceModelVec2S &thk,
-                               const CellTypeArray2 &mask,
+                               const array::CellType2 &mask,
                                IceModelVec2S &result) const {
 
   IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};

@@ -155,9 +155,12 @@ std::vector<double> interp(int i, int j) {
 %shared_ptr(pism::Array2SGhosted<2>)
 %template(Array2SGhosted2) pism::Array2SGhosted<2>;
 
-%shared_ptr(pism::CellTypeArray)
-%shared_ptr(pism::CellTypeArray1)
-%shared_ptr(pism::CellTypeArray2)
+%shared_ptr(pism::array::CellType)
+%shared_ptr(pism::array::CellType1)
+%shared_ptr(pism::array::CellType2)
+%ignore pism::array::duplicate(const pism::array::CellType &);
+%ignore pism::array::duplicate(const pism::array::CellType1 &);
+%ignore pism::array::duplicate(const pism::array::CellType2 &);
 %include "util/IceModelVec2CellType.hh"
 
 %include "util/iceModelVec2T.hh"

@@ -39,7 +39,7 @@ public:
   Inputs();
   void check() const;
 
-  const CellTypeArray0 *cell_type;
+  const array::CellType0 *cell_type;
   const IceModelVec2S *basal_frictional_heating;
   const IceModelVec2S *basal_heat_flux;
   const IceModelVec2S *ice_thickness;

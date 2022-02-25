@@ -39,9 +39,9 @@ public:
 
   typedef std::shared_ptr<IceModelVec2V> Ptr;
   typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
-};
 
-std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source);
+  std::shared_ptr<IceModelVec2V> duplicate() const;
+};
 
 void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result);
 

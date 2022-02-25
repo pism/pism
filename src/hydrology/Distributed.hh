@@ -76,7 +76,7 @@ protected:
                        IceModelVec2S &result);
 
   void update_P(double dt,
-                const CellTypeArray0 &cell_type,
+                const array::CellType0 &cell_type,
                 const IceModelVec2S &sliding_speed,
                 const IceModelVec2S &surface_input_rate,
                 const IceModelVec2S &basal_melt_rate,

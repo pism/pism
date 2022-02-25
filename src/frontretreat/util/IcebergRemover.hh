@@ -52,11 +52,11 @@ public:
   virtual ~IcebergRemover() = default;
 
   void update(const IceModelVec2S &bc_mask,
-              CellTypeArray1 &cell_type,
+              array::CellType1 &cell_type,
               IceModelVec2S &ice_thickness);
 protected:
   virtual void update_impl(const IceModelVec2S &bc_mask,
-                           CellTypeArray1 &cell_type,
+                           array::CellType1 &cell_type,
                            IceModelVec2S &ice_thickness);
 
 

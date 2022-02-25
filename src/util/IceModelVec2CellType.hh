@@ -21,32 +21,23 @@
 #define ICEMODELVEC2CELLTYPE_H
 
 #include "IceModelVec2S.hh"
-#include "Mask.hh"
-#include "interpolation.hh"
-#include "VariableMetadata.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
+namespace array {
 
-//! "Cell type" mask. Adds convenience methods to IceModelVec2S.
+//! "Cell type" mask. Adds convenience methods to IceModelVec2S. Not ghosted.
 /*!
  * We could achieve this with one template parameter (stencil width), but SWIG can't handle
- * `class CellTypeArray2 : public std::conditional<width != 0, CellTypeArray2<width-1>, IceModelVec2S>::type ...`
+ * `template<int width> class CellType : public std::conditional<width != 0, CellType<width-1>, IceModelVec2S>::type ...`
 
  */
-class CellTypeArray : public IceModelVec2S {
-protected:
-  CellTypeArray(IceGrid::ConstPtr grid, const std::string &name, int w)
-    : IceModelVec2S(grid, name, w) {
-    // empty
-  }
+class CellType : public IceModelVec2S {
 public:
-  typedef std::shared_ptr<CellTypeArray> Ptr;
-  typedef std::shared_ptr<const CellTypeArray> ConstPtr;
+  typedef std::shared_ptr<CellType> Ptr;
+  typedef std::shared_ptr<const CellType> ConstPtr;
 
-  CellTypeArray(IceGrid::ConstPtr grid, const std::string &name)
-    : IceModelVec2S(grid, name) {
-    IceModelVec2S::set_interpolation_type(NEAREST);
-  }
+  CellType(IceGrid::ConstPtr grid, const std::string &name);
 
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
@@ -110,35 +101,37 @@ public:
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
-};
-
-class CellTypeArray1 : public CellTypeArray {
-public:
-  CellTypeArray1(IceGrid::ConstPtr grid, const std::string &name)
-    : CellTypeArray(grid, name, 1) {
-    // empty
-  }
 protected:
-  CellTypeArray1(IceGrid::ConstPtr grid, const std::string &name, int width)
-    : CellTypeArray(grid, name, width) {
-    // empty
-  }
+  CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
 };
 
-class CellTypeArray2 : public CellTypeArray1 {
+using CellType0 = class CellType;
+
+/*!
+ * Cell type array supporting width=1 stencil computations (ghosted).
+ */
+class CellType1 : public CellType {
 public:
-  CellTypeArray2(IceGrid::ConstPtr grid, const std::string &name)
-    : CellTypeArray1(grid, name, 2) {
-    // empty
-  }
+  typedef std::shared_ptr<CellType1> Ptr;
+  typedef std::shared_ptr<const CellType1> ConstPtr;
+
+  CellType1(IceGrid::ConstPtr grid, const std::string &name);
+protected:
+  CellType1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
 
-using CellTypeArray0 = class CellTypeArray;
+/*!
+ * Cell type array supporting width=2 stencil computations (ghosted).
+ */
+class CellType2 : public CellType1 {
+public:
+  typedef std::shared_ptr<CellType2> Ptr;
+  typedef std::shared_ptr<const CellType2> ConstPtr;
 
-std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray0 &source);
-std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray1 &source);
-std::shared_ptr<CellTypeArray0> duplicate(const CellTypeArray2 &source);
+  CellType2(IceGrid::ConstPtr grid, const std::string &name);
+};
 
+} // end of namespace array
 } // end of namespace pism
 
 #endif /* ICEMODELVEC2CELLTYPE_H */

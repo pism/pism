@@ -392,7 +392,7 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
 /*! Uses mask values to avoid averaging using water thickness values from
   either ice-free or floating areas. */
 void Routing::water_thickness_staggered(const IceModelVec2S &W,
-                                        const CellTypeArray1 &mask,
+                                        const array::CellType1 &mask,
                                         IceModelVec2Stag &result) {
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");

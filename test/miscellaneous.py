@@ -977,7 +977,7 @@ class PrincipalStrainRates(TestCase):
         return velocity
 
     def create_cell_type(self, grid):
-        cell_type = PISM.CellTypeArray1(grid, "cell_type")
+        cell_type = PISM.CellType1(grid, "cell_type")
         cell_type.set(PISM.MASK_GROUNDED)
         cell_type.update_ghosts()
 

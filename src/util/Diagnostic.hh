@@ -135,7 +135,7 @@ public:
 protected:
 
   IceModelVec::Ptr compute_impl() const {
-    auto result = duplicate(m_input);
+    auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_vars.size(); ++k) {

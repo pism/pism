@@ -242,7 +242,7 @@ TSDiagnosticList FrontalMelt::ts_diagnostics_impl() const {
   }
 }
 
-bool FrontalMelt::apply(const CellTypeArray0 &M, int i, int j) {
+bool FrontalMelt::apply(const array::CellType0 &M, int i, int j) {
   // icy and grounded_ice cells are included for visualization only (values at these
   // locations have no effect)
   if (m_include_floating_ice) {

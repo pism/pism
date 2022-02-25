@@ -200,7 +200,7 @@ void Pico::write_model_state_impl(const File &output) const {
 * Note that melt rates are then simply interpolated into partially floating cells, they
 * are not included in the calculations of PICO.
 */
-static void extend_basal_melt_rates(const CellTypeArray1 &cell_type,
+static void extend_basal_melt_rates(const array::CellType1 &cell_type,
                                     IceModelVec2S &basal_melt_rate) {
 
   auto grid = basal_melt_rate.grid();
@@ -461,7 +461,7 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const IceModelVec2S &ice_thickness,
-                                  const CellTypeArray1 &mask,
+                                  const array::CellType1 &mask,
                                   const IceModelVec2S &basin_mask,
                                   const IceModelVec2S &shelf_mask,
                                   const std::vector<double> &basin_temperature,
@@ -582,7 +582,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 void Pico::beckmann_goosse(const PicoPhysics &physics,
                            const IceModelVec2S &ice_thickness,
                            const IceModelVec2S &shelf_mask,
-                           const CellTypeArray0 &cell_type,
+                           const array::CellType0 &cell_type,
                            const IceModelVec2S &Toc_box0,
                            const IceModelVec2S &Soc_box0,
                            IceModelVec2S &basal_melt_rate,

@@ -820,7 +820,7 @@ IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
 
-  CellTypeArray1 cell_type(m_grid, "cell_type");
+  array::CellType1 cell_type(m_grid, "cell_type");
   {
     const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
     cell_type.copy_from(mask);
@@ -863,7 +863,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
   // copy_from updates ghosts
   velocity.copy_from(*IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute()));
 
-  CellTypeArray1 cell_type(m_grid, "cell_type");
+  array::CellType1 cell_type(m_grid, "cell_type");
   {
     const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
     cell_type.copy_from(mask);

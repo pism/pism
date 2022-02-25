@@ -102,7 +102,7 @@ void PicoGeometry::init() {
  * to date.
  */
 void PicoGeometry::update(const IceModelVec2S &bed_elevation,
-                          const CellTypeArray1 &cell_type) {
+                          const array::CellType1 &cell_type) {
 
   // Update basin adjacency.
   //
@@ -305,7 +305,7 @@ void PicoGeometry::label_tmp() {
  * 1 - floating ice not connected to the open ocean
  * 2 - floating ice or ice-free ocean connected to the open ocean
  */
-void PicoGeometry::compute_lakes(const CellTypeArray0 &cell_type, IceModelVec2S &result) {
+void PicoGeometry::compute_lakes(const array::CellType0 &cell_type, IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
   const int
@@ -360,7 +360,7 @@ void PicoGeometry::compute_lakes(const CellTypeArray0 &cell_type, IceModelVec2S 
  * 2 - continental ice sheet
  * 3 - floating ice
  */
-void PicoGeometry::compute_ice_rises(const CellTypeArray0 &cell_type, bool exclude_ice_rises,
+void PicoGeometry::compute_ice_rises(const array::CellType0 &cell_type, bool exclude_ice_rises,
                                      IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
@@ -512,7 +512,7 @@ void PicoGeometry::compute_ice_shelf_mask(const IceModelVec2S &ice_rise_mask, co
  * - 2 - open ocean
  *
  */
-void PicoGeometry::compute_ocean_mask(const CellTypeArray0 &cell_type, IceModelVec2S &result) {
+void PicoGeometry::compute_ocean_mask(const array::CellType0 &cell_type, IceModelVec2S &result) {
   IceModelVec::AccessList list{ &cell_type, &m_tmp };
 
   // mask of zeros and ones: one if ice-free ocean, zero otherwise
@@ -540,7 +540,7 @@ void PicoGeometry::compute_ocean_mask(const CellTypeArray0 &cell_type, IceModelV
  *
  * Returns the map from the basin index to a set of indexes of neighbors.
  */
-std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const CellTypeArray1 &cell_type,
+std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1 &cell_type,
                                                            const IceModelVec2S &basin_mask) {
   using mask::ice_free_ocean;
 
@@ -630,7 +630,7 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const CellTypeArray1 
  *  Find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion.
  *  Find the basin bmax, in which the ice shelf s has the most cells
  */
-void PicoGeometry::identify_calving_front_connection(const CellTypeArray1 &cell_type,
+void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cell_type,
                                                      const IceModelVec2S &basin_mask,
                                                      const IceModelVec2S &shelf_mask,
                                                      int n_shelves,
@@ -691,7 +691,7 @@ void PicoGeometry::identify_calving_front_connection(const CellTypeArray1 &cell_
 /*!
  * Find all ice shelves s that spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number.
  */
-void PicoGeometry::split_ice_shelves(const CellTypeArray0 &cell_type,
+void PicoGeometry::split_ice_shelves(const array::CellType0 &cell_type,
                                      const IceModelVec2S &basin_mask,
                                      const std::map<int, std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,

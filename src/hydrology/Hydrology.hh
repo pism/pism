@@ -159,11 +159,11 @@ protected:
   void compute_overburden_pressure(const IceModelVec2S &ice_thickness,
                                    IceModelVec2S &result) const;
 
-  void compute_surface_input_rate(const CellTypeArray0 &mask,
+  void compute_surface_input_rate(const array::CellType0 &mask,
                                   const IceModelVec2S *surface_input_rate,
                                   IceModelVec2S &result);
 
-  void compute_basal_melt_rate(const CellTypeArray0 &mask,
+  void compute_basal_melt_rate(const array::CellType0 &mask,
                                const IceModelVec2S &basal_melt_rate,
                                IceModelVec2S &result);
 protected:
@@ -201,7 +201,7 @@ protected:
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
-  void enforce_bounds(const CellTypeArray0 &cell_type,
+  void enforce_bounds(const array::CellType0 &cell_type,
                       const IceModelVec2S *no_model_mask,
                       double max_thickness,
                       double ocean_water_thickness,

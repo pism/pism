@@ -247,14 +247,14 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
   inc_state_counter();
 }
 
-std::shared_ptr<IceModelVec3> duplicate(const IceModelVec3 &source) {
+std::shared_ptr<IceModelVec3> IceModelVec3::duplicate() const {
 
-  auto result = std::make_shared<IceModelVec3>(source.grid(),
-                                               source.get_name(),
+  auto result = std::make_shared<IceModelVec3>(this->grid(),
+                                               this->get_name(),
                                                WITHOUT_GHOSTS,
-                                               source.levels());
+                                               this->levels());
 
-  result->metadata() = source.metadata();
+  result->metadata() = this->metadata();
 
   return result;
 }

@@ -24,9 +24,11 @@
 
 namespace pism {
 
-using CellTypeArray0 = class CellTypeArray;
-class CellTypeArray1;
-class CellTypeArray2;
+namespace array {
+using CellType0 = class CellType;
+class CellType1;
+class CellType2;
+} // end of namespace array
 
 namespace inverse {
 
@@ -46,7 +48,7 @@ namespace inverse {
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
 public:
   IPGroundedIceH1NormFunctional2S(IceGrid::ConstPtr grid, double cL2, 
-                                  double cH1, CellTypeArray1 &ice_mask,
+                                  double cH1, array::CellType1 &ice_mask,
                                   IceModelVec2S *dirichletLocations=NULL)
     : IPInnerProductFunctional<IceModelVec2S>(grid),
     m_cL2(cL2),
@@ -65,7 +67,7 @@ protected:
 
   double m_cL2, m_cH1;
   IceModelVec2S *m_dirichletIndices;
-  CellTypeArray1 &m_ice_mask;
+  array::CellType1 &m_ice_mask;
 
 private:
   IPGroundedIceH1NormFunctional2S(IPGroundedIceH1NormFunctional2S const &);

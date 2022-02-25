@@ -40,7 +40,7 @@ public:
 
   void init();
 
-  void update(const CellTypeArray1 &cell_type,
+  void update(const array::CellType1 &cell_type,
               const IceModelVec2S &ice_thickness,
               const IceModelVec2V &ice_velocity,
               const IceModelVec3 &ice_enthalpy);

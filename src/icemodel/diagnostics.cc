@@ -83,7 +83,7 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
                                                 "ice_margin_pressure_difference");
   result->metadata(0) = m_vars[0];
 
-  CellTypeArray1 mask(m_grid, "mask");
+  array::CellType1 mask(m_grid, "mask");
 
   auto &H         = model->geometry().ice_thickness;
   auto &bed       = model->geometry().bed_elevation;
@@ -2403,7 +2403,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
     dy = m_grid->dy();
   const std::vector<double> &z = m_grid->z();
 
-  const CellTypeArray1 &mask = model->geometry().cell_type;
+  const array::CellType1 &mask = model->geometry().cell_type;
 
   IceModelVec::AccessList list{&U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get()};
 

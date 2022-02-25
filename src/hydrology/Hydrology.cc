@@ -594,7 +594,7 @@ void check_bounds(const IceModelVec2S& W, double W_max) {
   @param[in] surface_input_rate surface input rate (kg m-2 s-1); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_surface_input_rate(const CellTypeArray0 &mask,
+void Hydrology::compute_surface_input_rate(const array::CellType0 &mask,
                                            const IceModelVec2S *surface_input_rate,
                                            IceModelVec2S &result) {
 
@@ -628,7 +628,7 @@ void Hydrology::compute_surface_input_rate(const CellTypeArray0 &mask,
   @param[in] basal_melt_rate basal melt rate (ice thickness per time)
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_basal_melt_rate(const CellTypeArray0 &mask,
+void Hydrology::compute_basal_melt_rate(const array::CellType0 &mask,
                                         const IceModelVec2S &basal_melt_rate,
                                         IceModelVec2S &result) {
 
@@ -670,7 +670,7 @@ void Hydrology::compute_basal_melt_rate(const CellTypeArray0 &mask,
   @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
-void Hydrology::enforce_bounds(const CellTypeArray0 &cell_type,
+void Hydrology::enforce_bounds(const array::CellType0 &cell_type,
                                const IceModelVec2S *no_model_mask,
                                double max_thickness,
                                double ocean_water_thickness,

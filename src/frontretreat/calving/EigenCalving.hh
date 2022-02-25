@@ -35,7 +35,7 @@ public:
 
   void init();
 
-  void update(const CellTypeArray0 &cell_type, const IceModelVec2V &ice_velocity);
+  void update(const array::CellType0 &cell_type, const IceModelVec2V &ice_velocity);
 protected:
   DiagnosticList diagnostics_impl() const;
 

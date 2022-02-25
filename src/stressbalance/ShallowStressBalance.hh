@@ -55,7 +55,7 @@ public:
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
                                         const IceModelVec2S &tauc,
-                                        const CellTypeArray0 &mask,
+                                        const array::CellType0 &mask,
                                         IceModelVec2S &result) const;
   // helpers:
 

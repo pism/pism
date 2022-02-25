@@ -51,7 +51,7 @@ public:
   Array2SGhosted<1> ice_area_specific_volume;
 
   // redundant fields (can be computed using the ones above)
-  CellTypeArray2 cell_type;
+  array::CellType2 cell_type;
   IceModelVec2S cell_grounded_fraction;
   Array2SGhosted<2> ice_surface_elevation;
 

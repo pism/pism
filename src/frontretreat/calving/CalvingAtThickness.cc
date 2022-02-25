@@ -101,7 +101,7 @@ void CalvingAtThickness::init() {
  */
 void CalvingAtThickness::update(double t,
                                 double dt,
-                                CellTypeArray0 &pism_mask,
+                                array::CellType0 &pism_mask,
                                 IceModelVec2S &ice_thickness) {
 
   m_calving_threshold->update(t, dt);

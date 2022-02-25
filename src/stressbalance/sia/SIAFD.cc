@@ -374,7 +374,7 @@ void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
  * mask, and bed fields.)
  */
 void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                      const CellTypeArray2 &cell_type,
+                                      const array::CellType2 &cell_type,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double
     dx = m_grid->dx(),

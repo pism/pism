@@ -31,7 +31,9 @@ class IceModelVec2S;
 class IceModelVec2V;
 class IceModelVec2S;
 class IceModelVec3;
-using CellTypeArray0 = class CellTypeArray;
+namespace array {
+using CellType0 = class CellType;
+} // end of namespace array
 
 //! \brief A class for passing PISM variables from the core to other parts of
 //! the code (such as climate couplers).
@@ -47,7 +49,7 @@ public:
   const IceModelVec2S* get_2d_scalar(const std::string &name) const;
   const IceModelVec2S* get_2d_mask(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
-  const CellTypeArray0* get_2d_cell_type(const std::string &name) const;
+  const array::CellType0* get_2d_cell_type(const std::string &name) const;
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
@@ -56,7 +58,7 @@ public:
   typedef std::shared_ptr<IceModelVec2S> Vec2SPtr;
   typedef std::shared_ptr<IceModelVec2S> Vec2IntPtr;
   typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
-  typedef std::shared_ptr<CellTypeArray0> Vec2CellTypePtr;
+  typedef std::shared_ptr<array::CellType0> Vec2CellTypePtr;
   typedef std::shared_ptr<IceModelVec3> Vec3Ptr;
 
   void add_shared(VecPtr);

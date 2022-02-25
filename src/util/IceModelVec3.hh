@@ -50,6 +50,8 @@ public:
   typedef std::shared_ptr<IceModelVec3> Ptr;
   typedef std::shared_ptr<const IceModelVec3> ConstPtr;
 
+  std::shared_ptr<IceModelVec3> duplicate() const;
+
   void set_column(int i, int j, double c);
   void set_column(int i, int j, const double *input);
   double* get_column(int i, int j);
@@ -67,8 +69,6 @@ void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output);
 void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output);
 
 void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &output);
-
-std::shared_ptr<IceModelVec3> duplicate(const IceModelVec3 &source);
 
 inline double& IceModelVec3::operator() (int i, int j, int k) {
 #if (Pism_DEBUG==1)

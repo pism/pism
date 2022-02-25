@@ -45,14 +45,14 @@ IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_na
   : IceModelVec2V(grid, short_name, WITHOUT_GHOSTS, 1) {
 }
 
-std::shared_ptr<IceModelVec2V> duplicate(const IceModelVec2V &source) {
+std::shared_ptr<IceModelVec2V> IceModelVec2V::duplicate() const {
 
-  auto result = std::make_shared<IceModelVec2V>(source.grid(),
-                                                source.get_name(),
+  auto result = std::make_shared<IceModelVec2V>(this->grid(),
+                                                this->get_name(),
                                                 WITHOUT_GHOSTS,
                                                 1);
-  result->metadata(0) = source.metadata(0);
-  result->metadata(1) = source.metadata(1);
+  result->metadata(0) = this->metadata(0);
+  result->metadata(1) = this->metadata(1);
 
   return result;
 }

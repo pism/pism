@@ -176,8 +176,8 @@ const IceModelVec2S* Vars::get_2d_mask(const std::string &name) const {
   return tmp;
 }
 
-const CellTypeArray0* Vars::get_2d_cell_type(const std::string &name) const {
-  const auto *tmp = dynamic_cast<const CellTypeArray0*>(this->get_internal(name));
+const array::CellType0* Vars::get_2d_cell_type(const std::string &name) const {
+  const auto *tmp = dynamic_cast<const array::CellType0*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "2D cell type variable '%s' is not available", name.c_str());
@@ -304,8 +304,8 @@ IceModelVec2S::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
   return tmp;
 }
 
-CellTypeArray0::Ptr Vars::get_2d_cell_type_shared(const std::string &name) const {
-  auto tmp = dynamic_pointer_cast<CellTypeArray0,IceModelVec>(this->get_internal_shared(name));
+array::CellType0::Ptr Vars::get_2d_cell_type_shared(const std::string &name) const {
+  auto tmp = dynamic_pointer_cast<array::CellType0,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "shared 2D cell type variable '%s' is not available", name.c_str());

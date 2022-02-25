@@ -35,6 +35,8 @@ public:
 
   IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name);
 
+  std::shared_ptr<IceModelVec2S> duplicate() const;
+
   inline int as_int(int i, int j) const;
   inline stencils::Star<int> star_int(int i, int j) const;
   inline stencils::Box<int> box_int(int i, int j) const;
@@ -87,8 +89,6 @@ inline stencils::Box<int> IceModelVec2S::box_int(int i, int j) const {
   return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
           as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
 }
-
-std::shared_ptr<IceModelVec2S> duplicate(const IceModelVec2S &source);
 
 // Finite-difference shortcuts. They may be slower than hard-coding FD approximations of x
 // and y derivatives. Use with care.

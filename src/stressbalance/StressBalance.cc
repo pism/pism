@@ -277,7 +277,7 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
-void StressBalance::compute_vertical_velocity(const CellTypeArray1 &mask,
+void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
                                               const IceModelVec3 &u,
                                               const IceModelVec3 &v,
                                               const IceModelVec2S *basal_melt_rate,
@@ -683,7 +683,7 @@ necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
 void compute_2D_principal_strain_rates(const IceModelVec2V &V,
-                                       const CellTypeArray1 &mask,
+                                       const array::CellType1 &mask,
                                        IceModelVec3 &result) {
 
   using mask::ice_free;
@@ -770,7 +770,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const IceModelVec2S &hardness,
-                         const CellTypeArray1 &cell_type,
+                         const array::CellType1 &cell_type,
                          IceModelVec3 &result) {
 
   using mask::ice_free;
