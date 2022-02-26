@@ -30,8 +30,30 @@ namespace pism {
 IceModelVec2Stag::IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
                                    IceModelVecKind ghostedp,
                                    unsigned int stencil_width)
-  : IceModelVec3(grid, name, ghostedp, 2, stencil_width) {
+  : IceModelVec(grid, name, ghostedp, 2, stencil_width, {0.0}) {
   set_begin_access_use_dof(true);
+}
+
+void IceModelVec2Stag::copy_from(const IceModelVec2Stag &input) {
+  IceModelVec::AccessList list {this, &input};
+  // FIXME: this should be simplified
+
+  ParallelSection loop(grid()->com);
+  try {
+    for (Points p(*grid()); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      (*this)(i, j, 0) = input(i, j, 0);
+      (*this)(i, j, 1) = input(i, j, 1);
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  update_ghosts();
+
+  inc_state_counter();
 }
 
 std::array<double,2> absmax(const IceModelVec2Stag &input) {

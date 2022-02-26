@@ -32,7 +32,7 @@ class CellType1;
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
 //! components are not called `u` and `v` (to avoid confusion).
-class IceModelVec2Stag : public IceModelVec3 {
+class IceModelVec2Stag : public IceModelVec {
 public:
   IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
                    IceModelVecKind ghostedp, unsigned int stencil_width = 1);
@@ -40,12 +40,31 @@ public:
   typedef std::shared_ptr<IceModelVec2Stag> Ptr;
   typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
 
+  inline double& operator() (int i, int j, int k);
+  inline const double& operator() (int i, int j, int k) const;
+
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in
     this context.
   */
   inline stencils::Star<double> star(int i, int j) const;
+
+  void copy_from(const IceModelVec2Stag &input);
 };
+
+inline double& IceModelVec2Stag::operator() (int i, int j, int k) {
+#if (Pism_DEBUG==1)
+  check_array_indices(i, j, k);
+#endif
+  return static_cast<double***>(m_array)[j][i][k];
+}
+
+inline const double& IceModelVec2Stag::operator() (int i, int j, int k) const {
+#if (Pism_DEBUG==1)
+  check_array_indices(i, j, k);
+#endif
+  return static_cast<double***>(m_array)[j][i][k];
+}
 
 inline stencils::Star<double> IceModelVec2Stag::star(int i, int j) const {
   const IceModelVec2Stag &self = *this;
