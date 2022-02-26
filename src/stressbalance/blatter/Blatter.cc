@@ -55,7 +55,7 @@ namespace stressbalance {
  */
 void Blatter::compute_node_type(double min_thickness) {
 
-  Array2SGhosted<1> node_type(m_grid, "node_type");
+  array::Scalar1 node_type(m_grid, "node_type");
   node_type.set(0.0);
 
   DMDALocalInfo info;
@@ -529,7 +529,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     water_density = m_config->get_number("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S
+  const array::Scalar
     &tauc      = *inputs.basal_yield_stress,
     &H         = inputs.geometry->ice_thickness,
     &b         = inputs.geometry->bed_elevation,

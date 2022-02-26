@@ -107,15 +107,15 @@ void InitializationHelper::write_model_state_impl(const File &output) const {
   m_input_model->write_model_state(output);
 }
 
-const IceModelVec2S& InitializationHelper::shelf_base_temperature_impl() const {
+const array::Scalar& InitializationHelper::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& InitializationHelper::shelf_base_mass_flux_impl() const {
+const array::Scalar& InitializationHelper::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const IceModelVec2S& InitializationHelper::average_water_column_pressure_impl() const {
+const array::Scalar& InitializationHelper::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

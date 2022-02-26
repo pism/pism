@@ -115,11 +115,11 @@ MaxTimestep Given::max_timestep_impl(double t) const {
   return MaxTimestep("ocean th");
 }
 
-const IceModelVec2S& Given::shelf_base_temperature_impl() const {
+const array::Scalar& Given::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& Given::shelf_base_mass_flux_impl() const {
+const array::Scalar& Given::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

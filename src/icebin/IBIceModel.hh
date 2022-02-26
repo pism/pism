@@ -63,9 +63,9 @@ protected:
 
   // Output variables prepared for return to GCM
   // (relevant ice model state to be exported)
-  pism::IceModelVec2S M1, M2;
-  pism::IceModelVec2S H1, H2;
-  pism::IceModelVec2S V1, V2;
+  pism::array::Scalar M1, M2;
+  pism::array::Scalar H1, H2;
+  pism::array::Scalar V1, V2;
 
 protected:
   // see iceModel.cc
@@ -115,7 +115,7 @@ public:
   virtual void time_setup();
   virtual void misc_setup();
 
-  void compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2);
+  void compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &mass2);
 
   /** @return Our instance of IBSurfaceModel */
   pism::icebin::IBSurfaceModel *ib_surface_model() {
@@ -152,10 +152,10 @@ public:
     @param timestep_s: Length of the current coupling timestep [s]
     @param surface_temp OUT: Resulting surface temperature to use as the Dirichlet B.C.
     */
-  void construct_surface_temp(pism::IceModelVec2S &deltah, // IN: Input from Icebin
+  void construct_surface_temp(pism::array::Scalar &deltah, // IN: Input from Icebin
                               double default_val,
                               double timestep_s, // Length of this coupling interval [s]
-                              pism::IceModelVec2S &surface_temp);
+                              pism::array::Scalar &surface_temp);
 };
 }
 }

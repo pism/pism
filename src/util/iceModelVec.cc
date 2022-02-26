@@ -1041,7 +1041,7 @@ void IceModelVec::put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const {
 }
 
 
-//! Puts a local IceModelVec2S on processor 0.
+//! Puts a local array::Scalar on processor 0.
 void IceModelVec::put_on_proc0(petsc::Vec &onp0) const {
   if (m_impl->ghosted) {
     petsc::TemporaryGlobalVec tmp(dm());

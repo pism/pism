@@ -39,7 +39,7 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
   std::shared_ptr<IceModelVec2T> m_frontal_melt_rate;
 };

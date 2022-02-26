@@ -65,7 +65,7 @@ void IceEISModel::allocate_couplers() {
   }
 }
 
-void generate_trough_topography(IceModelVec2S &result) {
+void generate_trough_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
@@ -92,7 +92,7 @@ void generate_trough_topography(IceModelVec2S &result) {
   }
 }
 
-void generate_mound_topography(IceModelVec2S &result) {
+void generate_mound_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
@@ -134,7 +134,7 @@ void IceEISModel::initialize_2d() {
   m_geometry.sea_level_elevation.set(0.0);
 
   // set uplift
-  IceModelVec2S bed_uplift(m_grid, "uplift");
+  array::Scalar bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
   // start with zero ice

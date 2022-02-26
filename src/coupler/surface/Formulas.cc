@@ -34,23 +34,23 @@ PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
   m_runoff       = allocate_runoff(grid);
 }
 
-const IceModelVec2S &PSFormulas::mass_flux_impl() const {
+const array::Scalar &PSFormulas::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S & PSFormulas::temperature_impl() const {
+const array::Scalar & PSFormulas::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &PSFormulas::accumulation_impl() const {
+const array::Scalar &PSFormulas::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &PSFormulas::melt_impl() const {
+const array::Scalar &PSFormulas::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &PSFormulas::runoff_impl() const {
+const array::Scalar &PSFormulas::runoff_impl() const {
   return *m_runoff;
 }
 

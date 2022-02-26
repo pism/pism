@@ -132,9 +132,9 @@ public:
   void list_diagnostics() const;
   void list_diagnostics_json() const;
 
-  const IceModelVec2S &calving() const;
-  const IceModelVec2S &frontal_melt() const;
-  const IceModelVec2S &forced_retreat() const;
+  const array::Scalar &calving() const;
+  const array::Scalar &frontal_melt() const;
+  const array::Scalar &forced_retreat() const;
 
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
@@ -289,21 +289,21 @@ protected:
   bool m_new_bed_elevation;
 
   //! ghosted
-  Array2SGhosted<2> m_basal_yield_stress;
+  array::Scalar2 m_basal_yield_stress;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
-  IceModelVec2S m_basal_melt_rate;
+  array::Scalar m_basal_melt_rate;
   //! temperature at the top surface of the bedrock thermal layer
-  IceModelVec2S m_bedtoptemp;
+  array::Scalar m_bedtoptemp;
 
   std::shared_ptr<FractureDensity> m_fracture;
 
   //! mask to determine Dirichlet boundary locations for the sliding velocity
-  Array2SGhosted<2> m_velocity_bc_mask;
+  array::Scalar2 m_velocity_bc_mask;
   //! Dirichlet boundary velocities
   IceModelVec2V m_velocity_bc_values;
 
   //! Mask prescribing locations where ice thickness is held constant
-  Array2SGhosted<1> m_ice_thickness_bc_mask;
+  array::Scalar1 m_ice_thickness_bc_mask;
 
   // parameters
   //! mass continuity time step, s
@@ -339,21 +339,21 @@ protected:
   virtual void hydrology_step();
 
   virtual void combine_basal_melt_rate(const Geometry &geometry,
-                                       const IceModelVec2S &shelf_base_mass_flux,
-                                       const IceModelVec2S &grounded_basal_melt_rate,
-                                       IceModelVec2S &result);
+                                       const array::Scalar &shelf_base_mass_flux,
+                                       const array::Scalar &grounded_basal_melt_rate,
+                                       array::Scalar &result);
 
   enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
   virtual void front_retreat_step();
 
-  void compute_geometry_change(const IceModelVec2S &thickness,
-                               const IceModelVec2S &Href,
-                               const IceModelVec2S &thickness_old,
-                               const IceModelVec2S &Href_old,
+  void compute_geometry_change(const array::Scalar &thickness,
+                               const array::Scalar &Href,
+                               const array::Scalar &thickness_old,
+                               const array::Scalar &Href_old,
                                bool add_values,
-                               IceModelVec2S &output);
+                               array::Scalar &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -378,7 +378,7 @@ protected:
 
   // working space (a convenience)
   static const int m_n_work2d = 3;
-  mutable std::vector<std::shared_ptr<Array2SGhosted<2>>> m_work2d;
+  mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
@@ -386,13 +386,13 @@ protected:
     ThicknessChanges(const IceGrid::ConstPtr &grid);
 
     // calving during the last time step
-    IceModelVec2S calving;
+    array::Scalar calving;
 
     // frontal melt during the last time step
-    IceModelVec2S frontal_melt;
+    array::Scalar frontal_melt;
 
     // parameterized retreat
-    IceModelVec2S forced_retreat;
+    array::Scalar forced_retreat;
   };
 
   ThicknessChanges m_thickness_change;
@@ -468,16 +468,16 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times,
                                    double eps,
                                    const std::string &description);
 
-void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness);
-bool check_maximum_ice_thickness(const IceModelVec2S &ice_thickness);
+void check_minimum_ice_thickness(const array::Scalar &ice_thickness);
+bool check_maximum_ice_thickness(const array::Scalar &ice_thickness);
 
-void bedrock_surface_temperature(const IceModelVec2S &sea_level,
+void bedrock_surface_temperature(const array::Scalar &sea_level,
                                  const array::CellType0 &cell_type,
-                                 const IceModelVec2S &bed_topography,
-                                 const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &basal_enthalpy,
-                                 const IceModelVec2S &ice_surface_temperature,
-                                 IceModelVec2S &result);
+                                 const array::Scalar &bed_topography,
+                                 const array::Scalar &ice_thickness,
+                                 const array::Scalar &basal_enthalpy,
+                                 const array::Scalar &ice_surface_temperature,
+                                 array::Scalar &result);
 
 } // end of namespace pism
 

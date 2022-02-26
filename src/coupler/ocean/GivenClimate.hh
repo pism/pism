@@ -37,14 +37,14 @@ private:
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 
-  const IceModelVec2S& shelf_base_temperature_impl() const;
-  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const array::Scalar& shelf_base_temperature_impl() const;
+  const array::Scalar& shelf_base_mass_flux_impl() const;
 
   std::shared_ptr<IceModelVec2T> m_shelfbtemp;
   std::shared_ptr<IceModelVec2T> m_shelfbmassflux;
 
-  IceModelVec2S::Ptr m_shelf_base_temperature;
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  array::Scalar::Ptr m_shelf_base_temperature;
+  array::Scalar::Ptr m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

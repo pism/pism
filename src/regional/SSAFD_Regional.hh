@@ -33,18 +33,18 @@ public:
   SSAFD_Regional(IceGrid::ConstPtr g);
   virtual ~SSAFD_Regional() = default;
   virtual void init();
-  virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                      const IceModelVec2S &surface_elevation,
+  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
+                                      const array::Scalar &surface_elevation,
                                       const array::CellType1 &cell_type,
-                                      const IceModelVec2S *no_model_mask,
+                                      const array::Scalar *no_model_mask,
                                       IceModelVec2V &result) const;
 
 private:
   void update(const Inputs &inputs, bool full_update);
 
-  const IceModelVec2S   *m_h_stored;
-  const IceModelVec2S   *m_H_stored;
-  const IceModelVec2S *m_no_model_mask;
+  const array::Scalar   *m_h_stored;
+  const array::Scalar   *m_H_stored;
+  const array::Scalar *m_no_model_mask;
 };
 
 SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid);

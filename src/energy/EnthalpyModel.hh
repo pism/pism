@@ -34,16 +34,16 @@ protected:
   virtual void restart_impl(const File &input_file, int record);
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &surface_temperature,
-                              const IceModelVec2S &climatic_mass_balance,
-                              const IceModelVec2S &basal_heat_flux);
+                              const array::Scalar &ice_thickness,
+                              const array::Scalar &surface_temperature,
+                              const array::Scalar &climatic_mass_balance,
+                              const array::Scalar &basal_heat_flux);
 
-  virtual void initialize_impl(const IceModelVec2S &basal_melt_rate,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface_temperature,
-                               const IceModelVec2S &climatic_mass_balance,
-                               const IceModelVec2S &basal_heat_flux);
+  virtual void initialize_impl(const array::Scalar &basal_melt_rate,
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar &surface_temperature,
+                               const array::Scalar &climatic_mass_balance,
+                               const array::Scalar &basal_heat_flux);
 
   using EnergyModel::update_impl;
   virtual void update_impl(double t, double dt, const Inputs &inputs);
@@ -63,10 +63,10 @@ protected:
   void restart_impl(const File &input_file, int record);
 
   void bootstrap_impl(const File &input_file,
-                      const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &surface_temperature,
-                      const IceModelVec2S &climatic_mass_balance,
-                      const IceModelVec2S &basal_heat_flux);
+                      const array::Scalar &ice_thickness,
+                      const array::Scalar &surface_temperature,
+                      const array::Scalar &climatic_mass_balance,
+                      const array::Scalar &basal_heat_flux);
 
   using EnergyModel::update_impl;
   void update_impl(double t, double dt, const Inputs &inputs);

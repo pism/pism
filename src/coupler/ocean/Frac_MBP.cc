@@ -71,7 +71,7 @@ void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
     ice_density = m_config->get_number("constants.ice.density"),
     g           = m_config->get_number("constants.standard_gravity");
 
-  IceModelVec2S &P_o = *m_water_column_pressure;
+  array::Scalar &P_o = *m_water_column_pressure;
 
   IceModelVec::AccessList list{&P_o, &geometry.ice_thickness};
 
@@ -86,7 +86,7 @@ void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Frac_MBP::average_water_column_pressure_impl() const {
+const array::Scalar& Frac_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

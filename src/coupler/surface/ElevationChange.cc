@@ -106,7 +106,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   m_reference_surface->update(t, dt);
   m_reference_surface->interp(t + 0.5*dt);
 
-  const IceModelVec2S &surface = geometry.ice_surface_elevation;
+  const array::Scalar &surface = geometry.ice_surface_elevation;
 
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,
@@ -145,23 +145,23 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
 }
 
-const IceModelVec2S &ElevationChange::mass_flux_impl() const {
+const array::Scalar &ElevationChange::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ElevationChange::temperature_impl() const {
+const array::Scalar &ElevationChange::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &ElevationChange::accumulation_impl() const {
+const array::Scalar &ElevationChange::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ElevationChange::melt_impl() const {
+const array::Scalar &ElevationChange::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ElevationChange::runoff_impl() const {
+const array::Scalar &ElevationChange::runoff_impl() const {
   return *m_runoff;
 }
 

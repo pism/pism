@@ -20,7 +20,7 @@
 #define ICEBERGREMOVERFEM_H
 
 #include "IcebergRemover.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace calving {
@@ -35,10 +35,10 @@ class IcebergRemoverFEM : public IcebergRemover {
 public:
   IcebergRemoverFEM(IceGrid::ConstPtr g);
 private:
-  void update_impl(const IceModelVec2S &bc_mask,
+  void update_impl(const array::Scalar &bc_mask,
                    array::CellType1 &cell_type,
-                   IceModelVec2S &ice_thickness);
-  IceModelVec2S m_mask;
+                   array::Scalar &ice_thickness);
+  array::Scalar m_mask;
 };
 
 } // end of namespace calving

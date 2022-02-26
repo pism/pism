@@ -27,11 +27,11 @@
 namespace pism {
 
 class IceModelVec;
-class IceModelVec2S;
 class IceModelVec2V;
-class IceModelVec2S;
 class IceModelVec3;
+
 namespace array {
+class Scalar;
 using CellType0 = class CellType;
 } // end of namespace array
 
@@ -46,8 +46,8 @@ public:
   bool is_available(const std::string &name) const;
 
   const IceModelVec* get(const std::string &name) const;
-  const IceModelVec2S* get_2d_scalar(const std::string &name) const;
-  const IceModelVec2S* get_2d_mask(const std::string &name) const;
+  const array::Scalar* get_2d_scalar(const std::string &name) const;
+  const array::Scalar* get_2d_mask(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
   const array::CellType0* get_2d_cell_type(const std::string &name) const;
   const IceModelVec3* get_3d_scalar(const std::string &name) const;
@@ -55,8 +55,8 @@ public:
   std::set<std::string> keys() const;
 
   typedef std::shared_ptr<IceModelVec> VecPtr;
-  typedef std::shared_ptr<IceModelVec2S> Vec2SPtr;
-  typedef std::shared_ptr<IceModelVec2S> Vec2IntPtr;
+  typedef std::shared_ptr<array::Scalar> Vec2SPtr;
+  typedef std::shared_ptr<array::Scalar> Vec2IntPtr;
   typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
   typedef std::shared_ptr<array::CellType0> Vec2CellTypePtr;
   typedef std::shared_ptr<IceModelVec3> Vec3Ptr;

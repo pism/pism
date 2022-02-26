@@ -19,8 +19,8 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/IceModelVec2S.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 
@@ -30,25 +30,25 @@ class Poisson {
 public:
   Poisson(IceGrid::ConstPtr grid);
 
-  int solve(const IceModelVec2S& mask, const IceModelVec2S& bc, double rhs,
+  int solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
             bool reuse_matrix = false);
 
-  const IceModelVec2S &solution() const;
+  const array::Scalar &solution() const;
 private:
-  void assemble_matrix(const IceModelVec2S &mask, Mat A);
+  void assemble_matrix(const array::Scalar &mask, Mat A);
   void assemble_rhs(double rhs,
-                    const IceModelVec2S &mask,
-                    const IceModelVec2S &bc,
-                    IceModelVec2S &b);
+                    const array::Scalar &mask,
+                    const array::Scalar &bc,
+                    array::Scalar &b);
 
   IceGrid::ConstPtr m_grid;
   Logger::ConstPtr m_log;
   std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  IceModelVec2S m_b;
-  IceModelVec2S m_x;
-  Array2SGhosted<1> m_mask;
+  array::Scalar m_b;
+  array::Scalar m_x;
+  array::Scalar1 m_mask;
 };
 
 } // end of namespace pism

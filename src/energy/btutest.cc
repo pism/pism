@@ -128,12 +128,12 @@ int main(int argc, char *argv[]) {
                            "-dt", "Time-step, in years", "years", 1.0);
 
     // allocate tools and IceModelVecs
-    IceModelVec2S bedtoptemp(grid, "bedtoptemp");
+    array::Scalar bedtoptemp(grid, "bedtoptemp");
     bedtoptemp.set_attrs("",
                          "temperature at top of bedrock thermal layer",
                          "K", "K", "", 0);
 
-    IceModelVec2S heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
+    array::Scalar heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
     heat_flux_at_ice_base.set_attrs("",
                                     "upward geothermal flux at bedrock thermal layer base",
                                     "W m-2", "mW m-2", "", 0);

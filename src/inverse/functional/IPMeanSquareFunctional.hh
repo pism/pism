@@ -32,27 +32,27 @@ namespace inverse {
   where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
   of the normalization constant is set implicitly by a call to normalize().
 */
-class IPMeanSquareFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IPMeanSquareFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
   /*!
    * @param[in] grid the computational grid
    * @param[in] weights Vector of weights (NULL implies all weights are 1)
    */
   IPMeanSquareFunctional2S(IceGrid::ConstPtr grid, 
-                           IceModelVec2S *weights=NULL)
-    : IPInnerProductFunctional<IceModelVec2S>(grid),
+                           array::Scalar *weights=NULL)
+    : IPInnerProductFunctional<array::Scalar>(grid),
       m_weights(weights),
       m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2S() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 protected:
-  IceModelVec2S *m_weights;
+  array::Scalar *m_weights;
   double m_normalization;
 
 private:
@@ -71,7 +71,7 @@ private:
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
 public:
-  IPMeanSquareFunctional2V(IceGrid::ConstPtr grid, IceModelVec2S *weights=NULL) :
+  IPMeanSquareFunctional2V(IceGrid::ConstPtr grid, array::Scalar *weights=NULL) :
     IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
@@ -82,7 +82,7 @@ public:
   virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
 
 protected:
-  IceModelVec2S *m_weights;
+  array::Scalar *m_weights;
   double m_normalization;
 
 private:

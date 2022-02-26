@@ -58,9 +58,9 @@ protected:
   void init_diagnostics();
 
 private:
-  Array2SGhosted<2> m_no_model_mask;
-  Array2SGhosted<2>   m_usurf_stored;
-  Array2SGhosted<1>   m_thk_stored;
+  array::Scalar2 m_no_model_mask;
+  array::Scalar2   m_usurf_stored;
+  array::Scalar1   m_thk_stored;
 
   std::shared_ptr<energy::CHSystem> m_ch_system;
   IceModelVec3::Ptr m_ch_warming_flux;

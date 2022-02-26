@@ -105,14 +105,14 @@ def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
     modifier.max_timestep(ts[0])
 
 def precipitation(grid, value):
-    precip = PISM.IceModelVec2S(grid, "precipitation")
+    precip = PISM.Scalar(grid, "precipitation")
     precip.set_attrs("climate", "precipitation", "kg m-2 s-1", "kg m-2 s-1",
                      "precipitation_flux", 0)
     precip.set(value)
     return precip
 
 def air_temperature(grid, value):
-    temperature = PISM.IceModelVec2S(grid, "air_temp")
+    temperature = PISM.Scalar(grid, "air_temp")
     temperature.set_attrs("climate", "near-surface air temperature", "Kelvin", "Kelvin", "", 0)
     temperature.set(value)
     return temperature
@@ -200,7 +200,7 @@ class DeltaT2D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.delta_T = 5.0
 
-        delta_T = PISM.IceModelVec2S(self.grid, "delta_T")
+        delta_T = PISM.Scalar(self.grid, "delta_T")
         delta_T.set_attrs("climate", "temperature offset", "K", "K", "", 0)
         delta_T.set(self.delta_T)
 
@@ -263,7 +263,7 @@ class DeltaP2D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.delta_P = 5.0
 
-        delta_P = PISM.IceModelVec2S(self.grid, "delta_P")
+        delta_P = PISM.Scalar(self.grid, "delta_P")
         delta_P.set_attrs("climate", "precipitation offset",
                           "kg m-2 s-1", "kg m-2 s-1", "", 0)
         delta_P.set(self.delta_P)
@@ -364,12 +364,12 @@ class YearlyCycle(TestCase):
         output = PISM.util.prepare_output(self.filename)
         precipitation(self.grid, self.P).write(output)
 
-        T_mean = PISM.IceModelVec2S(self.grid, "air_temp_mean_annual")
+        T_mean = PISM.Scalar(self.grid, "air_temp_mean_annual")
         T_mean.set_attrs("climate", "mean annual near-surface air temperature", "K", "K", "", 0)
         T_mean.set(self.T_mean)
         T_mean.write(output)
 
-        T_summer = PISM.IceModelVec2S(self.grid, "air_temp_mean_summer")
+        T_summer = PISM.Scalar(self.grid, "air_temp_mean_summer")
         T_summer.set_attrs("climate", "mean summer near-surface air temperature", "K", "K", "", 0)
         T_summer.set(self.T_summer)
         T_summer.write(output)
@@ -477,11 +477,11 @@ class Anomaly(TestCase):
         self.dT = -5.0
         self.dP = 20.0
 
-        dT = PISM.IceModelVec2S(self.grid, "air_temp_anomaly")
+        dT = PISM.Scalar(self.grid, "air_temp_anomaly")
         dT.set_attrs("climate", "air temperature anomaly", "Kelvin", "Kelvin", "", 0)
         dT.set(self.dT)
 
-        dP = PISM.IceModelVec2S(self.grid, "precipitation_anomaly")
+        dP = PISM.Scalar(self.grid, "precipitation_anomaly")
         dP.set_attrs("climate", "precipitation anomaly", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         dP.set(self.dP)
 
@@ -576,7 +576,7 @@ class FracP2D(TestCase):
         self.model = PISM.AtmosphereUniform(self.grid)
         self.P_ratio = 5.0
 
-        frac_P = PISM.IceModelVec2S(self.grid, "frac_P")
+        frac_P = PISM.Scalar(self.grid, "frac_P")
         frac_P.set_attrs("climate", "precipitation scaling", "1", "1", "", 0)
         frac_P.set(self.P_ratio)
 

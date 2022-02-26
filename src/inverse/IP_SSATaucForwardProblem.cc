@@ -122,9 +122,9 @@ directly.  Use this method in conjuction with
 The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
 kept.
 */
-void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
+void IP_SSATaucForwardProblem::set_design(array::Scalar &new_zeta) {
 
-  IceModelVec2S &tauc = m_tauc_copy;
+  array::Scalar &tauc = m_tauc_copy;
 
   m_zeta = &new_zeta;
 
@@ -146,7 +146,7 @@ void IP_SSATaucForwardProblem::set_design(IceModelVec2S &new_zeta) {
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-TerminationReason::Ptr IP_SSATaucForwardProblem::linearize_at(IceModelVec2S &zeta) {
+TerminationReason::Ptr IP_SSATaucForwardProblem::linearize_at(array::Scalar &zeta) {
   this->set_design(zeta);
   return this->solve_nocache();
 }
@@ -188,7 +188,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 /*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
+void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta,
                                                      IceModelVec2V &du) {
   IceModelVec::AccessList l{&du};
 
@@ -199,7 +199,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelV
 /*! The return value is a Vec for the benefit of TAO. It is assumed to
 be ghostless; no communication is done. \overload
 */
-void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta,
+void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta,
                                                      Vec du) {
   petsc::DMDAVecArray du_a(m_da, du);
   this->apply_jacobian_design(u, dzeta, (Vector2**)du_a.get());
@@ -218,7 +218,7 @@ to this method.
   Typically this method is called via one of its overloads.
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
-                                                     IceModelVec2S &dzeta,
+                                                     array::Scalar &dzeta,
                                                      Vector2 **du_a) {
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -226,7 +226,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
 
-  IceModelVec2S *dzeta_local;
+  array::Scalar *dzeta_local;
   if (dzeta.stencil_width() > 0) {
     dzeta_local = &dzeta;
   } else {
@@ -244,7 +244,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2S *dirichletLocations = &m_bc_mask;
+  const array::Scalar *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
@@ -351,12 +351,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
-/*! The return value uses a StateVector (IceModelVec2S) which can be ghostless; ghosts (if present) are updated.
+/*! The return value uses a StateVector (array::Scalar) which can be ghostless; ghosts (if present) are updated.
 \overload
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
-                                                               IceModelVec2S &dzeta) {
+                                                               array::Scalar &dzeta) {
   IceModelVec::AccessList l{&dzeta};
 
   this->apply_jacobian_design_transpose(u, du, dzeta.array());
@@ -412,7 +412,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   double dzeta_e[Nk];
 
   // Aliases to help with notation consistency.
-  const IceModelVec2S *dirichletLocations = &m_bc_mask;
+  const array::Scalar *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
@@ -523,7 +523,7 @@ These are established by first calling linearize_at.
   @param[in]   dzeta     Perturbation of the design variable
   @param[out]  du        Computed corresponding perturbation of the state variable; ghosts (if present) are updated.
 */
-void IP_SSATaucForwardProblem::apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du) {
+void IP_SSATaucForwardProblem::apply_linearization(array::Scalar &dzeta, IceModelVec2V &du) {
 
   PetscErrorCode ierr;
 
@@ -578,7 +578,7 @@ These are established by first calling linearize_at.
   @param[out]  dzeta  Computed corresponding perturbation of the design variable; ghosts (if present) are updated.
 */
 void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
-                                                             IceModelVec2S &dzeta) {
+                                                             array::Scalar &dzeta) {
 
   PetscErrorCode ierr;
 
@@ -588,7 +588,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   }
 
   // Aliases to help with notation consistency below.
-  const IceModelVec2S *dirichletLocations = &m_bc_mask;
+  const array::Scalar *dirichletLocations = &m_bc_mask;
   const IceModelVec2V   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 

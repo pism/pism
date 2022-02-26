@@ -32,7 +32,7 @@ public:
   MohrCoulombYieldStress(IceGrid::ConstPtr g);
   virtual ~MohrCoulombYieldStress() = default;
 
-  void set_till_friction_angle(const IceModelVec2S &input);
+  void set_till_friction_angle(const array::Scalar &input);
 protected:
   void restart_impl(const File &input_file, int record);
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
@@ -48,18 +48,18 @@ protected:
 
   void finish_initialization(const YieldStressInputs &inputs);
 
-  IceModelVec2S m_till_phi;
+  array::Scalar m_till_phi;
 
   std::shared_ptr<IceModelVec2T> m_delta;
 private:
-  void till_friction_angle(const IceModelVec2S &bed_topography,
-                           IceModelVec2S &result);
+  void till_friction_angle(const array::Scalar &bed_topography,
+                           array::Scalar &result);
 
-  void till_friction_angle(const IceModelVec2S &basal_yield_stress,
-                           const IceModelVec2S &till_water_thickness,
-                           const IceModelVec2S &ice_thickness,
+  void till_friction_angle(const array::Scalar &basal_yield_stress,
+                           const array::Scalar &till_water_thickness,
+                           const array::Scalar &ice_thickness,
                            const array::CellType0 &cell_type,
-                           IceModelVec2S &result);
+                           array::Scalar &result);
 };
 
 } // end of namespace pism

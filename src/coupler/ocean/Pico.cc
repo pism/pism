@@ -201,7 +201,7 @@ void Pico::write_model_state_impl(const File &output) const {
 * are not included in the calculations of PICO.
 */
 static void extend_basal_melt_rates(const array::CellType1 &cell_type,
-                                    IceModelVec2S &basal_melt_rate) {
+                                    array::Scalar &basal_melt_rate) {
 
   auto grid = basal_melt_rate.grid();
 
@@ -272,9 +272,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   PicoPhysics physics(*m_config);
 
-  const IceModelVec2S &ice_thickness    = geometry.ice_thickness;
+  const array::Scalar &ice_thickness    = geometry.ice_thickness;
   const auto &cell_type = geometry.cell_type;
-  const IceModelVec2S &bed_elevation    = geometry.bed_elevation;
+  const array::Scalar &bed_elevation    = geometry.bed_elevation;
 
   // Geometric part of PICO
   m_geometry.update(bed_elevation, cell_type);
@@ -376,10 +376,10 @@ MaxTimestep Pico::max_timestep_impl(double t) const {
 
 
 void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
-                                         const IceModelVec2S &basin_mask,
-                                         const IceModelVec2S &continental_shelf_mask,
-                                         const IceModelVec2S &salinity_ocean,
-                                         const IceModelVec2S &theta_ocean,
+                                         const array::Scalar &basin_mask,
+                                         const array::Scalar &continental_shelf_mask,
+                                         const array::Scalar &salinity_ocean,
+                                         const array::Scalar &theta_ocean,
                                          std::vector<double> &temperature,
                                          std::vector<double> &salinity) const {
   std::vector<int> count(m_n_basins, 0);
@@ -460,14 +460,14 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 //!
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 void Pico::set_ocean_input_fields(const PicoPhysics &physics,
-                                  const IceModelVec2S &ice_thickness,
+                                  const array::Scalar &ice_thickness,
                                   const array::CellType1 &mask,
-                                  const IceModelVec2S &basin_mask,
-                                  const IceModelVec2S &shelf_mask,
+                                  const array::Scalar &basin_mask,
+                                  const array::Scalar &shelf_mask,
                                   const std::vector<double> &basin_temperature,
                                   const std::vector<double> &basin_salinity,
-                                  IceModelVec2S &Toc_box0,
-                                  IceModelVec2S &Soc_box0) const {
+                                  array::Scalar &Toc_box0,
+                                  array::Scalar &Soc_box0) const {
   
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
 
@@ -580,15 +580,15 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
  * rate to zero and set basal temperature to the pressure melting point.
  */
 void Pico::beckmann_goosse(const PicoPhysics &physics,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec2S &shelf_mask,
+                           const array::Scalar &ice_thickness,
+                           const array::Scalar &shelf_mask,
                            const array::CellType0 &cell_type,
-                           const IceModelVec2S &Toc_box0,
-                           const IceModelVec2S &Soc_box0,
-                           IceModelVec2S &basal_melt_rate,
-                           IceModelVec2S &basal_temperature,
-                           IceModelVec2S &Toc,
-                           IceModelVec2S &Soc) {
+                           const array::Scalar &Toc_box0,
+                           const array::Scalar &Soc_box0,
+                           array::Scalar &basal_melt_rate,
+                           array::Scalar &basal_temperature,
+                           array::Scalar &Toc,
+                           array::Scalar &Soc) {
 
   const double T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"),
                beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
@@ -625,17 +625,17 @@ void Pico::beckmann_goosse(const PicoPhysics &physics,
 
 
 void Pico::process_box1(const PicoPhysics &physics,
-                        const IceModelVec2S &ice_thickness,
-                        const IceModelVec2S &shelf_mask,
-                        const IceModelVec2S &box_mask,
-                        const IceModelVec2S &Toc_box0,
-                        const IceModelVec2S &Soc_box0,
-                        IceModelVec2S &basal_melt_rate,
-                        IceModelVec2S &basal_temperature,
-                        IceModelVec2S &T_star,
-                        IceModelVec2S &Toc,
-                        IceModelVec2S &Soc,
-                        IceModelVec2S &overturning) {
+                        const array::Scalar &ice_thickness,
+                        const array::Scalar &shelf_mask,
+                        const array::Scalar &box_mask,
+                        const array::Scalar &Toc_box0,
+                        const array::Scalar &Soc_box0,
+                        array::Scalar &basal_melt_rate,
+                        array::Scalar &basal_temperature,
+                        array::Scalar &T_star,
+                        array::Scalar &Toc,
+                        array::Scalar &Soc,
+                        array::Scalar &overturning) {
 
   std::vector<double> box1_area(m_n_shelves);
 
@@ -692,14 +692,14 @@ void Pico::process_box1(const PicoPhysics &physics,
 }
 
 void Pico::process_other_boxes(const PicoPhysics &physics,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &shelf_mask,
-                               const IceModelVec2S &box_mask,
-                               IceModelVec2S &basal_melt_rate,
-                               IceModelVec2S &basal_temperature,
-                               IceModelVec2S &T_star,
-                               IceModelVec2S &Toc,
-                               IceModelVec2S &Soc) const {
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar &shelf_mask,
+                               const array::Scalar &box_mask,
+                               array::Scalar &basal_melt_rate,
+                               array::Scalar &basal_temperature,
+                               array::Scalar &T_star,
+                               array::Scalar &Toc,
+                               array::Scalar &Soc) const {
 
   std::vector<double> overturning(m_n_shelves, 0.0);
   std::vector<double> salinity(m_n_shelves, 0.0);
@@ -804,9 +804,9 @@ DiagnosticList Pico::diagnostics_impl() const {
  * This method is used to get inputs from a previous box for the next one.
  */
 void Pico::compute_box_average(int box_id,
-                               const IceModelVec2S &field,
-                               const IceModelVec2S &shelf_mask,
-                               const IceModelVec2S &box_mask,
+                               const array::Scalar &field,
+                               const array::Scalar &shelf_mask,
+                               const array::Scalar &box_mask,
                                std::vector<double> &result) const {
 
   IceModelVec::AccessList list{ &field, &shelf_mask, &box_mask };
@@ -857,8 +857,8 @@ void Pico::compute_box_average(int box_id,
  * Note: shelf and box indexes start from 1.
  */
 void Pico::compute_box_area(int box_id,
-                            const IceModelVec2S &shelf_mask,
-                            const IceModelVec2S &box_mask,
+                            const array::Scalar &shelf_mask,
+                            const array::Scalar &box_mask,
                             std::vector<double> &result) const {
   result.resize(m_n_shelves);
   IceModelVec::AccessList list{ &shelf_mask, &box_mask };

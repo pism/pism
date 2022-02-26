@@ -19,7 +19,7 @@
 #ifndef __IceModelVec2T_hh
 #define __IceModelVec2T_hh
 
-#include "IceModelVec2S.hh"
+#include "array/Scalar.hh"
 #include "MaxTimestep.hh"
 #include "interpolation.hh"     // InterpolationType
 
@@ -41,7 +41,7 @@ namespace pism {
   Both versions of interp() use piecewise-constant interpolation and
   extrapolate (by a constant) outside the available range.
 */
-class IceModelVec2T : public IceModelVec2S {
+class IceModelVec2T : public array::Scalar {
 public:
   static std::shared_ptr<IceModelVec2T>
   ForcingField(IceGrid::ConstPtr grid,

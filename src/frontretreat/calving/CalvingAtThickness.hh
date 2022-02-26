@@ -41,9 +41,9 @@ public:
   void update(double t,
               double dt,
               array::CellType0 &pism_mask,
-              IceModelVec2S &ice_thickness);
+              array::Scalar &ice_thickness);
 
-  const IceModelVec2S& threshold() const;
+  const array::Scalar& threshold() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;

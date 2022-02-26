@@ -36,8 +36,8 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& precipitation_impl() const;
-  const IceModelVec2S& air_temperature_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void begin_pointwise_access_impl() const;
@@ -50,8 +50,8 @@ protected:
   std::shared_ptr<IceModelVec2T> m_air_temp_anomaly;
   std::shared_ptr<IceModelVec2T> m_precipitation_anomaly;
 
-  IceModelVec2S::Ptr m_precipitation;
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_precipitation;
+  array::Scalar::Ptr m_temperature;
 };
 
 } // end of namespace atmosphere

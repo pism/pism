@@ -62,7 +62,7 @@ protected:
   void reset_thickness_test_A();
 
   // related to test L
-  IceModelVec2S m_HexactL;
+  array::Scalar m_HexactL;
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc

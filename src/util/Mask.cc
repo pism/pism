@@ -23,18 +23,18 @@
 
 namespace pism {
 
-void GeometryCalculator::compute(const IceModelVec2S& sea_level,
-                                 const IceModelVec2S& bed,
-                                 const IceModelVec2S& thickness,
+void GeometryCalculator::compute(const array::Scalar& sea_level,
+                                 const array::Scalar& bed,
+                                 const array::Scalar& thickness,
                                  IceModelVec2<double>& out_mask,
-                                 IceModelVec2S& out_surface) const {
+                                 array::Scalar& out_surface) const {
   compute_mask(sea_level, bed, thickness, out_mask);
   compute_surface(sea_level, bed, thickness, out_surface);
 }
 
-void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
-                                      const IceModelVec2S &bed,
-                                      const IceModelVec2S &thickness,
+void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
+                                      const array::Scalar &bed,
+                                      const array::Scalar &thickness,
                                       IceModelVec2<double> &result) const {
   IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
 
@@ -52,10 +52,10 @@ void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
   }
 }
 
-void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
-                                         const IceModelVec2S &bed,
-                                         const IceModelVec2S &thickness,
-                                         IceModelVec2S &result) const {
+void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
+                                         const array::Scalar &bed,
+                                         const array::Scalar &thickness,
+                                         array::Scalar &result) const {
   IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();

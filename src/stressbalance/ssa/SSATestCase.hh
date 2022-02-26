@@ -25,9 +25,9 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec3.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -101,11 +101,11 @@ protected:
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  Array2SGhosted<1> m_tauc;
+  array::Scalar1 m_tauc;
   IceModelVec3 m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;
-  Array2SGhosted<2> m_bc_mask;
+  array::Scalar2 m_bc_mask;
 
   Geometry m_geometry;
 

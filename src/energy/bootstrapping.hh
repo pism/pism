@@ -24,7 +24,7 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 class IceModelVec3;
 
 namespace energy {

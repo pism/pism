@@ -55,7 +55,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
-const IceModelVec2S &Delta_T::temperature_impl() const {
+const array::Scalar &Delta_T::temperature_impl() const {
   return *m_temperature;
 }
 

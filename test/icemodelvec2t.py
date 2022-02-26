@@ -45,7 +45,7 @@ class ForcingInput(unittest.TestCase):
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
                                          PISM.NOT_PERIODIC)
 
-        v = PISM.IceModelVec2S(self.grid, "v")
+        v = PISM.Scalar(self.grid, "v")
 
         units = "30 days since 1-1-1"
         N = 12

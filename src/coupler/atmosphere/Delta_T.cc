@@ -125,7 +125,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_offsets->update(t, dt);
     m_2d_offsets->average(t, dt);
 
-    IceModelVec2S &T = *m_temperature;
+    array::Scalar &T = *m_temperature;
     IceModelVec2T &delta = *m_2d_offsets;
 
     IceModelVec::AccessList list{&T, &delta};
@@ -138,7 +138,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Delta_T::air_temperature_impl() const {
+const array::Scalar& Delta_T::air_temperature_impl() const {
   return *m_temperature;
 }
 

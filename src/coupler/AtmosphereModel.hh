@@ -26,9 +26,6 @@
 
 namespace pism {
 
-class Geometry;
-class IceModelVec2S;
-
 //! @brief Atmosphere models and modifiers: provide precipitation and
 //! temperature to a surface::SurfaceModel below
 namespace atmosphere {
@@ -44,10 +41,10 @@ public:
   void update(const Geometry &geometry, double t, double dt);
 
   //! @brief Sets result to the mean precipitation, in "kg m-2 second-1".
-  const IceModelVec2S& precipitation() const;
+  const array::Scalar& precipitation() const;
 
   //! @brief Sets result to the mean near-surface air temperature, in degrees Kelvin.
-  const IceModelVec2S& air_temperature() const;
+  const array::Scalar& air_temperature() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -71,8 +68,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual const IceModelVec2S& precipitation_impl() const;
-  virtual const IceModelVec2S& air_temperature_impl() const;
+  virtual const array::Scalar& precipitation_impl() const;
+  virtual const array::Scalar& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -87,8 +84,8 @@ protected:
 
   std::shared_ptr<AtmosphereModel> m_input_model;
 
-  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
 };
 
 } // end of namespace atmosphere

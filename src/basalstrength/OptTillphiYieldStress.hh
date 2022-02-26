@@ -32,8 +32,8 @@ public:
 private:
   DiagnosticList diagnostics_impl() const;
 
-  void update_tillphi(const IceModelVec2S &ice_surface_elevation,
-                      const IceModelVec2S &bed_topography,
+  void update_tillphi(const array::Scalar &ice_surface_elevation,
+                      const array::Scalar &bed_topography,
                       const array::CellType0 &mask);
 
   void init_t_last(const File &input_file);
@@ -49,9 +49,9 @@ private:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  Array2SGhosted<1> m_mask;
-  Array2SGhosted<1> m_usurf_difference;
-  Array2SGhosted<1> m_usurf_target;
+  array::Scalar1 m_mask;
+  array::Scalar1 m_usurf_difference;
+  array::Scalar1 m_usurf_target;
 
   double m_dphi_scale;
 

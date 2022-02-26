@@ -25,12 +25,12 @@ namespace pism {
 namespace array {
 
 CellType::CellType(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec2S(grid, name) {
+  : array::Scalar(grid, name) {
   set_interpolation_type(NEAREST);
 }
 
 CellType::CellType(IceGrid::ConstPtr grid, const std::string &name, int width)
-  : IceModelVec2S(grid, name, width) {
+  : array::Scalar(grid, name, width) {
   set_interpolation_type(NEAREST);
 }
 

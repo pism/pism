@@ -128,10 +128,10 @@ static double huybrechts_dewolde_mean_summer(double surface_elevation, double la
  * Parameterization of mean annual and mean summer near-surface temperature as in
  * Huybrechts & DeWolde (1999)
  */
-static void huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
@@ -148,10 +148,10 @@ static void huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, Ic
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data
  */
-static void era_interim(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
@@ -168,10 +168,10 @@ static void era_interim(const Geometry &geometry, IceModelVec2S &T_ma, IceModelV
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data with sin(lat)
  */
-static void era_interim_sin(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
@@ -188,10 +188,10 @@ static void era_interim_sin(const Geometry &geometry, IceModelVec2S &T_ma, IceMo
 /*!
  * Parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
  */
-static void era_interim_lon(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude,
     &lon = geometry.longitude;
@@ -220,10 +220,10 @@ static double martin2011_mean_annual(double elevation, double latitude) {
  * - annual mean temperature as in Martin et al. (2011)
  * - no seasonal variation of air temperature
  */
-static void martin2011(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
@@ -241,10 +241,10 @@ static void martin2011(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVe
  * - annual mean temperature as in Martin et al. (2011)
  * - summer mean temperature computed as an anomaly to Huybrechts & DeWolde (1999)
  */
-static void martin_huybrechts_dewolde(const Geometry &geometry, IceModelVec2S &T_ma, IceModelVec2S &T_ms) {
+static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
   IceGrid::ConstPtr grid = T_ma.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 

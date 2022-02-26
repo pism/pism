@@ -21,7 +21,7 @@
 
 #include "Element.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/DM.hh"
 

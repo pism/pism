@@ -27,7 +27,7 @@
 #include "error_handling.hh"
 #include "pism/util/IceModelVec_impl.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -142,8 +142,8 @@ const double* IceModelVec3::get_column(int i, int j) const {
   return ((double***) m_array)[j][i];
 }
 
-//! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
-void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output) {
+//! Copies a horizontal slice at level z of an IceModelVec3 into an array::Scalar gslice.
+void extract_surface(const IceModelVec3 &data, double z, array::Scalar &output) {
   IceModelVec::AccessList list{&data, &output};
 
   ParallelSection loop(output.grid()->com);
@@ -159,8 +159,8 @@ void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output) 
 }
 
 
-//! Copies the values of an IceModelVec3 at the ice surface (specified by the level `z`) to an IceModelVec2S gsurf.
-void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output) {
+//! Copies the values of an IceModelVec3 at the ice surface (specified by the level `z`) to an array::Scalar gsurf.
+void extract_surface(const IceModelVec3 &data, const array::Scalar &z, array::Scalar &output) {
   IceModelVec::AccessList list{&data, &output, &z};
 
   ParallelSection loop(output.grid()->com);
@@ -181,23 +181,23 @@ Note that this sums up all the values in a column, including ones
 above the ice. This may or may not be what you need. Also, take a look
 at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.
 
-As for the difference between IceModelVec2 and IceModelVec2S, the
+As for the difference between IceModelVec2 and array::Scalar, the
 former can store fields with more than 1 "degree of freedom" per grid
 point (such as 2D fields on the "staggered" grid, with the first
 degree of freedom corresponding to the i-offset and second to
 j-offset).
 
-IceModelVec2S is just IceModelVec2 with "dof == 1", and
+array::Scalar is just IceModelVec2 with "dof == 1", and
 IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
 methods, of course.)
 
-Either one of IceModelVec2 and IceModelVec2S would work in this
+Either one of IceModelVec2 and array::Scalar would work in this
 case.
 
 Computes output = A*output + B*sum_columns(input) + C
 
 @see https://github.com/pism/pism/issues/229 */
-void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &output) {
+void sum_columns(const IceModelVec3 &data, double A, double B, array::Scalar &output) {
   const unsigned int Mz = data.grid()->Mz();
 
   AccessList access{&data, &output};

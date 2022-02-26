@@ -99,7 +99,7 @@ MaxTimestep Given::max_timestep_impl(double t) const {
 }
 
 
-const IceModelVec2S& Given::frontal_melt_rate_impl() const {
+const array::Scalar& Given::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
 

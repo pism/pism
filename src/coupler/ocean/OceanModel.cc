@@ -28,16 +28,16 @@ namespace pism {
 
 namespace ocean {
 
-IceModelVec2S::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbtemp"));
+array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(IceGrid::ConstPtr g) {
+  array::Scalar::Ptr result(new array::Scalar(g, "shelfbtemp"));
   result->set_attrs("diagnostic",
                     "ice temperature at the bottom of floating ice",
                     "Kelvin", "Kelvin", "", 0);
   return result;
 }
 
-IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g, "shelfbmassflux"));
+array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g) {
+  array::Scalar::Ptr result(new array::Scalar(g, "shelfbmassflux"));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
                     "kg m-2 s-1", "kg m-2 year-1", "", 0);
@@ -45,8 +45,8 @@ IceModelVec2S::Ptr OceanModel::allocate_shelf_base_mass_flux(IceGrid::ConstPtr g
   return result;
 }
 
-IceModelVec2S::Ptr OceanModel::allocate_water_column_pressure(IceGrid::ConstPtr g) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(g,
+array::Scalar::Ptr OceanModel::allocate_water_column_pressure(IceGrid::ConstPtr g) {
+  array::Scalar::Ptr result(new array::Scalar(g,
                                               "average_water_column_pressure"));
   result->set_attrs("diagnostic",
                     "vertically-averaged water column pressure",
@@ -93,15 +93,15 @@ void OceanModel::update(const Geometry &geometry, double t, double dt) {
 }
 
 
-const IceModelVec2S& OceanModel::shelf_base_mass_flux() const {
+const array::Scalar& OceanModel::shelf_base_mass_flux() const {
   return shelf_base_mass_flux_impl();
 }
 
-const IceModelVec2S& OceanModel::shelf_base_temperature() const {
+const array::Scalar& OceanModel::shelf_base_temperature() const {
   return shelf_base_temperature_impl();
 }
 
-const IceModelVec2S& OceanModel::average_water_column_pressure() const {
+const array::Scalar& OceanModel::average_water_column_pressure() const {
   return average_water_column_pressure_impl();
 }
 
@@ -139,7 +139,7 @@ void OceanModel::write_model_state_impl(const File &output) const {
   }
 }
 
-const IceModelVec2S& OceanModel::shelf_base_temperature_impl() const {
+const array::Scalar& OceanModel::shelf_base_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->shelf_base_temperature();
   } else {
@@ -147,7 +147,7 @@ const IceModelVec2S& OceanModel::shelf_base_temperature_impl() const {
   }
 }
 
-const IceModelVec2S& OceanModel::shelf_base_mass_flux_impl() const {
+const array::Scalar& OceanModel::shelf_base_mass_flux_impl() const {
   if (m_input_model) {
     return m_input_model->shelf_base_mass_flux();
   } else {
@@ -155,7 +155,7 @@ const IceModelVec2S& OceanModel::shelf_base_mass_flux_impl() const {
   }
 }
 
-const IceModelVec2S& OceanModel::average_water_column_pressure_impl() const {
+const array::Scalar& OceanModel::average_water_column_pressure_impl() const {
   if (m_input_model) {
     return m_input_model->average_water_column_pressure();
   } else {
@@ -181,7 +181,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbtemp"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbtemp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_temperature());
@@ -208,7 +208,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "shelfbmassflux"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbmassflux"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_mass_flux());
@@ -245,11 +245,11 @@ void OceanModel::compute_average_water_column_pressure(const Geometry &geometry,
                                                           double ice_density,
                                                           double water_density,
                                                           double g,
-                                                          IceModelVec2S &result) {
+                                                          array::Scalar &result) {
 
   auto grid = result.grid();
 
-  const IceModelVec2S
+  const array::Scalar
     &bed = geometry.bed_elevation,
     &H   = geometry.ice_thickness,
     &z_s = geometry.sea_level_elevation;

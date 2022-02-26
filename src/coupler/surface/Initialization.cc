@@ -133,35 +133,35 @@ void InitializationHelper::update_impl(const Geometry &geometry, double t, doubl
   m_runoff->copy_from(m_input_model->runoff());
 }
 
-const IceModelVec2S &InitializationHelper::layer_thickness_impl() const {
+const array::Scalar &InitializationHelper::layer_thickness_impl() const {
   return *m_layer_thickness;
 }
 
-const IceModelVec2S &InitializationHelper::mass_flux_impl() const {
+const array::Scalar &InitializationHelper::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &InitializationHelper::temperature_impl() const {
+const array::Scalar &InitializationHelper::temperature_impl() const {
   return m_temperature;
 }
 
-const IceModelVec2S &InitializationHelper::liquid_water_fraction_impl() const {
+const array::Scalar &InitializationHelper::liquid_water_fraction_impl() const {
   return *m_liquid_water_fraction;
 }
 
-const IceModelVec2S &InitializationHelper::layer_mass_impl() const {
+const array::Scalar &InitializationHelper::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
-const IceModelVec2S &InitializationHelper::accumulation_impl() const {
+const array::Scalar &InitializationHelper::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &InitializationHelper::melt_impl() const {
+const array::Scalar &InitializationHelper::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &InitializationHelper::runoff_impl() const {
+const array::Scalar &InitializationHelper::runoff_impl() const {
   return *m_runoff;
 }
 

@@ -76,7 +76,7 @@ void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 }
 
-const IceModelVec2S& YieldStress::basal_material_yield_stress() {
+const array::Scalar& YieldStress::basal_material_yield_stress() {
   return m_basal_yield_stress;
 }
 

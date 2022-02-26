@@ -28,7 +28,7 @@
 #include "ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -244,7 +244,7 @@ protected:
   }
 
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
+    array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid,
                                                 "diagnostic"));
     result->metadata(0) = Diagnostic::m_vars.at(0);
 
@@ -262,13 +262,13 @@ protected:
   double m_factor;
   InputKind m_input_kind;
   // the state (read from and written to files)
-  IceModelVec2S m_accumulator;
+  array::Scalar m_accumulator;
   // length of the reporting interval, accumulated along with the cumulative quantity
   double m_interval_length;
   VariableMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
-  virtual const IceModelVec2S& model_input() {
+  virtual const array::Scalar& model_input() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no default implementation");
   }
 };

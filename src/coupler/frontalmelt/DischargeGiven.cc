@@ -84,7 +84,7 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
  * Initialize potential temperature from IceModelVecs instead of an input
  * file (for testing).
  */
-void DischargeGiven::initialize(const IceModelVec2S &theta, const IceModelVec2S &sgl) {
+void DischargeGiven::initialize(const array::Scalar &theta, const array::Scalar &sgl) {
   m_theta_ocean->copy_from(theta);
   m_subglacial_discharge->copy_from(sgl);
 }
@@ -100,8 +100,8 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   FrontalMeltPhysics physics(*m_config);
 
   const auto          &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
+  const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
   IceModelVec::AccessList list
     {&bed_elevation, &cell_type, &sea_level_elevation,
@@ -172,7 +172,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   }
 }
 
-const IceModelVec2S& DischargeGiven::frontal_melt_rate_impl() const {
+const array::Scalar& DischargeGiven::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 

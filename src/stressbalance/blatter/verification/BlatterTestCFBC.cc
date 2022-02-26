@@ -181,7 +181,7 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
 
   Blatter::init_2d_parameters(inputs);
 
-  const IceModelVec2S &b = inputs.geometry->bed_elevation;
+  const array::Scalar &b = inputs.geometry->bed_elevation;
 
   {
     IceModelVec::AccessList list{&b, &m_parameters};

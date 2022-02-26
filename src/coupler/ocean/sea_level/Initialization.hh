@@ -43,7 +43,7 @@ private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  const IceModelVec2S& sea_level_elevation_impl() const;
+  const array::Scalar& sea_level_elevation_impl() const;
 };
 
 } // end of namespace sea_level

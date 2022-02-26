@@ -151,11 +151,11 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   }
 }
 
-const IceModelVec2S& ElevationChange::air_temperature_impl() const {
+const array::Scalar& ElevationChange::air_temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& ElevationChange::precipitation_impl() const {
+const array::Scalar& ElevationChange::precipitation_impl() const {
   return *m_precipitation;
 }
 

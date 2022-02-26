@@ -79,7 +79,7 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
 
 IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid,
+  auto result = std::make_shared<array::Scalar>(m_grid,
                                                 "ice_margin_pressure_difference");
   result->metadata(0) = m_vars[0];
 
@@ -173,7 +173,7 @@ public:
 protected:
   AreaType m_kind;
   void update_impl(double dt) {
-    const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
+    const array::Scalar &input = model->geometry_evolution().bottom_surface_mass_balance();
     const auto &cell_type = model->geometry().cell_type;
 
     double ice_density = m_config->get_number("constants.ice.density");
@@ -236,13 +236,13 @@ IceModelVec::Ptr HardnessAverage::compute_impl() const {
     }
   }
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "hardav");
+  auto result = std::make_shared<array::Scalar>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
   const auto &cell_type = model->geometry().cell_type;
 
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
   IceModelVec::AccessList list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
   ParallelSection loop(m_grid->com);
@@ -287,7 +287,7 @@ Rank::Rank(const IceModel *m)
 
 IceModelVec::Ptr Rank::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "rank");
+  auto result = std::make_shared<array::Scalar>(m_grid, "rank");
   result->metadata() = m_vars[0];
 
   IceModelVec::AccessList list{result.get()};
@@ -353,7 +353,7 @@ IceModelVec::Ptr Temperature::compute_impl() const {
   IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
   const IceModelVec3 &enthalpy = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
@@ -412,7 +412,7 @@ IceModelVec::Ptr TemperaturePA::compute_impl() const {
   IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
   const IceModelVec3  &enthalpy  = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
@@ -477,10 +477,10 @@ IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "temp_pa_base");
+  auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
   const IceModelVec3 &enthalpy = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
@@ -539,13 +539,13 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
 
 IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "enthalpysurf");
+  auto result = std::make_shared<array::Scalar>(m_grid, "enthalpysurf");
   result->metadata() = m_vars[0];
 
   // compute levels corresponding to 1 m below the ice surface:
 
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
   IceModelVec::AccessList list{&ice_thickness, result.get()};
 
@@ -590,7 +590,7 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
 
 IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "enthalpybase");
+  auto result = std::make_shared<array::Scalar>(m_grid, "enthalpybase");
   result->metadata() = m_vars[0];
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
@@ -641,10 +641,10 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
 
 IceModelVec::Ptr TemperatureBasal::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "basal_temperature");
+  auto result = std::make_shared<array::Scalar>(m_grid, "basal_temperature");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -704,10 +704,10 @@ TemperatureSurface::TemperatureSurface(const IceModel *m)
 
 IceModelVec::Ptr TemperatureSurface::compute_impl() const {
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
 
   auto enth = IceEnthalpySurface(model).compute();
-  auto result = IceModelVec::cast<IceModelVec2S>(enth);
+  auto result = IceModelVec::cast<array::Scalar>(enth);
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -798,12 +798,12 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
 
 IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "tempicethk");
+  auto result = std::make_shared<array::Scalar>(m_grid, "tempicethk");
   result->metadata(0) = m_vars[0];
 
   const auto &cell_type = model->geometry().cell_type;
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
   IceModelVec::AccessList list{&cell_type, result.get(), &ice_enthalpy, &ice_thickness};
 
@@ -872,14 +872,14 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
  */
 IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "tempicethk_basal");
+  auto result = std::make_shared<array::Scalar>(m_grid, "tempicethk_basal");
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const auto &cell_type = model->geometry().cell_type;
   const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
   IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &ice_enthalpy};
 
@@ -1170,7 +1170,7 @@ public:
     const double
       ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S
+    const array::Scalar
       &dH = model->geometry_evolution().thickness_change_due_to_flow(),
       &dV = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
@@ -1409,7 +1409,7 @@ public:
   double compute() {
     const auto &cell_type = model->geometry().cell_type;
 
-    const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+    const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
     const double
       thickness_threshold = m_config->get_number("output.ice_free_thickness_standard"),
@@ -1447,7 +1447,7 @@ public:
   double compute() {
     const auto &cell_type = model->geometry().cell_type;
 
-    const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+    const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
     const double
       thickness_threshold = m_config->get_number("output.ice_free_thickness_standard"),
@@ -1568,7 +1568,7 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
 
   const auto &cell_type = model->geometry().cell_type;
 
-  const IceModelVec2S *thickness_change = nullptr;
+  const array::Scalar *thickness_change = nullptr;
 
   switch (term) {
   case FLOW:
@@ -1588,7 +1588,7 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid term type");
   }
 
-  const IceModelVec2S &dV_flow = model->geometry_evolution().area_specific_volume_change_due_to_flow();
+  const array::Scalar &dV_flow = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
   IceModelVec::AccessList list{&cell_type, thickness_change};
 
@@ -1738,9 +1738,9 @@ public:
   double compute() {
     const double ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S &calving = model->calving();
-    const IceModelVec2S &frontal_melt = model->frontal_melt();
-    const IceModelVec2S &forced_retreat = model->forced_retreat();
+    const array::Scalar &calving = model->calving();
+    const array::Scalar &frontal_melt = model->frontal_melt();
+    const array::Scalar &forced_retreat = model->forced_retreat();
 
     auto cell_area = m_grid->cell_area();
 
@@ -1779,7 +1779,7 @@ public:
   double compute() {
     const double ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S &calving = model->calving();
+    const array::Scalar &calving = model->calving();
 
     auto cell_area = m_grid->cell_area();
 
@@ -1856,7 +1856,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    auto result = std::make_shared<IceModelVec2S>(m_grid, "dHdt");
+    auto result = std::make_shared<array::Scalar>(m_grid, "dHdt");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
@@ -1879,7 +1879,7 @@ protected:
   }
 
 protected:
-  IceModelVec2S m_last_thickness;
+  array::Scalar m_last_thickness;
   double m_interval_length;
 };
 
@@ -1963,10 +1963,10 @@ IceAreaFraction::IceAreaFraction(const IceModel *m)
 
 IceModelVec::Ptr IceAreaFraction::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, land_ice_area_fraction_name);
+  auto result = std::make_shared<array::Scalar>(m_grid, land_ice_area_fraction_name);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S
+  const array::Scalar
     &thickness         = model->geometry().ice_thickness,
     &surface_elevation = model->geometry().ice_surface_elevation,
     &bed_topography    = model->geometry().bed_elevation;
@@ -1977,7 +1977,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
       result.get()};
 
   const bool do_part_grid = m_config->get_flag("geometry.part_grid.enabled");
-  const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;;
+  const array::Scalar &Href = model->geometry().ice_area_specific_volume;;
   if (do_part_grid) {
     list.add(Href);
   }
@@ -2041,7 +2041,7 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
 }
 
 IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
-  auto result = std::make_shared<IceModelVec2S>(m_grid, grounded_ice_sheet_area_fraction_name);
+  auto result = std::make_shared<array::Scalar>(m_grid, grounded_ice_sheet_area_fraction_name);
   result->metadata() = m_vars[0];
 
   const double
@@ -2132,7 +2132,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
 
 IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "height_above_flotation");
+  auto result = std::make_shared<array::Scalar>(m_grid, "height_above_flotation");
   result->metadata(0) = m_vars[0];
 
   const auto &cell_type = model->geometry().cell_type;
@@ -2195,7 +2195,7 @@ IceMass::IceMass(const IceModel *m)
 
 IceModelVec::Ptr IceMass::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "ice_mass");
+  auto result = std::make_shared<array::Scalar>(m_grid, "ice_mass");
   result->metadata(0) = m_vars[0];
 
   const auto &cell_type = model->geometry().cell_type;
@@ -2203,7 +2203,7 @@ IceModelVec::Ptr IceMass::compute_impl() const {
   const double
     ice_density = m_config->get_number("constants.ice.density");
 
-  const IceModelVec2S
+  const array::Scalar
     &ice_thickness = model->geometry().ice_thickness;
 
   auto cell_area = m_grid->cell_area();
@@ -2231,7 +2231,7 @@ IceModelVec::Ptr IceMass::compute_impl() const {
 
   // Add the mass of ice in Href:
   if (m_config->get_flag("geometry.part_grid.enabled")) {
-    const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;
+    const array::Scalar &Href = model->geometry().ice_area_specific_volume;
     list.add(Href);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -2266,7 +2266,7 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
 
 IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "topg_sl_adjusted");
+  auto result = std::make_shared<array::Scalar>(m_grid, "topg_sl_adjusted");
   result->metadata(0) = m_vars[0];
 
   auto &bed       = model->geometry().bed_elevation;
@@ -2314,7 +2314,7 @@ IceModelVec::Ptr IceHardness::compute_impl() const {
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
@@ -2387,7 +2387,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
-  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
   const IceModelVec3
     &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
@@ -2554,7 +2554,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    auto result = std::make_shared<IceModelVec2S>(m_grid, "thk");
+    auto result = std::make_shared<array::Scalar>(m_grid, "thk");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_thickness);
@@ -2581,7 +2581,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    auto result = std::make_shared<IceModelVec2S>(m_grid, "ice_base_elevation");
+    auto result = std::make_shared<array::Scalar>(m_grid, "ice_base_elevation");
     result->metadata(0) = m_vars[0];
 
     ice_bottom_surface(model->geometry(), *result);
@@ -2608,7 +2608,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    auto result = std::make_shared<IceModelVec2S>(m_grid, "usurf");
+    auto result = std::make_shared<array::Scalar>(m_grid, "usurf");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_surface_elevation);

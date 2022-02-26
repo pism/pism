@@ -66,7 +66,7 @@ protected:
     Vector2 driving_stress;
   };
 
-  Array2SGhosted<1> m_bc_mask;
+  array::Scalar1 m_bc_mask;
   IceModelVec2V m_bc_values;
 
   GeometryCalculator m_gc;
@@ -128,7 +128,7 @@ protected:
   petsc::SNES m_snes;
 
   //! Storage for node types (interior, boundary, exterior).
-  Array2SGhosted<1> m_node_type;
+  array::Scalar1 m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
   IceModelVec2V m_boundary_integral;
 
@@ -143,8 +143,8 @@ protected:
   // Support for direct specification of driving stress to the FEM SSA solver. This helps
   // with certain test cases where the grid is periodic but the driving stress cannot be the
   // gradient of a periodic function. (See commit ffb4be16.)
-  const IceModelVec2S *m_driving_stress_x;
-  const IceModelVec2S *m_driving_stress_y;
+  const array::Scalar *m_driving_stress_x;
+  const array::Scalar *m_driving_stress_y;
 private:
   void cache_residual_cfbc(const Inputs &inputs);
   void monitor_jacobian(Mat Jac);

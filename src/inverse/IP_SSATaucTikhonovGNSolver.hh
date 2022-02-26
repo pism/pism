@@ -56,10 +56,10 @@ protected:
 
 class IP_SSATaucTikhonovGNSolver {
 public:
-  typedef IceModelVec2S DesignVec;
+  typedef array::Scalar DesignVec;
   typedef IceModelVec2V StateVec;
 
-  typedef Array2SGhosted<1> DesignVecGhosted;
+  typedef array::Scalar1 DesignVecGhosted;
 
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
@@ -87,7 +87,7 @@ public:
 
   virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
-  virtual void apply_GN(IceModelVec2S &h, IceModelVec2S &out);
+  virtual void apply_GN(array::Scalar &h, array::Scalar &out);
   virtual void apply_GN(Vec h, Vec out);
 
   virtual TerminationReason::Ptr init();

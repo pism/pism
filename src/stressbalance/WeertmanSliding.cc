@@ -75,8 +75,8 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
 
   (void) full_update;
 
-  const IceModelVec2S &H         = inputs.geometry->ice_thickness;
-  const IceModelVec2S &h         = inputs.geometry->ice_surface_elevation;
+  const array::Scalar &H         = inputs.geometry->ice_thickness;
+  const array::Scalar &h         = inputs.geometry->ice_surface_elevation;
   const auto          &cell_type = inputs.geometry->cell_type;
   const IceModelVec3  &enthalpy  = *inputs.enthalpy;
 

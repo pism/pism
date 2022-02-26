@@ -59,7 +59,7 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S &H = geometry.ice_thickness;
+  const array::Scalar &H = geometry.ice_thickness;
 
   // Set shelf base temperature to the melting temperature at the base (depth within the
   // ice equal to ice thickness).
@@ -79,8 +79,8 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 /*!
  * Compute melting temperature at a given depth within the ice.
  */
-void PIK::melting_point_temperature(const IceModelVec2S &depth,
-                                    IceModelVec2S &result) const {
+void PIK::melting_point_temperature(const array::Scalar &depth,
+                                    array::Scalar &result) const {
   const double
     T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"), // K
     beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
@@ -101,7 +101,7 @@ void PIK::melting_point_temperature(const IceModelVec2S &depth,
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void PIK::mass_flux(const IceModelVec2S &ice_thickness, IceModelVec2S &result) const {
+void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) const {
   const double
     melt_factor       = m_config->get_number("ocean.pik_melt_factor"),
     L                 = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),

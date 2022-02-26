@@ -37,7 +37,7 @@ class SteadyHydrology(TestCase):
         geometry.sea_level_elevation.set(0.0)
         geometry.ensure_consistency(0.0)
 
-        surface_input_rate = PISM.IceModelVec2S(grid, "water_input_rate")
+        surface_input_rate = PISM.Scalar(grid, "water_input_rate")
         surface_input_rate.set_attrs("", "water input rate", "kg m-2 s-1", "kg m-2 s-1", "", 0)
         self.surface_input_rate = surface_input_rate
 
@@ -63,7 +63,7 @@ class SteadyHydrology(TestCase):
 
         self.model = PISM.SteadyState(grid)
 
-        zero = PISM.IceModelVec2S(grid, "zero")
+        zero = PISM.Scalar(grid, "zero")
         zero.set(0.0)
         self.zero = zero
 
@@ -87,7 +87,7 @@ class SteadyHydrology(TestCase):
         dt = self.model.max_timestep(0).value()
         self.model.update(0, dt, inputs)
 
-        flux_magnitude = PISM.IceModelVec2S(grid, "flux_magnitude")
+        flux_magnitude = PISM.Scalar(grid, "flux_magnitude")
 
         PISM.compute_magnitude(self.model.flux(), flux_magnitude)
 
@@ -131,7 +131,7 @@ class SteadyHydrology(TestCase):
         model.surface_input_rate().write(f)
         model.flux().write(f)
 
-        Q = PISM.IceModelVec2S(self.grid, "water_flux_magnitude", PISM.WITHOUT_GHOSTS)
+        Q = PISM.Scalar(self.grid, "water_flux_magnitude", PISM.WITHOUT_GHOSTS)
         Q.set_attrs("", "magnitude of the water flux", "m2 s-1", "m2 s-1", "", 0)
         Q.set_to_magnitude(model.flux())
         Q.write(f)

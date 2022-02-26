@@ -28,8 +28,8 @@
 namespace pism {
 namespace atmosphere {
 
-IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "air_temp"));
+array::Scalar::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid) {
+  array::Scalar::Ptr result(new array::Scalar(grid, "air_temp"));
 
   result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
                     "Kelvin", "Kelvin", "", 0);
@@ -37,8 +37,8 @@ IceModelVec2S::Ptr AtmosphereModel::allocate_temperature(IceGrid::ConstPtr grid)
   return result;
 }
 
-IceModelVec2S::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "precipitation"));
+array::Scalar::Ptr AtmosphereModel::allocate_precipitation(IceGrid::ConstPtr grid) {
+  array::Scalar::Ptr result(new array::Scalar(grid, "precipitation"));
   result->set_attrs("climate_forcing", "precipitation rate",
                     "kg m-2 second-1", "kg m-2 year-1",
                     "precipitation_flux", 0);
@@ -65,11 +65,11 @@ void AtmosphereModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
 }
 
-const IceModelVec2S& AtmosphereModel::precipitation() const {
+const array::Scalar& AtmosphereModel::precipitation() const {
   return this->precipitation_impl();
 }
 
-const IceModelVec2S& AtmosphereModel::air_temperature() const {
+const array::Scalar& AtmosphereModel::air_temperature() const {
   return this->air_temperature_impl();
 }
 
@@ -113,7 +113,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_snapshot"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_snapshot"));
     result->metadata(0) = m_vars[0];
 
     std::vector<double> current_time(1, m_grid->ctx()->time()->current());
@@ -159,7 +159,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_air_temp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->air_temperature());
@@ -184,7 +184,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_precipitation"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->precipitation());
@@ -245,7 +245,7 @@ void AtmosphereModel::write_model_state_impl(const File &output) const {
   }
 }
 
-const IceModelVec2S& AtmosphereModel::precipitation_impl() const {
+const array::Scalar& AtmosphereModel::precipitation_impl() const {
   if (m_input_model) {
     return m_input_model->precipitation();
   } else {
@@ -253,7 +253,7 @@ const IceModelVec2S& AtmosphereModel::precipitation_impl() const {
   }
 }
 
-const IceModelVec2S& AtmosphereModel::air_temperature_impl() const {
+const array::Scalar& AtmosphereModel::air_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->air_temperature();
   } else {

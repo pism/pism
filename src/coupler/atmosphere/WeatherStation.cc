@@ -88,11 +88,11 @@ void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) 
   m_temperature->set(m_air_temp_timeseries->average(t, dt));
 }
 
-const IceModelVec2S& WeatherStation::precipitation_impl() const {
+const array::Scalar& WeatherStation::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& WeatherStation::air_temperature_impl() const {
+const array::Scalar& WeatherStation::air_temperature_impl() const {
   return *m_temperature;
 }
 

@@ -25,9 +25,9 @@
 
 namespace pism {
 
+namespace array { class Scalar; }
+
 class IceModelVec;
-class IceModelVec2S;
-class IceModelVec2S;
 class IceModelVec2V;
 
 namespace fem {
@@ -45,17 +45,17 @@ protected:
   DirichletData();
   ~DirichletData();
 
-  void init(const IceModelVec2S *indices, const IceModelVec *values, double weight = 1.0);
+  void init(const array::Scalar *indices, const IceModelVec *values, double weight = 1.0);
   void finish(const IceModelVec *values);
 
-  const IceModelVec2S *m_indices;
+  const array::Scalar *m_indices;
   double m_indices_e[q1::n_chi];
   double m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar(const IceModelVec2S *indices, const IceModelVec2S *values,
+  DirichletData_Scalar(const array::Scalar *indices, const array::Scalar *values,
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
@@ -65,12 +65,12 @@ public:
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
 protected:
-  const IceModelVec2S *m_values;
+  const array::Scalar *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const IceModelVec2S *indices, const IceModelVec2V *values,
+  DirichletData_Vector(const array::Scalar *indices, const IceModelVec2V *values,
                        double weight);
   ~DirichletData_Vector();
 

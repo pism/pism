@@ -43,10 +43,10 @@ public:
   virtual ~TemperatureIndex() = default;
 
   // diagnostics (for the last time step)
-  const IceModelVec2S& firn_depth() const;
-  const IceModelVec2S& snow_depth() const;
+  const array::Scalar& firn_depth() const;
+  const array::Scalar& snow_depth() const;
   // these represent totals (not rates) over the time step
-  const IceModelVec2S& air_temp_sd() const;
+  const array::Scalar& air_temp_sd() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -58,12 +58,12 @@ protected:
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const array::Scalar& mass_flux_impl() const;
+  virtual const array::Scalar& temperature_impl() const;
   
-  virtual const IceModelVec2S& accumulation_impl() const;
-  virtual const IceModelVec2S& melt_impl() const;
-  virtual const IceModelVec2S& runoff_impl() const;
+  virtual const array::Scalar& accumulation_impl() const;
+  virtual const array::Scalar& melt_impl() const;
+  virtual const array::Scalar& runoff_impl() const;
 
   double compute_next_balance_year_start(double time);
 protected:
@@ -83,27 +83,27 @@ protected:
   double m_next_balance_year_start;
 
   //! cached surface mass balance rate
-  IceModelVec2S m_mass_flux;
+  array::Scalar m_mass_flux;
 
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_temperature;
 
   //! firn depth
-  IceModelVec2S m_firn_depth;
+  array::Scalar m_firn_depth;
 
   //! snow depth (reset once a year)
-  IceModelVec2S m_snow_depth;
+  array::Scalar m_snow_depth;
 
   //! standard deviation of the daily variability of the air temperature
   std::shared_ptr<IceModelVec2T> m_air_temp_sd;
 
   //! total accumulation during the last time step
-  IceModelVec2S::Ptr m_accumulation;
+  array::Scalar::Ptr m_accumulation;
 
   //! total melt during the last time step
-  IceModelVec2S::Ptr m_melt;
+  array::Scalar::Ptr m_melt;
 
   //! total runoff during the last time step
-  IceModelVec2S::Ptr m_runoff;
+  array::Scalar::Ptr m_runoff;
 
   bool m_sd_use_param, m_sd_file_set;
   double m_sd_param_a, m_sd_param_b;

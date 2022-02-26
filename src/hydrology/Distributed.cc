@@ -62,7 +62,7 @@ void Distributed::restart_impl(const File &input_file, int record) {
 }
 
 void Distributed::bootstrap_impl(const File &input_file,
-                                 const IceModelVec2S &ice_thickness) {
+                                 const array::Scalar &ice_thickness) {
   Routing::bootstrap_impl(input_file, ice_thickness);
 
   double bwp_default = m_config->get_number("bootstrapping.defaults.bwp");
@@ -78,7 +78,7 @@ void Distributed::bootstrap_impl(const File &input_file,
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
-    IceModelVec2S sliding_speed(m_grid, "velbase_mag");
+    array::Scalar sliding_speed(m_grid, "velbase_mag");
     sliding_speed.set_attrs("internal", "basal sliding speed",
                             "m s-1", "m s-1", "", 0);
 
@@ -96,9 +96,9 @@ void Distributed::bootstrap_impl(const File &input_file,
   }
 }
 
-void Distributed::init_impl(const IceModelVec2S &W_till,
-                              const IceModelVec2S &W,
-                              const IceModelVec2S &P) {
+void Distributed::init_impl(const array::Scalar &W_till,
+                              const array::Scalar &W,
+                              const array::Scalar &P) {
   Routing::init_impl(W_till, W, P);
 
   m_P.copy_from(P);
@@ -122,7 +122,7 @@ std::map<std::string, TSDiagnostic::Ptr> Distributed::ts_diagnostics_impl() cons
 }
 
 //! Copies the P state variable which is the modeled water pressure.
-const IceModelVec2S& Distributed::subglacial_water_pressure() const {
+const array::Scalar& Distributed::subglacial_water_pressure() const {
   return m_P;
 }
 
@@ -131,8 +131,8 @@ const IceModelVec2S& Distributed::subglacial_water_pressure() const {
 /*!
   The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
 */
-void Distributed::check_P_bounds(IceModelVec2S &P,
-                                 const IceModelVec2S &P_o,
+void Distributed::check_P_bounds(array::Scalar &P,
+                                 const array::Scalar &P_o,
                                  bool enforce_upper) {
 
   IceModelVec::AccessList list{&P, &P_o};
@@ -175,10 +175,10 @@ void Distributed::check_P_bounds(IceModelVec2S &P,
   in verification and/or reporting.  It is not used during time-dependent
   model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
 */
-void Distributed::P_from_W_steady(const IceModelVec2S &W,
-                                  const IceModelVec2S &P_overburden,
-                                  const IceModelVec2S &sliding_speed,
-                                  IceModelVec2S &result) {
+void Distributed::P_from_W_steady(const array::Scalar &W,
+                                  const array::Scalar &P_overburden,
+                                  const array::Scalar &sliding_speed,
+                                  array::Scalar &result) {
 
   const double
     ice_softness                   = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
@@ -220,18 +220,18 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
 
 void Distributed::update_P(double dt,
                            const array::CellType0 &cell_type,
-                           const IceModelVec2S &sliding_speed,
-                           const IceModelVec2S &surface_input_rate,
-                           const IceModelVec2S &basal_melt_rate,
-                           const IceModelVec2S &P_overburden,
-                           const IceModelVec2S &Wtill,
-                           const IceModelVec2S &Wtill_new,
-                           const IceModelVec2S &P,
-                           const IceModelVec2S &W,
+                           const array::Scalar &sliding_speed,
+                           const array::Scalar &surface_input_rate,
+                           const array::Scalar &basal_melt_rate,
+                           const array::Scalar &P_overburden,
+                           const array::Scalar &Wtill,
+                           const array::Scalar &Wtill_new,
+                           const array::Scalar &P,
+                           const array::Scalar &W,
                            const IceModelVec2Stag &Ws,
                            const IceModelVec2Stag &K,
                            const IceModelVec2Stag &Q,
-                           IceModelVec2S &P_new) const {
+                           array::Scalar &P_new) const {
 
   const double
     n    = m_config->get_number("stress_balance.sia.Glen_exponent"),

@@ -49,7 +49,7 @@ public:
 
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwp"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "bwp"));
     result->metadata() = m_vars[0];
     result->copy_from(model->subglacial_water_pressure());
     return result;
@@ -75,10 +75,10 @@ protected:
   virtual IceModelVec::Ptr compute_impl() const {
     double fill_value = m_fill_value;
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "bwprel"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "bwprel"));
     result->metadata(0) = m_vars[0];
 
-    const IceModelVec2S
+    const array::Scalar
       &P  = model->subglacial_water_pressure(),
       &Po = model->overburden_pressure();
 
@@ -114,10 +114,10 @@ public:
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effbwp"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "effbwp"));
     result->metadata() = m_vars[0];
 
-    const IceModelVec2S
+    const array::Scalar
       &P  = model->subglacial_water_pressure(),
       &Po = model->overburden_pressure();
 
@@ -149,10 +149,10 @@ public:
 
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "wallmelt"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "wallmelt"));
     result->metadata() = m_vars[0];
 
-    const IceModelVec2S &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+    const array::Scalar &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
 
     wall_melt(*model, bed_elevation, *result);
     return result;
@@ -192,12 +192,12 @@ protected:
 /*!
   Computes \f$\psi = P + \rho_w g (b + W)\f$.
 */
-void hydraulic_potential(const IceModelVec2S &W,
-                         const IceModelVec2S &P,
-                         const IceModelVec2S &sea_level,
-                         const IceModelVec2S &bed,
-                         const IceModelVec2S &ice_thickness,
-                         IceModelVec2S &result) {
+void hydraulic_potential(const array::Scalar &W,
+                         const array::Scalar &P,
+                         const array::Scalar &sea_level,
+                         const array::Scalar &bed,
+                         const array::Scalar &ice_thickness,
+                         array::Scalar &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -237,12 +237,12 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hydraulic_potential"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "hydraulic_potential"));
     result->metadata(0) = m_vars[0];
 
-    const IceModelVec2S        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
-    const IceModelVec2S        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-    const IceModelVec2S        &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const array::Scalar        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
+    const array::Scalar        &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
+    const array::Scalar        &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     hydraulic_potential(model->subglacial_water_thickness(),
                         model->subglacial_water_pressure(),
@@ -350,7 +350,7 @@ void Routing::restart_impl(const File &input_file, int record) {
 }
 
 void Routing::bootstrap_impl(const File &input_file,
-                             const IceModelVec2S &ice_thickness) {
+                             const array::Scalar &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
   double bwat_default = m_config->get_number("bootstrapping.defaults.bwat");
@@ -359,9 +359,9 @@ void Routing::bootstrap_impl(const File &input_file,
   regrid("Hydrology", m_W);
 }
 
-void Routing::init_impl(const IceModelVec2S &W_till,
-                              const IceModelVec2S &W,
-                              const IceModelVec2S &P) {
+void Routing::init_impl(const array::Scalar &W_till,
+                              const array::Scalar &W,
+                              const array::Scalar &P) {
   Hydrology::init_impl(W_till, W, P);
 
   m_W.copy_from(W);
@@ -379,7 +379,7 @@ void Routing::write_model_state_impl(const File &output) const {
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water,
 //! because this is the model.
-const IceModelVec2S& Routing::subglacial_water_pressure() const {
+const array::Scalar& Routing::subglacial_water_pressure() const {
   return m_Pover;
 }
 
@@ -391,7 +391,7 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
   either ice-free or floating areas. */
-void Routing::water_thickness_staggered(const IceModelVec2S &W,
+void Routing::water_thickness_staggered(const array::Scalar &W,
                                         const array::CellType1 &mask,
                                         IceModelVec2Stag &result) {
 
@@ -451,8 +451,8 @@ void Routing::water_thickness_staggered(const IceModelVec2S &W,
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
 void Routing::compute_conductivity(const IceModelVec2Stag &W,
-                                   const IceModelVec2S &P,
-                                   const IceModelVec2S &bed_elevation,
+                                   const array::Scalar &P,
+                                   const array::Scalar &bed_elevation,
                                    IceModelVec2Stag &result,
                                    double &KW_max) const {
   const double
@@ -542,8 +542,8 @@ void Routing::compute_conductivity(const IceModelVec2Stag &W,
   At the current state of the code, this is a diagnostic calculation only.
 */
 void wall_melt(const Routing &model,
-               const IceModelVec2S &bed_elevation,
-               IceModelVec2S &result) {
+               const array::Scalar &bed_elevation,
+               array::Scalar &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -565,13 +565,13 @@ void wall_melt(const Routing &model,
                                   "alpha = %f < 1 which is not allowed", alpha);
   }
 
-  Array2SGhosted<1> R(grid, "R");
+  array::Scalar1 R(grid, "R");
 
   // R  <-- P + rhow g b
   model.subglacial_water_pressure().add(rg, bed_elevation, R);
   // yes, it updates ghosts
 
-  Array2SGhosted<1> W(grid, "W");
+  array::Scalar1 W(grid, "W");
   W.copy_from(model.subglacial_water_thickness());
 
   IceModelVec::AccessList list{&R, &W, &result};
@@ -626,12 +626,12 @@ void wall_melt(const Routing &model,
   bed has valid ghosts.
 */
 void Routing::compute_velocity(const IceModelVec2Stag &W,
-                               const IceModelVec2S &pressure,
-                               const IceModelVec2S &bed,
+                               const array::Scalar &pressure,
+                               const array::Scalar &bed,
                                const IceModelVec2Stag &K,
-                               const IceModelVec2S *no_model_mask,
+                               const array::Scalar *no_model_mask,
                                IceModelVec2Stag &result) const {
-  IceModelVec2S &P = m_R;
+  array::Scalar &P = m_R;
   P.copy_from(pressure);  // yes, it updates ghosts
 
   IceModelVec::AccessList list{&P, &W, &K, &bed, &result};
@@ -685,7 +685,7 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
   FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
 */
 void Routing::advective_fluxes(const IceModelVec2Stag &V,
-                               const IceModelVec2S &W,
+                               const array::Scalar &W,
                                IceModelVec2Stag &result) const {
   IceModelVec::AccessList list{&W, &V, &result};
 
@@ -745,10 +745,10 @@ double Routing::max_timestep_W_cfl() const {
   Otherwise this is the same physical model with the same configurable parameters.
 */
 void Routing::update_Wtill(double dt,
-                           const IceModelVec2S &Wtill,
-                           const IceModelVec2S &surface_input_rate,
-                           const IceModelVec2S &basal_melt_rate,
-                           IceModelVec2S &Wtill_new) {
+                           const array::Scalar &Wtill,
+                           const array::Scalar &surface_input_rate,
+                           const array::Scalar &basal_melt_rate,
+                           array::Scalar &Wtill_new) {
   const double
     tillwat_max = m_config->get_number("hydrology.tillwat_max"),
     C           = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
@@ -774,11 +774,11 @@ void Routing::update_Wtill(double dt,
 }
 
 void Routing::W_change_due_to_flow(double dt,
-                                   const IceModelVec2S    &W,
+                                   const array::Scalar    &W,
                                    const IceModelVec2Stag &Wstag,
                                    const IceModelVec2Stag &K,
                                    const IceModelVec2Stag &Q,
-                                   IceModelVec2S &result) {
+                                   array::Scalar &result) {
   const double
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
@@ -811,15 +811,15 @@ void Routing::W_change_due_to_flow(double dt,
 
 //! The computation of Wnew, called by update().
 void Routing::update_W(double dt,
-                       const IceModelVec2S    &surface_input_rate,
-                       const IceModelVec2S    &basal_melt_rate,
-                       const IceModelVec2S    &W,
+                       const array::Scalar    &surface_input_rate,
+                       const array::Scalar    &basal_melt_rate,
+                       const array::Scalar    &W,
                        const IceModelVec2Stag &Wstag,
-                       const IceModelVec2S    &Wtill,
-                       const IceModelVec2S    &Wtill_new,
+                       const array::Scalar    &Wtill,
+                       const array::Scalar    &Wtill_new,
                        const IceModelVec2Stag &K,
                        const IceModelVec2Stag &Q,
-                       IceModelVec2S &W_new) {
+                       array::Scalar &W_new) {
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
 

@@ -88,7 +88,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
                                      m_grid->x0(), m_grid->y0(),
                                      Nx, Ny, CELL_CORNER, NOT_PERIODIC);
 
-  m_viscous_displacement.reset(new IceModelVec2S(m_extended_grid,
+  m_viscous_displacement.reset(new array::Scalar(m_extended_grid,
                                                  "viscous_bed_displacement"));
   m_viscous_displacement->set_attrs("model state",
                                     "bed displacement in the viscous half-space "
@@ -132,10 +132,10 @@ LingleClark::~LingleClark() {
  * This method has to initialize m_viscous_displacement, m_elastic_displacement,
  * m_total_displacement, and m_relief.
  */
-void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
-                                 const IceModelVec2S &bed_uplift,
-                                 const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &sea_level_elevation) {
+void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
+                                 const array::Scalar &bed_uplift,
+                                 const array::Scalar &ice_thickness,
+                                 const array::Scalar &sea_level_elevation) {
   m_t_last = m_grid->ctx()->time()->current();
 
   m_topg_last.copy_from(bed_elevation);
@@ -187,8 +187,8 @@ void LingleClark::bootstrap_impl(const IceModelVec2S &bed_elevation,
  *
  * This method is used for testing only.
  */
-IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_extended_grid, "lrm"));
+array::Scalar::Ptr LingleClark::elastic_load_response_matrix() const {
+  array::Scalar::Ptr result(new array::Scalar(m_extended_grid, "lrm"));
 
   int
     Nx = m_extended_grid->Mx(),
@@ -226,8 +226,8 @@ IceModelVec2S::Ptr LingleClark::elastic_load_response_matrix() const {
  * - plate displacement (either read from a file or bootstrapped using uplift) and
  *   possibly re-gridded.
  */
-void LingleClark::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &sea_level_elevation) {
+void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                            const array::Scalar &sea_level_elevation) {
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
@@ -321,24 +321,24 @@ MaxTimestep LingleClark::max_timestep_impl(double t) const {
 /*!
  * Get total bed displacement on the PISM grid.
  */
-const IceModelVec2S& LingleClark::total_displacement() const {
+const array::Scalar& LingleClark::total_displacement() const {
   return m_total_displacement;
 }
 
-const IceModelVec2S& LingleClark::viscous_displacement() const {
+const array::Scalar& LingleClark::viscous_displacement() const {
   return *m_viscous_displacement;
 }
 
-const IceModelVec2S& LingleClark::elastic_displacement() const {
+const array::Scalar& LingleClark::elastic_displacement() const {
   return m_elastic_displacement;
 }
 
-const IceModelVec2S& LingleClark::relief() const {
+const array::Scalar& LingleClark::relief() const {
   return m_relief;
 }
 
-void LingleClark::step(const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation,
+void LingleClark::step(const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation,
                        double dt) {
 
   compute_load(m_topg, ice_thickness, sea_level_elevation,
@@ -386,8 +386,8 @@ void LingleClark::step(const IceModelVec2S &ice_thickness,
 }
 
 //! Update the Lingle-Clark bed deformation model.
-void LingleClark::update_impl(const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &sea_level_elevation,
+void LingleClark::update_impl(const array::Scalar &ice_thickness,
+                              const array::Scalar &sea_level_elevation,
                               double t, double dt) {
 
   double

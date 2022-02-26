@@ -28,7 +28,7 @@ namespace frontalmelt {
 
 Constant::Constant(IceGrid::ConstPtr g)
   : FrontalMelt(g) {
-  m_frontal_melt_rate = std::make_shared<IceModelVec2S>(g, "frontal_melt_rate");
+  m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
   m_frontal_melt_rate->set_attrs("diagnostic", "frontal melt rate",
                                  "m s-1", "m day-1", "", 0);
 }
@@ -55,7 +55,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   }
 }
 
-const IceModelVec2S& Constant::frontal_melt_rate_impl() const {
+const array::Scalar& Constant::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
   

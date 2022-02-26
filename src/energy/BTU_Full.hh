@@ -92,7 +92,7 @@ public:
   const IceModelVec3& temperature() const;
 
 protected:
-  virtual void bootstrap(const IceModelVec2S &bedrock_top_temperature);
+  virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
 
   virtual void init_impl(const InputOptions &opts);
 
@@ -103,7 +103,7 @@ protected:
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
   using BedThermalUnit::update_impl;
-  virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt);
 
   virtual void define_model_state_impl(const File &output) const;

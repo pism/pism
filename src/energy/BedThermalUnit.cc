@@ -201,16 +201,16 @@ DiagnosticList BedThermalUnit::diagnostics_impl() const {
   return result;
 }
 
-void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
+void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature,
                             double t, double dt) {
   this->update_impl(bedrock_top_temperature, t, dt);
 }
 
-const IceModelVec2S& BedThermalUnit::flux_through_top_surface() const {
+const array::Scalar& BedThermalUnit::flux_through_top_surface() const {
   return m_top_surface_flux;
 }
 
-const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
+const array::Scalar& BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
 }
 
@@ -231,7 +231,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
 }
 
 IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
-  auto result = std::make_shared<IceModelVec2S>(m_grid, "hfgeoubed");
+  auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 
   result->copy_from(model->flux_through_top_surface());

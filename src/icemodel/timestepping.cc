@@ -124,7 +124,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
     // at least one of front retreat mechanisms is active *and* PISM is told to use a CFL
     // restriction
 
-    IceModelVec2S &retreat_rate = *m_work2d[0];
+    array::Scalar &retreat_rate = *m_work2d[0];
     retreat_rate.set(0.0);
 
     if (m_eigen_calving) {

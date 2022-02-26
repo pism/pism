@@ -19,8 +19,8 @@
 
 #include "node_types.hh"
 
-#include "pism/util/IceModelVec2S.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 
@@ -59,9 +59,9 @@ Cell layout:
 (i-1,j-1) +-------S--------+ (i+1,j-1)
 ~~~
  */
-void compute_node_types(const IceModelVec2S &ice_thickness,
+void compute_node_types(const array::Scalar &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2S &result) {
+                        array::Scalar &result) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
 

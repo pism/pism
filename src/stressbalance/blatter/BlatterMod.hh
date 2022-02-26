@@ -44,11 +44,11 @@ public:
 private:
   std::shared_ptr<Blatter> m_solver;
 
-  void transfer(const IceModelVec2S &ice_thickness);
+  void transfer(const array::Scalar &ice_thickness);
 
   void compute_max_diffusivity(const IceModelVec2V &velocity,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface);
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar &surface);
 };
 
 } // end of namespace stressbalance

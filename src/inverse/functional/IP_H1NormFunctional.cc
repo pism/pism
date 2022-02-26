@@ -20,12 +20,12 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace inverse {
 
-void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IP_H1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -68,7 +68,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
+void IP_H1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -122,7 +122,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 }
 
 
-void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IP_H1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();

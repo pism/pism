@@ -72,7 +72,7 @@ void BlatterMod::update(const IceModelVec2V &sliding_velocity,
  *
  * Uses constant extrapolation above the ice surface.
  */
-void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
+void BlatterMod::transfer(const array::Scalar &ice_thickness) {
 
   auto u_sigma = m_solver->velocity_u_sigma();
   auto v_sigma = m_solver->velocity_v_sigma();
@@ -111,8 +111,8 @@ void BlatterMod::transfer(const IceModelVec2S &ice_thickness) {
  * Estimate max SIA-type diffusivity assuming that `Q = -D \nabla h`.
  */
 void BlatterMod::compute_max_diffusivity(const IceModelVec2V &velocity,
-                                         const IceModelVec2S &ice_thickness,
-                                         const IceModelVec2S &surface) {
+                                         const array::Scalar &ice_thickness,
+                                         const array::Scalar &surface) {
   const double eps = 1e-3;
   double
     dx = m_grid->dx(),

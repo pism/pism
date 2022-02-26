@@ -40,7 +40,7 @@ private:
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
-  const IceModelVec2S& air_temperature_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
@@ -51,7 +51,7 @@ private:
 
   std::shared_ptr<IceModelVec2T> m_2d_offsets;
 
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_temperature;
 };
 
 } // end of namespace atmosphere

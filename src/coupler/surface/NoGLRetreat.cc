@@ -117,23 +117,23 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S& NoGLRetreat::mass_flux_impl() const {
+const array::Scalar& NoGLRetreat::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S& NoGLRetreat::accumulation_impl() const {
+const array::Scalar& NoGLRetreat::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& NoGLRetreat::melt_impl() const {
+const array::Scalar& NoGLRetreat::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& NoGLRetreat::runoff_impl() const {
+const array::Scalar& NoGLRetreat::runoff_impl() const {
   return *m_runoff;
 }
 
-const IceModelVec2S& NoGLRetreat::smb_adjustment() const {
+const array::Scalar& NoGLRetreat::smb_adjustment() const {
   return m_smb_adjustment;
 }
 
@@ -162,7 +162,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->smb_adjustment();
   }
 };

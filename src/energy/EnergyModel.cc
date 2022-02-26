@@ -91,7 +91,7 @@ EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
 }
 
 
-bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold) {
+bool marginal(const array::Scalar &thickness, int i, int j, double threshold) {
   int
     n = j + 1,
     e = i + 1,
@@ -182,7 +182,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       }
     }
 
-    const IceModelVec2S & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const array::Scalar & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     if (input_file.find_variable("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
@@ -246,20 +246,20 @@ void EnergyModel::restart(const File &input_file, int record) {
 }
 
 void EnergyModel::bootstrap(const File &input_file,
-                            const IceModelVec2S &ice_thickness,
-                            const IceModelVec2S &surface_temperature,
-                            const IceModelVec2S &climatic_mass_balance,
-                            const IceModelVec2S &basal_heat_flux) {
+                            const array::Scalar &ice_thickness,
+                            const array::Scalar &surface_temperature,
+                            const array::Scalar &climatic_mass_balance,
+                            const array::Scalar &basal_heat_flux) {
   this->bootstrap_impl(input_file,
                        ice_thickness, surface_temperature,
                        climatic_mass_balance, basal_heat_flux);
 }
 
-void EnergyModel::initialize(const IceModelVec2S &basal_melt_rate,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &surface_temperature,
-                             const IceModelVec2S &climatic_mass_balance,
-                             const IceModelVec2S &basal_heat_flux) {
+void EnergyModel::initialize(const array::Scalar &basal_melt_rate,
+                             const array::Scalar &ice_thickness,
+                             const array::Scalar &surface_temperature,
+                             const array::Scalar &climatic_mass_balance,
+                             const array::Scalar &basal_heat_flux) {
   this->initialize_impl(basal_melt_rate,
                         ice_thickness,
                         surface_temperature,
@@ -331,7 +331,7 @@ const IceModelVec3 & EnergyModel::enthalpy() const {
 }
 
 /*! @brief Basal melt rate in grounded areas. (It is set to zero elsewhere.) */
-const IceModelVec2S & EnergyModel::basal_melt_rate() const {
+const array::Scalar & EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 

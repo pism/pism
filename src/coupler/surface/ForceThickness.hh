@@ -20,8 +20,8 @@
 #define _PSFORCETHICKNESS_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/IceModelVec2S.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -40,25 +40,25 @@ protected:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  const IceModelVec2S& mass_flux_impl() const;
+  const array::Scalar& mass_flux_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 private:
   void adjust_mass_flux(double time,
-                        const IceModelVec2S &ice_thickness,
+                        const array::Scalar &ice_thickness,
                         const array::CellType0 &cell_type,
-                        IceModelVec2S &result) const;
+                        array::Scalar &result) const;
 
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
   double m_start_time;
-  IceModelVec2S m_target_thickness;
-  IceModelVec2S m_ftt_mask;
+  array::Scalar m_target_thickness;
+  array::Scalar m_ftt_mask;
 
-  IceModelVec2S::Ptr m_mass_flux;
+  array::Scalar::Ptr m_mass_flux;
 };
 
 } // end of namespace surface

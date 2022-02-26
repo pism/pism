@@ -58,13 +58,13 @@ void NullTransport::restart_impl(const File &input_file, int record) {
 }
 
 void NullTransport::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness) {
+                                   const array::Scalar &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 }
 
-void NullTransport::init_impl(const IceModelVec2S &W_till,
-                                    const IceModelVec2S &W,
-                                    const IceModelVec2S &P) {
+void NullTransport::init_impl(const array::Scalar &W_till,
+                                    const array::Scalar &W,
+                                    const array::Scalar &P) {
   Hydrology::init_impl(W_till, W, P);
 }
 

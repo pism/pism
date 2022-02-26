@@ -56,7 +56,7 @@ def run(dt, restart=False):
 
     geometry = PISM.Geometry(grid)
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift")
+    bed_uplift = PISM.Scalar(grid, "uplift")
 
     # start with a flat bed, no ice, and no uplift
     geometry.bed_elevation.set(0.0)

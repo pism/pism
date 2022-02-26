@@ -39,13 +39,13 @@ public:
 
   virtual ~CompleteOceanModel() = default;
 protected:
-  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
-  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar& shelf_base_temperature_impl() const;
+  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
   // getter for melange_back_pressure_fraction is inherited from OceanModel
 
   // storage for melange_back_pressure_fraction is inherited from OceanModel
-  IceModelVec2S::Ptr m_shelf_base_temperature;
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  array::Scalar::Ptr m_shelf_base_temperature;
+  array::Scalar::Ptr m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

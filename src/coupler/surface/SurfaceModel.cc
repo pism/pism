@@ -34,8 +34,8 @@
 namespace pism {
 namespace surface {
 
-IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_mass"));
+array::Scalar::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
+  array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_mass"));
 
   result->set_attrs("climate_forcing", "mass held in the surface layer",
                     "kg", "kg", "", 0);
@@ -45,9 +45,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_mass(IceGrid::ConstPtr grid) {
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_layer_thickness"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_thickness"));
 
   result->set_attrs("climate_forcing",
                     "thickness of the surface process layer at the top surface of the ice",
@@ -58,9 +58,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_layer_thickness(IceGrid::ConstPtr grid
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid,
+  array::Scalar::Ptr result(new array::Scalar(grid,
                                               "ice_surface_liquid_water_fraction"));
 
   result->set_attrs("climate_forcing",
@@ -72,9 +72,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_liquid_water_fraction(IceGrid::ConstPt
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "climatic_mass_balance"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "climatic_mass_balance"));
 
   result->set_attrs("climate_forcing",
                     "surface mass balance (accumulation/ablation) rate",
@@ -89,9 +89,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_mass_flux(IceGrid::ConstPtr grid) {
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "ice_surface_temp"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "ice_surface_temp"));
 
   result->set_attrs("climate_forcing",
                     "temperature of the ice at the ice surface but below firn processes",
@@ -102,9 +102,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_temperature(IceGrid::ConstPtr grid) {
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_accumulation_flux"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "surface_accumulation_flux"));
 
   result->set_attrs("diagnostic",
                     "surface accumulation (precipitation minus rain)",
@@ -113,9 +113,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_accumulation(IceGrid::ConstPtr grid) {
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_melt_flux"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "surface_melt_flux"));
 
   result->set_attrs("diagnostic",
                     "surface melt",
@@ -124,9 +124,9 @@ IceModelVec2S::Ptr SurfaceModel::allocate_melt(IceGrid::ConstPtr grid) {
   return result;
 }
 
-IceModelVec2S::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
+array::Scalar::Ptr SurfaceModel::allocate_runoff(IceGrid::ConstPtr grid) {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(grid, "surface_runoff_flux"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "surface_runoff_flux"));
 
   result->set_attrs("diagnostic",
                     "surface meltwater runoff",
@@ -172,7 +172,7 @@ SurfaceModel::SurfaceModel(IceGrid::ConstPtr grid,
 /*!
  * Basic surface models currently implemented in PISM do not model accumulation
  */
-const IceModelVec2S& SurfaceModel::accumulation() const {
+const array::Scalar& SurfaceModel::accumulation() const {
   return accumulation_impl();
 }
 
@@ -180,7 +180,7 @@ const IceModelVec2S& SurfaceModel::accumulation() const {
 /*!
  * Basic surface models currently implemented in PISM do not model melt
  */
-const IceModelVec2S& SurfaceModel::melt() const {
+const array::Scalar& SurfaceModel::melt() const {
   return melt_impl();
 }
 
@@ -188,15 +188,15 @@ const IceModelVec2S& SurfaceModel::melt() const {
 /*!
  * Basic surface models currently implemented in PISM do not model runoff
  */
-const IceModelVec2S& SurfaceModel::runoff() const {
+const array::Scalar& SurfaceModel::runoff() const {
   return runoff_impl();
 }
 
-const IceModelVec2S& SurfaceModel::mass_flux() const {
+const array::Scalar& SurfaceModel::mass_flux() const {
   return mass_flux_impl();
 }
 
-const IceModelVec2S& SurfaceModel::temperature() const {
+const array::Scalar& SurfaceModel::temperature() const {
   return temperature_impl();
 }
 
@@ -204,7 +204,7 @@ const IceModelVec2S& SurfaceModel::temperature() const {
 /*!
  * Most PISM surface models return 0.
  */
-const IceModelVec2S& SurfaceModel::liquid_water_fraction() const {
+const array::Scalar& SurfaceModel::liquid_water_fraction() const {
   return liquid_water_fraction_impl();
 }
 
@@ -213,7 +213,7 @@ const IceModelVec2S& SurfaceModel::liquid_water_fraction() const {
  * Basic surface models currently implemented in PISM do not model the mass of
  * the surface layer.
  */
-const IceModelVec2S& SurfaceModel::layer_mass() const {
+const array::Scalar& SurfaceModel::layer_mass() const {
   return layer_mass_impl();
 }
 
@@ -224,11 +224,11 @@ const IceModelVec2S& SurfaceModel::layer_mass() const {
  * Basic surface models currently implemented in PISM do not model surface
  * layer thickness.
  */
-const IceModelVec2S& SurfaceModel::layer_thickness() const {
+const array::Scalar& SurfaceModel::layer_thickness() const {
   return layer_thickness_impl();
 }
 
-const IceModelVec2S& SurfaceModel::accumulation_impl() const {
+const array::Scalar& SurfaceModel::accumulation_impl() const {
   if (m_input_model) {
     return m_input_model->accumulation();
   } else {
@@ -236,7 +236,7 @@ const IceModelVec2S& SurfaceModel::accumulation_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::melt_impl() const {
+const array::Scalar& SurfaceModel::melt_impl() const {
   if (m_input_model) {
     return m_input_model->melt();
   } else {
@@ -244,7 +244,7 @@ const IceModelVec2S& SurfaceModel::melt_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::runoff_impl() const {
+const array::Scalar& SurfaceModel::runoff_impl() const {
   if (m_input_model) {
     return m_input_model->runoff();
   } else {
@@ -252,7 +252,7 @@ const IceModelVec2S& SurfaceModel::runoff_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
+const array::Scalar& SurfaceModel::mass_flux_impl() const {
   if (m_input_model) {
     return m_input_model->mass_flux();
   } else {
@@ -260,7 +260,7 @@ const IceModelVec2S& SurfaceModel::mass_flux_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::temperature_impl() const {
+const array::Scalar& SurfaceModel::temperature_impl() const {
   if (m_input_model) {
     return m_input_model->temperature();
   } else {
@@ -268,7 +268,7 @@ const IceModelVec2S& SurfaceModel::temperature_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
+const array::Scalar& SurfaceModel::liquid_water_fraction_impl() const {
   if (m_input_model) {
     return m_input_model->liquid_water_fraction();
   } else {
@@ -276,7 +276,7 @@ const IceModelVec2S& SurfaceModel::liquid_water_fraction_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
+const array::Scalar& SurfaceModel::layer_mass_impl() const {
   if (m_input_model) {
     return m_input_model->layer_mass();
   } else {
@@ -284,7 +284,7 @@ const IceModelVec2S& SurfaceModel::layer_mass_impl() const {
   }
 }
 
-const IceModelVec2S& SurfaceModel::layer_thickness_impl() const {
+const array::Scalar& SurfaceModel::layer_thickness_impl() const {
   if (m_input_model) {
     return m_input_model->layer_thickness();
   } else {
@@ -362,7 +362,7 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
  * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
  * - runoff".
  */
-void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_accumulation(const array::Scalar& smb, array::Scalar& result) {
 
   IceModelVec::AccessList list{&result, &smb};
 
@@ -382,7 +382,7 @@ void SurfaceModel::dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& r
  * runoff. This ensures that outputs of PISM's surface models satisfy "SMB = accumulation
  * - runoff".
  */
-void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_runoff(const array::Scalar& smb, array::Scalar& result) {
 
   IceModelVec::AccessList list{&result, &smb};
 
@@ -401,7 +401,7 @@ void SurfaceModel::dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result)
  * We assume that all melt runs off, i.e. runoff = melt, but treat melt as a "derived"
  * quantity.
  */
-void SurfaceModel::dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result) {
+void SurfaceModel::dummy_melt(const array::Scalar& smb, array::Scalar& result) {
   dummy_runoff(smb, result);
 }
 
@@ -467,7 +467,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "climatic_mass_balance"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "climatic_mass_balance"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->mass_flux());
@@ -492,7 +492,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_temp"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "ice_surface_temp"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->temperature());
@@ -512,7 +512,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_surface_liquid_water_fraction"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "ice_surface_liquid_water_fraction"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->liquid_water_fraction());
@@ -532,7 +532,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_mass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_mass"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "surface_layer_mass"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_mass());
@@ -552,7 +552,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
 
 IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "surface_layer_thickness"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "surface_layer_thickness"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_thickness());
@@ -601,8 +601,8 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
-    const IceModelVec2S &melt_amount = model->melt();
+  const array::Scalar& model_input() {
+    const array::Scalar &melt_amount = model->melt();
 
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
@@ -619,7 +619,7 @@ protected:
     }
   }
 private:
-  IceModelVec2S m_melt_mass;
+  array::Scalar m_melt_mass;
   AmountKind m_kind;
 };
 
@@ -661,8 +661,8 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
-    const IceModelVec2S &runoff_amount = model->runoff();
+  const array::Scalar& model_input() {
+    const array::Scalar &runoff_amount = model->runoff();
 
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
@@ -680,7 +680,7 @@ protected:
   }
 private:
   AmountKind m_kind;
-  IceModelVec2S m_runoff_mass;
+  array::Scalar m_runoff_mass;
 };
 
 /*! @brief Report accumulation (precipitation minus rain), averaged over the reporting interval */
@@ -721,8 +721,8 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
-    const IceModelVec2S &accumulation_amount = model->accumulation();
+  const array::Scalar& model_input() {
+    const array::Scalar &accumulation_amount = model->accumulation();
 
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
@@ -740,7 +740,7 @@ protected:
   }
 private:
   AmountKind m_kind;
-  IceModelVec2S m_accumulation_mass;
+  array::Scalar m_accumulation_mass;
 };
 
 /*!
@@ -748,7 +748,7 @@ private:
  *
  * If the input has units kg/m^2, the output will be in kg.
  */
-static double integrate(const IceModelVec2S &input) {
+static double integrate(const array::Scalar &input) {
   IceGrid::ConstPtr grid = input.grid();
 
   double cell_area = grid->cell_area();

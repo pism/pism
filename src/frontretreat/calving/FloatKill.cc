@@ -57,7 +57,7 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(array::CellType1 &mask, IceModelVec2S &ice_thickness) {
+void FloatKill::update(array::CellType1 &mask, array::Scalar &ice_thickness) {
 
   IceModelVec::AccessList list{&mask, &ice_thickness};
 

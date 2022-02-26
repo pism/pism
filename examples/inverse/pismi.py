@@ -403,14 +403,14 @@ def run():
                 raise NotImplementedError("Unable to build 'zeta_fixed_mask' for design variable %s.", design_var)
 
     # Convert design_prior -> zeta_prior
-    zeta_prior = PISM.Array2SGhosted2(grid, "zeta_prior")
+    zeta_prior = PISM.Scalar2(grid, "zeta_prior")
     design_param.convertFromDesignVariable(design_prior, zeta_prior)
     vecs.add(zeta_prior, writing=True)
 
     # Determine the initial guess for zeta.  If we are restarting, load it from
     # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
     # If none of the above, copy from 'zeta_prior'.
-    zeta = PISM.Array2SGhosted2(grid, "zeta_inv")
+    zeta = PISM.Scalar2(grid, "zeta_inv")
     zeta.set_attrs("diagnostic", "zeta_inv", "1", "1", "zeta_inv", 0)
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
@@ -560,7 +560,7 @@ def run():
     residual.copy_from(u)
     residual.add(-1, vel_ssa_observed)
 
-    r_mag = PISM.IceModelVec2S(grid, "inv_ssa_residual")
+    r_mag = PISM.Scalar(grid, "inv_ssa_residual")
 
     r_mag.set_attrs("diagnostic",
                     "magnitude of mismatch between observed surface velocities and their reconstrution by inversion",

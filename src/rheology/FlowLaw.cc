@@ -23,7 +23,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec3.hh"
 
 #include "pism/util/ConfigInterface.hh"
@@ -181,9 +181,9 @@ void FlowLaw::effective_viscosity(double B, double gamma, double eps,
 }
 
 void averaged_hardness_vec(const FlowLaw &ice,
-                           const IceModelVec2S &thickness,
+                           const array::Scalar &thickness,
                            const IceModelVec3  &enthalpy,
-                           IceModelVec2S &result) {
+                           array::Scalar &result) {
 
   const IceGrid &grid = *thickness.grid();
 

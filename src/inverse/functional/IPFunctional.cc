@@ -19,13 +19,13 @@
 #include "IPFunctional.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace inverse {
 
-void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient) {
+void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient) {
   const IceGrid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 

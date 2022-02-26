@@ -57,7 +57,7 @@ MaxTimestep BTU_Minimal::max_timestep_impl(double t) const {
   return MaxTimestep("minimal thermal bedrock layer");
 }
 
-void BTU_Minimal::update_impl(const IceModelVec2S &bedrock_top_temperature, double t, double dt) {
+void BTU_Minimal::update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt) {
   (void) bedrock_top_temperature;
   (void) t;
   (void) dt;

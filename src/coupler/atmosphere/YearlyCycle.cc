@@ -90,17 +90,17 @@ void YearlyCycle::write_model_state_impl(const File &output) const {
 }
 
 //! Copies the stored precipitation field into result.
-const IceModelVec2S& YearlyCycle::precipitation_impl() const {
+const array::Scalar& YearlyCycle::precipitation_impl() const {
   return m_precipitation;
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-const IceModelVec2S& YearlyCycle::air_temperature_impl() const {
+const array::Scalar& YearlyCycle::air_temperature_impl() const {
   return m_air_temp_mean_annual;
 }
 
 //! Copies the stored mean summer near-surface air temperature field into result.
-const IceModelVec2S& YearlyCycle::mean_summer_temp() const {
+const array::Scalar& YearlyCycle::mean_summer_temp() const {
   return m_air_temp_mean_summer;
 }
 
@@ -165,7 +165,7 @@ public:
 private:
   IceModelVec::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "air_temp_mean_summer"));
+    array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_mean_summer"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->mean_summer_temp());

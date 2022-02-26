@@ -121,7 +121,7 @@ TerminationReason::Ptr IP_SSATaucTikhonovGNSolver::init() {
   return m_ssaforward.linearize_at(m_d0);
 }
 
-void IP_SSATaucTikhonovGNSolver::apply_GN(IceModelVec2S &x, IceModelVec2S &y) {
+void IP_SSATaucTikhonovGNSolver::apply_GN(array::Scalar &x, array::Scalar &y) {
   this->apply_GN(x.vec(), y.vec());
 }
 

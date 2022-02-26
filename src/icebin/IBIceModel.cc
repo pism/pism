@@ -120,7 +120,7 @@ void IBIceModel::energy_step() {
   cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
 
   // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
-  IceModelVec2S const &Rb(m_stress_balance->basal_frictional_heating());
+  array::Scalar const &Rb(m_stress_balance->basal_frictional_heating());
   cur.basal_frictional_heating.add(my_dt, Rb);
 
   // NOTE: strain_heating is inf at the coastlines.
@@ -270,9 +270,9 @@ void IBIceModel::set_rate(double dt) {
   auto cur_ii(cur.all_vecs.begin());
   auto rate_ii(rate.all_vecs.begin());
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii, ++rate_ii) {
-    IceModelVec2S &vbase(base_ii->vec);
-    IceModelVec2S &vcur(cur_ii->vec);
-    IceModelVec2S &vrate(rate_ii->vec);
+    array::Scalar &vbase(base_ii->vec);
+    array::Scalar &vcur(cur_ii->vec);
+    array::Scalar &vrate(rate_ii->vec);
 
     {
       AccessList access{ &vbase, &vcur, &vrate };
@@ -298,8 +298,8 @@ void IBIceModel::reset_rate() {
   auto base_ii(base.all_vecs.begin());
   auto cur_ii(cur.all_vecs.begin());
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii) {
-    IceModelVec2S &vbase(base_ii->vec);
-    IceModelVec2S &vcur(cur_ii->vec);
+    array::Scalar &vbase(base_ii->vec);
+    array::Scalar &vcur(cur_ii->vec);
 
     // This cannot go in the loop above with PETSc because
     // vbase is needed on the RHS of the equations above.
@@ -415,7 +415,7 @@ by computing the average over icy neighbors. I think you can re-use
 the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
 
-void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
+void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &mass2) {
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
@@ -458,10 +458,10 @@ in the vector provided.
 @param surface_temp OUT: Resulting surface temperature to use as the Dirichlet B.C.
 */
 void IBIceModel::construct_surface_temp(
-    pism::IceModelVec2S &deltah, // IN: Input from Icebin
+    pism::array::Scalar &deltah, // IN: Input from Icebin
     double default_val,
     double timestep_s,                 // Length of this coupling interval [s]
-    pism::IceModelVec2S &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
+    pism::array::Scalar &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
 
 {
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);

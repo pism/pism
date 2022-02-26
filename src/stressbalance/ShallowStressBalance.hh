@@ -51,12 +51,12 @@ public:
   const IceModelVec2V& velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  const IceModelVec2S& basal_frictional_heating();
+  const array::Scalar& basal_frictional_heating();
 
   void compute_basal_frictional_heating(const IceModelVec2V &velocity,
-                                        const IceModelVec2S &tauc,
+                                        const array::Scalar &tauc,
                                         const array::CellType0 &mask,
-                                        IceModelVec2S &result) const;
+                                        array::Scalar &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -79,7 +79,7 @@ protected:
   EnthalpyConverter::Ptr m_EC;
 
   IceModelVec2V m_velocity;
-  IceModelVec2S m_basal_frictional_heating;
+  array::Scalar m_basal_frictional_heating;
 
   //! flow enhancement factor
   double m_e_factor;

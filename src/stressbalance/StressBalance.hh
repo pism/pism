@@ -27,10 +27,6 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec2Stag;
-class Geometry;
-
 namespace rheology {
 class FlowLaw;
 } // end of namespace rheology
@@ -48,21 +44,21 @@ public:
   const Geometry *geometry;
   bool new_bed_elevation;
 
-  const IceModelVec2S *basal_melt_rate;
-  const IceModelVec2S *basal_yield_stress;
-  const IceModelVec2S *water_column_pressure;
-  const IceModelVec2S *fracture_density;
+  const array::Scalar *basal_melt_rate;
+  const array::Scalar *basal_yield_stress;
+  const array::Scalar *water_column_pressure;
+  const array::Scalar *fracture_density;
 
   const IceModelVec3  *enthalpy;
   const IceModelVec3  *age;
 
-  const IceModelVec2S *bc_mask;
+  const array::Scalar *bc_mask;
   const IceModelVec2V *bc_values;
 
   // inputs used by regional stress balance models
-  const IceModelVec2S *no_model_mask;
-  const IceModelVec2S *no_model_ice_thickness;
-  const IceModelVec2S *no_model_surface_elevation;
+  const array::Scalar *no_model_mask;
+  const array::Scalar *no_model_ice_thickness;
+  const array::Scalar *no_model_surface_elevation;
 
   void dump(const char *filename) const;
 };
@@ -113,7 +109,7 @@ public:
   const IceModelVec3& velocity_w() const;
 
   //! \brief Get the basal frictional heating.
-  const IceModelVec2S& basal_frictional_heating() const;
+  const array::Scalar& basal_frictional_heating() const;
 
   const IceModelVec3& volumetric_strain_heating() const;
 
@@ -135,7 +131,7 @@ protected:
   virtual void compute_vertical_velocity(const array::CellType1 &mask,
                                          const IceModelVec3 &u,
                                          const IceModelVec3 &v,
-                                         const IceModelVec2S *bmr,
+                                         const array::Scalar *bmr,
                                          IceModelVec3 &result);
   virtual void compute_volumetric_strain_heating(const Inputs &inputs);
 
@@ -157,7 +153,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
-                         const IceModelVec2S &hardness,
+                         const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          IceModelVec3 &result);
 

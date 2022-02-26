@@ -41,15 +41,15 @@ public:
   void init();
 
   void update(const array::CellType1 &cell_type,
-              const IceModelVec2S &ice_thickness,
+              const array::Scalar &ice_thickness,
               const IceModelVec2V &ice_velocity,
               const IceModelVec3 &ice_enthalpy);
-  const IceModelVec2S& threshold() const;
+  const array::Scalar& threshold() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
-  IceModelVec2S m_calving_threshold;
+  array::Scalar m_calving_threshold;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

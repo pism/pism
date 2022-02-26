@@ -54,8 +54,8 @@ Given::Given(IceGrid::ConstPtr grid)
   }
 }
 
-void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &sea_level_elevation) {
+void Given::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                      const array::Scalar &sea_level_elevation) {
   (void) ice_thickness;
   (void) sea_level_elevation;
 
@@ -75,8 +75,8 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
   }
 }
 
-void Given::update_impl(const IceModelVec2S &ice_thickness,
-                        const IceModelVec2S &sea_level_elevation,
+void Given::update_impl(const array::Scalar &ice_thickness,
+                        const array::Scalar &sea_level_elevation,
                         double t, double dt) {
   (void) ice_thickness;
   (void) sea_level_elevation;

@@ -19,7 +19,7 @@
 
 #include "DirichletData.hh"
 
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
@@ -39,7 +39,7 @@ DirichletData::~DirichletData() {
   finish(NULL);
 }
 
-void DirichletData::init(const IceModelVec2S *indices,
+void DirichletData::init(const array::Scalar *indices,
                          const IceModelVec *values,
                          double weight) {
   m_weight = weight;
@@ -90,8 +90,8 @@ void DirichletData::constrain(Element2 &element) {
 
 // Scalar version
 
-DirichletData_Scalar::DirichletData_Scalar(const IceModelVec2S *indices,
-                                           const IceModelVec2S *values,
+DirichletData_Scalar::DirichletData_Scalar(const array::Scalar *indices,
+                                           const array::Scalar *values,
                                            double weight)
   : m_values(values) {
   init(indices, m_values, weight);
@@ -186,7 +186,7 @@ DirichletData_Scalar::~DirichletData_Scalar() {
 
 // Vector version
 
-DirichletData_Vector::DirichletData_Vector(const IceModelVec2S *indices,
+DirichletData_Vector::DirichletData_Vector(const array::Scalar *indices,
                                            const IceModelVec2V *values,
                                            double weight)
   : m_values(values) {

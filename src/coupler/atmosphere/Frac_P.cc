@@ -122,7 +122,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_scaling->update(t, dt);
     m_2d_scaling->average(t, dt);
 
-    IceModelVec2S &P = *m_precipitation;
+    array::Scalar &P = *m_precipitation;
     IceModelVec2T &S = *m_2d_scaling;
 
     IceModelVec::AccessList list{&P, &S};
@@ -135,7 +135,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Frac_P::precipitation_impl() const {
+const array::Scalar& Frac_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

@@ -102,7 +102,7 @@ T interpolate(const F &field, double x, double y) {
   ## Memory allocation
 
   \code
-  IceModelVec2S var(grid, "var_name", WITH_GHOSTS);
+  array::Scalar var(grid, "var_name", WITH_GHOSTS);
   // var is ready to use
   \endcode
 
@@ -122,7 +122,7 @@ T interpolate(const F &field, double x, double y) {
   \code
   double foo;
   int i = 0, j = 0;
-  IceModelVec2S var;
+  array::Scalar var;
   // assume that var was allocated
   ierr = var.begin_access(); CHKERRQ(ierr);
   foo = var(i,j) * 2;

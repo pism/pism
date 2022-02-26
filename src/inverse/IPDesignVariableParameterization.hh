@@ -25,7 +25,7 @@
 namespace pism {
 
 class Config;
-class IceModelVec2S;
+namespace array { class Scalar; }
 
 namespace inverse {
 
@@ -80,9 +80,9 @@ public:
   /*! More than one such \f$\zeta\f$ may exist; only one is returned. */
   virtual void fromDesignVariable(double d, double *OUTPUT) = 0;
 
-  virtual void convertToDesignVariable(IceModelVec2S &zeta, IceModelVec2S &d, bool communicate = true);
+  virtual void convertToDesignVariable(array::Scalar &zeta, array::Scalar &d, bool communicate = true);
 
-  virtual void convertFromDesignVariable(IceModelVec2S &d, IceModelVec2S &zeta,  bool communicate = true);
+  virtual void convertFromDesignVariable(array::Scalar &d, array::Scalar &zeta,  bool communicate = true);
 protected:
   
   /// Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.

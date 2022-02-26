@@ -69,7 +69,7 @@ public:
 protected:
   IceModelVec::Ptr compute_impl() const {
 
-    auto result = std::make_shared<IceModelVec2S>(m_grid, "");
+    auto result = std::make_shared<array::Scalar>(m_grid, "");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
@@ -106,8 +106,8 @@ protected:
   void reset_impl() {
     m_interval_length = 0.0;
 
-    const IceModelVec2S& thickness = model->geometry().ice_thickness;
-    const IceModelVec2S& area_specific_volume = model->geometry().ice_area_specific_volume;
+    const array::Scalar& thickness = model->geometry().ice_thickness;
+    const array::Scalar& area_specific_volume = model->geometry().ice_area_specific_volume;
 
     double ice_density = m_config->get_number("constants.ice.density");
 
@@ -127,7 +127,7 @@ protected:
 
 protected:
   AmountKind m_kind;
-  IceModelVec2S m_last_amount;
+  array::Scalar m_last_amount;
   double m_interval_length;
 };
 
@@ -174,7 +174,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
+    const array::Scalar
       &dH = model->geometry_evolution().thickness_change_due_to_flow(),
       &dV = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
@@ -238,7 +238,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
+    const array::Scalar
       &SMB = model->geometry_evolution().top_surface_mass_balance();
 
     auto cell_area = m_grid->cell_area();
@@ -298,7 +298,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
+    const array::Scalar
       &BMB = model->geometry_evolution().bottom_surface_mass_balance();
 
     auto cell_area = m_grid->cell_area();
@@ -358,7 +358,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S
+    const array::Scalar
       &error = model->geometry_evolution().conservation_error();
 
     IceModelVec::AccessList list{&m_accumulator, &error};
@@ -422,9 +422,9 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S &calving = model->calving();
-    const IceModelVec2S &frontal_melt = model->frontal_melt();
-    const IceModelVec2S &forced_retreat = model->forced_retreat();
+    const array::Scalar &calving = model->calving();
+    const array::Scalar &frontal_melt = model->frontal_melt();
+    const array::Scalar &forced_retreat = model->forced_retreat();
 
     IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
 
@@ -487,7 +487,7 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const IceModelVec2S &calving = model->calving();
+    const array::Scalar &calving = model->calving();
 
     IceModelVec::AccessList list{&m_accumulator, &calving};
 

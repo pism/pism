@@ -41,7 +41,7 @@ TemperatureModel.
 */
 unsigned int count_CFL_violations(const IceModelVec3 &u3,
                                   const IceModelVec3 &v3,
-                                  const IceModelVec2S &ice_thickness,
+                                  const array::Scalar &ice_thickness,
                                   double dt) {
 
   if (dt == 0.0) {

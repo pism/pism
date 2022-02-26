@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 
 double grounded_area_fraction(double a, double b, double c);
 
@@ -32,10 +32,10 @@ double grounded_area_fraction(double a, double b, double c);
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
-                                    const IceModelVec2S &sea_level,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_topography,
-                                    IceModelVec2S &result);
+                                    const array::Scalar &sea_level,
+                                    const array::Scalar &ice_thickness,
+                                    const array::Scalar &bed_topography,
+                                    array::Scalar &result);
 
 } // end of namespace pism
 

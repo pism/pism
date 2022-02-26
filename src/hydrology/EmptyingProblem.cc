@@ -34,9 +34,9 @@ namespace diagnostics {
  * filling dips to eliminate sinks (and get a better estimate of the steady state flow
  * direction).
  */
-static void compute_sinks(const IceModelVec2S &domain_mask,
-                          const IceModelVec2S &psi,
-                          IceModelVec2S &result) {
+static void compute_sinks(const array::Scalar &domain_mask,
+                          const array::Scalar &psi,
+                          array::Scalar &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -175,8 +175,8 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
  * @param[in] water_input_rate water input rate in m/s
  */
 void EmptyingProblem::update(const Geometry &geometry,
-                             const IceModelVec2S *no_model_mask,
-                             const IceModelVec2S &water_input_rate,
+                             const array::Scalar *no_model_mask,
+                             const array::Scalar &water_input_rate,
                              bool recompute_potential) {
 
   const double
@@ -312,9 +312,9 @@ void EmptyingProblem::update(const Geometry &geometry,
  * @param[in] b ice bottom surface elevation
  * @param[out] result simplified hydraulic potential used by to compute velocity
  */
-void EmptyingProblem::compute_raw_potential(const IceModelVec2S &H,
-                                            const IceModelVec2S &b,
-                                            IceModelVec2S &result) const {
+void EmptyingProblem::compute_raw_potential(const array::Scalar &H,
+                                            const array::Scalar &b,
+                                            array::Scalar &result) const {
   const double
     g     = m_config->get_number("constants.standard_gravity"),
     rho_i = m_config->get_number("constants.ice.density"),
@@ -331,11 +331,11 @@ void EmptyingProblem::compute_raw_potential(const IceModelVec2S &H,
   result.update_ghosts();
 }
 
-void EmptyingProblem::compute_potential(const IceModelVec2S &ice_thickness,
-                                        const IceModelVec2S &ice_bottom_surface,
-                                        const IceModelVec2S &domain_mask,
-                                        IceModelVec2S &result) {
-  IceModelVec2S &psi_new = m_tmp;
+void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
+                                        const array::Scalar &ice_bottom_surface,
+                                        const array::Scalar &domain_mask,
+                                        array::Scalar &result) {
+  array::Scalar &psi_new = m_tmp;
 
   double delta = m_config->get_number("hydrology.steady.potential_delta");
 
@@ -403,8 +403,8 @@ static double K(double psi_x, double psi_y, double speed, double epsilon) {
 /*!
  * Compute water velocity on the staggered grid.
  */
-void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
-                                       const IceModelVec2S &domain_mask,
+void EmptyingProblem::compute_velocity(const array::Scalar &psi,
+                                       const array::Scalar &domain_mask,
                                        IceModelVec2Stag &result) const {
 
   IceModelVec::AccessList list{&psi, &result, &domain_mask};
@@ -442,8 +442,8 @@ void EmptyingProblem::compute_velocity(const IceModelVec2S &psi,
  * Compute the mask that defines the domain: ones in the domain, zeroes elsewhere.
  */
 void EmptyingProblem::compute_mask(const array::CellType0 &cell_type,
-                                   const IceModelVec2S *no_model_mask,
-                                   IceModelVec2S &result) const {
+                                   const array::Scalar *no_model_mask,
+                                   array::Scalar &result) const {
 
   IceModelVec::AccessList list{&cell_type, &result};
 
@@ -485,7 +485,7 @@ DiagnosticList EmptyingProblem::diagnostics() const {
  * This field can be used to get an idea of where water is accumulated. (This affects the
  * quality of the estimate of the water flux).
  */
-const IceModelVec2S& EmptyingProblem::remaining_water_thickness() const {
+const array::Scalar& EmptyingProblem::remaining_water_thickness() const {
   return m_W;
 }
 
@@ -506,21 +506,21 @@ const IceModelVec2V& EmptyingProblem::effective_water_velocity() const {
 /*!
  * Hydraulic potential used to determine flow direction.
  */
-const IceModelVec2S& EmptyingProblem::potential() const {
+const array::Scalar& EmptyingProblem::potential() const {
   return m_potential;
 }
 
 /*!
  * Map of sinks.
  */
-const IceModelVec2S& EmptyingProblem::sinks() const {
+const array::Scalar& EmptyingProblem::sinks() const {
   return m_sinks;
 }
 
 /*!
  * Adjustment applied to the unmodified hydraulic potential to eliminate sinks.
  */
-const IceModelVec2S& EmptyingProblem::adjustment() const {
+const array::Scalar& EmptyingProblem::adjustment() const {
   return m_adjustment;
 }
 

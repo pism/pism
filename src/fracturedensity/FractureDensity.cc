@@ -105,8 +105,8 @@ void FractureDensity::bootstrap(const File &input_file) {
   m_age.regrid(input_file, OPTIONAL, 0.0);
 }
 
-void FractureDensity::initialize(const IceModelVec2S &density,
-                                 const IceModelVec2S &age) {
+void FractureDensity::initialize(const array::Scalar &density,
+                                 const array::Scalar &age) {
   m_density.copy_from(density);
   m_age.copy_from(age);
 }
@@ -129,8 +129,8 @@ void FractureDensity::write_model_state_impl(const File &output) const {
 void FractureDensity::update(double dt,
                              const Geometry &geometry,
                              const IceModelVec2V &velocity,
-                             const IceModelVec2S &hardness,
-                             const IceModelVec2S &bc_mask) {
+                             const array::Scalar &hardness,
+                             const array::Scalar &bc_mask) {
   using std::pow;
 
   const double
@@ -140,7 +140,7 @@ void FractureDensity::update(double dt,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec2S
+  array::Scalar
     &D     = m_density,
     &D_new = m_density_new,
     &A     = m_age,
@@ -483,27 +483,27 @@ DiagnosticList FractureDensity::diagnostics_impl() const {
   };
 }
 
-const IceModelVec2S& FractureDensity::density() const {
+const array::Scalar& FractureDensity::density() const {
   return m_density;
 }
 
-const IceModelVec2S& FractureDensity::growth_rate() const {
+const array::Scalar& FractureDensity::growth_rate() const {
   return m_growth_rate;
 }
 
-const IceModelVec2S& FractureDensity::healing_rate() const {
+const array::Scalar& FractureDensity::healing_rate() const {
   return m_healing_rate;
 }
 
-const IceModelVec2S& FractureDensity::flow_enhancement() const {
+const array::Scalar& FractureDensity::flow_enhancement() const {
   return m_flow_enhancement;
 }
 
-const IceModelVec2S& FractureDensity::age() const {
+const array::Scalar& FractureDensity::age() const {
   return m_age;
 }
 
-const IceModelVec2S& FractureDensity::toughness() const {
+const array::Scalar& FractureDensity::toughness() const {
   return m_toughness;
 }
 

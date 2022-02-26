@@ -426,7 +426,7 @@ void IceRegionalModel::init_diagnostics() {
 void IceRegionalModel::hydrology_step() {
   hydrology::Inputs inputs;
 
-  IceModelVec2S &sliding_speed = *m_work2d[0];
+  array::Scalar &sliding_speed = *m_work2d[0];
   compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = &m_no_model_mask;
@@ -441,7 +441,7 @@ void IceRegionalModel::hydrology_step() {
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
-    IceModelVec2S &surface_input_rate = *m_work2d[1];
+    array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
     surface_input_rate.scale(1.0 / m_dt);
     inputs.surface_input_rate = &surface_input_rate;

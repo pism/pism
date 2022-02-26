@@ -37,28 +37,28 @@ public:
 
   // This is grid information, which is not (strictly speaking) ice geometry, but it should be
   // available everywhere we use ice geometry.
-  IceModelVec2S latitude;
-  IceModelVec2S longitude;
+  array::Scalar latitude;
+  array::Scalar longitude;
 
   // Part of ice geometry, but managed by the bed model and the ocean model. From the point of view
   // of the code updating ice geometry, these are inputs. These fields should be filled in before
   // passing a Geometry instance to the code that uses it.
-  Array2SGhosted<2> bed_elevation;
-  Array2SGhosted<1> sea_level_elevation;
+  array::Scalar2 bed_elevation;
+  array::Scalar1 sea_level_elevation;
 
   // the minimal "state"
-  Array2SGhosted<2> ice_thickness;
-  Array2SGhosted<1> ice_area_specific_volume;
+  array::Scalar2 ice_thickness;
+  array::Scalar1 ice_area_specific_volume;
 
   // redundant fields (can be computed using the ones above)
   array::CellType2 cell_type;
-  IceModelVec2S cell_grounded_fraction;
-  Array2SGhosted<2> ice_surface_elevation;
+  array::Scalar cell_grounded_fraction;
+  array::Scalar2 ice_surface_elevation;
 
   void dump(const char *filename) const;
 };
 
-void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
+void ice_bottom_surface(const Geometry &geometry, array::Scalar &result);
 
 double ice_volume(const Geometry &geometry, double thickness_threshold);
 double ice_area_floating(const Geometry &geometry, double thickness_threshold);
@@ -68,7 +68,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
                                           double thickness_threshold);
 double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
 
-void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2S &result);
+void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result);
 
 } // end of namespace pism
 

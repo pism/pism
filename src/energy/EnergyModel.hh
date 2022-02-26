@@ -22,7 +22,7 @@
 
 #include "pism/util/Component.hh"
 
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec3.hh"
 #include "pism/util/array/CellType.hh"
 
@@ -40,13 +40,13 @@ public:
   void check() const;
 
   const array::CellType0 *cell_type;
-  const IceModelVec2S *basal_frictional_heating;
-  const IceModelVec2S *basal_heat_flux;
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec2S *surface_liquid_fraction;
-  const IceModelVec2S *shelf_base_temp;
-  const IceModelVec2S *surface_temp;
-  const IceModelVec2S *till_water_thickness;
+  const array::Scalar *basal_frictional_heating;
+  const array::Scalar *basal_heat_flux;
+  const array::Scalar *ice_thickness;
+  const array::Scalar *surface_liquid_fraction;
+  const array::Scalar *shelf_base_temp;
+  const array::Scalar *surface_temp;
+  const array::Scalar *till_water_thickness;
 
   const IceModelVec3 *volumetric_heating_rate;
   const IceModelVec3 *u3;
@@ -54,7 +54,7 @@ public:
   const IceModelVec3 *w3;
 
   // inputs used by regional models
-  const IceModelVec2S *no_model_mask;
+  const array::Scalar *no_model_mask;
 };
 
 class EnergyModelStats {
@@ -83,24 +83,24 @@ public:
    * fields using heuristics.
    */
   void bootstrap(const File &input_file,
-                 const IceModelVec2S &ice_thickness,
-                 const IceModelVec2S &surface_temperature,
-                 const IceModelVec2S &climatic_mass_balance,
-                 const IceModelVec2S &basal_heat_flux);
+                 const array::Scalar &ice_thickness,
+                 const array::Scalar &surface_temperature,
+                 const array::Scalar &climatic_mass_balance,
+                 const array::Scalar &basal_heat_flux);
 
   /*! @brief Initialize using formulas (for runs using synthetic data). */
-  void initialize(const IceModelVec2S &basal_melt_rate,
-                  const IceModelVec2S &ice_thickness,
-                  const IceModelVec2S &surface_temperature,
-                  const IceModelVec2S &climatic_mass_balance,
-                  const IceModelVec2S &basal_heat_flux);
+  void initialize(const array::Scalar &basal_melt_rate,
+                  const array::Scalar &ice_thickness,
+                  const array::Scalar &surface_temperature,
+                  const array::Scalar &climatic_mass_balance,
+                  const array::Scalar &basal_heat_flux);
 
   void update(double t, double dt, const Inputs &inputs);
 
   const EnergyModelStats& stats() const;
 
   const IceModelVec3 & enthalpy() const;
-  const IceModelVec2S & basal_melt_rate() const;
+  const array::Scalar & basal_melt_rate() const;
 
   const std::string& stdout_flags() const;
 protected:
@@ -110,16 +110,16 @@ protected:
   virtual void restart_impl(const File &input_file, int record) = 0;
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness,
-                              const IceModelVec2S &surface_temperature,
-                              const IceModelVec2S &climatic_mass_balance,
-                              const IceModelVec2S &basal_heat_flux) = 0;
+                              const array::Scalar &ice_thickness,
+                              const array::Scalar &surface_temperature,
+                              const array::Scalar &climatic_mass_balance,
+                              const array::Scalar &basal_heat_flux) = 0;
 
-  virtual void initialize_impl(const IceModelVec2S &basal_melt_rate,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface_temperature,
-                               const IceModelVec2S &climatic_mass_balance,
-                               const IceModelVec2S &basal_heat_flux) = 0;
+  virtual void initialize_impl(const array::Scalar &basal_melt_rate,
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar &surface_temperature,
+                               const array::Scalar &climatic_mass_balance,
+                               const array::Scalar &basal_heat_flux) = 0;
 
   virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
 
@@ -138,7 +138,7 @@ protected:
 protected:
   IceModelVec3 m_ice_enthalpy;
   IceModelVec3 m_work;
-  IceModelVec2S m_basal_melt_rate;
+  array::Scalar m_basal_melt_rate;
 
   EnergyModelStats m_stats;
 
@@ -150,7 +150,7 @@ private:
 /*!
  * Return true if the grid point (i,j) is near the margin of the ice.
  */
-bool marginal(const IceModelVec2S &thickness, int i, int j, double threshold);
+bool marginal(const array::Scalar &thickness, int i, int j, double threshold);
 
 } // end of namespace energy
 } // end of namespace pism

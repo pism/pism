@@ -41,7 +41,7 @@ private:
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
-  const IceModelVec2S& precipitation_impl() const;
+  const array::Scalar& precipitation_impl() const;
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
@@ -51,7 +51,7 @@ private:
 
   std::shared_ptr<IceModelVec2T> m_2d_scaling;
 
-  IceModelVec2S::Ptr m_precipitation;
+  array::Scalar::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere

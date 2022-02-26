@@ -21,7 +21,7 @@
 #define STRESSCALVING_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec3.hh"
 #include "pism/util/array/CellType.hh"
 
@@ -35,14 +35,14 @@ public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
   virtual ~StressCalving() = default;
 
-  const IceModelVec2S &calving_rate() const;
+  const array::Scalar &calving_rate() const;
 
 protected:
   const int m_stencil_width;
 
   IceModelVec3 m_strain_rates;
 
-  IceModelVec2S m_calving_rate;
+  array::Scalar m_calving_rate;
 
   array::CellType1 m_cell_type;
 };

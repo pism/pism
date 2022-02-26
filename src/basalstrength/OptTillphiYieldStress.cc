@@ -219,8 +219,8 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
 
 //! Perform an iteration to adjust the till friction angle according to the difference
 //! between target and modeled surface elevations.
-void OptTillphiYieldStress::update_tillphi(const IceModelVec2S &ice_surface_elevation,
-                                           const IceModelVec2S &bed_topography,
+void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elevation,
+                                           const array::Scalar &bed_topography,
                                            const array::CellType0 &cell_type) {
 
   m_log->message(2, "* Updating till friction angle...\n");

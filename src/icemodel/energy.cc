@@ -44,7 +44,7 @@ void IceModel::bedrock_thermal_model_step() {
 
   const Profiling &profiling = m_ctx->profiling();
 
-  IceModelVec2S &basal_enthalpy = *m_work2d[2];
+  array::Scalar &basal_enthalpy = *m_work2d[2];
 
   extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
@@ -88,9 +88,9 @@ void IceModel::energy_step() {
  * s-1], so we divide by the ice density to convert to [m second-1].
  */
 void IceModel::combine_basal_melt_rate(const Geometry &geometry,
-                                       const IceModelVec2S &shelf_base_mass_flux,
-                                       const IceModelVec2S &grounded_basal_melt_rate,
-                                       IceModelVec2S &result) {
+                                       const array::Scalar &shelf_base_mass_flux,
+                                       const array::Scalar &grounded_basal_melt_rate,
+                                       array::Scalar &result) {
 
   const bool sub_gl = (m_config->get_flag("geometry.grounded_cell_fraction") and
                        m_config->get_flag("energy.basal_melt.use_grounded_cell_fraction"));
@@ -123,13 +123,13 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
 }
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
-void bedrock_surface_temperature(const IceModelVec2S &sea_level,
+void bedrock_surface_temperature(const array::Scalar &sea_level,
                                  const array::CellType0 &cell_type,
-                                 const IceModelVec2S &bed_topography,
-                                 const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &basal_enthalpy,
-                                 const IceModelVec2S &ice_surface_temperature,
-                                 IceModelVec2S &result) {
+                                 const array::Scalar &bed_topography,
+                                 const array::Scalar &ice_thickness,
+                                 const array::Scalar &basal_enthalpy,
+                                 const array::Scalar &ice_surface_temperature,
+                                 array::Scalar &result) {
 
   IceGrid::ConstPtr grid  = result.grid();
   Config::ConstPtr config = grid->ctx()->config();

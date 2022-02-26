@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IceModelVec2S.hh"
+#include "Scalar.hh"
 
-#include "IceModelVec2V.hh"
+#include "pism/util/IceModelVec2V.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
+namespace array {
 
 // protected constructor
-IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
+Scalar::Scalar(IceGrid::ConstPtr grid, const std::string &name,
                              int width)
   : IceModelVec2<double>(grid, name,
                          width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS, width) {
@@ -34,18 +35,34 @@ IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
 }
 
 // public constructor
-IceModelVec2S::IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name)
+Scalar::Scalar(IceGrid::ConstPtr grid, const std::string &name)
   : IceModelVec2<double>(grid, name, WITHOUT_GHOSTS, 1) {
   // empty
 }
 
-std::shared_ptr<IceModelVec2S> IceModelVec2S::duplicate() const {
-  auto result = std::make_shared<IceModelVec2S>(this->grid(),
-                                                this->get_name());
+std::shared_ptr<Scalar> Scalar::duplicate() const {
+  auto result = std::make_shared<Scalar>(this->grid(), this->get_name());
   result->metadata() = this->metadata();
 
   return result;
 }
+
+Scalar1::Scalar1(IceGrid::ConstPtr grid, const std::string &name)
+  : Scalar(grid, name, 1) {
+  // empty
+}
+
+Scalar1::Scalar1(IceGrid::ConstPtr grid, const std::string &name, int width)
+  : Scalar(grid, name, width) {
+  // empty
+}
+
+Scalar2::Scalar2(IceGrid::ConstPtr grid, const std::string &name)
+  : Scalar1(grid, name, 2) {
+  // empty
+}
+
+} // end of namespace array
 
 //! Sets an IceModelVec2 to the magnitude of a 2D vector field with components `v_x` and `v_y`.
 /*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
@@ -53,9 +70,9 @@ std::shared_ptr<IceModelVec2S> IceModelVec2S::duplicate() const {
 
   Does not communicate.
  */
-void compute_magnitude(const IceModelVec2S &v_x,
-                       const IceModelVec2S &v_y,
-                       IceModelVec2S &result) {
+void compute_magnitude(const array::Scalar &v_x,
+                       const array::Scalar &v_y,
+                       array::Scalar &result) {
   IceModelVec::AccessList list{&result, &v_x, &v_y};
 
   for (Points p(*result.grid()); p; p.next()) {
@@ -67,7 +84,7 @@ void compute_magnitude(const IceModelVec2S &v_x,
   result.inc_state_counter();          // mark as modified
 }
 
-void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result) {
+void compute_magnitude(const IceModelVec2V &input, array::Scalar &result) {
   IceModelVec::AccessList list{&result, &input};
 
   for (Points p(*result.grid()); p; p.next()) {
@@ -80,7 +97,7 @@ void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result) {
 }
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`.
-void apply_mask(const IceModelVec2S &M, double fill, IceModelVec2S &result) {
+void apply_mask(const array::Scalar &M, double fill, array::Scalar &result) {
   IceModelVec::AccessList list{&result, &M};
 
   for (Points p(*result.grid()); p; p.next()) {
@@ -96,20 +113,20 @@ void apply_mask(const IceModelVec2S &M, double fill, IceModelVec2S &result) {
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences.
-double diff_x(const IceModelVec2S &array, int i, int j) {
+double diff_x(const array::Scalar &array, int i, int j) {
   return (array(i + 1,j) - array(i - 1,j)) / (2 * array.grid()->dx());
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences.
-double diff_y(const IceModelVec2S &array, int i, int j) {
+double diff_y(const array::Scalar &array, int i, int j) {
   return (array(i,j + 1) - array(i,j - 1)) / (2 * array.grid()->dy());
 }
 
 //! \brief Returns the x-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-double diff_x_p(const IceModelVec2S &array, int i, int j) {
+double diff_x_p(const array::Scalar &array, int i, int j) {
   const auto &grid = *array.grid();
 
   if ((grid.periodicity() & X_PERIODIC) != 0) {
@@ -128,7 +145,7 @@ double diff_x_p(const IceModelVec2S &array, int i, int j) {
 //! \brief Returns the y-derivative at i,j approximated using centered finite
 //! differences. Respects grid periodicity and uses one-sided FD at grid edges
 //! if necessary.
-double diff_y_p(const IceModelVec2S &array, int i, int j) {
+double diff_y_p(const array::Scalar &array, int i, int j) {
   const auto &grid = *array.grid();
 
   if ((grid.periodicity() & Y_PERIODIC) != 0) {
@@ -146,10 +163,10 @@ double diff_y_p(const IceModelVec2S &array, int i, int j) {
   return diff_y(array, i,j);
 }
 
-//! Sums up all the values in an IceModelVec2S object. Ignores ghosts.
+//! Sums up all the values in an array::Scalar object. Ignores ghosts.
 /*! Avoids copying to a "global" vector.
  */
-double sum(const IceModelVec2S &input) {
+double sum(const array::Scalar &input) {
   double result = 0;
 
   IceModelVec::AccessList list(input);
@@ -163,8 +180,8 @@ double sum(const IceModelVec2S &input) {
   return GlobalSum(input.grid()->com, result);
 }
 
-//! Finds maximum over all the values in an IceModelVec2S object.  Ignores ghosts.
-double max(const IceModelVec2S &input) {
+//! Finds maximum over all the values in an array::Scalar object.  Ignores ghosts.
+double max(const array::Scalar &input) {
   IceModelVec::AccessList list(input);
 
   auto grid = input.grid();
@@ -177,8 +194,8 @@ double max(const IceModelVec2S &input) {
   return GlobalMax(grid->com, result);
 }
 
-//! Finds maximum over all the absolute values in an IceModelVec2S object.  Ignores ghosts.
-double absmax(const IceModelVec2S &input) {
+//! Finds maximum over all the absolute values in an array::Scalar object.  Ignores ghosts.
+double absmax(const array::Scalar &input) {
 
   double result = 0.0;
 
@@ -191,8 +208,8 @@ double absmax(const IceModelVec2S &input) {
 }
 
 
-//! Finds minimum over all the values in an IceModelVec2S object.  Ignores ghosts.
-double min(const IceModelVec2S &input) {
+//! Finds minimum over all the values in an array::Scalar object.  Ignores ghosts.
+double min(const array::Scalar &input) {
   IceModelVec::AccessList list(input);
 
   auto grid = input.grid();

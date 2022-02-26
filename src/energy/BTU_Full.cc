@@ -157,7 +157,7 @@ MaxTimestep BTU_Full::max_timestep_impl(double t) const {
 
 /** Perform a step of the bedrock thermal model.
 */
-void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
+void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt) {
   (void) t;
 
@@ -252,7 +252,7 @@ const IceModelVec3& BTU_Full::temperature() const {
   return *m_temp;
 }
 
-void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
 
   m_log->message(2,
                 "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"

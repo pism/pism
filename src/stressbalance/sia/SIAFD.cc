@@ -224,15 +224,15 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &bed_elevation,
+void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
+                                 const array::Scalar &bed_elevation,
                                  IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
-  IceModelVec2S &eta = m_work_2d_0;
+  array::Scalar &eta = m_work_2d_0;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
@@ -298,11 +298,11 @@ void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
+void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = ice_surface_elevation;
+  const array::Scalar &h = ice_surface_elevation;
 
   IceModelVec::AccessList list{&h_x, &h_y, &h};
 
@@ -373,15 +373,15 @@ void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
+void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
                                       const array::CellType2 &cell_type,
                                       IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
-  const IceModelVec2S
+  const array::Scalar
     &h = ice_surface_elevation;
-  IceModelVec2S
+  array::Scalar
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
@@ -550,11 +550,11 @@ void SIAFD::compute_diffusivity(bool full_update,
                                 const IceModelVec2Stag &h_x,
                                 const IceModelVec2Stag &h_y,
                                 IceModelVec2Stag &result) {
-  IceModelVec2S
+  array::Scalar
     &thk_smooth = m_work_2d_0,
     &theta      = m_work_2d_1;
 
-  const IceModelVec2S
+  const array::Scalar
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
@@ -576,7 +576,7 @@ void SIAFD::compute_diffusivity(bool full_update,
   rheology::grain_size_vostok gs_vostok;
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
-  // thickness relative to the smoothed bed; each IceModelVec2S involved must
+  // thickness relative to the smoothed bed; each array::Scalar involved must
   // have stencil width WIDE_GHOSTS for this too work
   m_bed_smoother->theta(h, theta);
 
@@ -815,11 +815,11 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
  */
 void SIAFD::compute_I(const Geometry &geometry) {
 
-  IceModelVec2S &thk_smooth = m_work_2d_0;
+  array::Scalar &thk_smooth = m_work_2d_0;
   IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
   IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
 
-  const IceModelVec2S
+  const array::Scalar
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 

@@ -95,7 +95,7 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
   ensure_consistency(0.0);
 }
 
-void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
+void check_minimum_ice_thickness(const array::Scalar &ice_thickness) {
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
   IceModelVec::AccessList list(ice_thickness);
@@ -218,7 +218,7 @@ void Geometry::dump(const char *filename) const {
 
 /*! Compute the elevation of the bottom surface of the ice.
  */
-void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
+void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
   auto grid = result.grid();
   auto config = grid->ctx()->config();
@@ -228,9 +228,9 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
     water_density = config->get_number("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S &sea_level     = geometry.sea_level_elevation;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
+  const array::Scalar &bed_elevation = geometry.bed_elevation;
+  const array::Scalar &sea_level     = geometry.sea_level_elevation;
 
   IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
 
@@ -410,7 +410,7 @@ double sea_level_rise_potential(const Geometry &geometry, double thickness_thres
  * @brief Set no_model_mask variable to have value 1 in strip of width 'strip' m around
  * edge of computational domain, and value 0 otherwise.
  */
-void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2S &result) {
+void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result) {
 
   if (width <= 0.0) {
     return;

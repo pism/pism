@@ -50,10 +50,10 @@ void EnthalpyModel::restart_impl(const File &input_file, int record) {
 }
 
 void EnthalpyModel::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness,
-                                   const IceModelVec2S &surface_temperature,
-                                   const IceModelVec2S &climatic_mass_balance,
-                                   const IceModelVec2S &basal_heat_flux) {
+                                   const array::Scalar &ice_thickness,
+                                   const array::Scalar &surface_temperature,
+                                   const array::Scalar &climatic_mass_balance,
+                                   const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
                  input_file.filename().c_str());
@@ -72,11 +72,11 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
   }
 }
 
-void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &surface_temperature,
-                                    const IceModelVec2S &climatic_mass_balance,
-                                    const IceModelVec2S &basal_heat_flux) {
+void EnthalpyModel::initialize_impl(const array::Scalar &basal_melt_rate,
+                                    const array::Scalar &ice_thickness,
+                                    const array::Scalar &surface_temperature,
+                                    const array::Scalar &climatic_mass_balance,
+                                    const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model...\n");
 
@@ -98,7 +98,7 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 m_work and IceModelVec2S basal_melt_rate.
+This method updates IceModelVec3 m_work and array::Scalar basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -130,7 +130,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   const auto &cell_type = *inputs.cell_type;
 
-  const IceModelVec2S
+  const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
     &ice_thickness            = *inputs.ice_thickness,

@@ -24,7 +24,7 @@
 namespace pism {
 namespace inverse {
 
-typedef IceModelVec2S  DesignVec;
+typedef array::Scalar  DesignVec;
 typedef IceModelVec2V  StateVec;
 
 // typedef TikhonovProblemListener<InverseProblem> Listener;
@@ -59,7 +59,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   m_velocityScale = grid->ctx()->config()->get_number("inverse.ssa.velocity_scale", "m second-1");
 
   int state_stencil_width = m_u_obs.stencil_width();
-  m_d.reset(new DesignVec(grid, "design variable"));
+  m_d.reset(new DesignVecGhosted(grid, "design variable"));
 
   m_dGlobal.copy_from(m_d0);
 
@@ -68,7 +68,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
   m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
 
-  m_d_diff.reset(new DesignVec(grid, "design residual"));
+  m_d_diff.reset(new DesignVecGhosted(grid, "design residual"));
 
   m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
 

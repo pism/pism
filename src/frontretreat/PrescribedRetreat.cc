@@ -56,8 +56,8 @@ void PrescribedRetreat::init() {
 
 void PrescribedRetreat::update(double t,
                                double dt,
-                               IceModelVec2S& ice_thickness,
-                               IceModelVec2S& ice_area_specific_volume) {
+                               array::Scalar& ice_thickness,
+                               array::Scalar& ice_area_specific_volume) {
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 

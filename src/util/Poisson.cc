@@ -64,7 +64,7 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
  *
  * Set the mask to 2 to use zero Neumann BC.
  */
-int Poisson::solve(const IceModelVec2S& mask, const IceModelVec2S& bc, double rhs,
+int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
@@ -118,7 +118,7 @@ int Poisson::solve(const IceModelVec2S& mask, const IceModelVec2S& bc, double rh
   return ksp_iterations;
 }
 
-const IceModelVec2S& Poisson::solution() const {
+const array::Scalar& Poisson::solution() const {
   return m_x;
 }
 
@@ -156,7 +156,7 @@ const IceModelVec2S& Poisson::solution() const {
 // b : rhs(eq2);
 //
 // print(''out)$
-void Poisson::assemble_matrix(const IceModelVec2S &mask, Mat A) {
+void Poisson::assemble_matrix(const array::Scalar &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
   const double
@@ -257,9 +257,9 @@ void Poisson::assemble_matrix(const IceModelVec2S &mask, Mat A) {
 }
 
 void Poisson::assemble_rhs(double rhs,
-                           const IceModelVec2S &mask,
-                           const IceModelVec2S &bc,
-                           IceModelVec2S &b) {
+                           const array::Scalar &mask,
+                           const array::Scalar &bc,
+                           array::Scalar &b) {
   IceModelVec::AccessList list{&mask, &bc, &b};
 
   for (Points p(*m_grid); p; p.next()) {

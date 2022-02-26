@@ -24,7 +24,7 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 
 /** Class for storing and accessing 2D vector fields
 */
@@ -43,7 +43,7 @@ public:
   std::shared_ptr<IceModelVec2V> duplicate() const;
 };
 
-void compute_magnitude(const IceModelVec2V &input, IceModelVec2S &result);
+void compute_magnitude(const IceModelVec2V &input, array::Scalar &result);
 
 } // end of namespace pism
 

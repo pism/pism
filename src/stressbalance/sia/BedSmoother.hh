@@ -21,7 +21,7 @@
 
 #include <petsc.h>
 
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {
@@ -60,7 +60,7 @@ namespace stressbalance {
 
   BedSmoother then provides three major functionalities, all of which \e must
   \e follow the call to `preprocess_bed()`:
-  -# User accesses public IceModelVec2S `topgsmooth`, the smoothed bed itself.
+  -# User accesses public array::Scalar `topgsmooth`, the smoothed bed itself.
   -# User asks `get_smoothed_thk()` for gridded values of the consistent smoothed
   version of the ice thickness, which is the thickness corresponding to a given
   surface elevation and the pre-computed smoothed bed.
@@ -80,31 +80,31 @@ namespace stressbalance {
   \endcode
   See IceGrid documentation for initializing `grid`. Note we assume
   `topg`, `usurf`, `thk`, `thksmooth`, and `theta` are all created
-  IceModelVec2S instances.
+  array::Scalar instances.
 */
 class BedSmoother {
 public:
   BedSmoother(IceGrid::ConstPtr g);
   virtual ~BedSmoother() = default;
 
-  void preprocess_bed(const IceModelVec2S &topg);
+  void preprocess_bed(const array::Scalar &topg);
 
-  void smoothed_thk(const IceModelVec2S &usurf,
-                    const IceModelVec2S &thk,
+  void smoothed_thk(const array::Scalar &usurf,
+                    const array::Scalar &thk,
                     const array::CellType2 &mask,
-                    IceModelVec2S &thksmooth) const;
+                    array::Scalar &thksmooth) const;
 
-  void theta(const IceModelVec2S &usurf, IceModelVec2S &result) const;
+  void theta(const array::Scalar &usurf, array::Scalar &result) const;
 
-  const IceModelVec2S& smoothed_bed() const;
+  const array::Scalar& smoothed_bed() const;
 protected:
   IceGrid::ConstPtr m_grid;
   const Config::ConstPtr m_config;
 
   //! smoothed bed elevation; set by calling preprocess_bed()
-  Array2SGhosted<2> m_topgsmooth;
+  array::Scalar2 m_topgsmooth;
 
-  Array2SGhosted<2> m_maxtl, m_C2, m_C3, m_C4;
+  array::Scalar2 m_maxtl, m_C2, m_C3, m_C4;
 
   /* number of grid points to smooth over; e.g. i=-Nx,-Nx+1,...,-1,0,1,...,Nx-1,Nx; note
     Nx>=1 and Ny>=1 always, unless lambda<=0
@@ -120,7 +120,7 @@ protected:
   //! maximum elevation at (i,j) of local topography (nearby patch)
   std::shared_ptr<petsc::Vec> m_maxtlp0, m_C2p0, m_C3p0, m_C4p0;
 
-  void preprocess_bed(const IceModelVec2S &topg,
+  void preprocess_bed(const array::Scalar &topg,
                       unsigned int Nx_in, unsigned int Ny_in);
 
   void smooth_the_bed_on_proc0();

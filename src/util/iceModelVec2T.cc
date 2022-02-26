@@ -164,7 +164,7 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int buffer_size,
                              InterpolationType interpolation_type)
-  : IceModelVec2S(grid, short_name, 0),
+  : array::Scalar(grid, short_name, 0),
     m_data(new Data())
 {
   m_impl->report_range = false;
@@ -217,12 +217,12 @@ void IceModelVec2T::begin_access() const {
   }
 
   // this call will increment the m_access_counter
-  IceModelVec2S::begin_access();
+  array::Scalar::begin_access();
 }
 
 void IceModelVec2T::end_access() const {
   // this call will decrement the m_access_counter
-  IceModelVec2S::end_access();
+  array::Scalar::end_access();
 
   if (m_impl->access_counter == 0) {
     PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_data->da, m_data->v, &m_data->array);

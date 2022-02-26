@@ -24,7 +24,7 @@
 
 namespace pism {
 
-class IceModelVec2S;
+namespace array { class Scalar; }
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
 //! fields.
@@ -65,10 +65,10 @@ public:
   void copy_from(const IceModelVec3 &input);
 };
 
-void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output);
-void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output);
+void extract_surface(const IceModelVec3 &data, double z, array::Scalar &output);
+void extract_surface(const IceModelVec3 &data, const array::Scalar &z, array::Scalar &output);
 
-void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &output);
+void sum_columns(const IceModelVec3 &data, double A, double B, array::Scalar &output);
 
 inline double& IceModelVec3::operator() (int i, int j, int k) {
 #if (Pism_DEBUG==1)

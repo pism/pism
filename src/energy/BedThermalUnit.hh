@@ -113,12 +113,12 @@ public:
   void init(const InputOptions &opts);
 
   //! Return the upward heat flux through the top surface of the bedrock thermal layer.
-  const IceModelVec2S& flux_through_top_surface() const;
+  const array::Scalar& flux_through_top_surface() const;
 
   //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
-  const IceModelVec2S& flux_through_bottom_surface() const;
+  const array::Scalar& flux_through_bottom_surface() const;
 
-  void update(const IceModelVec2S &bedrock_top_temperature,
+  void update(const array::Scalar &bedrock_top_temperature,
               double t, double dt);
 
   double vertical_spacing() const;
@@ -131,7 +131,7 @@ protected:
 
   virtual void init_impl(const InputOptions &opts);
 
-  virtual void update_impl(const IceModelVec2S &bedrock_top_temperature,
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt) = 0;
 
   virtual double vertical_spacing_impl() const = 0;
@@ -144,10 +144,10 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 protected:
   //! upward heat flux through the bottom surface of the bed thermal layer
-  IceModelVec2S m_bottom_surface_flux;
+  array::Scalar m_bottom_surface_flux;
 
   //! upward heat flux through the top surface of the bed thermal layer
-  IceModelVec2S m_top_surface_flux;
+  array::Scalar m_top_surface_flux;
 };
 
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {

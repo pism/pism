@@ -71,7 +71,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
  * Initialize potential temperature from IceModelVecs instead of an input
  * file (for testing).
  */
-void DischargeRouting::initialize(const IceModelVec2S &theta) {
+void DischargeRouting::initialize(const array::Scalar &theta) {
   m_theta_ocean->copy_from(theta);
 }
 
@@ -82,10 +82,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   FrontalMeltPhysics physics(*m_config);
 
   const auto          &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S &ice_thickness       = inputs.geometry->ice_thickness;
-  const IceModelVec2S &sea_level_elevation = inputs.geometry->sea_level_elevation;
-  const IceModelVec2S &water_flux          = *inputs.subglacial_water_flux;
+  const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
+  const array::Scalar &ice_thickness       = inputs.geometry->ice_thickness;
+  const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const array::Scalar &water_flux          = *inputs.subglacial_water_flux;
 
   IceModelVec::AccessList list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
@@ -159,7 +159,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   }
 }
 
-const IceModelVec2S& DischargeRouting::frontal_melt_rate_impl() const {
+const array::Scalar& DischargeRouting::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 

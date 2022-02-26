@@ -39,9 +39,9 @@
 
 
 %include "inverse/functional/IPFunctional.hh"
-%template(_IPFunctional2S) pism::inverse::IPFunctional< pism::IceModelVec2S >;
+%template(_IPFunctional2S) pism::inverse::IPFunctional< pism::array::Scalar >;
 %template(_IPFunctional2V) pism::inverse::IPFunctional< pism::IceModelVec2V >;
-%template(_IPInnerProductFunctional2S) pism::inverse::IPInnerProductFunctional< pism::IceModelVec2S >;
+%template(_IPInnerProductFunctional2S) pism::inverse::IPInnerProductFunctional< pism::array::Scalar >;
 %template(_IPInnerProductFunctional2V) pism::inverse::IPInnerProductFunctional< pism::IceModelVec2V >;
 %include "inverse/functional/IP_L2NormFunctional.hh"
 %include "inverse/functional/IP_H1NormFunctional.hh"

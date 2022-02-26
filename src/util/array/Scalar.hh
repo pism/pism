@@ -17,57 +17,65 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_ICEMODELVEC2S_H
-#define PISM_ICEMODELVEC2S_H
+#ifndef PISM_ARRAY_SCALAR_H
+#define PISM_ARRAY_SCALAR_H
 
 #include <cmath>                // floor()
 
 #include "pism/util/IceModelVec2.hh"
 
 namespace pism {
+namespace array {
 
 /** A class for storing and accessing scalar 2D fields.
-    IceModelVec2S is just IceModelVec2 with "dof == 1" */
-class IceModelVec2S : public IceModelVec2<double> {
+    Scalar is just IceModelVec2 with "dof == 1" */
+class Scalar : public IceModelVec2<double> {
 public:
-  typedef std::shared_ptr<IceModelVec2S> Ptr;
-  typedef std::shared_ptr<const IceModelVec2S> ConstPtr;
+  typedef std::shared_ptr<Scalar> Ptr;
+  typedef std::shared_ptr<const Scalar> ConstPtr;
 
-  IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name);
+  Scalar(IceGrid::ConstPtr grid, const std::string &name);
 
-  std::shared_ptr<IceModelVec2S> duplicate() const;
+  std::shared_ptr<Scalar> duplicate() const;
 
   inline int as_int(int i, int j) const;
   inline stencils::Star<int> star_int(int i, int j) const;
   inline stencils::Box<int> box_int(int i, int j) const;
 
 protected:
-  IceModelVec2S(IceGrid::ConstPtr grid, const std::string &name,
-                int width);
+  Scalar(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
 
-inline int IceModelVec2S::as_int(int i, int j) const {
+inline int Scalar::as_int(int i, int j) const {
   const double &value = (*this)(i, j);
   return static_cast<int>(floor(value + 0.5));
 }
 
-template<int width>
-class Array2SGhosted : public IceModelVec2S {
+/*!
+ * Scalar 2D array supporting width=1 stencil computations
+ */
+class Scalar1 : public Scalar {
 public:
-  Array2SGhosted(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec2S(grid, name, width) {
-    // empty
-  }
+  typedef std::shared_ptr<Scalar1> Ptr;
+  typedef std::shared_ptr<const Scalar1> ConstPtr;
 
-  // Allow implicit casting to a reference to an array with a smaller stencil width:
-  template <int smaller_width>
-  operator Array2SGhosted<smaller_width>&() {
-    static_assert(smaller_width < width, "insufficient stencil width");
-    return *this;
-  }
+  Scalar1(IceGrid::ConstPtr grid, const std::string &name);
+protected:
+  Scalar1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
 
-inline stencils::Star<int> IceModelVec2S::star_int(int i, int j) const {
+/*!
+ * Scalar 2D array supporting width=1 stencil computations
+ */
+class Scalar2 : public Scalar1 {
+public:
+  typedef std::shared_ptr<Scalar2> Ptr;
+  typedef std::shared_ptr<const Scalar2> ConstPtr;
+
+  Scalar2(IceGrid::ConstPtr grid, const std::string &name);
+};
+
+inline stencils::Star<int> Scalar::star_int(int i, int j) const {
   stencils::Star<int> result;
 
   result.ij = as_int(i,j);
@@ -79,7 +87,7 @@ inline stencils::Star<int> IceModelVec2S::star_int(int i, int j) const {
   return result;
 }
 
-inline stencils::Box<int> IceModelVec2S::box_int(int i, int j) const {
+inline stencils::Box<int> Scalar::box_int(int i, int j) const {
   const int
       E = i + 1,
       W = i - 1,
@@ -89,27 +97,28 @@ inline stencils::Box<int> IceModelVec2S::box_int(int i, int j) const {
   return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
           as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
 }
+} // end of namespace array
 
 // Finite-difference shortcuts. They may be slower than hard-coding FD approximations of x
 // and y derivatives. Use with care.
-double diff_x(const IceModelVec2S &array, int i, int j);
-double diff_y(const IceModelVec2S &array, int i, int j);
+double diff_x(const array::Scalar &array, int i, int j);
+double diff_y(const array::Scalar &array, int i, int j);
 
 // These take grid periodicity into account and use one-sided differences at domain edges.
-double diff_x_p(const IceModelVec2S &array, int i, int j);
-double diff_y_p(const IceModelVec2S &array, int i, int j);
+double diff_x_p(const array::Scalar &array, int i, int j);
+double diff_y_p(const array::Scalar &array, int i, int j);
 
-double sum(const IceModelVec2S &input);
-double min(const IceModelVec2S &input);
-double max(const IceModelVec2S &input);
-double absmax(const IceModelVec2S &input);
+double sum(const array::Scalar &input);
+double min(const array::Scalar &input);
+double max(const array::Scalar &input);
+double absmax(const array::Scalar &input);
 
-void apply_mask(const IceModelVec2S &M, double fill, IceModelVec2S &result);
+void apply_mask(const array::Scalar &M, double fill, array::Scalar &result);
 
-void compute_magnitude(const IceModelVec2S &v_x,
-                       const IceModelVec2S &v_y,
-                       IceModelVec2S &result);
+void compute_magnitude(const array::Scalar &v_x,
+                       const array::Scalar &v_y,
+                       array::Scalar &result);
 
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC2S_H */
+#endif /* PISM_ARRAY_SCALAR_H */

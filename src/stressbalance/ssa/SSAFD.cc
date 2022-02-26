@@ -247,7 +247,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   using mask::ice_free_land;
   using mask::ice_free_ocean;
 
-  const IceModelVec2S
+  const array::Scalar
     &thickness             = inputs.geometry->ice_thickness,
     &bed                   = inputs.geometry->bed_elevation,
     &surface               = inputs.geometry->ice_surface_elevation,
@@ -506,7 +506,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   // shortcut:
   const IceModelVec2V &vel = m_velocity;
 
-  const IceModelVec2S
+  const array::Scalar
     &thickness         = inputs.geometry->ice_thickness,
     &bed               = inputs.geometry->bed_elevation,
     &surface           = inputs.geometry->ice_surface_elevation,
@@ -1260,7 +1260,7 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
-  const IceModelVec2S
+  const array::Scalar
     &thickness = inputs.geometry->ice_thickness;
 
   const IceModelVec3 &enthalpy = *inputs.enthalpy;
@@ -1349,7 +1349,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
   So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
-void SSAFD::fracture_induced_softening(const IceModelVec2S *fracture_density) {
+void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
   if (not fracture_density) {
     return;
   }
@@ -1498,7 +1498,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
                                        double nuH_regularization,
                                        IceModelVec2Stag &result) {
 
-  const IceModelVec2S &thickness = geometry.ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
   const IceModelVec2V &uv = m_velocity; // shortcut
 
@@ -1642,7 +1642,7 @@ void SSAFD::update_nuH_viewers() {
     return;
   }
 
-  IceModelVec2S tmp(m_grid, "nuH");
+  array::Scalar tmp(m_grid, "nuH");
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "Pa s m", "", 0);

@@ -26,7 +26,7 @@
 
 namespace pism {
 
-AgeModelInputs::AgeModelInputs(const IceModelVec2S *thickness,
+AgeModelInputs::AgeModelInputs(const array::Scalar *thickness,
                                const IceModelVec3 *u,
                                const IceModelVec3 *v,
                                const IceModelVec3 *w)
@@ -112,7 +112,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
 
   inputs.check();
 
-  const IceModelVec2S &ice_thickness = *inputs.ice_thickness;
+  const array::Scalar &ice_thickness = *inputs.ice_thickness;
 
   const IceModelVec3
     &u3 = *inputs.u3,

@@ -428,16 +428,16 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
 /*!
 Unfortunately this duplicates code in SeaRISEGreenland::update();
  */
-void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
-                                          const IceModelVec2S &lat,
-                                          const IceModelVec2S &lon) {
+void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
+                                          const array::Scalar &lat,
+                                          const array::Scalar &lon) {
   const double
     d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // K
     gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
     c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
     kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
 
-  const IceModelVec2S
+  const array::Scalar
     &h        = surfelev,
     &lat_degN = lat,
     &lon_degE = lon;

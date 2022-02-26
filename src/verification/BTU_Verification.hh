@@ -35,7 +35,7 @@ public:
 
 protected:
   virtual void initialize_bottom_surface_flux();
-  virtual void bootstrap(const IceModelVec2S &bedrock_top_temperature);
+  virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
   int m_testname;
   bool m_bedrock_is_ice;
 };

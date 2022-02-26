@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -101,7 +101,7 @@ void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt
 
 
   // initialize pointers to fields the parameterization depends on:
-  const IceModelVec2S
+  const array::Scalar
     &h        = geometry.ice_surface_elevation,
     &lat_degN = geometry.latitude,
     &lon_degE = geometry.longitude;

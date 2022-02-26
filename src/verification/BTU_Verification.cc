@@ -41,7 +41,7 @@ void BTU_Verification::initialize_bottom_surface_flux() {
   m_bottom_surface_flux.set(0.042);
 }
 
-void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),

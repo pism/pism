@@ -35,7 +35,7 @@ namespace inverse {
   using a projection that forces \f$f\f$ to equal zero at nodes specified
   by the constructor argument \a dirichletLocations.
 */
-class IP_H1NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IP_H1NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
   /*!
    * @param[in] grid computational grid
@@ -46,22 +46,22 @@ public:
   IP_H1NormFunctional2S(IceGrid::ConstPtr grid,
                         double cL2,
                         double cH1,
-                        IceModelVec2S *dirichletLocations=NULL)
-    : IPInnerProductFunctional<IceModelVec2S>(grid),
+                        array::Scalar *dirichletLocations=NULL)
+    : IPInnerProductFunctional<array::Scalar>(grid),
       m_cL2(cL2),
       m_cH1(cH1),
       m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
   
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
   virtual void assemble_form(Mat J);
 
 protected:
 
   double m_cL2, m_cH1;
-  IceModelVec2S *m_dirichletIndices;
+  array::Scalar *m_dirichletIndices;
 
 private:
   IP_H1NormFunctional2S(IP_H1NormFunctional2S const &);

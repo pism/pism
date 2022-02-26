@@ -25,9 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class Geometry;
-
 //! @brief Ocean models and modifiers: provide sea level elevation,
 //! melange back pressure, shelf base mass flux and shelf base
 //! temperature.
@@ -46,9 +43,9 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& shelf_base_temperature() const;
-  const IceModelVec2S& shelf_base_mass_flux() const;
-  const IceModelVec2S& average_water_column_pressure() const;
+  const array::Scalar& shelf_base_temperature() const;
+  const array::Scalar& shelf_base_mass_flux() const;
+  const array::Scalar& average_water_column_pressure() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -61,23 +58,23 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual const IceModelVec2S& shelf_base_temperature_impl() const;
-  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
-  virtual const IceModelVec2S& average_water_column_pressure_impl() const;
+  virtual const array::Scalar& shelf_base_temperature_impl() const;
+  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar& average_water_column_pressure_impl() const;
 
 protected:
   std::shared_ptr<OceanModel> m_input_model;
-  IceModelVec2S::Ptr m_water_column_pressure;
+  array::Scalar::Ptr m_water_column_pressure;
 
-  static IceModelVec2S::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
-  static IceModelVec2S::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
-  static IceModelVec2S::Ptr allocate_water_column_pressure(IceGrid::ConstPtr g);
+  static array::Scalar::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
+  static array::Scalar::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
+  static array::Scalar::Ptr allocate_water_column_pressure(IceGrid::ConstPtr g);
 
   static void compute_average_water_column_pressure(const Geometry &geometry,
                                                        double ice_density,
                                                        double water_density,
                                                        double g,
-                                                       IceModelVec2S &result);
+                                                       array::Scalar &result);
 
 };
 

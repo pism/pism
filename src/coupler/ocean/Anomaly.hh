@@ -35,10 +35,10 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
 
 protected:
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  array::Scalar::Ptr m_shelf_base_mass_flux;
 
   std::shared_ptr<IceModelVec2T> m_shelf_base_mass_flux_anomaly;
 

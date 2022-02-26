@@ -95,7 +95,7 @@ void vonMisesCalving::init() {
   See equation (4) in [@ref Morlighem2016].
 */
 void vonMisesCalving::update(const array::CellType1 &cell_type,
-                             const IceModelVec2S &ice_thickness,
+                             const array::Scalar &ice_thickness,
                              const IceModelVec2V &ice_velocity,
                              const IceModelVec3 &ice_enthalpy) {
 
@@ -190,7 +190,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
   }   // end of loop over grid points
 }
 
-const IceModelVec2S& vonMisesCalving::threshold() const {
+const array::Scalar& vonMisesCalving::threshold() const {
   return m_calving_threshold;
 }
 

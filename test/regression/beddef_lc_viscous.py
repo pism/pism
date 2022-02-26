@@ -63,13 +63,13 @@ def modeled_time_dependent(dics_radius, disc_thickness, t_end, L, Nx, dt):
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S(grid, "thk")
+    ice_thickness = PISM.Scalar(grid, "thk")
 
-    bed = PISM.IceModelVec2S(grid, "topg")
+    bed = PISM.Scalar(grid, "topg")
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift")
+    bed_uplift = PISM.Scalar(grid, "uplift")
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level")
+    sea_level = PISM.Scalar(grid, "sea_level")
 
     # start with a flat bed, no ice, and no uplift
     bed.set(0.0)
@@ -119,15 +119,15 @@ def modeled_steady_state(dics_radius, disc_thickness, time, L, Nx):
 
     bed_model = PISM.LingleClark(grid)
 
-    ice_thickness = PISM.IceModelVec2S(grid, "thk")
+    ice_thickness = PISM.Scalar(grid, "thk")
 
-    bed = PISM.IceModelVec2S(grid, "topg")
+    bed = PISM.Scalar(grid, "topg")
     bed.set(0.0)
 
-    bed_uplift = PISM.IceModelVec2S(grid, "uplift")
+    bed_uplift = PISM.Scalar(grid, "uplift")
     bed_uplift.set(0.0)
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level")
+    sea_level = PISM.Scalar(grid, "sea_level")
     sea_level.set(-1000.0)
 
     with PISM.vec.Access(nocomm=ice_thickness):

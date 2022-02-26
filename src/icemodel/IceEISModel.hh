@@ -41,8 +41,8 @@ protected:
   char m_experiment;
 };
 
-void generate_trough_topography(IceModelVec2S &result);  // for experiments I,J
-void generate_mound_topography(IceModelVec2S &result);   // for experiments K,L
+void generate_trough_topography(array::Scalar &result);  // for experiments I,J
+void generate_mound_topography(array::Scalar &result);   // for experiments K,L
 
 } // end of namespace pism
 

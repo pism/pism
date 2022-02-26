@@ -224,9 +224,9 @@ The script also has a run with no forcing, one with forcing at a lower alpha val
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
 void ForceThickness::adjust_mass_flux(double time,
-                                      const IceModelVec2S &ice_thickness,
+                                      const array::Scalar &ice_thickness,
                                       const array::CellType0 &cell_type,
-                                      IceModelVec2S &result) const {
+                                      array::Scalar &result) const {
 
   if (time < m_start_time) {
     return;
@@ -269,19 +269,19 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S &ForceThickness::mass_flux_impl() const {
+const array::Scalar &ForceThickness::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ForceThickness::accumulation_impl() const {
+const array::Scalar &ForceThickness::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ForceThickness::melt_impl() const {
+const array::Scalar &ForceThickness::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ForceThickness::runoff_impl() const {
+const array::Scalar &ForceThickness::runoff_impl() const {
   return *m_runoff;
 }
 

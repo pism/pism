@@ -24,8 +24,6 @@
 
 namespace pism {
 
-class IceModelVec2S;
-
 namespace calving {
 
 /*! \brief Calving mechanism removing floating ice. */
@@ -36,7 +34,7 @@ public:
   virtual ~FloatKill() = default;
 
   virtual void init();
-  void update(array::CellType1 &pism_mask, IceModelVec2S &ice_thickness);
+  void update(array::CellType1 &pism_mask, array::Scalar &ice_thickness);
 
 protected:
   bool m_margin_only, m_calve_near_grounding_line;

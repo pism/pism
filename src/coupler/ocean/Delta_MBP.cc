@@ -69,7 +69,7 @@ void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Delta_MBP::average_water_column_pressure_impl() const {
+const array::Scalar& Delta_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

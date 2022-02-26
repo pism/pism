@@ -28,7 +28,7 @@
 namespace pism {
 
 class File;
-class IceModelVec2S;
+namespace array { class Scalar; }
 class IceModelVec3;
 
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
@@ -55,8 +55,8 @@ void check_consistency_epsg(const MappingInfo &info);
 MappingInfo get_projection_info(const File &input_file, const std::string &mapping_name,
                                 units::System::Ptr unit_system);
 
-void compute_longitude(const std::string &projection, IceModelVec2S &result);
-void compute_latitude(const std::string &projection, IceModelVec2S &result);
+void compute_longitude(const std::string &projection, array::Scalar &result);
+void compute_latitude(const std::string &projection, array::Scalar &result);
 
 void compute_lon_bounds(const std::string &projection, IceModelVec3 &result);
 void compute_lat_bounds(const std::string &projection, IceModelVec3 &result);

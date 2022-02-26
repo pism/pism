@@ -46,8 +46,8 @@ public:
   void init();
 
   void update(double t, double dt,
-              IceModelVec2S &ice_thickness,
-              IceModelVec2S &ice_area_specific_volume);
+              array::Scalar &ice_thickness,
+              array::Scalar &ice_area_specific_volume);
 
 protected:
   MaxTimestep max_timestep_impl(double t) const;

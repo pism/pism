@@ -239,7 +239,7 @@ const IceModelVec3& StressBalance::velocity_w() const {
   return m_w;
 }
 
-const IceModelVec2S& StressBalance::basal_frictional_heating() const {
+const array::Scalar& StressBalance::basal_frictional_heating() const {
   return m_shallow_stress_balance->basal_frictional_heating();
 }
 
@@ -280,7 +280,7 @@ The vertical integral is computed by the trapezoid rule.
 void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
                                               const IceModelVec3 &u,
                                               const IceModelVec3 &v,
-                                              const IceModelVec2S *basal_melt_rate,
+                                              const array::Scalar *basal_melt_rate,
                                               IceModelVec3 &result) {
 
   const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
@@ -511,7 +511,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
     &u = m_modifier->velocity_u(),
     &v = m_modifier->velocity_v();
 
-  const IceModelVec2S &thickness = inputs.geometry->ice_thickness;
+  const array::Scalar &thickness = inputs.geometry->ice_thickness;
   const IceModelVec3  *enthalpy  = inputs.enthalpy;
 
   const auto &mask = inputs.geometry->cell_type;
@@ -769,7 +769,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
-                         const IceModelVec2S &hardness,
+                         const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          IceModelVec3 &result) {
 

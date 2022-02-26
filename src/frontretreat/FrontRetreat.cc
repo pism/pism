@@ -71,8 +71,8 @@ void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
 MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
-                                       const IceModelVec2S &bc_mask,
-                                       const IceModelVec2S &retreat_rate) const {
+                                       const array::Scalar &bc_mask,
+                                       const array::Scalar &retreat_rate) const {
 
   IceGrid::ConstPtr grid = retreat_rate.grid();
   units::System::Ptr sys = grid->ctx()->unit_system();
@@ -144,14 +144,14 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
  */
 void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
-                                   const IceModelVec2S &bc_mask,
-                                   const IceModelVec2S &retreat_rate,
-                                   IceModelVec2S &Href,
-                                   IceModelVec2S &ice_thickness) {
+                                   const array::Scalar &bc_mask,
+                                   const array::Scalar &retreat_rate,
+                                   array::Scalar &Href,
+                                   array::Scalar &ice_thickness) {
 
-  const IceModelVec2S &bed = geometry.bed_elevation;
-  const IceModelVec2S &sea_level = geometry.sea_level_elevation;
-  const IceModelVec2S &surface_elevation = geometry.ice_surface_elevation;
+  const array::Scalar &bed = geometry.bed_elevation;
+  const array::Scalar &sea_level = geometry.sea_level_elevation;
+  const array::Scalar &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
     m_cell_type.copy_from(geometry.cell_type);

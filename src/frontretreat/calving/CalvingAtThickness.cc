@@ -102,7 +102,7 @@ void CalvingAtThickness::init() {
 void CalvingAtThickness::update(double t,
                                 double dt,
                                 array::CellType0 &pism_mask,
-                                IceModelVec2S &ice_thickness) {
+                                array::Scalar &ice_thickness) {
 
   m_calving_threshold->update(t, dt);
   m_calving_threshold->average(t, dt);
@@ -128,7 +128,7 @@ void CalvingAtThickness::update(double t,
   ice_thickness.update_ghosts();
 }
 
-const IceModelVec2S& CalvingAtThickness::threshold() const {
+const array::Scalar& CalvingAtThickness::threshold() const {
   return *m_calving_threshold;
 }
 

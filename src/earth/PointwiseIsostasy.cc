@@ -33,8 +33,8 @@ PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
   // empty
 }
 
-void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                                  const IceModelVec2S &sea_level_elevation) {
+void PointwiseIsostasy::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                                  const array::Scalar &sea_level_elevation) {
 
   m_log->message(2,
                  "* Initializing the pointwise isostasy bed deformation model...\n");
@@ -46,10 +46,10 @@ void PointwiseIsostasy::init_impl(const InputOptions &opts, const IceModelVec2S 
 }
 
 
-void PointwiseIsostasy::bootstrap_impl(const IceModelVec2S &bed_elevation,
-                                       const IceModelVec2S &bed_uplift,
-                                       const IceModelVec2S &ice_thickness,
-                                       const IceModelVec2S &sea_level_elevation) {
+void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
+                                       const array::Scalar &bed_uplift,
+                                       const array::Scalar &ice_thickness,
+                                       const array::Scalar &sea_level_elevation) {
   BedDef::bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 
   // store initial load and bed elevation
@@ -63,8 +63,8 @@ MaxTimestep PointwiseIsostasy::max_timestep_impl(double t) const {
 }
 
 //! Updates the pointwise isostasy model.
-void PointwiseIsostasy::update_impl(const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &sea_level_elevation,
+void PointwiseIsostasy::update_impl(const array::Scalar &ice_thickness,
+                                    const array::Scalar &sea_level_elevation,
                                     double t, double dt) {
   (void) t;
 

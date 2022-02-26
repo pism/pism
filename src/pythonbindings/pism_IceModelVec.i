@@ -2,7 +2,7 @@
 /* Using directives needed to compile IceModelVec wrappers. */
 
 #include "util/array/CellType.hh"
-#include "util/IceModelVec2S.hh"
+#include "util/array/Scalar.hh"
 #include "util/iceModelVec2T.hh"
 #include "util/IceModelVec2V.hh"
 #include "util/IceModelVec3.hh"
@@ -13,7 +13,7 @@ using namespace pism;
 
 %shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::IceModelVec)
-%shared_ptr(pism::IceModelVec2S)
+%shared_ptr(pism::array::Scalar)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::IceModelVec2Stag)
@@ -21,7 +21,7 @@ using namespace pism;
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
 
-%ignore pism::IceModelVec2S::array;
+%ignore pism::array::Scalar::array;
 %ignore pism::IceModelVec2V::array;
 
 %template(Range) std::array<double,2>;
@@ -34,7 +34,7 @@ using namespace pism;
 
 // Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
 // elegant solution.
-%extend pism::IceModelVec2S
+%extend pism::array::Scalar
 {
     double getitem(int i, int j)
     {
@@ -46,7 +46,7 @@ using namespace pism;
         (*($self))(i,j) = val;
     }
 
-    %pythoncode "IceModelVec2S.py"
+    %pythoncode "ArrayScalar.py"
 };
 
 %rename(__mult__) pism::Vector2::operator*;
@@ -149,11 +149,9 @@ std::vector<double> interp(int i, int j) {
 %ignore pism::IceModelVec2< double >::array() const;
 %template(_IceModelVec2double) pism::IceModelVec2<double>;
 
-%include "util/IceModelVec2S.hh"
-%shared_ptr(pism::Array2SGhosted<1>)
-%template(Array2SGhosted1) pism::Array2SGhosted<1>;
-%shared_ptr(pism::Array2SGhosted<2>)
-%template(Array2SGhosted2) pism::Array2SGhosted<2>;
+%shared_ptr(pism::array::Scalar1)
+%shared_ptr(pism::array::Scalar2)
+%include "util/array/Scalar.hh"
 
 %shared_ptr(pism::array::CellType)
 %shared_ptr(pism::array::CellType1)

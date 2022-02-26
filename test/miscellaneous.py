@@ -1158,7 +1158,7 @@ def checksum_test():
     "Check if a small change in an IceModelVec affects checksum() output"
     grid = PISM.testing.shallow_grid(Mx=101, My=201)
 
-    v = PISM.IceModelVec2S(grid, "dummy")
+    v = PISM.Scalar(grid, "dummy")
     v.set(1e15)
 
     old_checksum = v.checksum(serial=False)
@@ -1565,7 +1565,7 @@ def grounding_line_flux_test():
     geometry.ensure_consistency(0)
 
     velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-    thk_bc_mask = PISM.IceModelVec2S(grid, "thk_bc_mask")
+    thk_bc_mask = PISM.Scalar(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
     sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
     sia_flux.set(0)
@@ -1581,8 +1581,8 @@ def grounding_line_flux_test():
 
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
-    gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux")
-    print(geometry.cell_type)
+    gl_flux = PISM.Scalar(grid, "grounding_line_flux")
+
     PISM.grounding_line_flux(geometry.cell_type,
                              geometry_evolution.flux_staggered(),
                              dt,

@@ -47,7 +47,7 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
   m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
 }
 
-const IceModelVec2S &StressCalving::calving_rate() const {
+const array::Scalar &StressCalving::calving_rate() const {
   return m_calving_rate;
 }
 

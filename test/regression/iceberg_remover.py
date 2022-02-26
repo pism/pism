@@ -31,8 +31,8 @@ def check(version):
     grid = PISM.testing.shallow_grid(11, 11, Lx=1e4, Ly=1e4)
 
     cell_type     = PISM.CellType1(grid, "cell_type")
-    vel_bc_mask   = PISM.Array2SGhosted1(grid, "vel_bc_mask")
-    ice_thickness = PISM.IceModelVec2S(grid, "thk")
+    vel_bc_mask   = PISM.Scalar1(grid, "vel_bc_mask")
+    ice_thickness = PISM.Scalar(grid, "thk")
 
     input_mask, result_fd, result_fem = create_mask(cell_type.shape())
 

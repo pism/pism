@@ -62,7 +62,7 @@ void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }
 
-void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {
+void Runoff_SMB::mass_flux(double delta_T, array::Scalar &result) const {
 
   // short-cuts, just to make the formula below easier to read
   double

@@ -40,14 +40,14 @@ public:
 
   void update_geometry(double dt,
                        const Geometry &geometry,
-                       const IceModelVec2S &bc_mask,
-                       const IceModelVec2S &retreat_rate,
-                       IceModelVec2S &Href,
-                       IceModelVec2S &ice_thickness);
+                       const array::Scalar &bc_mask,
+                       const array::Scalar &retreat_rate,
+                       array::Scalar &Href,
+                       array::Scalar &ice_thickness);
 
   MaxTimestep max_timestep(const array::CellType1 &cell_type,
-                           const IceModelVec2S &bc_mask,
-                           const IceModelVec2S &retreat_rate) const;
+                           const array::Scalar &bc_mask,
+                           const array::Scalar &retreat_rate) const;
 private:
 
   void compute_modified_mask(const array::CellType1 &input,
@@ -60,7 +60,7 @@ private:
   array::CellType1 m_cell_type;
   // Temporary storage for distributing ice loss to "full" (as opposed to "partially
   // filled") cells near the front
-  Array2SGhosted<1> m_tmp;
+  array::Scalar1 m_tmp;
 };
 
 } // end of namespace pism

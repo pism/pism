@@ -95,7 +95,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
+void BedSmoother::preprocess_bed(const array::Scalar &topg) {
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -120,7 +120,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   preprocess_bed(topg, m_Nx, m_Ny);
 }
 
-const IceModelVec2S& BedSmoother::smoothed_bed() const {
+const array::Scalar& BedSmoother::smoothed_bed() const {
   return m_topgsmooth;
 }
 
@@ -128,7 +128,7 @@ const IceModelVec2S& BedSmoother::smoothed_bed() const {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
+void BedSmoother::preprocess_bed(const array::Scalar &topg,
                                  unsigned int Nx, unsigned int Ny) {
 
   if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
@@ -280,10 +280,10 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
-                               const IceModelVec2S &thk,
+void BedSmoother::smoothed_thk(const array::Scalar &usurf,
+                               const array::Scalar &thk,
                                const array::CellType2 &mask,
-                               IceModelVec2S &result) const {
+                               array::Scalar &result) const {
 
   IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
@@ -347,7 +347,7 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const {
+void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const {
 
   if ((m_Nx < 0) || (m_Ny < 0)) {
     result.set(1.0);

@@ -100,23 +100,23 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &Given::mass_flux_impl() const {
+const array::Scalar &Given::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Given::temperature_impl() const {
+const array::Scalar &Given::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Given::accumulation_impl() const {
+const array::Scalar &Given::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Given::melt_impl() const {
+const array::Scalar &Given::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Given::runoff_impl() const {
+const array::Scalar &Given::runoff_impl() const {
   return *m_runoff;
 }
 

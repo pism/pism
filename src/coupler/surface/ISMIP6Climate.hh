@@ -33,12 +33,12 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S &temperature_impl() const;
-  const IceModelVec2S &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
   MaxTimestep max_timestep_impl(double t) const;
 protected:
   // time-dependent inputs
@@ -48,13 +48,13 @@ protected:
   std::shared_ptr<IceModelVec2T> m_temperature_gradient;
 
   // time-independent inputs
-  IceModelVec2S m_mass_flux_reference;
-  IceModelVec2S m_temperature_reference;
-  IceModelVec2S m_surface_reference;
+  array::Scalar m_mass_flux_reference;
+  array::Scalar m_temperature_reference;
+  array::Scalar m_surface_reference;
 
   // outputs; stored as shared_ptr to be able to use SurfaceModel::allocate_xxx()
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_mass_flux;
+  array::Scalar::Ptr m_temperature;
 
 };
 

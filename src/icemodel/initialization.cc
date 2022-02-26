@@ -218,7 +218,7 @@ void IceModel::model_state_setup() {
       break;
     case INIT_OTHER:
       {
-        IceModelVec2S
+        array::Scalar
           &W_till = *m_work2d[0],
           &W      = *m_work2d[1],
           &P      = *m_work2d[2];

@@ -41,12 +41,12 @@ namespace frontalmelt {
  * scale the provided melt rate.
  */
 void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
-                                       const IceModelVec2S &frontal_melt_rate,
-                                       IceModelVec2S &result) const {
+                                       const array::Scalar &frontal_melt_rate,
+                                       array::Scalar &result) const {
 
   GeometryCalculator gc(*m_config);
 
-  const IceModelVec2S
+  const array::Scalar
     &bed_elevation       = geometry.bed_elevation,
     &surface_elevation   = geometry.ice_surface_elevation,
     &ice_thickness       = geometry.ice_thickness,
@@ -127,11 +127,11 @@ void FrontalMelt::update(const FrontalMeltInputs &inputs, double t, double dt) {
   compute_retreat_rate(*inputs.geometry, frontal_melt_rate(), m_retreat_rate);
 }
 
-const IceModelVec2S& FrontalMelt::frontal_melt_rate() const {
+const array::Scalar& FrontalMelt::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
 }
 
-const IceModelVec2S& FrontalMelt::retreat_rate() const {
+const array::Scalar& FrontalMelt::retreat_rate() const {
   return m_retreat_rate;
 }
 
@@ -189,7 +189,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->frontal_melt_rate();
   }
 };
@@ -213,7 +213,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->retreat_rate();
   }
 };

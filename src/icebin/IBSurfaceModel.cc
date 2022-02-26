@@ -96,11 +96,11 @@ void IBSurfaceModel::update_impl(const Geometry &geometry, double t, double dt) 
   (void) dt;
 }
 
-const IceModelVec2S &IBSurfaceModel::mass_flux_impl() const {
+const array::Scalar &IBSurfaceModel::mass_flux_impl() const {
   return icebin_massxfer;
 }
 
-const IceModelVec2S &IBSurfaceModel::temperature_impl() const {
+const array::Scalar &IBSurfaceModel::temperature_impl() const {
   return surface_temp;
 }
 

@@ -39,9 +39,9 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const array::Scalar& shelf_base_mass_flux_impl() const;
 
-  IceModelVec2S::Ptr m_shelf_base_mass_flux;
+  array::Scalar::Ptr m_shelf_base_mass_flux;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

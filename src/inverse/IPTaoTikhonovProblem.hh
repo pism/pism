@@ -98,7 +98,7 @@ public:
   L2NormFunctional2S designFunctional(grid); //J_X
   L2NormFunctional2V stateFunctional(grid);  //J_Y
   IceModelVec2V u_obs;     // Set this to the surface velocity observations.
-  IceModelVec2S tauc_0;    // Set this to the initial guess for tauc.
+  array::Scalar tauc_0;    // Set this to the initial guess for tauc.
   double eta;           // Set this to the desired penalty parameter.
 
   typedef InvSSATauc IPTaoTikhonovProblem<SSATaucForwardProblem>;
@@ -123,7 +123,7 @@ public:
   define the function spaces \f$D\f$ and \f$S\f$.  E.g. 
 
   \code
-  typedef IceModelVec2S DesignVec;
+  typedef array::Scalar DesignVec;
   typedef IceModelVec2V StateVec;
   \endcode
   would be appropriate for a map from basal yeild stress to surface velocities.
@@ -277,7 +277,7 @@ protected:
   double m_val_state;
 
   /// Implementation of \f$J_D\f$.
-  IPFunctional<IceModelVec2S> &m_designFunctional;
+  IPFunctional<array::Scalar> &m_designFunctional;
   /// Implementation of \f$J_S\f$.
   IPFunctional<IceModelVec2V> &m_stateFunctional;
 

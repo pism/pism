@@ -36,12 +36,11 @@ enum NodeType {
   NODE_EXTERIOR = 1
 };
 
-class IceModelVec2S;
-class IceModelVec2S;
+namespace array { class Scalar; }
 
-void compute_node_types(const IceModelVec2S &ice_thickness,
+void compute_node_types(const array::Scalar &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2S &result);
+                        array::Scalar &result);
 
 } // end of namespace pism
 

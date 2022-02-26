@@ -105,8 +105,8 @@ class IP_SSATaucForwardProblem : public stressbalance::SSAFEM
 public:
 
   /// The function space for the design variable, i.e. \f$\tau_c\f$.
-  typedef IceModelVec2S DesignVec;
-  typedef Array2SGhosted<1> DesignVecGhosted;
+  typedef array::Scalar DesignVec;
+  typedef array::Scalar1 DesignVecGhosted;
 
   /// The function space for the state variable, \f$u_{\rm SSA}\f$.
   typedef IceModelVec2V StateVec;
@@ -131,7 +131,7 @@ public:
     having the desired values in the fixed locations, and using set_tauc_fixed_locations()
     to indicate the nodes that should not be changed.
   */
-  virtual void set_tauc_fixed_locations(IceModelVec2S &locations)
+  virtual void set_tauc_fixed_locations(array::Scalar &locations)
   {
     m_fixed_tauc_locations = &locations;
   }
@@ -147,25 +147,25 @@ public:
     return m_tauc_param;
   }
 
-  virtual void set_design(IceModelVec2S &zeta);
+  virtual void set_design(array::Scalar &zeta);
 
-  virtual TerminationReason::Ptr linearize_at(IceModelVec2S &zeta);
+  virtual TerminationReason::Ptr linearize_at(array::Scalar &zeta);
 
   virtual void assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
   virtual void assemble_residual(IceModelVec2V &u, Vec R);
 
   virtual void assemble_jacobian_state(IceModelVec2V &u, Mat J);
 
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vec du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, IceModelVec2S &dzeta, Vector2 **du_a);
+  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, IceModelVec2V &du);
+  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, Vec du);
+  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, Vector2 **du_a);
 
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, IceModelVec2S &dzeta);
+  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, array::Scalar &dzeta);
   virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);
   virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, double **dzeta);
 
-  virtual void apply_linearization(IceModelVec2S &dzeta, IceModelVec2V &du);
-  virtual void apply_linearization_transpose(IceModelVec2V &du, IceModelVec2S &dzeta);
+  virtual void apply_linearization(array::Scalar &dzeta, IceModelVec2V &du);
+  virtual void apply_linearization_transpose(IceModelVec2V &du, array::Scalar &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
   petsc::DM& get_da() const {
@@ -175,14 +175,14 @@ public:
 protected:
 
   /// Current value of zeta, provided from caller.
-  IceModelVec2S   *m_zeta;
+  array::Scalar   *m_zeta;
   /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
-  Array2SGhosted<1>   m_dzeta_local;
+  array::Scalar1   m_dzeta_local;
   /// Storage for tauc (avoids modifying fields obtained via pism::Vars)
-  Array2SGhosted<2> m_tauc_copy;
+  array::Scalar2 m_tauc_copy;
 
   /// Locations where \f$\tau_c\f$ should not be adjusted.
-  IceModelVec2S *m_fixed_tauc_locations;
+  array::Scalar *m_fixed_tauc_locations;
 
   /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
   IPDesignVariableParameterization &m_tauc_param;

@@ -19,14 +19,14 @@
 
 #include <cmath>                // fabs
 
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
-void lapse_rate_correction(const IceModelVec2S &surface,
-                           const IceModelVec2S &reference_surface,
+void lapse_rate_correction(const array::Scalar &surface,
+                           const array::Scalar &reference_surface,
                            double lapse_rate,
-                           IceModelVec2S &result) {
+                           array::Scalar &result) {
   IceGrid::ConstPtr grid = result.grid();
 
   if (fabs(lapse_rate) < 1e-12) {

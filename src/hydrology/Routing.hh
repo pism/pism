@@ -84,18 +84,18 @@ public:
   Routing(IceGrid::ConstPtr g);
   virtual ~Routing() = default;
 
-  const IceModelVec2S& subglacial_water_pressure() const;
+  const array::Scalar& subglacial_water_pressure() const;
   const IceModelVec2Stag& velocity_staggered() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness);
+                              const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const IceModelVec2S &W_till,
-                               const IceModelVec2S &W,
-                               const IceModelVec2S &P);
+  virtual void init_impl(const array::Scalar &W_till,
+                               const array::Scalar &W,
+                               const array::Scalar &P);
 
   virtual void update_impl(double t, double dt, const Inputs& inputs);
 
@@ -124,67 +124,67 @@ protected:
   IceModelVec2Stag m_Kstag;
 
   // work space
-  IceModelVec2S m_Wnew, m_Wtillnew;
+  array::Scalar m_Wnew, m_Wtillnew;
 
   // ghosted temporary storage; modified in compute_conductivity and compute_velocity
-  mutable Array2SGhosted<1> m_R;
+  mutable array::Scalar1 m_R;
 
   double m_dx, m_dy;
   double m_rg;
 
-  Array2SGhosted<1> m_bottom_surface;
+  array::Scalar1 m_bottom_surface;
 
-  void water_thickness_staggered(const IceModelVec2S &W,
+  void water_thickness_staggered(const array::Scalar &W,
                                  const array::CellType1 &mask,
                                  IceModelVec2Stag &result);
 
   void compute_conductivity(const IceModelVec2Stag &W,
-                            const IceModelVec2S &P,
-                            const IceModelVec2S &bed,
+                            const array::Scalar &P,
+                            const array::Scalar &bed,
                             IceModelVec2Stag &result,
                             double &maxKW) const;
 
   void compute_velocity(const IceModelVec2Stag &W,
-                        const IceModelVec2S &P,
-                        const IceModelVec2S &bed,
+                        const array::Scalar &P,
+                        const array::Scalar &bed,
                         const IceModelVec2Stag &K,
-                        const IceModelVec2S *no_model_mask,
+                        const array::Scalar *no_model_mask,
                         IceModelVec2Stag &result) const;
 
   void advective_fluxes(const IceModelVec2Stag &V,
-                        const IceModelVec2S &W,
+                        const array::Scalar &W,
                         IceModelVec2Stag &result) const;
 
   void W_change_due_to_flow(double dt,
-                            const IceModelVec2S    &W,
+                            const array::Scalar    &W,
                             const IceModelVec2Stag &Wstag,
                             const IceModelVec2Stag &K,
                             const IceModelVec2Stag &Q,
-                            IceModelVec2S &result);
+                            array::Scalar &result);
   void update_W(double dt,
-                const IceModelVec2S    &surface_input_rate,
-                const IceModelVec2S    &basal_melt_rate,
-                const IceModelVec2S    &W,
+                const array::Scalar    &surface_input_rate,
+                const array::Scalar    &basal_melt_rate,
+                const array::Scalar    &W,
                 const IceModelVec2Stag &Wstag,
-                const IceModelVec2S    &Wtill,
-                const IceModelVec2S    &Wtill_new,
+                const array::Scalar    &Wtill,
+                const array::Scalar    &Wtill_new,
                 const IceModelVec2Stag &K,
                 const IceModelVec2Stag &Q,
-                IceModelVec2S &W_new);
+                array::Scalar &W_new);
 
   void update_Wtill(double dt,
-                    const IceModelVec2S &Wtill,
-                    const IceModelVec2S &surface_input_rate,
-                    const IceModelVec2S &basal_melt_rate,
-                    IceModelVec2S &Wtill_new);
+                    const array::Scalar &Wtill,
+                    const array::Scalar &surface_input_rate,
+                    const array::Scalar &basal_melt_rate,
+                    array::Scalar &Wtill_new);
 
 private:
   virtual void initialization_message() const;
 };
 
 void wall_melt(const Routing &model,
-               const IceModelVec2S &bed_elevation,
-               IceModelVec2S &result);
+               const array::Scalar &bed_elevation,
+               array::Scalar &result);
 
 } // end of namespace hydrology
 } // end of namespace pism

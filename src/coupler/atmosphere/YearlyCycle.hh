@@ -33,7 +33,7 @@ public:
   YearlyCycle(IceGrid::ConstPtr g);
   virtual ~YearlyCycle() = default;
 
-  virtual const IceModelVec2S& mean_summer_temp() const;
+  virtual const array::Scalar& mean_summer_temp() const;
 
 protected:
   virtual void define_model_state_impl(const File &output) const;
@@ -41,8 +41,8 @@ protected:
 
   virtual void init_impl(const Geometry &geometry);
 
-  virtual const IceModelVec2S& precipitation_impl() const;
-  virtual const IceModelVec2S& air_temperature_impl() const;
+  virtual const array::Scalar& precipitation_impl() const;
+  virtual const array::Scalar& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -60,7 +60,7 @@ protected:
 
   double m_snow_temp_summer_day;
   std::string m_reference;
-  IceModelVec2S m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
+  array::Scalar m_air_temp_mean_annual, m_air_temp_mean_summer, m_precipitation;
   mutable std::vector<double> m_cosine_cycle;
 };
 

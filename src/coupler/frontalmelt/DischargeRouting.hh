@@ -31,14 +31,14 @@ public:
   DischargeRouting(IceGrid::ConstPtr g);
   virtual ~DischargeRouting() = default;
 
-  void initialize(const IceModelVec2S &theta);
+  void initialize(const array::Scalar &theta);
 
 private:
   void init_impl(const Geometry &geometry);
 
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 
@@ -46,7 +46,7 @@ private:
   std::shared_ptr<IceModelVec2T> m_theta_ocean;
 
   // output
-  Array2SGhosted<1> m_frontal_melt_rate;
+  array::Scalar1 m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

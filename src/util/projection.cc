@@ -26,7 +26,7 @@
 #include "io/File.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec3.hh"
 
 #include "pism/pism_config.hh"
@@ -255,7 +255,7 @@ static double triangle_area(const double *A, const double *B, const double *C) {
                   pow(V1[0]*V2[1] - V2[0]*V1[1], 2));
 }
 
-void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
+void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   IceGrid::ConstPtr grid = result.grid();
 
   Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
@@ -310,7 +310,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 }
 
 static void compute_lon_lat(const std::string &projection,
-                            LonLat which, IceModelVec2S &result) {
+                            LonLat which, array::Scalar &result) {
 
   Proj crs(projection, "EPSG:4326");
 
@@ -386,7 +386,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
 #else
 
-void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
+void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   (void) projection;
 
   IceGrid::ConstPtr grid = result.grid();
@@ -394,7 +394,7 @@ void compute_cell_areas(const std::string &projection, IceModelVec2S &result) {
 }
 
 static void compute_lon_lat(const std::string &projection, LonLat which,
-                            IceModelVec2S &result) {
+                            array::Scalar &result) {
   (void) projection;
   (void) which;
   (void) result;
@@ -416,10 +416,10 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
 #endif
 
-void compute_longitude(const std::string &projection, IceModelVec2S &result) {
+void compute_longitude(const std::string &projection, array::Scalar &result) {
   compute_lon_lat(projection, LONGITUDE, result);
 }
-void compute_latitude(const std::string &projection, IceModelVec2S &result) {
+void compute_latitude(const std::string &projection, array::Scalar &result) {
   compute_lon_lat(projection, LATITUDE, result);
 }
 

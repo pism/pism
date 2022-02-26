@@ -22,7 +22,7 @@
 
 #include <gsl/gsl_rng.h>
 
-#include "pism/util/IceModelVec2S.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
 
 namespace pism {
 namespace surface {
@@ -221,12 +221,12 @@ public:
   FaustoGrevePDDObject(IceGrid::ConstPtr g);
   virtual ~FaustoGrevePDDObject() = default;
 
-  void update_temp_mj(const IceModelVec2S &surfelev,
-                      const IceModelVec2S &lat,
-                      const IceModelVec2S &lon);
+  void update_temp_mj(const array::Scalar &surfelev,
+                      const array::Scalar &lat,
+                      const array::Scalar &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range
-    for IceModelVec2S temp_mj. */
+    for array::Scalar temp_mj. */
   LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
 
 protected:
@@ -244,7 +244,7 @@ protected:
   double m_pdd_fausto_latitude_beta_w;
   double m_refreeze_fraction;
 
-  IceModelVec2S m_temp_mj;
+  array::Scalar m_temp_mj;
 };
 
 

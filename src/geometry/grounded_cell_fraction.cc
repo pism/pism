@@ -24,7 +24,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh" // clip
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -256,10 +256,10 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
-                                    const IceModelVec2S &sea_level,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_topography,
-                                    IceModelVec2S &result) {
+                                    const array::Scalar &sea_level,
+                                    const array::Scalar &ice_thickness,
+                                    const array::Scalar &bed_topography,
+                                    array::Scalar &result) {
   IceGrid::ConstPtr grid = result.grid();
   double alpha = ice_density / ocean_density;
 

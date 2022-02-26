@@ -19,7 +19,7 @@
 #include "IPMeanSquareFunctional.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -137,7 +137,7 @@ void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradi
 
 //! Implicitly set the normalization constant for the functional.
 /*! The normalization constant is selected so that if an input
-IceModelVec2S has entries all equal to \a scale, then the funtional value will be 1. I.e.
+array::Scalar has entries all equal to \a scale, then the funtional value will be 1. I.e.
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/
@@ -163,7 +163,7 @@ void IPMeanSquareFunctional2S::normalize(double scale) {
   m_normalization *= (scale*scale);
 }
 
-void IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
+void IPMeanSquareFunctional2S::valueAt(array::Scalar &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -191,7 +191,7 @@ void IPMeanSquareFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT)  {
+void IPMeanSquareFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -218,7 +218,7 @@ void IPMeanSquareFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *O
 }
 
 
-void IPMeanSquareFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient)  {
+void IPMeanSquareFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient)  {
   gradient.set(0);
 
   IceModelVec::AccessList list{&x, &gradient};

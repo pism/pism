@@ -271,7 +271,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
-  const IceModelVec2S *latitude = nullptr;
+  const array::Scalar *latitude = nullptr;
   if (fausto_greve or sigmalapserate != 0.0) {
     latitude = &geometry.latitude;
 
@@ -279,7 +279,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   }
 
   if (fausto_greve) {
-    const IceModelVec2S
+    const array::Scalar
       *longitude        = &geometry.latitude,
       *surface_altitude = &geometry.ice_surface_elevation;
 
@@ -456,35 +456,35 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-const IceModelVec2S &TemperatureIndex::mass_flux_impl() const {
+const array::Scalar &TemperatureIndex::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &TemperatureIndex::temperature_impl() const {
+const array::Scalar &TemperatureIndex::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& TemperatureIndex::accumulation_impl() const {
+const array::Scalar& TemperatureIndex::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndex::melt_impl() const {
+const array::Scalar& TemperatureIndex::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& TemperatureIndex::runoff_impl() const {
+const array::Scalar& TemperatureIndex::runoff_impl() const {
   return *m_runoff;
 }
 
-const IceModelVec2S& TemperatureIndex::firn_depth() const {
+const array::Scalar& TemperatureIndex::firn_depth() const {
   return m_firn_depth;
 }
 
-const IceModelVec2S& TemperatureIndex::snow_depth() const {
+const array::Scalar& TemperatureIndex::snow_depth() const {
   return m_snow_depth;
 }
 
-const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
+const array::Scalar& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 

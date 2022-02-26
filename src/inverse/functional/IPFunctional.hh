@@ -123,9 +123,9 @@ public:
 
 };
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Scalar> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient);
 
 //! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
 /*! Useful for debugging a hand coded gradient. */

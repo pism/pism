@@ -65,7 +65,7 @@ void PrecipitationScaling::update_impl(const Geometry &geometry, double t, doubl
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
-const IceModelVec2S& PrecipitationScaling::precipitation_impl() const {
+const array::Scalar& PrecipitationScaling::precipitation_impl() const {
   return *m_precipitation;
 }
 

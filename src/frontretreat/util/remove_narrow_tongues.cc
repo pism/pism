@@ -58,7 +58,7 @@ namespace pism {
  * @return 0 on success
  */
 void remove_narrow_tongues(const Geometry &geometry,
-                           IceModelVec2S &ice_thickness) {
+                           array::Scalar &ice_thickness) {
 
   auto &mask      = geometry.cell_type;
   auto &bed       = geometry.bed_elevation;

@@ -28,13 +28,13 @@ namespace pism {
 class AgeModelInputs {
 public:
   AgeModelInputs();
-  AgeModelInputs(const IceModelVec2S *ice_thickness,
+  AgeModelInputs(const array::Scalar *ice_thickness,
                  const IceModelVec3 *u3,
                  const IceModelVec3 *v3,
                  const IceModelVec3 *w3);
   void check() const;
 
-  const IceModelVec2S *ice_thickness;
+  const array::Scalar *ice_thickness;
   const IceModelVec3 *u3;
   const IceModelVec3 *v3;
   const IceModelVec3 *w3;

@@ -32,14 +32,14 @@ namespace inverse {
   where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
   Q1 finite elements.
 */
-class IP_L2NormFunctional2S : public IPInnerProductFunctional<IceModelVec2S> {
+class IP_L2NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
-  IP_L2NormFunctional2S(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2S>(grid) {};
+  IP_L2NormFunctional2S(IceGrid::ConstPtr grid) : IPInnerProductFunctional<array::Scalar>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void dot(IceModelVec2S &a, IceModelVec2S &b, double *v);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void dot(array::Scalar &a, array::Scalar &b, double *v);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 private:
   IP_L2NormFunctional2S(IP_L2NormFunctional2S const &);

@@ -102,11 +102,11 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Anomaly::precipitation_impl() const {
+const array::Scalar& Anomaly::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Anomaly::air_temperature_impl() const {
+const array::Scalar& Anomaly::air_temperature_impl() const {
   return *m_temperature;
 }
 

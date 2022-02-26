@@ -63,9 +63,9 @@ void HayhurstCalving::init() {
 }
 
 void HayhurstCalving::update(const array::CellType1 &cell_type,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &sea_level,
-                             const IceModelVec2S &bed_elevation) {
+                             const array::Scalar &ice_thickness,
+                             const array::Scalar &sea_level,
+                             const array::Scalar &bed_elevation) {
 
   using std::min;
 
@@ -152,7 +152,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   }
 }
 
-const IceModelVec2S &HayhurstCalving::calving_rate() const {
+const array::Scalar &HayhurstCalving::calving_rate() const {
   return m_calving_rate;
 }
 

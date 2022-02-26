@@ -20,8 +20,8 @@
 #define _MASK_H_
 
 // the following three includes are needed here because of inlined code
-#include "IceModelVec2S.hh"
-#include "IceModelVec2S.hh"
+#include "array/Scalar.hh"
+#include "array/Scalar.hh"
 #include "ConfigInterface.hh"
 #include "error_handling.hh"
 
@@ -84,14 +84,14 @@ public:
     m_icefree_thickness = threshold;
   }
 
-  void compute(const IceModelVec2S &sea_level, const IceModelVec2S &bed, const IceModelVec2S &thickness,
-               IceModelVec2<double> &out_mask, IceModelVec2S &out_surface) const;
+  void compute(const array::Scalar &sea_level, const array::Scalar &bed, const array::Scalar &thickness,
+               IceModelVec2<double> &out_mask, array::Scalar &out_surface) const;
 
-  void compute_mask(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
-                    const IceModelVec2S& thickness, IceModelVec2<double>& result) const;
+  void compute_mask(const array::Scalar& sea_level, const array::Scalar& bed,
+                    const array::Scalar& thickness, IceModelVec2<double>& result) const;
 
-  void compute_surface(const IceModelVec2S& sea_level, const IceModelVec2S& bed,
-                       const IceModelVec2S& thickness, IceModelVec2S& result) const;
+  void compute_surface(const array::Scalar& sea_level, const array::Scalar& bed,
+                       const array::Scalar& thickness, array::Scalar& result) const;
 
   inline void compute(double sea_level, double bed, double thickness,
                       int *out_mask, double *out_surface) const {

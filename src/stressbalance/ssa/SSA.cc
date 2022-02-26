@@ -234,10 +234,10 @@ static int weight(bool margin_bc,
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
  */
-void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &surface_elevation,
+void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
+                                 const array::Scalar &surface_elevation,
                                  const array::CellType1 &cell_type,
-                                 const IceModelVec2S *no_model_mask,
+                                 const array::Scalar *no_model_mask,
                                  IceModelVec2V &result) const {
 
   using mask::ice_free_ocean;
@@ -417,7 +417,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
 IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag"));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata() = m_vars[0];
 
   compute_magnitude(model->driving_stress(), *result);

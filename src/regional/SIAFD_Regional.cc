@@ -49,7 +49,7 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
                             inputs.geometry->cell_type,
                             m_h_x_no_model, m_h_y_no_model);
 
-  const IceModelVec2S &no_model = *inputs.no_model_mask;
+  const array::Scalar &no_model = *inputs.no_model_mask;
 
   const int Mx = m_grid->Mx(), My = m_grid->My();
 

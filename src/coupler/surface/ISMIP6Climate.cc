@@ -159,10 +159,10 @@ void ISMIP6::init_impl(const Geometry &geometry) {
 void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
 
   // inputs
-  const IceModelVec2S &h       = geometry.ice_surface_elevation;
-  const IceModelVec2S &h_ref   = m_surface_reference;
-  const IceModelVec2S &T_ref   = m_temperature_reference;
-  const IceModelVec2S &SMB_ref = m_mass_flux_reference;
+  const array::Scalar &h       = geometry.ice_surface_elevation;
+  const array::Scalar &h_ref   = m_surface_reference;
+  const array::Scalar &T_ref   = m_temperature_reference;
+  const array::Scalar &SMB_ref = m_mass_flux_reference;
 
   IceModelVec2T &dTdz   = *m_temperature_gradient;
   IceModelVec2T &dSMBdz = *m_mass_flux_gradient;
@@ -170,8 +170,8 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   IceModelVec2T &aSMB   = *m_mass_flux_anomaly;
 
   // outputs
-  IceModelVec2S &T   = *m_temperature;
-  IceModelVec2S &SMB = *m_mass_flux;
+  array::Scalar &T   = *m_temperature;
+  array::Scalar &SMB = *m_mass_flux;
 
   // get time-dependent input fields at the current time
   {
@@ -220,23 +220,23 @@ MaxTimestep ISMIP6::max_timestep_impl(double t) const {
   }
 }
 
-const IceModelVec2S &ISMIP6::mass_flux_impl() const {
+const array::Scalar &ISMIP6::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ISMIP6::temperature_impl() const {
+const array::Scalar &ISMIP6::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &ISMIP6::accumulation_impl() const {
+const array::Scalar &ISMIP6::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ISMIP6::melt_impl() const {
+const array::Scalar &ISMIP6::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ISMIP6::runoff_impl() const {
+const array::Scalar &ISMIP6::runoff_impl() const {
   return *m_runoff;
 }
 

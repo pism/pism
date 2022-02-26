@@ -46,7 +46,7 @@ static char help[] =
 namespace pism {
 
 static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
-                                          const IceModelVec2S &thickness,
+                                          const array::Scalar &thickness,
                                           const IceGrid &grid,
                                           double &gmax_strain_heating_err,
                                           double &gav_strain_heating_err) {
@@ -102,7 +102,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
 
 
 static void computeSurfaceVelocityErrors(const IceGrid &grid,
-                                         const IceModelVec2S &ice_thickness,
+                                         const array::Scalar &ice_thickness,
                                          const IceModelVec3 &u3,
                                          const IceModelVec3 &v3,
                                          const IceModelVec3 &w3,
@@ -152,7 +152,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
 static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                            const IceGrid &grid,
-                                           const IceModelVec2S &thickness,
+                                           const array::Scalar &thickness,
                                            const IceModelVec3 &temperature,
                                            IceModelVec3 &enthalpy) {
 
@@ -179,10 +179,10 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 //! \brief Set the test F initial state.
 static void setInitStateF(IceGrid &grid,
                           EnthalpyConverter &EC,
-                          IceModelVec2S &bed,
+                          array::Scalar &bed,
                           IceModelVec2<double> &mask,
-                          IceModelVec2S &surface,
-                          IceModelVec2S &thickness,
+                          array::Scalar &surface,
+                          array::Scalar &thickness,
                           IceModelVec3 &enthalpy) {
 
   double
@@ -224,7 +224,7 @@ static void setInitStateF(IceGrid &grid,
 
 static void reportErrors(const IceGrid &grid,
                          units::System::Ptr unit_system,
-                         const IceModelVec2S &thickness,
+                         const array::Scalar &thickness,
                          const IceModelVec3 &u_sia,
                          const IceModelVec3 &v_sia,
                          const IceModelVec3 &w_sia,

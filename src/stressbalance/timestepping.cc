@@ -20,7 +20,7 @@
 #include "timestepping.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec3.hh"
-#include "pism/util/IceModelVec2S.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/pism_utilities.hh"
@@ -41,7 +41,7 @@ Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
 Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
-CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
+CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::CellType0 &cell_type,
                             const IceModelVec3 &u3,
                             const IceModelVec3 &v3,
@@ -114,7 +114,7 @@ CFLData max_timestep_cfl_3d(const IceModelVec2S &ice_thickness,
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-CFLData max_timestep_cfl_2d(const IceModelVec2S &ice_thickness,
+CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType0 &cell_type,
                             const IceModelVec2V &velocity) {
 

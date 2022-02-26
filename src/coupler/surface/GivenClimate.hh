@@ -33,12 +33,12 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S &temperature_impl() const;
-  const IceModelVec2S &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
