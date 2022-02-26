@@ -219,7 +219,7 @@ const IceModelVec2V& StressBalance::advective_velocity() const {
   return m_shallow_stress_balance->velocity();
 }
 
-const IceModelVec2Stag& StressBalance::diffusive_flux() const {
+const array::Staggered& StressBalance::diffusive_flux() const {
   return m_modifier->diffusive_flux();
 }
 

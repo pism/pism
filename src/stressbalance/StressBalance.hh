@@ -93,7 +93,7 @@ public:
   const IceModelVec2V& advective_velocity() const;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const IceModelVec2Stag& diffusive_flux() const;
+  const array::Staggered& diffusive_flux() const;
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;

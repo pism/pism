@@ -178,7 +178,7 @@ public:
   }
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "bwatvel", WITHOUT_GHOSTS));
+    array::Staggered::Ptr result(new array::Staggered(m_grid, "bwatvel", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 
@@ -383,7 +383,7 @@ const array::Scalar& Routing::subglacial_water_pressure() const {
   return m_Pover;
 }
 
-const IceModelVec2Stag& Routing::velocity_staggered() const {
+const array::Staggered& Routing::velocity_staggered() const {
   return m_Vstag;
 }
 
@@ -393,7 +393,7 @@ const IceModelVec2Stag& Routing::velocity_staggered() const {
   either ice-free or floating areas. */
 void Routing::water_thickness_staggered(const array::Scalar &W,
                                         const array::CellType1 &mask,
-                                        IceModelVec2Stag &result) {
+                                        array::Staggered &result) {
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
 
@@ -450,10 +450,10 @@ void Routing::water_thickness_staggered(const array::Scalar &W,
 
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
-void Routing::compute_conductivity(const IceModelVec2Stag &W,
+void Routing::compute_conductivity(const array::Staggered &W,
                                    const array::Scalar &P,
                                    const array::Scalar &bed_elevation,
-                                   IceModelVec2Stag &result,
+                                   array::Staggered &result,
                                    double &KW_max) const {
   const double
     k     = m_config->get_number("hydrology.hydraulic_conductivity"),
@@ -625,12 +625,12 @@ void wall_melt(const Routing &model,
   anyway) but it does provide the correct max velocity in the CFL calculation. We assume
   bed has valid ghosts.
 */
-void Routing::compute_velocity(const IceModelVec2Stag &W,
+void Routing::compute_velocity(const array::Staggered &W,
                                const array::Scalar &pressure,
                                const array::Scalar &bed,
-                               const IceModelVec2Stag &K,
+                               const array::Staggered &K,
                                const array::Scalar *no_model_mask,
-                               IceModelVec2Stag &result) const {
+                               array::Staggered &result) const {
   array::Scalar &P = m_R;
   P.copy_from(pressure);  // yes, it updates ghosts
 
@@ -684,9 +684,9 @@ void Routing::compute_velocity(const IceModelVec2Stag &W,
 
   FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
 */
-void Routing::advective_fluxes(const IceModelVec2Stag &V,
+void Routing::advective_fluxes(const array::Staggered &V,
                                const array::Scalar &W,
-                               IceModelVec2Stag &result) const {
+                               array::Staggered &result) const {
   IceModelVec::AccessList list{&W, &V, &result};
 
   assert(W.stencil_width() >= 1);
@@ -775,9 +775,9 @@ void Routing::update_Wtill(double dt,
 
 void Routing::W_change_due_to_flow(double dt,
                                    const array::Scalar    &W,
-                                   const IceModelVec2Stag &Wstag,
-                                   const IceModelVec2Stag &K,
-                                   const IceModelVec2Stag &Q,
+                                   const array::Staggered &Wstag,
+                                   const array::Staggered &K,
+                                   const array::Staggered &Q,
                                    array::Scalar &result) {
   const double
     wux = 1.0 / (m_dx * m_dx),
@@ -814,11 +814,11 @@ void Routing::update_W(double dt,
                        const array::Scalar    &surface_input_rate,
                        const array::Scalar    &basal_melt_rate,
                        const array::Scalar    &W,
-                       const IceModelVec2Stag &Wstag,
+                       const array::Staggered &Wstag,
                        const array::Scalar    &Wtill,
                        const array::Scalar    &Wtill_new,
-                       const IceModelVec2Stag &K,
-                       const IceModelVec2Stag &Q,
+                       const array::Staggered &K,
+                       const array::Staggered &Q,
                        array::Scalar &W_new) {
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);

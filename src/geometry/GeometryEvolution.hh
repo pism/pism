@@ -26,9 +26,6 @@
 
 namespace pism {
 
-class IceModelVec2Stag;
-class IceModelVec2V;
-
 /*!
  * NB! Write this in a way that does not use ghosts of input fields (copy to temp. storage and
  * communicate).
@@ -50,7 +47,7 @@ public:
 
   void flow_step(const Geometry &ice_geometry, double dt,
                  const IceModelVec2V    &advective_velocity,
-                 const IceModelVec2Stag &diffusive_flux,
+                 const array::Staggered &diffusive_flux,
                  const array::Scalar  &thickness_bc_mask);
 
   void source_term_step(const Geometry &geometry, double dt,
@@ -70,7 +67,7 @@ public:
   const array::Scalar& conservation_error() const;
 
   // diagnostic
-  const IceModelVec2Stag& flux_staggered() const;
+  const array::Staggered& flux_staggered() const;
   const array::Scalar& flux_divergence() const;
 
   // "regional" setup
@@ -99,11 +96,11 @@ protected:
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,
                                         const array::Scalar        &ice_thickness,
                                         const IceModelVec2V        &velocity,
-                                        const IceModelVec2Stag     &diffusive_flux,
-                                        IceModelVec2Stag           &output);
+                                        const array::Staggered     &diffusive_flux,
+                                        array::Staggered           &output);
 
   virtual void compute_flux_divergence(double dt,
-                                       const IceModelVec2Stag &flux_staggered,
+                                       const array::Staggered &flux_staggered,
                                        const array::Scalar &thickness_bc_mask,
                                        array::Scalar &conservation_error,
                                        array::Scalar &flux_fivergence);
@@ -141,8 +138,8 @@ protected:
   void compute_interface_fluxes(const array::CellType1 &cell_type,
                                 const array::Scalar        &ice_thickness,
                                 const IceModelVec2V        &velocity,
-                                const IceModelVec2Stag     &diffusive_flux,
-                                IceModelVec2Stag           &output);
+                                const array::Staggered     &diffusive_flux,
+                                array::Staggered           &output);
 
   void compute_surface_and_basal_mass_balance(double dt,
                                               const array::Scalar      &thickness_bc_mask,
@@ -166,13 +163,13 @@ private:
  * calving fluxes.
  */
 void grounding_line_flux(const array::CellType1 &cell_type,
-                         const IceModelVec2Stag &flux,
+                         const array::Staggered &flux,
                          double dt,
                          bool add_values,
                          array::Scalar &result);
 
 double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const IceModelVec2Stag &flux,
+                                 const array::Staggered &flux,
                                  double dt);
 } // end of namespace pism
 

@@ -27,14 +27,16 @@
 
 namespace pism {
 
-IceModelVec2Stag::IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
-                                   IceModelVecKind ghostedp,
-                                   unsigned int stencil_width)
+namespace array {
+
+Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name,
+                     IceModelVecKind ghostedp,
+                     unsigned int stencil_width)
   : IceModelVec(grid, name, ghostedp, 2, stencil_width, {0.0}) {
   set_begin_access_use_dof(true);
 }
 
-void IceModelVec2Stag::copy_from(const IceModelVec2Stag &input) {
+void Staggered::copy_from(const Staggered &input) {
   IceModelVec::AccessList list {this, &input};
   // FIXME: this should be simplified
 
@@ -56,7 +58,9 @@ void IceModelVec2Stag::copy_from(const IceModelVec2Stag &input) {
   inc_state_counter();
 }
 
-std::array<double,2> absmax(const IceModelVec2Stag &input) {
+} // end of namespace array
+
+std::array<double,2> absmax(const array::Staggered &input) {
 
   double z[2] = {0.0, 0.0};
 
@@ -75,7 +79,7 @@ std::array<double,2> absmax(const IceModelVec2Stag &input) {
 }
 
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const IceModelVec2Stag &input,
+                          const array::Staggered &input,
                           bool include_floating_ice,
                           array::Scalar &result) {
 
@@ -122,7 +126,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 }
 
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const IceModelVec2Stag &input,
+                          const array::Staggered &input,
                           bool include_floating_ice,
                           IceModelVec2V &result) {
 

@@ -1426,7 +1426,7 @@ issue is handled when -cfbc is set.
 */
 void SSAFD::compute_nuH_staggered(const Geometry &geometry,
                                   double nuH_regularization,
-                                  IceModelVec2Stag &result) {
+                                  array::Staggered &result) {
 
   const IceModelVec2V &uv = m_velocity; // shortcut
 
@@ -1496,7 +1496,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
  */
 void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
                                        double nuH_regularization,
-                                       IceModelVec2Stag &result) {
+                                       array::Staggered &result) {
 
   const array::Scalar &thickness = geometry.ice_thickness;
 
@@ -1754,7 +1754,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
 
 IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "nuH", WITH_GHOSTS));
+  array::Staggered::Ptr result(new array::Staggered(m_grid, "nuH", WITH_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -1771,7 +1771,7 @@ DiagnosticList SSAFD::diagnostics_impl() const {
   return result;
 }
 
-const IceModelVec2Stag & SSAFD::integrated_viscosity() const {
+const array::Staggered & SSAFD::integrated_viscosity() const {
   return m_nuH;
 }
 

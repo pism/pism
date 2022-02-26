@@ -76,7 +76,7 @@ struct GeometryEvolution::Impl {
   array::Scalar ice_area_specific_volume_change;
 
   //! Flux through cell interfaces. Ghosted.
-  IceModelVec2Stag flux_staggered;
+  array::Staggered flux_staggered;
 
   // Work space
   IceModelVec2V      input_velocity;       // a ghosted copy; not modified
@@ -209,7 +209,7 @@ const array::Scalar& GeometryEvolution::flux_divergence() const {
   return m_impl->flux_divergence;
 }
 
-const IceModelVec2Stag& GeometryEvolution::flux_staggered() const {
+const array::Staggered& GeometryEvolution::flux_staggered() const {
   return m_impl->flux_staggered;
 }
 
@@ -245,7 +245,7 @@ const array::Scalar& GeometryEvolution::conservation_error() const {
  */
 void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                                   const IceModelVec2V    &advective_velocity,
-                                  const IceModelVec2Stag &diffusive_flux,
+                                  const array::Staggered &diffusive_flux,
                                   const array::Scalar  &thickness_bc_mask) {
 
   m_impl->profile.begin("ge.update_ghosted_copies");
@@ -540,8 +540,8 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
 void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                  const array::Scalar        &ice_thickness,
                                                  const IceModelVec2V        &velocity,
-                                                 const IceModelVec2Stag     &diffusive_flux,
-                                                 IceModelVec2Stag           &output) {
+                                                 const array::Staggered     &diffusive_flux,
+                                                 array::Staggered           &output) {
 
   IceModelVec::AccessList list{&cell_type, &velocity, &ice_thickness,
                                &diffusive_flux, &output};
@@ -625,7 +625,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
  * The flux divergence at *ice thickness* Dirichlet B.C. locations is set to zero.
  */
 void GeometryEvolution::compute_flux_divergence(double dt,
-                                                const IceModelVec2Stag &flux,
+                                                const array::Staggered &flux,
                                                 const array::Scalar &thickness_bc_mask,
                                                 array::Scalar &conservation_error,
                                                 array::Scalar &output) {
@@ -1092,14 +1092,14 @@ public:
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
-    IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "flux_staggered", WITHOUT_GHOSTS));
+    array::Staggered::Ptr result(new array::Staggered(m_grid, "flux_staggered", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 
-    const IceModelVec2Stag &input = model->flux_staggered();
-    IceModelVec2Stag &output = *result.get();
+    const array::Staggered &input = model->flux_staggered();
+    array::Staggered &output = *result.get();
 
-    // FIXME: implement IceModelVec2Stag::copy_from()
+    // FIXME: implement array::Staggered::copy_from()
 
     IceModelVec::AccessList list{&input, &output};
 
@@ -1153,8 +1153,8 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask
 void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                          const array::Scalar        &ice_thickness,
                                                          const IceModelVec2V        &velocity,
-                                                         const IceModelVec2Stag     &diffusive_flux,
-                                                         IceModelVec2Stag           &output) {
+                                                         const array::Staggered     &diffusive_flux,
+                                                         array::Staggered           &output) {
 
   GeometryEvolution::compute_interface_fluxes(cell_type, ice_thickness,
                                               velocity, diffusive_flux,
@@ -1237,7 +1237,7 @@ void GeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {
 }
 
 void grounding_line_flux(const array::CellType1 &cell_type,
-                         const IceModelVec2Stag &flux,
+                         const array::Staggered &flux,
                          double dt,
                          bool add_values,
                          array::Scalar &output) {
@@ -1303,7 +1303,7 @@ void grounding_line_flux(const array::CellType1 &cell_type,
  * Compute the total grounding line flux over a time step, in kg.
  */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const IceModelVec2Stag &flux,
+                                 const array::Staggered &flux,
                                  double dt) {
   using mask::grounded;
 

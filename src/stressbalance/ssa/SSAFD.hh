@@ -37,7 +37,7 @@ public:
   SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD() = default;
 
-  const IceModelVec2Stag & integrated_viscosity() const;
+  const array::Staggered & integrated_viscosity() const;
 protected:
   virtual void init_impl();
 
@@ -63,11 +63,11 @@ protected:
 
   virtual void compute_nuH_staggered(const Geometry &geometry,
                                      double nuH_regularization,
-                                     IceModelVec2Stag &result);
+                                     array::Staggered &result);
 
   virtual void compute_nuH_staggered_cfbc(const Geometry &geometry,
                                           double nuH_regularization,
-                                          IceModelVec2Stag &result);
+                                          array::Staggered &result);
 
   virtual void compute_nuH_norm(double &norm,
                                 double &norm_change);
@@ -89,7 +89,7 @@ protected:
   virtual void fracture_induced_softening(const array::Scalar *fracture_density);
 
   // objects used internally
-  IceModelVec2Stag m_hardness, m_nuH, m_nuH_old;
+  array::Staggered m_hardness, m_nuH, m_nuH_old;
 
   struct Work {
     // u_x on the i offset

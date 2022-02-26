@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -52,7 +52,7 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
 void SSB_Modifier::init() {
 }
 
-const IceModelVec2Stag& SSB_Modifier::diffusive_flux() {
+const array::Staggered& SSB_Modifier::diffusive_flux() {
   return m_diffusive_flux;
 }
 

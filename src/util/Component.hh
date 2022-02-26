@@ -35,7 +35,7 @@ namespace pism {
 class MaxTimestep;
 class File;
 class IceModelVec;
-class IceModelVec2Stag;
+class IceModelVec2V;
 class Geometry;
 
 namespace array {
@@ -46,6 +46,7 @@ class CellType2;
 class Scalar;
 class Scalar1;
 class Scalar2;
+class Staggered;
 } // end of namespace array
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};

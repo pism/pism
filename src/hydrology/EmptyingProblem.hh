@@ -67,7 +67,7 @@ protected:
 
   void compute_velocity(const array::Scalar &hydraulic_potential,
                         const array::Scalar &mask,
-                        IceModelVec2Stag &result) const;
+                        array::Staggered &result) const;
 
   void compute_mask(const array::CellType0 &cell_type,
                     const array::Scalar *no_model_mask,
@@ -77,8 +77,8 @@ protected:
   array::Scalar m_tmp;
   array::Scalar m_bottom_surface;
   array::Scalar1 m_W;
-  IceModelVec2Stag m_Vstag;
-  IceModelVec2Stag m_Qsum;
+  array::Staggered m_Vstag;
+  array::Staggered m_Qsum;
   array::Scalar1 m_domain_mask;
 
   IceModelVec2V m_Q;

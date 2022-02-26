@@ -195,7 +195,7 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
 void SIAFD::compute_surface_gradient(const Inputs &inputs,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                     array::Staggered &h_x, array::Staggered &h_y) {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
@@ -226,7 +226,7 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 //! \brief Compute the ice surface gradient using the eta-transformation.
 void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
                                  const array::Scalar &bed_elevation,
-                                 IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                 array::Staggered &h_x, array::Staggered &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -299,7 +299,7 @@ void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                     array::Staggered &h_x, array::Staggered &h_y) {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
   const array::Scalar &h = ice_surface_elevation;
@@ -375,7 +375,7 @@ void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
  */
 void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
                                       const array::CellType2 &cell_type,
-                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                      array::Staggered &h_x, array::Staggered &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
@@ -547,9 +547,9 @@ void SIAFD::compute_diffusivity(bool full_update,
                                 const Geometry &geometry,
                                 const IceModelVec3 *enthalpy,
                                 const IceModelVec3 *age,
-                                const IceModelVec2Stag &h_x,
-                                const IceModelVec2Stag &h_y,
-                                IceModelVec2Stag &result) {
+                                const array::Staggered &h_x,
+                                const array::Staggered &h_y,
+                                array::Staggered &result) {
   array::Scalar
     &thk_smooth = m_work_2d_0,
     &theta      = m_work_2d_1;
@@ -778,9 +778,9 @@ void SIAFD::compute_diffusivity(bool full_update,
   }
 }
 
-void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                   const IceModelVec2Stag &diffusivity,
-                                   IceModelVec2Stag &result) {
+void SIAFD::compute_diffusive_flux(const array::Staggered &h_x, const array::Staggered &h_y,
+                                   const array::Staggered &diffusivity,
+                                   array::Staggered &result) {
 
   IceModelVec::AccessList list{&diffusivity, &h_x, &h_y, &result};
 
@@ -897,8 +897,8 @@ void SIAFD::compute_I(const Geometry &geometry) {
  * \param[out] v_out the Y-component of the resulting horizontal velocity field
  */
 void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
-                                           const IceModelVec2Stag &h_x,
-                                           const IceModelVec2Stag &h_y,
+                                           const array::Staggered &h_x,
+                                           const array::Staggered &h_y,
                                            const IceModelVec2V &sliding_velocity,
                                            IceModelVec3 &u_out, IceModelVec3 &v_out) {
 
@@ -969,15 +969,15 @@ bool SIAFD::interglacial(double accumulation_time) const {
   return (accumulation_time >= m_holocene_start);
 }
 
-const IceModelVec2Stag& SIAFD::surface_gradient_x() const {
+const array::Staggered& SIAFD::surface_gradient_x() const {
   return m_h_x;
 }
 
-const IceModelVec2Stag& SIAFD::surface_gradient_y() const {
+const array::Staggered& SIAFD::surface_gradient_y() const {
   return m_h_y;
 }
 
-const IceModelVec2Stag& SIAFD::diffusivity() const {
+const array::Staggered& SIAFD::diffusivity() const {
   return m_D;
 }
 

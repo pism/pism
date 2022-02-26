@@ -27,18 +27,17 @@ namespace pism {
 class IceModelVec2V;
 namespace array {
 class CellType1;
-} // end of namespace array
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
 //! components are not called `u` and `v` (to avoid confusion).
-class IceModelVec2Stag : public IceModelVec {
+class Staggered : public IceModelVec {
 public:
-  IceModelVec2Stag(IceGrid::ConstPtr grid, const std::string &name,
-                   IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+  Staggered(IceGrid::ConstPtr grid, const std::string &name,
+            IceModelVecKind ghostedp, unsigned int stencil_width = 1);
 
-  typedef std::shared_ptr<IceModelVec2Stag> Ptr;
-  typedef std::shared_ptr<const IceModelVec2Stag> ConstPtr;
+  typedef std::shared_ptr<array::Staggered> Ptr;
+  typedef std::shared_ptr<const array::Staggered> ConstPtr;
 
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
@@ -49,25 +48,25 @@ public:
   */
   inline stencils::Star<double> star(int i, int j) const;
 
-  void copy_from(const IceModelVec2Stag &input);
+  void copy_from(const array::Staggered &input);
 };
 
-inline double& IceModelVec2Stag::operator() (int i, int j, int k) {
+inline double& array::Staggered::operator() (int i, int j, int k) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
-inline const double& IceModelVec2Stag::operator() (int i, int j, int k) const {
+inline const double& array::Staggered::operator() (int i, int j, int k) const {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
-inline stencils::Star<double> IceModelVec2Stag::star(int i, int j) const {
-  const IceModelVec2Stag &self = *this;
+inline stencils::Star<double> array::Staggered::star(int i, int j) const {
+  const array::Staggered &self = *this;
 
   stencils::Star<double> result;
 
@@ -80,7 +79,9 @@ inline stencils::Star<double> IceModelVec2Stag::star(int i, int j) const {
   return result;
 }
 
-std::array<double,2> absmax(const IceModelVec2Stag &input);
+} // end of namespace array
+
+std::array<double,2> absmax(const array::Staggered &input);
 
 /*!
  * Average a scalar field from the staggered grid onto the regular grid by considering
@@ -90,7 +91,7 @@ std::array<double,2> absmax(const IceModelVec2Stag &input);
  * icy cells only.
  */
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const IceModelVec2Stag &input,
+                          const array::Staggered &input,
                           bool include_floating_ice,
                           array::Scalar &result);
 
@@ -102,7 +103,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
  * icy cells only.
  */
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const IceModelVec2Stag &input,
+                          const array::Staggered &input,
                           bool include_floating_ice,
                           IceModelVec2V &result);
 

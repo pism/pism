@@ -405,7 +405,7 @@ static double K(double psi_x, double psi_y, double speed, double epsilon) {
  */
 void EmptyingProblem::compute_velocity(const array::Scalar &psi,
                                        const array::Scalar &domain_mask,
-                                       IceModelVec2Stag &result) const {
+                                       array::Staggered &result) const {
 
   IceModelVec::AccessList list{&psi, &result, &domain_mask};
 

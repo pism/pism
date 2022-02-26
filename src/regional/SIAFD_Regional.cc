@@ -40,7 +40,7 @@ void SIAFD_Regional::init() {
 }
 
 void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
-                                              IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                              array::Staggered &h_x, array::Staggered &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
 

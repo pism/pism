@@ -85,7 +85,7 @@ public:
   virtual ~Routing() = default;
 
   const array::Scalar& subglacial_water_pressure() const;
-  const IceModelVec2Stag& velocity_staggered() const;
+  const array::Staggered& velocity_staggered() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
@@ -110,18 +110,18 @@ protected:
 protected:
 
   // edge-centered (staggered) advection flux
-  IceModelVec2Stag m_Qstag;
+  array::Staggered m_Qstag;
 
-  IceModelVec2Stag m_Qstag_average;
+  array::Staggered m_Qstag_average;
 
   // edge-centered (staggered) water velocity
-  IceModelVec2Stag m_Vstag;
+  array::Staggered m_Vstag;
 
   // edge-centered (staggered) W values (averaged from regular)
-  IceModelVec2Stag m_Wstag;
+  array::Staggered m_Wstag;
 
   // edge-centered (staggered) values of nonlinear conductivity
-  IceModelVec2Stag m_Kstag;
+  array::Staggered m_Kstag;
 
   // work space
   array::Scalar m_Wnew, m_Wtillnew;
@@ -136,40 +136,40 @@ protected:
 
   void water_thickness_staggered(const array::Scalar &W,
                                  const array::CellType1 &mask,
-                                 IceModelVec2Stag &result);
+                                 array::Staggered &result);
 
-  void compute_conductivity(const IceModelVec2Stag &W,
+  void compute_conductivity(const array::Staggered &W,
                             const array::Scalar &P,
                             const array::Scalar &bed,
-                            IceModelVec2Stag &result,
+                            array::Staggered &result,
                             double &maxKW) const;
 
-  void compute_velocity(const IceModelVec2Stag &W,
+  void compute_velocity(const array::Staggered &W,
                         const array::Scalar &P,
                         const array::Scalar &bed,
-                        const IceModelVec2Stag &K,
+                        const array::Staggered &K,
                         const array::Scalar *no_model_mask,
-                        IceModelVec2Stag &result) const;
+                        array::Staggered &result) const;
 
-  void advective_fluxes(const IceModelVec2Stag &V,
+  void advective_fluxes(const array::Staggered &V,
                         const array::Scalar &W,
-                        IceModelVec2Stag &result) const;
+                        array::Staggered &result) const;
 
   void W_change_due_to_flow(double dt,
                             const array::Scalar    &W,
-                            const IceModelVec2Stag &Wstag,
-                            const IceModelVec2Stag &K,
-                            const IceModelVec2Stag &Q,
+                            const array::Staggered &Wstag,
+                            const array::Staggered &K,
+                            const array::Staggered &Q,
                             array::Scalar &result);
   void update_W(double dt,
                 const array::Scalar    &surface_input_rate,
                 const array::Scalar    &basal_melt_rate,
                 const array::Scalar    &W,
-                const IceModelVec2Stag &Wstag,
+                const array::Staggered &Wstag,
                 const array::Scalar    &Wtill,
                 const array::Scalar    &Wtill_new,
-                const IceModelVec2Stag &K,
-                const IceModelVec2Stag &Q,
+                const array::Staggered &K,
+                const array::Staggered &Q,
                 array::Scalar &W_new);
 
   void update_Wtill(double dt,

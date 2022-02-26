@@ -50,7 +50,7 @@ public:
                       bool full_update) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const IceModelVec2Stag& diffusive_flux();
+  const array::Staggered& diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
@@ -67,7 +67,7 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
-  IceModelVec2Stag m_diffusive_flux;
+  array::Staggered m_diffusive_flux;
   IceModelVec3 m_u, m_v;
 };
 

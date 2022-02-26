@@ -148,7 +148,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
-static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &output) {
+static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
   IceGrid::ConstPtr grid = output.grid();
 
   IceModelVec::AccessList list{ &input, &output };
@@ -162,7 +162,7 @@ static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &
 }
 
 IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "diffusivity", WITHOUT_GHOSTS));
+  array::Staggered::Ptr result(new array::Staggered(m_grid, "diffusivity", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -186,7 +186,7 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_x", WITHOUT_GHOSTS));
+  array::Staggered::Ptr result(new array::Staggered(m_grid, "h_x", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -210,7 +210,7 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_y", WITHOUT_GHOSTS));
+  array::Staggered::Ptr result(new array::Staggered(m_grid, "h_y", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

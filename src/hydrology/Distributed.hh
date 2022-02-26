@@ -85,9 +85,9 @@ protected:
                 const array::Scalar &Wtill_new,
                 const array::Scalar &P,
                 const array::Scalar &W,
-                const IceModelVec2Stag &Ws,
-                const IceModelVec2Stag &K,
-                const IceModelVec2Stag &Q,
+                const array::Staggered &Ws,
+                const array::Staggered &K,
+                const array::Staggered &Q,
                 array::Scalar &P_new) const;
 protected:
   array::Scalar1 m_P;

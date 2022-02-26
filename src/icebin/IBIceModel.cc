@@ -135,7 +135,7 @@ void IBIceModel::energy_step() {
 }
 
 void IBIceModel::massContExplicitStep(double dt,
-                                      const IceModelVec2Stag &diffusive_flux,
+                                      const array::Staggered &diffusive_flux,
                                       const IceModelVec2V &advective_velocity) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
