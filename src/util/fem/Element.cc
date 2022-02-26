@@ -173,7 +173,7 @@ Element2::Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   // empty
 }
 
-void Element2::nodal_values(const IceModelVec2<double> &x_global, int *result) const {
+void Element2::nodal_values(const array::Scalar &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],

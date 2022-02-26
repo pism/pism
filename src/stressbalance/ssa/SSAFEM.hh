@@ -73,7 +73,7 @@ protected:
   double m_alpha;
   double m_rho_g;
 
-  IceModelVec2<Coefficients> m_coefficients;
+  array::Array2D<Coefficients> m_coefficients;
 
   void quad_point_values(const fem::Element &Q,
                          const Coefficients *x,

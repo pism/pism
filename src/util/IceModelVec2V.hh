@@ -19,7 +19,7 @@
 #ifndef PISM_ICEMODELVEC2V_H
 #define PISM_ICEMODELVEC2V_H
 
-#include "pism/util/IceModelVec2.hh"
+#include "pism/util/array/Array2D.hh"
 #include "pism/util/Vector2.hh"
 
 namespace pism {
@@ -28,7 +28,7 @@ namespace array { class Scalar; }
 
 /** Class for storing and accessing 2D vector fields
 */
-class IceModelVec2V : public IceModelVec2<Vector2> {
+class IceModelVec2V : public array::Array2D<Vector2> {
 public:
   IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                 IceModelVecKind ghostedp, unsigned int stencil_width = 1);

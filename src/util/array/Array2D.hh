@@ -16,22 +16,24 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef PISM_ICEMODELVEC2_H
-#define PISM_ICEMODELVEC2_H
+#ifndef PISM_ARRAY2D_H
+#define PISM_ARRAY2D_H
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/iceModelVec_helpers.hh"
 
 namespace pism {
 
+namespace array {
+
 //! A storage vector combining related fields in a struct
 template<typename T>
-class IceModelVec2 : public IceModelVec {
+class Array2D : public IceModelVec {
 public:
   using value_type = T;
 
-  IceModelVec2(IceGrid::ConstPtr grid, const std::string &short_name,
-               IceModelVecKind ghostedp, unsigned int stencil_width = 1)
+  Array2D(IceGrid::ConstPtr grid, const std::string &short_name,
+          IceModelVecKind ghostedp, unsigned int stencil_width = 1)
     : IceModelVec(grid, short_name, ghostedp,
                   sizeof(T) / sizeof(double), stencil_width, {0.0}) {
     set_begin_access_use_dof(false);
@@ -86,19 +88,20 @@ public:
             x(i, S), x(E, S), x(E, j), x(E, N)};
   }
 
-  void add(double alpha, const IceModelVec2<T> &x) {
+  void add(double alpha, const Array2D<T> &x) {
     vec::add(*this, alpha, x, *this);
   }
 
-  void add(double alpha, const IceModelVec2<T> &x, IceModelVec2<T> &result) const {
+  void add(double alpha, const Array2D<T> &x, Array2D<T> &result) const {
     vec::add(*this, alpha, x, result);
   }
 
-  void copy_from(const IceModelVec2<T> &source) {
+  void copy_from(const Array2D<T> &source) {
     return vec::copy(source, *this);
   }
 };
 
+} // end of namespace array
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC2_H */
+#endif /* PISM_ARRAY2D_H */

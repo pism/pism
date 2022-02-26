@@ -85,10 +85,10 @@ public:
   }
 
   void compute(const array::Scalar &sea_level, const array::Scalar &bed, const array::Scalar &thickness,
-               IceModelVec2<double> &out_mask, array::Scalar &out_surface) const;
+               array::Scalar &out_mask, array::Scalar &out_surface) const;
 
   void compute_mask(const array::Scalar& sea_level, const array::Scalar& bed,
-                    const array::Scalar& thickness, IceModelVec2<double>& result) const;
+                    const array::Scalar& thickness, array::Scalar& result) const;
 
   void compute_surface(const array::Scalar& sea_level, const array::Scalar& bed,
                        const array::Scalar& thickness, array::Scalar& result) const;

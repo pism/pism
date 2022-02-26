@@ -29,7 +29,7 @@ namespace pism {
 
 IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
                              IceModelVecKind ghostedp, unsigned int stencil_width)
-  : IceModelVec2<Vector2>(grid, short_name, ghostedp, stencil_width) {
+  : array::Array2D<Vector2>(grid, short_name, ghostedp, stencil_width) {
 
   auto sys = m_impl->grid->ctx()->unit_system();
 

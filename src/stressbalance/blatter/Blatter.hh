@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -78,7 +78,7 @@ protected:
   // solver
   petsc::SNES m_snes;
 
-  IceModelVec2<Parameters> m_parameters;
+  array::Array2D<Parameters> m_parameters;
 
   // Scaling of quadrature weights (note: this does not seem to matter).
   double m_scaling;

@@ -144,10 +144,10 @@ std::vector<double> interp(int i, int j) {
 
 %include "util/iceModelVec.hh"
 
-%include "util/IceModelVec2.hh"
-%shared_ptr(pism::IceModelVec2<double>)
-%ignore pism::IceModelVec2< double >::array() const;
-%template(_IceModelVec2double) pism::IceModelVec2<double>;
+%include "util/array/Array2D.hh"
+%shared_ptr(pism::array::Array2D<double>)
+%ignore pism::array::Array2D< double >::array() const;
+%template(_Array2Ddouble) pism::array::Array2D<double>;
 
 %shared_ptr(pism::array::Scalar1)
 %shared_ptr(pism::array::Scalar2)
@@ -163,9 +163,9 @@ std::vector<double> interp(int i, int j) {
 
 %include "util/iceModelVec2T.hh"
 
-%shared_ptr(pism::IceModelVec2<Vector2>)
-%ignore pism::IceModelVec2< Vector2 >::array() const;
-%template(_IceModelVec2Vector2) pism::IceModelVec2<Vector2>;
+%shared_ptr(pism::array::Array2D<Vector2>)
+%ignore pism::array::Array2D< Vector2 >::array() const;
+%template(_Array2DVector2) pism::array::Array2D<Vector2>;
 %include "util/IceModelVec2V.hh"
 
 %include "util/IceModelVec3.hh"

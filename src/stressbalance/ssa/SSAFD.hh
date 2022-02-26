@@ -105,7 +105,7 @@ protected:
     // weight for the j offset
     double w_j;
   };
-  IceModelVec2<Work> m_work;
+  array::Array2D<Work> m_work;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;

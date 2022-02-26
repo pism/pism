@@ -22,14 +22,13 @@
 
 #include <cmath>                // floor()
 
-#include "pism/util/IceModelVec2.hh"
+#include "pism/util/array/Array2D.hh"
 
 namespace pism {
 namespace array {
 
-/** A class for storing and accessing scalar 2D fields.
-    Scalar is just IceModelVec2 with "dof == 1" */
-class Scalar : public IceModelVec2<double> {
+/** A class for storing and accessing scalar 2D fields. */
+class Scalar : public Array2D<double> {
 public:
   typedef std::shared_ptr<Scalar> Ptr;
   typedef std::shared_ptr<const Scalar> ConstPtr;

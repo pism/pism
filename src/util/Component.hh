@@ -39,6 +39,7 @@ class IceModelVec2Stag;
 class Geometry;
 
 namespace array {
+template<typename T> class Array2D;
 using CellType0 = class CellType;
 class CellType1;
 class CellType2;

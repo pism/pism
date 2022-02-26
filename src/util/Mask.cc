@@ -26,7 +26,7 @@ namespace pism {
 void GeometryCalculator::compute(const array::Scalar& sea_level,
                                  const array::Scalar& bed,
                                  const array::Scalar& thickness,
-                                 IceModelVec2<double>& out_mask,
+                                 array::Scalar& out_mask,
                                  array::Scalar& out_surface) const {
   compute_mask(sea_level, bed, thickness, out_mask);
   compute_surface(sea_level, bed, thickness, out_surface);
@@ -35,7 +35,7 @@ void GeometryCalculator::compute(const array::Scalar& sea_level,
 void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
                                       const array::Scalar &bed,
                                       const array::Scalar &thickness,
-                                      IceModelVec2<double> &result) const {
+                                      array::Scalar &result) const {
   IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();

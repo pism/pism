@@ -29,14 +29,14 @@ namespace array {
 // protected constructor
 Scalar::Scalar(IceGrid::ConstPtr grid, const std::string &name,
                              int width)
-  : IceModelVec2<double>(grid, name,
+  : Array2D<double>(grid, name,
                          width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS, width) {
   // empty
 }
 
 // public constructor
 Scalar::Scalar(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec2<double>(grid, name, WITHOUT_GHOSTS, 1) {
+  : Array2D<double>(grid, name, WITHOUT_GHOSTS, 1) {
   // empty
 }
 
@@ -64,7 +64,8 @@ Scalar2::Scalar2(IceGrid::ConstPtr grid, const std::string &name)
 
 } // end of namespace array
 
-//! Sets an IceModelVec2 to the magnitude of a 2D vector field with components `v_x` and `v_y`.
+//! Sets an array::Scalar to the magnitude of a 2D vector field with components `v_x` and
+//! `v_y`.
 /*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
   this is called on can be the same.
 
