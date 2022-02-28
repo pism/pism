@@ -22,7 +22,7 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec2Stag.hh"
+#include "pism/util/array/Staggered.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec2V.hh"
 

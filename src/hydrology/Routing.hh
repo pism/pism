@@ -20,7 +20,7 @@
 #define _ROUTING_H_
 
 #include "Hydrology.hh"
-#include "pism/util/IceModelVec2Stag.hh"
+#include "pism/util/array/Staggered.hh"
 
 namespace pism {
 

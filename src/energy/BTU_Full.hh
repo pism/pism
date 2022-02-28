@@ -25,8 +25,6 @@
 
 namespace pism {
 
-class array::Array3D;
-
 namespace energy {
 
 class BedrockColumn;

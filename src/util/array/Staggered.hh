@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_ICEMODELVEC2STAG_H
-#define PISM_ICEMODELVEC2STAG_H
+#ifndef PISM_STAGGERED_H
+#define PISM_STAGGERED_H
 
 #include "pism/util/array/Array3D.hh"
 
@@ -109,4 +109,4 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC2STAG_H */
+#endif /* PISM_STAGGERED_H */

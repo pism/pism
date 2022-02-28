@@ -29,7 +29,7 @@ set(PISMUTIL_SRC
   iceModelVec2V.cc
   array/Array3D.cc
   array/Scalar.cc
-  IceModelVec2Stag.cc
+  array/Staggered.cc
   interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc

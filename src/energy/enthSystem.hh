@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,6 @@
 namespace pism {
 
 class Config;
-class array::Array3D;
 
 namespace energy {
 

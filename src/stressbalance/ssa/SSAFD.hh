@@ -25,7 +25,7 @@
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
-#include "pism/util/IceModelVec2Stag.hh"
+#include "pism/util/array/Staggered.hh"
 
 namespace pism {
 namespace stressbalance {

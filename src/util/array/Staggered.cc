@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IceModelVec2Stag.hh"
+#include "Staggered.hh"
 
 #include "pism/util/Mask.hh"
 
@@ -26,7 +26,6 @@
 #include "pism/util/IceModelVec2V.hh"
 
 namespace pism {
-
 namespace array {
 
 Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name,

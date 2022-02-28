@@ -6,7 +6,7 @@
 #include "util/iceModelVec2T.hh"
 #include "util/IceModelVec2V.hh"
 #include "util/array/Array3D.hh"
-#include "util/IceModelVec2Stag.hh"
+#include "util/array/Staggered.hh"
 
 using namespace pism;
 %}
@@ -169,6 +169,6 @@ std::vector<double> interp(int i, int j) {
 %include "util/IceModelVec2V.hh"
 
 %include "util/array/Array3D.hh"
-%include "util/IceModelVec2Stag.hh"
+%include "util/array/Staggered.hh"
 
 %include "util/Vector2.hh"

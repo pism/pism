@@ -27,8 +27,6 @@
 
 namespace pism {
 
-class array::Array3D;
-
 namespace fem {
 class Element3;
 class Q1Element3Face;
