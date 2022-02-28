@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -94,8 +94,8 @@ void EigenCalving::update(const array::CellType0 &cell_type,
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
           if (m_cell_type.floating_ice(I, j) and not m_cell_type.ice_margin(I, j)) {
-            eigen1 += m_strain_rates(I, j, 0);
-            eigen2 += m_strain_rates(I, j, 1);
+            eigen1 += m_strain_rates(I, j).eigen1;
+            eigen2 += m_strain_rates(I, j).eigen2;
             N += 1;
           }
         }
@@ -103,8 +103,8 @@ void EigenCalving::update(const array::CellType0 &cell_type,
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
           if (m_cell_type.floating_ice(i, J) and not m_cell_type.ice_margin(i, J)) {
-            eigen1 += m_strain_rates(i, J, 0);
-            eigen2 += m_strain_rates(i, J, 1);
+            eigen1 += m_strain_rates(i, J).eigen1;
+            eigen2 += m_strain_rates(i, J).eigen2;
             N += 1;
           }
         }

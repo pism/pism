@@ -145,8 +145,8 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
               unsigned int k = m_grid->kBelowHeight(H);
               hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(I, j));
             }
-            eigen1 += m_strain_rates(I, j, 0);
-            eigen2 += m_strain_rates(I, j, 1);
+            eigen1 += m_strain_rates(I, j).eigen1;
+            eigen2 += m_strain_rates(I, j).eigen2;
             N += 1;
           }
         }
@@ -160,8 +160,8 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
               unsigned int k = m_grid->kBelowHeight(H);
               hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(i, J));
             }
-            eigen1 += m_strain_rates(i, J, 0);
-            eigen2 += m_strain_rates(i, J, 1);
+            eigen1 += m_strain_rates(i, J).eigen1;
+            eigen2 += m_strain_rates(i, J).eigen2;
             N += 1;
           }
         }

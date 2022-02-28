@@ -147,9 +147,14 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
                                       IceGrid::ConstPtr grid,
                                       bool regional);
 
+struct PrincipalStrainRates {
+  double eigen1;
+  double eigen2;
+};
+
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const array::CellType1 &mask,
-                                       array::Array3D &result);
+                                       array::Array2D<PrincipalStrainRates> &result);
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,

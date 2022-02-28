@@ -988,8 +988,8 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.Array3D(grid, "strain_rates",
-                                         PISM.WITHOUT_GHOSTS, 2)
+        strain_rates = PISM.ArrayPrincipalStrainRates(grid, "strain_rates",
+                                                      PISM.WITHOUT_GHOSTS)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()

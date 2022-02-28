@@ -36,9 +36,7 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_age(grid, "fracture_age"),
     m_age_new(grid, "new_fracture_age"),
     m_toughness(grid, "fracture_toughness"),
-    m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS,
-                   2,           // dof
-                   2),          // stencil width
+    m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS),
     m_deviatoric_stresses(grid, "sigma",
                           WITHOUT_GHOSTS, 3),
     m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
@@ -337,8 +335,8 @@ void FractureDensity::update(double dt,
         double kappa = 2.8;
 
         // effective strain rate
-        double e1 = m_strain_rates(i, j, 0);
-        double e2 = m_strain_rates(i, j, 1);
+        double e1 = m_strain_rates(i, j).eigen1;
+        double e2 = m_strain_rates(i, j).eigen2;
         double ee = sqrt(pow(e1, 2.0) + pow(e2, 2.0) - e1 * e2);
 
         // threshold for unfractured ice
@@ -361,14 +359,14 @@ void FractureDensity::update(double dt,
         }
       }
     } else {
-      fdnew = gamma * (m_strain_rates(i, j, 0) - 0.0) * (1 - D_new(i, j));
+      fdnew = gamma * (m_strain_rates(i, j).eigen1 - 0.0) * (1 - D_new(i, j));
       if (sigmat > initThreshold) {
         D_new(i, j) += fdnew * dt;
       }
     }
 
     //healing
-    double fdheal = gammaheal * std::min(0.0,(m_strain_rates(i, j, 0) - healThreshold));
+    double fdheal = gammaheal * std::min(0.0, (m_strain_rates(i, j).eigen1 - healThreshold));
     if (geometry.cell_type.icy(i, j)) {
       if (constant_healing) {
         fdheal = gammaheal * (-healThreshold);
@@ -377,7 +375,7 @@ void FractureDensity::update(double dt,
         } else {
           D_new(i, j) += fdheal * dt;
         }
-      } else if (m_strain_rates(i, j, 0) < healThreshold) {
+      } else if (m_strain_rates(i, j).eigen1 < healThreshold) {
         if (fracture_weighted_healing) {
           D_new(i, j) += fdheal * dt * (1 - D(i, j));
         } else {
@@ -403,7 +401,7 @@ void FractureDensity::update(double dt,
 
       // fracture healing rate
       if (geometry.cell_type.icy(i, j)) {
-        if (constant_healing or (m_strain_rates(i, j, 0) < healThreshold)) {
+        if (constant_healing or (m_strain_rates(i, j).eigen1 < healThreshold)) {
           if (fracture_weighted_healing) {
             m_healing_rate(i, j) = fdheal * (1 - D(i, j));
           } else {

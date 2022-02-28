@@ -26,8 +26,7 @@ StressCalving::StressCalving(IceGrid::ConstPtr grid,
                              unsigned int stencil_width)
   : Component(grid),
     m_stencil_width(stencil_width),
-    m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS, 2,
-                   m_stencil_width),
+    m_strain_rates(m_grid, "strain_rates", WITH_GHOSTS, 2),
     m_calving_rate(m_grid, "calving_rate"),
     m_cell_type(m_grid, "cell_type")
 {

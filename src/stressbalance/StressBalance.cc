@@ -684,7 +684,7 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                        const array::CellType1 &mask,
-                                       array::Array3D &result) {
+                                       array::Array2D<PrincipalStrainRates> &result) {
 
   using mask::ice_free;
 
@@ -692,18 +692,14 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
   double dx = grid->dx();
   double dy = grid->dy();
 
-  if (result.ndof() != 2) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
-  }
-
   IceModelVec::AccessList list{&V, &mask, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i,j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
+      result(i, j).eigen1 = 0.0;
+      result(i, j).eigen2 = 0.0;
       continue;
     }
 
@@ -759,8 +755,8 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
       B   = 0.5 * (u_x - v_y),
       Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
       q   = sqrt(B*B + Dxy*Dxy);
-    result(i,j,0) = A + q;
-    result(i,j,1) = A - q; // q >= 0 so e1 >= e2
+    result(i, j).eigen1 = A + q;
+    result(i, j).eigen2 = A - q; // q >= 0 so e1 >= e2
 
   }
 }

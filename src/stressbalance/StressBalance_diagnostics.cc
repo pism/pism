@@ -810,8 +810,8 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
 IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
   auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid,
-                                            "strain_rates", WITHOUT_GHOSTS, 2));
+  auto result = std::make_shared<array::Array2D<PrincipalStrainRates>>
+    (m_grid, "strain_rates", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
