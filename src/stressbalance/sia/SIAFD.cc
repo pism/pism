@@ -45,9 +45,9 @@ SIAFD::SIAFD(IceGrid::ConstPtr g)
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0"),
     m_work_2d_1(m_grid, "work_vector_2d_1"),
-    m_h_x(m_grid, "h_x", WITH_GHOSTS),
-    m_h_y(m_grid, "h_y", WITH_GHOSTS),
-    m_D(m_grid, "diffusivity", WITH_GHOSTS),
+    m_h_x(m_grid, "h_x"),
+    m_h_y(m_grid, "h_y"),
+    m_D(m_grid, "diffusivity"),
     m_delta_0(m_grid, "delta_0", WITH_GHOSTS, m_grid->z()),
     m_delta_1(m_grid, "delta_1", WITH_GHOSTS, m_grid->z()),
     m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS, m_grid->z()),
@@ -195,7 +195,8 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
 void SIAFD::compute_surface_gradient(const Inputs &inputs,
-                                     array::Staggered &h_x, array::Staggered &h_y) {
+                                     array::Staggered1 &h_x,
+                                     array::Staggered1 &h_y) {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
@@ -226,7 +227,8 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 //! \brief Compute the ice surface gradient using the eta-transformation.
 void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
                                  const array::Scalar &bed_elevation,
-                                 array::Staggered &h_x, array::Staggered &h_y) {
+                                 array::Staggered1 &h_x,
+                                 array::Staggered1 &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
@@ -299,7 +301,8 @@ void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
 void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
-                                     array::Staggered &h_x, array::Staggered &h_y) {
+                                     array::Staggered1 &h_x,
+                                     array::Staggered1 &h_y) {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
   const array::Scalar &h = ice_surface_elevation;
@@ -375,7 +378,8 @@ void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
  */
 void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
                                       const array::CellType2 &cell_type,
-                                      array::Staggered &h_x, array::Staggered &h_y) {
+                                      array::Staggered1 &h_x,
+                                      array::Staggered1 &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience

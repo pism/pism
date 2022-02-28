@@ -77,8 +77,8 @@ protected:
   array::Scalar m_tmp;
   array::Scalar m_bottom_surface;
   array::Scalar1 m_W;
-  array::Staggered m_Vstag;
-  array::Staggered m_Qsum;
+  array::Staggered1 m_Vstag;
+  array::Staggered1 m_Qsum;
   array::Scalar1 m_domain_mask;
 
   IceModelVec2V m_Q;

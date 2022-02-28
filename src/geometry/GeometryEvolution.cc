@@ -76,18 +76,18 @@ struct GeometryEvolution::Impl {
   array::Scalar ice_area_specific_volume_change;
 
   //! Flux through cell interfaces. Ghosted.
-  array::Staggered flux_staggered;
+  array::Staggered1 flux_staggered;
 
   // Work space
-  IceModelVec2V      input_velocity;       // a ghosted copy; not modified
-  array::Scalar1  bed_elevation;        // a copy; not modified
-  array::Scalar1  sea_level;            // a copy; not modified
-  array::Scalar1  ice_thickness;        // updated in place
-  array::Scalar1  area_specific_volume; // updated in place
-  array::Scalar1  surface_elevation;    // updated to maintain consistency
-  array::CellType1 cell_type;            // updated to maintain consistency
-  array::Scalar1  residual;             // temporary storage
-  array::Scalar1  thickness;            // temporary storage
+  IceModelVec2V    input_velocity; // a ghosted copy; not modified
+  array::Scalar1   bed_elevation; // a copy; not modified
+  array::Scalar1   sea_level;   // a copy; not modified
+  array::Scalar1   ice_thickness; // updated in place
+  array::Scalar1   area_specific_volume; // updated in place
+  array::Scalar1   surface_elevation; // updated to maintain consistency
+  array::CellType1 cell_type;   // updated to maintain consistency
+  array::Scalar1   residual;    // temporary storage
+  array::Scalar1   thickness;   // temporary storage
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
@@ -99,7 +99,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     effective_BMB(grid, "effective_BMB"),
     thickness_change(grid, "thickness_change"),
     ice_area_specific_volume_change(grid, "ice_area_specific_volume_change"),
-    flux_staggered(grid, "flux_staggered", WITH_GHOSTS),
+    flux_staggered(grid, "flux_staggered"),
     input_velocity(grid, "input_velocity", WITH_GHOSTS),
     bed_elevation(grid, "bed_elevation"),
     sea_level(grid, "sea_level"),
@@ -1092,7 +1092,8 @@ public:
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
-    array::Staggered::Ptr result(new array::Staggered(m_grid, "flux_staggered", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Staggered>(m_grid, "flux_staggered");
+
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 

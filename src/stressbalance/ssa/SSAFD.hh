@@ -89,7 +89,8 @@ protected:
   virtual void fracture_induced_softening(const array::Scalar *fracture_density);
 
   // objects used internally
-  array::Staggered m_hardness, m_nuH, m_nuH_old;
+  array::Staggered m_hardness;
+  array::Staggered1 m_nuH, m_nuH_old;
 
   struct Work {
     // u_x on the i offset

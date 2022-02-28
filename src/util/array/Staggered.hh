@@ -33,8 +33,7 @@ class CellType1;
 //! components are not called `u` and `v` (to avoid confusion).
 class Staggered : public IceModelVec {
 public:
-  Staggered(IceGrid::ConstPtr grid, const std::string &name,
-            IceModelVecKind ghostedp, unsigned int stencil_width = 1);
+  Staggered(IceGrid::ConstPtr grid, const std::string &name);
 
   typedef std::shared_ptr<array::Staggered> Ptr;
   typedef std::shared_ptr<const array::Staggered> ConstPtr;
@@ -49,6 +48,9 @@ public:
   inline stencils::Star<double> star(int i, int j) const;
 
   void copy_from(const array::Staggered &input);
+protected:
+  Staggered(IceGrid::ConstPtr grid, const std::string &name,
+            unsigned int stencil_width);
 };
 
 inline double& array::Staggered::operator() (int i, int j, int k) {
@@ -78,7 +80,10 @@ inline stencils::Star<double> array::Staggered::star(int i, int j) const {
 
   return result;
 }
-
+class Staggered1 : public Staggered {
+public:
+  Staggered1(IceGrid::ConstPtr grid, const std::string &name);
+};
 } // end of namespace array
 
 std::array<double,2> absmax(const array::Staggered &input);

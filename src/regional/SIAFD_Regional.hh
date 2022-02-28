@@ -34,9 +34,10 @@ public:
   void init();
 private:
   void compute_surface_gradient(const Inputs &inputs,
-                                array::Staggered &h_x, array::Staggered &h_y);
-  array::Staggered m_h_x_no_model;
-  array::Staggered m_h_y_no_model;
+                                array::Staggered1 &h_x,
+                                array::Staggered1 &h_y);
+  array::Staggered1 m_h_x_no_model;
+  array::Staggered1 m_h_y_no_model;
 };
 
 } // end of namespace stressbalance

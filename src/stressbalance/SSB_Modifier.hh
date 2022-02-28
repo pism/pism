@@ -67,7 +67,7 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
-  array::Staggered m_diffusive_flux;
+  array::Staggered1 m_diffusive_flux;
   array::Array3D m_u, m_v;
 };
 

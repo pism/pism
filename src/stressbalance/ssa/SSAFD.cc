@@ -62,9 +62,9 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(IceGrid::ConstPtr grid)
   : SSA(grid),
-    m_hardness(grid, "hardness", WITHOUT_GHOSTS),
-    m_nuH(grid, "nuH", WITH_GHOSTS),
-    m_nuH_old(grid, "nuH_old", WITH_GHOSTS),
+    m_hardness(grid, "hardness"),
+    m_nuH(grid, "nuH"),
+    m_nuH_old(grid, "nuH_old"),
     m_work(grid, "work_vector", WITH_GHOSTS,
            2 /* stencil width */),
     m_b(grid, "right_hand_side", WITHOUT_GHOSTS),
@@ -995,7 +995,7 @@ void SSAFD::picard_iteration(const Inputs &inputs,
       m_default_pc_failure_count += 1;
 
       m_log->message(1,
-                 "  re-trying using the Additive Schwarz preconditioner...\n");
+                     "  re-trying using the Additive Schwarz preconditioner...\n");
 
       pc_setup_asm();
 
@@ -1754,7 +1754,8 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
 
 IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
 
-  array::Staggered::Ptr result(new array::Staggered(m_grid, "nuH", WITH_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "nuH");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

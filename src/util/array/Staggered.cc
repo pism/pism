@@ -28,10 +28,14 @@
 namespace pism {
 namespace array {
 
+Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
+  set_begin_access_use_dof(true);
+}
+
 Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name,
-                     IceModelVecKind ghostedp,
                      unsigned int stencil_width)
-  : IceModelVec(grid, name, ghostedp, 2, stencil_width, {0.0}) {
+  : IceModelVec(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
   set_begin_access_use_dof(true);
 }
 
@@ -55,6 +59,11 @@ void Staggered::copy_from(const Staggered &input) {
   update_ghosts();
 
   inc_state_counter();
+}
+
+Staggered1::Staggered1(IceGrid::ConstPtr grid, const std::string &name)
+    : Staggered(grid, name, 1) {
+  // empty
 }
 
 } // end of namespace array

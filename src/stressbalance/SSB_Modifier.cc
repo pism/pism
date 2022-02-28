@@ -32,7 +32,7 @@ namespace stressbalance {
 SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
   : Component(g),
     m_EC(g->ctx()->enthalpy_converter()),
-    m_diffusive_flux(m_grid, "diffusive_flux", WITH_GHOSTS, 1),
+    m_diffusive_flux(m_grid, "diffusive_flux"),
     m_u(m_grid, "uvel", WITH_GHOSTS, m_grid->z()),
     m_v(m_grid, "vvel", WITH_GHOSTS, m_grid->z()) {
   m_D_max = 0.0;

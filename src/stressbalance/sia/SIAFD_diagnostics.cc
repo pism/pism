@@ -162,7 +162,8 @@ static void copy_staggered_vec(const array::Staggered &input, array::Staggered &
 }
 
 IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
-  array::Staggered::Ptr result(new array::Staggered(m_grid, "diffusivity", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "diffusivity");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -186,7 +187,8 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
 
-  array::Staggered::Ptr result(new array::Staggered(m_grid, "h_x", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "h_x");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -210,7 +212,8 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
 
 IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
 
-  array::Staggered::Ptr result(new array::Staggered(m_grid, "h_y", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "h_y");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

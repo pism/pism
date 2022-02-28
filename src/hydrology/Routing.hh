@@ -110,18 +110,18 @@ protected:
 protected:
 
   // edge-centered (staggered) advection flux
-  array::Staggered m_Qstag;
+  array::Staggered1 m_Qstag;
 
-  array::Staggered m_Qstag_average;
+  array::Staggered1 m_Qstag_average;
 
   // edge-centered (staggered) water velocity
   array::Staggered m_Vstag;
 
   // edge-centered (staggered) W values (averaged from regular)
-  array::Staggered m_Wstag;
+  array::Staggered1 m_Wstag;
 
   // edge-centered (staggered) values of nonlinear conductivity
-  array::Staggered m_Kstag;
+  array::Staggered1 m_Kstag;
 
   // work space
   array::Scalar m_Wnew, m_Wtillnew;

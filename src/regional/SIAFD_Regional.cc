@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,8 +27,8 @@ namespace stressbalance {
 
 SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr grid)
   : SIAFD(grid),
-    m_h_x_no_model(grid, "h_x_no_model", WITH_GHOSTS),
-    m_h_y_no_model(grid, "h_y_no_model", WITH_GHOSTS) {
+    m_h_x_no_model(grid, "h_x_no_model"),
+    m_h_y_no_model(grid, "h_y_no_model") {
   // empty
 }
 
@@ -40,7 +40,8 @@ void SIAFD_Regional::init() {
 }
 
 void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
-                                              array::Staggered &h_x, array::Staggered &h_y) {
+                                              array::Staggered1 &h_x,
+                                              array::Staggered1 &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
 

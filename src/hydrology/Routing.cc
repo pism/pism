@@ -178,7 +178,7 @@ public:
   }
 protected:
   virtual IceModelVec::Ptr compute_impl() const {
-    array::Staggered::Ptr result(new array::Staggered(m_grid, "bwatvel", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Staggered>(m_grid, "bwatvel");
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
 
@@ -259,11 +259,11 @@ protected:
 
 Routing::Routing(IceGrid::ConstPtr grid)
   : Hydrology(grid),
-    m_Qstag(grid, "advection_flux", WITH_GHOSTS, 1),
-    m_Qstag_average(grid, "cumulative_advection_flux", WITH_GHOSTS, 1),
-    m_Vstag(grid, "water_velocity", WITHOUT_GHOSTS),
-    m_Wstag(grid, "W_staggered", WITH_GHOSTS, 1),
-    m_Kstag(grid, "K_staggered", WITH_GHOSTS, 1),
+    m_Qstag(grid, "advection_flux"),
+    m_Qstag_average(grid, "cumulative_advection_flux"),
+    m_Vstag(grid, "water_velocity"),
+    m_Wstag(grid, "W_staggered"),
+    m_Kstag(grid, "K_staggered"),
     m_Wnew(grid, "W_new"),
     m_Wtillnew(grid, "Wtill_new"),
     m_R(grid, "potential_workspace"), /* box stencil used */

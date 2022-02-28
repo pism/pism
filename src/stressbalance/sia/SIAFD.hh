@@ -70,16 +70,19 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,
-                                        array::Staggered &h_x, array::Staggered &h_y);
+                                        array::Staggered1 &h_x,
+                                        array::Staggered1 &h_y);
 
   virtual void surface_gradient_eta(const array::Scalar &ice_thickness,
                                     const array::Scalar &bed_elevation,
-                                    array::Staggered &h_x, array::Staggered &h_y);
+                                    array::Staggered1 &h_x, array::Staggered1 &h_y);
   virtual void surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
                                          const array::CellType2 &cell_type,
-                                         array::Staggered &h_x, array::Staggered &h_y);
+                                         array::Staggered1 &h_x,
+                                         array::Staggered1 &h_y);
   virtual void surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
-                                        array::Staggered &h_x, array::Staggered &h_y);
+                                        array::Staggered1 &h_x,
+                                        array::Staggered1 &h_y);
 
   virtual void compute_diffusivity(bool full_update,
                                    const Geometry &geometry,
@@ -109,7 +112,7 @@ protected:
   array::Scalar1 m_work_2d_0;
   array::Scalar1 m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
-  array::Staggered m_h_x, m_h_y, m_D;
+  array::Staggered1 m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
   array::Array3D m_delta_0;
   array::Array3D m_delta_1;

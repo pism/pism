@@ -17,6 +17,7 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::array::Staggered)
+%shared_ptr(pism::array::Staggered1)
 %shared_ptr(pism::array::Array3D)
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
