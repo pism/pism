@@ -43,7 +43,7 @@ public:
   void update(const array::CellType1 &cell_type,
               const array::Scalar &ice_thickness,
               const IceModelVec2V &ice_velocity,
-              const IceModelVec3 &ice_enthalpy);
+              const array::Array3D &ice_enthalpy);
   const array::Scalar& threshold() const;
 
 protected:

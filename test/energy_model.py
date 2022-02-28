@@ -45,13 +45,13 @@ def setup():
     surface_temp = PISM.IceModelVec2S(grid, "surface_temp", PISM.WITHOUT_GHOSTS)
     surface_temp.set(260.0)
 
-    strain_heating3 = PISM.IceModelVec3(grid, "sigma", PISM.WITHOUT_GHOSTS)
+    strain_heating3 = PISM.Array3D(grid, "sigma", PISM.WITHOUT_GHOSTS)
 
-    u = PISM.IceModelVec3(grid, "u", PISM.WITHOUT_GHOSTS)
+    u = PISM.Array3D(grid, "u", PISM.WITHOUT_GHOSTS)
 
-    v = PISM.IceModelVec3(grid, "v", PISM.WITHOUT_GHOSTS)
+    v = PISM.Array3D(grid, "v", PISM.WITHOUT_GHOSTS)
 
-    w = PISM.IceModelVec3(grid, "w", PISM.WITHOUT_GHOSTS)
+    w = PISM.Array3D(grid, "w", PISM.WITHOUT_GHOSTS)
 
     ice_thickness.set(4000.0)
     u.set(0.0)

@@ -78,7 +78,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
   const array::Scalar &H         = inputs.geometry->ice_thickness;
   const array::Scalar &h         = inputs.geometry->ice_surface_elevation;
   const auto          &cell_type = inputs.geometry->cell_type;
-  const IceModelVec3  &enthalpy  = *inputs.enthalpy;
+  const array::Array3D  &enthalpy  = *inputs.enthalpy;
 
   double n   = m_flow_law->exponent();
   double A_s = m_config->get_number("stress_balance.weertman_sliding.A", "Pa-3 s-1 m-2");

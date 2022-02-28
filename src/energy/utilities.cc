@@ -21,7 +21,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/EnthalpyConverter.hh"
@@ -45,9 +45,9 @@ content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
 */
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
+void compute_enthalpy_cold(const array::Array3D &temperature,
                            const array::Scalar &ice_thickness,
-                           IceModelVec3 &result) {
+                           array::Array3D &result) {
 
   IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -74,9 +74,9 @@ void compute_enthalpy_cold(const IceModelVec3 &temperature,
   result.update_ghosts();
 }
 
-void compute_temperature(const IceModelVec3 &enthalpy,
+void compute_temperature(const array::Array3D &enthalpy,
                          const array::Scalar &ice_thickness,
-                         IceModelVec3 &result) {
+                         array::Array3D &result) {
 
   IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -106,10 +106,10 @@ void compute_temperature(const IceModelVec3 &enthalpy,
 }
 
 //! Compute `result` (enthalpy) from `temperature` and liquid fraction.
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
+void compute_enthalpy(const array::Array3D &temperature,
+                      const array::Array3D &liquid_water_fraction,
                       const array::Scalar &ice_thickness,
-                      IceModelVec3 &result) {
+                      array::Array3D &result) {
 
   IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -138,9 +138,9 @@ void compute_enthalpy(const IceModelVec3 &temperature,
 }
 
 //! Compute the liquid fraction corresponding to enthalpy and ice_thickness.
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+void compute_liquid_water_fraction(const array::Array3D &enthalpy,
                                    const array::Scalar &ice_thickness,
-                                   IceModelVec3 &result) {
+                                   array::Array3D &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -180,11 +180,11 @@ void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
 /*!
  * The actual cold-temperate transition surface (CTS) is the level set CTS = 1.
  *
- * Does not communicate ghosts for IceModelVec3 result.
+ * Does not communicate ghosts for array::Array3D result.
  */
-void compute_cts(const IceModelVec3 &ice_enthalpy,
+void compute_cts(const array::Array3D &ice_enthalpy,
                  const array::Scalar &ice_thickness,
-                 IceModelVec3 &result) {
+                 array::Array3D &result) {
 
   IceGrid::ConstPtr grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
@@ -223,7 +223,7 @@ void compute_cts(const IceModelVec3 &ice_enthalpy,
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
 */
 double total_ice_enthalpy(double thickness_threshold,
-                          const IceModelVec3 &ice_enthalpy,
+                          const array::Array3D &ice_enthalpy,
                           const array::Scalar &ice_thickness) {
   double enthalpy_sum = 0.0;
 
@@ -335,7 +335,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
                                const array::Scalar &ice_surface_temp,
                                const array::Scalar &surface_mass_balance,
                                const array::Scalar &basal_heat_flux,
-                               IceModelVec3 &result) {
+                               array::Array3D &result) {
 
   auto grid   = result.grid();
   auto ctx    = grid->ctx();
@@ -447,7 +447,7 @@ void bootstrap_ice_enthalpy(const array::Scalar &ice_thickness,
                             const array::Scalar &ice_surface_temp,
                             const array::Scalar &surface_mass_balance,
                             const array::Scalar &basal_heat_flux,
-                            IceModelVec3 &result) {
+                            array::Array3D &result) {
 
   bootstrap_ice_temperature(ice_thickness, ice_surface_temp,
                             surface_mass_balance, basal_heat_flux,

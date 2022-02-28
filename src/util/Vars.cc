@@ -23,7 +23,7 @@ using std::dynamic_pointer_cast;
 #include "VariableMetadata.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "error_handling.hh"
 
 namespace pism {
@@ -185,8 +185,8 @@ const array::CellType0* Vars::get_2d_cell_type(const std::string &name) const {
   return tmp;
 }
 
-const IceModelVec3* Vars::get_3d_scalar(const std::string &name) const {
-  const IceModelVec3* tmp = dynamic_cast<const IceModelVec3*>(this->get_internal(name));
+const array::Array3D* Vars::get_3d_scalar(const std::string &name) const {
+  const array::Array3D* tmp = dynamic_cast<const array::Array3D*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "3D scalar variable '%s' is not available", name.c_str());
   }
@@ -314,8 +314,8 @@ array::CellType0::Ptr Vars::get_2d_cell_type_shared(const std::string &name) con
 }
 
 
-IceModelVec3::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
-  IceModelVec3::Ptr tmp = dynamic_pointer_cast<IceModelVec3,IceModelVec>(this->get_internal_shared(name));
+array::Array3D::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
+  array::Array3D::Ptr tmp = dynamic_pointer_cast<array::Array3D,IceModelVec>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 3D scalar variable '%s' is not available", name.c_str());
   }

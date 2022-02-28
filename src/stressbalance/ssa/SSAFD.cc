@@ -1263,7 +1263,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
   const array::Scalar
     &thickness = inputs.geometry->ice_thickness;
 
-  const IceModelVec3 &enthalpy = *inputs.enthalpy;
+  const array::Array3D &enthalpy = *inputs.enthalpy;
 
   const double
     *E_ij     = NULL,

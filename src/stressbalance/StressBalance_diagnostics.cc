@@ -179,7 +179,7 @@ IceModelVec::Ptr PSB_flux::compute_impl() const {
   // get the thickness
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
@@ -379,7 +379,7 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() const {
   array::Scalar u_surf(m_grid, "u_surf");
   array::Scalar v_surf(m_grid, "v_surf");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
@@ -420,7 +420,7 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
-  IceModelVec3::Ptr result3(new IceModelVec3(m_grid, "wvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result3(new array::Array3D(m_grid, "wvel", WITHOUT_GHOSTS, m_grid->z()));
   result3->metadata() = m_vars[0];
 
   const array::Scalar *bed, *uplift;
@@ -430,7 +430,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   const array::Scalar        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const auto &mask      = *m_grid->variables().get_2d_cell_type("mask");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v(),
     &w3 = model->velocity_w();
@@ -526,7 +526,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<IceModelVec3>(PSB_wvel(model).compute(false));
+  auto w3 = IceModelVec::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -572,7 +572,7 @@ IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<IceModelVec3>(PSB_wvel(model).compute(false));
+  auto w3 = IceModelVec::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
   extract_surface(*w3, 0.0, *result);
 
@@ -627,7 +627,7 @@ IceModelVec::Ptr PSB_velbase::compute_impl() const {
   array::Scalar u_base(m_grid, "u_base");
   array::Scalar v_base(m_grid, "v_base");
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
@@ -686,8 +686,8 @@ PSB_uvel::PSB_uvel(const StressBalance *m)
 /*!
  * Copy F to result and set it to zero above the surface of the ice.
  */
-static void zero_above_ice(const IceModelVec3 &F, const array::Scalar &H,
-                           IceModelVec3 &result) {
+static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
+                           array::Array3D &result) {
 
   IceModelVec::AccessList list{&F, &H, &result};
 
@@ -722,7 +722,7 @@ static void zero_above_ice(const IceModelVec3 &F, const array::Scalar &H,
 
 IceModelVec::Ptr PSB_uvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "uvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "uvel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_u(),
@@ -744,7 +744,7 @@ PSB_vvel::PSB_vvel(const StressBalance *m)
 
 IceModelVec::Ptr PSB_vvel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "vvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "vvel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_v(),
@@ -766,7 +766,7 @@ PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
 
 IceModelVec::Ptr PSB_wvel_rel::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_w(),
@@ -788,7 +788,7 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m)
 }
 
 IceModelVec::Ptr PSB_strainheat::compute_impl() const {
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "strainheat", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "strainheat", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->volumetric_strain_heating());
@@ -810,7 +810,7 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
 IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
   auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
+  array::Array3D::Ptr result(new array::Array3D(m_grid,
                                             "strain_rates", WITHOUT_GHOSTS, 2));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
@@ -844,14 +844,14 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 
 IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
+  array::Array3D::Ptr result(new array::Array3D(m_grid,
                                             "deviatoric_stresses",
                                             WITHOUT_GHOSTS, 3));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const IceModelVec3         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
+  const array::Array3D         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
   const array::Scalar        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   array::Scalar hardness(m_grid, "hardness");
@@ -886,7 +886,7 @@ PSB_pressure::PSB_pressure(const StressBalance *m)
 
 IceModelVec::Ptr PSB_pressure::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "pressure", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "pressure", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -940,7 +940,7 @@ PSB_tauxz::PSB_tauxz(const StressBalance *m)
  */
 IceModelVec::Ptr PSB_tauxz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauxz", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauxz", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const array::Scalar *thickness, *surface;
@@ -1000,7 +1000,7 @@ PSB_tauyz::PSB_tauyz(const StressBalance *m)
  */
 IceModelVec::Ptr PSB_tauyz::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "tauyz", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauyz", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -1063,11 +1063,11 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
   auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
   IceModelVec2V &velocity = *velbar;
 
-  auto eigen12 = IceModelVec::cast<IceModelVec3>(PSB_strain_rates(model).compute());
-  IceModelVec3 &strain_rates = *eigen12;
+  auto eigen12 = IceModelVec::cast<array::Array3D>(PSB_strain_rates(model).compute());
+  array::Array3D &strain_rates = *eigen12;
 
   const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec3 *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
+  const array::Array3D *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
   std::shared_ptr<const rheology::FlowLaw> flow_law;

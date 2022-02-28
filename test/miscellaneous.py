@@ -886,7 +886,7 @@ def vertical_extrapolation_during_regridding_test():
     grid = PISM.IceGrid(ctx.ctx, params)
 
     # create an IceModelVec that uses this grid
-    v = PISM.IceModelVec3(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
+    v = PISM.Array3D(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
     # set a column
@@ -907,7 +907,7 @@ def vertical_extrapolation_during_regridding_test():
         tall_grid = PISM.IceGrid(ctx.ctx, params)
 
         # create an IceModelVec that uses this grid
-        v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
+        v_tall = PISM.Array3D(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
 
         # Try regridding without extrapolation. This should fail.
         try:
@@ -988,7 +988,7 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.IceModelVec3(grid, "strain_rates",
+        strain_rates = PISM.Array3D(grid, "strain_rates",
                                          PISM.WITHOUT_GHOSTS, 2)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
@@ -1130,9 +1130,9 @@ class AgeModel(TestCase):
         "Check if AgeModel runs"
         ice_thickness = PISM.model.createIceThicknessVec(self.grid)
 
-        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
-        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
-        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
+        u = PISM.Array3D(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
+        v = PISM.Array3D(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
+        w = PISM.Array3D(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
 
         ice_thickness.set(4000.0)
         u.set(0.0)
@@ -1567,7 +1567,7 @@ def grounding_line_flux_test():
     velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
     thk_bc_mask = PISM.Scalar(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
-    sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
+    sia_flux = PISM.Staggered(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
     sia_flux.set(0)
 
     dt = 365 * 86400

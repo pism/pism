@@ -195,7 +195,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_temperature};
 
@@ -281,7 +281,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   }
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list{&ice_temperature, &bedrock_temp};
 
@@ -334,7 +334,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   std::vector<double> z(1, 0.0);
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
   IceModelVec::AccessList list(ice_temperature);
 
@@ -389,7 +389,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = m_config->get_number("constants.ice.density"),
     ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
-  const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
+  const array::Array3D &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
   IceModelVec::AccessList list{&m_geometry.ice_thickness, &strain_heating3};
 
@@ -443,7 +443,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     avUerr  = 0.0,
     avWerr  = 0.0;
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v(),
     &w3 = m_stress_balance->velocity_w();

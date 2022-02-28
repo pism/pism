@@ -127,7 +127,7 @@ void IBIceModel::energy_step() {
   // See: https://github.com/pism/pism/issues/292
   // ------------ Volumetric Strain Heating
   // strain_heating_sum += my_dt * sum_columns(strainheating3p)
-  const IceModelVec3 &strain_heating3(m_stress_balance->volumetric_strain_heating());
+  const array::Array3D &strain_heating3(m_stress_balance->volumetric_strain_heating());
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
   sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 
@@ -345,7 +345,7 @@ void IBIceModel::prepare_outputs(double t0) {
 void IBIceModel::prepare_initial_outputs() {
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -419,7 +419,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 *ice_enthalpy = &m_energy_model->enthalpy();
+  const array::Array3D *ice_enthalpy = &m_energy_model->enthalpy();
 
   AccessList access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -469,7 +469,7 @@ void IBIceModel::construct_surface_temp(
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   {
     AccessList access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };

@@ -27,7 +27,7 @@
 
 namespace pism {
 
-class IceModelVec3;
+class array::Array3D;
 
 namespace fem {
 class Element3;
@@ -43,8 +43,8 @@ public:
 
   void update(const Inputs &inputs, bool);
 
-  std::shared_ptr<IceModelVec3> velocity_u_sigma() const;
-  std::shared_ptr<IceModelVec3> velocity_v_sigma() const;
+  std::shared_ptr<array::Array3D> velocity_u_sigma() const;
+  std::shared_ptr<array::Array3D> velocity_v_sigma() const;
 
   /*!
    * 2D input parameters
@@ -67,7 +67,7 @@ public:
 
 protected:
   // u and v components of ice velocity on the fine sigma grid
-  std::shared_ptr<IceModelVec3> m_u_sigma, m_v_sigma;
+  std::shared_ptr<array::Array3D> m_u_sigma, m_v_sigma;
 
   // 3D dof=2 DM used by m_snes
   petsc::DM m_da;
@@ -214,7 +214,7 @@ protected:
   PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor,
                        const std::string &prefix);
 
-  void set_initial_guess(const IceModelVec3 &u_sigma, const IceModelVec3 &v_sigma);
+  void set_initial_guess(const array::Array3D &u_sigma, const array::Array3D &v_sigma);
 
   void copy_solution();
 

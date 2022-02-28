@@ -25,7 +25,7 @@
 
 namespace pism {
 
-class IceModelVec3;
+class array::Array3D;
 
 namespace energy {
 
@@ -89,7 +89,7 @@ public:
   virtual ~BTU_Full() = default;
 
   //! Bedrock thermal layer temperature field.
-  const IceModelVec3& temperature() const;
+  const array::Array3D& temperature() const;
 
 protected:
   virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
@@ -111,7 +111,7 @@ protected:
 protected:
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
-  std::shared_ptr<IceModelVec3> m_temp;
+  std::shared_ptr<array::Array3D> m_temp;
 
   //! bedrock thermal conductivity
   double m_k;

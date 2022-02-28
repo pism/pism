@@ -61,11 +61,11 @@ double SSB_Modifier::max_diffusivity() const {
   return m_D_max;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_u() const {
+const array::Array3D& SSB_Modifier::velocity_u() const {
   return m_u;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_v() const {
+const array::Array3D& SSB_Modifier::velocity_v() const {
   return m_v;
 }
 

@@ -81,7 +81,7 @@ protected:
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
-  IceModelVec3 m_strain_heating3_comp;
+  array::Array3D m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();

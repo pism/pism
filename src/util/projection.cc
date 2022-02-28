@@ -27,7 +27,7 @@
 #include "io/io_helpers.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 
 #include "pism/pism_config.hh"
 
@@ -347,7 +347,7 @@ static void compute_lon_lat(const std::string &projection,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3 &result) {
+                                   array::Array3D &result) {
 
   Proj crs(projection, "EPSG:4326");
 
@@ -405,7 +405,7 @@ static void compute_lon_lat(const std::string &projection, LonLat which,
 
 static void compute_lon_lat_bounds(const std::string &projection,
                                    LonLat which,
-                                   IceModelVec3 &result) {
+                                   array::Array3D &result) {
   (void) projection;
   (void) which;
   (void) result;
@@ -423,11 +423,11 @@ void compute_latitude(const std::string &projection, array::Scalar &result) {
   compute_lon_lat(projection, LATITUDE, result);
 }
 
-void compute_lon_bounds(const std::string &projection, IceModelVec3 &result) {
+void compute_lon_bounds(const std::string &projection, array::Array3D &result) {
   compute_lon_lat_bounds(projection, LONGITUDE, result);
 }
 
-void compute_lat_bounds(const std::string &projection, IceModelVec3 &result) {
+void compute_lat_bounds(const std::string &projection, array::Array3D &result) {
   compute_lon_lat_bounds(projection, LATITUDE, result);
 }
 

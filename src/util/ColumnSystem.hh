@@ -25,6 +25,10 @@
 
 namespace pism {
 
+namespace array {
+class Array3D;
+} // end of namespace array
+
 //! Virtual base class.  Abstracts a tridiagonal system to solve in a column of ice and/or bedrock.
 /*!
   Because both the age evolution and conservation of energy equations require us to set up
@@ -131,7 +135,6 @@ private:
   std::string m_prefix;
 };
 
-class IceModelVec3;
 class ColumnInterpolation;
 
 //! Base class for tridiagonal systems in the ice.
@@ -142,7 +145,7 @@ class columnSystemCtx {
 public:
   columnSystemCtx(const std::vector<double>& storage_grid, const std::string &prefix,
                   double dx, double dy, double dt,
-                  const IceModelVec3 &u3, const IceModelVec3 &v3, const IceModelVec3 &w3);
+                  const array::Array3D &u3, const array::Array3D &v3, const array::Array3D &w3);
   ~columnSystemCtx();
 
   void save_to_file(const std::vector<double> &x);
@@ -152,7 +155,7 @@ public:
   double dz() const;
   const std::vector<double>& z() const;
   void fine_to_coarse(const std::vector<double> &fine, int i, int j,
-                      IceModelVec3& coarse) const;
+                      array::Array3D& coarse) const;
 protected:
   TridiagonalSystem *m_solver;
 
@@ -175,7 +178,7 @@ protected:
   std::vector<double> m_z;
 
   //! pointers to 3D velocity components
-  const IceModelVec3 &m_u3, &m_v3, &m_w3;
+  const array::Array3D &m_u3, &m_v3, &m_w3;
 
   void init_column(int i, int j, double ice_thickness);
 
@@ -183,7 +186,7 @@ protected:
 
   void init_fine_grid(const std::vector<double>& storage_grid);
 
-  void coarse_to_fine(const IceModelVec3 &coarse, int i, int j, double* fine) const;
+  void coarse_to_fine(const array::Array3D &coarse, int i, int j, double* fine) const;
 };
 
 } // end of namespace pism

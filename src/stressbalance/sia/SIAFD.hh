@@ -83,8 +83,8 @@ protected:
 
   virtual void compute_diffusivity(bool full_update,
                                    const Geometry &geometry,
-                                   const IceModelVec3 *enthalpy,
-                                   const IceModelVec3 *age,
+                                   const array::Array3D *enthalpy,
+                                   const array::Array3D *age,
                                    const array::Staggered &h_x,
                                    const array::Staggered &h_y,
                                    array::Staggered &result);
@@ -97,7 +97,7 @@ protected:
                                               const array::Staggered &h_x,
                                               const array::Staggered &h_y,
                                               const IceModelVec2V &vel_input,
-                                              IceModelVec3 &u_out, IceModelVec3 &v_out);
+                                              array::Array3D &u_out, array::Array3D &v_out);
 
   virtual void compute_I(const Geometry &geometry);
 
@@ -111,11 +111,11 @@ protected:
   //! temporary storage for the surface gradient and the diffusivity
   array::Staggered m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid
-  IceModelVec3 m_delta_0;
-  IceModelVec3 m_delta_1;
+  array::Array3D m_delta_0;
+  array::Array3D m_delta_1;
   //! temporary storage used to store I and strain_heating on the staggered grid
-  IceModelVec3 m_work_3d_0;
-  IceModelVec3 m_work_3d_1;
+  array::Array3D m_work_3d_0;
+  array::Array3D m_work_3d_1;
 
   BedSmoother *m_bed_smoother;
 

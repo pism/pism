@@ -27,7 +27,7 @@ set(PISMUTIL_SRC
   iceModelVec.cc
   iceModelVec2T.cc
   iceModelVec2V.cc
-  iceModelVec3.cc
+  array/Array3D.cc
   array/Scalar.cc
   IceModelVec2Stag.cc
   interpolation.cc

@@ -43,7 +43,7 @@ these classes*. (This is a summary.)
 
 - pism::IceGrid (computational grid)
 - pism::Component and pism::Component_TS (interface shared by most sub-models)
-- pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
+- pism::array::Scalar, pism::array::Staggered, pism::IceModelVec2V, and pism::array::Array3D (storage)
 - pism::ScalarForcing (scalar time-dependent forcing)
 - pism::IceModelVec2T (2D time-dependent forcing)
 - pism::VariableMetadata (variable metadata such as physical units)

@@ -114,7 +114,7 @@ void CHSystem::initialize_impl(const array::Scalar &basal_melt_rate,
 
 //! Update the enthalpy of the cryo-hydrologic system.
 /*!
-  This method updates IceModelVec3 m_work. No communication of ghosts is done.
+  This method updates array::Array3D m_work. No communication of ghosts is done.
 */
 void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
@@ -125,7 +125,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   inputs.check();
 
   // give them names that are a bit shorter...
-  const IceModelVec3
+  const array::Array3D
     &volumetric_heat = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
@@ -253,9 +253,9 @@ void CHSystem::write_model_state_impl(const File &output) const {
 void cryo_hydrologic_warming_flux(double k,
                                   double R,
                                   const array::Scalar &ice_thickness,
-                                  const IceModelVec3 &ice_enthalpy,
-                                  const IceModelVec3 &ch_enthalpy,
-                                  IceModelVec3 &result) {
+                                  const array::Array3D &ice_enthalpy,
+                                  const array::Array3D &ch_enthalpy,
+                                  array::Array3D &result) {
 
   auto grid = result.grid();
 

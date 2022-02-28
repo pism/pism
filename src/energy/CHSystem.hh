@@ -56,9 +56,9 @@ protected:
 void cryo_hydrologic_warming_flux(double k,
                                   double R,
                                   const array::Scalar &ice_thickness,
-                                  const IceModelVec3 &ice_enthalpy,
-                                  const IceModelVec3 &ch_enthalpy,
-                                  IceModelVec3 &result);
+                                  const array::Array3D &ice_enthalpy,
+                                  const array::Array3D &ch_enthalpy,
+                                  array::Array3D &result);
 
 } // end of namespace energy
 } // end of namespace pism

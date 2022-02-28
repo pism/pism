@@ -22,7 +22,7 @@
 #include <memory>               // std::shared_ptr
 
 #include "pism/util/Component.hh"     // derives from Component
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/stressbalance/timestepping.hh"
 
 namespace pism {
@@ -49,8 +49,8 @@ public:
   const array::Scalar *water_column_pressure;
   const array::Scalar *fracture_density;
 
-  const IceModelVec3  *enthalpy;
-  const IceModelVec3  *age;
+  const array::Array3D  *enthalpy;
+  const array::Array3D  *age;
 
   const array::Scalar *bc_mask;
   const IceModelVec2V *bc_values;
@@ -104,14 +104,14 @@ public:
   // for the energy/age time step:
 
   //! \brief Get components of the the 3D velocity field.
-  const IceModelVec3& velocity_u() const;
-  const IceModelVec3& velocity_v() const;
-  const IceModelVec3& velocity_w() const;
+  const array::Array3D& velocity_u() const;
+  const array::Array3D& velocity_v() const;
+  const array::Array3D& velocity_w() const;
 
   //! \brief Get the basal frictional heating.
   const array::Scalar& basal_frictional_heating() const;
 
-  const IceModelVec3& volumetric_strain_heating() const;
+  const array::Array3D& volumetric_strain_heating() const;
 
   //! \brief Produce a report string for the standard output.
   std::string stdout_report() const;
@@ -129,15 +129,15 @@ protected:
   virtual void write_model_state_impl(const File &output) const;
 
   virtual void compute_vertical_velocity(const array::CellType1 &mask,
-                                         const IceModelVec3 &u,
-                                         const IceModelVec3 &v,
+                                         const array::Array3D &u,
+                                         const array::Array3D &v,
                                          const array::Scalar *bmr,
-                                         IceModelVec3 &result);
+                                         array::Array3D &result);
   virtual void compute_volumetric_strain_heating(const Inputs &inputs);
 
   CFLData m_cfl_2d, m_cfl_3d;
 
-  IceModelVec3 m_w, m_strain_heating;
+  array::Array3D m_w, m_strain_heating;
 
   std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
   std::shared_ptr<SSB_Modifier> m_modifier;
@@ -149,13 +149,13 @@ std::shared_ptr<StressBalance> create(const std::string &model_name,
 
 void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const array::CellType1 &mask,
-                                       IceModelVec3 &result);
+                                       array::Array3D &result);
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
-                         IceModelVec3 &result);
+                         array::Array3D &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

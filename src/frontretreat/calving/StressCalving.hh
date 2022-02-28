@@ -22,7 +22,7 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/array/CellType.hh"
 
 namespace pism {
@@ -40,7 +40,7 @@ public:
 protected:
   const int m_stencil_width;
 
-  IceModelVec3 m_strain_rates;
+  array::Array3D m_strain_rates;
 
   array::Scalar m_calving_rate;
 

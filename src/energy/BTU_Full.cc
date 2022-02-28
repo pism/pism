@@ -23,7 +23,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "BedrockColumn.hh"
 
 namespace pism {
@@ -65,7 +65,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
+    m_temp.reset(new array::Array3D(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
     m_temp->metadata(0).z().set_name("zb");
 
     std::map<std::string, std::string> z_attrs =
@@ -244,7 +244,7 @@ void BTU_Full::update_flux_through_top_surface() {
   }
 }
 
-const IceModelVec3& BTU_Full::temperature() const {
+const array::Array3D& BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
     throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
   }

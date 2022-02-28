@@ -28,7 +28,7 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -102,7 +102,7 @@ protected:
 
   // SSA coefficient variables.
   array::Scalar1 m_tauc;
-  IceModelVec3 m_ice_enthalpy;
+  array::Array3D m_ice_enthalpy;
 
   IceModelVec2V m_bc_values;
   array::Scalar2 m_bc_mask;

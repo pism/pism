@@ -54,13 +54,13 @@ PISM uses the following classes to manage 2D and 3D fields, their I/O and metada
 
 .. list-table::
 
-   * - `IceModelVec2S`
+   * - `pism::array::Scalar`
      - scalar 2D fields
    * - `IceModelVec2V`
      - vector 2D fields such as horizontal velocities; corresponds to 2 NetCDF variables
    * - `IceModelVec2T`
      - 2D time-dependent fields (used to read and store forcing data)
-   * - `IceModelVec3`
+   * - `pism::array::Array3D`
      - scalar 3D fields (usually within the ice)
 
 Please see the documentation of these classes for more info. The base class `IceModelVec` is

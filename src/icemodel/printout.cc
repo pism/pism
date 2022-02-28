@@ -39,8 +39,8 @@ namespace pism {
 horizontal part of the 3D convection-diffusion problems solved by EnthalpyModel and
 TemperatureModel.
 */
-unsigned int count_CFL_violations(const IceModelVec3 &u3,
-                                  const IceModelVec3 &v3,
+unsigned int count_CFL_violations(const array::Array3D &u3,
+                                  const array::Array3D &v3,
                                   const array::Scalar &ice_thickness,
                                   double dt) {
 
@@ -88,7 +88,7 @@ unsigned int count_CFL_violations(const IceModelVec3 &u3,
 
 void IceModel::print_summary(bool tempAndAge) {
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v();
 

@@ -17,40 +17,42 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_ICEMODELVEC3_H
-#define PISM_ICEMODELVEC3_H
+#ifndef PISM_ARRAY3D_H
+#define PISM_ARRAY3D_H
 
 #include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
-namespace array { class Scalar; }
+namespace array {
+
+class Scalar;
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
 //! fields.
-class IceModelVec3 : public IceModelVec {
+class Array3D : public IceModelVec {
 public:
 
   // Three-dimensional array with a number of vertical levels
-  IceModelVec3(IceGrid::ConstPtr grid,
-               const std::string &name,
-               IceModelVecKind ghostedp,
-               const std::vector<double> &levels,
-               unsigned int stencil_width = 1);
+  Array3D(IceGrid::ConstPtr grid,
+          const std::string &name,
+          IceModelVecKind ghostedp,
+          const std::vector<double> &levels,
+          unsigned int stencil_width = 1);
 
   // A collection of two-dimensional arrays using three-dimensional indexing
-  IceModelVec3(IceGrid::ConstPtr grid,
-               const std::string &name,
-               IceModelVecKind ghostedp,
-               unsigned int dof,
-               unsigned int stencil_width = 1);
+  Array3D(IceGrid::ConstPtr grid,
+          const std::string &name,
+          IceModelVecKind ghostedp,
+          unsigned int dof,
+          unsigned int stencil_width = 1);
 
-  virtual ~IceModelVec3() = default;
+  virtual ~Array3D() = default;
 
-  typedef std::shared_ptr<IceModelVec3> Ptr;
-  typedef std::shared_ptr<const IceModelVec3> ConstPtr;
+  typedef std::shared_ptr<Array3D> Ptr;
+  typedef std::shared_ptr<const Array3D> ConstPtr;
 
-  std::shared_ptr<IceModelVec3> duplicate() const;
+  std::shared_ptr<Array3D> duplicate() const;
 
   void set_column(int i, int j, double c);
   void set_column(int i, int j, const double *input);
@@ -62,28 +64,29 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 
-  void copy_from(const IceModelVec3 &input);
+  void copy_from(const Array3D &input);
 };
 
-void extract_surface(const IceModelVec3 &data, double z, array::Scalar &output);
-void extract_surface(const IceModelVec3 &data, const array::Scalar &z, array::Scalar &output);
+void extract_surface(const Array3D &data, double z, Scalar &output);
+void extract_surface(const Array3D &data, const Scalar &z, Scalar &output);
 
-void sum_columns(const IceModelVec3 &data, double A, double B, array::Scalar &output);
+void sum_columns(const Array3D &data, double A, double B, Scalar &output);
 
-inline double& IceModelVec3::operator() (int i, int j, int k) {
+inline double& Array3D::operator() (int i, int j, int k) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
-inline const double& IceModelVec3::operator() (int i, int j, int k) const {
+inline const double& Array3D::operator() (int i, int j, int k) const {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, k);
 #endif
   return static_cast<double***>(m_array)[j][i][k];
 }
 
+} // end of namespace array
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC3_H */
+#endif /* PISM_ARRAY3D_H */

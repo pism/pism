@@ -98,7 +98,7 @@ void EnthalpyModel::initialize_impl(const array::Scalar &basal_melt_rate,
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 m_work and array::Scalar basal_melt_rate.
+This method updates array::Array3D m_work and array::Scalar basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -122,7 +122,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   inputs.check();
 
   // give them names that are a bit shorter...
-  const IceModelVec3
+  const array::Array3D
     &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,

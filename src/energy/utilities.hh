@@ -22,47 +22,49 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
-class IceModelVec3;
+namespace array {
+class Array3D;
+class Scalar;
+}
 
 namespace energy {
 
-void compute_temperature(const IceModelVec3 &enthalpy,
+void compute_temperature(const array::Array3D &enthalpy,
                          const array::Scalar &ice_thickness,
-                         IceModelVec3 &result);
+                         array::Array3D &result);
 
-void compute_enthalpy(const IceModelVec3 &temperature,
-                      const IceModelVec3 &liquid_water_fraction,
+void compute_enthalpy(const array::Array3D &temperature,
+                      const array::Array3D &liquid_water_fraction,
                       const array::Scalar &ice_thickness,
-                      IceModelVec3 &result);
+                      array::Array3D &result);
 
-void compute_enthalpy_cold(const IceModelVec3 &temperature,
+void compute_enthalpy_cold(const array::Array3D &temperature,
                            const array::Scalar &ice_thickness,
-                           IceModelVec3 &result);
+                           array::Array3D &result);
 
-void compute_liquid_water_fraction(const IceModelVec3 &enthalpy,
+void compute_liquid_water_fraction(const array::Array3D &enthalpy,
                                    const array::Scalar &ice_thickness,
-                                   IceModelVec3 &result);
+                                   array::Array3D &result);
 
-void compute_cts(const IceModelVec3 &enthalpy,
+void compute_cts(const array::Array3D &enthalpy,
                  const array::Scalar &ice_thickness,
-                 IceModelVec3 &result);
+                 array::Array3D &result);
 
 double total_ice_enthalpy(double thickness_threshold,
-                          const IceModelVec3 &ice_enthalpy,
+                          const array::Array3D &ice_enthalpy,
                           const array::Scalar &ice_thickness);
 
 void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
                                const array::Scalar &ice_surface_temp,
                                const array::Scalar &surface_mass_balance,
                                const array::Scalar &basal_heat_flux,
-                               IceModelVec3 &result);
+                               array::Array3D &result);
 
 void bootstrap_ice_enthalpy(const array::Scalar &ice_thickness,
                             const array::Scalar &ice_surface_temp,
                             const array::Scalar &surface_mass_balance,
                             const array::Scalar &basal_heat_flux,
-                            IceModelVec3 &result);
+                            array::Array3D &result);
 
 } // end of namespace energy
 } // end of namespace pism

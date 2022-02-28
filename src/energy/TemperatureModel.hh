@@ -29,7 +29,7 @@ class TemperatureModel : public EnergyModel {
 public:
   TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
 
-  const IceModelVec3 & temperature() const;
+  const array::Array3D & temperature() const;
 
 protected:
   void restart_impl(const File &input_file, int record);
@@ -56,7 +56,7 @@ protected:
                        const double z, const double dz,
                        double *Texcess, double *bwat) const;
 
-  IceModelVec3 m_ice_temperature;
+  array::Array3D m_ice_temperature;
 };
 
 } // end of namespace energy

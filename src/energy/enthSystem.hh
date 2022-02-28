@@ -27,7 +27,7 @@
 namespace pism {
 
 class Config;
-class IceModelVec3;
+class array::Array3D;
 
 namespace energy {
 
@@ -43,11 +43,11 @@ public:
                 const std::string &prefix,
                 double dx,  double dy, double dt,
                 const Config &config,
-                const IceModelVec3 &Enth3,
-                const IceModelVec3 &u3,
-                const IceModelVec3 &v3,
-                const IceModelVec3 &w3,
-                const IceModelVec3 &strain_heating3,
+                const array::Array3D &Enth3,
+                const array::Array3D &u3,
+                const array::Array3D &v3,
+                const array::Array3D &w3,
+                const array::Array3D &strain_heating3,
                 EnthalpyConverter::Ptr EC);
   ~enthSystemCtx();
 
@@ -107,7 +107,7 @@ protected:
   bool m_exclude_vertical_advection;
   bool m_exclude_strain_heat;
 
-  const IceModelVec3 &m_Enth3, &m_strain_heating3;
+  const array::Array3D &m_Enth3, &m_strain_heating3;
   EnthalpyConverter::Ptr m_EC;  // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();

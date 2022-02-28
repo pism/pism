@@ -89,7 +89,7 @@ struct BTUGrid {
   method uses second-order differencing to compute the values of \f$G_0\f$.
 
   If `n_levels` <= 1 then this object becomes very simplified: there is no internal
-  state in IceModelVec3 temp.  The update() and allocate() methods are null,
+  state in array::Array3D temp.  The update() and allocate() methods are null,
   and the top_heat_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 

@@ -39,7 +39,7 @@ TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
   m_ice_temperature.metadata()["valid_min"] = {0.0};
 }
 
-const IceModelVec3 & TemperatureModel::temperature() const {
+const array::Array3D & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
@@ -185,7 +185,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   const double bulge_max  = m_config->get_number("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
-  const IceModelVec3
+  const array::Array3D
     &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,

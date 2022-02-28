@@ -26,8 +26,10 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
-class IceModelVec3;
+namespace array {
+class Scalar;
+class Array3D;
+}
 class Config;
 
 /*!
@@ -160,7 +162,7 @@ double averaged_hardness(const FlowLaw &ice,
 
 void averaged_hardness_vec(const FlowLaw &ice,
                            const array::Scalar &ice_thickness,
-                           const IceModelVec3  &enthalpy,
+                           const array::Array3D  &enthalpy,
                            array::Scalar &result);
 
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);

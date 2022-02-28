@@ -24,7 +24,7 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/IceModelVec2V.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 
@@ -70,10 +70,10 @@ private:
   array::Scalar m_toughness;
 
   //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
-  IceModelVec3 m_strain_rates;
+  array::Array3D m_strain_rates;
 
   //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  IceModelVec3 m_deviatoric_stresses;
+  array::Array3D m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
   IceModelVec2V m_velocity;

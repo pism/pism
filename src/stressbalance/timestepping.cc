@@ -19,7 +19,7 @@
 
 #include "timestepping.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/IceModelVec2V.hh"
@@ -43,9 +43,9 @@ The maximum vertical velocity is computed but it does not affect the output.
  */
 CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::CellType0 &cell_type,
-                            const IceModelVec3 &u3,
-                            const IceModelVec3 &v3,
-                            const IceModelVec3 &w3) {
+                            const array::Array3D &u3,
+                            const array::Array3D &v3,
+                            const array::Array3D &w3) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();

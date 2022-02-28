@@ -23,7 +23,7 @@
 #include "pism/util/Component.hh"
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/array/CellType.hh"
 
 namespace pism {
@@ -48,10 +48,10 @@ public:
   const array::Scalar *surface_temp;
   const array::Scalar *till_water_thickness;
 
-  const IceModelVec3 *volumetric_heating_rate;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
+  const array::Array3D *volumetric_heating_rate;
+  const array::Array3D *u3;
+  const array::Array3D *v3;
+  const array::Array3D *w3;
 
   // inputs used by regional models
   const array::Scalar *no_model_mask;
@@ -99,7 +99,7 @@ public:
 
   const EnergyModelStats& stats() const;
 
-  const IceModelVec3 & enthalpy() const;
+  const array::Array3D & enthalpy() const;
   const array::Scalar & basal_melt_rate() const;
 
   const std::string& stdout_flags() const;
@@ -136,8 +136,8 @@ protected:
   /*! @brief Regrid enthalpy from the -regrid_file. */
   void regrid_enthalpy();
 protected:
-  IceModelVec3 m_ice_enthalpy;
-  IceModelVec3 m_work;
+  array::Array3D m_ice_enthalpy;
+  array::Array3D m_work;
   array::Scalar m_basal_melt_rate;
 
   EnergyModelStats m_stats;

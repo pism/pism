@@ -25,8 +25,9 @@
 namespace pism {
 
 class IceModelVec2V;
-class IceModelVec3;
+
 namespace array {
+class Array3D;
 using CellType0 = class CellType;
 class CellType1;
 class CellType2;
@@ -49,9 +50,9 @@ struct CFLData {
  */
 CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::CellType0 &cell_type,
-                            const IceModelVec3 &u3,
-                            const IceModelVec3 &v3,
-                            const IceModelVec3 &w3);
+                            const array::Array3D &u3,
+                            const array::Array3D &v3,
+                            const array::Array3D &w3);
 
 /*! @brief Compute the max. time step according to the CFL condition (within the ice, 2D). */
 /*!

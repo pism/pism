@@ -55,9 +55,9 @@ public:
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
-  const IceModelVec3& velocity_u() const;
+  const array::Array3D& velocity_u() const;
 
-  const IceModelVec3& velocity_v() const;
+  const array::Array3D& velocity_v() const;
 
   virtual std::string stdout_report() const;
 
@@ -68,7 +68,7 @@ protected:
   EnthalpyConverter::Ptr m_EC;
   double m_D_max;
   array::Staggered m_diffusive_flux;
-  IceModelVec3 m_u, m_v;
+  array::Array3D m_u, m_v;
 };
 
 

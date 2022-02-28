@@ -20,7 +20,7 @@
 #ifndef PISM_ICEMODELVEC2STAG_H
 #define PISM_ICEMODELVEC2STAG_H
 
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 

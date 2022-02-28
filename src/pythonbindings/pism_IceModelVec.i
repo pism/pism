@@ -5,7 +5,7 @@
 #include "util/array/Scalar.hh"
 #include "util/iceModelVec2T.hh"
 #include "util/IceModelVec2V.hh"
-#include "util/IceModelVec3.hh"
+#include "util/array/Array3D.hh"
 #include "util/IceModelVec2Stag.hh"
 
 using namespace pism;
@@ -17,7 +17,7 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
 %shared_ptr(pism::array::Staggered)
-%shared_ptr(pism::IceModelVec3)
+%shared_ptr(pism::array::Array3D)
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
 
@@ -82,10 +82,10 @@ using namespace pism;
     %pythoncode "IceModelVec2V.py"
 };
 
-%ignore pism::IceModelVec3::operator();
-%ignore pism::IceModelVec3::get_column(int, int);
-%ignore pism::IceModelVec3::set_column(int, int, const double*);
-%extend pism::IceModelVec3
+%ignore pism::array::Array3D::operator();
+%ignore pism::array::Array3D::get_column(int, int);
+%ignore pism::array::Array3D::set_column(int, int, const double*);
+%extend pism::array::Array3D
 {
 
   double getitem(int i, int j, int k) const {
@@ -168,7 +168,7 @@ std::vector<double> interp(int i, int j) {
 %template(_Array2DVector2) pism::array::Array2D<Vector2>;
 %include "util/IceModelVec2V.hh"
 
-%include "util/IceModelVec3.hh"
+%include "util/array/Array3D.hh"
 %include "util/IceModelVec2Stag.hh"
 
 %include "util/Vector2.hh"

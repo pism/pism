@@ -165,7 +165,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       m_ice_enthalpy.read(input_file, record);
     }
   } else if (input_file.find_variable("temp")) {
-    IceModelVec3
+    array::Array3D
       &temp    = m_work,
       &liqfrac = m_ice_enthalpy;
 
@@ -326,7 +326,7 @@ const EnergyModelStats& EnergyModel::stats() const {
   return m_stats;
 }
 
-const IceModelVec3 & EnergyModel::enthalpy() const {
+const array::Array3D & EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 

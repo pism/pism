@@ -28,9 +28,9 @@ namespace pism {
 
 class IceModelVec;
 class IceModelVec2V;
-class IceModelVec3;
 
 namespace array {
+class Array3D;
 class Scalar;
 using CellType0 = class CellType;
 } // end of namespace array
@@ -50,7 +50,7 @@ public:
   const array::Scalar* get_2d_mask(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
   const array::CellType0* get_2d_cell_type(const std::string &name) const;
-  const IceModelVec3* get_3d_scalar(const std::string &name) const;
+  const array::Array3D* get_3d_scalar(const std::string &name) const;
 
   std::set<std::string> keys() const;
 
@@ -59,7 +59,7 @@ public:
   typedef std::shared_ptr<array::Scalar> Vec2IntPtr;
   typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
   typedef std::shared_ptr<array::CellType0> Vec2CellTypePtr;
-  typedef std::shared_ptr<IceModelVec3> Vec3Ptr;
+  typedef std::shared_ptr<array::Array3D> Vec3Ptr;
 
   void add_shared(VecPtr);
   void add_shared(VecPtr, const std::string &name);

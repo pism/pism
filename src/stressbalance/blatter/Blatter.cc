@@ -36,7 +36,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -282,12 +282,12 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
     }
     sigma.back() = 1.0;
 
-    m_u_sigma.reset(new IceModelVec3(grid, "uvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_u_sigma.reset(new array::Array3D(grid, "uvel_sigma", WITHOUT_GHOSTS, sigma));
     m_u_sigma->set_attrs("diagnostic",
                          "u velocity component on the sigma grid",
                          "m s-1", "m s-1", "", 0);
 
-    m_v_sigma.reset(new IceModelVec3(grid, "vvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_v_sigma.reset(new array::Array3D(grid, "vvel_sigma", WITHOUT_GHOSTS, sigma));
     m_v_sigma->set_attrs("diagnostic",
                          "v velocity component on the sigma grid",
                          "m s-1", "m s-1", "", 0);
@@ -1132,8 +1132,8 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
 }
 
 
-void Blatter::set_initial_guess(const IceModelVec3 &u_sigma,
-                                const IceModelVec3 &v_sigma) {
+void Blatter::set_initial_guess(const array::Array3D &u_sigma,
+                                const array::Array3D &v_sigma) {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
@@ -1191,11 +1191,11 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 }
 
 
-IceModelVec3::Ptr Blatter::velocity_u_sigma() const {
+array::Array3D::Ptr Blatter::velocity_u_sigma() const {
   return m_u_sigma;
 }
 
-IceModelVec3::Ptr Blatter::velocity_v_sigma() const {
+array::Array3D::Ptr Blatter::velocity_v_sigma() const {
   return m_v_sigma;
 }
 

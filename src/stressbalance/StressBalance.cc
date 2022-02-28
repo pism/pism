@@ -180,8 +180,8 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
     profiling.end("stress_balance.modifier");
 
     if (full_update) {
-      const IceModelVec3 &u = m_modifier->velocity_u();
-      const IceModelVec3 &v = m_modifier->velocity_v();
+      const array::Array3D &u = m_modifier->velocity_u();
+      const array::Array3D &v = m_modifier->velocity_v();
 
       profiling.begin("stress_balance.strain_heat");
       this->compute_volumetric_strain_heating(inputs);
@@ -227,15 +227,15 @@ double StressBalance::max_diffusivity() const {
   return m_modifier->max_diffusivity();
 }
 
-const IceModelVec3& StressBalance::velocity_u() const {
+const array::Array3D& StressBalance::velocity_u() const {
   return m_modifier->velocity_u();
 }
 
-const IceModelVec3& StressBalance::velocity_v() const {
+const array::Array3D& StressBalance::velocity_v() const {
   return m_modifier->velocity_v();
 }
 
-const IceModelVec3& StressBalance::velocity_w() const {
+const array::Array3D& StressBalance::velocity_w() const {
   return m_w;
 }
 
@@ -243,7 +243,7 @@ const array::Scalar& StressBalance::basal_frictional_heating() const {
   return m_shallow_stress_balance->basal_frictional_heating();
 }
 
-const IceModelVec3& StressBalance::volumetric_strain_heating() const {
+const array::Array3D& StressBalance::volumetric_strain_heating() const {
   return m_strain_heating;
 }
 
@@ -278,10 +278,10 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 The vertical integral is computed by the trapezoid rule.
  */
 void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
-                                              const IceModelVec3 &u,
-                                              const IceModelVec3 &v,
+                                              const array::Array3D &u,
+                                              const array::Array3D &v,
                                               const array::Scalar *basal_melt_rate,
-                                              IceModelVec3 &result) {
+                                              array::Array3D &result) {
 
   const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
@@ -507,12 +507,12 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   const rheology::FlowLaw &flow_law = *m_shallow_stress_balance->flow_law();
   EnthalpyConverter::Ptr EC = m_shallow_stress_balance->enthalpy_converter();
 
-  const IceModelVec3
+  const array::Array3D
     &u = m_modifier->velocity_u(),
     &v = m_modifier->velocity_v();
 
   const array::Scalar &thickness = inputs.geometry->ice_thickness;
-  const IceModelVec3  *enthalpy  = inputs.enthalpy;
+  const array::Array3D  *enthalpy  = inputs.enthalpy;
 
   const auto &mask = inputs.geometry->cell_type;
 
@@ -684,7 +684,7 @@ update_ghosts() to ensure that ghost values are up to date.
  */
 void compute_2D_principal_strain_rates(const IceModelVec2V &V,
                                        const array::CellType1 &mask,
-                                       IceModelVec3 &result) {
+                                       array::Array3D &result) {
 
   using mask::ice_free;
 
@@ -771,7 +771,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
-                         IceModelVec3 &result) {
+                         array::Array3D &result) {
 
   using mask::ice_free;
 

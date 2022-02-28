@@ -545,8 +545,8 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation
  */
 void SIAFD::compute_diffusivity(bool full_update,
                                 const Geometry &geometry,
-                                const IceModelVec3 *enthalpy,
-                                const IceModelVec3 *age,
+                                const array::Array3D *enthalpy,
+                                const array::Array3D *age,
                                 const array::Staggered &h_x,
                                 const array::Staggered &h_y,
                                 array::Staggered &result) {
@@ -559,7 +559,7 @@ void SIAFD::compute_diffusivity(bool full_update,
     &H = geometry.ice_thickness;
 
   const auto &mask = geometry.cell_type;
-  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
+  array::Array3D* delta[] = {&m_delta_0, &m_delta_1};
 
   result.set(0.0);
 
@@ -816,8 +816,8 @@ void SIAFD::compute_diffusive_flux(const array::Staggered &h_x, const array::Sta
 void SIAFD::compute_I(const Geometry &geometry) {
 
   array::Scalar &thk_smooth = m_work_2d_0;
-  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
-  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
+  array::Array3D* I[] = {&m_work_3d_0, &m_work_3d_1};
+  array::Array3D* delta[] = {&m_delta_0, &m_delta_1};
 
   const array::Scalar
     &h = geometry.ice_surface_elevation,
@@ -900,11 +900,11 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
                                            const array::Staggered &h_x,
                                            const array::Staggered &h_y,
                                            const IceModelVec2V &sliding_velocity,
-                                           IceModelVec3 &u_out, IceModelVec3 &v_out) {
+                                           array::Array3D &u_out, array::Array3D &v_out) {
 
   compute_I(geometry);
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
-  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
+  array::Array3D* I[] = {&m_work_3d_0, &m_work_3d_1};
 
   IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
 

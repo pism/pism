@@ -27,9 +27,9 @@
 namespace pism {
 
 AgeModelInputs::AgeModelInputs(const array::Scalar *thickness,
-                               const IceModelVec3 *u,
-                               const IceModelVec3 *v,
-                               const IceModelVec3 *w)
+                               const array::Array3D *u,
+                               const array::Array3D *v,
+                               const array::Array3D *w)
   : ice_thickness(thickness), u3(u), v3(v), w3(w) {
   // empty
 }
@@ -114,7 +114,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
 
   const array::Scalar &ice_thickness = *inputs.ice_thickness;
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = *inputs.u3,
     &v3 = *inputs.v3,
     &w3 = *inputs.w3;
@@ -146,7 +146,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
         // solve the system for this column; call checks that params set
         system.solve(x);
 
-        // put solution in IceModelVec3
+        // put solution in array::Array3D
         system.fine_to_coarse(x, i, j, m_work);
 
         // Ensure that the age of the ice is non-negative.
@@ -169,7 +169,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   m_ice_age.copy_from(m_work);
 }
 
-const IceModelVec3 & AgeModel::age() const {
+const array::Array3D & AgeModel::age() const {
   return m_ice_age;
 }
 

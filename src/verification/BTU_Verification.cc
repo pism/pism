@@ -22,7 +22,7 @@
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec3.hh"
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 namespace energy {
