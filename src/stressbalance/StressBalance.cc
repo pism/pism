@@ -767,7 +767,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
-                         array::Array3D &result) {
+                         array::Array2D<DeviatoricStresses> &result) {
 
   using mask::ice_free;
 
@@ -777,19 +777,15 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     dx = grid->dx(),
     dy = grid->dy();
 
-  if (result.ndof() != 3) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.ndof() == 3 is required");
-  }
-
   IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
-      result(i,j,2) = 0.0;
+      result(i,j).xx = 0.0;
+      result(i,j).yy = 0.0;
+      result(i,j).xy = 0.0;
       continue;
     }
 
@@ -847,9 +843,9 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                                  &nu, NULL);
 
     //get deviatoric stresses
-    result(i,j,0) = 2.0*nu*u_x;
-    result(i,j,1) = 2.0*nu*v_y;
-    result(i,j,2) = nu*(u_y+v_x);
+    result(i,j).xx = 2.0*nu*u_x;
+    result(i,j).yy = 2.0*nu*v_y;
+    result(i,j).xy = nu*(u_y+v_x);
   }
 }
 

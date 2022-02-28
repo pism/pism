@@ -156,11 +156,17 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result);
 
+struct DeviatoricStresses {
+  double xx;
+  double yy;
+  double xy;
+};
+
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const IceModelVec2V &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
-                         array::Array3D &result);
+                         array::Array2D<DeviatoricStresses> &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

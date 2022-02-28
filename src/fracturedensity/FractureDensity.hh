@@ -74,7 +74,7 @@ private:
   array::Array2D<stressbalance::PrincipalStrainRates> m_strain_rates;
 
   //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  array::Array3D m_deviatoric_stresses;
+  array::Array2D<stressbalance::DeviatoricStresses> m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
   IceModelVec2V m_velocity;

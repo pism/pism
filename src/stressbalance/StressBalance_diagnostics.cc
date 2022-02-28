@@ -844,15 +844,14 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 
 IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid,
-                                            "deviatoric_stresses",
-                                            WITHOUT_GHOSTS, 3));
+  auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses>>
+    (m_grid, "deviatoric_stresses", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
 
-  const array::Array3D         *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
-  const array::Scalar        *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
+  const array::Array3D *enthalpy  = m_grid->variables().get_3d_scalar("enthalpy");
+  const array::Scalar  *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   array::Scalar hardness(m_grid, "hardness");
   IceModelVec2V velocity(m_grid, "velocity", WITH_GHOSTS);

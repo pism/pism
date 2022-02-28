@@ -261,9 +261,9 @@ void FractureDensity::update(double dt,
     ///von mises criterion
 
     double
-      txx    = m_deviatoric_stresses(i, j, 0),
-      tyy    = m_deviatoric_stresses(i, j, 1),
-      txy    = m_deviatoric_stresses(i, j, 2),
+      txx    = m_deviatoric_stresses(i, j).xx,
+      tyy    = m_deviatoric_stresses(i, j).yy,
+      txy    = m_deviatoric_stresses(i, j).xy,
       T1     = 0.5 * (txx + tyy) + sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
       T2     = 0.5 * (txx + tyy) - sqrt(0.25 * pow(txx - tyy, 2) + pow(txy, 2)), //Pa
       sigmat = sqrt(pow(T1, 2) + pow(T2, 2) - T1 * T2);
