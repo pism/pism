@@ -211,7 +211,7 @@ def define_refinement_paths(KSPRTOL, SSARTOL):
     J.path = "(refine Mx={})".format(J.Mx)
     J.Mz = [11] * 5
     J.executable = "ssa_testj"
-    J.opts = "-ssa_method fd -ssafd_pc_type asm -ssafd_sub_pc_type lu -ssafd_ksp_rtol %1.e" % KSPRTOL
+    J.opts = "-ssa_method fd -ssafd_pc_type gamg -ssafd_ksp_rtol %1.e" % KSPRTOL
     tests['J'] = J
     # K
     K = PISMVerificationTest()
