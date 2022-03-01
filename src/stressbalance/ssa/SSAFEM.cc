@@ -45,11 +45,11 @@ namespace stressbalance {
 SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
   : SSA(grid),
     m_bc_mask(grid, "bc_mask"),
-    m_bc_values(grid, "_bc", WITH_GHOSTS),
+    m_bc_values(grid, "_bc"),
     m_gc(*m_config),
     m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
     m_node_type(m_grid, "node_type"),
-    m_boundary_integral(m_grid, "boundary_integral", WITH_GHOSTS, 1),
+    m_boundary_integral(m_grid, "boundary_integral"),
     m_element_index(*grid),
     m_q1_element(*grid, fem::Q1Quadrature4())
 {

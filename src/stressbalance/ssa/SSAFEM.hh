@@ -67,7 +67,7 @@ protected:
   };
 
   array::Scalar1 m_bc_mask;
-  IceModelVec2V m_bc_values;
+  Velocity1 m_bc_values;
 
   GeometryCalculator m_gc;
   double m_alpha;
@@ -130,7 +130,7 @@ protected:
   //! Storage for node types (interior, boundary, exterior).
   array::Scalar1 m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
-  IceModelVec2V m_boundary_integral;
+  Velocity1 m_boundary_integral;
 
   double m_dirichletScale;
   double m_beta_ice_free_bedrock;

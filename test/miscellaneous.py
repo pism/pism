@@ -966,7 +966,7 @@ class PrincipalStrainRates(TestCase):
                                     0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
 
     def create_velocity(self, grid):
-        velocity = PISM.IceModelVec2V(grid, "bar", PISM.WITH_GHOSTS)
+        velocity = PISM.Velocity1(grid, "bar")
         with PISM.vec.Access(nocomm=velocity):
             for (i, j) in grid.points():
                 u, v = self.u_exact(grid.x(i), grid.y(j))
@@ -1564,7 +1564,7 @@ def grounding_line_flux_test():
 
     geometry.ensure_consistency(0)
 
-    velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
+    velocity = PISM.IceModelVec2V(grid, "velocity")
     thk_bc_mask = PISM.Scalar(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
     sia_flux = PISM.Staggered(grid, "sia_flux")

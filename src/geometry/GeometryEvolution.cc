@@ -79,7 +79,7 @@ struct GeometryEvolution::Impl {
   array::Staggered1 flux_staggered;
 
   // Work space
-  IceModelVec2V    input_velocity; // a ghosted copy; not modified
+  Velocity1    input_velocity; // a ghosted copy; not modified
   array::Scalar1   bed_elevation; // a copy; not modified
   array::Scalar1   sea_level;   // a copy; not modified
   array::Scalar1   ice_thickness; // updated in place
@@ -100,7 +100,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
     thickness_change(grid, "thickness_change"),
     ice_area_specific_volume_change(grid, "ice_area_specific_volume_change"),
     flux_staggered(grid, "flux_staggered"),
-    input_velocity(grid, "input_velocity", WITH_GHOSTS),
+    input_velocity(grid, "input_velocity"),
     bed_elevation(grid, "bed_elevation"),
     sea_level(grid, "sea_level"),
     ice_thickness(grid, "ice_thickness"),

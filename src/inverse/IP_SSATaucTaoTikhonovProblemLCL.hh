@@ -88,7 +88,8 @@ public:
   typedef array::Scalar DesignVec;
   typedef array::Scalar1 DesignVecGhosted;
 
-typedef IceModelVec2V StateVec;
+  typedef IceModelVec2V StateVec;
+  typedef Velocity1 StateVec1;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
@@ -137,8 +138,8 @@ protected:
   DesignVecGhosted m_dzeta;            // ghosted
 
   StateVec::Ptr m_uGlobal;
-  StateVec m_u;                 // ghosted
-  StateVec m_du;                // ghosted
+  StateVec1 m_u;                 // ghosted
+  StateVec1 m_du;                // ghosted
   StateVec &m_u_obs;
   StateVec::Ptr m_u_diff;
 
@@ -154,8 +155,8 @@ protected:
   petsc::Mat m_Jstate;
   petsc::Mat m_Jdesign;
 
-  array::Scalar1 m_d_Jdesign;    // ghosted
-  IceModelVec2V m_u_Jdesign;    // ghosted
+  array::Scalar1 m_d_Jdesign;   // ghosted
+  Velocity1 m_u_Jdesign;        // ghosted
 
   double m_constraintsScale;
   double m_velocityScale;

@@ -113,7 +113,7 @@ protected:
   IceModelVec2V m_b;            // right hand side
   double m_scaling;
 
-  IceModelVec2V m_velocity_old;
+  Velocity1 m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;

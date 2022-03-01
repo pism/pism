@@ -53,6 +53,7 @@ public:
 
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
   typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
+  typedef typename ForwardProblem::StateVec1::Ptr StateVec1Ptr;
 
   IPTaoTikhonovProblemListener() {}
   virtual ~IPTaoTikhonovProblemListener() {}
@@ -168,12 +169,14 @@ public:
 
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;
+  typedef typename ForwardProblem::StateVec1 StateVec1;
 
   typedef typename ForwardProblem::DesignVecGhosted DesignVecGhosted;
   typedef typename ForwardProblem::DesignVecGhosted::Ptr DesignVecGhostedPtr;
 
   typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
   typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
+  typedef typename ForwardProblem::StateVec1::Ptr StateVec1Ptr;
 
   /*! Constructs a Tikhonov problem:
   
@@ -254,7 +257,7 @@ protected:
   /// State parameter to match via F(d)=u_obs
   StateVec &m_u_obs;
   /// Storage for F(d)-u_obs
-  StateVecPtr m_u_diff;         // ghosted
+  StateVec1Ptr m_u_diff;         // ghosted
 
   /// Temporary storage used in gradient computation.
   StateVec m_adjointRHS;
@@ -308,7 +311,7 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
     m_dGlobal(d0.grid(), "design variable (global)"),
     m_d0(d0),
     m_u_obs(u_obs),
-    m_adjointRHS(d0.grid(), "work vector", WITHOUT_GHOSTS),
+    m_adjointRHS(d0.grid(), "work vector"),
     m_eta(eta),
     m_designFunctional(designFunctional),
     m_stateFunctional(stateFunctional)
@@ -317,13 +320,11 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
   m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
 
-  int state_stencil_width = m_u_obs.stencil_width();
-
   m_d = std::make_shared<DesignVecGhosted>(m_grid, "design variable");
 
   m_dGlobal.copy_from(m_d0);
 
-  m_u_diff = std::make_shared<StateVec>(m_grid, "state residual", WITH_GHOSTS, state_stencil_width);
+  m_u_diff = std::make_shared<StateVec1>(m_grid, "state residual");
 
   m_d_diff = std::make_shared<DesignVecGhosted>(m_grid, "design residual");
 

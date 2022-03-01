@@ -16,6 +16,8 @@ using namespace pism;
 %shared_ptr(pism::array::Scalar)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
+%shared_ptr(pism::Velocity1)
+%shared_ptr(pism::Velocity2)
 %shared_ptr(pism::array::Staggered)
 %shared_ptr(pism::array::Staggered1)
 %shared_ptr(pism::array::Array3D)

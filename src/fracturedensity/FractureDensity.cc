@@ -39,7 +39,7 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS),
     m_deviatoric_stresses(grid, "sigma",
                           WITHOUT_GHOSTS, 3),
-    m_velocity(grid, "ghosted_velocity", WITH_GHOSTS, 1),
+    m_velocity(grid, "ghosted_velocity"),
     m_flow_law(flow_law) {
 
   m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);

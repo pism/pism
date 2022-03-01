@@ -58,6 +58,7 @@ class IP_SSATaucTikhonovGNSolver {
 public:
   typedef array::Scalar DesignVec;
   typedef IceModelVec2V StateVec;
+  typedef Velocity1 StateVec1;
 
   typedef array::Scalar1 DesignVecGhosted;
 
@@ -121,8 +122,8 @@ protected:
   DesignVecGhosted m_tmp_D2Local;
   StateVec  m_tmp_S1Global;
   StateVec  m_tmp_S2Global;
-  StateVec  m_tmp_S1Local;      // ghosted
-  StateVec  m_tmp_S2Local;      // ghosted
+  StateVec1  m_tmp_S1Local;      // ghosted
+  StateVec1  m_tmp_S2Local;      // ghosted
 
   DesignVec  m_GN_rhs;
 
@@ -145,7 +146,7 @@ protected:
   double m_val_design, m_val_state, m_value;
 
   StateVec &m_u_obs;
-  StateVec m_u_diff;            // ghosted
+  StateVec1 m_u_diff;            // ghosted
 
   petsc::KSP m_ksp;  
   petsc::Mat m_mat_GN;

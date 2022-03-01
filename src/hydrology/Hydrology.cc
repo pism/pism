@@ -274,7 +274,7 @@ Inputs::Inputs() {
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g),
-    m_Q(m_grid, "water_flux", WITHOUT_GHOSTS),
+    m_Q(m_grid, "water_flux"),
     m_Wtill(m_grid, "tillwat"),
     m_W(m_grid, "bwat"),
     m_Pover(m_grid, "overburden_pressure"),

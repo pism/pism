@@ -110,6 +110,7 @@ public:
 
   /// The function space for the state variable, \f$u_{\rm SSA}\f$.
   typedef IceModelVec2V StateVec;
+  typedef Velocity1 StateVec1;
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
@@ -190,7 +191,7 @@ protected:
   /// Temporary storage when state vectors need to be used without ghosts.
   IceModelVec2V  m_du_global;
   /// Temporary storage when state vectors need to be used with ghosts.
-  IceModelVec2V  m_du_local;
+  Velocity1  m_du_local;
   /// Vertically-averaged ice hardness.
   array::Scalar1  m_hardav;
 

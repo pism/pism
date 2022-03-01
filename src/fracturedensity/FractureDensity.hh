@@ -77,7 +77,7 @@ private:
   array::Array2D<stressbalance::DeviatoricStresses> m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
-  IceModelVec2V m_velocity;
+  Velocity1 m_velocity;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

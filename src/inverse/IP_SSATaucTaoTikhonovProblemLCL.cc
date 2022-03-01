@@ -40,12 +40,12 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
   m_dGlobal(d0.grid(), "design variable (global)"),
   m_d0(d0),
   m_dzeta(d0.grid(), "dzeta"),
-  m_u(d0.grid(), "state variable", WITH_GHOSTS, u_obs.stencil_width()),
-  m_du(d0.grid(), "du", WITH_GHOSTS, u_obs.stencil_width()),
+  m_u(d0.grid(), "state variable"),
+  m_du(d0.grid(), "du"),
   m_u_obs(u_obs),
   m_eta(eta),
   m_d_Jdesign(d0.grid(), "Jdesign design variable"),
-  m_u_Jdesign(d0.grid(), "Jdesign state variable", WITH_GHOSTS, u_obs.stencil_width()),
+  m_u_Jdesign(d0.grid(), "Jdesign state variable"),
   m_designFunctional(designFunctional),
   m_stateFunctional(stateFunctional)
 {
@@ -58,19 +58,17 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
   m_velocityScale = grid->ctx()->config()->get_number("inverse.ssa.velocity_scale", "m second-1");
 
-  int state_stencil_width = m_u_obs.stencil_width();
   m_d.reset(new DesignVecGhosted(grid, "design variable"));
 
   m_dGlobal.copy_from(m_d0);
 
-  m_uGlobal.reset(new StateVec(grid, "state variable (global)",
-                               WITHOUT_GHOSTS, state_stencil_width));
+  m_uGlobal.reset(new StateVec(grid, "state variable (global)"));
 
-  m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
+  m_u_diff.reset(new StateVec1(grid, "state residual"));
 
   m_d_diff.reset(new DesignVecGhosted(grid, "design residual"));
 
-  m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
+  m_grad_state.reset(new StateVec(grid, "state gradient"));
 
   m_grad_design.reset(new DesignVec(grid, "design gradient"));
 

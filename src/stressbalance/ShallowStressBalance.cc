@@ -37,7 +37,7 @@ ShallowStressBalance::ShallowStressBalance(IceGrid::ConstPtr g)
     m_basal_sliding_law(NULL),
     m_flow_law(NULL),
     m_EC(g->ctx()->enthalpy_converter()),
-    m_velocity(m_grid, "bar", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
+    m_velocity(m_grid, "bar"),
     m_basal_frictional_heating(m_grid, "bfrict"),
     m_e_factor(1.0)
 {
@@ -196,7 +196,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  */
 array::Array::Ptr SSB_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -265,7 +265,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 
 array::Array::Ptr SSB_taub::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 

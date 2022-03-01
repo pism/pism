@@ -78,7 +78,7 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
     m_basal_melt_rate(m_grid, "bmelt"),
     m_bedtoptemp(m_grid, "bedtoptemp"),
     m_velocity_bc_mask(m_grid, "vel_bc_mask"),
-    m_velocity_bc_values(m_grid, "_bc", WITH_GHOSTS, m_wide_stencil), // u_bc and v_bc
+    m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
     m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),

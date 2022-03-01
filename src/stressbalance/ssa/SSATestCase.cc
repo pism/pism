@@ -42,7 +42,7 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_tauc(m_grid, "tauc"),
     m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_stencil_width),
-    m_bc_values(m_grid, "_bc", WITH_GHOSTS, m_stencil_width), // u_bc and v_bc
+    m_bc_values(m_grid, "_bc"), // u_bc and v_bc
     m_bc_mask(m_grid, "bc_mask"),
     m_geometry(m_grid),
     m_ssa(NULL)
@@ -341,7 +341,7 @@ void SSATestCase::write(const std::string &filename) {
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
   vel_ssa.write(file);
 
-  IceModelVec2V exact(m_grid, "_exact", WITHOUT_GHOSTS);
+  IceModelVec2V exact(m_grid, "_exact");
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
                   "m s-1", "m s-1", "", 0);

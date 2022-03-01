@@ -42,8 +42,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
     m_fixed_design_locations(NULL),
     m_design_param(tp),
     m_du_global(m_grid, "linearization work vector (sans ghosts)"),
-    m_du_local(m_grid, "linearization work vector (with ghosts)",
-               WITH_GHOSTS, m_stencil_width),
+    m_du_local(m_grid, "linearization work vector (with ghosts)"),
     m_hardav(m_grid, "hardav"),
     m_element_index(*m_grid),
     m_element(*m_grid, fem::Q1Quadrature4()),
@@ -52,7 +51,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
 
   PetscErrorCode ierr;
 
-  m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy", WITHOUT_GHOSTS));
+  m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy"));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 

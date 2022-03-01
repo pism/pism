@@ -20,7 +20,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_FlowLaw.i
     pism_Hydrology.i
     pism_IceGrid.i
-    pism_IceModelVec.i
+    pism_Array.i
     pism_File.i
     pism_SIA.i
     pism_SSA.i

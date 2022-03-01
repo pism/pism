@@ -30,9 +30,6 @@ namespace array { class Scalar; }
 */
 class IceModelVec2V : public array::Array2D<Vector2> {
 public:
-  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
-                IceModelVecKind ghostedp, unsigned int stencil_width = 1);
-
   IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name);
 
   virtual ~IceModelVec2V() = default;
@@ -41,6 +38,28 @@ public:
   typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
 
   std::shared_ptr<IceModelVec2V> duplicate() const;
+protected:
+  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name,
+                unsigned int stencil_width);
+};
+
+class Velocity1 : public IceModelVec2V {
+public:
+  Velocity1(IceGrid::ConstPtr grid, const std::string &name);
+
+  typedef std::shared_ptr<Velocity1> Ptr;
+  typedef std::shared_ptr<const Velocity1> ConstPtr;
+protected:
+  Velocity1(IceGrid::ConstPtr grid, const std::string &name,
+            unsigned int stencil_width);
+};
+
+class Velocity2 : public Velocity1 {
+public:
+  Velocity2(IceGrid::ConstPtr grid, const std::string &name);
+
+  typedef std::shared_ptr<Velocity2> Ptr;
+  typedef std::shared_ptr<const Velocity2> ConstPtr;
 };
 
 void compute_magnitude(const IceModelVec2V &input, array::Scalar &result);

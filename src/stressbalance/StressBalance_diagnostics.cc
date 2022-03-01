@@ -172,7 +172,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 array::Array::Ptr PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -372,7 +372,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 array::Array::Ptr PSB_velsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -620,7 +620,7 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
 array::Array::Ptr PSB_velbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -815,7 +815,7 @@ array::Array::Ptr PSB_strain_rates::compute_impl() const {
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec2V velbar_with_ghosts(m_grid, "velbar", WITH_GHOSTS);
+  Velocity1 velbar_with_ghosts(m_grid, "velbar");
 
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
@@ -854,7 +854,7 @@ array::Array::Ptr PSB_deviatoric_stresses::compute_impl() const {
   const array::Scalar  *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   array::Scalar hardness(m_grid, "hardness");
-  IceModelVec2V velocity(m_grid, "velocity", WITH_GHOSTS);
+  Velocity1 velocity(m_grid, "velocity");
 
   averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy,
                         hardness);

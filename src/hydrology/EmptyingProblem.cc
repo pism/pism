@@ -121,8 +121,8 @@ EmptyingProblem::EmptyingProblem(IceGrid::ConstPtr grid)
     m_Vstag(grid, "V_staggered"),
     m_Qsum(grid, "flux_total"),
     m_domain_mask(grid, "domain_mask"),
-    m_Q(grid, "_water_flux", WITHOUT_GHOSTS),
-    m_q_sg(grid, "_effective_water_velocity", WITHOUT_GHOSTS),
+    m_Q(grid, "_water_flux"),
+    m_q_sg(grid, "_effective_water_velocity"),
     m_adjustment(grid, "hydraulic_potential_adjustment"),
     m_sinks(grid, "sinks") {
 

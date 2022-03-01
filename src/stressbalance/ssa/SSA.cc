@@ -75,8 +75,8 @@ double SSAStrengthExtension::get_min_thickness() const {
 SSA::SSA(IceGrid::ConstPtr g)
   : ShallowStressBalance(g),
     m_mask(m_grid, "ssa_mask"),
-    m_taud(m_grid, "taud", WITHOUT_GHOSTS),
-    m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
+    m_taud(m_grid, "taud"),
+    m_velocity_global(m_grid, "bar")
 {
 
   m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
@@ -393,7 +393,7 @@ SSA_taud::SSA_taud(const SSA *m)
 
 array::Array::Ptr SSA_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
+  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

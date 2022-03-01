@@ -28,34 +28,51 @@
 
 namespace pism {
 
-IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name,
-                             IceModelVecKind ghostedp, unsigned int stencil_width)
-  : array::Array2D<Vector2>(grid, short_name, ghostedp, stencil_width) {
+IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name)
+  : array::Array2D<Vector2>(grid, name, WITHOUT_GHOSTS, 2) {
+  // This constructor uses the stencil width of 2 to make the DM compatible with ghosted
+  // arrays with this wide stencil.
 
   auto sys = m_impl->grid->ctx()->unit_system();
-
-  m_impl->metadata.clear();
-  for (const auto* prefix : {"u", "v"}) {
-    m_impl->metadata.emplace_back(SpatialVariableMetadata{sys, prefix + short_name});
-  }
-
-  set_name("vel" + short_name);
+  m_impl->metadata = {{sys, "u" + name}, {sys, "v" + name}};
+  set_name("vel" + name);
 }
 
-IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name)
-  : IceModelVec2V(grid, short_name, WITHOUT_GHOSTS, 1) {
+IceModelVec2V::IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name,
+                             unsigned int stencil_width)
+  : array::Array2D<Vector2>(grid, name,
+                            stencil_width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
+                            stencil_width) {
+
+  auto sys = m_impl->grid->ctx()->unit_system();
+  m_impl->metadata = {{sys, "u" + name}, {sys, "v" + name}};
+  set_name("vel" + name);
 }
 
 std::shared_ptr<IceModelVec2V> IceModelVec2V::duplicate() const {
 
   auto result = std::make_shared<IceModelVec2V>(this->grid(),
-                                                this->get_name(),
-                                                WITHOUT_GHOSTS,
-                                                1);
+                                                this->get_name());
   result->metadata(0) = this->metadata(0);
   result->metadata(1) = this->metadata(1);
 
   return result;
+}
+
+Velocity1::Velocity1(IceGrid::ConstPtr grid, const std::string &name)
+  : IceModelVec2V(grid, name, 1) {
+  // empty
+}
+
+Velocity1::Velocity1(IceGrid::ConstPtr grid, const std::string &name,
+                     unsigned int stencil_width)
+  : IceModelVec2V(grid, name, stencil_width) {
+  // empty
+}
+
+Velocity2::Velocity2(IceGrid::ConstPtr grid, const std::string &name)
+  : Velocity1(grid, name, 2) {
+  // empty
 }
 
 } // end of namespace pism

@@ -78,7 +78,7 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
-  IceModelVec2V m_velocity;
+  Velocity2 m_velocity;
   array::Scalar m_basal_frictional_heating;
 
   //! flow enhancement factor
