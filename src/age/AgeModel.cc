@@ -41,7 +41,7 @@ AgeModelInputs::AgeModelInputs() {
   w3            = NULL;
 }
 
-static void check_input(const IceModelVec *ptr, const char *name) {
+static void check_input(const array::Array *ptr, const char *name) {
   if (ptr == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "ice age model input %s was not provided", name);
@@ -126,7 +126,7 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   size_t Mz_fine = system.z().size();
   std::vector<double> x(Mz_fine);   // space for solution
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3, &m_ice_age, &m_work};
+  array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &m_ice_age, &m_work};
 
   unsigned int Mz = m_grid->Mz();
 

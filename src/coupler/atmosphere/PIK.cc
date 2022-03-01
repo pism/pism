@@ -135,7 +135,7 @@ static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, ar
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -155,7 +155,7 @@ static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Sc
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -175,7 +175,7 @@ static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -196,7 +196,7 @@ static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array
     &lat = geometry.latitude,
     &lon = geometry.longitude;
 
-  IceModelVec::AccessList list{&h, &lat, &lon, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &lon, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -227,7 +227,7 @@ static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Sca
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -248,7 +248,7 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T
     &h   = geometry.ice_surface_elevation,
     &lat = geometry.latitude;
 
-  IceModelVec::AccessList list{&h, &lat, &T_ma, &T_ms};
+  array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

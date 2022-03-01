@@ -35,7 +35,7 @@
 namespace pism {
 namespace energy {
 
-static void check_input(const IceModelVec *ptr, const char *name) {
+static void check_input(const array::Array *ptr, const char *name) {
   if (ptr == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "energy balance model input %s was not provided", name);
   }

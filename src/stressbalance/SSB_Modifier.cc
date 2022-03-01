@@ -109,7 +109,7 @@ void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
   }
 
   // horizontal velocity and its maximum:
-  IceModelVec::AccessList list{&m_u, &m_v, &sliding_velocity};
+  array::AccessScope list{&m_u, &m_v, &sliding_velocity};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

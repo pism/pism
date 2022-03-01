@@ -250,7 +250,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
+  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
 
   if (no_model_mask) {
     list.add(*no_model_mask);
@@ -391,7 +391,7 @@ SSA_taud::SSA_taud(const SSA *m)
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute_impl() const {
+array::Array::Ptr SSA_taud::compute_impl() const {
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -414,7 +414,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
     "this is the magnitude of the driving stress used by the SSA solver";
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
+array::Array::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
   array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));

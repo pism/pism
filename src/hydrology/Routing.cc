@@ -48,7 +48,7 @@ public:
   }
 
 protected:
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
     array::Scalar::Ptr result(new array::Scalar(m_grid, "bwp"));
     result->metadata() = m_vars[0];
     result->copy_from(model->subglacial_water_pressure());
@@ -72,7 +72,7 @@ public:
   }
 
 protected:
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
     double fill_value = m_fill_value;
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "bwprel"));
@@ -82,7 +82,7 @@ protected:
       &P  = model->subglacial_water_pressure(),
       &Po = model->overburden_pressure();
 
-    IceModelVec::AccessList list{result.get(), &Po, &P};
+    array::AccessScope list{result.get(), &Po, &P};
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
@@ -112,7 +112,7 @@ public:
   }
 
 protected:
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "effbwp"));
     result->metadata() = m_vars[0];
@@ -121,7 +121,7 @@ protected:
       &P  = model->subglacial_water_pressure(),
       &Po = model->overburden_pressure();
 
-    IceModelVec::AccessList list{&Po, &P, result.get()};
+    array::AccessScope list{&Po, &P, result.get()};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -148,7 +148,7 @@ public:
   }
 
 protected:
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
     array::Scalar::Ptr result(new array::Scalar(m_grid, "wallmelt"));
     result->metadata() = m_vars[0];
 
@@ -177,7 +177,7 @@ public:
               "m s-1", "m s-1", 1);
   }
 protected:
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
     auto result = std::make_shared<array::Staggered>(m_grid, "bwatvel");
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
@@ -210,7 +210,7 @@ void hydraulic_potential(const array::Scalar &W,
     rg                = (config->get_number("constants.fresh_water.density") *
                          config->get_number("constants.standard_gravity"));
 
-  IceModelVec::AccessList list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
+  array::AccessScope list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -235,7 +235,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "hydraulic_potential"));
     result->metadata(0) = m_vars[0];
@@ -397,7 +397,7 @@ void Routing::water_thickness_staggered(const array::Scalar &W,
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
 
-  IceModelVec::AccessList list{ &mask, &W, &result };
+  array::AccessScope list{ &mask, &W, &result };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -461,7 +461,7 @@ void Routing::compute_conductivity(const array::Staggered &W,
     beta  = m_config->get_number("hydrology.gradient_power_in_flux"),
     betapow = (beta - 2.0) / 2.0;
 
-  IceModelVec::AccessList list({&result, &W});
+  array::AccessScope list({&result, &W});
 
   KW_max = 0.0;
 
@@ -574,7 +574,7 @@ void wall_melt(const Routing &model,
   array::Scalar1 W(grid, "W");
   W.copy_from(model.subglacial_water_thickness());
 
-  IceModelVec::AccessList list{&R, &W, &result};
+  array::AccessScope list{&R, &W, &result};
 
   double dx = grid->dx();
   double dy = grid->dy();
@@ -634,7 +634,7 @@ void Routing::compute_velocity(const array::Staggered &W,
   array::Scalar &P = m_R;
   P.copy_from(pressure);  // yes, it updates ghosts
 
-  IceModelVec::AccessList list{&P, &W, &K, &bed, &result};
+  array::AccessScope list{&P, &W, &K, &bed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -687,7 +687,7 @@ void Routing::compute_velocity(const array::Staggered &W,
 void Routing::advective_fluxes(const array::Staggered &V,
                                const array::Scalar &W,
                                array::Staggered &result) const {
-  IceModelVec::AccessList list{&W, &V, &result};
+  array::AccessScope list{&W, &V, &result};
 
   assert(W.stencil_width() >= 1);
 
@@ -753,7 +753,7 @@ void Routing::update_Wtill(double dt,
     tillwat_max = m_config->get_number("hydrology.tillwat_max"),
     C           = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
 
-  IceModelVec::AccessList list{&Wtill, &Wtill_new, &basal_melt_rate};
+  array::AccessScope list{&Wtill, &Wtill_new, &basal_melt_rate};
 
   bool add_surface_input = m_config->get_flag("hydrology.add_water_input_to_till_storage");
   if (add_surface_input) {
@@ -783,7 +783,7 @@ void Routing::W_change_due_to_flow(double dt,
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&W, &Wstag, &K, &Q, &result};
+  array::AccessScope list{&W, &Wstag, &K, &Q, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -823,7 +823,7 @@ void Routing::update_W(double dt,
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
 
-  IceModelVec::AccessList list{&W, &Wtill, &Wtill_new, &surface_input_rate,
+  array::AccessScope list{&W, &Wtill, &Wtill_new, &surface_input_rate,
                                &basal_melt_rate, &m_flow_change_incremental, &W_new};
 
   for (Points p(*m_grid); p; p.next()) {

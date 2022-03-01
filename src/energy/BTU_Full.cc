@@ -170,7 +170,7 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
     throw RuntimeError(PISM_ERROR_LOCATION, "dt < 0 is not allowed");
   }
 
-  IceModelVec::AccessList list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
+  array::AccessScope list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -221,7 +221,7 @@ void BTU_Full::update_flux_through_top_surface() {
   double dz = this->vertical_spacing();
   const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  IceModelVec::AccessList list{m_temp.get(), &m_top_surface_flux};
+  array::AccessScope list{m_temp.get(), &m_top_surface_flux};
 
   if (m_Mbz >= 3) {
 
@@ -262,7 +262,7 @@ void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
   double dz = this->vertical_spacing();
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
-  IceModelVec::AccessList list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
+  array::AccessScope list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

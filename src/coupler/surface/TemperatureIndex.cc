@@ -263,7 +263,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   const auto &mask = geometry.cell_type;
   const auto &H    = geometry.ice_thickness;
 
-  IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
+  array::AccessScope list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
                                &m_firn_depth, &m_snow_depth,
                                m_accumulation.get(), m_melt.get(), m_runoff.get()};
 

@@ -252,7 +252,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
-  IceModelVec::AccessList list(m_parameters);
+  array::AccessScope list(m_parameters);
   auto *P = m_parameters.array();
 
   // loop over all the elements that have at least one owned node

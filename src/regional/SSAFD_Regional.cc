@@ -82,7 +82,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec::AccessList list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
+  array::AccessScope list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

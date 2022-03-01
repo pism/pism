@@ -42,7 +42,7 @@ Array3D::Array3D(IceGrid::ConstPtr grid,
                  IceModelVecKind ghostedp,
                  const std::vector<double> &levels,
                  unsigned int stencil_width)
-  : IceModelVec(grid, name, ghostedp, 1, stencil_width, levels) {
+  : Array(grid, name, ghostedp, 1, stencil_width, levels) {
   set_begin_access_use_dof(true);
 }
 
@@ -51,7 +51,7 @@ Array3D::Array3D(IceGrid::ConstPtr grid,
                  IceModelVecKind ghostedp,
                  unsigned int dof,
                  unsigned int stencil_width)
-  : IceModelVec(grid, name, ghostedp, dof, stencil_width, {0.0}) {
+  : Array(grid, name, ghostedp, dof, stencil_width, {0.0}) {
   set_begin_access_use_dof(true);
 }
 
@@ -145,7 +145,7 @@ const double* Array3D::get_column(int i, int j) const {
 
 //! Copies a horizontal slice at level z of an Array3D into an Scalar gslice.
 void extract_surface(const Array3D &data, double z, Scalar &output) {
-  IceModelVec::AccessList list{&data, &output};
+  array::AccessScope list{&data, &output};
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -162,7 +162,7 @@ void extract_surface(const Array3D &data, double z, Scalar &output) {
 
 //! Copies the values of an Array3D at the ice surface (specified by the level `z`) to an Scalar gsurf.
 void extract_surface(const Array3D &data, const Scalar &z, Scalar &output) {
-  IceModelVec::AccessList list{&data, &output, &z};
+  array::AccessScope list{&data, &output, &z};
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -201,7 +201,7 @@ Computes output = A*output + B*sum_columns(input) + C
 void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
   const unsigned int Mz = data.grid()->Mz();
 
-  AccessList access{&data, &output};
+  AccessScope access{&data, &output};
 
   for (Points p(*data.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -217,7 +217,7 @@ void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
 }
 
 void Array3D::copy_from(const Array3D &input) {
-  IceModelVec::AccessList list {this, &input};
+  array::AccessScope list {this, &input};
 
   assert(levels().size() == input.levels().size());
   assert(ndof() == input.ndof());

@@ -57,7 +57,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
     ice_density = m_config->get_number("constants.ice.density"),
     alpha       = ice_density / m_config->get_number("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
+  array::AccessScope list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
                                &bed_elevation, &surface_elevation, &ice_thickness, &result};
 
   ParallelSection loop(m_grid->com);

@@ -400,7 +400,7 @@ protected:
   /*!
    * The set of variables that the "state" of IceModel consists of.
    */
-  std::set<IceModelVec*> m_model_state;
+  std::set<array::Array*> m_model_state;
   //! Requested spatially-variable diagnostics.
   std::map<std::string,Diagnostic::Ptr> m_diagnostics;
   //! Requested scalar diagnostics.
@@ -454,7 +454,7 @@ protected:
 
   // diagnostic viewers; see iMviewers.cc
   virtual void update_viewers();
-  virtual void view_field(const IceModelVec *field);
+  virtual void view_field(const array::Array *field);
   std::map<std::string,
            std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 

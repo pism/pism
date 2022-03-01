@@ -364,7 +364,7 @@ MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
  */
 void SurfaceModel::dummy_accumulation(const array::Scalar& smb, array::Scalar& result) {
 
-  IceModelVec::AccessList list{&result, &smb};
+  array::AccessScope list{&result, &smb};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -384,7 +384,7 @@ void SurfaceModel::dummy_accumulation(const array::Scalar& smb, array::Scalar& r
  */
 void SurfaceModel::dummy_runoff(const array::Scalar& smb, array::Scalar& result) {
 
-  IceModelVec::AccessList list{&result, &smb};
+  array::AccessScope list{&result, &smb};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -415,7 +415,7 @@ class PS_climatic_mass_balance : public Diag<SurfaceModel>
 public:
   PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 /*! @brief Ice surface temperature. */
@@ -424,7 +424,7 @@ class PS_ice_surface_temp : public Diag<SurfaceModel>
 public:
   PS_ice_surface_temp(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 /*! @brief Ice liquid water fraction at the ice surface. */
@@ -433,7 +433,7 @@ class PS_liquid_water_fraction : public Diag<SurfaceModel>
 public:
   PS_liquid_water_fraction(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 /*! @brief Mass of the surface layer (snow and firn). */
@@ -442,7 +442,7 @@ class PS_layer_mass : public Diag<SurfaceModel>
 public:
   PS_layer_mass(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 /*! @brief Surface layer (snow and firn) thickness. */
@@ -451,7 +451,7 @@ class PS_layer_thickness : public Diag<SurfaceModel>
 public:
   PS_layer_thickness(const SurfaceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
@@ -465,7 +465,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
             "kg m-2 second-1", "kg m-2 year-1", 0);
 }
 
-IceModelVec::Ptr PS_climatic_mass_balance::compute_impl() const {
+array::Array::Ptr PS_climatic_mass_balance::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "climatic_mass_balance"));
   result->metadata(0) = m_vars[0];
@@ -490,7 +490,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
             "K", "K", 0);
 }
 
-IceModelVec::Ptr PS_ice_surface_temp::compute_impl() const {
+array::Array::Ptr PS_ice_surface_temp::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "ice_surface_temp"));
   result->metadata(0) = m_vars[0];
@@ -510,7 +510,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr PS_liquid_water_fraction::compute_impl() const {
+array::Array::Ptr PS_liquid_water_fraction::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "ice_surface_liquid_water_fraction"));
   result->metadata(0) = m_vars[0];
@@ -530,7 +530,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
             "kg", "kg", 0);
 }
 
-IceModelVec::Ptr PS_layer_mass::compute_impl() const {
+array::Array::Ptr PS_layer_mass::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "surface_layer_mass"));
   result->metadata(0) = m_vars[0];
@@ -550,7 +550,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr PS_layer_thickness::compute_impl() const {
+array::Array::Ptr PS_layer_thickness::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "surface_layer_thickness"));
   result->metadata(0) = m_vars[0];
@@ -607,7 +607,7 @@ protected:
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_melt_mass, &melt_amount};
+      array::AccessScope list{&m_melt_mass, &melt_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -667,7 +667,7 @@ protected:
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_runoff_mass, &runoff_amount};
+      array::AccessScope list{&m_runoff_mass, &runoff_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -727,7 +727,7 @@ protected:
     if (m_kind == MASS) {
       double cell_area = m_grid->cell_area();
 
-      IceModelVec::AccessList list{&m_accumulation_mass, &accumulation_amount};
+      array::AccessScope list{&m_accumulation_mass, &accumulation_amount};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -753,7 +753,7 @@ static double integrate(const array::Scalar &input) {
 
   double cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&input};
+  array::AccessScope list{&input};
 
   double result = 0.0;
 

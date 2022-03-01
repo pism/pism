@@ -225,7 +225,7 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
   m_log->message(2, "* Updating till friction angle...\n");
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     { &m_till_phi, &m_usurf_target, &m_usurf_difference, &m_mask, &ice_surface_elevation, &bed_topography, &cell_type };
 
   m_mask.set(0.0);

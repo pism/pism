@@ -189,7 +189,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland:
   // SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
 
-  IceModelVec::AccessList list{&h, &h_ref,
+  array::AccessScope list{&h, &h_ref,
                                &SMB, &SMB_ref, &aSMB, &dSMBdz,
                                &T, &T_ref, &aT, &dTdz};
 

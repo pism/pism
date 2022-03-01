@@ -31,7 +31,7 @@ class CellType1;
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
 //! components are not called `u` and `v` (to avoid confusion).
-class Staggered : public IceModelVec {
+class Staggered : public Array {
 public:
   Staggered(IceGrid::ConstPtr grid, const std::string &name);
 

@@ -128,7 +128,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
     switch (m_precip_method) {
     case SCALE:
       {
-        IceModelVec::AccessList list{&m_surface, &reference_surface, m_precipitation.get()};
+        array::AccessScope list{&m_surface, &reference_surface, m_precipitation.get()};
 
         for (Points p(*m_grid); p; p.next()) {
           const int i = p.i(), j = p.j();

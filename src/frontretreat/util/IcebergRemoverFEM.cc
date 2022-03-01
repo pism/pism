@@ -76,7 +76,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
   assert(bc_mask.stencil_width() >= 1);
   assert(cell_type.stencil_width() >= 1);
 
-  IceModelVec::AccessList list{&bc_mask, &cell_type, &m_iceberg_mask};
+  array::AccessScope list{&bc_mask, &cell_type, &m_iceberg_mask};
 
   fem::Q1Element2 element(*m_grid, fem::Q1Quadrature1());
 

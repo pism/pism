@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
       // compute exact ice temperature at z=0 at time y
       {
-        IceModelVec::AccessList list(bedtoptemp);
+        array::AccessScope list(bedtoptemp);
         for (Points p(*grid); p; p.next()) {
           const int i = p.i(), j = p.j();
 

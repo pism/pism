@@ -33,7 +33,7 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
   
   f.valueAt(x,&F0);
   
-  IceModelVec::AccessList list(gradient);
+  array::AccessScope list(gradient);
 
   ParallelSection loop(grid.com);
   try {
@@ -41,7 +41,7 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
       const int i = p.i(), j = p.j();
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j) += h;
       }
       x.update_ghosts();
@@ -49,7 +49,7 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j) -= h;
       }
       x.update_ghosts();
@@ -70,7 +70,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
   
   f.valueAt(x,&F0);
   
-  IceModelVec::AccessList access_gradient(gradient);
+  array::AccessScope access_gradient(gradient);
 
   ParallelSection loop(grid.com);
   try {
@@ -78,7 +78,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       const int i = p.i(), j = p.j();
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).u += h;
       }
       x.update_ghosts();
@@ -86,7 +86,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).u -= h;
       }
       x.update_ghosts();
@@ -94,7 +94,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       gradient(i,j).u = (Fh-F0)/h;
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).v += h;
       }
       x.update_ghosts();
@@ -102,7 +102,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
       f.valueAt(x,&Fh);
 
       {
-        IceModelVec::AccessList access_x(x);
+        array::AccessScope access_x(x);
         x(i,j).v -= h;
       }
       x.update_ghosts();

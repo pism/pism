@@ -67,7 +67,7 @@ void Blatter::compute_node_type(double min_thickness) {
 
   Parameters p[fem::q1::n_chi];
 
-  IceModelVec::AccessList l{&node_type, &m_parameters};
+  array::AccessScope l{&node_type, &m_parameters};
 
   // Loop over all the elements with at least one owned node and compute the number of icy
   // elements each node belongs to.
@@ -536,7 +536,7 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
     &sea_level = inputs.geometry->sea_level_elevation;
 
   {
-    IceModelVec::AccessList list{&tauc, &H, &b, &sea_level, &m_parameters};
+    array::AccessScope list{&tauc, &H, &b, &sea_level, &m_parameters};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -588,7 +588,7 @@ void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
   const auto &ice_thickness = inputs.geometry->ice_thickness;
   DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
 
-  IceModelVec::AccessList list{enthalpy, &ice_thickness};
+  array::AccessScope list{enthalpy, &ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -699,7 +699,7 @@ void Blatter::report_mesh_info() {
 
   fem::Q1Element2 E(info, 1.0, 1.0, fem::Q1Quadrature1());
 
-  IceModelVec::AccessList l{&m_parameters};
+  array::AccessScope l{&m_parameters};
 
   double R_min = 1e16, R_max = 0.0, R_avg = 0.0;
   double dxy = std::max(m_grid->dx(), m_grid->dy());
@@ -1099,7 +1099,7 @@ void Blatter::copy_solution() {
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{m_u_sigma.get(), m_v_sigma.get()};
+  array::AccessScope list{m_u_sigma.get(), m_v_sigma.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1120,7 +1120,7 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
   Vector2 ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1139,7 +1139,7 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&u_sigma, &v_sigma};
+  array::AccessScope list{&u_sigma, &v_sigma};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1164,7 +1164,7 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 
   int Mz = m_u_sigma->levels().size();
 
-  IceModelVec::AccessList list{&result, &m_parameters};
+  array::AccessScope list{&result, &m_parameters};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

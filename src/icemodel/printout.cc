@@ -54,7 +54,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
     CFL_x = grid->dx() / dt,
     CFL_y = grid->dy() / dt;
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3};
+  array::AccessScope list{&ice_thickness, &u3, &v3};
 
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);

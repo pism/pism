@@ -278,7 +278,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
                          inputs.no_model_mask,
                          m_taud);
 
-  IceModelVec::AccessList list{&m_taud, &m_b};
+  array::AccessScope list{&m_taud, &m_b};
 
   if (inputs.bc_values and inputs.bc_mask) {
     list.add({inputs.bc_values, inputs.bc_mask});
@@ -530,7 +530,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
+  array::AccessScope list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
 
   if (inputs.bc_values && inputs.bc_mask) {
     list.add(*inputs.bc_mask);
@@ -1101,7 +1101,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
       auto max_speed = m_config->get_number("stress_balance.ssa.fd.max_speed", "m second-1");
       int high_speed_counter = 0;
 
-      IceModelVec::AccessList list{&m_velocity_global};
+      array::AccessScope list{&m_velocity_global};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -1271,7 +1271,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
 
   std::vector<double> E(m_grid->Mz());
 
-  IceModelVec::AccessList list{&thickness, &enthalpy, &m_hardness, &m_mask};
+  array::AccessScope list{&thickness, &enthalpy, &m_hardness, &m_mask};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1358,7 +1358,7 @@ void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
     epsilon = m_config->get_number("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
-  IceModelVec::AccessList list{&m_hardness, fracture_density};
+  array::AccessScope list{&m_hardness, fracture_density};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1430,7 +1430,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
 
   const IceModelVec2V &uv = m_velocity; // shortcut
 
-  IceModelVec::AccessList list{&result, &uv, &m_hardness, &geometry.ice_thickness};
+  array::AccessScope list{&result, &uv, &m_hardness, &geometry.ice_thickness};
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1508,7 +1508,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
+  array::AccessScope list{&m_mask, &m_work, &m_velocity};
 
   assert(m_velocity.stencil_width() >= 2);
   assert(m_mask.stencil_width()     >= 2);
@@ -1647,7 +1647,7 @@ void SSAFD::update_nuH_viewers() {
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "Pa s m", "", 0);
 
-  IceModelVec::AccessList list{&m_nuH, &tmp};
+  array::AccessScope list{&m_nuH, &tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1686,7 +1686,7 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
 
 //! \brief Checks if a cell is near or at the ice front.
 /*!
- * You need to create IceModelVec::AccessList object and add mask to it.
+ * You need to create array::AccessScope object and add mask to it.
  *
  * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
  *
@@ -1752,7 +1752,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
+array::Array::Ptr SSAFD_nuH::compute_impl() const {
 
   auto result = std::make_shared<array::Staggered>(m_grid, "nuH");
 

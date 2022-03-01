@@ -98,7 +98,7 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
 void check_minimum_ice_thickness(const array::Scalar &ice_thickness) {
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
-  IceModelVec::AccessList list(ice_thickness);
+  array::AccessScope list(ice_thickness);
 
   ParallelSection loop(grid->com);
   try {
@@ -123,7 +123,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
   check_minimum_ice_thickness(ice_thickness);
 
-  IceModelVec::AccessList list{&sea_level_elevation, &bed_elevation,
+  array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,
       &cell_type, &ice_surface_elevation};
 
@@ -232,7 +232,7 @@ void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
   const array::Scalar &bed_elevation = geometry.bed_elevation;
   const array::Scalar &sea_level     = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+  array::AccessScope list{&ice_thickness, &bed_elevation, &sea_level, &result};
 
   ParallelSection loop(grid->com);
   try {
@@ -258,7 +258,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   auto grid = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
+  array::AccessScope list{&geometry.ice_thickness};
 
   double volume = 0.0;
 
@@ -297,7 +297,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
     ice_density       = config->get_number("constants.ice.density"),
     cell_area         = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness,
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
       &geometry.bed_elevation, &geometry.sea_level_elevation};
 
   double volume = 0.0;
@@ -332,7 +332,7 @@ double ice_area(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
+  array::AccessScope list{&geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -352,7 +352,7 @@ double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -373,7 +373,7 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -416,7 +416,7 @@ void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result
     return;
   }
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();

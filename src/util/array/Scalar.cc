@@ -74,7 +74,7 @@ Scalar2::Scalar2(IceGrid::ConstPtr grid, const std::string &name)
 void compute_magnitude(const array::Scalar &v_x,
                        const array::Scalar &v_y,
                        array::Scalar &result) {
-  IceModelVec::AccessList list{&result, &v_x, &v_y};
+  array::AccessScope list{&result, &v_x, &v_y};
 
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -86,7 +86,7 @@ void compute_magnitude(const array::Scalar &v_x,
 }
 
 void compute_magnitude(const IceModelVec2V &input, array::Scalar &result) {
-  IceModelVec::AccessList list{&result, &input};
+  array::AccessScope list{&result, &input};
 
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -99,7 +99,7 @@ void compute_magnitude(const IceModelVec2V &input, array::Scalar &result) {
 
 //! Masks out all the areas where \f$ M \le 0 \f$ by setting them to `fill`.
 void apply_mask(const array::Scalar &M, double fill, array::Scalar &result) {
-  IceModelVec::AccessList list{&result, &M};
+  array::AccessScope list{&result, &M};
 
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -170,7 +170,7 @@ double diff_y_p(const array::Scalar &array, int i, int j) {
 double sum(const array::Scalar &input) {
   double result = 0;
 
-  IceModelVec::AccessList list(input);
+  array::AccessScope list(input);
 
   // sum up the local part:
   for (Points p(*input.grid()); p; p.next()) {
@@ -183,7 +183,7 @@ double sum(const array::Scalar &input) {
 
 //! Finds maximum over all the values in an array::Scalar object.  Ignores ghosts.
 double max(const array::Scalar &input) {
-  IceModelVec::AccessList list(input);
+  array::AccessScope list(input);
 
   auto grid = input.grid();
 
@@ -200,7 +200,7 @@ double absmax(const array::Scalar &input) {
 
   double result = 0.0;
 
-  IceModelVec::AccessList list(input);
+  array::AccessScope list(input);
   for (Points p(*input.grid()); p; p.next()) {
     result = std::max(result, std::abs(input(p.i(), p.j())));
   }
@@ -211,7 +211,7 @@ double absmax(const array::Scalar &input) {
 
 //! Finds minimum over all the values in an array::Scalar object.  Ignores ghosts.
 double min(const array::Scalar &input) {
-  IceModelVec::AccessList list(input);
+  array::AccessScope list(input);
 
   auto grid = input.grid();
 

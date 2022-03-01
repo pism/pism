@@ -132,7 +132,7 @@ void IP_SSATaucForwardProblem::set_design(array::Scalar &new_zeta) {
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points.
-  IceModelVec::AccessList list{&tauc, &m_coefficients};
+  array::AccessScope list{&tauc, &m_coefficients};
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -155,7 +155,7 @@ TerminationReason::Ptr IP_SSATaucForwardProblem::linearize_at(array::Scalar &zet
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
-  IceModelVec::AccessList l{&u, &RHS};
+  array::AccessScope l{&u, &RHS};
 
   this->compute_local_function(u.array(), RHS.array());
 }
@@ -164,7 +164,7 @@ void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
 void IP_SSATaucForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
-  IceModelVec::AccessList l{&u};
+  array::AccessScope l{&u};
 
   petsc::DMDAVecArray rhs_a(m_da, RHS);
   this->compute_local_function(u.array(), (Vector2**)rhs_a.get());
@@ -179,7 +179,7 @@ to this method.
   @param[out] J computed state Jacobian.
 */
 void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
-  IceModelVec::AccessList l{&u};
+  array::AccessScope l{&u};
 
   this->compute_local_jacobian(u.array(), Jac);
 }
@@ -190,7 +190,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta,
                                                      IceModelVec2V &du) {
-  IceModelVec::AccessList l{&du};
+  array::AccessScope l{&du};
 
   this->apply_jacobian_design(u, dzeta, du.array());
 }
@@ -224,7 +224,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{&m_coefficients, m_zeta, &u};
 
   array::Scalar *dzeta_local;
   if (dzeta.stencil_width() > 0) {
@@ -357,7 +357,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
                                                                IceModelVec2V &du,
                                                                array::Scalar &dzeta) {
-  IceModelVec::AccessList l{&dzeta};
+  array::AccessScope l{&dzeta};
 
   this->apply_jacobian_design_transpose(u, du, dzeta.array());
 }
@@ -392,7 +392,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
   const unsigned int Nq = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  IceModelVec::AccessList list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{&m_coefficients, m_zeta, &u};
 
   IceModelVec2V *du_local;
   if (du.stencil_width() > 0) {
@@ -597,7 +597,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   if (dirichletBC) {
-    IceModelVec::AccessList l{&m_du_global};
+    array::AccessScope l{&m_du_global};
     dirichletBC.fix_residual_homogeneous(m_du_global.array());
   }
 

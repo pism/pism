@@ -87,7 +87,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
   const array::Scalar &water_flux          = *inputs.subglacial_water_flux;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
      &water_flux, m_theta_ocean.get(), &m_frontal_melt_rate};
 

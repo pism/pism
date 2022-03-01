@@ -60,7 +60,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
   {
     m_iceberg_mask.set(0.0);
 
-    IceModelVec::AccessList list{&cell_type, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{&cell_type, &m_iceberg_mask, &bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -103,7 +103,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

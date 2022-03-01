@@ -33,7 +33,7 @@ void lapse_rate_correction(const array::Scalar &surface,
     return;
   }
 
-  IceModelVec::AccessList list{&surface, &reference_surface, &result};
+  array::AccessScope list{&surface, &reference_surface, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

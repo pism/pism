@@ -59,7 +59,7 @@ void FloatKill::init() {
  */
 void FloatKill::update(array::CellType1 &mask, array::Scalar &ice_thickness) {
 
-  IceModelVec::AccessList list{&mask, &ice_thickness};
+  array::AccessScope list{&mask, &ice_thickness};
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 

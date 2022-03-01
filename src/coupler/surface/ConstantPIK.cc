@@ -78,7 +78,7 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
     &surface_elevation = geometry.ice_surface_elevation,
     &latitude          = geometry.latitude;
 
-  IceModelVec::AccessList list{ m_temperature.get(), &surface_elevation, &latitude };
+  array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j   = p.j();

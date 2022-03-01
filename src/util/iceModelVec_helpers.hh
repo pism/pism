@@ -30,7 +30,7 @@ namespace vec {
 template<class V>
 void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
 
-  IceModelVec::AccessList list{&x, &y, &result};
+  array::AccessScope list{&x, &y, &result};
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -47,7 +47,7 @@ void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
 template<class V>
 void copy(const V& source, V& destination, bool scatter=true) {
 
-  IceModelVec::AccessList list{&source, &destination};
+  array::AccessScope list{&source, &destination};
 
   for (Points p(*destination.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();

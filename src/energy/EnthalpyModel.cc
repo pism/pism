@@ -146,7 +146,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
       &ice_thickness, &basal_frictional_heating, &basal_heat_flux, &till_water_thickness,
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};

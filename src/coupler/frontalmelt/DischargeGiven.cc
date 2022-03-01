@@ -103,7 +103,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
   const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&bed_elevation, &cell_type, &sea_level_elevation,
      m_theta_ocean.get(), m_subglacial_discharge.get(), &m_frontal_melt_rate};
 

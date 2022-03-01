@@ -173,7 +173,7 @@ void Poisson::assemble_matrix(const array::Scalar &mask, Mat A) {
 
   ierr = MatZeroEntries(A); PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&mask};
+  array::AccessScope list{&mask};
 
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
@@ -260,7 +260,7 @@ void Poisson::assemble_rhs(double rhs,
                            const array::Scalar &mask,
                            const array::Scalar &bc,
                            array::Scalar &b) {
-  IceModelVec::AccessList list{&mask, &bc, &b};
+  array::AccessScope list{&mask, &bc, &b};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

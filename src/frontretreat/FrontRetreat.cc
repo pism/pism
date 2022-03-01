@@ -45,7 +45,7 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
 void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
                                          array::CellType1 &output) const {
 
-  IceModelVec::AccessList list{&input, &output};
+  array::AccessScope list{&input, &output};
 
   const int Mx = m_grid->Mx();
   const int My = m_grid->My();
@@ -87,7 +87,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
     retreat_rate_mean = 0.0;
   int N_cells = 0;
 
-  IceModelVec::AccessList list{&cell_type, &bc_mask, &retreat_rate};
+  array::AccessScope list{&cell_type, &bc_mask, &retreat_rate};
 
   for (Points pt(*grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -165,7 +165,7 @@ void FrontRetreat::update_geometry(double dt,
 
   m_tmp.set(0.0);
 
-  IceModelVec::AccessList list{&ice_thickness, &bc_mask,
+  array::AccessScope list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
       &surface_elevation};
 

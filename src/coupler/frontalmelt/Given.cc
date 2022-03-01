@@ -72,7 +72,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   // post-processing: keep values at grounded (or grounded and floating) margins and in
   // the interior, filling the rest with zeros
 
-  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

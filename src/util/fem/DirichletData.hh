@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,9 +25,11 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
+namespace array {
+class Array;
+class Scalar;
+}
 
-class IceModelVec;
 class IceModelVec2V;
 
 namespace fem {
@@ -45,8 +47,8 @@ protected:
   DirichletData();
   ~DirichletData();
 
-  void init(const array::Scalar *indices, const IceModelVec *values, double weight = 1.0);
-  void finish(const IceModelVec *values);
+  void init(const array::Scalar *indices, const array::Array *values, double weight = 1.0);
+  void finish(const array::Array *values);
 
   const array::Scalar *m_indices;
   double m_indices_e[q1::n_chi];

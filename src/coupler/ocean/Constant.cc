@@ -85,7 +85,7 @@ void Constant::melting_point_temperature(const array::Scalar& depth,
     g           = m_config->get_number("constants.standard_gravity"),
     ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&depth, &result};
+  array::AccessScope list{&depth, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

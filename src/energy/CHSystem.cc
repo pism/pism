@@ -148,7 +148,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
       &ice_thickness, &basal_frictional_heating, &basal_heat_flux,
       &cell_type, &u3, &v3, &w3, &volumetric_heat, &m_ice_enthalpy,
       &m_work};
@@ -264,7 +264,7 @@ void cryo_hydrologic_warming_flux(double k,
 
   auto EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList access{&ice_thickness, &ice_enthalpy, &ch_enthalpy, &result};
+  array::AccessScope access{&ice_thickness, &ice_enthalpy, &ch_enthalpy, &result};
 
   double C = k / (R * R);
 

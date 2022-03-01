@@ -80,7 +80,7 @@ void SSATestCaseJ::initializeSSACoefficients() {
   m_ssa->strength_extension->set_notional_strength(nu0 * H0);
   m_ssa->strength_extension->set_min_thickness(800);
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values};
+  array::AccessScope list{&m_geometry.ice_thickness, &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -232,7 +232,7 @@ void IceModel::compute_geometry_change(const array::Scalar &thickness,
                                        bool add_values,
                                        array::Scalar &output) {
 
-  IceModelVec::AccessList list{&thickness, &thickness_old,
+  array::AccessScope list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
 
   for (Points p(*m_grid); p; p.next()) {

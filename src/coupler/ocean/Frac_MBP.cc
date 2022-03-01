@@ -73,7 +73,7 @@ void Frac_MBP::update_impl(const Geometry &geometry, double t, double dt) {
 
   array::Scalar &P_o = *m_water_column_pressure;
 
-  IceModelVec::AccessList list{&P_o, &geometry.ice_thickness};
+  array::AccessScope list{&P_o, &geometry.ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

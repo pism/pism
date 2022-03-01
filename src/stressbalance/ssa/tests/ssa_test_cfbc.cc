@@ -101,7 +101,7 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness,
+  array::AccessScope list{&m_geometry.ice_thickness,
       &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
 
   const double x_min = m_grid->x(0);

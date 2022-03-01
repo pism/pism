@@ -117,7 +117,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   switch (m_smb_method) {
   case SCALE:
     {
-      IceModelVec::AccessList list{&surface, m_reference_surface.get(), m_mass_flux.get()};
+      array::AccessScope list{&surface, m_reference_surface.get(), m_mass_flux.get()};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();

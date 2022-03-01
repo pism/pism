@@ -289,7 +289,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
   const auto &bed_topography = inputs.geometry->bed_elevation;
   const auto &sea_level      = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
+  array::AccessScope list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
                                &bed_topography, &sea_level, &ice_thickness};
 
   if (add_transportable_water) {
@@ -376,7 +376,7 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &bed_topogr
 
   const double slope = (phi_max - phi_min) / (topg_max - topg_min);
 
-  IceModelVec::AccessList list{&bed_topography, &result};
+  array::AccessScope list{&bed_topography, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -420,7 +420,7 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yiel
   const array::Scalar
     &W_till = till_water_thickness;
 
-  IceModelVec::AccessList list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
+  array::AccessScope list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

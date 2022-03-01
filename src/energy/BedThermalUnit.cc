@@ -230,7 +230,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 
-IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
+array::Array::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
   auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 

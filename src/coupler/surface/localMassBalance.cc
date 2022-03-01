@@ -391,7 +391,7 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
   LocalMassBalance::DegreeDayFactors ddf;
   ddf.refreeze_fraction = m_refreeze_fraction;
 
-  IceModelVec::AccessList list(m_temp_mj);
+  array::AccessScope list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
 
   if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
@@ -442,7 +442,7 @@ void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
     &lat_degN = lat,
     &lon_degE = lon;
 
-  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_temp_mj};
+  array::AccessScope list{&h, &lat_degN, &lon_degE, &m_temp_mj};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

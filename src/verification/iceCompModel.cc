@@ -308,7 +308,7 @@ void IceCompModel::initTestABCDH() {
 
   m_geometry.cell_type.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -407,7 +407,7 @@ void IceCompModel::initTestL() {
   {
     array::Scalar bed_uplift(m_grid, "uplift");
 
-    IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
+    array::AccessScope list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
 
     for (k = 0; k < MM; k++) {
       m_geometry.ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
@@ -430,7 +430,7 @@ void IceCompModel::initTestL() {
 void IceCompModel::reset_thickness_test_A() {
   const double LforAE = 750e3; // m
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -464,7 +464,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     avHerr = 0.0,
     etaerr = 0.0;
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
   if (m_testname == 'L') {
     list.add(m_HexactL);
   }
@@ -859,7 +859,7 @@ void IceCompModel::test_V_init() {
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
      &m_velocity_bc_mask, &m_velocity_bc_values};
 

@@ -121,7 +121,7 @@ void EISMINTII::initialize_using_formulas() {
     cy += 100.0e3;
   }
 
-  IceModelVec::AccessList list{m_temperature.get(), m_mass_flux.get()};
+  array::AccessScope list{m_temperature.get(), m_mass_flux.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

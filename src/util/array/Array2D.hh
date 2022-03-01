@@ -28,14 +28,14 @@ namespace array {
 
 //! A storage vector combining related fields in a struct
 template<typename T>
-class Array2D : public IceModelVec {
+class Array2D : public Array {
 public:
   using value_type = T;
 
   Array2D(IceGrid::ConstPtr grid, const std::string &short_name,
           IceModelVecKind ghostedp, unsigned int stencil_width = 1)
-    : IceModelVec(grid, short_name, ghostedp,
-                  sizeof(T) / sizeof(double), stencil_width, {0.0}) {
+    : Array(grid, short_name, ghostedp,
+            sizeof(T) / sizeof(double), stencil_width, {0.0}) {
     set_begin_access_use_dof(false);
   }
 

@@ -128,7 +128,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
     array::Scalar &T = *m_temperature;
     IceModelVec2T &delta = *m_2d_offsets;
 
-    IceModelVec::AccessList list{&T, &delta};
+    array::AccessScope list{&T, &delta};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

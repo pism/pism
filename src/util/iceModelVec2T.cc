@@ -375,7 +375,7 @@ void IceModelVec2T::init_periodic_data(const File &file) {
   int first = 1;
   int last = buffer_required - 2;
 
-  IceModelVec::AccessList list{this};
+  array::AccessScope list{this};
 
   // compute values at the beginning (and so at the end) of the period
   double  **a2 = array();
@@ -566,7 +566,7 @@ void IceModelVec2T::discard(int number) {
 
   m_data->n_records -= number;
 
-  AccessList l{this};
+  array::AccessScope l{this};
 
   double ***a3 = array3();
   for (Points p(*m_impl->grid); p; p.next()) {
@@ -581,7 +581,7 @@ void IceModelVec2T::discard(int number) {
 //! Sets the record number n to the contents of the (internal) Vec v.
 void IceModelVec2T::set_record(int n) {
 
-  AccessList l{this};
+  array::AccessScope l{this};
 
   double  **a2 = array();
   double ***a3 = array3();
@@ -647,7 +647,7 @@ void IceModelVec2T::interp(double t) {
   int R = m_data->interp->right(0);
   double alpha = m_data->interp->alpha(0);
 
-  AccessList l{this};
+  array::AccessScope l{this};
   double ***a3 = array3();
   double  **a2 = array();
 
@@ -744,7 +744,7 @@ void IceModelVec2T::average(double t, double dt) {
     weights = integration_weights(data, data_size, type, t, t + dt);
   }
 
-  AccessList l{this};
+  array::AccessScope l{this};
   double **a2 = array();
   double ***a3 = array3();
 

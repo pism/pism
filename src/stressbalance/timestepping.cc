@@ -52,7 +52,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3, &cell_type};
+  array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &cell_type};
 
   // update global max of abs of velocities for CFL; only velocities under surface
   const double
@@ -127,7 +127,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
     dx = grid->dx(),
     dy = grid->dy();
 
-  IceModelVec::AccessList list{&velocity, &cell_type};
+  array::AccessScope list{&velocity, &cell_type};
 
   double u_max = 0.0, v_max = 0.0;
   for (Points p(*grid); p; p.next()) {

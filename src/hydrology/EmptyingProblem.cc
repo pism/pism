@@ -40,7 +40,7 @@ static void compute_sinks(const array::Scalar &domain_mask,
 
   IceGrid::ConstPtr grid = result.grid();
 
-  IceModelVec::AccessList list{&psi, &domain_mask, &result};
+  array::AccessScope list{&psi, &domain_mask, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -72,7 +72,7 @@ static void effective_water_velocity(const Geometry &geometry,
   const auto &ice_thickness       = geometry.ice_thickness;
   const auto &sea_level_elevation = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
      &water_flux, &result};
 
@@ -213,7 +213,7 @@ void EmptyingProblem::update(const Geometry &geometry,
   // set initial state and compute initial volume
   double volume_0 = 0.0;
   {
-    IceModelVec::AccessList list{&geometry.cell_type, &m_W, &water_input_rate};
+    array::AccessScope list{&geometry.cell_type, &m_W, &water_input_rate};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -245,7 +245,7 @@ void EmptyingProblem::update(const Geometry &geometry,
   double volume = 0.0;
   int step_counter = 0;
 
-  IceModelVec::AccessList list{&m_Qsum, &m_W, &m_Vstag, &m_domain_mask, &m_tmp};
+  array::AccessScope list{&m_Qsum, &m_W, &m_Vstag, &m_domain_mask, &m_tmp};
 
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
     volume = 0.0;
@@ -320,7 +320,7 @@ void EmptyingProblem::compute_raw_potential(const array::Scalar &H,
     rho_i = m_config->get_number("constants.ice.density"),
     rho_w = m_config->get_number("constants.fresh_water.density");
 
-  IceModelVec::AccessList list({&H, &b, &result});
+  array::AccessScope list({&H, &b, &result});
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -346,7 +346,7 @@ void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
 
   compute_raw_potential(ice_thickness, ice_bottom_surface, result);
 
-  IceModelVec::AccessList list{&result, &psi_new, &domain_mask};
+  array::AccessScope list{&result, &psi_new, &domain_mask};
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
 
     n_sinks_remaining = 0;
@@ -407,7 +407,7 @@ void EmptyingProblem::compute_velocity(const array::Scalar &psi,
                                        const array::Scalar &domain_mask,
                                        array::Staggered &result) const {
 
-  IceModelVec::AccessList list{&psi, &result, &domain_mask};
+  array::AccessScope list{&psi, &result, &domain_mask};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -445,7 +445,7 @@ void EmptyingProblem::compute_mask(const array::CellType0 &cell_type,
                                    const array::Scalar *no_model_mask,
                                    array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&cell_type, &result};
+  array::AccessScope list{&cell_type, &result};
 
   if (no_model_mask) {
     list.add(*no_model_mask);

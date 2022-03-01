@@ -36,7 +36,7 @@ void IP_H1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -83,7 +83,7 @@ void IP_H1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTP
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b};
+  array::AccessScope list{&a, &b};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -136,7 +136,7 @@ void IP_H1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient
 
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 

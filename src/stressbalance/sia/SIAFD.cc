@@ -238,7 +238,7 @@ void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
-  IceModelVec::AccessList list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
+  array::AccessScope list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
 
   unsigned int GHOSTS = eta.stencil_width();
   assert(ice_thickness.stencil_width() >= GHOSTS);
@@ -307,7 +307,7 @@ void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
 
   const array::Scalar &h = ice_surface_elevation;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &h};
+  array::AccessScope list{&h_x, &h_y, &h};
 
   // h_x and h_y have to have ghosts
   assert(h_x.stencil_width() >= 1);
@@ -391,7 +391,7 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation
 
   const auto &mask = cell_type;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
+  array::AccessScope list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
 
   assert(mask.stencil_width() >= 2);
   assert(h.stencil_width()    >= 2);
@@ -586,7 +586,7 @@ void SIAFD::compute_diffusivity(bool full_update,
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
+  array::AccessScope list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
 
   if (use_age) {
     assert(age->stencil_width() >= 2);
@@ -786,7 +786,7 @@ void SIAFD::compute_diffusive_flux(const array::Staggered &h_x, const array::Sta
                                    const array::Staggered &diffusivity,
                                    array::Staggered &result) {
 
-  IceModelVec::AccessList list{&diffusivity, &h_x, &h_y, &result};
+  array::AccessScope list{&diffusivity, &h_x, &h_y, &result};
 
   for (int o = 0; o < 2; o++) {
     ParallelSection loop(m_grid->com);
@@ -831,7 +831,7 @@ void SIAFD::compute_I(const Geometry &geometry) {
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list{delta[0], delta[1], I[0], I[1], &thk_smooth};
+  array::AccessScope list{delta[0], delta[1], I[0], I[1], &thk_smooth};
 
   assert(I[0]->stencil_width()     >= 1);
   assert(I[1]->stencil_width()     >= 1);
@@ -910,7 +910,7 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
   array::Array3D* I[] = {&m_work_3d_0, &m_work_3d_1};
 
-  IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
+  array::AccessScope list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
 
   const unsigned int Mz = m_grid->Mz();
 

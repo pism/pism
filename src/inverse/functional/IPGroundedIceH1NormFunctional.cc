@@ -37,7 +37,7 @@ void IPGroundedIceH1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&x, &m_ice_mask};
+  array::AccessScope list{&x, &m_ice_mask};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -90,7 +90,7 @@ void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, do
   double a_e[Nk];
   double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b, &m_ice_mask};
+  array::AccessScope list{&a, &b, &m_ice_mask};
 
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
@@ -153,7 +153,7 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&x, &gradient, &m_ice_mask};
+  array::AccessScope list{&x, &gradient, &m_ice_mask};
 
   double gradient_e[Nk];
 
@@ -221,7 +221,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
 
   fem::DirichletData_Scalar zeroLocs(m_dirichletIndices, NULL);
 
-  IceModelVec::AccessList list(m_ice_mask);
+  array::AccessScope list(m_ice_mask);
 
   // Loop through all the elements.
   const int

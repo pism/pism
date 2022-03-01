@@ -79,7 +79,7 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
 
   // The update_impl() call above sets m_work; ghosts are communicated
   // later (in EnergyModel::update()).
-  IceModelVec::AccessList list{&no_model_mask, &m_work, &m_ice_enthalpy,
+  array::AccessScope list{&no_model_mask, &m_work, &m_ice_enthalpy,
       &m_basal_melt_rate, &m_basal_melt_rate_stored};
 
   for (Points p(*m_grid); p; p.next()) {

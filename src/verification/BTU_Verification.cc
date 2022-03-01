@@ -71,7 +71,7 @@ void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   }
 
   // copy column values into 3D arrays
-  IceModelVec::AccessList list(*m_temp);
+  array::AccessScope list(*m_temp);
 
   ParallelSection loop(m_grid->com);
   try {

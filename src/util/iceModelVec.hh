@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __IceModelVec_hh
-#define __IceModelVec_hh
+#ifndef PISM_ARRAY_H
+#define PISM_ARRAY_H
 
 #include <initializer_list>
 #include <memory>               // shared_ptr, dynamic_pointer_cast
@@ -52,13 +52,15 @@ public:
   virtual void end_access() const = 0;
 };
 
+namespace array {
+
 //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
-class AccessList {
+class AccessScope {
 public:
-  AccessList();
-  AccessList(std::initializer_list<const PetscAccessible *> vecs);
-  AccessList(const PetscAccessible &v);
-  ~AccessList();
+  AccessScope();
+  AccessScope(std::initializer_list<const PetscAccessible *> vecs);
+  AccessScope(const PetscAccessible &v);
+  ~AccessScope();
   void add(const PetscAccessible &v);
   void add(const std::vector<const PetscAccessible*> &vecs);
 private:
@@ -196,17 +198,17 @@ T interpolate(const F &field, double x, double y) {
   to work, a bed deformation model has to call inc_state_counter() after an
   update.
 */
-class IceModelVec : public PetscAccessible {
+class Array : public PetscAccessible {
 public:
-  virtual ~IceModelVec();
+  virtual ~Array();
 
-  typedef std::shared_ptr<IceModelVec> Ptr;
-  typedef std::shared_ptr<const IceModelVec> ConstPtr;
+  typedef std::shared_ptr<Array> Ptr;
+  typedef std::shared_ptr<const Array> ConstPtr;
 
   //! `dynamic_pointer_cast` wrapper that checks if the cast succeeded.
   template<class T>
-  static typename T::Ptr cast(IceModelVec::Ptr input) {
-    auto result = std::dynamic_pointer_cast<T,IceModelVec>(input);
+  static typename T::Ptr cast(Array::Ptr input) {
+    auto result = std::dynamic_pointer_cast<T,Array>(input);
 
     if (not result) {
       throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
@@ -226,7 +228,7 @@ public:
   std::array<double,2> range() const;
   std::vector<double> norm(int n) const;
 
-  void add(double alpha, const IceModelVec &x);
+  void add(double alpha, const Array &x);
   void shift(double alpha);
   void scale(double alpha);
 
@@ -278,7 +280,7 @@ public:
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
 
 protected:
-  IceModelVec(IceGrid::ConstPtr grid,
+  Array(IceGrid::ConstPtr grid,
               const std::string &name,
               IceModelVecKind ghostedp,
               size_t dof,
@@ -298,7 +300,7 @@ protected:
                    double default_value = 0.0);
   void write_impl(const File &file) const;
 
-  void checkCompatibility(const char *function, const IceModelVec &other) const;
+  void checkCompatibility(const char *function, const Array &other) const;
 
   //! @brief Check array indices and warn if they are out of range.
   void check_array_indices(int i, int j, unsigned int k) const;
@@ -311,10 +313,10 @@ protected:
 private:
   size_t size() const;
   // disable copy constructor and the assignment operator:
-  IceModelVec(const IceModelVec &other);
-  IceModelVec& operator=(const IceModelVec&);
+  Array(const Array &other);
+  Array& operator=(const Array&);
 public:
-  //! Dump an IceModelVec to a file. *This is for debugging only.*
+  //! Dump an Array to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
   void dump(const char filename[]) const;
 
@@ -323,11 +325,12 @@ public:
   std::string checksum(bool serial) const;
   void print_checksum(const char *prefix = "", bool serial=false) const;
 
-  typedef pism::AccessList AccessList;
 protected:
   void put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const;
   void get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) const;
 };
+
+} // end of namespace array
 
 /**
  * Convert a PETSc Vec from the units in `from` into units in `to` (in place).
@@ -342,4 +345,4 @@ void convert_vec(petsc::Vec &v, std::shared_ptr<units::System> system,
 
 } // end of namespace pism
 
-#endif /* __IceModelVec_hh */
+#endif /* PISM_ARRAY_H */

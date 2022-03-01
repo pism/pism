@@ -253,7 +253,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    IceModelVec::AccessList list
+    array::AccessScope list
       {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -344,7 +344,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_temp", WITHOUT_GHOSTS, m_grid->z()));
 
@@ -371,7 +371,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_liqfrac", WITHOUT_GHOSTS, m_grid->z()));
 
@@ -398,7 +398,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_heat_flux", WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];

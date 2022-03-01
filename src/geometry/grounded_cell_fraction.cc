@@ -263,7 +263,7 @@ void compute_grounded_cell_fraction(double ice_density,
   IceGrid::ConstPtr grid = result.grid();
   double alpha = ice_density / ocean_density;
 
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
+  array::AccessScope list{&sea_level, &ice_thickness, &bed_topography, &result};
 
   ParallelSection loop(grid->com);
   try {

@@ -76,7 +76,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
     // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
     unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
-  IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
   for (Points pt(*m_grid); pt; pt.next()) {

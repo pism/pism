@@ -29,18 +29,18 @@ namespace pism {
 namespace array {
 
 Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name)
-  : IceModelVec(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
+  : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
   set_begin_access_use_dof(true);
 }
 
 Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name,
                      unsigned int stencil_width)
-  : IceModelVec(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
+  : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
   set_begin_access_use_dof(true);
 }
 
 void Staggered::copy_from(const Staggered &input) {
-  IceModelVec::AccessList list {this, &input};
+  array::AccessScope list {this, &input};
   // FIXME: this should be simplified
 
   ParallelSection loop(grid()->com);
@@ -72,7 +72,7 @@ std::array<double,2> absmax(const array::Staggered &input) {
 
   double z[2] = {0.0, 0.0};
 
-  IceModelVec::AccessList list(input);
+  array::AccessScope list(input);
   for (Points p(*input.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -99,7 +99,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
   IceGrid::ConstPtr grid = result.grid();
 
-  IceModelVec::AccessList list{&cell_type, &input, &result};
+  array::AccessScope list{&cell_type, &input, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -146,7 +146,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
   IceGrid::ConstPtr grid = result.grid();
 
-  IceModelVec::AccessList list{&cell_type, &input, &result};
+  array::AccessScope list{&cell_type, &input, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

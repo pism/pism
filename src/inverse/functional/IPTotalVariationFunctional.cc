@@ -43,7 +43,7 @@ void IPTotalVariationFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -89,7 +89,7 @@ void IPTotalVariationFunctional2S::gradientAt(array::Scalar &x, array::Scalar &g
 
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 

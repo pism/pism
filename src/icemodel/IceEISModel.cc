@@ -78,7 +78,7 @@ void generate_trough_topography(array::Scalar &result) {
     slope = b0 / L,
     dx61  = (2.0 * L) / 60; // = 25.0e3
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -101,7 +101,7 @@ void generate_mound_topography(array::Scalar &result) {
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

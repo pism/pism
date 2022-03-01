@@ -111,7 +111,7 @@ void Verification::update_L() {
     L           = 750e3,
     Lsqr        = L * L;
 
-  IceModelVec::AccessList list(*m_mass_flux);
+  array::AccessScope list(*m_mass_flux);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -186,7 +186,7 @@ void Verification::update_ABCDH(double time) {
 
   m_temperature->set(T0);
 
-  IceModelVec::AccessList list(*m_mass_flux);
+  array::AccessScope list(*m_mass_flux);
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -226,7 +226,7 @@ void Verification::update_FG(double time) {
   const double t = m_testname == 'F' ? 0.0 : time;
   const double A = m_testname == 'F' ? 0.0 : ApforG;
 
-  IceModelVec::AccessList list{m_mass_flux.get(), m_temperature.get()};
+  array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -285,7 +285,7 @@ void BedSmoother::smoothed_thk(const array::Scalar &usurf,
                                const array::CellType2 &mask,
                                array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
+  array::AccessScope list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.stencil_width();
   assert(mask.stencil_width()         >= GHOSTS);
@@ -354,7 +354,7 @@ void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const
     return;
   }
 
-  IceModelVec::AccessList list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
+  array::AccessScope list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.stencil_width();
   assert(m_C2.stencil_width()         >= GHOSTS);

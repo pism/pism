@@ -179,7 +179,7 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbtemp"));
     result->metadata(0) = m_vars[0];
@@ -206,7 +206,7 @@ public:
               "kg m-2 s-1", "kg m-2 s-1", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbmassflux"));
     result->metadata(0) = m_vars[0];
@@ -254,7 +254,7 @@ void OceanModel::compute_average_water_column_pressure(const Geometry &geometry,
     &H   = geometry.ice_thickness,
     &z_s = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList l{&bed, &H, &z_s, &result};
+  array::AccessScope l{&bed, &H, &z_s, &result};
 
   ParallelSection loop(grid->com);
   try {

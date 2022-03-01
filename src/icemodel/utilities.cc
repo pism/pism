@@ -120,7 +120,7 @@ bool check_maximum_ice_thickness(const array::Scalar &ice_thickness) {
 
   const double Lz = grid->Lz();
 
-  IceModelVec::AccessList list(ice_thickness);
+  array::AccessScope list(ice_thickness);
 
   unsigned int counter = 0;
   for (Points p(*grid); p; p.next()) {

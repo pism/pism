@@ -113,7 +113,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
+  array::AccessScope list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
                                &m_strain_rates, &m_calving_rate, &m_calving_threshold};
 
   const double *z = &m_grid->z()[0];

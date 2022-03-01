@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@
 
 namespace pism {
 
-void IceModel::view_field(const IceModelVec *field) {
+void IceModel::view_field(const array::Array *field) {
   unsigned int viewer_size = (unsigned int)m_config->get_number("output.runtime.viewer.size");
 
   if (field->ndims() != 2) {

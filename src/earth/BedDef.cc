@@ -207,7 +207,7 @@ void compute_load(const array::Scalar &bed_elevation,
     ice_density   = config->get_number("constants.ice.density"),
     ocean_density = config->get_number("constants.sea_water.density");
 
-  IceModelVec::AccessList list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
+  array::AccessScope list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
 
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();

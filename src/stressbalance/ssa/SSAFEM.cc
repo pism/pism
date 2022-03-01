@@ -273,7 +273,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   const std::vector<double> &z = m_grid->z();
 
-  IceModelVec::AccessList list{&m_coefficients,
+  array::AccessScope list{&m_coefficients,
       inputs.enthalpy,
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
@@ -591,7 +591,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     return;
   }
 
-  IceModelVec::AccessList list{&m_node_type,
+  array::AccessScope list{&m_node_type,
       &inputs.geometry->ice_thickness,
       &inputs.geometry->bed_elevation,
       &inputs.geometry->sea_level_elevation,
@@ -745,7 +745,7 @@ void SSAFEM::compute_local_function(Vector2 const *const *const velocity_global,
                                P1Element2(*m_grid, Q_p1, 2),
                                P1Element2(*m_grid, Q_p1, 3)};
 
-  IceModelVec::AccessList list{&m_node_type, &m_coefficients, &m_boundary_integral};
+  array::AccessScope list{&m_node_type, &m_coefficients, &m_boundary_integral};
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using Element::add_contribution() because that would lead to
@@ -968,7 +968,7 @@ void SSAFEM::compute_local_jacobian(Vector2 const *const *const velocity_global,
   PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_node_type, &m_coefficients};
+  array::AccessScope list{&m_node_type, &m_coefficients};
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);

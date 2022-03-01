@@ -331,7 +331,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   if (flag == REMOVE_ICEBERGS) {
     // clean up partially-filled cells that are not next to ice
-    IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
+    array::AccessScope list{&m_geometry.ice_area_specific_volume,
                                  &m_geometry.cell_type};
 
     for (Points p(*m_grid); p; p.next()) {

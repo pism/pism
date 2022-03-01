@@ -201,7 +201,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
       &cell_type, &basal_heat_flux, &till_water_thickness, &basal_frictional_heating,
       &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_temperature, &m_work};
 

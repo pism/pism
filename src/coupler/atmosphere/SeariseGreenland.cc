@@ -116,7 +116,7 @@ void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt
                        "SeaRISE-Greenland atmosphere model depends on longitude and would return nonsense!");
   }
 
-  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_air_temp_mean_annual, &m_air_temp_mean_summer};
+  array::AccessScope list{&h, &lat_degN, &lon_degE, &m_air_temp_mean_annual, &m_air_temp_mean_summer};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -187,7 +187,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
 
   const IceGrid &grid = *thickness.grid();
 
-  IceModelVec::AccessList list{&thickness, &result, &enthalpy};
+  array::AccessScope list{&thickness, &result, &enthalpy};
 
   ParallelSection loop(grid.com);
   try {

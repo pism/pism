@@ -74,7 +74,7 @@ void EigenCalving::update(const array::CellType0 &cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&m_cell_type, &m_calving_rate, &m_strain_rates};
+  array::AccessScope list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {

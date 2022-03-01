@@ -66,7 +66,7 @@ void remove_narrow_tongues(const Geometry &geometry,
 
   IceGrid::ConstPtr grid = mask.grid();
 
-  IceModelVec::AccessList list{&mask, &bed, &sea_level, &ice_thickness};
+  array::AccessScope list{&mask, &bed, &sea_level, &ice_thickness};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

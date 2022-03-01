@@ -26,10 +26,10 @@
 
 namespace pism {
 
-class IceModelVec;
 class IceModelVec2V;
 
 namespace array {
+class Array;
 class Array3D;
 class Scalar;
 using CellType0 = class CellType;
@@ -40,12 +40,12 @@ using CellType0 = class CellType;
 class Vars {
 public:
   Vars();
-  void add(const IceModelVec &);
-  void add(const IceModelVec &, const std::string &name);
+  void add(const array::Array &);
+  void add(const array::Array &, const std::string &name);
   void remove(const std::string &name);
   bool is_available(const std::string &name) const;
 
-  const IceModelVec* get(const std::string &name) const;
+  const array::Array* get(const std::string &name) const;
   const array::Scalar* get_2d_scalar(const std::string &name) const;
   const array::Scalar* get_2d_mask(const std::string &name) const;
   const IceModelVec2V* get_2d_vector(const std::string &name) const;
@@ -54,7 +54,7 @@ public:
 
   std::set<std::string> keys() const;
 
-  typedef std::shared_ptr<IceModelVec> VecPtr;
+  typedef std::shared_ptr<array::Array> VecPtr;
   typedef std::shared_ptr<array::Scalar> Vec2SPtr;
   typedef std::shared_ptr<array::Scalar> Vec2IntPtr;
   typedef std::shared_ptr<IceModelVec2V> Vec2VPtr;
@@ -75,8 +75,8 @@ public:
 
   std::set<std::string> keys_shared() const;
 private:
-  const IceModelVec* get_internal(const std::string &name) const;
-  mutable std::map<std::string, const IceModelVec*> m_variables;
+  const array::Array* get_internal(const std::string &name) const;
+  mutable std::map<std::string, const array::Array*> m_variables;
   //! stores standard names of variables that
   //! have standard names, allowing looking them
   //! up using either short or standard names and

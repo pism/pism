@@ -148,7 +148,7 @@ void IBIceModel::massContExplicitStep(double dt,
   // This will call through to accumulateFluxes_massContExplicitStep()
   // in the inner loop
   {
-    AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
+    pism::array::AccessScope access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
     // FIXME: this is obviously broken now that PISM uses GeometryEvolution instead.
@@ -165,7 +165,7 @@ void IBIceModel::massContExplicitStep(double dt,
 
 
   {
-    AccessList access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
+    pism::array::AccessScope access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
                        &cur.icebin_xfer, &cur.icebin_deltah };
 
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -275,7 +275,7 @@ void IBIceModel::set_rate(double dt) {
     array::Scalar &vrate(rate_ii->vec);
 
     {
-      AccessList access{ &vbase, &vcur, &vrate };
+      pism::array::AccessScope access{ &vbase, &vcur, &vrate };
       for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
         for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
           // rate = cur - base: Just for DELTA and EPISLON flagged vectors
@@ -303,7 +303,7 @@ void IBIceModel::reset_rate() {
 
     // This cannot go in the loop above with PETSc because
     // vbase is needed on the RHS of the equations above.
-    AccessList access{ &vbase, &vcur };
+    pism::array::AccessScope access{ &vbase, &vcur };
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
       for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
         // base = cur: For ALL vectors
@@ -347,7 +347,7 @@ void IBIceModel::prepare_initial_outputs() {
 
   const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
-  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
+  pism::array::AccessScope access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = ice_enthalpy.get_column(i, j);
@@ -421,7 +421,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
 
   const array::Array3D *ice_enthalpy = &m_energy_model->enthalpy();
 
-  AccessList access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
+  pism::array::AccessScope access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -472,7 +472,7 @@ void IBIceModel::construct_surface_temp(
   const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   {
-    AccessList access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };
+    pism::array::AccessScope access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {

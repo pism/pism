@@ -152,7 +152,7 @@ void SSATestCase::report(const std::string &testname) {
 
   const IceModelVec2V &vel_ssa = m_ssa->velocity();
 
-  IceModelVec::AccessList list{&vel_ssa};
+  array::AccessScope list{&vel_ssa};
 
   double exactvelmax = 0, gexactvelmax = 0;
   for (Points p(*m_grid); p; p.next()) {
@@ -349,7 +349,7 @@ void SSATestCase::write(const std::string &filename) {
                   "Y-component of the SSA exact solution",
                   "m s-1", "m s-1", "", 1);
 
-  IceModelVec::AccessList list(exact);
+  array::AccessScope list(exact);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

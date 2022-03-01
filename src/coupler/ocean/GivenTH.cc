@@ -150,7 +150,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
   array::Scalar &temperature = *m_shelf_base_temperature;
   array::Scalar &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
+  array::AccessScope list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {

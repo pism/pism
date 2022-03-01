@@ -93,18 +93,18 @@ PSB_velbar::PSB_velbar(const StressBalance *m)
             "m s-1", "m year-1", 1);
 }
 
-IceModelVec::Ptr PSB_velbar::compute_impl() const {
+array::Array::Ptr PSB_velbar::compute_impl() const {
   // get the thickness
   const array::Scalar* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-integrated horizontal ice flux:
-  IceModelVec2V::Ptr result = IceModelVec::cast<IceModelVec2V>(PSB_flux(model).compute());
+  IceModelVec2V::Ptr result = array::Array::cast<IceModelVec2V>(PSB_flux(model).compute());
 
   // Override metadata set by the flux computation
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -135,13 +135,13 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velbar_mag::compute_impl() const {
+array::Array::Ptr PSB_velbar_mag::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "velbar_mag"));
   result->metadata(0) = m_vars[0];
 
   // compute vertically-averaged horizontal velocity:
-  IceModelVec2V::Ptr velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
+  IceModelVec2V::Ptr velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
 
   // compute its magnitude:
   compute_magnitude(*velbar, *result);
@@ -169,7 +169,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
             "m2 s-1", "m2 year-1", 1);
 }
 
-IceModelVec::Ptr PSB_flux::compute_impl() const {
+array::Array::Ptr PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux", WITHOUT_GHOSTS));
@@ -183,7 +183,7 @@ IceModelVec::Ptr PSB_flux::compute_impl() const {
     &u3 = model->velocity_u(),
     &v3 = model->velocity_v();
 
-  IceModelVec::AccessList list{&u3, &v3, thickness, result.get()};
+  array::AccessScope list{&u3, &v3, thickness, result.get()};
 
   auto &z = m_grid->z();
 
@@ -251,15 +251,15 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_flux_mag::compute_impl() const {
+array::Array::Ptr PSB_flux_mag::compute_impl() const {
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-averaged horizontal ice velocity:
-  auto result = IceModelVec::cast<array::Scalar>(PSB_velbar_mag(model).compute());
+  auto result = array::Array::cast<array::Scalar>(PSB_velbar_mag(model).compute());
 
   result->metadata() = m_vars[0];
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -285,17 +285,17 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velbase_mag::compute_impl() const {
+array::Array::Ptr PSB_velbase_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "velbase_mag"));
   result->metadata(0) = m_vars[0];
 
-  compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velbase(model).compute()), *result);
+  compute_magnitude(*array::Array::cast<IceModelVec2V>(PSB_velbase(model).compute()), *result);
 
   double fill_value = to_internal(m_fill_value);
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -320,17 +320,17 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr PSB_velsurf_mag::compute_impl() const {
+array::Array::Ptr PSB_velsurf_mag::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "velsurf_mag"));
   result->metadata(0) = m_vars[0];
 
-  compute_magnitude(*IceModelVec::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
+  compute_magnitude(*array::Array::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -369,7 +369,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
   m_vars[1]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
-IceModelVec::Ptr PSB_velsurf::compute_impl() const {
+array::Array::Ptr PSB_velsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf", WITHOUT_GHOSTS));
@@ -390,7 +390,7 @@ IceModelVec::Ptr PSB_velsurf::compute_impl() const {
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &u_surf, &v_surf, result.get()};
+  array::AccessScope list{&mask, &u_surf, &v_surf, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -419,7 +419,7 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
   m_vars[0]["valid_range"] = {-large_number, large_number};
 }
 
-IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
+array::Array::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   array::Array3D::Ptr result3(new array::Array3D(m_grid, "wvel", WITHOUT_GHOSTS, m_grid->z()));
   result3->metadata() = m_vars[0];
 
@@ -435,7 +435,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
     &v3 = model->velocity_v(),
     &w3 = model->velocity_w();
 
-  IceModelVec::AccessList list{&thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
+  array::AccessScope list{&thickness, &mask, bed, &u3, &v3, &w3, uplift, result3.get()};
 
   const double ice_density = m_config->get_number("constants.ice.density"),
     sea_water_density = m_config->get_number("constants.sea_water.density"),
@@ -497,7 +497,7 @@ IceModelVec::Ptr PSB_wvel::compute(bool zero_above_ice) const {
   return result3;
 }
 
-IceModelVec::Ptr PSB_wvel::compute_impl() const {
+array::Array::Ptr PSB_wvel::compute_impl() const {
   return this->compute(true);   // fill wvel above the ice with zeros
 }
 
@@ -519,14 +519,14 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m)
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
-IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
+array::Array::Ptr PSB_wvelsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "wvelsurf"));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<array::Array3D>(PSB_wvel(model).compute(false));
+  auto w3 = array::Array::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
@@ -534,7 +534,7 @@ IceModelVec::Ptr PSB_wvelsurf::compute_impl() const {
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -565,20 +565,20 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m)
   m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 }
 
-IceModelVec::Ptr PSB_wvelbase::compute_impl() const {
+array::Array::Ptr PSB_wvelbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "wvelbase"));
   result->metadata() = m_vars[0];
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = IceModelVec::cast<array::Array3D>(PSB_wvel(model).compute(false));
+  auto w3 = array::Array::cast<array::Array3D>(PSB_wvel(model).compute(false));
 
   extract_surface(*w3, 0.0, *result);
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, result.get()};
+  array::AccessScope list{&mask, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -617,7 +617,7 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
   m_vars[1]["_FillValue"] = {fill_value};
 }
 
-IceModelVec::Ptr PSB_velbase::compute_impl() const {
+array::Array::Ptr PSB_velbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base", WITHOUT_GHOSTS));
@@ -636,7 +636,7 @@ IceModelVec::Ptr PSB_velbase::compute_impl() const {
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
-  IceModelVec::AccessList list{&mask, &u_base, &v_base, result.get()};
+  array::AccessScope list{&mask, &u_base, &v_base, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -662,7 +662,7 @@ PSB_bfrict::PSB_bfrict(const StressBalance *m)
             "W m-2", "W m-2", 0);
 }
 
-IceModelVec::Ptr PSB_bfrict::compute_impl() const {
+array::Array::Ptr PSB_bfrict::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "bfrict"));
   result->metadata() = m_vars[0];
@@ -689,7 +689,7 @@ PSB_uvel::PSB_uvel(const StressBalance *m)
 static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
                            array::Array3D &result) {
 
-  IceModelVec::AccessList list{&F, &H, &result};
+  array::AccessScope list{&F, &H, &result};
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -720,7 +720,7 @@ static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
   loop.check();
 }
 
-IceModelVec::Ptr PSB_uvel::compute_impl() const {
+array::Array::Ptr PSB_uvel::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "uvel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
@@ -742,7 +742,7 @@ PSB_vvel::PSB_vvel(const StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_vvel::compute_impl() const {
+array::Array::Ptr PSB_vvel::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "vvel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
@@ -764,7 +764,7 @@ PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
             "m s-1", "m year-1", 0);
 }
 
-IceModelVec::Ptr PSB_wvel_rel::compute_impl() const {
+array::Array::Ptr PSB_wvel_rel::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
@@ -787,7 +787,7 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m)
             "W m-3", "mW m-3", 0);
 }
 
-IceModelVec::Ptr PSB_strainheat::compute_impl() const {
+array::Array::Ptr PSB_strainheat::compute_impl() const {
   array::Array3D::Ptr result(new array::Array3D(m_grid, "strainheat", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
@@ -807,8 +807,8 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
             "", "s-1", "s-1", 1);
 }
 
-IceModelVec::Ptr PSB_strain_rates::compute_impl() const {
-  auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
+array::Array::Ptr PSB_strain_rates::compute_impl() const {
+  auto velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
 
   auto result = std::make_shared<array::Array2D<PrincipalStrainRates>>
     (m_grid, "strain_rates", WITHOUT_GHOSTS);
@@ -842,7 +842,7 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 
 }
 
-IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
+array::Array::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
   auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses>>
     (m_grid, "deviatoric_stresses", WITHOUT_GHOSTS);
@@ -860,7 +860,7 @@ IceModelVec::Ptr PSB_deviatoric_stresses::compute_impl() const {
                         hardness);
 
   // copy_from updates ghosts
-  velocity.copy_from(*IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute()));
+  velocity.copy_from(*array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute()));
 
   array::CellType1 cell_type(m_grid, "cell_type");
   {
@@ -883,14 +883,14 @@ PSB_pressure::PSB_pressure(const StressBalance *m)
   set_attrs("pressure in ice (hydrostatic)", "", "Pa", "Pa", 0);
 }
 
-IceModelVec::Ptr PSB_pressure::compute_impl() const {
+array::Array::Ptr PSB_pressure::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "pressure", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec::AccessList list{thickness, result.get()};
+  array::AccessScope list{thickness, result.get()};
 
   const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
@@ -937,7 +937,7 @@ PSB_tauxz::PSB_tauxz(const StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauyz
  */
-IceModelVec::Ptr PSB_tauxz::compute_impl() const {
+array::Array::Ptr PSB_tauxz::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "tauxz", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
@@ -947,7 +947,7 @@ IceModelVec::Ptr PSB_tauxz::compute_impl() const {
   thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list{surface, thickness, result.get()};
+  array::AccessScope list{surface, thickness, result.get()};
 
   const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
@@ -997,7 +997,7 @@ PSB_tauyz::PSB_tauyz(const StressBalance *m)
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH PSB_tauxz
  */
-IceModelVec::Ptr PSB_tauyz::compute_impl() const {
+array::Array::Ptr PSB_tauyz::compute_impl() const {
 
   array::Array3D::Ptr result(new array::Array3D(m_grid, "tauyz", WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
@@ -1005,7 +1005,7 @@ IceModelVec::Ptr PSB_tauyz::compute_impl() const {
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const array::Scalar *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec::AccessList list{surface, thickness, result.get()};
+  array::AccessScope list{surface, thickness, result.get()};
 
   const double rg = m_config->get_number("constants.ice.density") * m_config->get_number("constants.standard_gravity");
 
@@ -1048,7 +1048,7 @@ PSB_vonmises_stress::PSB_vonmises_stress(const StressBalance *m)
             "Pascal", "Pascal", 0);
 }
 
-IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
+array::Array::Ptr PSB_vonmises_stress::compute_impl() const {
 
   using std::max;
   using std::sqrt;
@@ -1059,10 +1059,10 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   array::Scalar &vonmises_stress = *result;
 
-  auto velbar = IceModelVec::cast<IceModelVec2V>(PSB_velbar(model).compute());
+  auto velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
   IceModelVec2V &velocity = *velbar;
 
-  auto eigen12 = IceModelVec::cast<array::Array3D>(PSB_strain_rates(model).compute());
+  auto eigen12 = array::Array::cast<array::Array3D>(PSB_strain_rates(model).compute());
   array::Array3D &strain_rates = *eigen12;
 
   const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -1083,7 +1083,7 @@ IceModelVec::Ptr PSB_vonmises_stress::compute_impl() const {
 
   double glen_exponent = flow_law->exponent();
 
-  IceModelVec::AccessList list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
+  array::AccessScope list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
       enthalpy, &mask};
 
   for (Points pt(*m_grid); pt; pt.next()) {

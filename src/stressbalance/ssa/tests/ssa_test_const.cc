@@ -104,7 +104,7 @@ void SSATestCaseConst::initializeSSACoefficients() {
   m_geometry.ice_thickness.set(H0);
   m_tauc.set(tauc0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask,
+  array::AccessScope list{&m_bc_values, &m_bc_mask,
       &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
   for (Points p(*m_grid); p; p.next()) {

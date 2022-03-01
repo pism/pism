@@ -11,7 +11,9 @@
 
 namespace pism {
 
-class IceModelVec;
+namespace array {
+class Array;
+} // end of namespace array
 
 namespace icebin {
 
@@ -20,10 +22,10 @@ namespace icebin {
 class VecBundleWriter {
   pism::IceGrid::ConstPtr m_grid;
   std::string const fname;                     // Name of the file to write
-  std::vector<pism::IceModelVec const *> vecs; // The vectors we will write
+  std::vector<pism::array::Array const *> vecs; // The vectors we will write
 
 public:
-  VecBundleWriter(pism::IceGrid::Ptr grid, std::string const &_fname, std::vector<pism::IceModelVec const *> &_vecs);
+  VecBundleWriter(pism::IceGrid::Ptr grid, std::string const &_fname, std::vector<pism::array::Array const *> &_vecs);
 
   void init();
 

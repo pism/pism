@@ -46,7 +46,7 @@ namespace pism {
  * methods of a class, but it is possible to define a (friend) function
  *
  * @code
- * IceModelVec::Ptr compute_bar(Foo* model, ...);
+ * array::Array::Ptr compute_bar(Foo* model, ...);
  * @endcode
  *
  * which is the same as creating a method `Foo::compute_bar()`, but you *can*
@@ -69,8 +69,8 @@ public:
   void update(double dt);
   void reset();
 
-  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated IceModelVec.
-  IceModelVec::Ptr compute() const;
+  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
+  array::Array::Ptr compute() const;
 
   unsigned int n_variables() const;
 
@@ -96,7 +96,7 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual IceModelVec::Ptr compute_impl() const = 0;
+  virtual array::Array::Ptr compute_impl() const = 0;
 
   double to_internal(double x) const;
   double to_external(double x) const;
@@ -134,7 +134,7 @@ public:
   }
 protected:
 
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
     auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
@@ -243,7 +243,7 @@ protected:
     m_interval_length = 0.0;
   }
 
-  virtual IceModelVec::Ptr compute_impl() const {
+  virtual array::Array::Ptr compute_impl() const {
     array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid,
                                                 "diagnostic"));
     result->metadata(0) = Diagnostic::m_vars.at(0);

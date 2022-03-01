@@ -54,7 +54,7 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
   double rho_w = m_config->get_number("constants.sea_water.density");
   double eps = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec::AccessList list{&sea_level, &bed, &ice_thickness,
+  array::AccessScope list{&sea_level, &bed, &ice_thickness,
                                &m_min_ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -86,7 +86,7 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
 
   double rho_i = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&mass_flux,
+  array::AccessScope list{&mass_flux,
                                &ice_thickness,
                                m_mass_flux.get(),
                                &m_smb_adjustment,

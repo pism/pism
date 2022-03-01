@@ -49,7 +49,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   m_vars[0]["valid_max"] = {1};
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
+array::Array::Ptr SIAFD_schoofs_theta::compute_impl() const {
   const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "schoofs_theta"));
@@ -70,7 +70,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
+array::Array::Ptr SIAFD_topgsmooth::compute_impl() const {
 
   array::Scalar::Ptr result(new array::Scalar(m_grid, "topgsmooth"));
   result->metadata() = m_vars[0];
@@ -89,7 +89,7 @@ SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
+array::Array::Ptr SIAFD_thksmooth::compute_impl() const {
 
   const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
   const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -120,7 +120,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
             "m2 s-1", "m2 s-1", 0);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
+array::Array::Ptr SIAFD_diffusivity::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "diffusivity"));
   result->metadata() = m_vars[0];
 
@@ -151,7 +151,7 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
 static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
   IceGrid::ConstPtr grid = output.grid();
 
-  IceModelVec::AccessList list{ &input, &output };
+  array::AccessScope list{ &input, &output };
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -161,7 +161,7 @@ static void copy_staggered_vec(const array::Staggered &input, array::Staggered &
   }
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
+array::Array::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
   auto result = std::make_shared<array::Staggered>(m_grid, "diffusivity");
 
   result->metadata(0) = m_vars[0];
@@ -185,7 +185,7 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
+array::Array::Ptr SIAFD_h_x::compute_impl() const {
 
   auto result = std::make_shared<array::Staggered>(m_grid, "h_x");
 
@@ -210,7 +210,7 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
+array::Array::Ptr SIAFD_h_y::compute_impl() const {
 
   auto result = std::make_shared<array::Staggered>(m_grid, "h_y");
 

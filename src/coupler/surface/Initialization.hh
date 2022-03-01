@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -59,7 +59,7 @@ protected:
 
 private:
   // store pointers to fields so that we can iterate over them
-  std::vector<IceModelVec*> m_variables;
+  std::vector<array::Array*> m_variables;
   // storage
   array::Scalar m_mass_flux;
   array::Scalar m_temperature;

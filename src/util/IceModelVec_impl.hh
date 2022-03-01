@@ -31,8 +31,9 @@
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
+namespace array {
 
-struct IceModelVec::Impl {
+struct Array::Impl {
   Impl() {
     access_counter = 0;
 
@@ -108,6 +109,7 @@ struct IceModelVec::Impl {
   gsl_interp_accel *bsearch_accel;
 };
 
+} // end of namespace array
 } // end of namespace pism
 
 #endif /* ICEMODELVEC_IMPL_H */

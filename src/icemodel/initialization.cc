@@ -323,7 +323,7 @@ void IceModel::model_state_setup() {
   // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
   // prescribed
   {
-    IceModelVec::AccessList list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
+    array::AccessScope list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

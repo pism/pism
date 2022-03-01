@@ -88,7 +88,7 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", true);
   m_config->set_number("stress_balance.ssa.epsilon", 0.0);  // don't use this lower bound
 
-  IceModelVec::AccessList list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
+  array::AccessScope list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

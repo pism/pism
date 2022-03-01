@@ -52,7 +52,7 @@ void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &ze
                                                                bool communicate) {
   PetscErrorCode ierr;
 
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
   const IceGrid &grid = *zeta.grid();
 
@@ -84,7 +84,7 @@ void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &
                                                                  array::Scalar &zeta,
                                                                  bool communicate) {
   PetscErrorCode ierr;
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
   const IceGrid &grid = *zeta.grid();
 

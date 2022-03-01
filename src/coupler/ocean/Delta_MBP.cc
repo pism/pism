@@ -58,7 +58,7 @@ void Delta_MBP::update_impl(const Geometry &geometry, double t, double dt) {
   const auto &P = m_input_model->average_water_column_pressure();
   const auto &H = geometry.ice_thickness;
   auto &P_new = *m_water_column_pressure;
-  IceModelVec::AccessList list{&P, &H, &P_new};
+  array::AccessScope list{&P, &H, &P_new};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

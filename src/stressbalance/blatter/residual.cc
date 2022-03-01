@@ -347,7 +347,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> ice_hardness(info.da, 3, GHOSTED);
 
-  IceModelVec::AccessList list(m_parameters);
+  array::AccessScope list(m_parameters);
   auto *P = m_parameters.array();
 
   // Compute the residual at Dirichlet nodes and set it to zero elsewhere.

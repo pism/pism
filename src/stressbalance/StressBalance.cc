@@ -285,7 +285,7 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
 
   const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
-  IceModelVec::AccessList list{&u, &v, &mask, &result};
+  array::AccessScope list{&u, &v, &mask, &result};
 
   if (basal_melt_rate) {
     list.add(*basal_melt_rate);
@@ -522,7 +522,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  IceModelVec::AccessList list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
+  array::AccessScope list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();
@@ -692,7 +692,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
   double dx = grid->dx();
   double dy = grid->dy();
 
-  IceModelVec::AccessList list{&V, &mask, &result};
+  array::AccessScope list{&V, &mask, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -777,7 +777,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     dx = grid->dx(),
     dy = grid->dy();
 
-  IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
+  array::AccessScope list{&velocity, &hardness, &result, &cell_type};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

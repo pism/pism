@@ -367,7 +367,7 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
     &dH_BMB  = bottom_surface_mass_balance();
   array::Scalar &H = geometry.ice_thickness;
 
-  IceModelVec::AccessList list{&H, &dH_SMB, &dH_BMB};
+  array::AccessScope list{&H, &dH_SMB, &dH_BMB};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -543,7 +543,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
                                                  const array::Staggered     &diffusive_flux,
                                                  array::Staggered           &output) {
 
-  IceModelVec::AccessList list{&cell_type, &velocity, &ice_thickness,
+  array::AccessScope list{&cell_type, &velocity, &ice_thickness,
                                &diffusive_flux, &output};
 
   ParallelSection loop(m_grid->com);
@@ -633,7 +633,7 @@ void GeometryEvolution::compute_flux_divergence(double dt,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&flux, &thickness_bc_mask, &conservation_error, &output};
+  array::AccessScope list{&flux, &thickness_bc_mask, &conservation_error, &output};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -686,7 +686,7 @@ void GeometryEvolution::update_in_place(double dt,
   m_impl->gc.compute(sea_level, bed_topography, ice_thickness,
                      m_impl->cell_type, m_impl->surface_elevation);
 
-  IceModelVec::AccessList list{&ice_thickness, &flux_divergence};
+  array::AccessScope list{&ice_thickness, &flux_divergence};
 
   if (m_impl->use_part_grid) {
     m_impl->residual.set(0.0);
@@ -822,7 +822,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar  &
   // First step: distribute residual mass
   {
     // will be destroyed at the end of the block
-    IceModelVec::AccessList list{&cell_type, &ice_thickness, &area_specific_volume, &residual};
+    array::AccessScope list{&cell_type, &ice_thickness, &area_specific_volume, &residual};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -889,7 +889,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar  &
   // neighbors which gained redistributed ice also become full.
   {
     // will be destroyed at the end of the block
-    IceModelVec::AccessList list{&m_impl->thickness, &ice_thickness,
+    array::AccessScope list{&m_impl->thickness, &ice_thickness,
         &ice_surface_elevation, &bed_topography, &cell_type};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -952,7 +952,7 @@ void GeometryEvolution::ensure_nonnegativity(const array::Scalar &ice_thickness,
                                              array::Scalar &area_specific_volume_change,
                                              array::Scalar &conservation_error) {
 
-  IceModelVec::AccessList list{&ice_thickness, &area_specific_volume, &thickness_change,
+  array::AccessScope list{&ice_thickness, &area_specific_volume, &thickness_change,
       &area_specific_volume_change, &conservation_error};
 
   ParallelSection loop(m_grid->com);
@@ -1021,7 +1021,7 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
                                                                array::Scalar              &effective_SMB,
                                                                array::Scalar              &effective_BMB) {
 
-  IceModelVec::AccessList list{&ice_thickness,
+  array::AccessScope list{&ice_thickness,
       &smb_flux, &basal_melt_rate, &cell_type, &thickness_bc_mask,
       &effective_SMB, &effective_BMB};
 
@@ -1071,7 +1071,7 @@ public:
     m_vars = {model->flux_divergence().metadata()};
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
     array::Scalar::Ptr result(new array::Scalar(m_grid, "flux_divergence"));
     result->metadata(0) = m_vars[0];
 
@@ -1091,7 +1091,7 @@ public:
       model->flux_staggered().metadata(1)};
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
     auto result = std::make_shared<array::Staggered>(m_grid, "flux_staggered");
 
     result->metadata(0) = m_vars[0];
@@ -1102,7 +1102,7 @@ protected:
 
     // FIXME: implement array::Staggered::copy_from()
 
-    IceModelVec::AccessList list{&input, &output};
+    array::AccessScope list{&input, &output};
 
     ParallelSection loop(m_grid->com);
     try {
@@ -1161,7 +1161,7 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 
                                               velocity, diffusive_flux,
                                               output);
 
-  IceModelVec::AccessList list{&m_no_model_mask, &output};
+  array::AccessScope list{&m_no_model_mask, &output};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1210,7 +1210,7 @@ void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt
                                                             effective_SMB,
                                                             effective_BMB);
 
-  IceModelVec::AccessList list{&m_no_model_mask, &effective_SMB, &effective_BMB};
+  array::AccessScope list{&m_no_model_mask, &effective_SMB, &effective_BMB};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1255,7 +1255,7 @@ void grounding_line_flux(const array::CellType1 &cell_type,
 
   auto ice_density = grid->ctx()->config()->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&cell_type, &flux, &output};
+  array::AccessScope list{&cell_type, &flux, &output};
 
   ParallelSection loop(grid->com);
   try {
@@ -1318,7 +1318,7 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
 
   double total_flux = 0.0;
 
-  IceModelVec::AccessList list{&cell_type, &flux};
+  array::AccessScope list{&cell_type, &flux};
 
   ParallelSection loop(grid->com);
   try {

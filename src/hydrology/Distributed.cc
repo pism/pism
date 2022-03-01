@@ -135,7 +135,7 @@ void Distributed::check_P_bounds(array::Scalar &P,
                                  const array::Scalar &P_o,
                                  bool enforce_upper) {
 
-  IceModelVec::AccessList list{&P, &P_o};
+  array::AccessScope list{&P, &P_o};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -189,7 +189,7 @@ void Distributed::P_from_W_steady(const array::Scalar &W,
 
   const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
-  IceModelVec::AccessList list{&W, &P_overburden, &sliding_speed, &result};
+  array::AccessScope list{&W, &P_overburden, &sliding_speed, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -247,7 +247,7 @@ void Distributed::update_P(double dt,
     wux = 1.0 / (m_dx * m_dx),
     wuy = 1.0 / (m_dy * m_dy);
 
-  IceModelVec::AccessList list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
+  array::AccessScope list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
                                &K, &Q, &surface_input_rate, &basal_melt_rate,
                                &cell_type, &P_overburden, &P_new};
 

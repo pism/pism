@@ -30,7 +30,7 @@ class Scalar;
 
 //! \brief A virtual class collecting methods common to ice and bedrock 3D
 //! fields.
-class Array3D : public IceModelVec {
+class Array3D : public Array {
 public:
 
   // Three-dimensional array with a number of vertical levels

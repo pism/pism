@@ -154,7 +154,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V 
                                                             const array::CellType0 &mask,
                                                             array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&V, &result, &tauc, &mask};
+  array::AccessScope list{&V, &result, &tauc, &mask};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -194,7 +194,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-IceModelVec::Ptr SSB_taud::compute_impl() const {
+array::Array::Ptr SSB_taud::compute_impl() const {
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata(0) = m_vars[0];
@@ -206,7 +206,7 @@ IceModelVec::Ptr SSB_taud::compute_impl() const {
   double standard_gravity = m_config->get_number("constants.standard_gravity"),
     ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{surface, thickness, result.get()};
+  array::AccessScope list{surface, thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -235,11 +235,11 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-IceModelVec::Ptr SSB_taud_mag::compute_impl() const {
+array::Array::Ptr SSB_taud_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taud = IceModelVec::cast<IceModelVec2V>(SSB_taud(model).compute());
+  IceModelVec2V::Ptr taud = array::Array::cast<IceModelVec2V>(SSB_taud(model).compute());
 
   compute_magnitude(*taud, *result);
 
@@ -263,7 +263,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 }
 
 
-IceModelVec::Ptr SSB_taub::compute_impl() const {
+array::Array::Ptr SSB_taub::compute_impl() const {
 
   IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
   result->metadata() = m_vars[0];
@@ -275,7 +275,7 @@ IceModelVec::Ptr SSB_taub::compute_impl() const {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  IceModelVec::AccessList list{tauc, &velocity, &mask, result.get()};
+  array::AccessScope list{tauc, &velocity, &mask, result.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -304,11 +304,11 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-IceModelVec::Ptr SSB_taub_mag::compute_impl() const {
+array::Array::Ptr SSB_taub_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "taub_mag"));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taub = IceModelVec::cast<IceModelVec2V>(SSB_taub(model).compute());
+  IceModelVec2V::Ptr taub = array::Array::cast<IceModelVec2V>(SSB_taub(model).compute());
 
   compute_magnitude(*taub, *result);
 
@@ -354,7 +354,7 @@ SSB_beta::SSB_beta(const ShallowStressBalance *m)
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
 
-IceModelVec::Ptr SSB_beta::compute_impl() const {
+array::Array::Ptr SSB_beta::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "beta"));
   result->metadata(0) = m_vars[0];
 
@@ -364,7 +364,7 @@ IceModelVec::Ptr SSB_beta::compute_impl() const {
 
   const IceModelVec2V &velocity = model->velocity();
 
-  IceModelVec::AccessList list{tauc, &velocity, result.get()};
+  array::AccessScope list{tauc, &velocity, result.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

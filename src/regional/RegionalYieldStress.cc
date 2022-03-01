@@ -40,7 +40,7 @@ static void set_no_model_yield_stress(double tauc,
                                       array::Scalar &basal_yield_stress) {
   auto grid = mask.grid();
 
-  IceModelVec::AccessList list{&mask, &basal_yield_stress};
+  array::AccessScope list{&mask, &basal_yield_stress};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

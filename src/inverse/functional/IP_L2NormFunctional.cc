@@ -35,7 +35,7 @@ void IP_L2NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   double x_q[Nq_max];
 
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   // Loop through all LOCAL elements.
   const int
@@ -75,7 +75,7 @@ void IP_L2NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTP
   double a_q[Nq_max];
   double b_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b};
+  array::AccessScope list{&a, &b};
 
   // Loop through all LOCAL elements.
   const int
@@ -117,7 +117,7 @@ void IP_L2NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient
   double x_q[Nq_max];
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   // Loop through all local and ghosted elements.
   const int
@@ -164,7 +164,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
 
   Vector2 x_q[Nq_max];
 
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   // Loop through all local and ghosted elements.
   const int
@@ -204,7 +204,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   Vector2 a_q[Nq_max];
   Vector2 b_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b};
+  array::AccessScope list{&a, &b};
 
   // Loop through all LOCAL elements.
   const int
@@ -246,7 +246,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   Vector2 x_q[Nq_max];
   Vector2 gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   // Loop through all local and ghosted elements.
   const int

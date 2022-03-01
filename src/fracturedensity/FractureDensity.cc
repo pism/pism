@@ -156,7 +156,7 @@ void FractureDensity::update(double dt,
                                      geometry.cell_type,
                                      m_deviatoric_stresses);
 
-  IceModelVec::AccessList list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
+  array::AccessScope list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
                                &D, &D_new, &geometry.cell_type, &bc_mask, &A, &A_new,
                                &m_growth_rate, &m_healing_rate, &m_flow_enhancement,
                                &m_toughness, &hardness, &geometry.ice_thickness};

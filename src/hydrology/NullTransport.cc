@@ -122,7 +122,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
 
   const auto &cell_type = inputs.geometry->cell_type;
 
-  IceModelVec::AccessList list{&cell_type, &m_Wtill, &m_basal_melt_rate,
+  array::AccessScope list{&cell_type, &m_Wtill, &m_basal_melt_rate,
       &m_conservation_error_change};
 
   if (add_surface_input) {
@@ -188,7 +188,7 @@ void NullTransport::diffuse_till_water(double dt) {
     Rx = K * dt / (dx * dx),
     Ry = K * dt / (dy * dy);
 
-  IceModelVec::AccessList list{&m_Wtill, &m_Wtill_old, &m_flow_change};
+  array::AccessScope list{&m_Wtill, &m_Wtill_old, &m_flow_change};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

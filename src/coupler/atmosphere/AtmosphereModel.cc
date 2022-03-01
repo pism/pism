@@ -111,7 +111,7 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_snapshot"));
     result->metadata(0) = m_vars[0];
@@ -123,7 +123,7 @@ protected:
 
     model->begin_pointwise_access();
 
-    IceModelVec::AccessList list(*result);
+    array::AccessScope list(*result);
     ParallelSection loop(m_grid->com);
     try {
       for (Points p(*m_grid); p; p.next()) {
@@ -157,7 +157,7 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_air_temp"));
     result->metadata(0) = m_vars[0];
@@ -182,7 +182,7 @@ public:
               "kg m-2 second-1", "kg m-2 year-1", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_precipitation"));
     result->metadata(0) = m_vars[0];

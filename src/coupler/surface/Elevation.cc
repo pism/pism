@@ -197,7 +197,7 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
-  IceModelVec::AccessList list{&result, &surface};
+  array::AccessScope list{&result, &surface};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -234,7 +234,7 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
 
 void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&result, &surface};
+  array::AccessScope list{&result, &surface};
 
   double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);

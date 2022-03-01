@@ -273,7 +273,7 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -327,7 +327,7 @@ static void compute_lon_lat(const std::string &projection,
 
   IceGrid::ConstPtr grid = result.grid();
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -357,7 +357,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
   double y_offsets[] = {-dy2, -dy2, dy2, dy2};
 
-  IceModelVec::AccessList list{&result};
+  array::AccessScope list{&result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

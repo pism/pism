@@ -41,7 +41,7 @@ void IPLogRelativeFunctional::normalize(double scale) {
 
   double w = 1.;
 
-  IceModelVec::AccessList list(m_u_observed);
+  array::AccessScope list(m_u_observed);
 
   if (m_weights) {
     list.add(*m_weights);
@@ -68,7 +68,7 @@ void IPLogRelativeFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
 
   double w = 1;
 
-  IceModelVec::AccessList list{&x, &m_u_observed};
+  array::AccessScope list{&x, &m_u_observed};
   if (m_weights) {
     list.add(*m_weights);
   }
@@ -95,7 +95,7 @@ void IPLogRelativeFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradie
 
   double w = 1;
 
-  IceModelVec::AccessList list{&x, &gradient, &m_u_observed};
+  array::AccessScope list{&x, &gradient, &m_u_observed};
   if (m_weights) {
     list.add(*m_weights);
   }

@@ -154,7 +154,7 @@ class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
   BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 } // end of namespace energy

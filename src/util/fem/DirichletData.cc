@@ -40,7 +40,7 @@ DirichletData::~DirichletData() {
 }
 
 void DirichletData::init(const array::Scalar *indices,
-                         const IceModelVec *values,
+                         const array::Array *values,
                          double weight) {
   m_weight = weight;
 
@@ -54,7 +54,7 @@ void DirichletData::init(const array::Scalar *indices,
   }
 }
 
-void DirichletData::finish(const IceModelVec *values) {
+void DirichletData::finish(const array::Array *values) {
   if (m_indices != NULL) {
     MPI_Comm com = m_indices->grid()->ctx()->com();
     try {

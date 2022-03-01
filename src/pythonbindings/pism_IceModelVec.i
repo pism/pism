@@ -1,5 +1,5 @@
 %{
-/* Using directives needed to compile IceModelVec wrappers. */
+/* Using directives needed to compile array::Array wrappers. */
 
 #include "util/array/CellType.hh"
 #include "util/array/Scalar.hh"
@@ -12,7 +12,7 @@ using namespace pism;
 %}
 
 %shared_ptr(pism::PetscAccessible)
-%shared_ptr(pism::IceModelVec)
+%shared_ptr(pism::array::Array)
 %shared_ptr(pism::array::Scalar)
 %shared_ptr(pism::IceModelVec2T)
 %shared_ptr(pism::IceModelVec2V)
@@ -20,20 +20,20 @@ using namespace pism;
 %shared_ptr(pism::array::Staggered1)
 %shared_ptr(pism::array::Array3D)
 
-%ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
+%ignore pism::array::AccessScope::AccessScope(std::initializer_list<const PetscAccessible *>);
 
 %ignore pism::array::Scalar::array;
 %ignore pism::IceModelVec2V::array;
 
 %template(Range) std::array<double,2>;
 
-%rename(_regrid) pism::IceModelVec::regrid;
-%extend pism::IceModelVec
+%rename(_regrid) pism::array::Array::regrid;
+%extend pism::array::Array
 {
   %pythoncode "IceModelVec.py"
 }
 
-// Shenanigans to allow python indexing to get at IceModelVec entries.  I couldn't figure out a more
+// Shenanigans to allow python indexing to get at array::Array entries.  I couldn't figure out a more
 // elegant solution.
 %extend pism::array::Scalar
 {

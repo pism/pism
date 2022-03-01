@@ -80,7 +80,7 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
   const auto &zlevels = m_u.levels();
   int Mz = zlevels.size();
 
-  IceModelVec::AccessList list{&m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness};
+  array::AccessScope list{&m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -118,7 +118,7 @@ void BlatterMod::compute_max_diffusivity(const IceModelVec2V &velocity,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&velocity, &ice_thickness, &surface};
+  array::AccessScope list{&velocity, &ice_thickness, &surface};
 
   m_D_max = 0.0;
   for (Points p(*m_grid); p; p.next()) {

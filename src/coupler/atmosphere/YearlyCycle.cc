@@ -163,7 +163,7 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 private:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_mean_summer"));
     result->metadata(0) = m_vars[0];

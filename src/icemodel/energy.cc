@@ -95,7 +95,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
   const bool sub_gl = (m_config->get_flag("geometry.grounded_cell_fraction") and
                        m_config->get_flag("energy.basal_melt.use_grounded_cell_fraction"));
 
-  IceModelVec::AccessList list{&geometry.cell_type,
+  array::AccessScope list{&geometry.cell_type,
       &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};
   if (sub_gl) {
     list.add(geometry.cell_grounded_fraction);
@@ -142,7 +142,7 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  IceModelVec::AccessList list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
+  array::AccessScope list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
       &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {

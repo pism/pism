@@ -84,7 +84,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
   double A_s = m_config->get_number("stress_balance.weertman_sliding.A", "Pa-3 s-1 m-2");
   double k   = m_config->get_number("stress_balance.weertman_sliding.k");
 
-  IceModelVec::AccessList list{&m_velocity, &H, &h, &enthalpy, &cell_type};
+  array::AccessScope list{&m_velocity, &H, &h, &enthalpy, &cell_type};
 
   ParallelSection loop(m_grid->com);
   try {

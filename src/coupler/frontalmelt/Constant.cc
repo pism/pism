@@ -42,7 +42,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   const double
     melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");
 
-  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -61,7 +61,7 @@ void PrescribedRetreat::update(double t,
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 
-  IceModelVec::AccessList list{m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume};
+  array::AccessScope list{m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

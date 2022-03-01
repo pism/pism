@@ -36,7 +36,7 @@ void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
                                       const array::Scalar &bed,
                                       const array::Scalar &thickness,
                                       array::Scalar &result) const {
-  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+  array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();
 
@@ -56,7 +56,7 @@ void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
                                          const array::Scalar &bed,
                                          const array::Scalar &thickness,
                                          array::Scalar &result) const {
-  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+  array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();
 

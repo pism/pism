@@ -108,7 +108,7 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     array::Scalar::Ptr result(new array::Scalar(m_grid, "sea_level"));
     result->metadata(0) = m_vars[0];

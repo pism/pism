@@ -416,7 +416,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
                           *inputs.basal_melt_rate,
                           m_basal_melt_rate);
 
-  IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change};
+  array::AccessScope list{&m_W, &m_Wtill, &m_total_change};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -488,7 +488,7 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
     ice_density      = m_config->get_number("constants.ice.density"),
     standard_gravity = m_config->get_number("constants.standard_gravity");
 
-  IceModelVec::AccessList list{&ice_thickness, &result};
+  array::AccessScope list{&ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -560,7 +560,7 @@ void check_bounds(const array::Scalar& W, double W_max) {
 
   IceGrid::ConstPtr grid = W.grid();
 
-  IceModelVec::AccessList list(W);
+  array::AccessScope list(W);
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
@@ -603,7 +603,7 @@ void Hydrology::compute_surface_input_rate(const array::CellType0 &mask,
     return;
   }
 
-  IceModelVec::AccessList list{surface_input_rate, &mask, &result};
+  array::AccessScope list{surface_input_rate, &mask, &result};
 
   const double
     water_density = m_config->get_number("constants.fresh_water.density");
@@ -632,7 +632,7 @@ void Hydrology::compute_basal_melt_rate(const array::CellType0 &mask,
                                         const array::Scalar &basal_melt_rate,
                                         array::Scalar &result) {
 
-  IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
+  array::AccessScope list{&basal_melt_rate, &mask, &result};
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -682,7 +682,7 @@ void Hydrology::enforce_bounds(const array::CellType0 &cell_type,
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
 
-  IceModelVec::AccessList list{&water_thickness, &cell_type,
+  array::AccessScope list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
       &no_model_mask_change};
 

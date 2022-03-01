@@ -237,7 +237,7 @@ void ForceThickness::adjust_mass_flux(double time,
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&cell_type, &ice_thickness,
+  array::AccessScope list{&cell_type, &ice_thickness,
       &m_target_thickness, &m_ftt_mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {

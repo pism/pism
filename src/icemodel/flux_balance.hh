@@ -67,7 +67,7 @@ public:
                             units, units, "", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
     auto result = std::make_shared<array::Scalar>(m_grid, "");
     result->metadata() = m_vars[0];
@@ -80,7 +80,7 @@ protected:
       const auto& thickness = model->geometry().ice_thickness;
       const auto& area_specific_volume = model->geometry().ice_area_specific_volume;
 
-      IceModelVec::AccessList list{result.get(),
+      array::AccessScope list{result.get(),
           &thickness, &area_specific_volume, &m_last_amount};
 
       for (Points p(*m_grid); p; p.next()) {
@@ -111,7 +111,7 @@ protected:
 
     double ice_density = m_config->get_number("constants.ice.density");
 
-    IceModelVec::AccessList list{&m_last_amount, &thickness, &area_specific_volume};
+    array::AccessScope list{&m_last_amount, &thickness, &area_specific_volume};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -180,7 +180,7 @@ protected:
 
     auto cell_area = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&m_accumulator, &dH, &dV};
+    array::AccessScope list{&m_accumulator, &dH, &dV};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -243,7 +243,7 @@ protected:
 
     auto cell_area = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&m_accumulator, &SMB};
+    array::AccessScope list{&m_accumulator, &SMB};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -303,7 +303,7 @@ protected:
 
     auto cell_area = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&m_accumulator, &BMB};
+    array::AccessScope list{&m_accumulator, &BMB};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -361,7 +361,7 @@ protected:
     const array::Scalar
       &error = model->geometry_evolution().conservation_error();
 
-    IceModelVec::AccessList list{&m_accumulator, &error};
+    array::AccessScope list{&m_accumulator, &error};
 
     auto cell_area = m_grid->cell_area();
 
@@ -426,7 +426,7 @@ protected:
     const array::Scalar &frontal_melt = model->frontal_melt();
     const array::Scalar &forced_retreat = model->forced_retreat();
 
-    IceModelVec::AccessList list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
+    array::AccessScope list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
 
     auto cell_area = m_grid->cell_area();
 
@@ -489,7 +489,7 @@ protected:
   void update_impl(double dt) {
     const array::Scalar &calving = model->calving();
 
-    IceModelVec::AccessList list{&m_accumulator, &calving};
+    array::AccessScope list{&m_accumulator, &calving};
 
     auto cell_area = m_grid->cell_area();
 

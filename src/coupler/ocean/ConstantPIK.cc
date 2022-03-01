@@ -87,7 +87,7 @@ void PIK::melting_point_temperature(const array::Scalar &depth,
     g           = m_config->get_number("constants.standard_gravity"),
     ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&depth, &result};
+  array::AccessScope list{&depth, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -114,7 +114,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  IceModelVec::AccessList list{&ice_thickness, &result};
+  array::AccessScope list{&ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
