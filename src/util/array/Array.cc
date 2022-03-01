@@ -20,15 +20,15 @@
 
 #include <petscdraw.h>
 
-#include "iceModelVec.hh"
-#include "pism/util/IceModelVec_impl.hh"
+#include "Array.hh"
+#include "Array_impl.hh"
 
-#include "Time.hh"
-#include "IceGrid.hh"
-#include "ConfigInterface.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/ConfigInterface.hh"
 
-#include "error_handling.hh"
-#include "io/io_helpers.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
@@ -38,7 +38,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
-#include "pism_utilities.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 

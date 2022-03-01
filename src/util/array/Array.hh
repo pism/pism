@@ -24,7 +24,7 @@
 #include <cstdint>              // uint64_t
 #include <array>
 
-#include "stencils.hh"
+#include "pism/util/stencils.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh" // RuntimeError

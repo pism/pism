@@ -143,7 +143,7 @@ std::vector<double> interp(int i, int j) {
 %include "util/stencils.hh"
 %template(DoubleStar) pism::stencils::Star<double>;
 
-%include "util/iceModelVec.hh"
+%include "util/array/Array.hh"
 
 %include "util/array/Array2D.hh"
 %shared_ptr(pism::array::Array2D<double>)

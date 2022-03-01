@@ -22,12 +22,12 @@
 #include <memory>
 
 #include "pism/util/array/Array3D.hh"
-#include "pism/util/IceGrid.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/IceGrid.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array_impl.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace array {

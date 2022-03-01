@@ -24,7 +24,7 @@ set(PISMUTIL_SRC
   VariableMetadata.cc
   error_handling.cc
   array/CellType.cc
-  iceModelVec.cc
+  array/Array.cc
   iceModelVec2T.cc
   iceModelVec2V.cc
   array/Array3D.cc

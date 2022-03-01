@@ -33,7 +33,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {

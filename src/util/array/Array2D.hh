@@ -19,8 +19,8 @@
 #ifndef PISM_ARRAY2D_H
 #define PISM_ARRAY2D_H
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/iceModelVec_helpers.hh"
+#include "Array.hh"
+#include "Array_helpers.hh"
 
 namespace pism {
 

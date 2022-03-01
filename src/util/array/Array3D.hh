@@ -20,7 +20,7 @@
 #ifndef PISM_ARRAY3D_H
 #define PISM_ARRAY3D_H
 
-#include "pism/util/iceModelVec.hh"
+#include "Array.hh"
 
 namespace pism {
 
