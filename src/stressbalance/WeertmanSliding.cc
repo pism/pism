@@ -101,7 +101,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
       }
 
       // Note: we may need to decide if we should use one-sided FD at ice margins.
-      Vector2 grad_h = {diff_x_p(h, i, j), diff_y_p(h, i, j)};
+      Vector2d grad_h = {diff_x_p(h, i, j), diff_y_p(h, i, j)};
 
       // Note: this could be optimized by computing this instead
       // 2 * A_s / (1 - k) * pow(P * P * (h_x * h_x + h_y * h_y), (n - 1) / 2) * grad_h;

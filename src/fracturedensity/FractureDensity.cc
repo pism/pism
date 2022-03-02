@@ -126,7 +126,7 @@ void FractureDensity::write_model_state_impl(const File &output) const {
 
 void FractureDensity::update(double dt,
                              const Geometry &geometry,
-                             const IceModelVec2V &velocity,
+                             const array::Vector &velocity,
                              const array::Scalar &hardness,
                              const array::Scalar &bc_mask) {
   using std::pow;

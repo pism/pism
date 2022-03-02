@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -76,7 +76,7 @@ bool BlatterTestXZ::dirichlet_node(const DMDALocalInfo &info,
   return (I.i == 0 or I.i == info.mx - 1);
 }
 
-Vector2 BlatterTestXZ::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestXZ::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_exact(x, z, m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);
@@ -85,7 +85,7 @@ Vector2 BlatterTestXZ::u_bc(double x, double y, double z) const {
 void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element,
                                          const double *surface,
                                          const double *bed,
-                                         Vector2 *residual) {
+                                         Vector2d *residual) {
   (void) surface;
   (void) bed;
 
@@ -128,8 +128,8 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
                                    const fem::Q1Element3Face &face,
                                    const double *tauc_nodal,
                                    const double *f_nodal,
-                                   const Vector2 *u_nodal,
-                                   Vector2 *residual) {
+                                   const Vector2d *u_nodal,
+                                   Vector2d *residual) {
 
   // The basal sliding BC contribution:
   Blatter::residual_basal(element, face, tauc_nodal, f_nodal, u_nodal, residual);
@@ -173,7 +173,7 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
  */
 void BlatterTestXZ::residual_surface(const fem::Q1Element3 &element,
                                      const fem::Q1Element3Face &face,
-                                     Vector2 *residual) {
+                                     Vector2d *residual) {
 
   // compute x and z coordinates of quadrature points
   double

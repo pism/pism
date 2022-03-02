@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ public:
 
   void init();
 
-  void update(const IceModelVec2V &sliding_velocity,
+  void update(const array::Vector &sliding_velocity,
               const Inputs &inputs,
               bool full_update);
 private:
@@ -46,7 +46,7 @@ private:
 
   void transfer(const array::Scalar &ice_thickness);
 
-  void compute_max_diffusivity(const IceModelVec2V &velocity,
+  void compute_max_diffusivity(const array::Vector &velocity,
                                const array::Scalar &ice_thickness,
                                const array::Scalar &surface);
 };

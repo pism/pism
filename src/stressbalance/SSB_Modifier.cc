@@ -98,7 +98,7 @@ ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g)
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
+void ConstantInColumn::update(const array::Vector &sliding_velocity,
                               const Inputs &inputs,
                               bool full_update) {
 

@@ -160,8 +160,8 @@ const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
   return tmp;
 }
 
-const IceModelVec2V* Vars::get_2d_vector(const std::string &name) const {
-  const IceModelVec2V *tmp = dynamic_cast<const IceModelVec2V*>(this->get_internal(name));
+const array::Vector* Vars::get_2d_vector(const std::string &name) const {
+  const array::Vector *tmp = dynamic_cast<const array::Vector*>(this->get_internal(name));
   if (tmp == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "2D vector variable '%s' is not available", name.c_str());
   }
@@ -287,8 +287,8 @@ array::Scalar::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
 }
 
 
-IceModelVec2V::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
-  IceModelVec2V::Ptr tmp = dynamic_pointer_cast<IceModelVec2V,array::Array>(this->get_internal_shared(name));
+array::Vector::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
+  array::Vector::Ptr tmp = dynamic_pointer_cast<array::Vector,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D vector variable '%s' is not available", name.c_str());
   }

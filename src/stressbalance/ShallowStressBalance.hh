@@ -48,12 +48,12 @@ public:
   virtual void update(const Inputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  const IceModelVec2V& velocity() const;
+  const array::Vector& velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const array::Scalar& basal_frictional_heating();
 
-  void compute_basal_frictional_heating(const IceModelVec2V &velocity,
+  void compute_basal_frictional_heating(const array::Vector &velocity,
                                         const array::Scalar &tauc,
                                         const array::CellType0 &mask,
                                         array::Scalar &result) const;
@@ -78,7 +78,7 @@ protected:
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   EnthalpyConverter::Ptr m_EC;
 
-  Velocity2 m_velocity;
+  array::Vector2 m_velocity;
   array::Scalar m_basal_frictional_heating;
 
   //! flow enhancement factor

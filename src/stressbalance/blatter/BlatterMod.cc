@@ -50,7 +50,7 @@ void BlatterMod::init() {
  *
  * - estimates the maximum diffusivity used to compute the time step restriction
  */
-void BlatterMod::update(const IceModelVec2V &sliding_velocity,
+void BlatterMod::update(const array::Vector &sliding_velocity,
                         const Inputs &inputs,
                         bool full_update) {
   (void) sliding_velocity;
@@ -110,7 +110,7 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
 /*!
  * Estimate max SIA-type diffusivity assuming that `Q = -D \nabla h`.
  */
-void BlatterMod::compute_max_diffusivity(const IceModelVec2V &velocity,
+void BlatterMod::compute_max_diffusivity(const array::Vector &velocity,
                                          const array::Scalar &ice_thickness,
                                          const array::Scalar &surface) {
   const double eps = 1e-3;
@@ -128,7 +128,7 @@ void BlatterMod::compute_max_diffusivity(const IceModelVec2V &velocity,
     auto H = ice_thickness(i, j);
 
     if (H > 0.0) {
-      Vector2 grad_h = {(h.e - h.w) / (2.0 * dx),
+      Vector2d grad_h = {(h.e - h.w) / (2.0 * dx),
                         (h.n - h.s) / (2.0 * dy)};
 
       double D = H * velocity(i, j).magnitude() / (grad_h.magnitude() + eps);

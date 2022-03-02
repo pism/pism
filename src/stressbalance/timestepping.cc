@@ -116,7 +116,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
  */
 CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType0 &cell_type,
-                            const IceModelVec2V &velocity) {
+                            const array::Vector &velocity) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();

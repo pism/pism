@@ -54,7 +54,7 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
   m_normalization *= (scale*scale);
 }
 
-void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
+void IPMeanSquareFunctional2V::valueAt(array::Vector &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -66,14 +66,14 @@ void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Vector2 &x_ij = x(i, j);
+      Vector2d &x_ij = x(i, j);
       value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v)*(*m_weights)(i, j);
     }
   } else {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Vector2 &x_ij = x(i, j);
+      Vector2d &x_ij = x(i, j);
       value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v);
     }
   }
@@ -82,7 +82,7 @@ void IPMeanSquareFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   GlobalSum( m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT)  {
+void IPMeanSquareFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -94,16 +94,16 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Vector2 &a_ij = a(i, j);
-      Vector2 &b_ij = b(i, j);
+      Vector2d &a_ij = a(i, j);
+      Vector2d &b_ij = b(i, j);
       value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v)*(*m_weights)(i, j);
     }
   } else {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      Vector2 &a_ij = a(i, j);
-      Vector2 &b_ij = b(i, j);
+      Vector2d &a_ij = a(i, j);
+      Vector2d &b_ij = b(i, j);
       value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v);
     }
   }
@@ -112,7 +112,7 @@ void IPMeanSquareFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *O
   GlobalSum( m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPMeanSquareFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient)  {
   gradient.set(0);
 
   array::AccessScope list{&x, &gradient};

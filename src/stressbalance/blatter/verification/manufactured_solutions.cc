@@ -5,7 +5,7 @@
 
 namespace pism {
 
-Vector2 blatter_xy_exact(double x, double y)
+Vector2d blatter_xy_exact(double x, double y)
 {
   double x0 = exp(x);
   double x1 = 2*M_PI*y;
@@ -15,7 +15,7 @@ Vector2 blatter_xy_exact(double x, double y)
   };
 }
 
-Vector2 blatter_xy_source(double x, double y, double B)
+Vector2d blatter_xy_source(double x, double y, double B)
 {
   double x0 = 2*M_PI*y;
   double x1 = cos(x0);
@@ -32,7 +32,7 @@ Vector2 blatter_xy_source(double x, double y, double B)
   };
 }
 
-Vector2 blatter_xz_exact(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
+Vector2d blatter_xz_exact(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
 
   return {
     -4*A*pow(alpha, 3)*pow(g, 3)*pow(rho, 3)*pow(x, 3)*(-pow(H, 4) + pow(-alpha*pow(x, 2) + s_0 - z, 4)) + 2*H*alpha*g*rho*x/beta,
@@ -40,7 +40,7 @@ Vector2 blatter_xz_exact(double x, double z, double A, double rho, double g, dou
   };
 }
 
-Vector2 blatter_xz_source(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
+Vector2d blatter_xz_source(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
   double phi_1 = alpha*pow(x, 2) - s_0 + z;
   double phi_2 = 4*A*pow(alpha, 3)*pow(g, 3)*pow(rho, 3)*x;
   double phi_3 = 4*pow(phi_1, 5)*pow(phi_2, 2)*pow(x, 3);
@@ -54,7 +54,7 @@ Vector2 blatter_xz_source(double x, double z, double A, double rho, double g, do
   };
 }
 
-Vector2 blatter_xz_source_bed(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
+Vector2d blatter_xz_source_bed(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
   double phi_1 = alpha*pow(x, 2) - s_0 + z;
   double phi_2 = 4*A*pow(alpha, 3)*pow(g, 3)*pow(rho, 3)*x;
   double phi_3 = 4*pow(phi_1, 5)*pow(phi_2, 2)*pow(x, 3);
@@ -69,7 +69,7 @@ Vector2 blatter_xz_source_bed(double x, double z, double A, double rho, double g
   };
 }
 
-Vector2 blatter_xz_source_surface(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
+Vector2d blatter_xz_source_surface(double x, double z, double A, double rho, double g, double s_0, double alpha, double H, double beta) {
   double phi_1 = alpha*pow(x, 2) - s_0 + z;
   double phi_2 = 4*A*pow(alpha, 3)*pow(g, 3)*pow(rho, 3)*x;
   double phi_3 = 4*pow(phi_1, 5)*pow(phi_2, 2)*pow(x, 3);
@@ -84,7 +84,7 @@ Vector2 blatter_xz_source_surface(double x, double z, double A, double rho, doub
   };
 }
 
-Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w, double g)
+Vector2d blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho_i, double rho_w, double g)
 {
   return {
     (1.0/2.0)*L*g*z*(rho_i - rho_w)*sin(M_PI*x/L)/(M_PI*B),
@@ -92,7 +92,7 @@ Vector2 blatter_xz_cfbc_exact(double x, double z, double B, double L, double rho
   };
 }
 
-Vector2 blatter_xz_cfbc_source(double x, double z, double L, double rho_i, double rho_w, double g)
+Vector2d blatter_xz_cfbc_source(double x, double z, double L, double rho_i, double rho_w, double g)
 {
   double x0 = M_PI/L;
   return {
@@ -101,7 +101,7 @@ Vector2 blatter_xz_cfbc_source(double x, double z, double L, double rho_i, doubl
   };
 }
 
-Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, double g)
+Vector2d blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
     (1.0/4.0)*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
@@ -109,7 +109,7 @@ Vector2 blatter_xz_cfbc_surface(double x, double L, double rho_i, double rho_w, 
   };
 }
 
-Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, double g)
+Vector2d blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, double g)
 {
   return {
     -1.0/4.0*L*g*(rho_i - rho_w)*sin(M_PI*x/L)/M_PI,
@@ -117,7 +117,7 @@ Vector2 blatter_xz_cfbc_base(double x, double L, double rho_i, double rho_w, dou
   };
 }
 
-Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
   double C_0 = H_0;
   double C_1 = 1.0/R_0;
   double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
@@ -129,7 +129,7 @@ Vector2 blatter_xz_halfar_exact(double x, double z, double H_0, double R_0, doub
   };
 }
 
-Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_halfar_source(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
   double C_0 = H_0;
   double C_1 = 1.0/R_0;
   double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
@@ -148,7 +148,7 @@ Vector2 blatter_xz_halfar_source(double x, double z, double H_0, double R_0, dou
   };
 }
 
-Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_halfar_source_lateral(double x, double z, double H_0, double R_0, double rho_i, double g, double B) {
   double C_0 = H_0;
   double C_1 = 1.0/R_0;
   double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
@@ -163,7 +163,7 @@ Vector2 blatter_xz_halfar_source_lateral(double x, double z, double H_0, double 
   };
 }
 
-Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_halfar_source_surface(double x, double H_0, double R_0, double rho_i, double g, double B) {
   double C_0 = H_0;
   double C_1 = 1.0/R_0;
   double C_2 = (1.0/2.0)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
@@ -178,7 +178,7 @@ Vector2 blatter_xz_halfar_source_surface(double x, double H_0, double R_0, doubl
   };
 }
 
-Vector2 blatter_xz_halfar_source_base(double x, double H_0, double R_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_halfar_source_base(double x, double H_0, double R_0, double rho_i, double g, double B) {
   (void) B;
   return {
     -4.0/7.0*pow(H_0, 2)*g*rho_i*cbrt(x)/(pow(R_0, 8.0/7.0)*pow(pow(R_0, 4.0/3.0) - pow(x, 4.0/3.0), 1.0/7.0)),
@@ -191,7 +191,7 @@ double blatter_xz_vanderveen_thickness(double x, double alpha, double H_0, doubl
   return pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
 }
 
-Vector2 blatter_xz_vanderveen_exact(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_vanderveen_exact(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
   double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
   double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
   return {
@@ -200,7 +200,7 @@ Vector2 blatter_xz_vanderveen_exact(double x, double alpha, double H_0, double Q
   };
 }
 
-Vector2 blatter_xz_vanderveen_source_lateral(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_vanderveen_source_lateral(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
   double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
   double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
   return {
@@ -209,7 +209,7 @@ Vector2 blatter_xz_vanderveen_source_lateral(double x, double alpha, double H_0,
   };
 }
 
-Vector2 blatter_xz_vanderveen_source_surface(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
+Vector2d blatter_xz_vanderveen_source_surface(double x, double alpha, double H_0, double Q_0, double rho_i, double g, double B) {
   double C = (1.0/8.0)*pow(alpha, 3)*pow(g, 3)*pow(rho_i, 3)/pow(B, 3);
   double thickness = pow(4*C*x/Q_0 + pow(H_0, -4), -1.0/4.0);
   return {

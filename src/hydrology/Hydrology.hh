@@ -127,7 +127,7 @@ public:
   const array::Scalar& subglacial_water_thickness() const;
   const array::Scalar& overburden_pressure() const;
   const array::Scalar& surface_input_rate() const;
-  const IceModelVec2V& flux() const;
+  const array::Vector& flux() const;
 
   const array::Scalar& mass_change() const;
   const array::Scalar& mass_change_at_grounded_margin() const;
@@ -165,7 +165,7 @@ protected:
                                array::Scalar &result);
 protected:
   // water flux on the regular grid
-  IceModelVec2V m_Q;
+  array::Vector m_Q;
 
   //! effective thickness of basal water stored in till
   array::Scalar m_Wtill;

@@ -515,7 +515,7 @@ const array::Scalar& Hydrology::subglacial_water_thickness() const {
  * Return subglacial water flux (time-average over the time step requested at the time of
  * the update() call).
  */
-const IceModelVec2V& Hydrology::flux() const {
+const array::Vector& Hydrology::flux() const {
   return m_Q;
 }
 

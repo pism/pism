@@ -98,7 +98,7 @@ array::Array::Ptr PSB_velbar::compute_impl() const {
   const array::Scalar* thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // Compute the vertically-integrated horizontal ice flux:
-  IceModelVec2V::Ptr result = array::Array::cast<IceModelVec2V>(PSB_flux(model).compute());
+  array::Vector::Ptr result = array::Array::cast<array::Vector>(PSB_flux(model).compute());
 
   // Override metadata set by the flux computation
   result->metadata(0) = m_vars[0];
@@ -141,7 +141,7 @@ array::Array::Ptr PSB_velbar_mag::compute_impl() const {
   result->metadata(0) = m_vars[0];
 
   // compute vertically-averaged horizontal velocity:
-  IceModelVec2V::Ptr velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
+  array::Vector::Ptr velbar = array::Array::cast<array::Vector>(PSB_velbar(model).compute());
 
   // compute its magnitude:
   compute_magnitude(*velbar, *result);
@@ -172,7 +172,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 array::Array::Ptr PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "flux"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "flux"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -205,16 +205,16 @@ array::Array::Ptr PSB_flux::compute_impl() const {
         auto u = u3.get_column(i, j);
         auto v = v3.get_column(i, j);
 
-        Vector2 Q(0.0, 0.0);
+        Vector2d Q(0.0, 0.0);
 
         // ks is "k just below the surface"
         int ks = m_grid->kBelowHeight(H);
 
         if (ks > 0) {
-          Vector2 v0(u[0], v[0]);
+          Vector2d v0(u[0], v[0]);
 
           for (int k = 1; k <= ks; ++k) {
-            Vector2 v1(u[k], v[k]);
+            Vector2d v1(u[k], v[k]);
 
             // trapezoid rule
             Q += (z[k] - z[k - 1]) * 0.5 * (v0 + v1);
@@ -224,7 +224,7 @@ array::Array::Ptr PSB_flux::compute_impl() const {
         }
 
         // rectangle method to integrate over the last level
-        Q += (H - z[ks]) * Vector2(u[ks], v[ks]);
+        Q += (H - z[ks]) * Vector2d(u[ks], v[ks]);
 
         (*result)(i, j) = Q;
       }
@@ -289,7 +289,7 @@ array::Array::Ptr PSB_velbase_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "velbase_mag"));
   result->metadata(0) = m_vars[0];
 
-  compute_magnitude(*array::Array::cast<IceModelVec2V>(PSB_velbase(model).compute()), *result);
+  compute_magnitude(*array::Array::cast<array::Vector>(PSB_velbase(model).compute()), *result);
 
   double fill_value = to_internal(m_fill_value);
 
@@ -326,7 +326,7 @@ array::Array::Ptr PSB_velsurf_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "velsurf_mag"));
   result->metadata(0) = m_vars[0];
 
-  compute_magnitude(*array::Array::cast<IceModelVec2V>(PSB_velsurf(model).compute()), *result);
+  compute_magnitude(*array::Array::cast<array::Vector>(PSB_velsurf(model).compute()), *result);
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -372,7 +372,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 array::Array::Ptr PSB_velsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "surf"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "surf"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -620,7 +620,7 @@ PSB_velbase::PSB_velbase(const StressBalance *m)
 array::Array::Ptr PSB_velbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "base"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "base"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -808,14 +808,14 @@ PSB_strain_rates::PSB_strain_rates(const StressBalance *m)
 }
 
 array::Array::Ptr PSB_strain_rates::compute_impl() const {
-  auto velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
+  auto velbar = array::Array::cast<array::Vector>(PSB_velbar(model).compute());
 
   auto result = std::make_shared<array::Array2D<PrincipalStrainRates>>
     (m_grid, "strain_rates", WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  Velocity1 velbar_with_ghosts(m_grid, "velbar");
+  array::Vector1 velbar_with_ghosts(m_grid, "velbar");
 
   // copy_from communicates ghosts
   velbar_with_ghosts.copy_from(*velbar);
@@ -854,13 +854,13 @@ array::Array::Ptr PSB_deviatoric_stresses::compute_impl() const {
   const array::Scalar  *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   array::Scalar hardness(m_grid, "hardness");
-  Velocity1 velocity(m_grid, "velocity");
+  array::Vector1 velocity(m_grid, "velocity");
 
   averaged_hardness_vec(*model->shallow()->flow_law(), *thickness, *enthalpy,
                         hardness);
 
   // copy_from updates ghosts
-  velocity.copy_from(*array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute()));
+  velocity.copy_from(*array::Array::cast<array::Vector>(PSB_velbar(model).compute()));
 
   array::CellType1 cell_type(m_grid, "cell_type");
   {
@@ -1059,8 +1059,8 @@ array::Array::Ptr PSB_vonmises_stress::compute_impl() const {
 
   array::Scalar &vonmises_stress = *result;
 
-  auto velbar = array::Array::cast<IceModelVec2V>(PSB_velbar(model).compute());
-  IceModelVec2V &velocity = *velbar;
+  auto velbar = array::Array::cast<array::Vector>(PSB_velbar(model).compute());
+  array::Vector &velocity = *velbar;
 
   auto eigen12 = array::Array::cast<array::Array3D>(PSB_strain_rates(model).compute());
   array::Array3D &strain_rates = *eigen12;

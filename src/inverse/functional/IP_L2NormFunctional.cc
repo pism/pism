@@ -154,7 +154,7 @@ void IP_L2NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient
   } // i
 }
 
-void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
+void IP_L2NormFunctional2V::valueAt(array::Vector &x, double *OUTPUT) {
 
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
@@ -162,7 +162,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   // The value of the objective
   double value = 0;
 
-  Vector2 x_q[Nq_max];
+  Vector2d x_q[Nq_max];
 
   array::AccessScope list(x);
 
@@ -178,13 +178,13 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      Vector2 tmp[fem::q1::n_chi];
+      Vector2d tmp[fem::q1::n_chi];
       m_element.nodal_values(x.array(), tmp);
       m_element.evaluate(tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        const Vector2 &x_qq = x_q[q];
+        const Vector2d &x_qq = x_q[q];
         value += W*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
       } // q
     } // j
@@ -193,7 +193,7 @@ void IP_L2NormFunctional2V::valueAt(IceModelVec2V &x, double *OUTPUT) {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT) {
+void IP_L2NormFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTPUT) {
 
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
@@ -201,8 +201,8 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   // The value of the objective
   double value = 0;
 
-  Vector2 a_q[Nq_max];
-  Vector2 b_q[Nq_max];
+  Vector2d a_q[Nq_max];
+  Vector2d b_q[Nq_max];
 
   array::AccessScope list{&a, &b};
 
@@ -218,7 +218,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      Vector2 tmp[fem::q1::n_chi];
+      Vector2d tmp[fem::q1::n_chi];
       m_element.nodal_values(a.array(), tmp);
       m_element.evaluate(tmp, a_q);
       m_element.nodal_values(b.array(), tmp);
@@ -234,7 +234,7 @@ void IP_L2NormFunctional2V::dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTP
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient) {
+void IP_L2NormFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -243,8 +243,8 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
   // Clear the gradient before doing anything with it!
   gradient.set(0);
 
-  Vector2 x_q[Nq_max];
-  Vector2 gradient_e[Nk];
+  Vector2d x_q[Nq_max];
+  Vector2d gradient_e[Nk];
 
   array::AccessScope list{&x, &gradient};
 
@@ -262,7 +262,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
       m_element.reset(i, j);
 
       // Obtain values of x at the quadrature points for the element.
-      Vector2 tmp[Nk];
+      Vector2d tmp[Nk];
       m_element.nodal_values(x.array(), tmp);
       m_element.evaluate(tmp, x_q);
 
@@ -274,7 +274,7 @@ void IP_L2NormFunctional2V::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient
 
       for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        const Vector2 &x_qq = x_q[q];
+        const Vector2d &x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
           double gcommon = 2*W*m_element.chi(q, k).val;
           gradient_e[k].u += gcommon*x_qq.u;

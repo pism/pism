@@ -21,16 +21,16 @@
 
 #include "FEM.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
 namespace array {
 class Array;
 class Scalar;
+class Vector;
 }
 
-class IceModelVec2V;
 
 namespace fem {
 
@@ -72,17 +72,17 @@ protected:
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const array::Scalar *indices, const IceModelVec2V *values,
+  DirichletData_Vector(const array::Scalar *indices, const array::Vector *values,
                        double weight);
   ~DirichletData_Vector();
 
-  void enforce(const Element2 &element, Vector2* x_e);
-  void enforce_homogeneous(const Element2 &element, Vector2* x_e);
-  void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
-  void fix_residual_homogeneous(Vector2 **r);
+  void enforce(const Element2 &element, Vector2d* x_e);
+  void enforce_homogeneous(const Element2 &element, Vector2d* x_e);
+  void fix_residual(Vector2d const *const *const x_global, Vector2d **r_global);
+  void fix_residual_homogeneous(Vector2d **r);
   void fix_jacobian(Mat J);
 protected:
-  const IceModelVec2V *m_values;
+  const array::Vector *m_values;
 };
 
 } // end of namespace fem

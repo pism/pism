@@ -873,7 +873,7 @@ void IceCompModel::test_V_init() {
       m_ice_thickness_bc_mask(i, j) = 1;
     } else {
       m_velocity_bc_mask(i,j) = 0;
-      m_velocity_bc_values(i,j)  = Vector2(0.0, 0.0);
+      m_velocity_bc_values(i,j)  = {0.0, 0.0};
       m_geometry.ice_thickness(i, j) = 0;
       m_ice_thickness_bc_mask(i, j) = 0;
     }

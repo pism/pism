@@ -57,8 +57,8 @@ protected:
 class IP_SSATaucTikhonovGNSolver {
 public:
   typedef array::Scalar DesignVec;
-  typedef IceModelVec2V StateVec;
-  typedef Velocity1 StateVec1;
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   typedef array::Scalar1 DesignVecGhosted;
 

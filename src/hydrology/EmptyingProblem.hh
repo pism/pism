@@ -43,11 +43,11 @@ public:
               bool recompute_potential = true);
 
   // output
-  const IceModelVec2V& flux() const;
+  const array::Vector& flux() const;
 
   // diagnostics
   const array::Scalar& remaining_water_thickness() const;
-  const IceModelVec2V& effective_water_velocity() const;
+  const array::Vector& effective_water_velocity() const;
   const array::Scalar& potential() const;
   const array::Scalar& adjustment() const;
   const array::Scalar& sinks() const;
@@ -81,8 +81,8 @@ protected:
   array::Staggered1 m_Qsum;
   array::Scalar1 m_domain_mask;
 
-  IceModelVec2V m_Q;
-  IceModelVec2V m_q_sg;
+  array::Vector m_Q;
+  array::Vector m_q_sg;
   array::Scalar m_adjustment;
   array::Scalar m_sinks;
 

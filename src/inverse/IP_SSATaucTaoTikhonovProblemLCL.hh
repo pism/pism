@@ -48,7 +48,7 @@ public:
   typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
 
   typedef array::Scalar DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Vector StateVec;
   
   IP_SSATaucTaoTikhonovProblemLCLListener() {}
   virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
@@ -88,8 +88,8 @@ public:
   typedef array::Scalar DesignVec;
   typedef array::Scalar1 DesignVecGhosted;
 
-  typedef IceModelVec2V StateVec;
-  typedef Velocity1 StateVec1;
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
@@ -156,13 +156,13 @@ protected:
   petsc::Mat m_Jdesign;
 
   array::Scalar1 m_d_Jdesign;   // ghosted
-  Velocity1 m_u_Jdesign;        // ghosted
+  array::Vector1 m_u_Jdesign;        // ghosted
 
   double m_constraintsScale;
   double m_velocityScale;
 
   IPFunctional<array::Scalar> &m_designFunctional;
-  IPFunctional<IceModelVec2V> &m_stateFunctional;
+  IPFunctional<array::Vector> &m_stateFunctional;
 
   std::vector<Listener::Ptr> m_listeners;
 

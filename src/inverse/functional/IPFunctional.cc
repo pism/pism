@@ -62,7 +62,7 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
   loop.check();
 }
 
-void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient) {
+void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient) {
   const IceGrid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
@@ -115,7 +115,7 @@ void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V 
   loop.check();
 }
 
-// PetscErrorCode gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+// PetscErrorCode gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient);
 
 } // end of namespace inverse
 } // end of namespace pism

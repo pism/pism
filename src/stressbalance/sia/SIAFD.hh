@@ -56,7 +56,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update);
 
@@ -99,7 +99,7 @@ protected:
   virtual void compute_3d_horizontal_velocity(const Geometry &geometry,
                                               const array::Staggered &h_x,
                                               const array::Staggered &h_y,
-                                              const IceModelVec2V &vel_input,
+                                              const array::Vector &vel_input,
                                               array::Array3D &u_out, array::Array3D &v_out);
 
   virtual void compute_I(const Geometry &geometry);

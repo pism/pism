@@ -45,7 +45,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update) = 0;
 
@@ -80,7 +80,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const IceModelVec2V &sliding_velocity,
+  virtual void update(const array::Vector &sliding_velocity,
                       const Inputs &inputs,
                       bool full_update);
 };

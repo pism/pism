@@ -24,12 +24,12 @@
 
 namespace pism {
 
-class IceModelVec2V;
 namespace array {
 class CellType1;
+class Vector;
 
 //! \brief A class for storing and accessing internal staggered-grid 2D fields.
-//! Uses dof=2 storage. This class is identical to IceModelVec2V, except that
+//! Uses dof=2 storage. This class is identical to array::Vector, except that
 //! components are not called `u` and `v` (to avoid confusion).
 class Staggered : public Array {
 public:
@@ -110,7 +110,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 void staggered_to_regular(const array::CellType1 &cell_type,
                           const array::Staggered &input,
                           bool include_floating_ice,
-                          IceModelVec2V &result);
+                          array::Vector &result);
 
 } // end of namespace pism
 

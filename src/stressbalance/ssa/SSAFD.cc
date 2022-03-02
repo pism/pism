@@ -263,7 +263,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   // This constant is for debugging: simulations should not depend on the choice of
   // velocity used in ice-free areas.
-  const Vector2 ice_free_velocity(0.0, 0.0);
+  const Vector2d ice_free_velocity(0.0, 0.0);
 
   const bool
     use_cfbc       = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -297,7 +297,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Vector2 taud = m_taud(i, j);
+    Vector2d taud = m_taud(i, j);
 
     if (flow_line_mode) {
       // no cross-flow driving stress in the flow line mode
@@ -504,7 +504,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   PetscErrorCode ierr = 0;
 
   // shortcut:
-  const IceModelVec2V &vel = m_velocity;
+  const array::Vector &vel = m_velocity;
 
   const array::Scalar
     &thickness         = inputs.geometry->ice_thickness,
@@ -1428,7 +1428,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
                                   double nuH_regularization,
                                   array::Staggered &result) {
 
-  const IceModelVec2V &uv = m_velocity; // shortcut
+  const array::Vector &uv = m_velocity; // shortcut
 
   array::AccessScope list{&result, &uv, &m_hardness, &geometry.ice_thickness};
 
@@ -1500,7 +1500,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   const array::Scalar &thickness = geometry.ice_thickness;
 
-  const IceModelVec2V &uv = m_velocity; // shortcut
+  const array::Vector &uv = m_velocity; // shortcut
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1577,8 +1577,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
         }
 
         m_flow_law->effective_viscosity(m_hardness(i,j,0),
-                                        secondInvariant_2D(Vector2(u_x, v_x),
-                                                           Vector2(u_y, v_y)),
+                                        secondInvariant_2D(Vector2d(u_x, v_x),
+                                                           Vector2d(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,0) = nu * H;
       } else {
@@ -1612,8 +1612,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
         }
 
         m_flow_law->effective_viscosity(m_hardness(i,j,1),
-                                        secondInvariant_2D(Vector2(u_x, v_x),
-                                                           Vector2(u_y, v_y)),
+                                        secondInvariant_2D(Vector2d(u_x, v_x),
+                                                           Vector2d(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,1) = nu * H;
       } else {

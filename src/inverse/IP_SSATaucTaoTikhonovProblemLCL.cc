@@ -25,7 +25,7 @@ namespace pism {
 namespace inverse {
 
 typedef array::Scalar  DesignVec;
-typedef IceModelVec2V  StateVec;
+typedef array::Vector  StateVec;
 
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;

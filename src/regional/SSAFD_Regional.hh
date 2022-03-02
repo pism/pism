@@ -37,7 +37,7 @@ public:
                                       const array::Scalar &surface_elevation,
                                       const array::CellType1 &cell_type,
                                       const array::Scalar *no_model_mask,
-                                      IceModelVec2V &result) const;
+                                      array::Vector &result) const;
 
 private:
   void update(const Inputs &inputs, bool full_update);

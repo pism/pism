@@ -215,7 +215,7 @@ CFLData StressBalance::max_timestep_cfl_3d() const {
   return m_cfl_3d;
 }
 
-const IceModelVec2V& StressBalance::advective_velocity() const {
+const array::Vector& StressBalance::advective_velocity() const {
   return m_shallow_stress_balance->velocity();
 }
 
@@ -682,7 +682,7 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-void compute_2D_principal_strain_rates(const IceModelVec2V &V,
+void compute_2D_principal_strain_rates(const array::Vector &V,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result) {
 
@@ -764,7 +764,7 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
 //! @brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
-                         const IceModelVec2V &velocity,
+                         const array::Vector &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result) {
@@ -839,7 +839,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 
     double nu = 0.0;
     flow_law.effective_viscosity(hardness(i, j),
-                                 secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
+                                 secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                  &nu, NULL);
 
     //get deviatoric stresses

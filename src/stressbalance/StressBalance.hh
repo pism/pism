@@ -53,7 +53,7 @@ public:
   const array::Array3D  *age;
 
   const array::Scalar *bc_mask;
-  const IceModelVec2V *bc_values;
+  const array::Vector *bc_values;
 
   // inputs used by regional stress balance models
   const array::Scalar *no_model_mask;
@@ -90,7 +90,7 @@ public:
   void update(const Inputs &inputs, bool full_update);
 
   //! \brief Get the thickness-advective (SSA) 2D velocity.
-  const IceModelVec2V& advective_velocity() const;
+  const array::Vector& advective_velocity() const;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
   const array::Staggered& diffusive_flux() const;
@@ -152,7 +152,7 @@ struct PrincipalStrainRates {
   double eigen2;
 };
 
-void compute_2D_principal_strain_rates(const IceModelVec2V &velocity,
+void compute_2D_principal_strain_rates(const array::Vector &velocity,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result);
 
@@ -163,7 +163,7 @@ struct DeviatoricStresses {
 };
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
-                         const IceModelVec2V &velocity,
+                         const array::Vector &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result);

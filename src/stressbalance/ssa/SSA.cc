@@ -238,7 +238,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
                                  const array::Scalar &surface_elevation,
                                  const array::CellType1 &cell_type,
                                  const array::Scalar *no_model_mask,
-                                 IceModelVec2V &result) const {
+                                 array::Vector &result) const {
 
   using mask::ice_free_ocean;
   using mask::floating_ice;
@@ -270,7 +270,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
       double
         h_x = diff_x_p(surface_elevation, i, j),
         h_y = diff_y_p(surface_elevation, i, j);
-      result(i, j) = - pressure * Vector2(h_x, h_y);
+      result(i, j) = - pressure * Vector2d(h_x, h_y);
       continue;
     }
 
@@ -337,7 +337,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   }
 }
 
@@ -347,11 +347,11 @@ std::string SSA::stdout_report() const {
 
 
 //! \brief Set the initial guess of the SSA velocity.
-void SSA::set_initial_guess(const IceModelVec2V &guess) {
+void SSA::set_initial_guess(const array::Vector &guess) {
   m_velocity.copy_from(guess);
 }
 
-const IceModelVec2V& SSA::driving_stress() const {
+const array::Vector& SSA::driving_stress() const {
   return m_taud;
 }
 
@@ -393,7 +393,7 @@ SSA_taud::SSA_taud(const SSA *m)
 
 array::Array::Ptr SSA_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

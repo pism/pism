@@ -79,13 +79,13 @@ void compute_magnitude(const array::Scalar &v_x,
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) = Vector2(v_x(i, j), v_y(i, j)).magnitude();
+    result(i, j) = Vector2d(v_x(i, j), v_y(i, j)).magnitude();
   }
 
   result.inc_state_counter();          // mark as modified
 }
 
-void compute_magnitude(const IceModelVec2V &input, array::Scalar &result) {
+void compute_magnitude(const array::Vector &input, array::Scalar &result) {
   array::AccessScope list{&result, &input};
 
   for (Points p(*result.grid()); p; p.next()) {

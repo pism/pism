@@ -79,7 +79,7 @@ struct GeometryEvolution::Impl {
   array::Staggered1 flux_staggered;
 
   // Work space
-  Velocity1    input_velocity; // a ghosted copy; not modified
+  array::Vector1    input_velocity; // a ghosted copy; not modified
   array::Scalar1   bed_elevation; // a copy; not modified
   array::Scalar1   sea_level;   // a copy; not modified
   array::Scalar1   ice_thickness; // updated in place
@@ -244,7 +244,7 @@ const array::Scalar& GeometryEvolution::conservation_error() const {
  * Results are stored in internal fields accessible using getters.
  */
 void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
-                                  const IceModelVec2V    &advective_velocity,
+                                  const array::Vector    &advective_velocity,
                                   const array::Staggered &diffusive_flux,
                                   const array::Scalar  &thickness_bc_mask) {
 
@@ -539,7 +539,7 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
  */
 void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                  const array::Scalar        &ice_thickness,
-                                                 const IceModelVec2V        &velocity,
+                                                 const array::Vector        &velocity,
                                                  const array::Staggered     &diffusive_flux,
                                                  array::Staggered           &output) {
 
@@ -556,7 +556,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
         M  = cell_type(i, j);
 
       const double H = ice_thickness(i, j);
-      const Vector2 V  = velocity(i, j);
+      const Vector2d V  = velocity(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int
@@ -570,7 +570,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
         // advective velocity at the current interface
         double v = 0.0;
         {
-          Vector2 V_n  = velocity(i_n, j_n);
+          Vector2d V_n  = velocity(i_n, j_n);
           int
             W   = icy(M),
             W_n = icy(M_n);
@@ -1153,7 +1153,7 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask
  */
 void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                          const array::Scalar        &ice_thickness,
-                                                         const IceModelVec2V        &velocity,
+                                                         const array::Vector        &velocity,
                                                          const array::Staggered     &diffusive_flux,
                                                          array::Staggered           &output) {
 

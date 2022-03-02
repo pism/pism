@@ -70,7 +70,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
                                             const array::Scalar &surface_elevation,
                                             const array::CellType1 &cell_type,
                                             const array::Scalar *no_model_mask,
-                                            IceModelVec2V &result) const {
+                                            array::Vector &result) const {
 
   SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
@@ -140,7 +140,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   } // end of the loop over grid points
 }
 

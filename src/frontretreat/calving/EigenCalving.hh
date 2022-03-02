@@ -23,9 +23,6 @@
 
 namespace pism {
 
-class Geometry;
-class IceModelVec2V;
-
 namespace calving {
 
 class EigenCalving : public StressCalving {
@@ -35,7 +32,7 @@ public:
 
   void init();
 
-  void update(const array::CellType0 &cell_type, const IceModelVec2V &ice_velocity);
+  void update(const array::CellType0 &cell_type, const array::Vector &ice_velocity);
 protected:
   DiagnosticList diagnostics_impl() const;
 

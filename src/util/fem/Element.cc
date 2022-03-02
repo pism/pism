@@ -301,14 +301,14 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
-  const Vector2
+  const Vector2d
     n01( 0.0, -1.0),  // south
     n12( 1.0,  0.0),  // east
     n23( 0.0,  1.0),  // north
     n30(-1.0,  0.0);  // west
 
   // "diagonal" sides
-  Vector2
+  Vector2d
     n13( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
     n20(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
 
@@ -318,8 +318,8 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // coordinates of nodes of a Q1 element this P1 element is embedded in (up to
   // translation)
-  Vector2 p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
-  std::vector<Vector2> pts;
+  Vector2d p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
+  std::vector<Vector2d> pts;
 
   switch (type) {
   case 0:

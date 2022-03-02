@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -54,14 +54,14 @@ private:
   where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
   Q1 finite elements.
 */
-class IP_L2NormFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
+class IP_L2NormFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
-  IP_L2NormFunctional2V(IceGrid::ConstPtr grid) : IPInnerProductFunctional<IceModelVec2V>(grid) {};
+  IP_L2NormFunctional2V(IceGrid::ConstPtr grid) : IPInnerProductFunctional<array::Vector>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
-  virtual void valueAt(IceModelVec2V &x, double *v);
-  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *v);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *v);
+  virtual void dot(array::Vector &a, array::Vector &b, double *v);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 private:
   IP_L2NormFunctional2V(IP_L2NormFunctional2V const &);

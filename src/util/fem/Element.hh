@@ -25,7 +25,7 @@
 #include <petscdmda.h>          // DMDALocalInfo
 
 #include "FEM.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
 
 
@@ -173,7 +173,7 @@ public:
     j = m_j + m_j_offset[k];
   }
 
-  Vector2 normal(unsigned int side) const {
+  Vector2d normal(unsigned int side) const {
     assert(side < m_n_chi);
     return m_normals[side];
   }
@@ -248,7 +248,7 @@ protected:
   Element2(const IceGrid &grid, int Nq, int n_chi, int block_size);
   Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
-  std::vector<Vector2> m_normals;
+  std::vector<Vector2d> m_normals;
 
   std::vector<double> m_side_lengths;
 };

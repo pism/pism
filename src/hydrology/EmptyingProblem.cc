@@ -62,8 +62,8 @@ static void compute_sinks(const array::Scalar &domain_mask,
 }
 
 static void effective_water_velocity(const Geometry &geometry,
-                                     const IceModelVec2V &water_flux,
-                                     IceModelVec2V &result) {
+                                     const array::Vector &water_flux,
+                                     array::Vector &result) {
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -397,7 +397,7 @@ void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
 
 
 static double K(double psi_x, double psi_y, double speed, double epsilon) {
-  return speed / std::max(Vector2(psi_x, psi_y).magnitude(), epsilon);
+  return speed / std::max(Vector2d(psi_x, psi_y).magnitude(), epsilon);
 }
 
 /*!
@@ -492,14 +492,14 @@ const array::Scalar& EmptyingProblem::remaining_water_thickness() const {
 /*!
  * Steady state water flux.
  */
-const IceModelVec2V& EmptyingProblem::flux() const {
+const array::Vector& EmptyingProblem::flux() const {
   return m_Q;
 }
 
 /*!
  * Effective water velocity (flux per unit area of the front).
  */
-const IceModelVec2V& EmptyingProblem::effective_water_velocity() const {
+const array::Vector& EmptyingProblem::effective_water_velocity() const {
   return m_q_sg;
 }
 

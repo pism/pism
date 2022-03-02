@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017 David Maxwell
+// Copyright (C) 2011, 2012, 2014, 2015, 2016, 2017, 2022 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #define _SNESPROBLEM_H_
 
 #include "pism/util/IceGrid.hh" // inline implementation in the header uses IceGrid
-#include "pism/util/Vector2.hh" // to get Vector2
+#include "pism/util/Vector2d.hh" // to get Vector2
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/Logger.hh"
 
@@ -69,7 +69,7 @@ private:
 };
 
 typedef SNESProblem<1,double> SNESScalarProblem;
-typedef SNESProblem<2,Vector2> SNESVectorProblem;
+typedef SNESProblem<2,Vector2d> SNESVectorProblem;
 
 template<int DOF, class U>
 PetscErrorCode SNESProblem<DOF,U>::function_callback(DMDALocalInfo *info,

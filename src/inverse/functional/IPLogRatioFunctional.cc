@@ -51,7 +51,7 @@ void IPLogRatioFunctional::normalize(double scale) {
       w = (*m_weights)(i, j);
     }
 
-    Vector2 &u_obs_ij = m_u_observed(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
     double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
@@ -63,7 +63,7 @@ void IPLogRatioFunctional::normalize(double scale) {
   m_normalization = GlobalSum(m_grid->com, value);
 }
 
-void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
+void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
 
   // The value of the objective
   double value = 0;
@@ -82,9 +82,9 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2 &x_ij = x(i, j);
-    Vector2 &u_obs_ij = m_u_observed(i, j);
-    Vector2 u_model_ij = x_ij+u_obs_ij;
+    Vector2d &x_ij = x(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij+u_obs_ij;
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
 
     double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
@@ -97,7 +97,7 @@ void IPLogRatioFunctional::valueAt(IceModelVec2V &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)  {
+void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient)  {
   gradient.set(0);
 
   double w = 1.;
@@ -114,9 +114,9 @@ void IPLogRatioFunctional::gradientAt(IceModelVec2V &x, IceModelVec2V &gradient)
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2 &x_ij = x(i, j);
-    Vector2 &u_obs_ij = m_u_observed(i, j);
-    Vector2 u_model_ij = x_ij+u_obs_ij;
+    Vector2d &x_ij = x(i, j);
+    Vector2d &u_obs_ij = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij+u_obs_ij;
 
     double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
     double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;

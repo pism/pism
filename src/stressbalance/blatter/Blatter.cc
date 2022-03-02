@@ -25,7 +25,7 @@
 #include "Blatter.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 #include "util/DataAccess.hh"
 #include "util/grid_hierarchy.hh"
@@ -129,7 +129,7 @@ bool Blatter::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::Glo
 
 /*! Dirichlet BC
 */
-Vector2 Blatter::u_bc(double x, double y, double z) const {
+Vector2d Blatter::u_bc(double x, double y, double z) const {
   (void) x;
   (void) y;
   (void) z;
@@ -1094,7 +1094,7 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
 }
 
 void Blatter::copy_solution() {
-  Vector2 ***x = nullptr;
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
@@ -1116,8 +1116,8 @@ void Blatter::copy_solution() {
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
-void Blatter::get_basal_velocity(IceModelVec2V &result) {
-  Vector2 ***x = nullptr;
+void Blatter::get_basal_velocity(array::Vector &result) {
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   array::AccessScope list{&result};
@@ -1134,7 +1134,7 @@ void Blatter::get_basal_velocity(IceModelVec2V &result) {
 
 void Blatter::set_initial_guess(const array::Array3D &u_sigma,
                                 const array::Array3D &v_sigma) {
-  Vector2 ***x = nullptr;
+  Vector2d ***x = nullptr;
   int ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
@@ -1156,10 +1156,10 @@ void Blatter::set_initial_guess(const array::Array3D &u_sigma,
   ierr = DMDAVecRestoreArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecRestoreArray");
 }
 
-void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
+void Blatter::compute_averaged_velocity(array::Vector &result) {
   PetscErrorCode ierr;
 
-  Vector2 ***x = nullptr;
+  Vector2d ***x = nullptr;
   ierr = DMDAVecGetArray(m_da, m_x, &x); PISM_CHK(ierr, "DMDAVecGetArray");
 
   int Mz = m_u_sigma->levels().size();
@@ -1171,7 +1171,7 @@ void Blatter::compute_averaged_velocity(IceModelVec2V &result) {
 
     double H = m_parameters(i, j).thickness;
 
-    Vector2 V(0.0, 0.0);
+    Vector2d V(0.0, 0.0);
 
     if (H > 0.0) {
       // use trapezoid rule to compute the column average

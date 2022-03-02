@@ -150,7 +150,7 @@ void SSATestCase::report(const std::string &testname) {
   m_ctx->log()->message(1,
                         "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
-  const IceModelVec2V &vel_ssa = m_ssa->velocity();
+  const array::Vector &vel_ssa = m_ssa->velocity();
 
   array::AccessScope list{&vel_ssa};
 
@@ -338,10 +338,9 @@ void SSATestCase::write(const std::string &filename) {
   m_ice_enthalpy.write(file);
   m_bc_values.write(file);
 
-  const IceModelVec2V &vel_ssa = m_ssa->velocity();
-  vel_ssa.write(file);
+  m_ssa->velocity().write(file);
 
-  IceModelVec2V exact(m_grid, "_exact");
+  array::Vector exact(m_grid, "_exact");
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
                   "m s-1", "m s-1", "", 0);

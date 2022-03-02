@@ -104,7 +104,7 @@ protected:
   array::Scalar1 m_tauc;
   array::Array3D m_ice_enthalpy;
 
-  Velocity2 m_bc_values;
+  array::Vector2 m_bc_values;
   array::Scalar2 m_bc_mask;
 
   Geometry m_geometry;

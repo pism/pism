@@ -17,7 +17,7 @@ def join(args):
 def print_var(var, name):
     print("  double " + code(var, assign_to=name))
 
-def print_header(name, args, return_type="Vector2"):
+def print_header(name, args, return_type="Vector2d"):
     print("")
     print((func_template + " {{").format(return_type=return_type,
                                          name=name,
@@ -30,7 +30,7 @@ def print_footer(a, b=None):
         print("  return {};".format(code(a)))
     print("}")
 
-def declare(name, args, return_type="Vector2"):
+def declare(name, args, return_type="Vector2d"):
     print("")
     print((func_template + ";").format(return_type=return_type,
                                        name=name,
@@ -38,7 +38,7 @@ def declare(name, args, return_type="Vector2"):
 
 def define(f_u, f_v, name, args):
     print("")
-    print(func_template.format(return_type="Vector2",
+    print(func_template.format(return_type="Vector2d",
                                name=name,
                                arguments=join(args)))
     print("{")

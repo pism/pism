@@ -282,7 +282,7 @@ protected:
   /// Implementation of \f$J_D\f$.
   IPFunctional<array::Scalar> &m_designFunctional;
   /// Implementation of \f$J_S\f$.
-  IPFunctional<IceModelVec2V> &m_stateFunctional;
+  IPFunctional<array::Vector> &m_stateFunctional;
 
   /// List of iteration callbacks.
   std::vector<typename IPTaoTikhonovProblemListener<ForwardProblem>::Ptr> m_listeners;

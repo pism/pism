@@ -300,7 +300,7 @@ protected:
   //! mask to determine Dirichlet boundary locations for the sliding velocity
   array::Scalar2 m_velocity_bc_mask;
   //! Dirichlet boundary velocities
-  Velocity2 m_velocity_bc_values;
+  array::Vector2 m_velocity_bc_values;
 
   //! Mask prescribing locations where ice thickness is held constant
   array::Scalar1 m_ice_thickness_bc_mask;

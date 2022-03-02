@@ -203,8 +203,8 @@
 
 %include pism_options.i
 
-%ignore pism::Vector2::operator=;
-%include "util/Vector2.hh"
+%ignore pism::Vector2d::operator=;
+%include "util/Vector2d.hh"
 
 %ignore pism::units::Unit::operator=;
 %rename(UnitSystem) pism::units::System;

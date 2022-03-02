@@ -3,7 +3,7 @@
    this, it will rot. */
 %include "stressbalance/ssa/SNESProblem.hh"
 %template(_SNESScalarProblem) pism::SNESProblem<1,double>;
-%template(_SNESVectorProblem) pism::SNESProblem<2,pism::Vector2>;
+%template(_SNESVectorProblem) pism::SNESProblem<2,pism::Vector2d>;
 %{
 #include "stressbalance/ssa/SNESProblem.hh"
 %}
@@ -40,9 +40,9 @@
 
 %include "inverse/functional/IPFunctional.hh"
 %template(_IPFunctional2S) pism::inverse::IPFunctional< pism::array::Scalar >;
-%template(_IPFunctional2V) pism::inverse::IPFunctional< pism::IceModelVec2V >;
+%template(_IPFunctional2V) pism::inverse::IPFunctional< pism::array::Vector >;
 %template(_IPInnerProductFunctional2S) pism::inverse::IPInnerProductFunctional< pism::array::Scalar >;
-%template(_IPInnerProductFunctional2V) pism::inverse::IPInnerProductFunctional< pism::IceModelVec2V >;
+%template(_IPInnerProductFunctional2V) pism::inverse::IPInnerProductFunctional< pism::array::Vector >;
 %include "inverse/functional/IP_L2NormFunctional.hh"
 %include "inverse/functional/IP_H1NormFunctional.hh"
 %include "inverse/functional/IPGroundedIceH1NormFunctional.hh"

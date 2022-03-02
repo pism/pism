@@ -51,7 +51,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
 
   PetscErrorCode ierr;
 
-  m_velocity_shared.reset(new IceModelVec2V(m_grid, "dummy"));
+  m_velocity_shared.reset(new array::Vector(m_grid, "dummy"));
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
@@ -150,7 +150,7 @@ TerminationReason::Ptr IP_SSAHardavForwardProblem::linearize_at(array::Scalar &z
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ as defined in the class-level documentation.
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
-void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec2V &RHS) {
+void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, array::Vector &RHS) {
 
   array::AccessScope l{&u, &RHS};
 
@@ -159,14 +159,14 @@ void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, IceModelVec
 
 //! Computes the residual function \f$\mathcal{R}(u, \zeta)\f$ defined in the class-level documentation.
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
-the method is identical to the assemble_residual returning values as a StateVec (an IceModelVec2V).*/
-void IP_SSAHardavForwardProblem::assemble_residual(IceModelVec2V &u, Vec RHS) {
+the method is identical to the assemble_residual returning values as a StateVec (an array::Vector).*/
+void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, Vec RHS) {
 
   array::AccessScope l{&u};
 
   petsc::DMDAVecArray rhs_a(m_da, RHS);
 
-  this->compute_local_function(u.array(), (Vector2**)rhs_a.get());
+  this->compute_local_function(u.array(), (Vector2d**)rhs_a.get());
 }
 
 //! Assembles the state Jacobian matrix.
@@ -177,19 +177,19 @@ to this method.
   @param[in] u Current state variable value.
   @param[out] J computed state Jacobian.
 */
-void IP_SSAHardavForwardProblem::assemble_jacobian_state(IceModelVec2V &u, Mat Jac) {
+void IP_SSAHardavForwardProblem::assemble_jacobian_state(array::Vector &u, Mat Jac) {
   array::AccessScope l{&u};
 
   this->compute_local_jacobian(u.array(), Jac);
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
-/*! The return value uses a DesignVector (IceModelVec2V), which can be ghostless. Ghosts (if present) are updated.
+/*! The return value uses a DesignVector (array::Vector), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
                                                        array::Scalar &dzeta,
-                                                       IceModelVec2V &du) {
+                                                       array::Vector &du) {
   array::AccessScope l{&du};
 
   this->apply_jacobian_design(u, dzeta, du.array());
@@ -199,11 +199,11 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 /*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
 \overload
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
                                                        array::Scalar &dzeta,
                                                        Vec du) {
   petsc::DMDAVecArray du_a(m_da, du);
-  this->apply_jacobian_design(u, dzeta, (Vector2**)du_a.get());
+  this->apply_jacobian_design(u, dzeta, (Vector2d**)du_a.get());
 }
 
 //! @brief Applies the design Jacobian matrix to a perturbation of the
@@ -227,9 +227,9 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   Typically this method is called via one of its overloads.
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
                                                        array::Scalar &dzeta,
-                                                       Vector2 **du_a) {
+                                                       Vector2d **du_a) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -256,13 +256,13 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const IceModelVec2V   *dirichletValues    = &m_bc_values;
+  const array::Vector   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
-  Vector2 u_e[Nk];
-  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
+  Vector2d u_e[Nk];
+  Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
-  Vector2 du_e[Nk];
+  Vector2d du_e[Nk];
 
   double dzeta_e[Nk];
 
@@ -369,8 +369,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(IceModelVec2V &u,
 /*! The return value uses a StateVector (array::Scalar) which can be ghostless; ghosts (if present) are updated.
 \overload
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                 IceModelVec2V &du,
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
+                                                                 array::Vector &du,
                                                                  array::Scalar &dzeta) {
   array::AccessScope l{&dzeta};
   this->apply_jacobian_design_transpose(u, du, dzeta.array());
@@ -379,8 +379,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
 \overload */
-void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                 IceModelVec2V &du,
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
+                                                                 array::Vector &du,
                                                                  Vec dzeta) {
 
   petsc::DM::Ptr da2 = m_grid->get_dm(1, m_config->get_number("grid.max_stencil_width"));
@@ -408,8 +408,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   Typically this method is called via one of its overloads.
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &u,
-                                                                 IceModelVec2V &du,
+void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
+                                                                 array::Vector &du,
                                                                  double **dzeta_a) {
 
   const unsigned int Nk     = fem::q1::n_chi;
@@ -418,7 +418,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
 
   array::AccessScope list{&m_coefficients, m_zeta, &u};
 
-  IceModelVec2V *du_local;
+  array::Vector *du_local;
   if (du.stencil_width() > 0) {
     du_local = &du;
   } else {
@@ -427,19 +427,19 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(IceModelVec2V &
   }
   list.add(*du_local);
 
-  Vector2 u_e[Nk];
-  Vector2 U[Nq_max], U_x[Nq_max], U_y[Nq_max];
+  Vector2d u_e[Nk];
+  Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
-  Vector2 du_e[Nk];
-  Vector2 du_q[Nq_max];
-  Vector2 du_dx_q[Nq_max];
-  Vector2 du_dy_q[Nq_max];
+  Vector2d du_e[Nk];
+  Vector2d du_q[Nq_max];
+  Vector2d du_dx_q[Nq_max];
+  Vector2d du_dy_q[Nq_max];
 
   double dzeta_e[Nk];
 
   // Aliases to help with notation consistency.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const IceModelVec2V   *dirichletValues    = &m_bc_values;
+  const array::Vector   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
@@ -555,7 +555,7 @@ These are established by first calling linearize_at.
   @param[in]   dzeta     Perturbation of the design variable
   @param[out]  du        Computed corresponding perturbation of the state variable; ghosts (if present) are updated.
 */
-void IP_SSAHardavForwardProblem::apply_linearization(array::Scalar &dzeta, IceModelVec2V &du) {
+void IP_SSAHardavForwardProblem::apply_linearization(array::Scalar &dzeta, array::Vector &du) {
 
   PetscErrorCode ierr;
 
@@ -609,7 +609,7 @@ These are established by first calling linearize_at.
   @param[in]   du     Perturbation of the state variable
   @param[out]  dzeta  Computed corresponding perturbation of the design variable; ghosts (if present) are updated.
 */
-void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du,
+void IP_SSAHardavForwardProblem::apply_linearization_transpose(array::Vector &du,
                                                                array::Scalar &dzeta) {
 
   PetscErrorCode ierr;
@@ -621,7 +621,7 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(IceModelVec2V &du
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const IceModelVec2V   *dirichletValues    = &m_bc_values;
+  const array::Vector   *dirichletValues    = &m_bc_values;
   double                 dirichletWeight    = m_dirichletScale;
 
   m_du_global.copy_from(du);

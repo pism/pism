@@ -107,7 +107,7 @@ protected:
 
   double m_work[m_n_work][m_Nq];
 
-  Vector2 m_work2[m_n_work][m_Nq];
+  Vector2d m_work2[m_n_work][m_Nq];
 
   fem::Q1Element3Face m_face4;
   fem::Q1Element3Face m_face100;
@@ -143,65 +143,65 @@ protected:
 
   virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  virtual Vector2 u_bc(double x, double y, double z) const;
+  virtual Vector2d u_bc(double x, double y, double z) const;
 
-  void compute_jacobian(DMDALocalInfo *info, const Vector2 ***x, Mat A, Mat J);
+  void compute_jacobian(DMDALocalInfo *info, const Vector2d ***x, Mat A, Mat J);
 
   void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
   virtual void jacobian_f(const fem::Q1Element3 &element,
-                          const Vector2 *u_nodal,
+                          const Vector2d *u_nodal,
                           const double *B_nodal,
                           double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
   virtual void jacobian_basal(const fem::Q1Element3Face &face,
                               const double *tauc_nodal,
                               const double *f_nodal,
-                              const Vector2 *u_nodal,
+                              const Vector2d *u_nodal,
                               double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
-  void compute_residual(DMDALocalInfo *info, const Vector2 ***X, Vector2 ***R);
+  void compute_residual(DMDALocalInfo *info, const Vector2d ***X, Vector2d ***R);
 
   void residual_dirichlet(const DMDALocalInfo &info,
                           Parameters **P,
-                          const Vector2 ***x,
-                          Vector2 ***R);
+                          const Vector2d ***x,
+                          Vector2d ***R);
 
   virtual void residual_f(const fem::Q1Element3 &element,
-                          const Vector2 *u_nodal,
+                          const Vector2d *u_nodal,
                           const double *B_nodal,
-                          Vector2 *residual);
+                          Vector2d *residual);
 
   virtual void residual_source_term(const fem::Q1Element3 &element,
                                     const double *surface,
                                     const double *bed,
-                                    Vector2 *residual);
+                                    Vector2d *residual);
 
   virtual void residual_basal(const fem::Q1Element3 &element,
                               const fem::Q1Element3Face &face,
                               const double *tauc_nodal,
                               const double *f_nodal,
-                              const Vector2 *u_nodal,
-                              Vector2 *residual);
+                              const Vector2d *u_nodal,
+                              Vector2d *residual);
 
   virtual void residual_surface(const fem::Q1Element3 &element,
                                 const fem::Q1Element3Face &face,
-                                Vector2 *residual);
+                                Vector2d *residual);
 
   virtual void residual_lateral(const fem::Q1Element3 &element,
                                 const fem::Q1Element3Face &face,
                                 const double *surface_nodal,
                                 const double *z_nodal,
                                 const double *sl_nodal,
-                                Vector2 *residual);
+                                Vector2d *residual);
 
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          const Vector2 ***x,
+                                          const Vector2d ***x,
                                           Mat A, Mat J,
                                           Blatter *solver);
 
   static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          const Vector2 ***x, Vector2 ***f,
+                                          const Vector2d ***x, Vector2d ***f,
                                           Blatter *solver);
 
   virtual void init_2d_parameters(const Inputs &inputs);
@@ -216,9 +216,9 @@ protected:
 
   void copy_solution();
 
-  void compute_averaged_velocity(IceModelVec2V &result);
+  void compute_averaged_velocity(array::Vector &result);
 
-  void get_basal_velocity(IceModelVec2V &result);
+  void get_basal_velocity(array::Vector &result);
 
   void report_mesh_info();
 

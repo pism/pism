@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -88,14 +88,14 @@ bool BlatterTestvanderVeen::marine_boundary(int face,
   return true;
 }
 
-Vector2 BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
   (void) y;
   (void) z;
 
   return u_exact(x);
 }
 
-Vector2 BlatterTestvanderVeen::u_exact(double x) const {
+Vector2d BlatterTestvanderVeen::u_exact(double x) const {
   double Q0 = m_H0 * m_V0;
   return blatter_xz_vanderveen_exact(x, m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 }
@@ -119,7 +119,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
                                              const double *surface_nodal,
                                              const double *z_nodal,
                                              const double *sl_nodal,
-                                             Vector2 *residual) {
+                                             Vector2d *residual) {
   (void) surface_nodal;
   (void) sl_nodal;
   (void) z_nodal;
@@ -160,7 +160,7 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
  */
 void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
                                              const fem::Q1Element3Face &face,
-                                             Vector2 *residual) {
+                                             Vector2d *residual) {
   double Q0 = m_H0 * m_V0;
 
   // compute x coordinates of quadrature points

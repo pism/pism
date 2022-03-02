@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2020, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -69,17 +69,17 @@ private:
   where \f$[w_i]\f$ is a vector of weights and \f$c_N\f$ is a normalization constant. The value
   of the normalization constant is set implicitly by a call to normalize().
 */
-class IPMeanSquareFunctional2V : public IPInnerProductFunctional<IceModelVec2V> {
+class IPMeanSquareFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
   IPMeanSquareFunctional2V(IceGrid::ConstPtr grid, array::Scalar *weights=NULL) :
-    IPInnerProductFunctional<IceModelVec2V>(grid), m_weights(weights), m_normalization(1.) {};
+    IPInnerProductFunctional<array::Vector>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 
   virtual void normalize(double scale);
 
-  virtual void valueAt(IceModelVec2V &x, double *OUTPUT);
-  virtual void dot(IceModelVec2V &a, IceModelVec2V &b, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2V &x, IceModelVec2V &gradient);
+  virtual void valueAt(array::Vector &x, double *OUTPUT);
+  virtual void dot(array::Vector &a, array::Vector &b, double *OUTPUT);
+  virtual void gradientAt(array::Vector &x, array::Vector &gradient);
 
 protected:
   array::Scalar *m_weights;

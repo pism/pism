@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_VECTOR2_HH
-#define PISM_VECTOR2_HH
+#ifndef PISM_VECTOR2D_HH
+#define PISM_VECTOR2D_HH
 
 #include <cmath>                // sqrt
 
@@ -26,11 +26,11 @@ namespace pism {
 
 //! @brief This class represents a 2D vector field (such as ice
 //! velocity) at a certain grid point.
-class Vector2 {
+class Vector2d {
 public:
-  Vector2() : u(0), v(0) {}
-  Vector2(double a, double b) : u(a), v(b) {}
-  Vector2(const Vector2 &other) : u(other.u), v(other.v) {}
+  Vector2d() : u(0), v(0) {}
+  Vector2d(double a, double b) : u(a), v(b) {}
+  Vector2d(const Vector2d &other) : u(other.u), v(other.v) {}
 
   //! Magnitude squared.
   inline double magnitude_squared() const {
@@ -41,7 +41,7 @@ public:
     return sqrt(magnitude_squared());
   }
 
-  inline Vector2& operator=(const Vector2 &other) {
+  inline Vector2d& operator=(const Vector2d &other) {
     // NOTE: we don't check for self-assignment because there is no memory
     // (de-)allocation here.
     u = other.u;
@@ -50,64 +50,64 @@ public:
   }
 
   //! Set both components to the same number.
-  inline Vector2& operator=(const double &a) {
+  inline Vector2d& operator=(const double &a) {
     u = a;
     v = a;
     return *this;
   }
 
-  inline Vector2& operator+=(const Vector2 &other) {
+  inline Vector2d& operator+=(const Vector2d &other) {
     u += other.u;
     v += other.v;
     return *this;
   }
 
-  inline Vector2& operator-=(const Vector2 &other) {
+  inline Vector2d& operator-=(const Vector2d &other) {
     u -= other.u;
     v -= other.v;
     return *this;
   }
 
-  inline Vector2& operator*=(const double &a) {
+  inline Vector2d& operator*=(const double &a) {
     u *= a;
     v *= a;
     return *this;
   }
 
-  inline Vector2& operator/=(const double &a) {
+  inline Vector2d& operator/=(const double &a) {
     u /= a;
     v /= a;
     return *this;
   }
 
   //! \brief Adds two vectors.
-  inline Vector2 operator+(const Vector2 &other) const {
-    return Vector2(u + other.u, v + other.v);
+  inline Vector2d operator+(const Vector2d &other) const {
+    return Vector2d(u + other.u, v + other.v);
   }
 
   //! \brief Substracts two vectors.
-  inline Vector2 operator-(const Vector2 &other) const {
-    return Vector2(u - other.u, v - other.v);
+  inline Vector2d operator-(const Vector2d &other) const {
+    return Vector2d(u - other.u, v - other.v);
   }
 
   //! \brief Scales a vector.
-  inline Vector2 operator*(const double &a) const {
-    return Vector2(u * a, v * a);
+  inline Vector2d operator*(const double &a) const {
+    return Vector2d(u * a, v * a);
   }
 
   //! \brief Scales a vector.
-  inline Vector2 operator/(const double &a) const {
-    return Vector2(u / a, v / a);
+  inline Vector2d operator/(const double &a) const {
+    return Vector2d(u / a, v / a);
   }
 
   double u, v;
 };
 
 // Multiplication of a vector by a constant is commutative.
-inline Vector2 operator*(const double &a, const Vector2 &v) {
+inline Vector2d operator*(const double &a, const Vector2d &v) {
   return v * a;
 }
 
 } // end of namespace pism
 
-#endif /* PISM_VECTOR2_HH */
+#endif /* PISM_VECTOR2D_HH */

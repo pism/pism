@@ -46,7 +46,7 @@ public:
   void reset();
 
   void flow_step(const Geometry &ice_geometry, double dt,
-                 const IceModelVec2V    &advective_velocity,
+                 const array::Vector    &advective_velocity,
                  const array::Staggered &diffusive_flux,
                  const array::Scalar  &thickness_bc_mask);
 
@@ -95,7 +95,7 @@ protected:
 
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,
                                         const array::Scalar        &ice_thickness,
-                                        const IceModelVec2V        &velocity,
+                                        const array::Vector        &velocity,
                                         const array::Staggered     &diffusive_flux,
                                         array::Staggered           &output);
 
@@ -137,7 +137,7 @@ protected:
 
   void compute_interface_fluxes(const array::CellType1 &cell_type,
                                 const array::Scalar        &ice_thickness,
-                                const IceModelVec2V        &velocity,
+                                const array::Vector        &velocity,
                                 const array::Staggered     &diffusive_flux,
                                 array::Staggered           &output);
 

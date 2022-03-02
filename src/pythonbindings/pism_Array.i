@@ -15,9 +15,9 @@ using namespace pism;
 %shared_ptr(pism::array::Array)
 %shared_ptr(pism::array::Scalar)
 %shared_ptr(pism::IceModelVec2T)
-%shared_ptr(pism::IceModelVec2V)
-%shared_ptr(pism::Velocity1)
-%shared_ptr(pism::Velocity2)
+%shared_ptr(pism::array::Vector)
+%shared_ptr(pism::array::Vector1)
+%shared_ptr(pism::array::Vector2)
 %shared_ptr(pism::array::Staggered)
 %shared_ptr(pism::array::Staggered1)
 %shared_ptr(pism::array::Array3D)
@@ -25,7 +25,7 @@ using namespace pism;
 %ignore pism::array::AccessScope::AccessScope(std::initializer_list<const PetscAccessible *>);
 
 %ignore pism::array::Scalar::array;
-%ignore pism::IceModelVec2V::array;
+%ignore pism::array::Vector::array;
 
 %template(Range) std::array<double,2>;
 
@@ -52,10 +52,10 @@ using namespace pism;
     %pythoncode "ArrayScalar.py"
 };
 
-%rename(__mult__) pism::Vector2::operator*;
-%rename(__add__) pism::Vector2::operator+;
-%ignore operator*(const double &a, const pism::Vector2 &v1);
-%extend pism::Vector2
+%rename(__mult__) pism::Vector2d::operator*;
+%rename(__add__) pism::Vector2d::operator+;
+%ignore operator*(const double &a, const pism::Vector2d &v1);
+%extend pism::Vector2d
 {
   %pythoncode
   {
@@ -64,14 +64,14 @@ using namespace pism;
   }
 }
 
-%extend pism::IceModelVec2V
+%extend pism::array::Vector
 {
-    Vector2 &getitem(int i, int j)
+    Vector2d &getitem(int i, int j)
     {
         return (*($self))(i,j);
     }
 
-    void setitem(int i, int j, Vector2 val)
+    void setitem(int i, int j, Vector2d val)
     {
         (*($self))(i,j) = val;
     }
@@ -166,12 +166,12 @@ std::vector<double> interp(int i, int j) {
 
 %include "util/iceModelVec2T.hh"
 
-%shared_ptr(pism::array::Array2D<Vector2>)
-%ignore pism::array::Array2D< Vector2 >::array() const;
-%template(_Array2DVector2) pism::array::Array2D<Vector2>;
+%shared_ptr(pism::array::Array2D<Vector2d>)
+%ignore pism::array::Array2D< Vector2d >::array() const;
+%template(_Array2DVector2) pism::array::Array2D<Vector2d>;
 %include "util/IceModelVec2V.hh"
 
 %include "util/array/Array3D.hh"
 %include "util/array/Staggered.hh"
 
-%include "util/Vector2.hh"
+%include "util/Vector2d.hh"

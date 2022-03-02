@@ -20,50 +20,52 @@
 #define PISM_ICEMODELVEC2V_H
 
 #include "pism/util/array/Array2D.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
+namespace array {
 
-namespace array { class Scalar; }
+class Scalar;
 
 /** Class for storing and accessing 2D vector fields
 */
-class IceModelVec2V : public array::Array2D<Vector2> {
+class Vector : public array::Array2D<pism::Vector2d> {
 public:
-  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &short_name);
+  Vector(IceGrid::ConstPtr grid, const std::string &short_name);
 
-  virtual ~IceModelVec2V() = default;
+  virtual ~Vector() = default;
 
-  typedef std::shared_ptr<IceModelVec2V> Ptr;
-  typedef std::shared_ptr<const IceModelVec2V> ConstPtr;
+  typedef std::shared_ptr<Vector> Ptr;
+  typedef std::shared_ptr<const Vector> ConstPtr;
 
-  std::shared_ptr<IceModelVec2V> duplicate() const;
+  std::shared_ptr<Vector> duplicate() const;
 protected:
-  IceModelVec2V(IceGrid::ConstPtr grid, const std::string &name,
+  Vector(IceGrid::ConstPtr grid, const std::string &name,
                 unsigned int stencil_width);
 };
 
-class Velocity1 : public IceModelVec2V {
+class Vector1 : public Vector {
 public:
-  Velocity1(IceGrid::ConstPtr grid, const std::string &name);
+  Vector1(IceGrid::ConstPtr grid, const std::string &name);
 
-  typedef std::shared_ptr<Velocity1> Ptr;
-  typedef std::shared_ptr<const Velocity1> ConstPtr;
+  typedef std::shared_ptr<Vector1> Ptr;
+  typedef std::shared_ptr<const Vector1> ConstPtr;
 protected:
-  Velocity1(IceGrid::ConstPtr grid, const std::string &name,
+  Vector1(IceGrid::ConstPtr grid, const std::string &name,
             unsigned int stencil_width);
 };
 
-class Velocity2 : public Velocity1 {
+class Vector2 : public Vector1 {
 public:
-  Velocity2(IceGrid::ConstPtr grid, const std::string &name);
+  Vector2(IceGrid::ConstPtr grid, const std::string &name);
 
-  typedef std::shared_ptr<Velocity2> Ptr;
-  typedef std::shared_ptr<const Velocity2> ConstPtr;
+  typedef std::shared_ptr<Vector2> Ptr;
+  typedef std::shared_ptr<const Vector2> ConstPtr;
 };
 
-void compute_magnitude(const IceModelVec2V &input, array::Scalar &result);
+} // end of namespace array
 
+void compute_magnitude(const array::Vector &input, array::Scalar &result);
 } // end of namespace pism
 
 #endif /* PISM_ICEMODELVEC2V_H */

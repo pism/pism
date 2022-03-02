@@ -95,7 +95,7 @@ const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() const {
 }
 
 //! \brief Get the thickness-advective 2D velocity.
-const IceModelVec2V& ShallowStressBalance::velocity() const {
+const array::Vector& ShallowStressBalance::velocity() const {
   return m_velocity;
 }
 
@@ -149,7 +149,7 @@ void ZeroSliding::update(const Inputs &inputs, bool full_update) {
   \param[in] mask (used to determine if floating or grounded)
   \param[out] result
  */
-void ShallowStressBalance::compute_basal_frictional_heating(const IceModelVec2V &V,
+void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector &V,
                                                             const array::Scalar &tauc,
                                                             const array::CellType0 &mask,
                                                             array::Scalar &result) const {
@@ -196,7 +196,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  */
 array::Array::Ptr SSB_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -239,7 +239,7 @@ array::Array::Ptr SSB_taud_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taud = array::Array::cast<IceModelVec2V>(SSB_taud(model).compute());
+  array::Vector::Ptr taud = array::Array::cast<array::Vector>(SSB_taud(model).compute());
 
   compute_magnitude(*taud, *result);
 
@@ -265,7 +265,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 
 array::Array::Ptr SSB_taub::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result"));
+  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -308,7 +308,7 @@ array::Array::Ptr SSB_taub_mag::compute_impl() const {
   array::Scalar::Ptr result(new array::Scalar(m_grid, "taub_mag"));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2V::Ptr taub = array::Array::cast<IceModelVec2V>(SSB_taub(model).compute());
+  array::Vector::Ptr taub = array::Array::cast<array::Vector>(SSB_taub(model).compute());
 
   compute_magnitude(*taub, *result);
 
@@ -362,7 +362,7 @@ array::Array::Ptr SSB_beta::compute_impl() const {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  const IceModelVec2V &velocity = model->velocity();
+  const array::Vector &velocity = model->velocity();
 
   array::AccessScope list{tauc, &velocity, result.get()};
   for (Points p(*m_grid); p; p.next()) {

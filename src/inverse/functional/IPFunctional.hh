@@ -127,9 +127,9 @@ public:
 /*! Useful for debugging a hand coded gradient. */
 void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient);
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Vector> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient);
 
 } // end of namespace inverse
 } // end of namespace pism

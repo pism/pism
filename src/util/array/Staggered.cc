@@ -136,7 +136,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 void staggered_to_regular(const array::CellType1 &cell_type,
                           const array::Staggered &input,
                           bool include_floating_ice,
-                          IceModelVec2V &result) {
+                          array::Vector &result) {
 
   using mask::grounded_ice;
   using mask::icy;

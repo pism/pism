@@ -22,7 +22,7 @@
 #include <string>
 
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
@@ -42,7 +42,7 @@ class Config;
  * u_z = v_z = 0 @f$) and neglect horizontal derivatives of the vertical velocity (@f$ w_x = w_y = 0
  * @f$).
  */
-static inline double secondInvariant_2D(const Vector2 &U_x, const Vector2 &U_y) {
+static inline double secondInvariant_2D(const Vector2d &U_x, const Vector2d &U_y) {
   const double
     u_x = U_x.u,
     u_y = U_y.u,

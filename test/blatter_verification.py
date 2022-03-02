@@ -120,7 +120,7 @@ class TestXY(TestCase):
 
     def exact_solution(self, grid):
         "Returns an array with the exact solution"
-        exact = PISM.IceModelVec2V(grid, "exact")
+        exact = PISM.Vector(grid, "exact")
 
         with PISM.vec.Access(exact):
             for (i, j) in grid.points():
@@ -156,7 +156,7 @@ class TestXY(TestCase):
         model.update(inputs, True)
 
         # compute the error
-        error = PISM.IceModelVec2V(grid, "error")
+        error = PISM.Vector(grid, "error")
         error.copy_from(u_exact)
         error.add(-1.0, model.velocity())
 

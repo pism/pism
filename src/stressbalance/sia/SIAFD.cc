@@ -122,7 +122,7 @@ void SIAFD::init() {
 
 //! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
 //! heating.
-void SIAFD::update(const IceModelVec2V &sliding_velocity,
+void SIAFD::update(const array::Vector &sliding_velocity,
                    const Inputs &inputs,
                    bool full_update) {
 
@@ -903,7 +903,7 @@ void SIAFD::compute_I(const Geometry &geometry) {
 void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
                                            const array::Staggered &h_x,
                                            const array::Staggered &h_y,
-                                           const IceModelVec2V &sliding_velocity,
+                                           const array::Vector &sliding_velocity,
                                            array::Array3D &u_out, array::Array3D &v_out) {
 
   compute_I(geometry);

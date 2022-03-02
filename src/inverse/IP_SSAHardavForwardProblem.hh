@@ -109,8 +109,8 @@ public:
   typedef array::Scalar1 DesignVecGhosted;
 
   /// The function space for the state variable, \f$u_{\rm SSA}\f$.
-  typedef IceModelVec2V StateVec;
-  typedef Velocity1 StateVec1;
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
   IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
@@ -135,7 +135,7 @@ public:
   }
 
   //! Returns the last solution of the %SSA as computed by \ref linearize_at.
-  virtual IceModelVec2V::Ptr solution() {
+  virtual array::Vector::Ptr solution() {
     m_velocity_shared->copy_from(m_velocity);
     return m_velocity_shared;
   }
@@ -151,21 +151,21 @@ public:
 
   virtual TerminationReason::Ptr linearize_at(array::Scalar &zeta);
 
-  virtual void assemble_residual(IceModelVec2V &u, IceModelVec2V &R);
-  virtual void assemble_residual(IceModelVec2V &u, Vec R);
+  virtual void assemble_residual(array::Vector &u, array::Vector &R);
+  virtual void assemble_residual(array::Vector &u, Vec R);
 
-  virtual void assemble_jacobian_state(IceModelVec2V &u, Mat J);
+  virtual void assemble_jacobian_state(array::Vector &u, Mat J);
 
-  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, IceModelVec2V &du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, Vec du);
-  virtual void apply_jacobian_design(IceModelVec2V &u, array::Scalar &dzeta, Vector2 **du_a);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, array::Vector &du);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vec du);
+  virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vector2d **du_a);
 
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, array::Scalar &dzeta);
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, Vec dzeta);
-  virtual void apply_jacobian_design_transpose(IceModelVec2V &u, IceModelVec2V &du, double **dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, array::Scalar &dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, Vec dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, double **dzeta);
 
-  virtual void apply_linearization(array::Scalar &dzeta, IceModelVec2V &du);
-  virtual void apply_linearization_transpose(IceModelVec2V &du, array::Scalar &dzeta);
+  virtual void apply_linearization(array::Scalar &dzeta, array::Vector &du);
+  virtual void apply_linearization_transpose(array::Vector &du, array::Scalar &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
   petsc::DM& get_da() const {
@@ -186,12 +186,12 @@ protected:
   /// The function taking \f$\zeta\f$ to \f$\tau_c\f$.
   IPDesignVariableParameterization &m_design_param;
 
-  IceModelVec2V::Ptr m_velocity_shared;
+  array::Vector::Ptr m_velocity_shared;
 
   /// Temporary storage when state vectors need to be used without ghosts.
-  IceModelVec2V  m_du_global;
+  array::Vector  m_du_global;
   /// Temporary storage when state vectors need to be used with ghosts.
-  Velocity1  m_du_local;
+  array::Vector1  m_du_local;
   /// Vertically-averaged ice hardness.
   array::Scalar1  m_hardav;
 

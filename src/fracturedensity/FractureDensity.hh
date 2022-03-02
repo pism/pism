@@ -43,7 +43,7 @@ public:
 
   void update(double dt,
               const Geometry &geometry,
-              const IceModelVec2V &velocity,
+              const array::Vector &velocity,
               const array::Scalar &hardness,
               const array::Scalar &inflow_boundary_mask);
 
@@ -77,7 +77,7 @@ private:
   array::Array2D<stressbalance::DeviatoricStresses> m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
-  Velocity1 m_velocity;
+  array::Vector1 m_velocity;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

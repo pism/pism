@@ -63,11 +63,11 @@ protected:
     //! ice hardness
     double hardness;
     //! prescribed gravitational driving stress
-    Vector2 driving_stress;
+    Vector2d driving_stress;
   };
 
   array::Scalar1 m_bc_mask;
-  Velocity1 m_bc_values;
+  array::Vector1 m_bc_values;
 
   GeometryCalculator m_gc;
   double m_alpha;
@@ -84,26 +84,26 @@ protected:
 
   void explicit_driving_stress(const fem::Element &E,
                                const Coefficients *x,
-                               Vector2 *driving_stress) const;
+                               Vector2d *driving_stress) const;
 
   void driving_stress(const fem::Element &E,
                       const Coefficients *x,
-                      Vector2 *driving_stress) const;
+                      Vector2d *driving_stress) const;
 
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,
                            int mask,
                            double tauc,
-                           const Vector2 &U,
-                           const Vector2 &U_x,
-                           const Vector2 &U_y,
+                           const Vector2d &U,
+                           const Vector2d &U_x,
+                           const Vector2d &U_y,
                            double *nuH, double *dnuH,
                            double *beta, double *dbeta);
 
-  void compute_local_function(Vector2 const *const *const velocity,
-                              Vector2 **residual);
+  void compute_local_function(Vector2d const *const *const velocity,
+                              Vector2d **residual);
 
-  void compute_local_jacobian(Vector2 const *const *const velocity, Mat J);
+  void compute_local_jacobian(Vector2d const *const *const velocity, Mat J);
 
   virtual void solve(const Inputs &inputs);
 
@@ -130,7 +130,7 @@ protected:
   //! Storage for node types (interior, boundary, exterior).
   array::Scalar1 m_node_type;
   //! Boundary integral (CFBC contribution to the residual).
-  Velocity1 m_boundary_integral;
+  array::Vector1 m_boundary_integral;
 
   double m_dirichletScale;
   double m_beta_ice_free_bedrock;
@@ -148,17 +148,17 @@ protected:
 private:
   void cache_residual_cfbc(const Inputs &inputs);
   void monitor_jacobian(Mat Jac);
-  void monitor_function(Vector2 const *const *const velocity_global,
-                        Vector2 const *const *const residual_global);
+  void monitor_function(Vector2d const *const *const velocity_global,
+                        Vector2d const *const *const residual_global);
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
   static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          Vector2 const *const *const velocity,
-                                          Vector2 **residual,
+                                          Vector2d const *const *const velocity,
+                                          Vector2d **residual,
                                           CallbackData *fe);
   static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          Vector2 const *const *const xg,
+                                          Vector2d const *const *const xg,
                                           Mat A, Mat J, CallbackData *fe);
 };
 
