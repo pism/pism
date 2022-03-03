@@ -56,9 +56,9 @@ public:
   const array::Vector *bc_values;
 
   // inputs used by regional stress balance models
-  const array::Scalar *no_model_mask;
+  const array::Scalar2 *no_model_mask;
   const array::Scalar *no_model_ice_thickness;
-  const array::Scalar *no_model_surface_elevation;
+  const array::Scalar1 *no_model_surface_elevation;
 
   void dump(const char *filename) const;
 };
@@ -152,7 +152,7 @@ struct PrincipalStrainRates {
   double eigen2;
 };
 
-void compute_2D_principal_strain_rates(const array::Vector &velocity,
+void compute_2D_principal_strain_rates(const array::Vector1 &velocity,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result);
 
@@ -163,7 +163,7 @@ struct DeviatoricStresses {
 };
 
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
-                         const array::Vector &velocity,
+                         const array::Vector1 &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result);

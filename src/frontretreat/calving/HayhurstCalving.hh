@@ -46,7 +46,7 @@ protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
-  array::Scalar m_calving_rate;
+  array::Scalar1 m_calving_rate;
 
   double m_B_tilde, m_exponent_r, m_sigma_threshold;
 

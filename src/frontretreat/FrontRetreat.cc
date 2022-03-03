@@ -147,11 +147,11 @@ void FrontRetreat::update_geometry(double dt,
                                    const array::Scalar &bc_mask,
                                    const array::Scalar &retreat_rate,
                                    array::Scalar &Href,
-                                   array::Scalar &ice_thickness) {
+                                   array::Scalar1 &ice_thickness) {
 
-  const array::Scalar &bed = geometry.bed_elevation;
-  const array::Scalar &sea_level = geometry.sea_level_elevation;
-  const array::Scalar &surface_elevation = geometry.ice_surface_elevation;
+  const array::Scalar1 &bed = geometry.bed_elevation;
+  const array::Scalar1 &sea_level = geometry.sea_level_elevation;
+  const array::Scalar1 &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
     m_cell_type.copy_from(geometry.cell_type);

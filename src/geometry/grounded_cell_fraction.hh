@@ -22,7 +22,10 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+class Scalar1;
+}
 
 double grounded_area_fraction(double a, double b, double c);
 
@@ -32,9 +35,9 @@ double grounded_area_fraction(double a, double b, double c);
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
-                                    const array::Scalar &sea_level,
-                                    const array::Scalar &ice_thickness,
-                                    const array::Scalar &bed_topography,
+                                    const array::Scalar1 &sea_level,
+                                    const array::Scalar1 &ice_thickness,
+                                    const array::Scalar1 &bed_topography,
                                     array::Scalar &result);
 
 } // end of namespace pism

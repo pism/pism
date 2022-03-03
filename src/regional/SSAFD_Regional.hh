@@ -34,15 +34,15 @@ public:
   virtual ~SSAFD_Regional() = default;
   virtual void init();
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
-                                      const array::Scalar &surface_elevation,
+                                      const array::Scalar1 &surface_elevation,
                                       const array::CellType1 &cell_type,
-                                      const array::Scalar *no_model_mask,
+                                      const array::Scalar1 *no_model_mask,
                                       array::Vector &result) const;
 
 private:
   void update(const Inputs &inputs, bool full_update);
 
-  const array::Scalar   *m_h_stored;
+  const array::Scalar1   *m_h_stored;
   const array::Scalar   *m_H_stored;
   const array::Scalar *m_no_model_mask;
 };

@@ -541,7 +541,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType0 &cell_type, array::
  * Returns the map from the basin index to a set of indexes of neighbors.
  */
 std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1 &cell_type,
-                                                           const array::Scalar &basin_mask) {
+                                                           const array::Scalar1 &basin_mask) {
   using mask::ice_free_ocean;
 
   // Allocate the adjacency matrix. This uses twice the amount of storage necessary (the
@@ -768,9 +768,9 @@ void PicoGeometry::split_ice_shelves(const array::CellType0 &cell_type,
  * Compute distance to the grounding line.
  */
 void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
-                                        const array::Scalar &ice_rises,
+                                        const array::Scalar1 &ice_rises,
                                         bool exclude_ice_rises,
-                                        array::Scalar &result) {
+                                        array::Scalar1 &result) {
 
   array::AccessScope list{ &ice_rises, &ocean_mask, &result };
 
@@ -822,10 +822,10 @@ void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
 /*!
  * Compute distance to the calving front.
  */
-void PicoGeometry::compute_distances_cf(const array::Scalar &ocean_mask,
+void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
                                         const array::Scalar &ice_rises,
                                         bool exclude_ice_rises,
-                                        array::Scalar &result) {
+                                        array::Scalar1 &result) {
 
   array::AccessScope list{ &ice_rises, &ocean_mask, &result };
 
@@ -881,7 +881,7 @@ void PicoGeometry::compute_distances_cf(const array::Scalar &ocean_mask,
  *
  * FIXME: replace this with a better algorithm.
  */
-void eikonal_equation(array::Scalar &mask) {
+void eikonal_equation(array::Scalar1 &mask) {
 
   assert(mask.stencil_width() > 0);
 

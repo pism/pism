@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,9 +36,12 @@ enum NodeType {
   NODE_EXTERIOR = 1
 };
 
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+class Scalar1;
+}
 
-void compute_node_types(const array::Scalar &ice_thickness,
+void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
                         array::Scalar &result);
 

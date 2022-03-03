@@ -50,6 +50,8 @@ public:
 
   typedef std::shared_ptr<Vector1> Ptr;
   typedef std::shared_ptr<const Vector1> ConstPtr;
+  using Array2D<Vector2d>::star;
+  using Array2D<Vector2d>::box;
 protected:
   Vector1(IceGrid::ConstPtr grid, const std::string &name,
             unsigned int stencil_width);

@@ -48,7 +48,7 @@ public:
   virtual void update(const Inputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  const array::Vector& velocity() const;
+  const array::Vector1& velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const array::Scalar& basal_frictional_heating();

@@ -38,8 +38,8 @@ class Geometry;
 
 namespace array {
 class Array;
-class Array3D;
 template<typename T> class Array2D;
+class Array3D;
 using CellType0 = class CellType;
 class CellType1;
 class CellType2;
@@ -47,7 +47,10 @@ class Scalar;
 class Scalar1;
 class Scalar2;
 class Staggered;
+class Staggered1;
 class Vector;
+class Vector1;
+class Vector2;
 } // end of namespace array
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};

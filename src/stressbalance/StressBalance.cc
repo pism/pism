@@ -682,7 +682,7 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-void compute_2D_principal_strain_rates(const array::Vector &V,
+void compute_2D_principal_strain_rates(const array::Vector1 &V,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result) {
 
@@ -764,7 +764,7 @@ void compute_2D_principal_strain_rates(const array::Vector &V,
 //! @brief Compute 2D deviatoric stresses.
 /*! Note: IceModelVec2 result has to have dof == 3. */
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
-                         const array::Vector &velocity,
+                         const array::Vector1 &velocity,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result) {

@@ -59,6 +59,8 @@ public:
   typedef std::shared_ptr<const Scalar1> ConstPtr;
 
   Scalar1(IceGrid::ConstPtr grid, const std::string &name);
+  using Array2D<double>::star;
+  using Array2D<double>::box;
 protected:
   Scalar1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };

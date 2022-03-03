@@ -1966,12 +1966,12 @@ array::Array::Ptr IceAreaFraction::compute_impl() const {
   auto result = std::make_shared<array::Scalar>(m_grid, land_ice_area_fraction_name);
   result->metadata(0) = m_vars[0];
 
-  const array::Scalar
+  const array::Scalar1
     &thickness         = model->geometry().ice_thickness,
     &surface_elevation = model->geometry().ice_surface_elevation,
     &bed_topography    = model->geometry().bed_elevation;
 
-  const auto &cell_type = model->geometry().cell_type;
+  const array::CellType1 &cell_type = model->geometry().cell_type;
 
   array::AccessScope list{&thickness, &surface_elevation, &bed_topography, &cell_type,
       result.get()};

@@ -95,7 +95,7 @@ const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() const {
 }
 
 //! \brief Get the thickness-advective 2D velocity.
-const array::Vector& ShallowStressBalance::velocity() const {
+const array::Vector1& ShallowStressBalance::velocity() const {
   return m_velocity;
 }
 

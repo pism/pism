@@ -225,8 +225,8 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
-                                 const array::Scalar &bed_elevation,
+void SIAFD::surface_gradient_eta(const array::Scalar2 &ice_thickness,
+                                 const array::Scalar2 &bed_elevation,
                                  array::Staggered1 &h_x,
                                  array::Staggered1 &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
@@ -234,14 +234,14 @@ void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
-  array::Scalar &eta = m_work_2d_0;
+
+  array::Scalar2 &eta = m_work_2d_0;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
   array::AccessScope list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
 
   unsigned int GHOSTS = eta.stencil_width();
-  assert(ice_thickness.stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -252,7 +252,6 @@ void SIAFD::surface_gradient_eta(const array::Scalar &ice_thickness,
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(bed_elevation.stencil_width() >= 2);
   assert(eta.stencil_width() >= 2);
   assert(h_x.stencil_width() >= 1);
   assert(h_y.stencil_width() >= 1);
@@ -981,7 +980,7 @@ const array::Staggered& SIAFD::surface_gradient_y() const {
   return m_h_y;
 }
 
-const array::Staggered& SIAFD::diffusivity() const {
+const array::Staggered1& SIAFD::diffusivity() const {
   return m_D;
 }
 

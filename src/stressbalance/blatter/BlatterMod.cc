@@ -112,7 +112,7 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
  */
 void BlatterMod::compute_max_diffusivity(const array::Vector &velocity,
                                          const array::Scalar &ice_thickness,
-                                         const array::Scalar &surface) {
+                                         const array::Scalar1 &surface) {
   const double eps = 1e-3;
   double
     dx = m_grid->dx(),

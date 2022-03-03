@@ -84,10 +84,10 @@ protected:
                 const array::Scalar &Wtill,
                 const array::Scalar &Wtill_new,
                 const array::Scalar &P,
-                const array::Scalar &W,
-                const array::Staggered &Ws,
-                const array::Staggered &K,
-                const array::Staggered &Q,
+                const array::Scalar1 &W,
+                const array::Staggered1 &Ws,
+                const array::Staggered1 &K,
+                const array::Staggered1 &Q,
                 array::Scalar &P_new) const;
 protected:
   array::Scalar1 m_P;

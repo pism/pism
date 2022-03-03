@@ -35,7 +35,7 @@ public:
 
   const array::Scalar &solution() const;
 private:
-  void assemble_matrix(const array::Scalar &mask, Mat A);
+  void assemble_matrix(const array::Scalar1 &mask, Mat A);
   void assemble_rhs(double rhs,
                     const array::Scalar &mask,
                     const array::Scalar &bc,

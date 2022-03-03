@@ -59,7 +59,7 @@ Cell layout:
 (i-1,j-1) +-------S--------+ (i+1,j-1)
 ~~~
  */
-void compute_node_types(const array::Scalar &ice_thickness,
+void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
                         array::Scalar &result) {
 

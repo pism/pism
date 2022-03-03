@@ -58,10 +58,11 @@ void EigenCalving::init() {
   See equation (26) in [\ref Winkelmannetal2011].
 */
 void EigenCalving::update(const array::CellType0 &cell_type,
-                          const array::Vector &ice_velocity) {
+                          const array::Vector1 &ice_velocity) {
 
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
+  assert(m_cell_type.stencil_width() >= 2);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;

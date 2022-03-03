@@ -48,7 +48,7 @@ private:
 
   void compute_max_diffusivity(const array::Vector &velocity,
                                const array::Scalar &ice_thickness,
-                               const array::Scalar &surface);
+                               const array::Scalar1 &surface);
 };
 
 } // end of namespace stressbalance

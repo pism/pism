@@ -77,7 +77,7 @@ protected:
 protected:
   std::shared_ptr<FrontalMelt> m_input_model;
 
-  bool apply(const array::CellType0 &M, int i, int j);
+  bool apply(const array::CellType1 &M, int i, int j);
 
   array::Scalar m_retreat_rate;
   bool m_include_floating_ice;

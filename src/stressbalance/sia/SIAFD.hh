@@ -64,7 +64,7 @@ public:
 
   const array::Staggered& surface_gradient_x() const;
   const array::Staggered& surface_gradient_y() const;
-  const array::Staggered& diffusivity() const;
+  const array::Staggered1& diffusivity() const;
 
 protected:
   virtual DiagnosticList diagnostics_impl() const;
@@ -73,9 +73,10 @@ protected:
                                         array::Staggered1 &h_x,
                                         array::Staggered1 &h_y);
 
-  virtual void surface_gradient_eta(const array::Scalar &ice_thickness,
-                                    const array::Scalar &bed_elevation,
-                                    array::Staggered1 &h_x, array::Staggered1 &h_y);
+  virtual void surface_gradient_eta(const array::Scalar2 &ice_thickness,
+                                    const array::Scalar2 &bed_elevation,
+                                    array::Staggered1 &h_x,
+                                    array::Staggered1 &h_y);
   virtual void surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
                                          const array::CellType2 &cell_type,
                                          array::Staggered1 &h_x,
@@ -109,8 +110,8 @@ protected:
   const unsigned int m_stencil_width;
 
   //! temporary storage for eta, theta and the smoothed thickness
-  array::Scalar1 m_work_2d_0;
-  array::Scalar1 m_work_2d_1;
+  array::Scalar2 m_work_2d_0;
+  array::Scalar2 m_work_2d_1;
   //! temporary storage for the surface gradient and the diffusivity
   array::Staggered1 m_h_x, m_h_y, m_D;
   //! temporary storage for delta on the staggered grid

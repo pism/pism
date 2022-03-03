@@ -43,7 +43,7 @@ public:
                        const array::Scalar &bc_mask,
                        const array::Scalar &retreat_rate,
                        array::Scalar &Href,
-                       array::Scalar &ice_thickness);
+                       array::Scalar1 &ice_thickness);
 
   MaxTimestep max_timestep(const array::CellType1 &cell_type,
                            const array::Scalar &bc_mask,

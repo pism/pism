@@ -41,12 +41,6 @@ public:
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 
-  //! Returns the values at interfaces of the cell i,j using the staggered grid.
-  /*! The ij member of the return value is set to 0, since it has no meaning in
-    this context.
-  */
-  inline stencils::Star<double> star(int i, int j) const;
-
   void copy_from(const array::Staggered &input);
 protected:
   Staggered(IceGrid::ConstPtr grid, const std::string &name,
@@ -67,8 +61,19 @@ inline const double& array::Staggered::operator() (int i, int j, int k) const {
   return static_cast<double***>(m_array)[j][i][k];
 }
 
-inline stencils::Star<double> array::Staggered::star(int i, int j) const {
-  const array::Staggered &self = *this;
+class Staggered1 : public Staggered {
+public:
+  Staggered1(IceGrid::ConstPtr grid, const std::string &name);
+
+  //! Returns the values at interfaces of the cell i,j using the staggered grid.
+  /*! The ij member of the return value is set to 0, since it has no meaning in
+    this context.
+  */
+  inline stencils::Star<double> star(int i, int j) const;
+};
+
+inline stencils::Star<double> Staggered1::star(int i, int j) const {
+  const Staggered1 &self = *this;
 
   stencils::Star<double> result;
 
@@ -80,10 +85,7 @@ inline stencils::Star<double> array::Staggered::star(int i, int j) const {
 
   return result;
 }
-class Staggered1 : public Staggered {
-public:
-  Staggered1(IceGrid::ConstPtr grid, const std::string &name);
-};
+
 } // end of namespace array
 
 std::array<double,2> absmax(const array::Staggered &input);
@@ -96,7 +98,7 @@ std::array<double,2> absmax(const array::Staggered &input);
  * icy cells only.
  */
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered &input,
+                          const array::Staggered1 &input,
                           bool include_floating_ice,
                           array::Scalar &result);
 
@@ -108,7 +110,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
  * icy cells only.
  */
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered &input,
+                          const array::Staggered1 &input,
                           bool include_floating_ice,
                           array::Vector &result);
 

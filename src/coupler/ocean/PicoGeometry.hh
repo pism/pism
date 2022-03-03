@@ -29,7 +29,7 @@
 namespace pism {
 namespace ocean {
 
-void eikonal_equation(array::Scalar &mask);
+void eikonal_equation(array::Scalar1 &mask);
 
 /*!
  * This class isolates geometric computations performed by the PICO ocean model.
@@ -65,7 +65,7 @@ private:
                               array::Scalar &result);
 
   std::map<int,std::set<int> > basin_neighbors(const array::CellType1 &cell_type,
-                                               const array::Scalar &basin_mask);
+                                               const array::Scalar1 &basin_mask);
 
   void identify_calving_front_connection(const array::CellType1 &cell_type,
                                          const array::Scalar &basin_mask,
@@ -82,15 +82,15 @@ private:
                          int n_shelves,
                          array::Scalar &shelf_mask);
  
-  void compute_distances_cf(const array::Scalar &ocean_mask,
+  void compute_distances_cf(const array::Scalar1 &ocean_mask,
                             const array::Scalar &ice_rises,
                             bool exclude_ice_rises,
-                            array::Scalar &result);
+                            array::Scalar1 &result);
 
   void compute_distances_gl(const array::Scalar &ocean_mask,
-                            const array::Scalar &ice_rises,
+                            const array::Scalar1 &ice_rises,
                             bool exclude_ice_rises,
-                            array::Scalar &result);
+                            array::Scalar1 &result);
 
   void compute_box_mask(const array::Scalar &D_gl,
                         const array::Scalar &D_cf,

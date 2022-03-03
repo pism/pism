@@ -138,10 +138,11 @@ void FractureDensity::update(double dt,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
+  array::Scalar1
+    &A     = m_age;
   array::Scalar
     &D     = m_density,
     &D_new = m_density_new,
-    &A     = m_age,
     &A_new = m_age_new;
 
   m_velocity.copy_from(velocity);

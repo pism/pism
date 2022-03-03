@@ -629,7 +629,7 @@ void Routing::compute_velocity(const array::Staggered &W,
                                const array::Scalar &pressure,
                                const array::Scalar &bed,
                                const array::Staggered &K,
-                               const array::Scalar *no_model_mask,
+                               const array::Scalar1 *no_model_mask,
                                array::Staggered &result) const {
   array::Scalar &P = m_R;
   P.copy_from(pressure);  // yes, it updates ghosts
@@ -774,10 +774,10 @@ void Routing::update_Wtill(double dt,
 }
 
 void Routing::W_change_due_to_flow(double dt,
-                                   const array::Scalar    &W,
-                                   const array::Staggered &Wstag,
-                                   const array::Staggered &K,
-                                   const array::Staggered &Q,
+                                   const array::Scalar1    &W,
+                                   const array::Staggered1 &Wstag,
+                                   const array::Staggered1 &K,
+                                   const array::Staggered1 &Q,
                                    array::Scalar &result) {
   const double
     wux = 1.0 / (m_dx * m_dx),
@@ -811,14 +811,14 @@ void Routing::W_change_due_to_flow(double dt,
 
 //! The computation of Wnew, called by update().
 void Routing::update_W(double dt,
-                       const array::Scalar    &surface_input_rate,
-                       const array::Scalar    &basal_melt_rate,
-                       const array::Scalar    &W,
-                       const array::Staggered &Wstag,
-                       const array::Scalar    &Wtill,
-                       const array::Scalar    &Wtill_new,
-                       const array::Staggered &K,
-                       const array::Staggered &Q,
+                       const array::Scalar     &surface_input_rate,
+                       const array::Scalar     &basal_melt_rate,
+                       const array::Scalar1    &W,
+                       const array::Staggered1 &Wstag,
+                       const array::Scalar     &Wtill,
+                       const array::Scalar     &Wtill_new,
+                       const array::Staggered1 &K,
+                       const array::Staggered1 &Q,
                        array::Scalar &W_new) {
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);

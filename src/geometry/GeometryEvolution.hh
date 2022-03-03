@@ -67,7 +67,7 @@ public:
   const array::Scalar& conservation_error() const;
 
   // diagnostic
-  const array::Staggered& flux_staggered() const;
+  const array::Staggered1& flux_staggered() const;
   const array::Scalar& flux_divergence() const;
 
   // "regional" setup
@@ -84,14 +84,14 @@ protected:
                        array::Scalar& ice_thickness,
                        array::Scalar& area_specific_volume);
 
-  void residual_redistribution_iteration(const array::Scalar& bed_topography,
-                                         const array::Scalar& sea_level,
-                                         array::Scalar& ice_surface_elevation,
-                                         array::Scalar& ice_thickness,
-                                         array::CellType1& cell_type,
-                                         array::Scalar& Href,
-                                         array::Scalar& H_residual,
-                                         bool &done);
+  void residual_redistribution_iteration(const array::Scalar &bed_topography,
+                                         const array::Scalar &sea_level,
+                                         array::Scalar1      &ice_surface_elevation,
+                                         array::Scalar       &ice_thickness,
+                                         array::CellType1    &cell_type,
+                                         array::Scalar       &Href,
+                                         array::Scalar       &H_residual,
+                                         bool                &done);
 
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,
                                         const array::Scalar        &ice_thickness,
@@ -100,7 +100,7 @@ protected:
                                         array::Staggered           &output);
 
   virtual void compute_flux_divergence(double dt,
-                                       const array::Staggered &flux_staggered,
+                                       const array::Staggered1 &flux_staggered,
                                        const array::Scalar &thickness_bc_mask,
                                        array::Scalar &conservation_error,
                                        array::Scalar &flux_fivergence);
@@ -163,13 +163,13 @@ private:
  * calving fluxes.
  */
 void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered &flux,
+                         const array::Staggered1 &flux,
                          double dt,
                          bool add_values,
                          array::Scalar &result);
 
 double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const array::Staggered &flux,
+                                 const array::Staggered1 &flux,
                                  double dt);
 } // end of namespace pism
 

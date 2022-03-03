@@ -209,7 +209,7 @@ const array::Scalar& GeometryEvolution::flux_divergence() const {
   return m_impl->flux_divergence;
 }
 
-const array::Staggered& GeometryEvolution::flux_staggered() const {
+const array::Staggered1& GeometryEvolution::flux_staggered() const {
   return m_impl->flux_staggered;
 }
 
@@ -625,7 +625,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
  * The flux divergence at *ice thickness* Dirichlet B.C. locations is set to zero.
  */
 void GeometryEvolution::compute_flux_divergence(double dt,
-                                                const array::Staggered &flux,
+                                                const array::Staggered1 &flux,
                                                 const array::Scalar &thickness_bc_mask,
                                                 array::Scalar &conservation_error,
                                                 array::Scalar &output) {
@@ -808,7 +808,7 @@ void GeometryEvolution::update_in_place(double dt,
  */
 void GeometryEvolution::residual_redistribution_iteration(const array::Scalar  &bed_topography,
                                                           const array::Scalar  &sea_level,
-                                                          array::Scalar        &ice_surface_elevation,
+                                                          array::Scalar1       &ice_surface_elevation,
                                                           array::Scalar        &ice_thickness,
                                                           array::CellType1 &cell_type,
                                                           array::Scalar        &area_specific_volume,
@@ -1238,7 +1238,7 @@ void GeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {
 }
 
 void grounding_line_flux(const array::CellType1 &cell_type,
-                         const array::Staggered &flux,
+                         const array::Staggered1 &flux,
                          double dt,
                          bool add_values,
                          array::Scalar &output) {
@@ -1304,7 +1304,7 @@ void grounding_line_flux(const array::CellType1 &cell_type,
  * Compute the total grounding line flux over a time step, in kg.
  */
 double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const array::Staggered &flux,
+                                 const array::Staggered1 &flux,
                                  double dt) {
   using mask::grounded;
 

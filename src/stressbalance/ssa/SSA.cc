@@ -235,9 +235,9 @@ Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
  */
 void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
-                                 const array::Scalar &surface_elevation,
+                                 const array::Scalar1 &surface_elevation,
                                  const array::CellType1 &cell_type,
-                                 const array::Scalar *no_model_mask,
+                                 const array::Scalar1 *no_model_mask,
                                  array::Vector &result) const {
 
   using mask::ice_free_ocean;

@@ -32,7 +32,7 @@ public:
 
   void init();
 
-  void update(const array::CellType0 &cell_type, const array::Vector &ice_velocity);
+  void update(const array::CellType0 &cell_type, const array::Vector1 &ice_velocity);
 protected:
   DiagnosticList diagnostics_impl() const;
 

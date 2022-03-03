@@ -70,6 +70,23 @@ public:
   inline bool ice_free_land(int i, int j) const {
     return mask::ice_free_land(as_int(i, j));
   }
+protected:
+  CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
+};
+
+using CellType0 = class CellType;
+
+/*!
+ * Cell type array supporting width=1 stencil computations (ghosted).
+ */
+class CellType1 : public CellType {
+public:
+  typedef std::shared_ptr<CellType1> Ptr;
+  typedef std::shared_ptr<const CellType1> ConstPtr;
+
+  CellType1(IceGrid::ConstPtr grid, const std::string &name);
+  using Array2D<double>::star;
+  using Array2D<double>::box;
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j) const {
@@ -101,21 +118,6 @@ public:
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
-protected:
-  CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
-};
-
-using CellType0 = class CellType;
-
-/*!
- * Cell type array supporting width=1 stencil computations (ghosted).
- */
-class CellType1 : public CellType {
-public:
-  typedef std::shared_ptr<CellType1> Ptr;
-  typedef std::shared_ptr<const CellType1> ConstPtr;
-
-  CellType1(IceGrid::ConstPtr grid, const std::string &name);
 protected:
   CellType1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };

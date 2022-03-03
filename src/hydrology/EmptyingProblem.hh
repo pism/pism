@@ -63,10 +63,10 @@ protected:
   void compute_potential(const array::Scalar &ice_thickness,
                          const array::Scalar &ice_bottom_surface,
                          const array::Scalar &domain_mask,
-                         array::Scalar &result);
+                         array::Scalar1 &result);
 
   void compute_velocity(const array::Scalar &hydraulic_potential,
-                        const array::Scalar &mask,
+                        const array::Scalar1 &mask,
                         array::Staggered &result) const;
 
   void compute_mask(const array::CellType0 &cell_type,

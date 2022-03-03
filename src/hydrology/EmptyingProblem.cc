@@ -35,7 +35,7 @@ namespace diagnostics {
  * direction).
  */
 static void compute_sinks(const array::Scalar &domain_mask,
-                          const array::Scalar &psi,
+                          const array::Scalar1 &psi,
                           array::Scalar &result) {
 
   IceGrid::ConstPtr grid = result.grid();
@@ -331,10 +331,13 @@ void EmptyingProblem::compute_raw_potential(const array::Scalar &H,
   result.update_ghosts();
 }
 
+/*!
+ * FIXME: uses "result" as temporary storage with ghosts.
+ */
 void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
                                         const array::Scalar &ice_bottom_surface,
                                         const array::Scalar &domain_mask,
-                                        array::Scalar &result) {
+                                        array::Scalar1 &result) {
   array::Scalar &psi_new = m_tmp;
 
   double delta = m_config->get_number("hydrology.steady.potential_delta");
@@ -404,7 +407,7 @@ static double K(double psi_x, double psi_y, double speed, double epsilon) {
  * Compute water velocity on the staggered grid.
  */
 void EmptyingProblem::compute_velocity(const array::Scalar &psi,
-                                       const array::Scalar &domain_mask,
+                                       const array::Scalar1 &domain_mask,
                                        array::Staggered &result) const {
 
   array::AccessScope list{&psi, &result, &domain_mask};

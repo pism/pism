@@ -61,6 +61,20 @@ public:
     return static_cast<T**>(m_array)[j][i];
   }
 
+  void add(double alpha, const Array2D<T> &x) {
+    vec::add(*this, alpha, x, *this);
+  }
+
+  void add(double alpha, const Array2D<T> &x, Array2D<T> &result) const {
+    vec::add(*this, alpha, x, result);
+  }
+
+  void copy_from(const Array2D<T> &source) {
+    return vec::copy(source, *this);
+  }
+
+protected:
+
   inline stencils::Star<T> star(int i, int j) const {
     const auto &self = *this;
 
@@ -86,18 +100,6 @@ public:
 
     return {x(i, j), x(i, N), x(W, N), x(W, j), x(W, S),
             x(i, S), x(E, S), x(E, j), x(E, N)};
-  }
-
-  void add(double alpha, const Array2D<T> &x) {
-    vec::add(*this, alpha, x, *this);
-  }
-
-  void add(double alpha, const Array2D<T> &x, Array2D<T> &result) const {
-    vec::add(*this, alpha, x, result);
-  }
-
-  void copy_from(const Array2D<T> &source) {
-    return vec::copy(source, *this);
   }
 };
 

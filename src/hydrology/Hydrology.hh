@@ -33,7 +33,7 @@ public:
   Inputs();
 
   // modeling domain (set to NULL in whole-ice-sheet configurations)
-  const array::Scalar      *no_model_mask;
+  const array::Scalar1      *no_model_mask;
   // geometry
   const Geometry *geometry;
   // hydrological inputs

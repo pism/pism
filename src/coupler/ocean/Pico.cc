@@ -201,7 +201,7 @@ void Pico::write_model_state_impl(const File &output) const {
 * are not included in the calculations of PICO.
 */
 static void extend_basal_melt_rates(const array::CellType1 &cell_type,
-                                    array::Scalar &basal_melt_rate) {
+                                    array::Scalar1 &basal_melt_rate) {
 
   auto grid = basal_melt_rate.grid();
 

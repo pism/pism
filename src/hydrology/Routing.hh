@@ -148,7 +148,7 @@ protected:
                         const array::Scalar &P,
                         const array::Scalar &bed,
                         const array::Staggered &K,
-                        const array::Scalar *no_model_mask,
+                        const array::Scalar1 *no_model_mask,
                         array::Staggered &result) const;
 
   void advective_fluxes(const array::Staggered &V,
@@ -156,21 +156,21 @@ protected:
                         array::Staggered &result) const;
 
   void W_change_due_to_flow(double dt,
-                            const array::Scalar    &W,
-                            const array::Staggered &Wstag,
-                            const array::Staggered &K,
-                            const array::Staggered &Q,
+                            const array::Scalar1    &W,
+                            const array::Staggered1 &Wstag,
+                            const array::Staggered1 &K,
+                            const array::Staggered1 &Q,
                             array::Scalar &result);
   void update_W(double dt,
-                const array::Scalar    &surface_input_rate,
-                const array::Scalar    &basal_melt_rate,
-                const array::Scalar    &W,
-                const array::Staggered &Wstag,
-                const array::Scalar    &Wtill,
-                const array::Scalar    &Wtill_new,
-                const array::Staggered &K,
-                const array::Staggered &Q,
-                array::Scalar &W_new);
+                const array::Scalar     &surface_input_rate,
+                const array::Scalar     &basal_melt_rate,
+                const array::Scalar1    &W,
+                const array::Staggered1 &Wstag,
+                const array::Scalar     &Wtill,
+                const array::Scalar     &Wtill_new,
+                const array::Staggered1 &K,
+                const array::Staggered1 &Q,
+                array::Scalar           &W_new);
 
   void update_Wtill(double dt,
                     const array::Scalar &Wtill,

@@ -130,9 +130,9 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
 
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
-                                      const array::Scalar &surface_elevation,
+                                      const array::Scalar1 &surface_elevation,
                                       const array::CellType1 &cell_type,
-                                      const array::Scalar *no_model_mask,
+                                      const array::Scalar1 *no_model_mask,
                                       array::Vector &result) const;
 
   virtual void solve(const Inputs &inputs) = 0;

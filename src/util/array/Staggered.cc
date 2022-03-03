@@ -87,15 +87,12 @@ std::array<double,2> absmax(const array::Staggered &input) {
 }
 
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered &input,
+                          const array::Staggered1 &input,
                           bool include_floating_ice,
                           array::Scalar &result) {
 
   using mask::grounded_ice;
   using mask::icy;
-
-  assert(cell_type.stencil_width() > 0);
-  assert(input.stencil_width() > 0);
 
   IceGrid::ConstPtr grid = result.grid();
 
@@ -134,7 +131,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 }
 
 void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered &input,
+                          const array::Staggered1 &input,
                           bool include_floating_ice,
                           array::Vector &result) {
 

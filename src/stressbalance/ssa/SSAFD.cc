@@ -247,9 +247,10 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   using mask::ice_free_land;
   using mask::ice_free_ocean;
 
+  const array::Scalar1
+    &bed                   = inputs.geometry->bed_elevation;
   const array::Scalar
     &thickness             = inputs.geometry->ice_thickness,
-    &bed                   = inputs.geometry->bed_elevation,
     &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
     *water_column_pressure = inputs.water_column_pressure;
@@ -506,9 +507,10 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   // shortcut:
   const array::Vector &vel = m_velocity;
 
-  const array::Scalar
+  const array::Scalar1
     &thickness         = inputs.geometry->ice_thickness,
-    &bed               = inputs.geometry->bed_elevation,
+    &bed               = inputs.geometry->bed_elevation;
+  const array::Scalar
     &surface           = inputs.geometry->ice_surface_elevation,
     &grounded_fraction = inputs.geometry->cell_grounded_fraction,
     &tauc              = *inputs.basal_yield_stress;

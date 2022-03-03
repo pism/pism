@@ -156,7 +156,7 @@ const array::Scalar& Poisson::solution() const {
 // b : rhs(eq2);
 //
 // print(''out)$
-void Poisson::assemble_matrix(const array::Scalar &mask, Mat A) {
+void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
   const double
