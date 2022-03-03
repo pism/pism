@@ -46,16 +46,6 @@ Array3D::Array3D(IceGrid::ConstPtr grid,
   set_begin_access_use_dof(true);
 }
 
-Array3D::Array3D(IceGrid::ConstPtr grid,
-                 const std::string &name,
-                 IceModelVecKind ghostedp,
-                 unsigned int dof,
-                 unsigned int stencil_width)
-  : Array(grid, name, ghostedp, dof, stencil_width, {0.0}) {
-  set_begin_access_use_dof(true);
-}
-
-
 //! Set all values of scalar quantity to given a single value in a particular column.
 void Array3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;

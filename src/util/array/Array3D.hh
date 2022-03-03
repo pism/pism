@@ -40,13 +40,6 @@ public:
           const std::vector<double> &levels,
           unsigned int stencil_width = 1);
 
-  // A collection of two-dimensional arrays using three-dimensional indexing
-  Array3D(IceGrid::ConstPtr grid,
-          const std::string &name,
-          IceModelVecKind ghostedp,
-          unsigned int dof,
-          unsigned int stencil_width = 1);
-
   virtual ~Array3D() = default;
 
   typedef std::shared_ptr<Array3D> Ptr;
