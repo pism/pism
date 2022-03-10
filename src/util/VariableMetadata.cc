@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009--2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -88,11 +88,12 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     *units = units_string.c_str(),
     *name  = name_string.c_str(),
     *file  = filename.c_str();
+  double eps = 1e-12;
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {
     double valid_min = get_number("valid_min");
     double valid_max = get_number("valid_max");
-    if ((min < valid_min) or (max > valid_max)) {
+    if ((min < valid_min - eps) or (max > valid_max + eps)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are outside the valid range [%e, %e] (%s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
@@ -100,7 +101,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     }
   } else if (has_attribute("valid_min")) {
     double valid_min = get_number("valid_min");
-    if (min < valid_min) {
+    if (min < valid_min - eps) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are less than the valid minimum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
@@ -108,7 +109,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
     }
   } else if (has_attribute("valid_max")) {
     double valid_max = get_number("valid_max");
-    if (max > valid_max) {
+    if (max > valid_max + eps) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "some values of '%s' in '%s' are greater than the valid maximum (%e %s).\n"
                                     "computed min = %e %s, computed max = %e %s",
                                     name, file,
