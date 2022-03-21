@@ -21,7 +21,7 @@
 
 #include "pism/util/IceModelVec2V.hh"
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 

@@ -54,7 +54,7 @@
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnergyModel.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"

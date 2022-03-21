@@ -20,7 +20,7 @@
 #define _DELTA_SL_2D_
 
 #include "pism/coupler/SeaLevel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 

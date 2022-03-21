@@ -23,7 +23,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 
 namespace pism {

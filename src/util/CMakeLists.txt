@@ -25,7 +25,7 @@ set(PISMUTIL_SRC
   error_handling.cc
   array/CellType.cc
   array/Array.cc
-  iceModelVec2T.cc
+  array/Forcing.cc
   iceModelVec2V.cc
   array/Array3D.cc
   array/Scalar.cc

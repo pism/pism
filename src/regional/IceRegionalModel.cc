@@ -34,7 +34,7 @@
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/hydrology/Hydrology.hh"
 
 namespace pism {

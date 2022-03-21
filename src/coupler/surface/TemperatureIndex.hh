@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "localMassBalance.hh"
 

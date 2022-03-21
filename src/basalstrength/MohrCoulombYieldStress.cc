@@ -27,7 +27,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 

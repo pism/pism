@@ -20,7 +20,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"

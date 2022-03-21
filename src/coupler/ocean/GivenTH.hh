@@ -20,7 +20,7 @@
 #define _POGIVENTH_H_
 
 #include "CompleteOceanModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {

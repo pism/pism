@@ -21,7 +21,7 @@
 #define PISM_BEDDEF_GIVEN
 
 #include "BedDef.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace bed {

@@ -22,7 +22,7 @@
 
 #include "CompleteOceanModel.hh"
 
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "PicoGeometry.hh"
 
 namespace pism {
