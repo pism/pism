@@ -49,7 +49,7 @@ protected:
   double m_smb_exp_factor;
   double m_temp_lapse_rate;
 
-  std::shared_ptr<IceModelVec2T> m_reference_surface;
+  std::shared_ptr<array::Forcing> m_reference_surface;
 
   array::Scalar::Ptr m_mass_flux;
   array::Scalar::Ptr m_temperature;

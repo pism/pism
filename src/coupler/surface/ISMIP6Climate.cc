@@ -73,7 +73,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
     {
-      m_mass_flux_anomaly = std::make_shared<IceModelVec2T>(m_grid,
+      m_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                         file,
                                                         "climatic_mass_balance_anomaly",
                                                         "", // no standard name
@@ -88,7 +88,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     }
 
     {
-      m_mass_flux_gradient = std::make_shared<IceModelVec2T>(m_grid,
+      m_mass_flux_gradient = std::make_shared<array::Forcing>(m_grid,
                                                          file,
                                                          "climatic_mass_balance_gradient",
                                                          "", // no standard name
@@ -102,7 +102,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     }
 
     {
-      m_temperature_anomaly = std::make_shared<IceModelVec2T>(m_grid,
+      m_temperature_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                           file,
                                                           "ice_surface_temp_anomaly",
                                                           "", // no standard name
@@ -115,7 +115,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereMod
     }
 
     {
-      m_temperature_gradient = std::make_shared<IceModelVec2T>(m_grid,
+      m_temperature_gradient = std::make_shared<array::Forcing>(m_grid,
                                                            file,
                                                            "ice_surface_temp_gradient",
                                                            "", // no standard name
@@ -164,10 +164,10 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   const array::Scalar &T_ref   = m_temperature_reference;
   const array::Scalar &SMB_ref = m_mass_flux_reference;
 
-  IceModelVec2T &dTdz   = *m_temperature_gradient;
-  IceModelVec2T &dSMBdz = *m_mass_flux_gradient;
-  IceModelVec2T &aT     = *m_temperature_anomaly;
-  IceModelVec2T &aSMB   = *m_mass_flux_anomaly;
+  array::Forcing &dTdz   = *m_temperature_gradient;
+  array::Forcing &dSMBdz = *m_mass_flux_gradient;
+  array::Forcing &aT     = *m_temperature_anomaly;
+  array::Forcing &aSMB   = *m_mass_flux_anomaly;
 
   // outputs
   array::Scalar &T   = *m_temperature;

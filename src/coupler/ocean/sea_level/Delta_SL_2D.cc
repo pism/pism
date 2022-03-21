@@ -35,13 +35,13 @@ Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_forcing = std::make_shared<IceModelVec2T>(m_grid,
-                                            file,
-                                            "delta_SL",
-                                            "", // no standard name
-                                            buffer_size,
-                                            opt.periodic,
-                                            LINEAR);
+    m_forcing = std::make_shared<array::Forcing>(m_grid,
+                                                 file,
+                                                 "delta_SL",
+                                                 "", // no standard name
+                                                 buffer_size,
+                                                 opt.periodic,
+                                                 LINEAR);
     m_forcing->set_attrs("climate_forcing",
                          "two-dimensional sea level offsets",
                          "meters", "meters", "", 0);

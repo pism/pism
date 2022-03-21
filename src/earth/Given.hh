@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ protected:
 
   array::Scalar m_topg_reference;
 
-  std::shared_ptr<IceModelVec2T> m_topg_delta;
+  std::shared_ptr<array::Forcing> m_topg_delta;
 };
 
 } // end of namespace bed

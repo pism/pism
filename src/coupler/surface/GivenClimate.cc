@@ -37,7 +37,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_temperature = std::make_shared<IceModelVec2T>(m_grid,
+    m_temperature = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "ice_surface_temp",
                                                 "", // no standard name
@@ -45,7 +45,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_mass_flux = std::make_shared<IceModelVec2T>(m_grid,
+    m_mass_flux = std::make_shared<array::Forcing>(m_grid,
                                               file,
                                               "climatic_mass_balance",
                                               "land_ice_surface_specific_mass_balance_flux",

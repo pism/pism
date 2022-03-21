@@ -41,7 +41,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_calving_threshold = std::make_shared<IceModelVec2T>(m_grid,
+    m_calving_threshold = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "thickness_calving_threshold",
                                                       "", // no standard name
@@ -75,8 +75,8 @@ void CalvingAtThickness::init() {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
     SpatialVariableMetadata attributes = m_calving_threshold->metadata();
-    // replace with a constant IceModelVec2T
-    m_calving_threshold = IceModelVec2T::Constant(m_grid,
+    // replace with a constant array::Forcing
+    m_calving_threshold = array::Forcing::Constant(m_grid,
                                                   "thickness_calving_threshold",
                                                   calving_threshold);
     // restore metadata

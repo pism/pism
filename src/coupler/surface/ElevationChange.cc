@@ -54,7 +54,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceMod
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_reference_surface = std::make_shared<IceModelVec2T>(m_grid,
+    m_reference_surface = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "usurf",
                                                       "", // no standard name

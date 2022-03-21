@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  std::shared_ptr<IceModelVec2T> m_forcing;
+  std::shared_ptr<array::Forcing> m_forcing;
 };
 
 } // end of namespace sea_level

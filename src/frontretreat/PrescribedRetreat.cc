@@ -30,12 +30,12 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_retreat_mask = std::make_shared<IceModelVec2T>(m_grid,
-                                                     file,
-                                                     "land_ice_area_fraction_retreat",
-                                                     "", // no standard name
-                                                     buffer_size,
-                                                     opt.periodic);
+    m_retreat_mask = std::make_shared<array::Forcing>(m_grid,
+                                                      file,
+                                                      "land_ice_area_fraction_retreat",
+                                                      "", // no standard name
+                                                      buffer_size,
+                                                      opt.periodic);
     m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
                               "1", "1", "", 0);
   }

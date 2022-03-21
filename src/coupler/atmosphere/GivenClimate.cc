@@ -35,7 +35,7 @@ Given::Given(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_air_temp = std::make_shared<IceModelVec2T>(m_grid,
+    m_air_temp = std::make_shared<array::Forcing>(m_grid,
                                              file,
                                              "air_temp",
                                              "", // no standard name
@@ -43,7 +43,7 @@ Given::Given(IceGrid::ConstPtr g)
                                              opt.periodic,
                                              LINEAR);
 
-    m_precipitation = std::make_shared<IceModelVec2T>(m_grid,
+    m_precipitation = std::make_shared<array::Forcing>(m_grid,
                                                   file,
                                                   "precipitation",
                                                   "", // no standard name

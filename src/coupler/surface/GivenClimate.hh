@@ -43,8 +43,8 @@ protected:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  std::shared_ptr<IceModelVec2T> m_mass_flux;
-  std::shared_ptr<IceModelVec2T> m_temperature;
+  std::shared_ptr<array::Forcing> m_mass_flux;
+  std::shared_ptr<array::Forcing> m_temperature;
 };
 
 } // end of namespace surface

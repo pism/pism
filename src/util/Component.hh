@@ -43,6 +43,7 @@ class Array3D;
 using CellType0 = class CellType;
 class CellType1;
 class CellType2;
+class Forcing;
 class Scalar;
 class Scalar1;
 class Scalar2;

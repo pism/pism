@@ -63,8 +63,8 @@ private:
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 
-  std::shared_ptr<IceModelVec2T> m_theta_ocean;
-  std::shared_ptr<IceModelVec2T> m_salinity_ocean;
+  std::shared_ptr<array::Forcing> m_theta_ocean;
+  std::shared_ptr<array::Forcing> m_salinity_ocean;
 
   void pointwise_update(const Constants &constants,
                         double sea_water_salinity,

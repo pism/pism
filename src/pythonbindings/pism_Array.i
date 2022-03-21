@@ -14,7 +14,7 @@ using namespace pism;
 %shared_ptr(pism::PetscAccessible)
 %shared_ptr(pism::array::Array)
 %shared_ptr(pism::array::Scalar)
-%shared_ptr(pism::IceModelVec2T)
+%shared_ptr(pism::array::Forcing)
 %shared_ptr(pism::array::Vector)
 %shared_ptr(pism::array::Vector1)
 %shared_ptr(pism::array::Vector2)
@@ -131,8 +131,8 @@ using namespace pism;
     }
 };
 
-%ignore pism::IceModelVec2T::interp(int, int, double*);
-%extend pism::IceModelVec2T
+%ignore pism::array::Forcing::interp(int, int, double*);
+%extend pism::array::Forcing
 {
 std::vector<double> interp(int i, int j) {
   std::vector<double> result;

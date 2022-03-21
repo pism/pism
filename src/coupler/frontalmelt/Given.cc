@@ -30,7 +30,7 @@ namespace frontalmelt {
 Given::Given(IceGrid::ConstPtr grid)
   : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
 
-  m_frontal_melt_rate = IceModelVec2T::Constant(grid, "frontal_melt_rate", 0.0);
+  m_frontal_melt_rate = array::Forcing::Constant(grid, "frontal_melt_rate", 0.0);
 }
 
 void Given::init_impl(const Geometry &geometry) {
@@ -47,7 +47,7 @@ void Given::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_frontal_melt_rate = std::make_shared<IceModelVec2T>(m_grid,
+    m_frontal_melt_rate = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "frontal_melt_rate",
                                                       "", // no standard name

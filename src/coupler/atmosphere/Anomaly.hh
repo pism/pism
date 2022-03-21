@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,8 +47,8 @@ protected:
 protected:
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 
-  std::shared_ptr<IceModelVec2T> m_air_temp_anomaly;
-  std::shared_ptr<IceModelVec2T> m_precipitation_anomaly;
+  std::shared_ptr<array::Forcing> m_air_temp_anomaly;
+  std::shared_ptr<array::Forcing> m_precipitation_anomaly;
 
   array::Scalar::Ptr m_precipitation;
   array::Scalar::Ptr m_temperature;

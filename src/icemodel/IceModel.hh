@@ -96,10 +96,13 @@ namespace bed {
 class BedDef;
 }
 
+namespace array {
+class Forcing;
+}
+
 class IceGrid;
 class AgeModel;
 class IceModelVec2CellType;
-class IceModelVec2T;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;
@@ -254,7 +257,7 @@ protected:
   std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
   std::shared_ptr<YieldStress> m_basal_yield_stress_model;
 
-  std::shared_ptr<IceModelVec2T> m_surface_input_for_hydrology;
+  std::shared_ptr<array::Forcing> m_surface_input_for_hydrology;
 
   energy::BedThermalUnit *m_btu;
   energy::EnergyModel *m_energy_model;

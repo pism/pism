@@ -34,7 +34,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_ice_surface_temp_anomaly = std::make_shared<IceModelVec2T>(m_grid,
+    m_ice_surface_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                              file,
                                                              "ice_surface_temp_anomaly",
                                                              "", // no standard name
@@ -42,7 +42,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
                                                              opt.periodic,
                                                              LINEAR);
 
-    m_climatic_mass_balance_anomaly = std::make_shared<IceModelVec2T>(m_grid,
+    m_climatic_mass_balance_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                                   file,
                                                                   "climatic_mass_balance_anomaly",
                                                                   "", // no standard name

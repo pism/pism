@@ -38,7 +38,7 @@ DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
                  "  using the Rignot/Xu parameterization\n"
                  "  and routing of subglacial discharge\n");
 
-  m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
+  m_theta_ocean = array::Forcing::Constant(grid, "theta_ocean", 0.0);
 }
 
 void DischargeRouting::init_impl(const Geometry &geometry) {
@@ -51,13 +51,13 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<IceModelVec2T>(m_grid,
-                                                file,
-                                                "theta_ocean",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic,
-                                                LINEAR);
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
+                                                     file,
+                                                     "theta_ocean",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     opt.periodic,
+                                                     LINEAR);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",

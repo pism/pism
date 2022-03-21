@@ -6,7 +6,7 @@
 
 namespace pism {
 namespace ocean {
-//! \brief An example ocean model illustrating the use of `IceModelVec2T`.
+//! \brief An example ocean model illustrating the use of `array::Forcing`.
 class Example : public OceanModel {
 public:
   Example(IceGrid::ConstPtr g);
@@ -19,7 +19,7 @@ protected:
   virtual void shelf_base_temperature_impl(IceModelVec2S &result) const;
   virtual void shelf_base_mass_flux_impl(IceModelVec2S &result) const;
 protected:
-  IceModelVec2T m_shelf_melt_rate;
+  array::Forcing m_shelf_melt_rate;
 };
 
 } // end of namespace ocean

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,7 +61,7 @@ protected:
   // surface temperature lapse rate
   double m_temp_lapse_rate;
 
-  std::shared_ptr<IceModelVec2T> m_reference_surface;
+  std::shared_ptr<array::Forcing> m_reference_surface;
 
   array::Scalar::Ptr m_precipitation;
   array::Scalar::Ptr m_temperature;

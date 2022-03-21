@@ -34,7 +34,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_shelf_base_mass_flux_anomaly = std::make_shared<IceModelVec2T>(m_grid,
+    m_shelf_base_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                                   file,
                                                                   "shelf_base_mass_flux_anomaly",
                                                                   "", // no standard name

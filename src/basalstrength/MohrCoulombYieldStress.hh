@@ -23,8 +23,6 @@
 
 namespace pism {
 
-class IceModelVec2T;
-
 //! @brief PISM's default basal yield stress model which applies the
 //! Mohr-Coulomb model of deformable, pressurized till.
 class MohrCoulombYieldStress : public YieldStress {
@@ -50,7 +48,7 @@ protected:
 
   array::Scalar m_till_phi;
 
-  std::shared_ptr<IceModelVec2T> m_delta;
+  std::shared_ptr<array::Forcing> m_delta;
 private:
   void till_friction_angle(const array::Scalar &bed_topography,
                            array::Scalar &result);

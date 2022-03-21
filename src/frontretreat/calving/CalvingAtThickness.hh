@@ -25,8 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2T;
-
 namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
@@ -47,7 +45,7 @@ public:
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  std::shared_ptr<IceModelVec2T> m_calving_threshold;
+  std::shared_ptr<array::Forcing> m_calving_threshold;
   array::CellType1 m_old_mask;
 };
 

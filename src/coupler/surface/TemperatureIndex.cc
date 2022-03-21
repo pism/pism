@@ -79,14 +79,14 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
-    m_air_temp_sd = std::make_shared<IceModelVec2T>(m_grid, file,
+    m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
                                                 sd_periodic,
                                                 LINEAR);
     m_sd_file_set = true;
   } else {
-    m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", 0.0);
+    m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", 0.0);
     m_sd_file_set = false;
   }
 
@@ -153,8 +153,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                      "  Using constant standard deviation of near-surface temperature.\n");
 
       SpatialVariableMetadata attributes = m_air_temp_sd->metadata();
-      // replace with a constant IceModelVec2T:
-      m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
+      // replace with a constant array::Forcing:
+      m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
       // restore metadata:
       m_air_temp_sd->metadata() = attributes;
     } else {

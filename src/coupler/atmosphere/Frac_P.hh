@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -49,7 +49,7 @@ private:
 
   std::unique_ptr<ScalarForcing> m_1d_scaling;
 
-  std::shared_ptr<IceModelVec2T> m_2d_scaling;
+  std::shared_ptr<array::Forcing> m_2d_scaling;
 
   array::Scalar::Ptr m_precipitation;
 };

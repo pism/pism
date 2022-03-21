@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2022 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ private:
   MaxTimestep max_timestep_impl(double t) const;
 
   // input
-  std::shared_ptr<IceModelVec2T> m_theta_ocean;
+  std::shared_ptr<array::Forcing> m_theta_ocean;
 
   // output
   array::Scalar1 m_frontal_melt_rate;

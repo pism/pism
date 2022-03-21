@@ -24,37 +24,34 @@
 #include "interpolation.hh"     // InterpolationType
 
 namespace pism {
+namespace array {
 
-//! A class for storing and accessing 2D time-series (for climate forcing)
+//! @brief 2D time-dependent inputs (for climate forcing, etc)
 /*! This class was created to read time-dependent and spatially-varying climate
   forcing data, in particular snow temperatures and precipitation.
 
-  If requests (calls to update()) go in sequence, every records should be read
-  only once.
+  If requests (calls to update()) go in sequence, every record should be read only once.
 
   Note that this class is optimized for use with a PDD scheme -- it stores
   records so that data corresponding to a grid point are stored in adjacent
   memory locations.
 
-  IceModelVec2T is always global (%i.e. has no ghosts).
-
-  Both versions of interp() use piecewise-constant interpolation and
-  extrapolate (by a constant) outside the available range.
+  `Forcing` has no ghosts.
 */
-class IceModelVec2T : public array::Scalar {
+class Forcing : public array::Scalar {
 public:
 
-  IceModelVec2T(IceGrid::ConstPtr grid,
-                const File &file,
-                const std::string &short_name,
-                const std::string &standard_name,
-                int max_buffer_size,
-                bool periodic,
-                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
+  Forcing(IceGrid::ConstPtr grid,
+          const File &file,
+          const std::string &short_name,
+          const std::string &standard_name,
+          int max_buffer_size,
+          bool periodic,
+          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
-  virtual ~IceModelVec2T();
+  virtual ~Forcing();
 
-  static std::shared_ptr<IceModelVec2T>
+  static std::shared_ptr<Forcing>
   Constant(IceGrid::ConstPtr grid, const std::string &short_name, double value);
 
   unsigned int buffer_size();
@@ -79,11 +76,11 @@ private:
 
   Data *m_data;
 
-  IceModelVec2T(IceGrid::ConstPtr grid,
-                const std::string &short_name,
-                unsigned int buffer_size,
-                bool dummy,
-                InterpolationType interpolation_type);
+  Forcing(IceGrid::ConstPtr grid,
+          const std::string &short_name,
+          unsigned int buffer_size,
+          bool dummy,
+          InterpolationType interpolation_type);
   void allocate(IceGrid::ConstPtr grid,
                 const std::string &short_name,
                 unsigned int buffer_size,
@@ -96,7 +93,7 @@ private:
   void init_periodic_data(const File &file);
 };
 
-
+} // end of namespace array
 } // end of namespace pism
 
 #endif // PISM_ARRAY_FORCING

@@ -37,9 +37,9 @@ DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
                  "* Initializing the frontal melt model\n"
                  "  UAF-UT\n");
 
-  m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
+  m_theta_ocean = array::Forcing::Constant(grid, "theta_ocean", 0.0);
 
-  m_subglacial_discharge = IceModelVec2T::Constant(grid, "subglacial_discharge", 0.0);
+  m_subglacial_discharge = array::Forcing::Constant(grid, "subglacial_discharge", 0.0);
 }
 
 void DischargeGiven::init_impl(const Geometry &geometry) {
@@ -52,19 +52,19 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<IceModelVec2T>(m_grid,
-                                                file,
-                                                "theta_ocean",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic);
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
+                                                     file,
+                                                     "theta_ocean",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     opt.periodic);
 
-    m_subglacial_discharge = std::make_shared<IceModelVec2T>(m_grid,
-                                                file,
-                                                "subglacial_discharge",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic);
+    m_subglacial_discharge = std::make_shared<array::Forcing>(m_grid,
+                                                              file,
+                                                              "subglacial_discharge",
+                                                              "", // no standard name
+                                                              buffer_size,
+                                                              opt.periodic);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",

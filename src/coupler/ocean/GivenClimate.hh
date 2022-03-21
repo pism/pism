@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -40,8 +40,8 @@ private:
   const array::Scalar& shelf_base_temperature_impl() const;
   const array::Scalar& shelf_base_mass_flux_impl() const;
 
-  std::shared_ptr<IceModelVec2T> m_shelfbtemp;
-  std::shared_ptr<IceModelVec2T> m_shelfbmassflux;
+  std::shared_ptr<array::Forcing> m_shelfbtemp;
+  std::shared_ptr<array::Forcing> m_shelfbmassflux;
 
   array::Scalar::Ptr m_shelf_base_temperature;
   array::Scalar::Ptr m_shelf_base_mass_flux;

@@ -42,10 +42,10 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 protected:
   // time-dependent inputs
-  std::shared_ptr<IceModelVec2T> m_mass_flux_anomaly;
-  std::shared_ptr<IceModelVec2T> m_temperature_anomaly;
-  std::shared_ptr<IceModelVec2T> m_mass_flux_gradient;
-  std::shared_ptr<IceModelVec2T> m_temperature_gradient;
+  std::shared_ptr<array::Forcing> m_mass_flux_anomaly;
+  std::shared_ptr<array::Forcing> m_temperature_anomaly;
+  std::shared_ptr<array::Forcing> m_mass_flux_gradient;
+  std::shared_ptr<array::Forcing> m_temperature_gradient;
 
   // time-independent inputs
   array::Scalar m_mass_flux_reference;

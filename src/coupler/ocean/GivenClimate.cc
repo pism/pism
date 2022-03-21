@@ -39,7 +39,7 @@ Given::Given(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_shelfbtemp = std::make_shared<IceModelVec2T>(m_grid,
+    m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
                                                file,
                                                "shelfbtemp",
                                                "", // no standard name
@@ -47,7 +47,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                opt.periodic,
                                                LINEAR);
 
-    m_shelfbmassflux = std::make_shared<IceModelVec2T>(m_grid,
+    m_shelfbmassflux = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "shelfbmassflux",
                                                    "", // no standard name

@@ -67,7 +67,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<IceModelVec2T>(m_grid,
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
                                                 "", // no standard name
@@ -75,7 +75,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_salinity_ocean = std::make_shared<IceModelVec2T>(m_grid,
+    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
                                                    "", // no standard name
@@ -115,7 +115,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
 
-      m_salinity_ocean = IceModelVec2T::Constant(m_grid, variable_name, salinity);
+      m_salinity_ocean = array::Forcing::Constant(m_grid, variable_name, salinity);
 
       m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
                      variable_name.c_str(), salinity);

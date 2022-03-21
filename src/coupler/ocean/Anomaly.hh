@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,7 +40,7 @@ protected:
 protected:
   array::Scalar::Ptr m_shelf_base_mass_flux;
 
-  std::shared_ptr<IceModelVec2T> m_shelf_base_mass_flux_anomaly;
+  std::shared_ptr<array::Forcing> m_shelf_base_mass_flux_anomaly;
 
 };
 
