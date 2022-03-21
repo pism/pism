@@ -41,7 +41,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_calving_threshold = IceModelVec2T::ForcingField(m_grid,
+    m_calving_threshold = std::make_shared<IceModelVec2T>(m_grid,
                                                       file,
                                                       "thickness_calving_threshold",
                                                       "", // no standard name

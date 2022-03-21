@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021 PISM Authors
+/* Copyright (C) 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,12 +30,12 @@ PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_retreat_mask = IceModelVec2T::ForcingField(m_grid,
-                                                 file,
-                                                 "land_ice_area_fraction_retreat",
-                                                 "", // no standard name
-                                                 buffer_size,
-                                                 opt.periodic);
+    m_retreat_mask = std::make_shared<IceModelVec2T>(m_grid,
+                                                     file,
+                                                     "land_ice_area_fraction_retreat",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     opt.periodic);
     m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
                               "1", "1", "", 0);
   }

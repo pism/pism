@@ -106,13 +106,15 @@ struct IceModelVec2T::Data {
  * @param[in] max_buffer_size maximum buffer size for non-periodic fields
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  */
-std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
-                                               const File &file,
-                                               const std::string &short_name,
-                                               const std::string &standard_name,
-                                               int max_buffer_size,
-                                               bool periodic,
-                                               InterpolationType interpolation_type) {
+IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid,
+                             const File &file,
+                             const std::string &short_name,
+                             const std::string &standard_name,
+                             int max_buffer_size,
+                             bool periodic,
+                             InterpolationType interpolation_type)
+  : array::Scalar(grid, short_name, 0),
+    m_data(new Data()) {
 
   int n_records = file.nrecords(short_name, standard_name,
                                 grid->ctx()->unit_system());
@@ -136,14 +138,14 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   buffer_size = std::max(buffer_size, 1);
 
-  return std::make_shared<IceModelVec2T>(grid, short_name, buffer_size,
-                                         interpolation_type);
+  allocate(grid, short_name, buffer_size, interpolation_type);
 }
 
 std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
                                                        const std::string &short_name,
                                                        double value) {
-  auto result = std::make_shared<IceModelVec2T>(grid, short_name, 1, PIECEWISE_CONSTANT);
+  std::shared_ptr<IceModelVec2T> result(new IceModelVec2T(grid, short_name, 1,
+                                                          false, PIECEWISE_CONSTANT));
 
   // set constant value everywhere
   result->set(value);
@@ -163,10 +165,16 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
 
 IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
                              unsigned int buffer_size,
+                             bool dummy,
                              InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
-    m_data(new Data())
-{
+    m_data(new Data()) {
+  allocate(grid, short_name, buffer_size, interpolation_type);
+}
+
+void IceModelVec2T::allocate(IceGrid::ConstPtr grid, const std::string &short_name,
+                             unsigned int buffer_size,
+                             InterpolationType interpolation_type) {
   m_impl->report_range = false;
 
   m_data->interp_type            = interpolation_type;

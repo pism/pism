@@ -119,9 +119,9 @@ class ForcingInput(unittest.TestCase):
                 interpolation_type=PISM.PIECEWISE_CONSTANT):
         "Allocate and initialize forcing"
         input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-        forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
-                                                  buffer_size, periodic,
-                                                  interpolation_type)
+        forcing = PISM.IceModelVec2T(self.grid, input_file, "v", "",
+                                     buffer_size, periodic,
+                                     interpolation_type)
         input_file.close()
 
         forcing.metadata().set_string("long_name", "test field")

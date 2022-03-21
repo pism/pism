@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Constantine Khroulev
+// Copyright (C) 2009--2022 Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __IceModelVec2T_hh
-#define __IceModelVec2T_hh
+#ifndef PISM_ARRAY_FORCING
+#define PISM_ARRAY_FORCING
 
 #include "array/Scalar.hh"
 #include "MaxTimestep.hh"
@@ -43,24 +43,19 @@ namespace pism {
 */
 class IceModelVec2T : public array::Scalar {
 public:
-  static std::shared_ptr<IceModelVec2T>
-  ForcingField(IceGrid::ConstPtr grid,
-               const File &file,
-               const std::string &short_name,
-               const std::string &standard_name,
-               int max_buffer_size,
-               bool periodic,
-               InterpolationType interpolation_type = PIECEWISE_CONSTANT);
-
-  static std::shared_ptr<IceModelVec2T> Constant(IceGrid::ConstPtr grid,
-                                                 const std::string &short_name,
-                                                 double value);
 
   IceModelVec2T(IceGrid::ConstPtr grid,
+                const File &file,
                 const std::string &short_name,
-                unsigned int buffer_size,
+                const std::string &standard_name,
+                int max_buffer_size,
+                bool periodic,
                 InterpolationType interpolation_type = PIECEWISE_CONSTANT);
+
   virtual ~IceModelVec2T();
+
+  static std::shared_ptr<IceModelVec2T>
+  Constant(IceGrid::ConstPtr grid, const std::string &short_name, double value);
 
   unsigned int buffer_size();
 
@@ -84,6 +79,16 @@ private:
 
   Data *m_data;
 
+  IceModelVec2T(IceGrid::ConstPtr grid,
+                const std::string &short_name,
+                unsigned int buffer_size,
+                bool dummy,
+                InterpolationType interpolation_type);
+  void allocate(IceGrid::ConstPtr grid,
+                const std::string &short_name,
+                unsigned int buffer_size,
+                InterpolationType interpolation_type);
+
   double*** array3();
   void update(unsigned int start);
   void discard(int N);
@@ -94,4 +99,4 @@ private:
 
 } // end of namespace pism
 
-#endif // __IceModelVec2T_hh
+#endif // PISM_ARRAY_FORCING

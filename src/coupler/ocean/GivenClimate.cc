@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -39,7 +39,7 @@ Given::Given(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
+    m_shelfbtemp = std::make_shared<IceModelVec2T>(m_grid,
                                                file,
                                                "shelfbtemp",
                                                "", // no standard name
@@ -47,7 +47,7 @@ Given::Given(IceGrid::ConstPtr g)
                                                opt.periodic,
                                                LINEAR);
 
-    m_shelfbmassflux = IceModelVec2T::ForcingField(m_grid,
+    m_shelfbmassflux = std::make_shared<IceModelVec2T>(m_grid,
                                                    file,
                                                    "shelfbmassflux",
                                                    "", // no standard name

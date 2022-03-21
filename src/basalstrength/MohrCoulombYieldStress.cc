@@ -120,7 +120,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_delta = IceModelVec2T::ForcingField(m_grid,
+    m_delta = std::make_shared<IceModelVec2T>(m_grid,
                                           file,
                                           "mohr_coulomb_delta",
                                           "", // no standard name

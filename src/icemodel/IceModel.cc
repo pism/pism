@@ -139,7 +139,7 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
 
     File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
+    m_surface_input_for_hydrology = std::make_shared<IceModelVec2T>(m_grid,
                                                                 file,
                                                                 "water_input_rate",
                                                                 "", // no standard name

@@ -52,14 +52,14 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+    m_theta_ocean = std::make_shared<IceModelVec2T>(m_grid,
                                                 file,
                                                 "theta_ocean",
                                                 "", // no standard name
                                                 buffer_size,
                                                 opt.periodic);
 
-    m_subglacial_discharge = IceModelVec2T::ForcingField(m_grid,
+    m_subglacial_discharge = std::make_shared<IceModelVec2T>(m_grid,
                                                 file,
                                                 "subglacial_discharge",
                                                 "", // no standard name

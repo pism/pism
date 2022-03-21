@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceMod
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_reference_surface = IceModelVec2T::ForcingField(m_grid,
+    m_reference_surface = std::make_shared<IceModelVec2T>(m_grid,
                                                       file,
                                                       "usurf",
                                                       "", // no standard name

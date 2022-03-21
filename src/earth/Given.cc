@@ -41,13 +41,13 @@ Given::Given(IceGrid::ConstPtr grid)
 
     File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_topg_delta = IceModelVec2T::ForcingField(m_grid,
-                                               file,
-                                               "topg_delta",
-                                               "", // no standard name
-                                               buffer_size,
-                                               periodic,
-                                               LINEAR);
+    m_topg_delta = std::make_shared<IceModelVec2T>(m_grid,
+                                                   file,
+                                                   "topg_delta",
+                                                   "", // no standard name
+                                                   buffer_size,
+                                                   periodic,
+                                                   LINEAR);
     m_topg_delta->set_attrs("bed_deformation",
                             "two-dimensional bed elevation changes",
                             "meters", "meters", "", 0);
