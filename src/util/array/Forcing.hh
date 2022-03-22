@@ -45,7 +45,7 @@ public:
           const File &file,
           const std::string &short_name,
           const std::string &standard_name,
-          int max_buffer_size,
+          unsigned int max_buffer_size,
           bool periodic,
           InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 

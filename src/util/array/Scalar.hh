@@ -66,7 +66,7 @@ protected:
 };
 
 /*!
- * Scalar 2D array supporting width=1 stencil computations
+ * Scalar 2D array supporting width=2 stencil computations
  */
 class Scalar2 : public Scalar1 {
 public:

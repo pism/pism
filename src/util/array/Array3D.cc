@@ -34,9 +34,6 @@ namespace array {
 
 // this file contains method for derived class array::Array3D
 
-// methods for base class IceModelVec and derived class IceModelVec2S
-// are in "iceModelVec.cc"
-
 Array3D::Array3D(IceGrid::ConstPtr grid,
                  const std::string &name,
                  IceModelVecKind ghostedp,

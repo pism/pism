@@ -112,16 +112,16 @@ Forcing::Forcing(IceGrid::ConstPtr grid,
                  const File &file,
                  const std::string &short_name,
                  const std::string &standard_name,
-                 int max_buffer_size,
+                 unsigned int max_buffer_size,
                  bool periodic,
                  InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
     m_data(new Data()) {
 
-  int n_records = file.nrecords(short_name, standard_name,
-                                grid->ctx()->unit_system());
+  unsigned int n_records = file.nrecords(short_name, standard_name,
+                                         grid->ctx()->unit_system());
 
-  int buffer_size = 0;
+  unsigned int buffer_size = 0;
   if (periodic) {
     // In the periodic case we try to keep all the records in RAM.
     buffer_size = n_records;
@@ -138,7 +138,7 @@ Forcing::Forcing(IceGrid::ConstPtr grid,
   // Allocate storage for one record if the variable was not found. This is needed to be
   // able to cheaply allocate and then discard an "-atmosphere given" model
   // (atmosphere::Given) when "-surface given" (Given) is selected.
-  buffer_size = std::max(buffer_size, 1);
+  buffer_size = std::max(buffer_size, 1U);
 
   allocate(grid, short_name, buffer_size, interpolation_type);
 }
@@ -166,9 +166,9 @@ std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
 }
 
 Forcing::Forcing(IceGrid::ConstPtr grid, const std::string &short_name,
-                             unsigned int buffer_size,
-                             bool dummy,
-                             InterpolationType interpolation_type)
+                 unsigned int buffer_size,
+                 bool dummy,
+                 InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
     m_data(new Data()) {
   allocate(grid, short_name, buffer_size, interpolation_type);
@@ -246,8 +246,6 @@ void Forcing::init(const std::string &filename, bool periodic) {
     auto ctx = m_impl->grid->ctx();
     auto time = ctx->time();
 
-    bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
-
     m_data->filename = filename;
 
     File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
@@ -285,6 +283,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
       m_data->time       = times;
       m_data->time_range = {bounds.front(), bounds.back()};
 
+      bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
       if (not (extrapolate or periodic)) {
         check_forcing_duration(*time, bounds.front(), bounds.back());
       }

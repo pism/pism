@@ -16,13 +16,15 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef ICEMODELVEC_IMPL_H
-#define ICEMODELVEC_IMPL_H
+#ifndef PISM_ARRAY_IMPL_HH
+#define PISM_ARRAY_IMPL_HH
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "pism/util/array/Array.hh"
 
 #include <gsl/gsl_interp.h>
 
@@ -112,4 +114,4 @@ struct Array::Impl {
 } // end of namespace array
 } // end of namespace pism
 
-#endif /* ICEMODELVEC_IMPL_H */
+#endif /* PISM_ARRAY_IMPL_HH */

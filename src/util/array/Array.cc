@@ -55,11 +55,11 @@ static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
 namespace array {
 
 Array::Array(IceGrid::ConstPtr grid,
-                         const std::string &name,
-                         IceModelVecKind ghostedp,
-                         size_t dof,
-                         size_t stencil_width,
-                         const std::vector<double> &zlevels) {
+             const std::string &name,
+             IceModelVecKind ghostedp,
+             size_t dof,
+             size_t stencil_width,
+             const std::vector<double> &zlevels) {
   m_impl = new Impl();
   m_array = nullptr;
 
@@ -1216,7 +1216,9 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
       long_name           = m_impl->metadata[i].get_string("long_name"),
       units               = m_impl->metadata[i].get_string("units"),
       glaciological_units = m_impl->metadata[i].get_string("glaciological_units"),
-      title               = long_name + " (" + glaciological_units + ")";
+      title               = pism::printf("%s (%s)",
+                                         long_name.c_str(),
+                                         glaciological_units.c_str());
 
     PetscViewer v = *viewers[i].get();
 

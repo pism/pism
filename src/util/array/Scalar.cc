@@ -30,7 +30,8 @@ namespace array {
 Scalar::Scalar(IceGrid::ConstPtr grid, const std::string &name,
                              int width)
   : Array2D<double>(grid, name,
-                         width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS, width) {
+                    width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
+                    width) {
   // empty
 }
 
@@ -136,11 +137,13 @@ double diff_x_p(const array::Scalar &array, int i, int j) {
 
   if (i == 0) {
     return (array(i + 1,j) - array(i,j)) / (grid.dx());
-  } else if (i == (int)grid.Mx() - 1) {
+  }
+
+  if (i == (int)grid.Mx() - 1) {
     return (array(i,j) - array(i - 1,j)) / (grid.dx());
-  } else {
-    return diff_x(array, i,j);
- }
+  }
+
+  return diff_x(array, i,j);
 }
 
 //! \brief Returns the y-derivative at i,j approximated using centered finite

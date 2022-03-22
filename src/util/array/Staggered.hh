@@ -28,7 +28,7 @@ namespace array {
 class CellType1;
 class Vector;
 
-//! \brief A class for storing and accessing internal staggered-grid 2D fields.
+//! @brief A class for storing and accessing internal staggered-grid 2D fields.
 //! Uses dof=2 storage. This class is identical to array::Vector, except that
 //! components are not called `u` and `v` (to avoid confusion).
 class Staggered : public Array {
@@ -88,6 +88,9 @@ inline stencils::Star<double> Staggered1::star(int i, int j) const {
 
 } // end of namespace array
 
+/*!
+ * Computes maximums of absolute values of both components.
+ */
 std::array<double,2> absmax(const array::Staggered &input);
 
 /*!
