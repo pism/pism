@@ -89,10 +89,10 @@ class MassTransport(object):
         if part_grid:
             grid.ctx().config().set_flag("geometry.part_grid.enabled", True)
 
-        self.v = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-        self.Q = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-        self.v_bc_mask = PISM.IceModelVec2S(grid, "v_bc_mask")
-        self.H_bc_mask = PISM.IceModelVec2S(grid, "H_bc_mask")
+        self.v = PISM.Vector(grid, "velocity")
+        self.Q = PISM.Staggered(grid, "Q")
+        self.v_bc_mask = PISM.Scalar(grid, "v_bc_mask")
+        self.H_bc_mask = PISM.Scalar(grid, "H_bc_mask")
 
         self.ge = PISM.GeometryEvolution(grid)
 

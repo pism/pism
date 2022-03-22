@@ -4,7 +4,7 @@
 #include "util/array/CellType.hh"
 #include "util/array/Scalar.hh"
 #include "util/array/Forcing.hh"
-#include "util/IceModelVec2V.hh"
+#include "util/array/Vector.hh"
 #include "util/array/Array3D.hh"
 #include "util/array/Staggered.hh"
 
@@ -169,7 +169,7 @@ std::vector<double> interp(int i, int j) {
 %shared_ptr(pism::array::Array2D<Vector2d>)
 %ignore pism::array::Array2D< Vector2d >::array() const;
 %template(_Array2DVector2) pism::array::Array2D<Vector2d>;
-%include "util/IceModelVec2V.hh"
+%include "util/array/Vector.hh"
 
 %include "util/array/Array3D.hh"
 %include "util/array/Staggered.hh"

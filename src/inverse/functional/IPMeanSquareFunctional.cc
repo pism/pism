@@ -18,7 +18,7 @@
 
 #include "IPMeanSquareFunctional.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -27,7 +27,7 @@ namespace inverse {
 
 //! Implicitly set the normalization constant for the functional.
 /*! The normalization constant is selected so that if an input
-IceModelVec2V has component vectors all of length \a scale, then the funtional value will be 1. I.e.
+array::Vector has component vectors all of length \a scale, then the funtional value will be 1. I.e.
 \f[
 c_N^{-1} = \sum_{i} w_i {\tt scale}^2.
 \f]*/

@@ -27,7 +27,7 @@ namespace inverse {
 //! Implements a functional for log-ratio errors.
 /*!  This type of functional appears in [\ref Morlighemetal2010].
   Specifically, given a reference function \f$u_{obs}=[U_i]\f$, and an
-  IceModelVec2V \f$x=[X_i]\f$,
+  array::Vector \f$x=[X_i]\f$,
   \f[
   J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
   \f]

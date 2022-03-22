@@ -16,13 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceModelVec2V.hh"
+#include "Vector.hh"
+#include "Array_impl.hh"
 
-#include "pism/util/array/Array_impl.hh"
-
-#include "pism_utilities.hh"
-#include "IceGrid.hh"
-
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/IceGrid.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 

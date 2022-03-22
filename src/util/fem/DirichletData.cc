@@ -20,7 +20,7 @@
 #include "DirichletData.hh"
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"

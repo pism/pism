@@ -26,7 +26,7 @@ set(PISMUTIL_SRC
   array/CellType.cc
   array/Array.cc
   array/Forcing.cc
-  iceModelVec2V.cc
+  array/Vector.cc
   array/Array3D.cc
   array/Scalar.cc
   array/Staggered.cc

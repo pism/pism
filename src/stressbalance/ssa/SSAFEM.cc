@@ -144,7 +144,7 @@ void SSAFEM::init_impl() {
   }
 
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
-  // into IceModelVec2V "velocity". We use that field as an initial guess.
+  // into array::Vector "velocity". We use that field as an initial guess.
   // If we are not restarting from a PISM file, "velocity" is identically zero,
   // and the call below clears m_velocity_global.
 

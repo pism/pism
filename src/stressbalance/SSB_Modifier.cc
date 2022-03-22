@@ -23,7 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {

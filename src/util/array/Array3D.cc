@@ -178,8 +178,8 @@ point (such as 2D fields on the "staggered" grid, with the first
 degree of freedom corresponding to the i-offset and second to
 j-offset).
 
-array::Scalar is just IceModelVec2 with "dof == 1", and
-IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
+array::Scalar is just array::Array2D with "dof == 1", and
+array::Vector is array::Array2D with "dof == 2". (Plus some extra
 methods, of course.)
 
 Either one of IceModelVec2 and array::Scalar would work in this

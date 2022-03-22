@@ -21,7 +21,7 @@
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Staggered.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
 

@@ -19,7 +19,7 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/array/Forcing.hh"
 

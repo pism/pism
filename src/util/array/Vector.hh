@@ -16,8 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef PISM_ICEMODELVEC2V_H
-#define PISM_ICEMODELVEC2V_H
+#ifndef PISM_ARRAY_VECTOR_HH
+#define PISM_ARRAY_VECTOR_HH
 
 #include "pism/util/array/Array2D.hh"
 #include "pism/util/Vector2d.hh"
@@ -70,4 +70,4 @@ public:
 void compute_magnitude(const array::Vector &input, array::Scalar &result);
 } // end of namespace pism
 
-#endif /* PISM_ICEMODELVEC2V_H */
+#endif /* PISM_ARRAY_VECTOR_HH */

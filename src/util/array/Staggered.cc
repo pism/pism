@@ -23,7 +23,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 namespace array {

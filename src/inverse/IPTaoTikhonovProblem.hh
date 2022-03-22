@@ -98,7 +98,7 @@ public:
   SSATaucForwardProblem forwardProblem(grid);
   L2NormFunctional2S designFunctional(grid); //J_X
   L2NormFunctional2V stateFunctional(grid);  //J_Y
-  IceModelVec2V u_obs;     // Set this to the surface velocity observations.
+  array::Vector u_obs;     // Set this to the surface velocity observations.
   array::Scalar tauc_0;    // Set this to the initial guess for tauc.
   double eta;           // Set this to the desired penalty parameter.
 
@@ -125,7 +125,7 @@ public:
 
   \code
   typedef array::Scalar DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Vector StateVec;
   \endcode
   would be appropriate for a map from basal yeild stress to surface velocities.
 

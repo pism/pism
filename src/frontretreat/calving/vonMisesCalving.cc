@@ -22,7 +22,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
