@@ -55,7 +55,7 @@ public:
 
   void compute_basal_frictional_heating(const array::Vector &velocity,
                                         const array::Scalar &tauc,
-                                        const array::CellType0 &mask,
+                                        const array::CellType &mask,
                                         array::Scalar &result) const;
   // helpers:
 

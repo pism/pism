@@ -76,7 +76,7 @@ protected:
                        array::Scalar &result);
 
   void update_P(double dt,
-                const array::CellType0 &cell_type,
+                const array::CellType &cell_type,
                 const array::Scalar &sliding_speed,
                 const array::Scalar &surface_input_rate,
                 const array::Scalar &basal_melt_rate,

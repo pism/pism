@@ -30,9 +30,9 @@ class IceGrid;
 class Config;
 
 namespace array {
-using CellType0 = class CellType;
 class CellType1;
 class CellType2;
+class CellType;
 } // end of namespace array
 
 namespace stressbalance {

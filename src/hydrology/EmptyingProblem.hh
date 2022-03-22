@@ -69,7 +69,7 @@ protected:
                         const array::Scalar1 &mask,
                         array::Staggered &result) const;
 
-  void compute_mask(const array::CellType0 &cell_type,
+  void compute_mask(const array::CellType &cell_type,
                     const array::Scalar *no_model_mask,
                     array::Scalar &result) const;
 

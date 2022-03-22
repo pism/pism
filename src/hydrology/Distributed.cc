@@ -219,7 +219,7 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
 }
 
 void Distributed::update_P(double dt,
-                           const array::CellType0 &cell_type,
+                           const array::CellType &cell_type,
                            const array::Scalar &sliding_speed,
                            const array::Scalar &surface_input_rate,
                            const array::Scalar &basal_melt_rate,

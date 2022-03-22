@@ -221,7 +221,7 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
 //! between target and modeled surface elevations.
 void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elevation,
                                            const array::Scalar &bed_topography,
-                                           const array::CellType0 &cell_type) {
+                                           const array::CellType &cell_type) {
 
   m_log->message(2, "* Updating till friction angle...\n");
 

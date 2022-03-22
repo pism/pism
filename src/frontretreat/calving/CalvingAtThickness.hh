@@ -38,7 +38,7 @@ public:
   void init();
   void update(double t,
               double dt,
-              array::CellType0 &pism_mask,
+              array::CellType &pism_mask,
               array::Scalar &ice_thickness);
 
   const array::Scalar& threshold() const;

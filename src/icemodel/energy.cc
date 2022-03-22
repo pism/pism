@@ -124,7 +124,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
 void bedrock_surface_temperature(const array::Scalar &sea_level,
-                                 const array::CellType0 &cell_type,
+                                 const array::CellType &cell_type,
                                  const array::Scalar &bed_topography,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &basal_enthalpy,

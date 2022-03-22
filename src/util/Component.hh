@@ -37,21 +37,21 @@ class File;
 class Geometry;
 
 namespace array {
-class Array;
 template<typename T> class Array2D;
 class Array3D;
-using CellType0 = class CellType;
+class Array;
 class CellType1;
 class CellType2;
+class CellType;
 class Forcing;
-class Scalar;
 class Scalar1;
 class Scalar2;
-class Staggered;
+class Scalar;
 class Staggered1;
-class Vector;
+class Staggered;
 class Vector1;
 class Vector2;
+class Vector;
 } // end of namespace array
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};

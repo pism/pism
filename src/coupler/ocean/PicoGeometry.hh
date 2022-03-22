@@ -52,10 +52,10 @@ public:
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
 private:
-  void compute_ice_rises(const array::CellType0 &cell_type,
+  void compute_ice_rises(const array::CellType &cell_type,
                          bool exclude_ice_rises, array::Scalar &result);
-  void compute_lakes(const array::CellType0 &cell_type, array::Scalar &result);
-  void compute_ocean_mask(const array::CellType0 &cell_type, array::Scalar &result);
+  void compute_lakes(const array::CellType &cell_type, array::Scalar &result);
+  void compute_ocean_mask(const array::CellType &cell_type, array::Scalar &result);
   void compute_continental_shelf_mask(const array::Scalar &bed_elevation,
                                       const array::Scalar &ice_rise_mask,
                                       double bed_elevation_threshold,
@@ -74,7 +74,7 @@ private:
                                          std::vector<int> &most_shelf_cells_in_basin,
                                          std::vector<int> &cfs_in_basins_per_shelf);
 
-  void split_ice_shelves(const array::CellType0 &cell_type,
+  void split_ice_shelves(const array::CellType &cell_type,
                          const array::Scalar &basin_mask,
                          const std::map<int, std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,

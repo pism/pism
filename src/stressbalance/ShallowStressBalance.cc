@@ -151,7 +151,7 @@ void ZeroSliding::update(const Inputs &inputs, bool full_update) {
  */
 void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector &V,
                                                             const array::Scalar &tauc,
-                                                            const array::CellType0 &mask,
+                                                            const array::CellType &mask,
                                                             array::Scalar &result) const {
 
   array::AccessScope list{&V, &result, &tauc, &mask};

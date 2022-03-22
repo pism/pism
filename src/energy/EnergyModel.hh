@@ -39,7 +39,7 @@ public:
   Inputs();
   void check() const;
 
-  const array::CellType0 *cell_type;
+  const array::CellType *cell_type;
   const array::Scalar *basal_frictional_heating;
   const array::Scalar *basal_heat_flux;
   const array::Scalar *ice_thickness;

@@ -405,7 +405,7 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &bed_topogr
 void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yield_stress,
                                                  const array::Scalar &till_water_thickness,
                                                  const array::Scalar &ice_thickness,
-                                                 const array::CellType0 &cell_type,
+                                                 const array::CellType &cell_type,
                                                  array::Scalar &result) {
 
   MohrCoulombPointwise mc(m_config);

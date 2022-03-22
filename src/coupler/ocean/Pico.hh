@@ -105,7 +105,7 @@ private:
   void beckmann_goosse(const PicoPhysics &physics,
                        const array::Scalar &ice_thickness,
                        const array::Scalar &shelf_mask,
-                       const array::CellType0 &cell_type,
+                       const array::CellType &cell_type,
                        const array::Scalar &Toc_box0,
                        const array::Scalar &Soc_box0,
                        array::Scalar &basal_melt_rate,

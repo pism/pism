@@ -42,7 +42,7 @@ Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
 CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
-                            const array::CellType0 &cell_type,
+                            const array::CellType &cell_type,
                             const array::Array3D &u3,
                             const array::Array3D &v3,
                             const array::Array3D &w3) {
@@ -115,7 +115,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   sliding case we have a CFL condition.
  */
 CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
-                            const array::CellType0 &cell_type,
+                            const array::CellType &cell_type,
                             const array::Vector &velocity) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();

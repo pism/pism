@@ -444,7 +444,7 @@ void EmptyingProblem::compute_velocity(const array::Scalar &psi,
 /*!
  * Compute the mask that defines the domain: ones in the domain, zeroes elsewhere.
  */
-void EmptyingProblem::compute_mask(const array::CellType0 &cell_type,
+void EmptyingProblem::compute_mask(const array::CellType &cell_type,
                                    const array::Scalar *no_model_mask,
                                    array::Scalar &result) const {
 

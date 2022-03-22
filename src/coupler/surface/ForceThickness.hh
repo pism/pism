@@ -50,7 +50,7 @@ protected:
 private:
   void adjust_mass_flux(double time,
                         const array::Scalar &ice_thickness,
-                        const array::CellType0 &cell_type,
+                        const array::CellType &cell_type,
                         array::Scalar &result) const;
 
   double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;

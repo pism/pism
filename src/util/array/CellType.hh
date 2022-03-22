@@ -74,8 +74,6 @@ protected:
   CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
 };
 
-using CellType0 = class CellType;
-
 /*!
  * Cell type array supporting width=1 stencil computations (ghosted).
  */

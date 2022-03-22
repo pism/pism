@@ -305,7 +305,7 @@ void PicoGeometry::label_tmp() {
  * 1 - floating ice not connected to the open ocean
  * 2 - floating ice or ice-free ocean connected to the open ocean
  */
-void PicoGeometry::compute_lakes(const array::CellType0 &cell_type, array::Scalar &result) {
+void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar &result) {
   array::AccessScope list{ &cell_type, &m_tmp };
 
   const int
@@ -360,7 +360,7 @@ void PicoGeometry::compute_lakes(const array::CellType0 &cell_type, array::Scala
  * 2 - continental ice sheet
  * 3 - floating ice
  */
-void PicoGeometry::compute_ice_rises(const array::CellType0 &cell_type, bool exclude_ice_rises,
+void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool exclude_ice_rises,
                                      array::Scalar &result) {
   array::AccessScope list{ &cell_type, &m_tmp };
 
@@ -512,7 +512,7 @@ void PicoGeometry::compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, co
  * - 2 - open ocean
  *
  */
-void PicoGeometry::compute_ocean_mask(const array::CellType0 &cell_type, array::Scalar &result) {
+void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::Scalar &result) {
   array::AccessScope list{ &cell_type, &m_tmp };
 
   // mask of zeros and ones: one if ice-free ocean, zero otherwise
@@ -691,7 +691,7 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
 /*!
  * Find all ice shelves s that spread across non-neighboring basins with calving fronts in those basins and add an ice shelf mask number.
  */
-void PicoGeometry::split_ice_shelves(const array::CellType0 &cell_type,
+void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
                                      const array::Scalar &basin_mask,
                                      const std::map<int, std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,

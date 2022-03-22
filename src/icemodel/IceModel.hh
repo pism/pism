@@ -475,7 +475,7 @@ void check_minimum_ice_thickness(const array::Scalar &ice_thickness);
 bool check_maximum_ice_thickness(const array::Scalar &ice_thickness);
 
 void bedrock_surface_temperature(const array::Scalar &sea_level,
-                                 const array::CellType0 &cell_type,
+                                 const array::CellType &cell_type,
                                  const array::Scalar &bed_topography,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &basal_enthalpy,
