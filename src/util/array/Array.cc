@@ -56,7 +56,7 @@ namespace array {
 
 Array::Array(IceGrid::ConstPtr grid,
              const std::string &name,
-             IceModelVecKind ghostedp,
+             Kind ghostedp,
              size_t dof,
              size_t stencil_width,
              const std::vector<double> &zlevels) {

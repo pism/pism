@@ -36,9 +36,9 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
     m_age(grid, "fracture_age"),
     m_age_new(grid, "new_fracture_age"),
     m_toughness(grid, "fracture_toughness"),
-    m_strain_rates(grid, "strain_rates", WITHOUT_GHOSTS),
+    m_strain_rates(grid, "strain_rates", array::WITHOUT_GHOSTS),
     m_deviatoric_stresses(grid, "sigma",
-                          WITHOUT_GHOSTS, 3),
+                          array::WITHOUT_GHOSTS, 3),
     m_velocity(grid, "ghosted_velocity"),
     m_flow_law(flow_law) {
 

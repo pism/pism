@@ -55,11 +55,10 @@ def initialize_thickness(thickness, H0):
 def allocate(grid):
     H = PISM.model.createIceThicknessVec(grid)
     bed = PISM.model.createBedrockElevationVec(grid)
-    uplift = PISM.IceModelVec2S()
-    uplift.create(grid, "uplift", PISM.WITHOUT_GHOSTS)
+    uplift = PISM.Scalar.create(grid, "uplift")
     uplift.set_attrs("internal", "bed uplift", "m / second", "m / second", "", 0)
 
-    sea_level = PISM.IceModelVec2S(grid, "sea_level", PISM.WITHOUT_GHOSTS)
+    sea_level = PISM.Scalar(grid, "sea_level")
 
     return H, bed, uplift, sea_level
 

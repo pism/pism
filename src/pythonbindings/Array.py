@@ -1,5 +1,4 @@
-# code extending the IceModelVec class
-
+# code extending the Array class
 
 def regrid(self, filename, critical=False, default_value=0.0):
     if critical == True:

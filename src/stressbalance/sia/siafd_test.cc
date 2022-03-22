@@ -318,8 +318,8 @@ int main(int argc, char *argv[]) {
     const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
     array::Array3D
-      enthalpy(grid, "enthalpy", WITH_GHOSTS, grid->z(), WIDE_STENCIL),
-      age(grid, "age", WITHOUT_GHOSTS, grid->z());
+      enthalpy(grid, "enthalpy", array::WITH_GHOSTS, grid->z(), WIDE_STENCIL),
+      age(grid, "age", array::WITHOUT_GHOSTS, grid->z());
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);

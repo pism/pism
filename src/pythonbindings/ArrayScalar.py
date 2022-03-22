@@ -1,7 +1,6 @@
 def __getitem__(self, *args):
     return self.getitem(args[0][0], args[0][1])
 
-
 def __setitem__(self, *args):
     if(len(args) == 2):
         self.setitem(args[0][0], args[0][1], args[1])

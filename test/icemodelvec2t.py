@@ -256,7 +256,7 @@ class ForcingInput(unittest.TestCase):
         self.check_forcing(forcing, self.f[-1], 0, 1)
 
     def test_constant_field(self):
-        "Field allocatted using IceModelVec2T::Constant()"
+        "Field allocatted using Forcing::Constant()"
         f = 100.0
         forcing = PISM.Forcing.Constant(self.grid, "v", f)
 
@@ -279,10 +279,8 @@ class ForcingInput(unittest.TestCase):
 
     def test_buffer_too_small(self):
         "Reading periodic data that does not fit in the buffer"
-        # Note: IceModelVec2T::init() will throw RuntimeError if the buffer is too small
+        # Note: Forcing::init() will throw RuntimeError if the buffer is too small
         # to hold all records of a periodic forcing field. This will never happen if this
-        # IceModelVec2T was allocated using IceModelVec2T::ForcingField because it ensures
-        # that the buffer is big enough.
         forcing = self.forcing(self.filename, buffer_size=2, periodic=False)
         try:
             forcing.init(self.filename, periodic=True)

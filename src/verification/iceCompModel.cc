@@ -60,7 +60,7 @@ IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, 
   : IceModel(grid, context),
     m_testname(test),
     m_HexactL(m_grid, "HexactL"),
-    m_strain_heating3_comp(m_grid, "strain_heating_comp", WITHOUT_GHOSTS, m_grid->z()),
+    m_strain_heating3_comp(m_grid, "strain_heating_comp", array::WITHOUT_GHOSTS, m_grid->z()),
     m_bedrock_is_ice_forK(false)
 {
 

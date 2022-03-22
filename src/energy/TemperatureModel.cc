@@ -31,7 +31,7 @@ namespace energy {
 TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
                                    stressbalance::StressBalance *stress_balance)
   : EnergyModel(grid, stress_balance),
-    m_ice_temperature(m_grid, "temp", WITH_GHOSTS, m_grid->z()) {
+    m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
 
   m_ice_temperature.set_attrs("model_state",
                               "ice temperature",

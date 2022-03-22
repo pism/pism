@@ -42,9 +42,6 @@ class Vec;
 class Viewer;
 } // end of namespace petsc
 
-//! What "kind" of a vector to create: with or without ghosts.
-enum IceModelVecKind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
-
 class PetscAccessible {
 public:
   virtual ~PetscAccessible() = default;
@@ -53,6 +50,9 @@ public:
 };
 
 namespace array {
+
+//! What "kind" of a vector to create: with or without ghosts.
+enum Kind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
 //! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
 class AccessScope {
@@ -281,11 +281,11 @@ public:
 
 protected:
   Array(IceGrid::ConstPtr grid,
-              const std::string &name,
-              IceModelVecKind ghostedp,
-              size_t dof,
-              size_t stencil_width,
-              const std::vector<double> &zlevels);
+        const std::string &name,
+        Kind ghostedp,
+        size_t dof,
+        size_t stencil_width,
+        const std::vector<double> &zlevels);
   struct Impl;
   Impl *m_impl;
 

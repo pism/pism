@@ -68,7 +68,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 }
 
 /*!
- * Initialize potential temperature from IceModelVecs instead of an input
+ * Initialize potential temperature from an array instead of an input
  * file (for testing).
  */
 void DischargeRouting::initialize(const array::Scalar &theta) {

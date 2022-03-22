@@ -84,7 +84,7 @@ def random_vec_test():
 
 
 def vec_metadata_test():
-    "Test accessing IceModelVec metadata"
+    "Test accessing Array metadata"
     grid = create_dummy_grid()
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -97,7 +97,7 @@ def vec_metadata_test():
 
 
 def vars_ownership_test():
-    "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
+    "Test passing Array ownership from Python to C++ (i.e. PISM)."
     grid = create_dummy_grid()
     variables = PISM.Vars()
 
@@ -885,7 +885,7 @@ def vertical_extrapolation_during_regridding_test():
 
     grid = PISM.IceGrid(ctx.ctx, params)
 
-    # create an IceModelVec that uses this grid
+    # create an Array that uses this grid
     v = PISM.Array3D(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
@@ -906,7 +906,7 @@ def vertical_extrapolation_during_regridding_test():
 
         tall_grid = PISM.IceGrid(ctx.ctx, params)
 
-        # create an IceModelVec that uses this grid
+        # create an Array that uses this grid
         v_tall = PISM.Array3D(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
 
         # Try regridding without extrapolation. This should fail.
@@ -1155,7 +1155,7 @@ class AgeModel(TestCase):
         os.remove(self.output_file)
 
 def checksum_test():
-    "Check if a small change in an IceModelVec affects checksum() output"
+    "Check if a small change in an Array affects checksum() output"
     grid = PISM.testing.shallow_grid(Mx=101, My=201)
 
     v = PISM.Scalar(grid, "dummy")

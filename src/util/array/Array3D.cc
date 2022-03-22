@@ -36,7 +36,7 @@ namespace array {
 
 Array3D::Array3D(IceGrid::ConstPtr grid,
                  const std::string &name,
-                 IceModelVecKind ghostedp,
+                 Kind ghostedp,
                  const std::vector<double> &levels,
                  unsigned int stencil_width)
   : Array(grid, name, ghostedp, 1, stencil_width, levels) {

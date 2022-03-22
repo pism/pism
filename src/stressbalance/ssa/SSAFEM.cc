@@ -47,7 +47,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
     m_bc_mask(grid, "bc_mask"),
     m_bc_values(grid, "_bc"),
     m_gc(*m_config),
-    m_coefficients(grid, "ssa_coefficients", WITH_GHOSTS, 1),
+    m_coefficients(grid, "ssa_coefficients", array::WITH_GHOSTS, 1),
     m_node_type(m_grid, "node_type"),
     m_boundary_integral(m_grid, "boundary_integral"),
     m_element_index(*grid),

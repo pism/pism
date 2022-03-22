@@ -48,7 +48,7 @@ IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
   m_no_model_mask.set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
-    m_ch_warming_flux.reset(new array::Array3D(m_grid, "ch_warming_flux", WITHOUT_GHOSTS, m_grid->z()));
+    m_ch_warming_flux.reset(new array::Array3D(m_grid, "ch_warming_flux", array::WITHOUT_GHOSTS, m_grid->z()));
   }
 }
 
@@ -346,7 +346,7 @@ public:
 protected:
   array::Array::Ptr compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_temp", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
                                 model->geometry().ice_thickness,
@@ -373,7 +373,7 @@ public:
 protected:
   array::Array::Ptr compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_liqfrac", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
                                           model->geometry().ice_thickness,
@@ -400,7 +400,7 @@ public:
 protected:
   array::Array::Ptr compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_heat_flux", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),

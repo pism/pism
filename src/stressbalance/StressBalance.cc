@@ -140,8 +140,8 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()),
-    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS, m_grid->z()),
+    m_w(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
+    m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
 

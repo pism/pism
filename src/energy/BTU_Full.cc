@@ -65,7 +65,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new array::Array3D(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
+    m_temp.reset(new array::Array3D(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z));
     m_temp->metadata(0).z().set_name("zb");
 
     std::map<std::string, std::string> z_attrs =

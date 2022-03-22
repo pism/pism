@@ -258,7 +258,7 @@ bool Blatter::marine_boundary(int face,
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
-    m_parameters(grid, "bp_input_parameters", WITH_GHOSTS),
+    m_parameters(grid, "bp_input_parameters", array::WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
 {
@@ -282,12 +282,12 @@ Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
     }
     sigma.back() = 1.0;
 
-    m_u_sigma.reset(new array::Array3D(grid, "uvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_u_sigma = std::make_shared<array::Array3D>(grid, "uvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_u_sigma->set_attrs("diagnostic",
                          "u velocity component on the sigma grid",
                          "m s-1", "m s-1", "", 0);
 
-    m_v_sigma.reset(new array::Array3D(grid, "vvel_sigma", WITHOUT_GHOSTS, sigma));
+    m_v_sigma = std::make_shared<array::Array3D>(grid, "vvel_sigma", array::WITHOUT_GHOSTS, sigma);
     m_v_sigma->set_attrs("diagnostic",
                          "v velocity component on the sigma grid",
                          "m s-1", "m s-1", "", 0);

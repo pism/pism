@@ -420,7 +420,7 @@ PSB_wvel::PSB_wvel(const StressBalance *m)
 }
 
 array::Array::Ptr PSB_wvel::compute(bool zero_above_ice) const {
-  array::Array3D::Ptr result3(new array::Array3D(m_grid, "wvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result3(new array::Array3D(m_grid, "wvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result3->metadata() = m_vars[0];
 
   const array::Scalar *bed, *uplift;
@@ -722,7 +722,7 @@ static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
 
 array::Array::Ptr PSB_uvel::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "uvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_u(),
@@ -744,7 +744,7 @@ PSB_vvel::PSB_vvel(const StressBalance *m)
 
 array::Array::Ptr PSB_vvel::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "vvel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_v(),
@@ -766,7 +766,7 @@ PSB_wvel_rel::PSB_wvel_rel(const StressBalance *m)
 
 array::Array::Ptr PSB_wvel_rel::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   zero_above_ice(model->velocity_w(),
@@ -788,7 +788,7 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m)
 }
 
 array::Array::Ptr PSB_strainheat::compute_impl() const {
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "strainheat", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "strainheat", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->volumetric_strain_heating());
@@ -811,7 +811,7 @@ array::Array::Ptr PSB_strain_rates::compute_impl() const {
   auto velbar = array::Array::cast<array::Vector>(PSB_velbar(model).compute());
 
   auto result = std::make_shared<array::Array2D<PrincipalStrainRates>>
-    (m_grid, "strain_rates", WITHOUT_GHOSTS);
+    (m_grid, "strain_rates", array::WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -845,7 +845,7 @@ PSB_deviatoric_stresses::PSB_deviatoric_stresses(const StressBalance *m)
 array::Array::Ptr PSB_deviatoric_stresses::compute_impl() const {
 
   auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses>>
-    (m_grid, "deviatoric_stresses", WITHOUT_GHOSTS);
+    (m_grid, "deviatoric_stresses", array::WITHOUT_GHOSTS);
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
   result->metadata(2) = m_vars[2];
@@ -885,7 +885,7 @@ PSB_pressure::PSB_pressure(const StressBalance *m)
 
 array::Array::Ptr PSB_pressure::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "pressure", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "pressure", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -939,7 +939,7 @@ PSB_tauxz::PSB_tauxz(const StressBalance *m)
  */
 array::Array::Ptr PSB_tauxz::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauxz", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauxz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const array::Scalar *thickness, *surface;
@@ -999,7 +999,7 @@ PSB_tauyz::PSB_tauyz(const StressBalance *m)
  */
 array::Array::Ptr PSB_tauyz::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauyz", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "tauyz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");

@@ -41,7 +41,7 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
     m_sys(ctx->unit_system()),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_tauc(m_grid, "tauc"),
-    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_stencil_width),
+    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_stencil_width),
     m_bc_values(m_grid, "_bc"), // u_bc and v_bc
     m_bc_mask(m_grid, "bc_mask"),
     m_geometry(m_grid),

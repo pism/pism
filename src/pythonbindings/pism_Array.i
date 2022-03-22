@@ -32,7 +32,7 @@ using namespace pism;
 %rename(_regrid) pism::array::Array::regrid;
 %extend pism::array::Array
 {
-  %pythoncode "IceModelVec.py"
+  %pythoncode "Array.py"
 }
 
 // Shenanigans to allow python indexing to get at array::Array entries.  I couldn't figure out a more
@@ -82,7 +82,7 @@ using namespace pism;
         (*($self))(i,j).v = v;
     }
 
-    %pythoncode "IceModelVec2V.py"
+    %pythoncode "ArrayVector.py"
 };
 
 %ignore pism::array::Array3D::operator();

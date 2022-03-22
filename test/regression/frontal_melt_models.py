@@ -64,12 +64,12 @@ def create_grid():
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
-    T = PISM.IceModelVec2S(grid, "shelfbtemp")
+    T = PISM.Scalar(grid, "shelfbtemp")
     T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
-    M = PISM.IceModelVec2S(grid, "shelfbmassflux")
+    M = PISM.Scalar(grid, "shelfbmassflux")
     M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
     M.write(filename)

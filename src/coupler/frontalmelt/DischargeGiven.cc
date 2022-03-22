@@ -81,7 +81,7 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 }
 
 /*!
- * Initialize potential temperature from IceModelVecs instead of an input
+ * Initialize potential temperature from arrays instead of an input
  * file (for testing).
  */
 void DischargeGiven::initialize(const array::Scalar &theta, const array::Scalar &sgl) {

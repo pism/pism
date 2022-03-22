@@ -65,7 +65,7 @@ SSAFD::SSAFD(IceGrid::ConstPtr grid)
     m_hardness(grid, "hardness"),
     m_nuH(grid, "nuH"),
     m_nuH_old(grid, "nuH_old"),
-    m_work(grid, "work_vector", WITH_GHOSTS,
+    m_work(grid, "work_vector", array::WITH_GHOSTS,
            2 /* stencil width */),
     m_b(grid, "right_hand_side"),
     m_velocity_old(grid, "velocity_old")

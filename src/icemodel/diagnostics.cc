@@ -320,7 +320,7 @@ CTS::CTS(const IceModel *m)
 
 array::Array::Ptr CTS::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "cts", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   energy::compute_cts(model->energy_balance_model()->enthalpy(),
@@ -350,7 +350,7 @@ Temperature::Temperature(const IceModel *m)
 
 array::Array::Ptr Temperature::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const array::Scalar &thickness = model->geometry().ice_thickness;
@@ -409,7 +409,7 @@ array::Array::Ptr TemperaturePA::compute_impl() const {
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp_pa", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   const array::Scalar &thickness = model->geometry().ice_thickness;
@@ -760,7 +760,7 @@ LiquidFraction::LiquidFraction(const IceModel *m)
 
 array::Array::Ptr LiquidFraction::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "liqfrac", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   bool cold_mode = m_config->get_flag("energy.temperature_based");
@@ -1932,7 +1932,7 @@ LatLonBounds::LatLonBounds(const IceModel *m,
 array::Array::Ptr LatLonBounds::compute_impl() const {
   array::Array3D::Ptr result(new array::Array3D(m_grid,
                                             m_var_name + "_bnds",
-                                            WITHOUT_GHOSTS,
+                                            array::WITHOUT_GHOSTS,
                                             {0.0, 1.0, 2.0, 3.0}));
   result->metadata(0) = m_vars[0];
 
@@ -2308,7 +2308,7 @@ IceHardness::IceHardness(const IceModel *m)
 
 array::Array::Ptr IceHardness::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "hardness", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "hardness", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
@@ -2375,11 +2375,11 @@ static inline double square(double x) {
 
 array::Array::Ptr IceViscosity::compute_impl() const {
 
-  array::Array3D::Ptr result(new array::Array3D(m_grid, "effective_viscosity", WITHOUT_GHOSTS,
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "effective_viscosity", array::WITHOUT_GHOSTS,
                                             m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  array::Array3D W(m_grid, "wvel", WITH_GHOSTS, m_grid->z());
+  array::Array3D W(m_grid, "wvel", array::WITH_GHOSTS, m_grid->z());
 
   using mask::ice_free;
 

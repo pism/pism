@@ -44,7 +44,7 @@ Each sub-model has to be able to do the following.
 
    Each new component should have a regression test ensuring that it can be stopped and
    re-started without affecting results. Add an initialization method setting the state of
-   the model using provided `IceModelVec` instances: this makes writing such test much
+   the model using provided `array::Array` instances: this makes writing such test much
    easier.
 
 #. Save its model state to an output file.

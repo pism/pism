@@ -36,7 +36,7 @@ public:
   // Three-dimensional array with a number of vertical levels
   Array3D(IceGrid::ConstPtr grid,
           const std::string &name,
-          IceModelVecKind ghostedp,
+          Kind ghostedp,
           const std::vector<double> &levels,
           unsigned int stencil_width = 1);
 

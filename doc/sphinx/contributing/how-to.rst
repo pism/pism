@@ -47,8 +47,8 @@ To use a flag, do
 Create and use additional variables
 -----------------------------------
 
-Creating IceModelVec instances
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Creating array::Array instances
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 PISM uses the following classes to manage 2D and 3D fields, their I/O and metadata:
 
@@ -56,9 +56,9 @@ PISM uses the following classes to manage 2D and 3D fields, their I/O and metada
 
    * - `pism::array::Scalar`
      - scalar 2D fields
-   * - `IceModelVec2V`
+   * - `pism::array::Vector`
      - vector 2D fields such as horizontal velocities; corresponds to 2 NetCDF variables
-   * - `IceModelVec2T`
+   * - `pism::array::Forcing`
      - 2D time-dependent fields (used to read and store forcing data)
    * - `pism::array::Array3D`
      - scalar 3D fields (usually within the ice)
@@ -72,7 +72,7 @@ and then set its metadata:
 .. code-block:: c++
 
    // land ice thickness
-   IceModelVec2S ice_thickness(grid, "thk", WITH_GHOSTS, 2);
+   array::Scalar ice_thickness(grid, "thk");
    ice_thickness.set_attrs("model_state", "land ice thickness",
                            "m", "land_ice_thickness");
    ice_thickness.metadata().set_number("valid_min", 0.0);
