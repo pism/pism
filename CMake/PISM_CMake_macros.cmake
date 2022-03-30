@@ -229,11 +229,15 @@ endmacro()
 macro(pism_set_dependencies)
 
   # Set include and library directories for *required* libraries.
+  #
+  # Note: PISM does not use HDF5 directly, but we still need to be able to include hdf5.h
+  # to record its version.
   include_directories (BEFORE
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
+    ${HDF5_INCLUDE_DIRS}
     ${NETCDF_INCLUDES}
     ${MPI_C_INCLUDE_PATH})
 
