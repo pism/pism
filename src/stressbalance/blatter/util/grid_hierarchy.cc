@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -165,13 +165,21 @@ PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name) {
   /* Get the DM for parameters from the fine grid DM */
   ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
   if (!da_fine) {
+#if PETSC_VERSION_LT(3,17,0)
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#else
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#endif
   }
 
   /* Get the DM for parameters from the coarse grid DM */
   ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
   if (!da_coarse) {
+#if PETSC_VERSION_LT(3,17,0)
     SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#else
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#endif
   }
 
   /* call DMCreateInterpolation */

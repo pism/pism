@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -126,7 +126,11 @@ public:
       reason->set_root_cause(root_cause);
       return reason;
     }
+#if PETSC_VERSION_LT(3,17,0)
     ierr = TaoSetInitialVector(m_tao, x0);
+#else
+    ierr = TaoSetSolution(m_tao, x0);
+#endif
     PISM_CHK(ierr, "TaoSetInitialVector");
 
     ierr = TaoSolve(m_tao);
@@ -404,9 +408,16 @@ class TaoObjGradCallback {
 public:
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
+#if PETSC_VERSION_LT(3,17,0)
     ierr = TaoSetObjectiveAndGradientRoutine(tao,
                                              TaoObjGradCallback<Problem,Callback>::callback,
                                              &p);
+#else
+    ierr = TaoSetObjectiveAndGradient(tao,
+                                      NULL,
+                                      TaoObjGradCallback<Problem,Callback>::callback,
+                                      &p);
+#endif
     PISM_CHK(ierr, "TaoSetObjectiveAndGradientRoutine");
   }
 protected:
