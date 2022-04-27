@@ -121,7 +121,7 @@ def plot(data, total, grand_total):
     labels = [better_name(name) + " " + comment for name, comment in zip(names, comments)]
 
     explode = [0.05]*len(times)
-    plt.pie(times_percent, autopct="%3.1f%%", labels=labels, colors=colors, startangle=0.0, explode=explode)
+    plt.pie(times_percent, autopct="%3.1f%%", labels=labels, colors=colors, startangle=0.0, explode=explode, normalize=True)
     plt.margins(x=0.2, y=0.1)
     plt.axis('equal')
 
