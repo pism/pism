@@ -22,7 +22,7 @@ endif()
 
 if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
   # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
-  cmake_policy(SET CMP0078 OLD)       #controls names of SWIG targets
+  cmake_policy(SET CMP0078 NEW)       #controls names of SWIG targets
 endif()
 
 if (NOT (${CMAKE_VERSION} VERSION_LESS "3.14"))
@@ -172,8 +172,15 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
+  set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
+  file (WRITE "${pism_python_path_py}" "
+# Get module installation path from Python:
+import sysconfig as config
+print(config.get_path('platlib', 'posix_prefix', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
+")
+
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'))"
+    COMMAND ${PYTHON_EXECUTABLE} ${pism_python_path_py}
     OUTPUT_VARIABLE PISM_INSTALL_PYTHON_MODULE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE)
   set(PISM_INSTALL_PYTHON_MODULE_DIR ${PISM_INSTALL_PYTHON_MODULE_DIR}
