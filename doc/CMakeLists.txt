@@ -1,6 +1,6 @@
 # Find latex and create doc targets:
 project(PISM_Documentation "NONE")
-cmake_minimum_required (VERSION 2.8.0)
+cmake_minimum_required (VERSION 3.1)
 
 find_package(LATEX)
 find_package(Doxygen)

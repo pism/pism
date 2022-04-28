@@ -78,7 +78,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   # Install Python .py files
   install(FILES
-    $<TARGET_FILE:_cpp>
+    $<TARGET_FILE:cpp>
     ${CMAKE_CURRENT_BINARY_DIR}/cpp.py
     ${CMAKE_CURRENT_BINARY_DIR}/version_info.py
     DESTINATION ${PISM_INSTALL_PYTHON_MODULE_DIR}/PISM
@@ -86,11 +86,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     )
 
   add_custom_target (install_python_bindings_in_the_build_directory ALL
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:_cpp> ${CMAKE_BINARY_DIR}/site-packages/PISM
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:cpp> ${CMAKE_BINARY_DIR}/site-packages/PISM
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/cpp.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/version_info.py ${CMAKE_BINARY_DIR}/site-packages/PISM/
     VERBATIM
-    DEPENDS ${SWIG_MODULE_cpp_REAL_NAME}  install_site_packages_in_the_build_directory )
+    DEPENDS cpp install_site_packages_in_the_build_directory)
 
   # The Python code snippet below returns 1 if Python can import a PISM
   # and if the directory of said PISM matches the place we are about to
