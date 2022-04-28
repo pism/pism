@@ -22,7 +22,7 @@ mkdir -p ${build}/build ${build}/sources
 git clone ${url} ${build}/sources
 
 pushd ${build}/sources
-git checkout -b 2_5_4 pio2_5_4
+git checkout -b 2_5_7 pio2_5_7
 popd
 
 pushd ${build}/build
