@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1311,7 +1311,7 @@ void read_time_info(const Logger &log,
 
     if (time_bounds_name.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "please provide cell bounds for '%s'",
+                                    "please provide time bounds for '%s'",
                                     time_name.c_str());
     }
 
