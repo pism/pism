@@ -33,7 +33,7 @@ Follow these steps to build PISM:
 
    .. code-block:: bash
 
-      git clone git://github.com/pism/pism.git pism-stable
+      git clone https://github.com/pism/pism.git pism-stable
 
    A directory called "``pism-stable``" will be created. Note that in the future when you
    enter that directory, ``git pull`` will update to the latest revision of PISM. [#f1]_
