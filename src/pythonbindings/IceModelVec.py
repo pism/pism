@@ -10,7 +10,7 @@ def regrid(self, filename, critical=False, default_value=0.0):
 
 
 def numpy(self):
-    "Return a NumPy array containing data from this field (on rank 0)."
+    "Return a NumPy array (a copy) containing data from this field (on rank 0)."
     tmp = self.allocate_proc0_copy()
     self.put_on_proc0(tmp)
     import numpy
@@ -19,3 +19,19 @@ def numpy(self):
         return numpy.array(tmp.get()).reshape(self.shape())
     else:
         return None
+
+def local_part(self):
+    """NumPy array containing the local (sub-domain) part, ghosts and all.
+
+    This is not a copy. Modifications have immediate effect.
+    """
+
+    padding = 2 * self.stencil_width()
+    shape = self.shape()
+
+    if len(shape) == 2:
+        shape = (shape[0] + padding, shape[1] + padding)
+    else:
+        shape = (shape[0] + padding, shape[1] + padding, shape[2])
+
+    return self.vec().get().array.reshape(shape)
