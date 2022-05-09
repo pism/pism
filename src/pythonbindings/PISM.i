@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2021 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2022 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -66,6 +66,7 @@
 #include "util/Time.hh"
 #include "util/Poisson.hh"
 #include "util/label_components.hh"
+#include "icemodel/IceModel.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -383,3 +384,6 @@ pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
 %include "util/label_components.hh"
+
+%shared_ptr(pism::IceModel)
+%include "icemodel/IceModel.hh"
