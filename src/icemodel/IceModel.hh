@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -130,8 +130,6 @@ public:
 
   void list_diagnostics() const;
   void list_diagnostics_json() const;
-  std::map<std::string, std::vector<VariableMetadata>> describe_diagnostics() const;
-  std::map<std::string, std::vector<VariableMetadata>> describe_ts_diagnostics() const;
 
   const IceModelVec2S &calving() const;
   const IceModelVec2S &frontal_melt() const;
@@ -144,7 +142,6 @@ public:
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
-  const frontalmelt::FrontalMelt* frontalmelt_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
 
