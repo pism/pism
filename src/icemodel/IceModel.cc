@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -920,6 +920,10 @@ const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
 
 const energy::EnergyModel* IceModel::energy_balance_model() const {
   return m_energy_model;
+}
+
+const YieldStress* IceModel::basal_yield_stress_model() const {
+  return m_basal_yield_stress_model.get();
 }
 
 /*!
