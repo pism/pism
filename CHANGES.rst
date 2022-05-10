@@ -1,5 +1,19 @@
 .. default-role:: literal
 
+Changes since v2.0.2
+====================
+
+- Support PETSc 3.17.
+- Fix an error message (should say "time bounds" instead of "cell bounds").
+- Use a newer version of NCAR ParallelIO to support GCC 11.
+- Add HDF5 version info to "pismr -version"
+- Add pism::IceModel and IceModelVec.local_part() to Python bindings.
+- Manual: fix the command used to clone the PISM repository and fix broken links
+- Run regression tests that use nose via "python3 -m nose ..."
+- Add IceModel::basal_yield_stress_model() and IceModel::bed_deformation_model()
+- Update the release checklist
+- Update the build system and the CI setup (Docker image)
+
 Changes since v2.0.1
 ====================
 
