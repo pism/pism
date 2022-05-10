@@ -926,6 +926,10 @@ const YieldStress* IceModel::basal_yield_stress_model() const {
   return m_basal_yield_stress_model.get();
 }
 
+const bed::BedDef* IceModel::bed_deformation_model() const {
+  return m_beddef.get();
+}
+
 /*!
  * Return thickness change due to calving (over the last time step).
  */
