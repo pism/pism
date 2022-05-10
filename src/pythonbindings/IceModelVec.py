@@ -29,9 +29,12 @@ def local_part(self):
     padding = 2 * self.stencil_width()
     shape = self.shape()
 
+    xm = self.grid().xm() + padding
+    ym = self.grid().ym() + padding
+
     if len(shape) == 2:
-        shape = (shape[0] + padding, shape[1] + padding)
+        shape = (ym, xm)
     else:
-        shape = (shape[0] + padding, shape[1] + padding, shape[2])
+        shape = (ym, xm, shape[2])
 
     return self.vec().get().array.reshape(shape)
