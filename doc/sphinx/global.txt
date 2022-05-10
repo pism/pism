@@ -38,8 +38,8 @@
 .. |pism-github-url| replace:: https://github.com/pism/pism
 .. |pism-issues-url| replace:: https://github.com/pism/pism/issues
 
-.. |mismip-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip/
-.. |mismip3d-url| replace:: http://homepages.ulb.ac.be/~fpattyn/mismip3d/
+.. |mismip-url| replace:: https://frank.pattyn.web.ulb.be/mismip/welcome.html
+.. |mismip3d-url| replace:: https://frank.pattyn.web.ulb.be/mismip3d/welcome.html
 .. |eismint-url| replace:: http://homepages.vub.ac.be/~phuybrec/eismint.html
 .. |ismip-url| replace:: http://homepages.vub.ac.be/~phuybrec/ismip.html
 
