@@ -144,6 +144,7 @@ public:
   const ocean::OceanModel* ocean_model() const;
   const energy::BedThermalUnit* bedrock_thermal_model() const;
   const energy::EnergyModel* energy_balance_model() const;
+  const YieldStress* basal_yield_stress_model() const;
 
   const Geometry& geometry() const;
   const GeometryEvolution& geometry_evolution() const;
