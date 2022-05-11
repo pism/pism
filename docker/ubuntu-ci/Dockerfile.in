@@ -23,35 +23,36 @@ RUN set -eux; \
 # - SWIG is needed to build Python bindings
 # - MPICH is needed to build PETSc and PISM
 # - doxygen and graphviz are needed to build the source code browser
+# - python2 is needed to install old PETSc
 RUN set -eux; \
         apt-get update && apt-get install -y \
         apt-utils \
         ccache \
         clang \
         cython3 \
+        doxygen \
+        graphviz \
+        latexmk \
         libmpich-dev \
         libproj-dev \
         lld \
         m4 \
         nco \
+        python2 \
         python3-dev \
         python3-netcdf4 \
         python3-nose \
         python3-numpy \
         python3-pip \
         python3-scipy \
+        python3-sphinx \
+        python3-sphinxcontrib.bibtex \
         swig \
-        wget \
-        doxygen \
-        graphviz \
-        latexmk \
-        texlive-latex-recommended \
         texlive-latex-extra \
+        texlive-latex-recommended \
+        wget \
         ; \
         rm -rf /var/lib/apt/lists/*
-
-# Install newer versions of Sphinx and sphinxcontrib-bibtex:
-RUN pip3 install -U sphinx==4.3.1 sphinxcontrib-bibtex==2.4.1
 
 RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
 USER builder
@@ -76,11 +77,27 @@ RUN set -eux; \
         ./parallelio.sh && \
         rm -rf ~/local/build
 
-# Build PETSc last to make it easier to update this Docker image.
+# Build the current PETSc version
 COPY petsc.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
         ./petsc.sh && \
+        rm -rf ~/local/build
+
+# Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
+# compiles with PETSc 3.7. We do not support PISM's Python bindings with old PETSc
+# versions, so we build PETSc without petsc4py here.
+COPY petsc-3_7_0.sh /tmp/
+RUN set -eux;\
+        cd /tmp && \
+        ./petsc-3_7_0.sh && \
+        rm -rf ~/local/build
+
+# Build the oldest supported CMake version
+COPY cmake-3_3_0.sh /tmp/
+RUN set -eux;\
+        cd /tmp && \
+        ./cmake-3_3_0.sh && \
         rm -rf ~/local/build
 
 ENV PETSC_DIR="/home/builder/local/petsc" \

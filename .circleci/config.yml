@@ -1,16 +1,38 @@
 # Note: set the environment variable ${N} to the number of processes to use for parallel
 # builds and testing (overrides the default (4) used on CircleCI servers).
 
-version: 2
+version: 2.1
 
 jobs:
-  build-gcc:
+  deploy-p:                    # deployment predicate used to simplify the workflow
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
+      - image: busybox:latest   # the smallest image I could find
+    steps:
+      - run:
+          command: "true"
+
+  build:
+    docker:
+      - image: ckhrulev/pism-ubuntu:0.1.5
+
+    parameters:
+      cc:
+        type: string
+      cxx:
+        type: string
+      cmake_prefix:
+        type: string
+      petsc_dir:
+        type: string
+      python:
+        type: string            # actually a flag: "Yes" or "No"
 
     environment:
-      CC: ccache mpicc
-      CXX: ccache mpicxx
+      CC: << parameters.cc >>
+      CXX: << parameters.cxx >>
+      CMAKE_PREFIX: << parameters.cmake_prefix >>
+      PETSC_DIR: << parameters.petsc_dir >>
+      BUILD_PYTHON_BINDINGS: << parameters.python >>
       CCACHE_COMPRESS: 1
       LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
@@ -18,7 +40,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - ccache-gcc-{{ .Branch }}
+            - ccache-{{ .Branch }}
       - run:
           name: Create the build directory
           command: mkdir -p build
@@ -37,7 +59,8 @@ jobs:
           #
           # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
           command: >-
-            cmake -B build -S .
+            cd build &&
+            ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
@@ -49,155 +72,81 @@ jobs:
             -DPism_USE_PNETCDF=Yes
             -DPism_USE_PIO=Yes
             -DPython_ADDITIONAL_VERSIONS=3
-            -DPism_BUILD_PYTHON_BINDINGS=Yes
-            -DPism_BUILD_EXTRA_EXECS=Yes
-            -DPism_BUILD_ICEBIN=Yes
-      - run:
-          name: Build PISM using GCC
-          command: make --no-print-directory -C build -j ${N:-4} all
-      - save_cache:
-          key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - ~/.ccache
-      - run:
-          name: Run regression tests
-          command: >-
-            cd build &&
-            PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
-            ctest -j ${N:-4} --output-on-failure
-
-  build-gcc-minimal:
-    docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
-
-    environment:
-      CC: ccache mpicc
-      CXX: ccache mpicxx
-      CCACHE_COMPRESS: 1
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
-
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - ccache-gcc-minimal-{{ .Branch }}
-      - run:
-          name: Create the build directory
-          command: mkdir -p build
-      - run:
-          name: Configure PISM
-          command: >-
-            cmake -B build -S .
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_CXX_FLAGS="-Werror"
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
-      - run:
-          name: Build PISM using GCC
-          command: make --no-print-directory -C build -j ${N:-4} all
-      - save_cache:
-          key: ccache-gcc-{{ .Branch }}-{{ .BuildNum }}
-          paths:
-            - ~/.ccache
-
-  build-clang:
-    docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
-
-    environment:
-      CCACHE_COMPRESS: 1
-      CC: ccache mpicc -cc=clang
-      CXX: ccache mpicxx -cxx=clang++
-      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
-
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - ccache-clang-{{ .Branch }}
-      - run:
-          name: Create the build directory
-          command: mkdir -p build
-      - run:
-          name: Configure PISM
-          command: >-
-            cmake -B build -S .
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_C_FLAGS="-Werror"
-            -DCMAKE_CXX_FLAGS="-Werror"
-            -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
-            -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
-            -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
-            -DPism_USE_PROJ=Yes
-            -DPism_USE_PARALLEL_NETCDF4=Yes
-            -DPism_USE_PNETCDF=Yes
-            -DPism_USE_PIO=Yes
-            -DPython_ADDITIONAL_VERSIONS=3
-            -DPism_BUILD_PYTHON_BINDINGS=Yes
+            -DPism_BUILD_PYTHON_BINDINGS=${BUILD_PYTHON_BINDINGS}
             -DPism_BUILD_EXTRA_EXECS=Yes
             -DPism_BUILD_ICEBIN=Yes
       - run:
           name: Reset ccache stats
           command: ccache -z
       - run:
-          name: Build PISM using Clang
+          name: Build PISM
           command: make --no-print-directory -C build -j ${N:-4} all
       - run:
           name: Print ccache stats
           command: ccache -s
       - save_cache:
-          key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
+          key: ccache-{{ .Branch }}-{{ .BuildNum }}
           paths:
-            - ~/.ccache
+            - ~/.cache/ccache
       - run:
           name: Run regression tests
           command: >-
             cd build &&
             PYTHONPATH=~/project/build/site-packages:$PYTHONPATH
-            ctest -j ${N:-4} --output-on-failure
+            ${CMAKE_PREFIX}/bin/ctest -j ${N:-4} --output-on-failure
 
-  build-clang-minimal:
+  build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
+      - image: ckhrulev/pism-ubuntu:0.1.5
+
+    parameters:
+      cc:
+        type: string
+      cxx:
+        type: string
+      cmake_prefix:
+        type: string
 
     environment:
+      CC: << parameters.cc >>
+      CXX: << parameters.cxx >>
       CCACHE_COMPRESS: 1
-      CC: ccache mpicc -cc=clang
-      CXX: ccache mpicxx -cxx=clang++
+      CMAKE_PREFIX: << parameters.cmake_prefix >>
       LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
       - checkout
       - restore_cache:
           keys:
-            - ccache-clang-minimal-{{ .Branch }}
+            - ccache-minimal-{{ .Branch }}
       - run:
           name: Create the build directory
           command: mkdir -p build
       - run:
           name: Configure PISM
           command: >-
-            cmake -B build -S .
+            cd build &&
+            ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_C_FLAGS="-Werror"
             -DCMAKE_CXX_FLAGS="-Werror"
             -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
       - run:
           name: Reset ccache stats
           command: ccache -z
       - run:
-          name: Build PISM using Clang
+          name: Build PISM
           command: make --no-print-directory -C build -j ${N:-4} all
       - run:
           name: Print ccache stats
           command: ccache -s
       - save_cache:
-          key: ccache-clang-{{ .Branch }}-{{ .BuildNum }}
+          key: ccache-{{ .Branch }}-{{ .BuildNum }}
           paths:
-            - ~/.ccache
+            - ~/.cache/ccache
 
-  build-manual-html:
+  manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
+      - image: ckhrulev/pism-ubuntu:0.1.5
 
     steps:
       - checkout
@@ -237,9 +186,9 @@ jobs:
             --message "Update the manual"
             --dist manual/html
 
-  build-manual-pdf:
+  manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
+      - image: ckhrulev/pism-ubuntu:0.1.5
 
     steps:
       - checkout
@@ -279,9 +228,9 @@ jobs:
             --message "Update the manual"
             --dist manual/
 
-  build-source-browser:
+  doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.4
+      - image: ckhrulev/pism-ubuntu:0.1.5
 
     steps:
       - checkout
@@ -298,7 +247,7 @@ jobs:
           root: build/browser/
           paths: html
 
-  deploy-source-browser:
+  deploy-doxygen:
     docker:
       - image: node:8.10.0
 
@@ -328,40 +277,82 @@ workflows:
   version: 2
   build-and-test:
     jobs:
-      - build-gcc
-      - build-gcc-minimal
-      - build-clang
-      - build-clang-minimal
-      - build-manual-html
+      - build:
+          name: gcc
+          cc: ccache mpicc -cc=gcc
+          cxx: ccache mpicxx -cxx=g++
+          cmake_prefix: /usr
+          petsc_dir: /home/builder/local/petsc
+          python: "Yes"
+
+      - build:
+          name: clang
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /usr
+          petsc_dir: /home/builder/local/petsc
+          python: "Yes"
+
+      - build:
+          name: old-petsc
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /usr
+          petsc_dir: /home/builder/local/petsc-3.7.0
+          python: "No"
+
+      - build:
+          name: old-cmake
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /home/builder/local/cmake-3.3.0
+          petsc_dir: /home/builder/local/petsc
+          python: "Yes"
+
+      - build-minimal:
+          name: gcc-minimal
+          cc: ccache mpicc -cc=gcc
+          cxx: ccache mpicxx -cxx=g++
+          cmake_prefix: /usr
+
+      - build-minimal:
+          name: clang-minimal
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /usr
+
+      - build-minimal:
+          name: old-cmake-minimal
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /home/builder/local/cmake-3.3.0
+
+      - manual-html
+      - manual-pdf
+      - doxygen
+
+      - deploy-p:
+          requires:
+            - gcc
+            - gcc-minimal
+            - clang
+            - clang-minimal
+            - old-petsc
+            - old-cmake
+            - old-cmake-minimal
+            - manual-html
+            - manual-pdf
+            - doxygen
+          filters:
+            branches:
+              only: main
+
       - deploy-manual-html:
           requires:
-            - build-gcc
-            - build-gcc-minimal
-            - build-clang
-            - build-clang-minimal
-            - build-manual-html
-          filters:
-            branches:
-              only: main
-      - build-manual-pdf
+            - deploy-p
       - deploy-manual-pdf:
           requires:
-            - build-gcc
-            - build-gcc-minimal
-            - build-clang
-            - build-clang-minimal
-            - build-manual-pdf
-          filters:
-            branches:
-              only: main
-      - build-source-browser
-      - deploy-source-browser:
+            - deploy-p
+      - deploy-doxygen:
           requires:
-            - build-gcc
-            - build-gcc-minimal
-            - build-clang
-            - build-clang-minimal
-            - build-source-browser
-          filters:
-            branches:
-              only: main
+            - deploy-p
