@@ -78,7 +78,7 @@ these classes*. (This is a summary.)
   should suffice for understanding PISM unless one wants to modify it
   or couple another model to it.
 
-> Copyright (C) 2008-2021 the PISM authors.
+> Copyright (C) 2008-2022 the PISM authors.
 
 > This document is part of PISM. PISM is free software; you can redistribute it
 > and/or modify it under the terms of the GNU General Public License as published
