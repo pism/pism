@@ -14,8 +14,10 @@ find_path (PROJ_INCLUDES proj.h
   HINTS
   "${PROJ_ROOT}/include"
   "$ENV{PROJ_ROOT}/include"
-  "/opt/local/lib/proj5/include"
-  "/opt/local/lib/proj6/include")
+  "/opt/local/lib/proj6/include"
+  "/opt/local/lib/proj7/include"
+  "/opt/local/lib/proj8/include"
+  "/opt/local/lib/proj9/include")
 
 if (PROJ_INCLUDES)
   string(REGEX REPLACE "/include/?$" "/lib"
