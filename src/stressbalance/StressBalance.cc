@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -627,7 +627,12 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
+#if PETSC_VERSION_LT(3, 12, 0)
+        ierr = PetscMemzero(&Sigma[ks+1],
+                            remaining_levels*sizeof(double));
+#else
         ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
+#endif
         PISM_CHK(ierr, "PetscMemzero");
       }
     }

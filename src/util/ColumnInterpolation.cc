@@ -42,7 +42,11 @@ std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double
 
 void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int ks, double *result) const {
   if (m_identical_grids) {
+#if PETSC_VERSION_LT(3, 12, 0)
+    PetscMemmove(result, const_cast<double*>(input), Mz_fine()*sizeof(double));
+#else
     PetscArraymove(result, input, Mz_fine());
+#endif
     return;
   }
 
@@ -138,7 +142,11 @@ std::vector<double> ColumnInterpolation::fine_to_coarse(const std::vector<double
 
 void ColumnInterpolation::fine_to_coarse(const double *input, double *result) const {
   if (m_identical_grids) {
+#if PETSC_VERSION_LT(3, 12, 0)
+    PetscMemmove(result, const_cast<double*>(input), Mz_fine()*sizeof(double));
+#else
     PetscArraymove(result, input, Mz_fine());
+#endif
     return;
   }
 
@@ -221,7 +229,12 @@ void ColumnInterpolation::init_interpolation() {
   if (m_z_coarse.size() == m_z_fine.size()) {
 
     PetscBool identical = PETSC_FALSE;
+#if PETSC_VERSION_LT(3, 12, 0)
+    size_t bytes = m_z_fine.size() * sizeof(double);
+    PetscMemcmp(m_z_coarse.data(), m_z_fine.data(), bytes, &identical);
+#else
     PetscArraycmp(m_z_coarse.data(), m_z_fine.data(), m_z_fine.size(), &identical);
+#endif
 
     if (identical == PETSC_TRUE) {
       m_identical_grids = static_cast<bool>(identical);
