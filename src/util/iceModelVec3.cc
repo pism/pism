@@ -234,7 +234,12 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
     for (Points p(*m_impl->grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+#if PETSC_VERSION_LT(3, 12, 0)
+      PetscMemmove(this->get_column(i, j),
+                   const_cast<double*>(input.get_column(i, j)), N*sizeof(double));
+#else
       PetscArraymove(this->get_column(i, j), input.get_column(i, j), N);
+#endif
     }
   } catch (...) {
     loop.failed();
