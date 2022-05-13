@@ -59,7 +59,8 @@ jobs:
           #
           # CMAKE_FIND_ROOT_PATH points to HDF5 and NetCDF with support for parallel I/O.
           command: >-
-            ${CMAKE_PREFIX}/bin/cmake -B build -S .
+            cd build &&
+            ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_MODULE_LINKER_FLAGS="-fuse-ld=lld"
             -DCMAKE_BUILD_TYPE=Debug
@@ -121,7 +122,8 @@ jobs:
       - run:
           name: Configure PISM
           command: >-
-            cmake -B build -S .
+            cd build &&
+            cmake ..
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CXX_FLAGS="-Werror"
             -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
