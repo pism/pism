@@ -20,11 +20,6 @@ if (NOT (${CMAKE_VERSION} VERSION_LESS "3.12"))
   cmake_policy(SET CMP0074 NEW)
 endif()
 
-if (NOT (${CMAKE_VERSION} VERSION_LESS "3.13"))
-  # Policy CMP0078 was introduced in 3.13. See "cmake --help-policies" for details.
-  cmake_policy(SET CMP0078 NEW)       #controls names of SWIG targets
-endif()
-
 if (NOT (${CMAKE_VERSION} VERSION_LESS "3.14"))
   # Policy CMP0086 was introduced in 3.14. See "cmake --help-policies" for details.
   cmake_policy(SET CMP0086 NEW)
