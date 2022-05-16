@@ -94,10 +94,10 @@ RUN set -eux;\
         rm -rf ~/local/build
 
 # Build the oldest supported CMake version
-COPY cmake-3_3_0.sh /tmp/
+COPY cmake-3_7_0.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        ./cmake-3_3_0.sh && \
+        ./cmake-3_7_0.sh && \
         rm -rf ~/local/build
 
 ENV PETSC_DIR="/home/builder/local/petsc" \

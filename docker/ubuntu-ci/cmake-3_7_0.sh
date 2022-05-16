@@ -4,9 +4,9 @@ set -e
 set -u
 set -x
 
-# Install CMake 3.3 (the oldest supported version).
+# Install CMake 3.7 (the oldest supported version).
 
-version=3.3.0
+version=3.7.0
 build_dir=${build_dir:-/var/tmp/build/cmake-${version}}
 prefix=${prefix:-~/local/cmake-${version}}
 

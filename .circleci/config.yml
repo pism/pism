@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.5
+      - image: ckhrulev/pism-ubuntu:0.1.6
 
     parameters:
       cc:
@@ -97,7 +97,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.5
+      - image: ckhrulev/pism-ubuntu:0.1.6
 
     parameters:
       cc:
@@ -143,7 +143,7 @@ jobs:
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.5
+      - image: ckhrulev/pism-ubuntu:0.1.6
 
     steps:
       - checkout
@@ -185,7 +185,7 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.5
+      - image: ckhrulev/pism-ubuntu:0.1.6
 
     steps:
       - checkout
@@ -227,7 +227,7 @@ jobs:
 
   source-browser:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.5
+      - image: ckhrulev/pism-ubuntu:0.1.6
 
     steps:
       - checkout
@@ -302,7 +302,7 @@ workflows:
           name: old-cmake
           cc: ccache mpicc -cc=clang
           cxx: ccache mpicxx -cxx=clang++
-          cmake_prefix: /home/builder/local/cmake-3.3.0
+          cmake_prefix: /home/builder/local/cmake-3.7.0
           petsc_dir: /home/builder/local/petsc
           python: "Yes"
 
