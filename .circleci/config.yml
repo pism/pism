@@ -104,11 +104,14 @@ jobs:
         type: string
       cxx:
         type: string
+      cmake_prefix:
+        type: string
 
     environment:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
       CCACHE_COMPRESS: 1
+      CMAKE_PREFIX: << parameters.cmake_prefix >>
       LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
@@ -123,7 +126,7 @@ jobs:
           name: Configure PISM
           command: >-
             cd build &&
-            cmake ..
+            ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CXX_FLAGS="-Werror"
             -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
@@ -310,11 +313,19 @@ workflows:
           name: gcc-minimal
           cc: ccache mpicc -cc=gcc
           cxx: ccache mpicxx -cxx=g++
+          cmake_prefix: /usr
 
       - build-minimal:
           name: clang-minimal
           cc: ccache mpicc -cc=clang
           cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /usr
+
+      - build-minimal:
+          name: old-cmake-minimal
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /home/builder/local/cmake-3.7.0
 
       - manual-html
       - manual-pdf
