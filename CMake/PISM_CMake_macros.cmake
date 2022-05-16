@@ -135,32 +135,22 @@ macro(pism_check_build_dir_location)
 endmacro()
 
 macro(pism_find_prerequisites)
+  find_package(PkgConfig REQUIRED)
+  set(OLD_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
+
   # PETSc
-  find_package (PETSc REQUIRED)
-  if (DEFINED PETSC_VERSION)
+  # set root of location to find PETSc's pkg-config
 
-    # FindPETSc.cmake does not put PETSC_VERSION into the CMake cache,
-    # so we save it here.
-    set(Pism_PETSC_VERSION ${PETSC_VERSION} CACHE STRING "PETSc version")
-    mark_as_advanced(Pism_PETSC_VERSION)
+  set(PETSC $ENV{PETSC_DIR}/$ENV{PETSC_ARCH})
+  set(ENV{PKG_CONFIG_PATH} ${PETSC}/lib/pkgconfig)
 
-    if (PETSC_VERSION VERSION_LESS 3.5)
-      # Force PISM to look for PETSc again if the version we just found
-      # is too old:
-      set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
-      # Stop with an error message.
-      message(FATAL_ERROR "PISM requires PETSc version 3.5 or newer (found ${PETSC_VERSION}).")
-    endif()
+  pkg_search_module(PETSC REQUIRED IMPORTED_TARGET "PETSc>=3.7.0")
+  pkg_get_variable(PETSC_INCLUDES PETSc includedir)
+  message(STATUS "Found PETSc ${PETSC_VERSION}; PETSC_DIR='$ENV{PETSC_DIR}' PETSC_ARCH='$ENV{PETSC_ARCH}'")
 
-    if (PETSC_VERSION VERSION_EQUAL 3.6.0)
-      # Force PISM to look for PETSc again if the version we just found
-      # is not supported
-      set(PETSC_CURRENT "OFF" CACHE BOOL "" FORCE)
-      # Stop with an error message.
-      message(FATAL_ERROR "PISM does not support PETSc ${PETSC_VERSION}. Please install PETSc <= 3.5.4 or PETSc > 3.6.0.")
-    endif()
-
-  endif (DEFINED PETSC_VERSION)
+  # restore old PKG_CONFIG_PATH
+  set(ENV{PKG_CONFIG_PATH} ${OLD_PKG_CONFIG_PATH})
+  unset(OLD_PKG_CONFIG_PATH)
 
   # MPI
   find_package (MPI REQUIRED COMPONENTS C)
@@ -246,7 +236,7 @@ macro(pism_set_dependencies)
 
   # required libraries
   list (APPEND Pism_EXTERNAL_LIBS
-    ${PETSC_LIBRARIES}
+    PkgConfig::PETSC
     ${UDUNITS2_LIBRARIES}
     ${FFTW_LIBRARIES}
     ${GSL_LIBRARIES}
