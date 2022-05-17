@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -121,6 +121,7 @@ public:
 
   std::string get_string(const std::string &name) const;
   void set_string(const std::string &name, const std::string &value);
+  void set_units_without_validation(const std::string &value);
 
   bool get_time_independent() const;
   void set_time_independent(bool flag);

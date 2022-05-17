@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -146,10 +146,20 @@ void Diagnostic::set_attrs(const std::string &long_name,
 
   m_vars[N]["standard_name"] = standard_name;
 
-  m_vars[N]["units"] = units;
+  if (units == glaciological_units) {
+    // No unit conversion needed to write data, so we assume that we don't need to check
+    // if units are valid. This is needed to be able to set units like "Pa s^(1/3)", which
+    // are correct (ice hardness with the Glen exponent n=3) but are not supported by
+    // UDUNITS.
+    //
+    // Also note that this automatically sets glaciological_units.
+    m_vars[N].set_units_without_validation(units);
+  } else {
+    m_vars[N]["units"] = units;
 
-  if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
-    m_vars[N]["glaciological_units"] = glaciological_units;
+    if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
+      m_vars[N]["glaciological_units"] = glaciological_units;
+    }
   }
 }
 
