@@ -291,13 +291,15 @@ Spatially-variable fields
 
 #. ``hardav``
 
-   :Units: Pa s0.333333
+   :Units: Pa s^(1/n)
    :Description: vertical average of ice hardness
+   :Comment: units depend on the Glen exponent used by the flow law
 
 #. ``hardness``
 
-   :Units: Pa s0.333333
+   :Units: Pa s^(1/n)
    :Description: ice hardness computed using the SIA flow law
+   :Comment: units depend on the Glen exponent used by the flow law
 
 #. ``heat_flux_from_bedrock``
 

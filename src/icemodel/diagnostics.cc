@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2021 Constantine Khroulev
+// Copyright (C) 2010--2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -215,15 +215,13 @@ HardnessAverage::HardnessAverage(const IceModel *m)
   // set metadata:
   m_vars = {{m_sys, "hardav"}};
 
-  // choice to use SSA power; see #285
-  const double power = 1.0 / m_config->get_number("stress_balance.ssa.Glen_exponent");
-  auto unitstr = pism::printf("Pa s%f", power);
-
-  set_attrs("vertical average of ice hardness", "",
-            unitstr, unitstr, 0);
+  // n is the Glen exponent used by the SSA (shallow stress balance) flow law
+  auto units = "Pa s^(1/n)";
+  set_attrs("vertical average of ice hardness", "", units, units, 0);
 
   m_vars[0]["valid_min"] = {0.0};
   m_vars[0]["_FillValue"] = {m_fill_value};
+  m_vars[0]["comment"] = "units depend on the Glen exponent used by the flow law";
 }
 
 //! \brief Computes vertically-averaged ice hardness.
@@ -2303,11 +2301,12 @@ IceHardness::IceHardness(const IceModel *m)
   /* set metadata: */
   m_vars = {{m_sys, "hardness", m_grid->z()}};
 
-  const double power = 1.0 / m_config->get_number("stress_balance.sia.Glen_exponent");
-  auto unitstr = pism::printf("Pa s%f", power);
+  // n is the Glen exponent used by the SIA (modifier) flow law
+  auto units = "Pa s^(1/n)";
 
   set_attrs("ice hardness computed using the SIA flow law", "",
-            unitstr, unitstr, 0);
+            units, units, 0);
+  m_vars[0]["comment"] = "units depend on the Glen exponent used by the flow law";
 }
 
 IceModelVec::Ptr IceHardness::compute_impl() const {
