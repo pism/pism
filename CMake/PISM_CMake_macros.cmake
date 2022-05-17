@@ -145,9 +145,7 @@ macro(pism_find_prerequisites)
   set(ENV{PKG_CONFIG_PATH} ${PETSC}/lib/pkgconfig)
 
   pkg_search_module(PETSC REQUIRED IMPORTED_TARGET "PETSc>=3.7.0")
-  pkg_get_variable(PETSC_INCLUDES PETSc includedir)
-  message(STATUS "Found PETSc ${PETSC_VERSION}; PETSC_DIR='$ENV{PETSC_DIR}' PETSC_ARCH='$ENV{PETSC_ARCH}'")
-
+  message(STATUS "Found PETSc ${PETSC_VERSION} in ${PETSC_PREFIX}")
   # restore old PKG_CONFIG_PATH
   set(ENV{PKG_CONFIG_PATH} ${OLD_PKG_CONFIG_PATH})
   unset(OLD_PKG_CONFIG_PATH)
@@ -223,7 +221,7 @@ macro(pism_set_dependencies)
   # Note: PISM does not use HDF5 directly, but we still need to be able to include hdf5.h
   # to record its version.
   include_directories (BEFORE
-    ${PETSC_INCLUDES}
+    ${PETSC_INCLUDE_DIRS}
     ${FFTW_INCLUDES}
     ${GSL_INCLUDES}
     ${UDUNITS2_INCLUDES}
