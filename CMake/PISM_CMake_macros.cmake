@@ -214,7 +214,7 @@ macro(pism_find_prerequisites)
         LOG_BUILD ON
         LOG_CONFIGURE ON
         )
-      set(JANSSON_INCLUDE_DIRS ${pism_jansson_dir}/include CACHE STRING "Jansson include directory" OFRCE)
+      set(JANSSON_INCLUDE_DIRS ${pism_jansson_dir}/include CACHE STRING "Jansson include directory" FORCE)
       set(JANSSON_LIBRARIES "-L${pism_jansson_dir}/lib -ljansson" CACHE STRING "Jansson library" FORCE)
       set(Pism_BUILD_JANSSON ON CACHE BOOL "ON if we are using our own Jansson build." FORCE)
       message(WARNING "

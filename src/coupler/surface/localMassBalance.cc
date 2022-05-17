@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -275,7 +275,7 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   Changes result;
   // Ensure that we never generate negative ice thicknesses. As far as I can tell the code
-  // above guarantees that thickness + smb >= *in exact arithmetic*. The check below
+  // above guarantees that thickness + smb >= 0 *in exact arithmetic*. The check below
   // should make sure that we don't get bitten by rounding errors.
   result.smb        = thickness + smb >= 0 ? smb : -thickness;
   result.firn_depth = firn_depth - old_firn_depth;
