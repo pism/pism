@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2022 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -75,12 +75,13 @@ SSAFD::SSAFD(IceGrid::ConstPtr grid)
                            "old SSA velocity field; used for re-trying with a different epsilon",
                            "m s-1", "m s-1", "", 0);
 
-  auto units = pism::printf("Pa s%f", 1.0 / m_flow_law->exponent());
+  auto units = pism::printf("Pa s^(1/%f)", m_flow_law->exponent());
 
   m_hardness.set_attrs("diagnostic",
                        "vertically-averaged ice hardness",
-                       units, units,
+                       "1", "1",
                        "", 0);
+  m_hardness.metadata().set_units_without_validation(units);
 
   m_nuH.set_attrs("internal",
                   "ice thickness times effective viscosity",
