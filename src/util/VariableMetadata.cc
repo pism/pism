@@ -296,6 +296,16 @@ const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
   return m_doubles;
 }
 
+/*!
+ * Set units that may not be supported by UDUNITS.
+ *
+ * For example: "Pa s^(1/3)" (ice hardness units with Glen exponent n=3).
+ */
+void VariableMetadata::set_units_without_validation(const std::string &value) {
+  m_strings["units"] = value;
+  m_strings["glaciological_units"] = value;
+}
+
 //! Set a string attribute.
 void VariableMetadata::set_string(const std::string &name, const std::string &value) {
 
