@@ -10,6 +10,7 @@ This table lists required dependencies for PISM alphabetically.
 .. csv-table::
    :header: Required Library, Comment
 
+   pkg-config_, any recent version
    CMake_,       version `\ge` 3.7
    FFTW_,        version `\ge` 3.1
    GSL_,         version `\ge` 1.15
