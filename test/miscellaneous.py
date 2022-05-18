@@ -494,7 +494,8 @@ def column_interpolation_test(plot=False):
     def test_interp(z, f, z_fine, title):
         interp = PISM.ColumnInterpolation(z, z_fine)
 
-        f_fine = interp.coarse_to_fine(f, interp.Mz_fine())
+        max_fine_index = interp.Mz_fine() - 1
+        f_fine = interp.coarse_to_fine(f, max_fine_index)
 
         f_fine_numpy = np.interp(z_fine, z, f)
 
