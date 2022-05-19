@@ -19,17 +19,13 @@
 
 #include "ColumnInterpolation.hh"
 
-#include <petscsys.h>
 #include <cmath>
 
 namespace pism {
 
 ColumnInterpolation::ColumnInterpolation(const std::vector<double> &new_z_coarse,
                                          const std::vector<double> &new_z_fine)
-  : m_z_fine(new_z_fine),
-    m_z_coarse(new_z_coarse),
-    m_use_linear_interpolation(false),
-    m_identical_grids(false) {
+  : m_z_fine(new_z_fine), m_z_coarse(new_z_coarse) {
   init_interpolation();
 }
 
@@ -40,22 +36,14 @@ std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double
   return result;
 }
 
-void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int k_max_result, double *result) const {
-  if (m_identical_grids) {
-#if PETSC_VERSION_LT(3, 12, 0)
-    PetscMemmove(result, const_cast<double*>(input), Mz_fine()*sizeof(double));
-#else
-    PetscArraymove(result, input, Mz_fine());
-#endif
-    return;
-  }
-
+void ColumnInterpolation::coarse_to_fine(const double *input,
+                                         unsigned int k_max_result,
+                                         double *result) const {
   if (m_use_linear_interpolation) {
     coarse_to_fine_linear(input, k_max_result, result);
-    return;
+  } else {
+    coarse_to_fine_quadratic(input, k_max_result, result);
   }
-
-  coarse_to_fine_quadratic(input, k_max_result, result);
 }
 
 void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned int k_max_result,
@@ -141,15 +129,6 @@ std::vector<double> ColumnInterpolation::fine_to_coarse(const std::vector<double
 }
 
 void ColumnInterpolation::fine_to_coarse(const double *input, double *result) const {
-  if (m_identical_grids) {
-#if PETSC_VERSION_LT(3, 12, 0)
-    PetscMemmove(result, const_cast<double*>(input), Mz_fine()*sizeof(double));
-#else
-    PetscArraymove(result, input, Mz_fine());
-#endif
-    return;
-  }
-
   const unsigned int N = Mz_coarse();
 
   for (unsigned int k = 0; k < N - 1; ++k) {
@@ -225,22 +204,6 @@ static std::vector<unsigned int> init_interpolation_indexes(const std::vector<do
 }
 
 void ColumnInterpolation::init_interpolation() {
-
-  if (m_z_coarse.size() == m_z_fine.size()) {
-
-    PetscBool identical = PETSC_FALSE;
-#if PETSC_VERSION_LT(3, 12, 0)
-    size_t bytes = m_z_fine.size() * sizeof(double);
-    PetscMemcmp(m_z_coarse.data(), m_z_fine.data(), bytes, &identical);
-#else
-    PetscArraycmp(m_z_coarse.data(), m_z_fine.data(), m_z_fine.size(), &identical);
-#endif
-
-    if (identical == PETSC_TRUE) {
-      m_identical_grids = static_cast<bool>(identical);
-      return;
-    }
-  }
 
   // coarse -> fine
   m_coarse2fine = init_interpolation_indexes(m_z_coarse, m_z_fine);
