@@ -25,7 +25,7 @@ alpha2 = k / (c * rho)
 EC = PISM.EnthalpyConverter(ctx.config)
 pressure = np.vectorize(EC.pressure)
 cts = np.vectorize(EC.enthalpy_cts)
-
+do_assert = True
 
 class EnthalpyColumn(object):
     "Set up the grid and arrays needed to run column solvers"
@@ -493,32 +493,43 @@ def advection_convergence_rate_space(title, error_func, plot=False):
 
 
 def diffusion_DN_test(plot=False):
-    assert diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                           errors_DN, plot)[1] > 0.93
-    assert diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
-                                            errors_DN, plot)[1] > 2.0
+    time = diffusion_convergence_rate_time("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                           errors_DN, plot)
+    space = diffusion_convergence_rate_space("Diffusion: Dirichlet at the base, Neumann at the surface",
+                                             errors_DN, plot)
+    if do_assert:
+        assert time[1] > 0.93
+        assert space[1] > 2.0
 
 
 def diffusion_ND_test(plot=False):
-    assert diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                           errors_ND, plot)[1] > 0.93
-    assert diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
-                                            errors_ND, plot)[1] > 2.0
+    time = diffusion_convergence_rate_time("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                           errors_ND, plot)
+    space = diffusion_convergence_rate_space("Diffusion: Neumann at the base, Dirichlet at the surface",
+                                             errors_ND, plot)
+    if do_assert:
+        assert time[1] > 0.93
+        assert space[1] > 2.0
 
 
 def advection_up_test(plot=False):
-    assert advection_convergence_rate_time("Advection: Upward flow",
-                                           errors_advection_up, plot)[1] > 0.87
-    assert advection_convergence_rate_space("Advection: Upward flow",
-                                            errors_advection_up, plot)[1] > 0.96
+    time = advection_convergence_rate_time("Advection: Upward flow",
+                                           errors_advection_up, plot)
+    space = advection_convergence_rate_space("Advection: Upward flow",
+                                             errors_advection_up, plot)
+    if do_assert:
+        assert time[1] > 0.87
+        assert space[1] > 0.96
 
 
 def advection_down_test(plot=False):
-    assert advection_convergence_rate_time("Advection: Downward flow",
-                                           errors_advection_down, plot)[1] > 0.87
-    assert advection_convergence_rate_space("Advection: Downward flow",
-                                            errors_advection_down, plot)[1] > 0.96
-
+    time = advection_convergence_rate_time("Advection: Downward flow",
+                                           errors_advection_down, plot)
+    space = advection_convergence_rate_space("Advection: Downward flow",
+                                             errors_advection_down, plot)
+    if do_assert:
+        assert time[1] > 0.87
+        assert space[1] > 0.96
 
 if __name__ == "__main__":
     import pylab as plt
@@ -532,6 +543,7 @@ if __name__ == "__main__":
     def log_fit_plot(x, p, label):
         plt.plot(log10(x), np.polyval(p, log10(x)), label=label)
 
+    do_assert = False
     diffusion_ND_test(plot=True)
     diffusion_DN_test(plot=True)
     advection_up_test(plot=True)
