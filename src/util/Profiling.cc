@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,11 +33,7 @@ Profiling::Profiling() {
 
 //! Enable PETSc logging.
 void Profiling::start() const {
-#if PETSC_VERSION_LE(3,6,3)
-  PetscErrorCode ierr = PetscLogBegin(); PISM_CHK(ierr, "PetscLogBegin");
-#else
   PetscErrorCode ierr = PetscLogAllBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
-#endif
 }
 
 //! Save detailed profiling data to a Python script.
