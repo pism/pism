@@ -646,6 +646,10 @@ void IceModel::step(bool do_mass_continuity,
     m_new_bed_elevation = false;
   }
 
+  if (m_config->get_flag("time_stepping.assume_bed_elevation_changed")) {
+    m_new_bed_elevation = true;
+  }
+
   if (m_new_bed_elevation) {
     enforce_consistency_of_geometry(DONT_REMOVE_ICEBERGS);
     m_stdout_flags += "b";
