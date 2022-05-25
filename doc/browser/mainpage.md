@@ -71,10 +71,10 @@ these classes*. (This is a summary.)
   fixes are easy to distribute by `" git pull "`.
 
 - For help *installing* PISM, see the
-  [PISM Installation Manual](https://pism.github.io/docs/installation/).
+  [PISM Installation Manual](https://pism.io/docs/installation/).
 
 - For help *using* PISM, see the
-  [PISM User's Manual](https://pism.github.io/docs/manual/). The *User's Manual*
+  [PISM User's Manual](https://pism.io/docs/). The *User's Manual*
   should suffice for understanding PISM unless one wants to modify it
   or couple another model to it.
 
