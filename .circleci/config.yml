@@ -235,15 +235,21 @@ jobs:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.5
 
+    environment:
+      CC: mpicc
+      CXX: mpicxx
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      PETSC_DIR: /home/builder/local/petsc
+
     steps:
       - checkout
       - run:
           name: Build the source code browser
           command: |
             mkdir -p build
-            cmake -B build -S doc/
+            cmake -B build -S . -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
             make -C build browser
-            mv build/browser/html ./doxygen
+            mv build/doc/browser/html ./doxygen
             rm -f doxygen/*.md5
             touch doxygen/.nojekyll
             du -sh doxygen
