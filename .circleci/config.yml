@@ -199,9 +199,11 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_pdf
+            mkdir -p manual_pdf
+            mv pism_manual.pdf manual_pdf/
       - persist_to_workspace:
           root: build/sphinx/
-          paths: pism_manual.pdf
+          paths: manual_pdf
 
   deploy-manual-pdf:
     docker:
@@ -210,7 +212,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: manual_pdf
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
