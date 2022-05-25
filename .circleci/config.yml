@@ -156,9 +156,9 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
-            mv build/sphinx/html build/sphinx/manual_html
+            mv build/sphinx/html ./manual_html
       - persist_to_workspace:
-          root: build/sphinx
+          root: .
           paths: manual_html
 
   deploy-manual-html:
@@ -200,9 +200,9 @@ jobs:
             cmake -B build -S doc/
             make -C build manual_pdf
             mkdir -p manual_pdf
-            mv pism_manual.pdf manual_pdf/
+            mv build/sphinx/pism_manual.pdf manual_pdf/
       - persist_to_workspace:
-          root: build/sphinx/
+          root: .
           paths: manual_pdf
 
   deploy-manual-pdf:
@@ -243,12 +243,12 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build browser
-            rm -f build/browser/html/*.md5
-            touch build/browser/html/.nojekyll
-            du -sh build/browser/html/
-            mv build/browser/html build/browser/doxygen
+            mv build/browser/html ./doxygen
+            rm -f doxygen/*.md5
+            touch doxygen/.nojekyll
+            du -sh doxygen
       - persist_to_workspace:
-          root: build/browser/
+          root: .
           paths: doxygen
 
   deploy-doxygen:
