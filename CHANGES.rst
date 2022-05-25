@@ -1,5 +1,26 @@
 .. default-role:: literal
 
+Changes since v2.0.3
+====================
+
+- Add `time_stepping.assume_bed_elevation_changed`. With the default value ("false") PISM
+  tries to avoid re-computing bed-elevation-dependent quantities if it is known that bed
+  elevation did not change. Setting this flag to "true" disables this optimization.
+- Make the variable range check a little less strict. Now PISM uses the tolerance
+  `eps=1e-12` to check if a variable in an input file has values that are outside the
+  valid range.
+- Fix `issue 506`_ (PISM stopped with an unhelpful error message if the Glen exponent is
+  set to 1). The underlying issue is that UDUNITS does not support fractional exponents,
+  so units such as "Pa s^(1/n)" where `n` is the Glen exponent cannot be used for unit
+  conversion. Luckily we don't need to convert from "Pa s^(1/n)" to other units, so we can
+  get away with disabling unit validation in this particular case.
+- Update the build system: use proper PROJ locations on macOS with MacPorts.
+- Document that CMake >= 3.3 is required (previous versions incorrectly stated that PISM
+  supports CMake >= 3.1).
+- Restore compatibility with PETSc version 3.7.
+- Add tests to automatically check for compatibility with CMake 3.3 and PETSc 3.7.
+- Other minor fixes ()
+
 Changes since v2.0.2
 ====================
 
@@ -386,7 +407,7 @@ Diagnostics
 
   It did *not* affect ice dynamics.
 - Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
-  `issue #300`_.
+  `issue 300`_.
 - Rename `ocean_pressure_difference` to `ice_margin_pressure_difference`.
 
 Input and output
@@ -1036,6 +1057,7 @@ Miscellaneous
 .. _issue 424: https://github.com/pism/pism/issues/424
 .. _issue 462: https://github.com/pism/pism/issues/462
 .. _issue 407: https://github.com/pism/pism/issues/407
+.. _issue 506: https://github.com/pism/pism/issues/506
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 ..
    Local Variables:
