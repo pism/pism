@@ -156,9 +156,10 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
+            mv build/sphinx/html build/sphinx/manual_html
       - persist_to_workspace:
           root: build/sphinx
-          paths: html
+          paths: manual_html
 
   deploy-manual-html:
     docker:
@@ -167,7 +168,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: manual
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
@@ -184,7 +185,7 @@ jobs:
             --repo git@github.com:pism/docs.git
             --dotfiles
             --message "Update the manual"
-            --dist manual/html
+            --dist manual_html
 
   manual-pdf:
     docker:
@@ -209,7 +210,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: manual
+          at: manual_pdf
       - run:
           name: Install and configure dependencies
           command: |
@@ -226,7 +227,7 @@ jobs:
             --repo git@github.com:pism/docs-pdf.git
             --branch main
             --message "Update the manual"
-            --dist manual/
+            --dist manual_pdf
 
   doxygen:
     docker:
@@ -243,9 +244,10 @@ jobs:
             rm -f build/browser/html/*.md5
             touch build/browser/html/.nojekyll
             du -sh build/browser/html/
+            mv build/browser/html build/browser/doxygen
       - persist_to_workspace:
           root: build/browser/
-          paths: html
+          paths: doxygen
 
   deploy-doxygen:
     docker:
@@ -254,7 +256,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: browser
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
@@ -271,7 +273,7 @@ jobs:
             --repo git@github.com:pism/doxygen.git
             --dotfiles
             --message "Update the source code browser"
-            --dist browser/html
+            --dist doxygen
 
 workflows:
   version: 2
