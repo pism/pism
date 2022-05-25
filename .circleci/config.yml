@@ -104,11 +104,14 @@ jobs:
         type: string
       cxx:
         type: string
+      cmake_prefix:
+        type: string
 
     environment:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
       CCACHE_COMPRESS: 1
+      CMAKE_PREFIX: << parameters.cmake_prefix >>
       LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
 
     steps:
@@ -123,7 +126,7 @@ jobs:
           name: Configure PISM
           command: >-
             cd build &&
-            cmake ..
+            ${CMAKE_PREFIX}/bin/cmake ..
             -DCMAKE_BUILD_TYPE=Debug
             -DCMAKE_CXX_FLAGS="-Werror"
             -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
@@ -225,7 +228,7 @@ jobs:
             --message "Update the manual"
             --dist manual/
 
-  source-browser:
+  doxygen:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.5
 
@@ -244,7 +247,7 @@ jobs:
           root: build/browser/
           paths: html
 
-  deploy-source-browser:
+  deploy-doxygen:
     docker:
       - image: node:8.10.0
 
@@ -310,15 +313,23 @@ workflows:
           name: gcc-minimal
           cc: ccache mpicc -cc=gcc
           cxx: ccache mpicxx -cxx=g++
+          cmake_prefix: /usr
 
       - build-minimal:
           name: clang-minimal
           cc: ccache mpicc -cc=clang
           cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /usr
+
+      - build-minimal:
+          name: old-cmake-minimal
+          cc: ccache mpicc -cc=clang
+          cxx: ccache mpicxx -cxx=clang++
+          cmake_prefix: /home/builder/local/cmake-3.3.0
 
       - manual-html
       - manual-pdf
-      - source-browser
+      - doxygen
 
       - deploy-p:
           requires:
@@ -328,9 +339,10 @@ workflows:
             - clang-minimal
             - old-petsc
             - old-cmake
+            - old-cmake-minimal
             - manual-html
             - manual-pdf
-            - source-browser
+            - doxygen
           filters:
             branches:
               only: main
@@ -341,6 +353,6 @@ workflows:
       - deploy-manual-pdf:
           requires:
             - deploy-p
-      - deploy-source-browser:
+      - deploy-doxygen:
           requires:
             - deploy-p
