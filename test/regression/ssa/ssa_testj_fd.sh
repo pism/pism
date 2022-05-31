@@ -20,7 +20,7 @@ output=`mktemp pism-ssa-test-j.XXXX` || exit 1
 
 set -e
 
-OPTS="-verbose 1 -ssa_method fd -o_size none -ssafd_pc_type gamg"
+OPTS="-verbose 1 -ssa_method fd -o_size none -ssafd_pc_type gamg -ssafd_ksp_rtol 1e-12"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/ssa_testj${EXT} -Mx 61 -My 61 $OPTS > ${output}
@@ -32,11 +32,11 @@ set +e
 diff ${output} -  <<END-OF-OUTPUT
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.1565      0.05377    0.1502    0.0455    0.0923    0.0248
+                0.1558      0.05375    0.1493    0.0450    0.0923    0.0248
 NUM ERRORS DONE
 NUMERICAL ERRORS in velocity relative to exact solution:
 velocity  :  maxvector   prcntavvec      maxu      maxv       avu       avv
-                0.0426      0.01377    0.0407    0.0132    0.0236    0.0064
+                0.0396      0.01365    0.0379    0.0114    0.0234    0.0063
 NUM ERRORS DONE
 END-OF-OUTPUT
 
