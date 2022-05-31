@@ -156,9 +156,10 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
+            mv build/sphinx/html ./manual_html
       - persist_to_workspace:
-          root: build/sphinx
-          paths: html
+          root: .
+          paths: manual_html
 
   deploy-manual-html:
     docker:
@@ -167,7 +168,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: manual
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
@@ -184,7 +185,7 @@ jobs:
             --repo git@github.com:pism/docs.git
             --dotfiles
             --message "Update the manual"
-            --dist manual/html
+            --dist manual_html
 
   manual-pdf:
     docker:
@@ -198,9 +199,11 @@ jobs:
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_pdf
+            mkdir -p manual_pdf
+            mv build/sphinx/pism_manual.pdf manual_pdf/
       - persist_to_workspace:
-          root: build/sphinx/
-          paths: pism_manual.pdf
+          root: .
+          paths: manual_pdf
 
   deploy-manual-pdf:
     docker:
@@ -209,7 +212,7 @@ jobs:
     steps:
       - checkout
       - attach_workspace:
-          at: manual
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
@@ -226,11 +229,17 @@ jobs:
             --repo git@github.com:pism/docs-pdf.git
             --branch main
             --message "Update the manual"
-            --dist manual/
+            --dist manual_pdf
 
-  source-browser:
+  doxygen:
     docker:
       - image: ckhrulev/pism-ubuntu:0.1.6
+
+    environment:
+      CC: mpicc
+      CXX: mpicxx
+      LOCAL_LIBRARIES: "~/local/hdf5;~/local/netcdf;~/local/pnetcdf;~/local/parallelio"
+      PETSC_DIR: /home/builder/local/petsc
 
     steps:
       - checkout
@@ -238,23 +247,24 @@ jobs:
           name: Build the source code browser
           command: |
             mkdir -p build
-            cmake -B build -S doc/
+            cmake -B build -S . -DCMAKE_FIND_ROOT_PATH=${LOCAL_LIBRARIES}
             make -C build browser
-            rm -f build/browser/html/*.md5
-            touch build/browser/html/.nojekyll
-            du -sh build/browser/html/
+            mv build/doc/browser/html ./doxygen
+            rm -f doxygen/*.md5
+            touch doxygen/.nojekyll
+            du -sh doxygen
       - persist_to_workspace:
-          root: build/browser/
-          paths: html
+          root: .
+          paths: doxygen
 
-  deploy-source-browser:
+  deploy-doxygen:
     docker:
       - image: node:8.10.0
 
     steps:
       - checkout
       - attach_workspace:
-          at: browser
+          at: .
       - run:
           name: Install and configure dependencies
           command: |
@@ -271,7 +281,7 @@ jobs:
             --repo git@github.com:pism/doxygen.git
             --dotfiles
             --message "Update the source code browser"
-            --dist browser/html
+            --dist doxygen
 
 workflows:
   version: 2
@@ -329,7 +339,7 @@ workflows:
 
       - manual-html
       - manual-pdf
-      - source-browser
+      - doxygen
 
       - deploy-p:
           requires:
@@ -339,9 +349,10 @@ workflows:
             - clang-minimal
             - old-petsc
             - old-cmake
+            - old-cmake-minimal
             - manual-html
             - manual-pdf
-            - source-browser
+            - doxygen
           filters:
             branches:
               only: main
@@ -352,6 +363,6 @@ workflows:
       - deploy-manual-pdf:
           requires:
             - deploy-p
-      - deploy-source-browser:
+      - deploy-doxygen:
           requires:
             - deploy-p
