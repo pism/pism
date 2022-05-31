@@ -140,14 +140,15 @@ Forcing::Forcing(IceGrid::ConstPtr grid,
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   buffer_size = std::max(buffer_size, 1U);
 
-  allocate(grid, short_name, buffer_size, interpolation_type);
+  allocate(short_name, buffer_size, interpolation_type);
 }
 
 std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
                                                        const std::string &short_name,
                                                        double value) {
+  // note: cannot use std::make_shared because of a private constructor
   std::shared_ptr<Forcing> result(new Forcing(grid, short_name, 1,
-                                                          false, PIECEWISE_CONSTANT));
+                                              PIECEWISE_CONSTANT));
 
   // set constant value everywhere
   result->set(value);
@@ -167,16 +168,15 @@ std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
 
 Forcing::Forcing(IceGrid::ConstPtr grid, const std::string &short_name,
                  unsigned int buffer_size,
-                 bool dummy,
                  InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
     m_data(new Data()) {
-  allocate(grid, short_name, buffer_size, interpolation_type);
+  allocate(short_name, buffer_size, interpolation_type);
 }
 
-void Forcing::allocate(IceGrid::ConstPtr grid, const std::string &short_name,
-                             unsigned int buffer_size,
-                             InterpolationType interpolation_type) {
+void Forcing::allocate(const std::string &short_name,
+                       unsigned int buffer_size,
+                       InterpolationType interpolation_type) {
   m_impl->report_range = false;
 
   m_data->interp_type            = interpolation_type;

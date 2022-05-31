@@ -79,10 +79,8 @@ private:
   Forcing(IceGrid::ConstPtr grid,
           const std::string &short_name,
           unsigned int buffer_size,
-          bool dummy,
           InterpolationType interpolation_type);
-  void allocate(IceGrid::ConstPtr grid,
-                const std::string &short_name,
+  void allocate(const std::string &short_name,
                 unsigned int buffer_size,
                 InterpolationType interpolation_type);
 
