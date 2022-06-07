@@ -43,7 +43,7 @@ public:
   PicoGeometry(IceGrid::ConstPtr grid);
   virtual ~PicoGeometry() = default;
 
-  void init();
+  void init(const IceModelVec2CellType &cell_type);
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
   const IceModelVec2Int &continental_shelf_mask() const;
