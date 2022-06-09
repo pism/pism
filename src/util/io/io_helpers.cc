@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015--2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <cassert>
+#include <cmath>                // isnan
 
 #include "io_helpers.hh"
 #include "File.hh"
@@ -982,6 +983,13 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
       read_valid_range(file, var.name, variable);
 
       compute_range(grid.com, output, data_size, &min, &max);
+
+      if (std::isnan(min) or std::isnan(max)) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "Variable '%s' ('%s') contains not-a-number (NaN)",
+                                      variable.get_name().c_str(),
+                                      variable.get_string("long_name").c_str());
+      }
 
       // Check the range and warn the user if needed:
       variable.check_range(file.filename(), min, max);

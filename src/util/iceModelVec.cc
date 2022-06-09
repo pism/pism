@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -879,9 +879,13 @@ void IceModelVec::regrid(const File &file, RegriddingFlag flag,
                                 timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
   double start_time = get_time();
   m_impl->grid->ctx()->profiling().begin("io.regridding");
-  {
+  try {
     this->regrid_impl(file, flag, default_value);
     inc_state_counter();          // mark as modified
+  } catch (RuntimeError &e) {
+    e.add_context("regridding '%s' from '%s'",
+                  this->get_name().c_str(), file.filename().c_str());
+    throw;
   }
   m_impl->grid->ctx()->profiling().end("io.regridding");
   double
