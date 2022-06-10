@@ -67,7 +67,7 @@ add_library (pism
   icemodel/fracture_density.cc
   icemodel/initialization.cc
   icemodel/output.cc
-  icemodel/output_backup.cc
+  icemodel/output_checkpoint.cc
   icemodel/output_extra.cc
   icemodel/output_save.cc
   icemodel/output_ts.cc

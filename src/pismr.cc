@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 
   com = PETSC_COMM_WORLD;
 
+  int exit_code = 0;
   try {
     // Note: EISMINT II experiments G and H are not supported.
     auto eisII = options::Keyword("-eisII",
@@ -168,11 +169,29 @@ int main(int argc, char *argv[]) {
     } else if (list_json) {
       model->list_diagnostics_json();
     } else {
-      model->run();
+      auto termination_reason = model->run();
 
-      log->message(2, "... done with run\n");
-
-      model->save_results();
+      switch (termination_reason) {
+      case PISM_CHEKPOINT:
+        {
+          exit_code = static_cast<int>(config->get_number("output.checkpoint.exit_code"));
+          log->message(2, "... stopping (exit_code=%d) after saving the checkpoint file\n",
+                       exit_code);
+          break;
+        }
+      case PISM_SIGNAL:
+        {
+          exit_code = 0;
+          break;
+        }
+      case PISM_DONE:
+        {
+          log->message(2, "... done with the run\n");
+          model->save_results();
+          exit_code = 0;
+          break;
+        }
+      }
     }
     print_unused_parameters(*log, 3, *config);
 
@@ -182,8 +201,8 @@ int main(int argc, char *argv[]) {
   }
   catch (...) {
     handle_fatal_errors(com);
-    return 1;
+    exit_code = 1;
   }
 
-  return 0;
+  return exit_code;
 }

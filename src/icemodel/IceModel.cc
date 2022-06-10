@@ -756,11 +756,11 @@ void IceModel::post_step_hook() {
  *
  * @return 0 on success
  */
-void IceModel::run_to(double run_end) {
+IceModelTerminationReason IceModel::run_to(double run_end) {
 
   m_time->set_end(run_end);
 
-  run();
+  return run();
 }
 
 
@@ -770,7 +770,7 @@ void IceModel::run_to(double run_end) {
  *
  * This is the method used by PISM in the "standalone" mode.
  */
-void IceModel::run() {
+IceModelTerminationReason IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
@@ -808,6 +808,7 @@ void IceModel::run() {
   t_TempAge = m_time->current();
   dt_TempAge = 0.0;
 
+  IceModelTerminationReason termination_reason = PISM_DONE;
   // main loop for time evolution
   // IceModel::step calls Time::step(dt), ensuring that this while loop
   // will terminate
@@ -835,27 +836,33 @@ void IceModel::run() {
     profiling.begin("io");
     write_snapshot();
     write_extras();
-    write_backup();
+    bool stop_after_chekpoint = write_checkpoint();
     profiling.end("io");
 
     if (stepcount >= 0) {
       stepcount++;
     }
+
+    if (stop_after_chekpoint) {
+      termination_reason = PISM_CHEKPOINT;
+      break;
+    }
+
     if (process_signals() != 0) {
+      termination_reason = PISM_SIGNAL;
       break;
     }
   } // end of the time-stepping loop
-
   profiling.stage_end("time-stepping loop");
 
   if (stepcount >= 0) {
-    double count = stepcount;
+    double run_length = units::convert(m_sys, m_time->current() - m_time->start(), "seconds", "years");
     m_log->message(1,
                "count_time_steps:  run() took %d steps\n"
                "average dt = %.6f years\n",
-               stepcount,
-               units::convert(m_sys, m_time->end() - m_time->start(), "seconds", "years") / count);
+               stepcount, run_length / stepcount);
   }
+  return termination_reason;
 }
 
 //! Manage the initialization of the IceModel object.
@@ -994,7 +1001,7 @@ void warn_about_missing(const Logger &log,
 /*!
  * De-allocate diagnostics that were not requested.
  *
- * Checks viewers, -extra_vars, -backup, -save_vars, and regular output.
+ * Checks viewers, -extra_vars, -checkpoint, -save_vars, and regular output.
  *
  * FIXME: I need to make sure that these reporting mechanisms are active. It is possible that
  * variables are on a list, but that list is not actually used.
@@ -1008,17 +1015,17 @@ void IceModel::prune_diagnostics() {
   }
 
   auto m_extra_stop = m_config->get_flag("output.extra.stop_missing");
-  warn_about_missing(*m_log, m_output_vars,   "output",     available, false);
-  warn_about_missing(*m_log, m_snapshot_vars, "snapshot",   available, false);
-  warn_about_missing(*m_log, m_backup_vars,   "backup",     available, false);
-  warn_about_missing(*m_log, m_extra_vars,    "diagnostic", available, m_extra_stop);
+  warn_about_missing(*m_log, m_output_vars,     "output",     available, false);
+  warn_about_missing(*m_log, m_snapshot_vars,   "snapshot",   available, false);
+  warn_about_missing(*m_log, m_checkpoint_vars, "checkpoint", available, false);
+  warn_about_missing(*m_log, m_extra_vars,      "diagnostic", available, m_extra_stop);
 
   // get the list of requested diagnostics
   auto requested = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
   requested = combine(requested, m_output_vars);
   requested = combine(requested, m_snapshot_vars);
   requested = combine(requested, m_extra_vars);
-  requested = combine(requested, m_backup_vars);
+  requested = combine(requested, m_checkpoint_vars);
 
   // de-allocate diagnostics that were not requested
   for (const auto &v : available) {

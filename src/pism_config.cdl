@@ -1795,17 +1795,30 @@ netcdf pism_config {
     pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_ts_variables_type = "string";
 
-    pism_config:output.backup_interval = 1.0;
-    pism_config:output.backup_interval_doc = "wall-clock time between automatic backups";
-    pism_config:output.backup_interval_option = "backup_interval";
-    pism_config:output.backup_interval_type = "number";
-    pism_config:output.backup_interval_units = "hours";
+    pism_config:output.checkpoint.exit = "no";
+    pism_config:output.checkpoint.exit_doc = "If ``true`` PISM will exit with after checkpointing.";
+    pism_config:output.checkpoint.exit_type = "flag";
 
-    pism_config:output.backup_size = "small";
-    pism_config:output.backup_size_choices = "none,small,medium,big_2d,big";
-    pism_config:output.backup_size_doc = "The \"size\" of a backup file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
-    pism_config:output.backup_size_option = "backup_size";
-    pism_config:output.backup_size_type = "keyword";
+    pism_config:output.checkpoint.exit_code = 85;
+    pism_config:output.checkpoint.exit_code_doc = "Exit code to use if :config:`output.checkpoint.exit` is set.";
+    pism_config:output.checkpoint.exit_code_type = "integer";
+    pism_config:output.checkpoint.exit_code_units = "none";
+
+    pism_config:output.checkpoint.file = "";
+    pism_config:output.checkpoint.file_doc = "If set, save model checkpoints to this file, otherwise build the name by appending ``_checkpoint`` to :config:`output.file_name`.";
+    pism_config:output.checkpoint.file_type = "string";
+
+    pism_config:output.checkpoint.interval = 1.0;
+    pism_config:output.checkpoint.interval_doc = "wall-clock time between checkpointing";
+    pism_config:output.checkpoint.interval_option = "checkpoint_interval";
+    pism_config:output.checkpoint.interval_type = "number";
+    pism_config:output.checkpoint.interval_units = "hours";
+
+    pism_config:output.checkpoint.size = "small";
+    pism_config:output.checkpoint.size_choices = "none,small,medium,big_2d,big";
+    pism_config:output.checkpoint.size_doc = "The \"size\" of a checkpoint file. See parameters :config:`output.sizes.medium`, :config:`output.sizes.big_2d`, :config:`output.sizes.big`";
+    pism_config:output.checkpoint.size_option = "checkpoint_size";
+    pism_config:output.checkpoint.size_type = "keyword";
 
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";

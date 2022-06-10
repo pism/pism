@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -802,7 +802,7 @@ void IceModel::misc_setup() {
   init_front_retreat();
   init_diagnostics();
   init_snapshots();
-  init_backups();
+  init_checkpoints();
   init_timeseries();
   init_extras();
 

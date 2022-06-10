@@ -106,6 +106,8 @@ class FrontRetreat;
 class PrescribedRetreat;
 class ScalarForcing;
 
+enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
+
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
 class IceModel {
@@ -121,10 +123,10 @@ public:
   void init();
 
   /** Run PISM in the "standalone" mode. */
-  virtual void run();
+  IceModelTerminationReason run();
 
   /** Advance the current PISM run to a specific time */
-  virtual void run_to(double run_end);
+  IceModelTerminationReason run_to(double run_end);
 
   virtual void save_results();
 
@@ -440,12 +442,12 @@ protected:
   void write_extras();
   MaxTimestep extras_max_timestep(double my_t);
 
-  // automatic backups
-  std::string m_backup_filename;
-  double m_last_backup_time;
-  std::set<std::string> m_backup_vars;
-  void init_backups();
-  void write_backup();
+  // automatic checkpoints
+  std::string m_checkpoint_filename;
+  double m_last_checkpoint_time;
+  std::set<std::string> m_checkpoint_vars;
+  void init_checkpoints();
+  bool write_checkpoint();
 
   // last time at which PISM hit a multiple of X years, see the configuration parameter
   // time_stepping.hit_multiples
@@ -459,7 +461,7 @@ protected:
 
 private:
   VariableMetadata m_timestamp;
-  double m_start_time;    // this is used in the wall-clock-time backup code
+  double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times,
