@@ -471,6 +471,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const std::vector<double> &basin_salinity,
                                   IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0) const {
+
   
   IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask, &isolated_basin_mask };
 
@@ -559,6 +560,8 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
     }
   }
 
+  bool set_surface_pressure_limit = m_config->get_flag("ocean.pico.limit_pressure_melting_at_surface");
+
   // now set potential temperature and salinity box 0:
 
   int low_temperature_counter = 0;
@@ -585,7 +588,12 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 
       }
 
-      double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
+      double theta_pm = 273.15;
+      if (set_surface_pressure_limit) {
+        theta_pm = physics.theta_pm(Soc_box0(i, j), 0.0);
+      } else {
+        theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
+      }
 
       // temperature input for grounding line box should not be below pressure melting point
       if (Toc_box0(i, j) < theta_pm) {
