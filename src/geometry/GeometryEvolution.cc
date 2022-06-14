@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016--2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -122,8 +122,11 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     flux_staggered.set_attrs("diagnostic", "fluxes through cell interfaces (sides)"
-                             " on the staggered grid",
+                             " on the staggered grid (x-offset)",
                              "m2 s-1", "m2 year-1", "", 0);
+    flux_staggered.set_attrs("diagnostic", "fluxes through cell interfaces (sides)"
+                             " on the staggered grid (y-offset)",
+                             "m2 s-1", "m2 year-1", "", 1);
 
     flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "m year-1", "", 0);
 
@@ -1081,12 +1084,14 @@ class FluxStaggered : public Diag<GeometryEvolution>
 public:
   FluxStaggered(const GeometryEvolution *m)
     : Diag<GeometryEvolution>(m) {
-    m_vars = {model->flux_staggered().metadata()};
+    m_vars = {model->flux_staggered().metadata(0),
+      model->flux_staggered().metadata(1)};
   }
 protected:
   IceModelVec::Ptr compute_impl() const {
     IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "flux_staggered", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
+    result->metadata(1) = m_vars[1];
 
     const IceModelVec2Stag &input = model->flux_staggered();
     IceModelVec2Stag &output = *result.get();

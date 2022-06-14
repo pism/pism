@@ -245,8 +245,15 @@ Spatially-variable fields
 
 #. ``flux_staggered``
 
-   :Units: m2 year-1
-   :Description: fluxes through cell interfaces (sides) on the staggered grid
+   - ``flux_staggered[0]``
+
+     :Units: m2 year-1
+     :Description: fluxes through cell interfaces (sides) on the staggered grid (x-offset)
+
+   - ``flux_staggered[1]``
+
+     :Units: m2 year-1
+     :Description: fluxes through cell interfaces (sides) on the staggered grid (y-offset)
 
 #. ``frontal_melt_rate``
 

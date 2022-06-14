@@ -525,11 +525,15 @@ void IceModelVec2T::update(unsigned int start) {
   const bool allow_extrapolation = m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
-    {
+    try {
       petsc::VecArray tmp_array(vec());
       io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j, CRITICAL,
                                   m_impl->report_range, allow_extrapolation,
                                   0.0, m_impl->interpolation_type, tmp_array.get());
+    } catch (RuntimeError &e) {
+      e.add_context("regridding '%s' from '%s'",
+                    this->get_name().c_str(), m_data->filename.c_str());
+      throw;
     }
 
     log->message(5, " %s: reading entry #%02d, year %s...\n",
