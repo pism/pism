@@ -76,6 +76,7 @@ private:
                               const IceModelVec2CellType &mask,
                               const IceModelVec2Int &basin_mask,
                               const IceModelVec2Int &shelf_mask,
+			      const IceModelVec2Int &isolated_basin_mask,
                               const std::vector<double> &basin_temperature,
                               const std::vector<double> &basin_salinity,
                               IceModelVec2S &Toc_box0,

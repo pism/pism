@@ -304,6 +304,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
                              cell_type,
                              m_geometry.basin_mask(),
                              m_geometry.ice_shelf_mask(),
+                             m_geometry.isolated_basin_mask(),
                              basin_temperature,
                              basin_salinity,
                              m_Toc_box0,
@@ -465,12 +466,13 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const IceModelVec2CellType &mask,
                                   const IceModelVec2Int &basin_mask,
                                   const IceModelVec2Int &shelf_mask,
+                                  const IceModelVec2Int &isolated_basin_mask,
                                   const std::vector<double> &basin_temperature,
                                   const std::vector<double> &basin_salinity,
                                   IceModelVec2S &Toc_box0,
                                   IceModelVec2S &Soc_box0) const {
   
-  IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
+  IceModelVec::AccessList list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask, &isolated_basin_mask };
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
@@ -487,18 +489,47 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
-      n_shelf_cells_per_basin[s*m_n_basins+b]++;
-      n_shelf_cells[s]++;
 
-      // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
-      if (mask.as_int(i, j) == MASK_FLOATING) {
+      if (isolated_basin_mask.as_int(i, j) == 1) {
+        // Assume that all ocean input comes from the connected basin, adjacent to the isolated basin mask
         auto M = mask.star(i, j);
-        if (M.n == MASK_ICE_FREE_OCEAN or
-            M.e == MASK_ICE_FREE_OCEAN or
-            M.s == MASK_ICE_FREE_OCEAN or
-            M.w == MASK_ICE_FREE_OCEAN) {
-          if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
-            cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
+        auto B = basin_mask.star(i, j);
+        if (B.n != b and M.n == MASK_ICE_FREE_OCEAN) {
+          cfs_in_basins_per_shelf[s * m_n_basins + B.n] = B.n;
+          n_shelf_cells_per_basin[s*m_n_basins+B.n]++;
+          n_shelf_cells[s]++;
+        }
+        if (B.e != b and M.e == MASK_ICE_FREE_OCEAN) {
+          cfs_in_basins_per_shelf[s * m_n_basins + B.e] = B.e;
+          n_shelf_cells_per_basin[s*m_n_basins+B.e]++;
+          n_shelf_cells[s]++;
+        }
+        if (B.s != b and M.s == MASK_ICE_FREE_OCEAN) {
+          cfs_in_basins_per_shelf[s * m_n_basins + B.s] = B.s;
+          n_shelf_cells_per_basin[s*m_n_basins+B.s]++;
+          n_shelf_cells[s]++;
+        }
+        if (B.w != b and M.w == MASK_ICE_FREE_OCEAN) {
+          cfs_in_basins_per_shelf[s * m_n_basins + B.w] = B.w;
+          n_shelf_cells_per_basin[s*m_n_basins+B.w]++;
+          n_shelf_cells[s]++;
+        }
+
+      } else {
+
+        n_shelf_cells_per_basin[s*m_n_basins+b]++;
+        n_shelf_cells[s]++;
+
+        // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
+        if (mask.as_int(i, j) == MASK_FLOATING) {
+          auto M = mask.star(i, j);
+          if (M.n == MASK_ICE_FREE_OCEAN or
+              M.e == MASK_ICE_FREE_OCEAN or
+              M.s == MASK_ICE_FREE_OCEAN or
+              M.w == MASK_ICE_FREE_OCEAN) {
+            if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
+              cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
+            }
           }
         }
       }
@@ -518,6 +549,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
     for (int s = 0; s < m_n_shelves; s++) {
       for (int b = 0; b < m_n_basins; b++) {
         int sb = s * m_n_basins + b;
+
         // remove ice shelf parts from the count that do not have a calving front in that basin
         if (n_shelf_cells_per_basin[sb] > 0 and cfs_in_basins_per_shelf[sb] == 0) {
           n_shelf_cells[s] -= n_shelf_cells_per_basin[sb];
@@ -550,6 +582,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
         int sb = s * m_n_basins + b;
         Toc_box0(i, j) += basin_temperature[b] * n_shelf_cells_per_basin[sb] / N;
         Soc_box0(i, j) += basin_salinity[b] * n_shelf_cells_per_basin[sb] / N;
+
       }
 
       double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
@@ -790,6 +823,7 @@ DiagnosticList Pico::diagnostics_impl() const {
     { "pico_ice_rise_mask",     Diagnostic::wrap(m_geometry.ice_rise_mask()) },
     { "pico_basal_melt_rate",   Diagnostic::wrap(m_basal_melt_rate) },
     { "pico_contshelf_mask",    Diagnostic::wrap(m_geometry.continental_shelf_mask()) },
+    { "pico_isolated_mask",     Diagnostic::wrap(m_geometry.isolated_basin_mask()) },
     { "pico_salinity",          Diagnostic::wrap(m_Soc) },
     { "pico_temperature",       Diagnostic::wrap(m_Toc) },
     { "pico_T_star",            Diagnostic::wrap(m_T_star) },

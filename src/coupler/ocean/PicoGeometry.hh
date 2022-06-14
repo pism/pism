@@ -47,6 +47,7 @@ public:
   void update(const IceModelVec2S &bed_elevation, const IceModelVec2CellType &cell_type);
 
   const IceModelVec2Int &continental_shelf_mask() const;
+  const IceModelVec2Int &isolated_basin_mask() const;
   const IceModelVec2Int &box_mask() const;
   const IceModelVec2Int &ice_shelf_mask() const;
   const IceModelVec2Int &ice_rise_mask() const;
@@ -62,6 +63,12 @@ private:
                                       const IceModelVec2Int &ice_rise_mask,
                                       double bed_elevation_threshold,
                                       IceModelVec2Int &result);
+  void compute_isolated_basin_mask(const IceModelVec2S &bed_elevation,
+                                      const IceModelVec2Int &ice_rise_mask,
+                                      const IceModelVec2Int &basin_mask,
+                                      double bed_elevation_threshold,
+                                      IceModelVec2Int &result);
+
   void compute_ice_shelf_mask(const IceModelVec2Int &ice_rise_mask,
                               const IceModelVec2Int &lake_mask,
                               IceModelVec2Int &result);
@@ -75,6 +82,8 @@ private:
                                          int n_shelves,
                                          std::vector<int> &most_shelf_cells_in_basin,
                                          std::vector<int> &cfs_in_basins_per_shelf);
+
+
 
   void split_ice_shelves(const IceModelVec2CellType &cell_type,
                          const IceModelVec2Int &basin_mask,
@@ -105,6 +114,7 @@ private:
 
   // storage for outputs
   IceModelVec2Int m_continental_shelf;
+  IceModelVec2Int m_isolated_basin;
   IceModelVec2Int m_boxes;
   IceModelVec2Int m_ice_shelves;
   IceModelVec2Int m_basin_mask;
