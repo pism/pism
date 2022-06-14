@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2021 PISM authors
+# Copyright (C) 2021, 2022 PISM authors
 # created by torsten.albrecht@pik-potsdam.de
 
 set -e
@@ -51,6 +51,11 @@ ncap2 -O -s "where((basins==12 || basins==14) && mask==2 && topg<-600 && lon<-90
 # Advance Ross Ice Shelf into Amundsen Sea basin, but without connection
 ncap2 -O -s "where((basins==12 || basins==14) && mask==2 && topg<-600 && lon<-90 && lat<-77.4) thk=topg/(-910.0/1028.0)-10.0" input_01.nc input_03.nc
 
+# Advance Ross Ice Shelf into Amundsen Sea basin, but without connection, and calve off ice in one basin
+ncap2 -O -s "where((basins==12 && mask==2 && topg<-600 && lon<-90 && lat<-77.4) || (basins==12 && mask==3)) thk=0.0" input_03.nc input_04.nc
+
+extra="-extra_times 0:0.0005:0.001 -extra_vars pico_isolated_mask,basins,mask,pico_overturning,pico_salinity_box0,pico_temperature_box0,pico_box_mask,pico_shelf_mask,pico_ice_rise_mask,pico_basal_melt_rate,pico_contshelf_mask,pico_salinity,pico_temperature,pico_T_star,pico_basal_temperature"
+
 extract() {
 # Extracts pico_temperature_box0 at a given location.
 filename=$1
@@ -82,7 +87,7 @@ else
 fi
 }
 
-for testcase in "01" "02" "03";
+for testcase in "01" "02" "03" "04";
 do
   echo Test $testcase:
 
@@ -92,6 +97,7 @@ do
               $stressbalance \
               $surface \
               $pico \
+              $extra -extra_file ex_${testcase}.nc -verbose 2 \
               -y 0.001 \
               -o o_${testcase}.nc | tee output_${testcase}.log
 
@@ -100,24 +106,32 @@ do
   T12b_ref=271.541340785807
   T13_ref=272.781500154734
   T14_ref=273.596660429239
+  T12c_ref=271.532144093511
 
   T12=$(extract o_${testcase}.nc 59 37)
   T13=$(extract o_${testcase}.nc 41 34)
   T14=$(extract o_${testcase}.nc 28 49)
+  T14b=$(extract o_${testcase}.nc 37 55)
 
-  # basin 12
-  if [ ${testcase} == "01" ]
-  then
-    compare 12 $T12a_ref $T12
+  if [ ${testcase} == "04" ]
+    then
+      compare 14 $T12c_ref $T14b
   else
-    compare 12 $T12b_ref $T12
+
+    # basin 12
+    if [ ${testcase} == "01" ]
+    then
+      compare 12 $T12a_ref $T12
+    else
+      compare 12 $T12b_ref $T12
+    fi
+
+    # basin 13
+    compare 13 $T13_ref $T13
+
+    # basin 14
+    compare 14 $T13_ref $T13
   fi
-
-  # basin 13
-  compare 13 $T13_ref $T13
-
-  # basin 14
-  compare 14 $T13_ref $T13
 done
 
 rm -rf ${temp_dir}
