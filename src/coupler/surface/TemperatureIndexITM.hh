@@ -164,6 +164,8 @@ protected:
   std::unique_ptr<ScalarForcing> m_obliquity;
 
   std::unique_ptr<ScalarForcing> m_long_peri;
+
+  std::string m_paleo_file;
 };
 
 } // end of namespace surface

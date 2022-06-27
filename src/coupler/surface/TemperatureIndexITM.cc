@@ -179,28 +179,34 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
                               "W m-2", "W m-2", "", 0);
   m_qinsol.set(0.0);
 
+  m_paleo_file = m_config->get_string("surface.itm.paleo.file");
 
-  m_eccentricity.reset(new ScalarForcing(g->ctx(),
-                                    "surface.itm.paleo.eccentricity",
-                                    "eccentricity",
-                                    "",
-                                    "",
-                                    "eccentricity of the earth "));
+  if(not m_paleo_file.empty()){
 
-  m_obliquity.reset(new ScalarForcing(g->ctx(),
-                                    "surface.itm.paleo.obliquity",
-                                    "obliquity",
-                                    "degree",
-                                    "degree",
-                                    "obliquity of the earth "));
 
-  m_long_peri.reset(new ScalarForcing(g->ctx(),
-                                    "surface.itm.paleo.long_peri",
-                                    "long_peri",
-                                    "degree",
-                                    "degree",
-                                    "longitude of the perihelion "));
 
+    m_eccentricity.reset(new ScalarForcing(g->ctx(),
+                                      "surface.itm.paleo.eccentricity",
+                                      "eccentricity",
+                                      "",
+                                      "",
+                                      "eccentricity of the earth "));
+
+    m_obliquity.reset(new ScalarForcing(g->ctx(),
+                                      "surface.itm.paleo.obliquity",
+                                      "obliquity",
+                                      "degree",
+                                      "degree",
+                                      "obliquity of the earth "));
+
+    m_long_peri.reset(new ScalarForcing(g->ctx(),
+                                      "surface.itm.paleo.long_peri",
+                                      "long_peri",
+                                      "degree",
+                                      "degree",
+                                      "longitude of the perihelion "));
+  }
+  
 
 }
 
@@ -311,12 +317,12 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
     m_runoff->set(0.0);
   }
 
-
-  {
-    m_eccentricity->init();
-    m_obliquity->init();
-    m_long_peri->init();
-  }
+  if (not m_paleo_file.empty())
+    {
+      m_eccentricity->init();
+      m_obliquity->init();
+      m_long_peri->init();
+    }
 }
 
 MaxTimestep TemperatureIndexITM::max_timestep_impl(double my_t) const {
@@ -414,9 +420,15 @@ double TemperatureIndexITM::get_delta(double time){
 double TemperatureIndexITM::get_distance2_paleo(double time){
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double lambda = get_lambda_paleo(time);
-  double 
-    ecc = m_eccentricity->value(time), //m_config->get_number("surface.itm.paleo.eccentricity"),
-    peri_deg =  m_long_peri->value(time); //m_config->get_number("surface.itm.paleo.long_peri");
+  double ecc = 0; 
+  double peri_deg = 0; 
+  if (not m_paleo_file.empty()){
+      ecc = m_eccentricity->value(time); 
+      peri_deg =  m_long_peri->value(time); 
+  } else{
+      ecc = m_config->get_number("surface.itm.paleo.eccentricity");
+      peri_deg = m_config->get_number("surface.itm.paleo.long_peri");
+  }
   double distance2 = pow((1. - ecc * cos(lambda - peri_deg * M_PI / 180.)),2) / pow((1. - ecc * ecc),2);
   // From Equation 2.2.5 Liou (2002)
   // (a/r)^2
@@ -427,7 +439,10 @@ double TemperatureIndexITM::get_distance2_paleo(double time){
 
 double TemperatureIndexITM::get_delta_paleo(double time){
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
-  double epsilon_deg = m_obliquity->value(time);// m_config->get_number("surface.itm.paleo.obliquity");
+  double epsilon_deg = 0;
+  if (not m_paleo_file.empty()){
+    epsilon_deg = m_obliquity->value(time);
+  } else {epsilon_deg =  m_config->get_number("surface.itm.paleo.obliquity");}
   double lambda = get_lambda_paleo(time);
   double delta = sin(epsilon_deg * M_PI / 180.) * sin(lambda);
   // Equation 2.2.4 of Liou (2002)
@@ -441,11 +456,19 @@ double TemperatureIndexITM::get_lambda_paleo(double time){
   // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double 
-    epsilon_deg = m_obliquity->value(time); //m_config->get_number("surface.itm.paleo.obliquity"), 
-  double
-    ecc = m_eccentricity->value(time); //m_config->get_number("surface.itm.paleo.eccentricity"),
-  double
-    peri_deg = m_long_peri->value(time); // m_config->get_number("surface.itm.paleo.long_peri");
+    epsilon_deg = 0, 
+    ecc = 0, 
+    peri_deg = 0;
+  if (not m_paleo_file.empty()){ 
+      epsilon_deg = m_obliquity->value(time),
+      ecc = m_eccentricity->value(time), 
+      peri_deg =  m_long_peri->value(time); 
+  } else{
+      ecc = m_config->get_number("surface.itm.paleo.eccentricity"),
+      peri_deg = m_config->get_number("surface.itm.paleo.long_peri"),
+      epsilon_deg =  m_config->get_number("surface.itm.paleo.obliquity");
+  }
+
   double lambda_m, lambda, delta_lambda; 
   delta_lambda = 2. * M_PI * (m_grid->ctx()->time()->year_fraction(time) - 80./ 365.); 
   // lambda = 0 at March equinox (80th day of the year)
