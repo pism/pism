@@ -2480,6 +2480,11 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.eccentricity.reference_year_type = "integer";
     pism_config:surface.itm.paleo.eccentricity.reference_year_units = "years";
 
+    pism_config:surface.itm.paleo.file = "";
+    pism_config:surface.itm.paleo.file_doc = "Name of the file containing paleo parameters";
+    pism_config:surface.itm.paleo.file_option = "itm_paleo_file";
+    pism_config:surface.itm.paleo.file_type = "string";
+
     pism_config:surface.itm.paleo.obliquity =  23.44;
     pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.itm.paleo.obliquity_type = "number";
