@@ -65,6 +65,10 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
   m_sd_param_b                 = m_config->get_number("surface.itm.std_dev_param_b");
   m_refreeze_fraction          = m_config->get_number("surface.itm.refreeze");
 
+  m_albedo_period              = m_config->get_number("surface.itm.albedo_input.period");
+
+
+
 
   m_albedo_input_set = m_config-> get_flag("surface.itm.albedo_input_set");
   if (m_albedo_input_set) {
@@ -77,13 +81,13 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g,
                                                 "albedo", "",
                                                 max_buffer_size,
                                                 evaluations_per_year,
-                                                1, //FIXME here should be the period, for now only period of one year
+                                                m_albedo_period > 0, 
                                                 LINEAR);  
   }
 
 
 
-  options::Integer period("-pdd_sd_period",  //FIXME create option of itm sd period
+  options::Integer period("-itm_sd_period",  
                           "Length of the standard deviation data period in years", 0);
   m_sd_period = period;
 
@@ -471,7 +475,7 @@ double TemperatureIndexITM::get_lambda_paleo(double time){
 
   double lambda_m, lambda, delta_lambda; 
   delta_lambda = 2. * M_PI * (m_grid->ctx()->time()->year_fraction(time) - 80./ 365.); 
-  // lambda = 0 at March equinox (80th day of the year)
+  // lambda = 0 at March equinox (80th day of the year) 
   double beta = sqrt(1-ecc * ecc);
   lambda_m = -2.*((ecc/2. + (pow(ecc,3))/8. ) * (1.+beta) * sin(-peri_deg * M_PI / 180.) -
         (pow(ecc,2))/4. * (1./2. + beta) * sin(-2.*peri_deg * M_PI / 180.) + (pow(ecc,3))/8. *

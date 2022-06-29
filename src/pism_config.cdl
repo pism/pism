@@ -2363,8 +2363,14 @@ netcdf pism_config {
     pism_config:surface.itm.albedo_input_set_type = "flag";
 
     pism_config:surface.itm.albedo_input_file = "";
-    pism_config:surface.itm.albedo_input_file_doc = "the file with the albedo values to be read in. File needs to conver one year and will be used periodically.";
+    pism_config:surface.itm.albedo_input_file_doc = "the file with the albedo values to be read in.";
     pism_config:surface.itm.albedo_input_file_type = "string";
+
+    pism_config:surface.itm.albedo_input.period = 0;
+    pism_config:surface.itm.albedo_input.period_doc = "Length of the period of the albedo forcing data. Set to zero to disable.";
+    pism_config:surface.itm.albedo_input.period_option = "itm_albedo_period";
+    pism_config:surface.itm.albedo_input.period_type = "integer";
+    pism_config:surface.itm.albedo_input.period_units = "years";
 
     pism_config:surface.itm.albedo_snow = 0.82;
     pism_config:surface.itm.albedo_snow_doc = "albedo value for fresh snow, i.e. albedo without melting, in albedo parametrization";
@@ -2566,18 +2572,18 @@ netcdf pism_config {
 
     pism_config:surface.itm.std_dev.file = "";
     pism_config:surface.itm.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
-    pism_config:surface.itm.std_dev.file_option = "pdd_sd_file";
+    pism_config:surface.itm.std_dev.file_option = "itm_sd_file";
     pism_config:surface.itm.std_dev.file_type = "string";
 
     pism_config:surface.itm.std_dev.period = 0;
     pism_config:surface.itm.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.itm.std_dev.period_option = "pdd_sd_period";
+    pism_config:surface.itm.std_dev.period_option = "itm_sd_period";
     pism_config:surface.itm.std_dev.period_type = "integer";
     pism_config:surface.itm.std_dev.period_units = "years";
 
     pism_config:surface.itm.std_dev.reference_year = 0;
     pism_config:surface.itm.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
-    pism_config:surface.itm.std_dev.reference_year_option = "pdd_sd_reference_year";
+    pism_config:surface.itm.std_dev.reference_year_option = "itm_sd_reference_year";
     pism_config:surface.itm.std_dev.reference_year_type = "integer";
     pism_config:surface.itm.std_dev.reference_year_units = "years";
 
