@@ -47,7 +47,7 @@ NetCDF variable with standard name ``tendency_of_bedrock_altitude`` in the input
 then this model will initialize so that it starts with the given uplift rate.
 
 All parameters (except for :config:`constants.ice.density`) controlling the Lingle-Clark
-model are listed below (they all have the prefix ``bed.deformation.``).
+model are listed below (they all have the prefix ``bed_deformation.``).
 
 .. rubric:: Parameters
 
