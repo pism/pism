@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,6 +64,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("time.run_length", 1.0);
 
   set_config_from_options(sys, *config);
+  config->resolve_filenames();
 
   print_config(*logger, 3, *config);
 

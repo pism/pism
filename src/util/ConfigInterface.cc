@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,6 +19,9 @@
 
 #include <mpi.h>
 #include <cmath>
+#include <climits>              // PATH_MAX
+#include <cstdlib>              // realpath()
+
 
 #include "pism/util/io/File.hh"
 #include "ConfigInterface.hh"
@@ -123,6 +126,28 @@ void Config::import_from(const Config &other) {
                                     p.first.c_str(), other.filename().c_str());
     }
   }
+}
+
+void Config::resolve_filenames() {
+  for (const auto &s : all_strings()) {
+    auto parameter = s.first;
+    auto value = s.second;
+
+    if (value.empty()) {
+      continue;
+    }
+
+    auto last_token = pism::split(parameter, '.').back();
+
+    if (last_token == "file") {
+      char resolved_path[PATH_MAX];
+
+      if (realpath(value.c_str(), resolved_path) != NULL) {
+        set_string(parameter, resolved_path, CONFIG_USER);
+      }
+      // Note: we keep the old value if `realpath()` failed
+    }
+  } // end of the loop over all strings
 }
 
 const std::set<std::string>& Config::parameters_set_by_user() const {
@@ -763,6 +788,7 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
   config->init_with_default(log);
   config->import_from(*overrides);
   set_config_from_options(unit_system, *config);
+  config->resolve_filenames();
 
   return config;
 }

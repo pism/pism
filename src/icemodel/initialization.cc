@@ -1024,6 +1024,7 @@ void IceModel::process_options() {
              "Processing physics-related command-line options...\n");
 
   set_config_from_options(m_sys, *m_config);
+  m_config->resolve_filenames();
 
   // Set global attributes using the config database:
   m_output_global_attributes["title"] = m_config->get_string("run_info.title");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -71,6 +71,9 @@ public:
 
   // Import settings from an override file
   void import_from(const Config &other);
+
+  // Use `realpath()` to resolve relative file names.
+  void resolve_filenames();
 
   const std::set<std::string>& parameters_set_by_user() const;
   const std::set<std::string>& parameters_used() const;

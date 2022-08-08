@@ -108,6 +108,7 @@ int main(int argc, char *argv[]) {
       config->import_from(*overrides);
       // process command-line options
       set_config_from_options(ctx->unit_system(), *config);
+      config->resolve_filenames();
     } else {
       required_options.emplace_back("-i");
     }

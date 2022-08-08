@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -284,6 +284,7 @@ int main(int argc, char *argv[]) {
     config->set_string("stress_balance.sia.flow_law", "arr");
 
     set_config_from_options(ctx->unit_system(), *config);
+    config->resolve_filenames();
 
     std::string usage = "\n"
       "usage of SIAFD_TEST:\n"

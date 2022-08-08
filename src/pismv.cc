@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -52,6 +52,7 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
   config->set_string("grid.registration", "corner");
 
   set_config_from_options(sys, *config);
+  config->resolve_filenames();
 
   print_config(*logger, 3, *config);
 
