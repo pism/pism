@@ -187,7 +187,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   } catch (RuntimeError &e) {
     e.add_context("computing the grounded cell fraction");
 
-    std::string output_file = config->get_string("output.file_name");
+    std::string output_file = config->get_string("output.file");
     std::string o_file = filename_add_suffix(output_file,
                                              "_grounded_cell_fraction_failed", "");
     // save geometry to a file for debugging

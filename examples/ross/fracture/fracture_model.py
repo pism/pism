@@ -58,7 +58,7 @@ for k in range(N):
     fracture.update(dt, geometry, velocity, hardness, vel_bc_mask)
 
 # save results
-output_filename = ctx.config.get_string("output.file_name")
+output_filename = ctx.config.get_string("output.file")
 
 f = PISM.util.prepare_output(output_filename, append_time=True)
 fracture.density().write(f)

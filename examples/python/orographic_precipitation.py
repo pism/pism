@@ -95,7 +95,7 @@ def input_file(filename):
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    model.mean_precipitation().dump(config.get_string("output.file_name"))
+    model.mean_precipitation().dump(config.get_string("output.file"))
 
 if __name__ == "__main__":
     ctx = PISM.Context()

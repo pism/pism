@@ -43,9 +43,9 @@ if len(input_filename) == 0:
     import sys
     sys.exit(1)
 
-config.set_string("output.file_name", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
+config.set_string("output.file", "sia_" + os.path.basename(input_filename), PISM.CONFIG_DEFAULT)
 
-output_file = config.get_string("output.file_name")
+output_file = config.get_string("output.file")
 is_regional = PISM.OptionBool("-regional", "Compute SIA using regional model semantics")
 
 registration = PISM.CELL_CENTER

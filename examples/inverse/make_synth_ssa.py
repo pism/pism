@@ -88,8 +88,8 @@ if __name__ == '__main__':
 
     input_file_name = config.get_string("input.file")
 
-    config.set_string("output.file_name", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
-    output_file_name = config.get_string("output.file_name")
+    config.set_string("output.file", "make_synth_ssa.nc", PISM.CONFIG_DEFAULT)
+    output_file_name = config.get_string("output.file")
 
     sys = context.unit_system
     design_prior_scale = PISM.OptionReal(sys, "-design_prior_scale",

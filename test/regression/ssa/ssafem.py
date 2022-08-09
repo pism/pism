@@ -82,7 +82,7 @@ def save_results(filename):
     tauc.write(f)
     f.close()
 
-save_results(config.get_string("output.file_name"))
+save_results(config.get_string("output.file"))
 
 def plot():
     import pylab as plt

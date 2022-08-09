@@ -290,7 +290,7 @@ def run():
     append = PISM.OptionString("-a", "append file")
     append_filename = append.value() if append.is_set() else None
 
-    output_filename = config.get_string("output.file_name")
+    output_filename = config.get_string("output.file")
     if len(output_filename) == 0:
         output_filename = None
 

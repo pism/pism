@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     double basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
 
     auto method = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
 

@@ -143,4 +143,4 @@ if __name__ == '__main__':
     tc = test_cfbc(int(config.get_number("grid.Mx")),
                    int(config.get_number("grid.My")))
 
-    tc.run(config.get_string("output.file_name"))
+    tc.run(config.get_string("output.file"))

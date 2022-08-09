@@ -110,4 +110,4 @@ if __name__ == '__main__':
     PISM.set_abort_on_sigint(True)
 
     tc = test_plug(int(config.get_number("grid.Mx")), int(config.get_number("grid.My")))
-    tc.run(config.get_string("output.file_name"))
+    tc.run(config.get_string("output.file"))

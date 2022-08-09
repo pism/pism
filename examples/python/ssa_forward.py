@@ -49,7 +49,7 @@ if __name__ == '__main__':
         import sys
         sys.exit(1)
 
-    config.set_string("output.file_name", "ssa_forward.nc")
+    config.set_string("output.file", "ssa_forward.nc")
 
     ssa_run = PISM.ssa.SSAFromInputFile(input_file)
 
@@ -61,4 +61,4 @@ if __name__ == '__main__':
 
     PISM.verbPrintf(2, context.com, "Solve time %g seconds.\n", solve_t)
 
-    ssa_run.write(config.get_string("output.file_name"))
+    ssa_run.write(config.get_string("output.file"))

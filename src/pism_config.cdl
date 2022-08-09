@@ -1805,7 +1805,7 @@ netcdf pism_config {
     pism_config:output.checkpoint.exit_code_units = "none";
 
     pism_config:output.checkpoint.file = "";
-    pism_config:output.checkpoint.file_doc = "If set, save model checkpoints to this file, otherwise build the name by appending ``_checkpoint`` to :config:`output.file_name`.";
+    pism_config:output.checkpoint.file_doc = "If set, save model checkpoints to this file, otherwise build the name by appending ``_checkpoint`` to :config:`output.file`.";
     pism_config:output.checkpoint.file_type = "string";
 
     pism_config:output.checkpoint.interval = 1.0;
@@ -1831,7 +1831,7 @@ netcdf pism_config {
     pism_config:output.extra.append_type = "flag";
 
     pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file_name`.";
+    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
     pism_config:output.extra.file_option = "extra_file";
     pism_config:output.extra.file_type = "string";
 
@@ -1855,10 +1855,10 @@ netcdf pism_config {
     pism_config:output.extra.vars_option = "extra_vars";
     pism_config:output.extra.vars_type = "string";
 
-    pism_config:output.file_name = "unnamed.nc";
-    pism_config:output.file_name_doc = "The file to save final model results to.";
-    pism_config:output.file_name_option = "o";
-    pism_config:output.file_name_type = "string";
+    pism_config:output.file = "unnamed.nc";
+    pism_config:output.file_doc = "The file to save final model results to.";
+    pism_config:output.file_option = "o";
+    pism_config:output.file_type = "string";
 
     pism_config:output.fill_value = -2e9;
     pism_config:output.fill_value_doc = "_FillValue used when saving diagnostic quantities";

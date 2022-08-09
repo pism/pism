@@ -120,7 +120,7 @@ class SteadyHydrology(TestCase):
         geometry = self.geometry
         model = self.model
 
-        output_file = ctx.config.get_string("output.file_name")
+        output_file = ctx.config.get_string("output.file")
 
         f = PISM.util.prepare_output(output_file)
 

@@ -116,7 +116,7 @@ if __name__ == '__main__':
             if (i == 0) or (i == grid.Mx() - 1) or (j == 0) or (j == grid.My() - 1):
                 no_model_mask[i, j] = 1
 
-    output_filename = config.get_string("output.file_name")
+    output_filename = config.get_string("output.file")
     pio = PISM.util.prepare_output(output_filename)
     pio.close()
     vecs.writeall(output_filename)

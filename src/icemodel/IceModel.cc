@@ -444,10 +444,10 @@ void IceModel::step(bool do_mass_continuity,
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
-    std::string output_file = m_config->get_string("output.file_name");
+    std::string output_file = m_config->get_string("output.file");
 
     if (output_file.empty()) {
-      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+      m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.\n");
       output_file = "unnamed.nc";
     }
 
@@ -672,10 +672,10 @@ void IceModel::step(bool do_mass_continuity,
   const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness);
 
   if (thickness_too_high) {
-    std::string output_file = m_config->get_string("output.file_name");
+    std::string output_file = m_config->get_string("output.file");
 
     if (output_file.empty()) {
-      m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.");
+      m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
       output_file = "unnamed.nc";
     }
 

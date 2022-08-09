@@ -30,7 +30,7 @@ void IceModel::init_checkpoints() {
   m_checkpoint_filename = m_config->get_string("output.checkpoint.file");
 
   if (m_checkpoint_filename.empty()) {
-    std::string output_file = m_config->get_string("output.file_name");
+    std::string output_file = m_config->get_string("output.file");
     if (not output_file.empty()) {
       m_checkpoint_filename = filename_add_suffix(output_file, "_checkpoint", "");
     } else {

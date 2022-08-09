@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
     unsigned int My = config->get_number("grid.My");
 
     auto method      = config->get_string("stress_balance.ssa.method");
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
     auto glen_n      = config->get_number("stress_balance.ssa.Glen_exponent");
 
     bool write_output = config->get_string("output.size") != "none";

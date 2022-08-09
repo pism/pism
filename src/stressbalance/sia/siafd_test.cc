@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    auto output_file = config->get_string("output.file_name");
+    auto output_file = config->get_string("output.file");
 
     GridParameters P(config);
     P.Lx = 900e3;

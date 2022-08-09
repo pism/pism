@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     // create grid and set defaults
     IceGrid::Ptr grid(new IceGrid(ctx, P));
 
-    auto outname = config->get_string("output.file_name");
+    auto outname = config->get_string("output.file");
 
     options::Real dt_years(ctx->unit_system(),
                            "-dt", "Time-step, in years", "years", 1.0);

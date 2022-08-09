@@ -114,10 +114,10 @@ void IceModel::save_results() {
     prepend_history(str);
   }
 
-  std::string filename = m_config->get_string("output.file_name");
+  std::string filename = m_config->get_string("output.file");
 
   if (filename.empty()) {
-    m_log->message(2, "WARNING: output.file_name is empty. Using unnamed.nc instead.\n");
+    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.\n");
     filename = "unnamed.nc";
   }
 
