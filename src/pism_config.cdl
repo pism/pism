@@ -2434,6 +2434,11 @@ netcdf pism_config {
     pism_config:surface.itm.daily_cycle_doc = "if set to yes, the insolation melt module takes the diurnal cycle into account (see Krebs-Kanzow 2018)";
     pism_config:surface.itm.daily_cycle_type = "flag";
 
+    pism_config:surface.itm.firn_depth_file = "";
+    pism_config:surface.itm.firn_depth_file_doc = "The name of the file to read the firn_depth from.";
+    pism_config:surface.itm.firn_depth_file_option = "itm_firn_depth_file";
+    pism_config:surface.itm.firn_depth_file_type = "string";
+
     pism_config:surface.itm.max_evals_per_year = 52;
     pism_config:surface.itm.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
     pism_config:surface.itm.max_evals_per_year_type = "integer";

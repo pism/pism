@@ -239,7 +239,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
 
   // initialize the spatially-variable air temperature standard deviation
   {
-    std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
+    std::string sd_file = m_config->get_string("surface.itm.std_dev.file");
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
@@ -249,7 +249,7 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
                      "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
-      options::Integer sd_ref_year("-pdd_sd_reference_year",
+      options::Integer sd_ref_year("-itm_sd_reference_year",
                                    "Standard deviation data reference year", 0);
 
       double sd_ref_time = units::convert(m_sys, sd_ref_year, "years", "seconds");
@@ -261,12 +261,12 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
-  std::string firn_file = m_config->get_string("surface.pdd.firn_depth_file");
+  std::string firn_file = m_config->get_string("surface.itm.firn_depth_file");
 
   if (input.type == INIT_RESTART) {
     if (not firn_file.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "surface.pdd.firn_depth_file is not allowed when"
+                                    "surface.itm.firn_depth_file is not allowed when"
                                     " re-starting from a PISM output file.");
     }
 
