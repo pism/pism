@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -140,6 +140,21 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
       m_log->message(3, "PICO: update basin %d neighbors: %s\n",
                      p.first, neighbor_list.c_str());
     }
+  }
+
+  // Update m_basin_mask metadata to make sure that adjacency information is saved to the
+  // output file:
+  for (const auto &p : m_basin_neighbors) {
+    int basin = p.first;
+
+    // convert set<int> to vector<double>:
+    std::vector<double> neighbors{};
+    for (const auto &n : p.second) {
+      neighbors.emplace_back(n);
+    }
+
+    auto attr_name = pism::printf("basin_%02d_neighbors", basin);
+    m_basin_mask.metadata().set_numbers(attr_name, neighbors);
   }
 
   bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
