@@ -124,9 +124,9 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
   // adjacent basins by iterating over the current ice front. This means that basin
   // adjacency cannot be pre-computed during initialization.
   //
-  bool update_pico_basin_neighbors = m_config->get_flag("ocean.pico.update_pico_basin_neighbors");
+  bool update_basin_neighbors = m_config->get_flag("ocean.pico.update_basin_neighbors");
 
-  if (update_pico_basin_neighbors) {
+  if (update_basin_neighbors) {
 
     m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
 
