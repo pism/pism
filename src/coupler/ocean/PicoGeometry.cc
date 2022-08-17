@@ -82,30 +82,89 @@ const IceModelVec2Int &PicoGeometry::basin_mask() const {
 
 void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
+  auto input_opts = process_input_options(m_grid->com, m_config);
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  m_basin_mask.regrid(opt.filename, CRITICAL);
+  std::string basins_file = opt.filename;
+  if (input_opts.type == INIT_RESTART) {
+    basins_file = input_opts.filename;
+    m_log->message(2, "PICO: re-starting from %s...\n",
+                   basins_file.c_str());
+  }
+
+  m_basin_mask.regrid(basins_file, CRITICAL);
 
   m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
 
-  // Update basin adjacency.
-  //
-  // basin_neighbors() below uses the cell type mask to find
-  // adjacent basins by iterating over the current ice front. This means that basin
-  // adjacency cannot be pre-computed during initialization.
+  // Array of 0 and 1 indicating whether a specific basin is present: basins[k] = 1 if
+  // m_basin_mask contains `k` and 0 otherwise:
+  std::vector<int> basins(m_n_basins, 0);
   {
-    m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
+    IceModelVec::AccessList list{m_basin_mask};
 
-    // report
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      size_t b = m_basin_mask.as_int(i, j);
+      if (b < basins.size()) {
+        basins[b] = 1;
+      }
+    }
+    std::vector<int> tmp(basins.size(), 0);
+    GlobalMax(m_grid->com, basins.data(), tmp.data(), basins.size());
+    basins = tmp;
+  }
+
+  bool failed_to_read_adjacency = false;
+  {
+    File input_file(m_grid->com, basins_file, PISM_NETCDF3, PISM_READONLY);
+    // note: we skip the "0" basin here
+    for (size_t k = 1; k < basins.size(); ++k) {
+      if (basins[k] == 0) {
+        // skip non-existent basins
+        continue;
+      }
+      auto attr_name = pism::printf("basin_%02d_neighbors", (int)k);
+      auto value = input_file.read_double_attribute(m_basin_mask.get_name(),
+                                                    attr_name);
+      if (value.size() == 2) {
+        m_basin_neighbors[k] = {(int)value[0], (int)value[1]};
+      } else {
+        failed_to_read_adjacency = true;
+        break;
+      }
+    }
+  }
+
+  // Update basin adjacency.
+  if (failed_to_read_adjacency) {
+    m_log->message(2,
+                   "PICO: computing the list of basin neighbors using the basin mask\n"
+                   "      and the current ice extent...\n");
+    m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
+  } else {
+    m_log->message(2, "PICO: reading the list of basin neighbors from %s...\n",
+                   basins_file.c_str());
+  }
+
+  // report
+  {
+    // build a list of basins with corresponding neighbor IDs:
+    std::vector<std::string> basin_info;
     for (const auto &p : m_basin_neighbors) {
+      // make a list of neighbor IDs for this basin:
       std::vector<std::string> neighbors;
       for (const auto &n : p.second) {
         neighbors.emplace_back(pism::printf("%d", n));
       }
-      std::string neighbor_list = pism::join(neighbors, ", ");
-      m_log->message(3, "PICO: init basin %d neighbors: %s\n",
-		     p.first, neighbor_list.c_str());
+
+      std::string neighbor_list = pism::join(neighbors, ",");
+      basin_info.emplace_back(pism::printf("%d: {%s}", p.first, neighbor_list.c_str()));
     }
+    // make a comma-separated list:
+    auto joined = pism::join(basin_info, ", ");
+
+    m_log->message(2, "PICO basin neighbors: %s.\n", joined.c_str());
   }
 }
 
@@ -137,7 +196,7 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
         neighbors.emplace_back(pism::printf("%d", n));
       }
       std::string neighbor_list = pism::join(neighbors, ", ");
-      m_log->message(3, "PICO: update basin %d neighbors: %s\n",
+      m_log->message(3, "PICO: basin %d neighbors: %s\n",
                      p.first, neighbor_list.c_str());
     }
   }
