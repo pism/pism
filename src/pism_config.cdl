@@ -386,7 +386,7 @@ netcdf pism_config {
     pism_config:basal_yield_stress.mohr_coulomb.till_compressibility_coefficient_units = "pure number";
 
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden = 0.02;
-    pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_doc = "`\\delta` in notes; `N_0 = \\delta P_o` where `P_o` is overburden pressure; `N_0` is reference (low) value of effective pressure (i.e. normal stress); `N_0` scales with overburden pressure unlike :cite:`Tulaczyketal2000`; default value from Greenland and Antarctic model runs";
+    pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_doc = "`\\delta` in :cite:`BuelervanPelt2015`; `\\delta P_o \\le N_{\\text{till}} \\le P_o` where `P_o` is overburden pressure and `N_{\\text{till}}` is the effective pressure of the overlying ice on the saturated till; default value of `\\delta` corresponds to  Greenland and Antarctic model runs";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_option = "till_effective_fraction_overburden";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_type = "number";
     pism_config:basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden_units = "pure number";
