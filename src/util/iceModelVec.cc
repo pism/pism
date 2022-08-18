@@ -543,11 +543,13 @@ const SpatialVariableMetadata& IceModelVec::metadata(unsigned int N) const {
 //! Writes an IceModelVec to a NetCDF file.
 void IceModelVec::write_impl(const File &file) const {
   Logger::ConstPtr log = m_impl->grid->ctx()->log();
-
-  log->message(4, "  Writing %s...\n", m_impl->name.c_str());
+  auto time = timestamp(m_impl->grid->com);
 
   // The simplest case:
   if (ndof() == 1) {
+    log->message(3, "[%s] Writing %s...\n",
+                 time.c_str(), metadata(0).get_name().c_str());
+
     if (m_impl->ghosted) {
       petsc::TemporaryGlobalVec tmp(dm());
 
@@ -575,6 +577,8 @@ void IceModelVec::write_impl(const File &file) const {
     get_dof(da2, tmp, j);
 
     petsc::VecArray tmp_array(tmp);
+    log->message(3, "[%s] Writing %s...\n",
+                 time.c_str(), metadata(j).get_name().c_str());
     io::write_spatial_variable(metadata(j), *grid(), file, tmp_array.get());
   }
 }
@@ -906,10 +910,6 @@ void IceModelVec::read(const File &file, const unsigned int time) {
 
 void IceModelVec::write(const File &file) const {
   define(file);
-
-  m_impl->grid->ctx()->log()->message(3, "  [%s] Writing %s...",
-                               timestamp(m_impl->grid->com).c_str(),
-                               m_impl->name.c_str());
 
   double start_time = get_time();
   write_impl(file);
