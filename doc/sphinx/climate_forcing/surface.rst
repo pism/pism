@@ -307,9 +307,9 @@ simple diurnal Energy Balance Model dEBM-simple
 ++++++++++++++++++++++++
 
 :|options|: ``-surface itm``
-:|variables|: none 
+:|variables|: none
 :|implementation|: ``pism::surface::TemperatureIndexITM``
-                   
+
 The default dEBM-simple model used by PISM, turned on by option :opt:`-surface itm`, is based on
 :cite:`Zeitz2021`.
 
@@ -320,36 +320,36 @@ rain; all precipitation during periods with air temperatures below
 :config:`surface.itm.air_temp_all_precip_as_snow` (default of `0^\circ C`) is interpreted as
 snow.
 
-The dEBM-simple model can be used for long-term simulation. 
+The dEBM-simple model can be used for long-term simulation.
 Using only monthly temperatures and precipitation as input, can compute temperature- and insolation-driven
 melt rates. dEBM-simple uses an implicit diurnal cycle, assumptions about the average transmissivity of
 the atmosphere and a simple albedo parameterization in order to compute the insolation-driven melt and the
 "effective PDD temperature", computed by adding white noise to the (monthly) mean input temperature and
-taking the average above the melting point (usually 0°C), for computing the temperature-driven melt. 
+taking the average above the melting point (usually 0°C), for computing the temperature-driven melt.
 
-The equation for computing the melt rate reads 
+The equation for computing the melt rate reads
 
 .. math::
 
   M = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2,
 
-with the fresh water density `\rho_\text{w}`, latent heat of fusion `L_\text{m}`, the surface albedo `\alpha_\text{S}` and the two tuning parameters `c_1` :config:`surface.itm.itm_lambda` and `c_2` :config:`surface.itm.itm_c`. `\Delta t_\Phi` is the time during the day, when the sun is above the elevation angle `\Phi` and melt can occur. `\Phi` is assumed to be constant in space and time, it can be set by the configuration parameter :config:`surface.itm.phi` and the default value is `\Phi = 17.5^\circ`. 
-The incoming radiation, which reaches the surface, is obtained from the mean top of the atmosphere insolation over the time `\Delta t_\Phi` `\bar{S_\Phi}`, computed internally, and the parameterized transmissivity of the atmosphere `\tau_\text{A}`. 
+with the fresh water density `\rho_\text{w}`, latent heat of fusion `L_\text{m}`, the surface albedo `\alpha_\text{S}` and the two tuning parameters `c_1` :config:`surface.itm.itm_lambda` and `c_2` :config:`surface.itm.itm_c`. `\Delta t_\Phi` is the time during the day, when the sun is above the elevation angle `\Phi` and melt can occur. `\Phi` is assumed to be constant in space and time, it can be set by the configuration parameter :config:`surface.itm.phi` and the default value is `\Phi = 17.5^\circ`.
+The incoming radiation, which reaches the surface, is obtained from the mean top of the atmosphere insolation over the time `\Delta t_\Phi` `\bar{S_\Phi}`, computed internally, and the parameterized transmissivity of the atmosphere `\tau_\text{A}`.
 
-The parameterization of `\tau_\text{A}` is set by the configuration parameters :config:`surface.itm.tau_a_intercept` and :config:`surface.itm.tau_a_slope` and describes how much the transmissivity increases with surface height. 
-The paramterization of the albedo depends on the melt rate during the previous time step. The parameters are set by :config:`surface.itm.albedo_snow` (upper bound of the albedo), :config:`surface.itm.albedo_ice` (lower bound of the albedo), and :config:`surface.itm.albedo_slope` (slope of the linear part of the parameterization). 
-The albedo can also be read in from a time dependend spatial file, use option :config:`surface.itm.albedo_input_set` and :config:`surface.itm.albedo_input_file`. 
-It probably makes sense to have at least monthly resolution in this file. 
+The parameterization of `\tau_\text{A}` is set by the configuration parameters :config:`surface.itm.tau_a_intercept` and :config:`surface.itm.tau_a_slope` and describes how much the transmissivity increases with surface height.
+The paramterization of the albedo depends on the melt rate during the previous time step. The parameters are set by :config:`surface.itm.albedo_snow` (upper bound of the albedo), :config:`surface.itm.albedo_ice` (lower bound of the albedo), and :config:`surface.itm.albedo_slope` (slope of the linear part of the parameterization).
+The albedo can also be read in from a time dependend spatial file, use option :config:`surface.itm.albedo_input_set` and :config:`surface.itm.albedo_input_file`.
+It probably makes sense to have at least monthly resolution in this file.
 
-The top of the atmosphere insolation is by default calculated assuming present day values of orbital parameters. Here, the value of the solar constant can be set with :config:`surface.itm.solar_constant`. 
-For paleo simulations, use the option :opt:`-itm_paleo` or set the configuration parameter :config:`surface.itm.paleo.enabled` to true. 
-The orbital parameters can either be set to constants or be read from a time-dependent file. 
-Use the configuration parameters :config:`surface.itm.paleo.eccentricity`. :config:`surface.itm.paleo.obliquity`, and :config:`surface.itm.paleo.long_peri` for the former and the option :config:`surface.itm.paleo.file` to read them in in a time-dependent file. 
+The top of the atmosphere insolation is by default calculated assuming present day values of orbital parameters. Here, the value of the solar constant can be set with :config:`surface.itm.solar_constant`.
+For paleo simulations, use the option :opt:`-itm_paleo` or set the configuration parameter :config:`surface.itm.paleo.enabled` to true.
+The orbital parameters can either be set to constants or be read from a time-dependent file.
+Use the configuration parameters :config:`surface.itm.paleo.eccentricity`. :config:`surface.itm.paleo.obliquity`, and :config:`surface.itm.paleo.long_peri` for the former and the option :config:`surface.itm.paleo.file` to read them in in a time-dependent file.
 
 
 
 The method of computing the effective temperature is analogous to the Temperature Index method described in section :ref:`sec-surface-pdd`, i.e. as the magnitude of the temperature
-excursion above `0\!\phantom{|}^\circ \text{C}`. 
+excursion above `0\!\phantom{|}^\circ \text{C}`.
 The configuration parameters controlling the standard deviation use the prefix ``surface.itm.std_dev.``
 
 .. pism-parameters::
@@ -357,7 +357,39 @@ The configuration parameters controlling the standard deviation use the prefix `
 
 By default PISM uses a constant value for standard deviation, which is set by the configuration parameter :config:`surface.itm.std_dev`.
 
-Note that melt is prohibited if the air temperature is below a threshold, which can be set by :config:`surface.itm.background_melting_temp`. This is to avoid melt rates from high insolation values and low albedo values, when it is too cold to actually melt. 
+Note that melt is prohibited if the air temperature is below a threshold, which can be set by :config:`surface.itm.background_melting_temp`. This is to avoid melt rates from high insolation values and low albedo values, when it is too cold to actually melt.
+
+
+Note that when used with periodic climate data (air temperature and precipitation) that is
+read from a file (see section :ref:`sec-atmosphere-given`), use of
+:config:`time_stepping.hit_multiples` is recommended: set it to the length of the climate
+data period in years.
+
+This model provides the following scalar:
+
+- :var:`surface_accumulation_rate`
+- :var:`surface_melt_rate`
+- :var:`surface_runoff_rate`
+
+and these 2D diagnostic quantities (averaged over reporting intervals; positive flux
+corresponds to ice gain):
+
+- :var:`surface_accumulation_flux`
+- :var:`surface_melt_flux`
+- :var:`surface_runoff_flux`
+- :var:`surface_insolation_melt_flux`
+- :var:`surface_temperature_melt_flux`
+- :var:`surface_offset_melt_flux`
+- :var:`albedo`
+- :var:`transmissivity`
+- :var:`TOAinsol`, the daily insolation at the top of the atmosphere
+- :var:`qinsol`, the average insolation at the top of the atmosphere, averaged over the time of the day when the solar angle is higher than `\Phi`.
+
+
+This makes it easy to compare the surface mass balance computed by the model to its
+individual components:
+
+
 
 .. _sec-surface-pik:
 
