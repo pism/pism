@@ -152,9 +152,6 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       &m_work};
 
   double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
-  double tillwatmax  = m_config->get_number("hydrology.tillwat_max"),
-         one_year = units::convert(m_sys, 1.0, "year", "seconds"),
-         critical_melt = -tillwatmax / one_year;
 
   unsigned int liquifiedCount = 0;
 
@@ -318,12 +315,6 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             // we need to freeze co restore energy conservation.
 
             Hfrozen = E_difference * (0.5*dz) / EC->L(T_m);
-            if (Hfrozen*one_year/dt > tillwatmax) { //tillwatmax/year
-              m_log->message(2,"!!!!!!!!!! %d,%d: Assert Hfrozen=%f m/yr to not exceed tillwatmax! \n",i,j,Hfrozen*one_year/dt);
-
-              Hfrozen= tillwatmax*dt/one_year * 0.5; //adding the factor 0.5 here, because I still see jumps
-
-            }
           }
         }
 
