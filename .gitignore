@@ -18,7 +18,3 @@ examples/**/*.png
 examples/**/*.zip
 TAGS
 .DS_Store
-bin/*
-include/*
-lib/*
-share/*
