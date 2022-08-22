@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "localITM.hh"
-#include "pism/coupler/util/ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 // #include "localMassBalance.hh"
 
@@ -71,14 +71,13 @@ protected:
   virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
   
-  bool albedo_anomaly_true(double time, int n) ;
+  bool albedo_anomaly_true(double time) ;
   double get_distance2(double time);
   double get_delta(double time);
   double get_distance2_paleo(double time); 
@@ -118,7 +117,7 @@ protected:
   IceModelVec2S m_snow_depth;
 
   //! standard deviation of the daily variability of the air temperature
-  IceModelVec2T::Ptr m_air_temp_sd;
+  std::shared_ptr<IceModelVec2T> m_air_temp_sd;
 
   //! total accumulation during the last time step
   IceModelVec2S::Ptr m_accumulation;
@@ -142,7 +141,7 @@ protected:
   IceModelVec2S m_albedo;
 
   //! if albedo is given as input field
-  IceModelVec2T::Ptr m_input_albedo;
+  std::shared_ptr<IceModelVec2T> m_input_albedo;
 
   //! transmissivity field
   IceModelVec2S m_transmissivity;
@@ -153,11 +152,7 @@ protected:
   //! q insol field
   IceModelVec2S m_qinsol;
 
-  bool m_albedo_input_set;
-  int m_albedo_period; 
-
-  bool m_sd_use_param, m_sd_file_set;
-  int m_sd_period;
+  bool m_sd_use_param, m_use_air_temp_sd_file;
   double m_sd_param_a, m_sd_param_b;
 
   std::unique_ptr<ScalarForcing> m_eccentricity;
@@ -166,7 +161,7 @@ protected:
 
   std::unique_ptr<ScalarForcing> m_long_peri;
 
-  std::string m_paleo_file;
+  bool m_use_paleo_file;
 };
 
 } // end of namespace surface
