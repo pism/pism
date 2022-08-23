@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,6 @@ protected:
   virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
-  virtual TSDiagnosticList ts_diagnostics_impl() const;
 
   virtual const IceModelVec2S& mass_flux_impl() const;
   virtual const IceModelVec2S& temperature_impl() const;
