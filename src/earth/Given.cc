@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -89,8 +89,7 @@ void Given::update_impl(const IceModelVec2S &ice_thickness,
   m_topg.copy_from(m_topg_reference);
   m_topg.add(1.0, *m_topg_delta);
 
-  m_uplift.copy_from(m_topg_last);
-  m_uplift.add(-1.0, m_topg);
+  compute_uplift(m_topg, m_topg_last, dt, m_uplift);
 }
 
 } // end of namespace bed
