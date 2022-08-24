@@ -1,5 +1,15 @@
 .. default-role:: literal
 
+Changes since v2.0.4
+====================
+
+- Fix `issue 512`_: incorrect uplift reported by `-bed_def given`.
+- Fix the build system: PISM v2.0.4 failed to find GSL if it is installed in a
+  non-standard location.
+- Minor documentation fixes.
+- Fix metadata of the `flux_staggered` diagnostic.
+- Stop with an error message if a regridded variable contains `NaN`.
+
 Changes since v2.0.3
 ====================
 
@@ -19,7 +29,7 @@ Changes since v2.0.3
   supports CMake >= 3.1).
 - Restore compatibility with PETSc version 3.7.
 - Add tests to automatically check for compatibility with CMake 3.3 and PETSc 3.7.
-- Other minor fixes ()
+- Other minor fixes.
 
 Changes since v2.0.2
 ====================
@@ -1058,6 +1068,7 @@ Miscellaneous
 .. _issue 462: https://github.com/pism/pism/issues/462
 .. _issue 407: https://github.com/pism/pism/issues/407
 .. _issue 506: https://github.com/pism/pism/issues/506
+.. _issue 512: https://github.com/pism/pism/issues/512
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 ..
    Local Variables:
