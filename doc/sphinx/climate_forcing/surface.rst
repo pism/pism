@@ -303,17 +303,23 @@ Prefix: ``surface.pdd.``.
 
 .. _sec-surface-itm:
 
-simple diurnal Energy Balance Model dEBM-simple
-++++++++++++++++++++++++
+Simple diurnal Energy Balance Model "dEBM-simple"
++++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-surface itm``
 :|variables|: none
 :|implementation|: ``pism::surface::TemperatureIndexITM``
 
-The default dEBM-simple model used by PISM, turned on by option :opt:`-surface itm`, is based on
-:cite:`Zeitz2021`.
+This model
 
-Similarly to the TemperatureIndex model, this model computes the solid (snow) precipitation rate using the air temperature threshold
+Beyond the work of :cite:`KrebsKanzow2018`, we additionally introduce parameterizations of albedo and atmospheric transmissivity to make it
+possible to run the model in standalone, prognostic mode
+
+In particular the nonlinear albedo–melt relation (see Sect. 2.3.2) serves as an approximation to the melt–albedo feedback.
+
+This PISM component implements the model described in :cite:`Zeitzetal2021`.
+
+Similarly to the :ref:`sec-surface-pdd` model, this model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
 :config:`surface.itm.air_temp_all_precip_as_rain` (default of `2^\circ C`) is interpreted as
 rain; all precipitation during periods with air temperatures below
@@ -331,7 +337,7 @@ The equation for computing the melt rate reads
 
 .. math::
 
-  M = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2,
+   M = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2\right),
 
 with the fresh water density `\rho_\text{w}`, latent heat of fusion `L_\text{m}`, the surface albedo `\alpha_\text{S}` and the two tuning parameters `c_1` :config:`surface.itm.itm_lambda` and `c_2` :config:`surface.itm.itm_c`. `\Delta t_\Phi` is the time during the day, when the sun is above the elevation angle `\Phi` and melt can occur. `\Phi` is assumed to be constant in space and time, it can be set by the configuration parameter :config:`surface.itm.phi` and the default value is `\Phi = 17.5^\circ`.
 The incoming radiation, which reaches the surface, is obtained from the mean top of the atmosphere insolation over the time `\Delta t_\Phi` `\bar{S_\Phi}`, computed internally, and the parameterized transmissivity of the atmosphere `\tau_\text{A}`.
