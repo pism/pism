@@ -172,14 +172,17 @@ transported by the overturning circulation into the ice shelf cavity and towards
 grounding line. The basin mask defines regions of similar, large-scale ocean conditions;
 each region is marked with a distinct positive integer. In PICO, ocean input temperature
 and salinity are averaged on the continental shelf within each basins. For each ice shelf,
-the input values of the overturning circulation are calculated as an area-weighted average
-over all basins that intersect the ice shelf. Only those basins are considered in the average, 
-in which the ice shelf has in fact a connection to the ocean. Large ice shelves, that cover 
-across two basins, that do not share an ocean boundary, are considered as two separate ice 
-shelves with individual ocean inputs. If ocean input parameters cannot be
-identified, standard values are used (**Warning:** this could strongly influence melt
-rates computed by PICO). In regions where the PICO geometry cannot be identified,
-:cite:`BeckmannGoosse2003` is applied.
+the input values for the overturning circulation are calculated as an area-weighted average
+over all neighboring basins that intersect the ice shelf. Large ice shelves, that cover
+across two basins, that do not share an ocean boundary (and hence are not neighbors), are
+considered as two separate ice shelves with individual ocean inputs. Only those neighboring
+basins are considered in the average, in which the ice shelf has in fact a connection to
+the ocean. If ice shelves become isolated within a basin without an open ocean connection,
+ocean inputs of the neighoring basin will be considered. The indices of the basin neighbors
+are defined at bootstrap and are stored as metadata in the basin state variable and will be
+read at restart. If ocean input parameters cannot be identified, standard values are used
+(**Warning:** this could strongly influence melt rates computed by PICO). In regions where
+the PICO geometry cannot be identified, :cite:`BeckmannGoosse2003` is applied.
 
 .. rubric:: Parameters
 
