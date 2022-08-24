@@ -235,7 +235,7 @@ macro(pism_set_dependencies)
   include_directories (BEFORE
     ${PETSC_INCLUDES}
     ${FFTW_INCLUDES}
-    ${GSL_INCLUDES}
+    ${GSL_INCLUDE_DIRS}
     ${UDUNITS2_INCLUDES}
     ${HDF5_INCLUDE_DIRS}
     ${NETCDF_INCLUDES}
