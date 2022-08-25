@@ -2358,9 +2358,10 @@ netcdf pism_config {
     pism_config:surface.itm.air_temp_no_refreeze_type = "number";
     pism_config:surface.itm.air_temp_no_refreeze_units = "Kelvin";
 
-    pism_config:surface.itm.albedo_input_file = "";
-    pism_config:surface.itm.albedo_input_file_doc = "the file with the albedo values to use (needs to cover one year and will be interpreted as periodic in time)";
-    pism_config:surface.itm.albedo_input_file_type = "string";
+    pism_config:surface.itm.albedo_ice = 0.47;
+    pism_config:surface.itm.albedo_ice_doc = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
+    pism_config:surface.itm.albedo_ice_type = "number";
+    pism_config:surface.itm.albedo_ice_units = "";
 
     pism_config:surface.itm.albedo_input.period = 0;
     pism_config:surface.itm.albedo_input.period_doc = "Length of the period of the albedo forcing data. Set to zero to disable.";
@@ -2368,10 +2369,9 @@ netcdf pism_config {
     pism_config:surface.itm.albedo_input.period_type = "integer";
     pism_config:surface.itm.albedo_input.period_units = "years";
 
-    pism_config:surface.itm.albedo_snow = 0.82;
-    pism_config:surface.itm.albedo_snow_doc = "albedo value for fresh snow, i.e. albedo without melting, in albedo parametrization";
-    pism_config:surface.itm.albedo_snow_type = "number";
-    pism_config:surface.itm.albedo_snow_units = "";
+    pism_config:surface.itm.albedo_input_file = "";
+    pism_config:surface.itm.albedo_input_file_doc = "the file with the albedo values to use (needs to cover one year and will be interpreted as periodic in time)";
+    pism_config:surface.itm.albedo_input_file_type = "string";
 
     pism_config:surface.itm.albedo_land = 0.2;
     pism_config:surface.itm.albedo_land_doc = "albedo value over land, if no ice is present";
@@ -2388,19 +2388,14 @@ netcdf pism_config {
     pism_config:surface.itm.albedo_slope_type = "number";
     pism_config:surface.itm.albedo_slope_units = "m2 s kg-1";
 
-    pism_config:surface.itm.albedo_ice = 0.47;
-    pism_config:surface.itm.albedo_ice_doc = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
-    pism_config:surface.itm.albedo_ice_type = "number";
-    pism_config:surface.itm.albedo_ice_units = "";
+    pism_config:surface.itm.albedo_snow = 0.82;
+    pism_config:surface.itm.albedo_snow_doc = "albedo value for fresh snow, i.e. albedo without melting, in albedo parametrization";
+    pism_config:surface.itm.albedo_snow_type = "number";
+    pism_config:surface.itm.albedo_snow_units = "";
 
     pism_config:surface.itm.anomaly = "no";
     pism_config:surface.itm.anomaly_doc = "if yes, bare ice albedo is applied everywhere between start day and end day with a frequency on frequency years, set frequeqncy larger simulation time in order to apply albedo forcing only once";
     pism_config:surface.itm.anomaly_type = "flag";
-
-    pism_config:surface.itm.anomaly_start_day = 152;
-    pism_config:surface.itm.anomaly_start_day_doc = "day of the year when albedo forcing starts if surface.itm.anomaly = yes, 152 is 1st of June";
-    pism_config:surface.itm.anomaly_start_day_type = "integer";
-    pism_config:surface.itm.anomaly_start_day_units = "ordinal day number";
 
     pism_config:surface.itm.anomaly_end_day = 253;
     pism_config:surface.itm.anomaly_end_day_doc = "day of the year when albedo forcing ends if surface.itm.anomaly = yes, 253 is 31st of August";
@@ -2411,6 +2406,11 @@ netcdf pism_config {
     pism_config:surface.itm.anomaly_frequency_doc = "albedo forcing is applied every frequency years";
     pism_config:surface.itm.anomaly_frequency_type = "integer";
     pism_config:surface.itm.anomaly_frequency_units = "yr-1";
+
+    pism_config:surface.itm.anomaly_start_day = 152;
+    pism_config:surface.itm.anomaly_start_day_doc = "day of the year when albedo forcing starts if surface.itm.anomaly = yes, 152 is 1st of June";
+    pism_config:surface.itm.anomaly_start_day_type = "integer";
+    pism_config:surface.itm.anomaly_start_day_units = "ordinal day number";
 
     pism_config:surface.itm.anomaly_value = 0.47;
     pism_config:surface.itm.anomaly_value_doc = "albedo forcing with this value";
@@ -2435,11 +2435,6 @@ netcdf pism_config {
     pism_config:surface.itm.firn_depth_file_option = "itm_firn_depth_file";
     pism_config:surface.itm.firn_depth_file_type = "string";
 
-    pism_config:surface.itm.max_evals_per_year = 52;
-    pism_config:surface.itm.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
-    pism_config:surface.itm.max_evals_per_year_type = "integer";
-    pism_config:surface.itm.max_evals_per_year_units = "count";
-
     pism_config:surface.itm.interpret_precip_as_snow = "no";
     pism_config:surface.itm.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
     pism_config:surface.itm.interpret_precip_as_snow_type = "flag";
@@ -2454,16 +2449,16 @@ netcdf pism_config {
     pism_config:surface.itm.itm_lambda_type = "number";
     pism_config:surface.itm.itm_lambda_units = "W m-2 K-1";
 
+    pism_config:surface.itm.max_evals_per_year = 52;
+    pism_config:surface.itm.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
+    pism_config:surface.itm.max_evals_per_year_type = "integer";
+    pism_config:surface.itm.max_evals_per_year_units = "count";
+
     pism_config:surface.itm.method = "daily";
     pism_config:surface.itm.method_choices = "daily,not_daily,albedo_forcing";
     pism_config:surface.itm.method_doc = "itm implementation method";
     pism_config:surface.itm.method_option = "itm_method";
     pism_config:surface.itm.method_type = "keyword";
-
-    pism_config:surface.itm.paleo.enabled = "false";
-    pism_config:surface.itm.paleo.enabled_doc = "Use orbital parameters to compute insolation at TOA";
-    pism_config:surface.itm.paleo.enabled_option = "itm_paleo";
-    pism_config:surface.itm.paleo.enabled_type = "flag";
 
     pism_config:surface.itm.paleo.eccentricity =  0.0167;
     pism_config:surface.itm.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
@@ -2487,32 +2482,15 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.eccentricity.reference_year_type = "integer";
     pism_config:surface.itm.paleo.eccentricity.reference_year_units = "years";
 
+    pism_config:surface.itm.paleo.enabled = "false";
+    pism_config:surface.itm.paleo.enabled_doc = "Use orbital parameters to compute insolation at TOA";
+    pism_config:surface.itm.paleo.enabled_option = "itm_paleo";
+    pism_config:surface.itm.paleo.enabled_type = "flag";
+
     pism_config:surface.itm.paleo.file = "";
     pism_config:surface.itm.paleo.file_doc = "Name of the file containing paleo parameters";
     pism_config:surface.itm.paleo.file_option = "itm_paleo_file";
     pism_config:surface.itm.paleo.file_type = "string";
-
-    pism_config:surface.itm.paleo.obliquity =  23.44;
-    pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
-    pism_config:surface.itm.paleo.obliquity_type = "number";
-    pism_config:surface.itm.paleo.obliquity_units = "degree";
-
-    pism_config:surface.itm.paleo.obliquity.file = "";
-    pism_config:surface.itm.paleo.obliquity.file_doc = "Name of the file containing paleo obliquity over time.";
-    pism_config:surface.itm.paleo.obliquity.file_option = "paleo_obliquity_file";
-    pism_config:surface.itm.paleo.obliquity.file_type = "string";
-    
-    pism_config:surface.itm.paleo.obliquity.period = 0;
-    pism_config:surface.itm.paleo.obliquity.period_doc = "Length of the period of the obliquity forcing data. Set to zero to disable.";
-    pism_config:surface.itm.paleo.obliquity.period_option = "obliquity_period";
-    pism_config:surface.itm.paleo.obliquity.period_type = "integer";
-    pism_config:surface.itm.paleo.obliquity.period_units = "years";
-
-    pism_config:surface.itm.paleo.obliquity.reference_year = 0;
-    pism_config:surface.itm.paleo.obliquity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.obliquity.period`` is active.";
-    pism_config:surface.itm.paleo.obliquity.reference_year_option = "obliquity_reference_year";
-    pism_config:surface.itm.paleo.obliquity.reference_year_type = "integer";
-    pism_config:surface.itm.paleo.obliquity.reference_year_units = "years";
 
     pism_config:surface.itm.paleo.long_peri =  102.94719;
     pism_config:surface.itm.paleo.long_peri_doc = "Mean longitude of perihelion";
@@ -2535,7 +2513,28 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.long_peri.reference_year_option = "long_peri_reference_year";
     pism_config:surface.itm.paleo.long_peri.reference_year_type = "integer";
     pism_config:surface.itm.paleo.long_peri.reference_year_units = "years";
-      
+
+    pism_config:surface.itm.paleo.obliquity =  23.44;
+    pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
+    pism_config:surface.itm.paleo.obliquity_type = "number";
+    pism_config:surface.itm.paleo.obliquity_units = "degree";
+
+    pism_config:surface.itm.paleo.obliquity.file = "";
+    pism_config:surface.itm.paleo.obliquity.file_doc = "Name of the file containing paleo obliquity over time.";
+    pism_config:surface.itm.paleo.obliquity.file_option = "paleo_obliquity_file";
+    pism_config:surface.itm.paleo.obliquity.file_type = "string";
+
+    pism_config:surface.itm.paleo.obliquity.period = 0;
+    pism_config:surface.itm.paleo.obliquity.period_doc = "Length of the period of the obliquity forcing data. Set to zero to disable.";
+    pism_config:surface.itm.paleo.obliquity.period_option = "obliquity_period";
+    pism_config:surface.itm.paleo.obliquity.period_type = "integer";
+    pism_config:surface.itm.paleo.obliquity.period_units = "years";
+
+    pism_config:surface.itm.paleo.obliquity.reference_year = 0;
+    pism_config:surface.itm.paleo.obliquity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.obliquity.period`` is active.";
+    pism_config:surface.itm.paleo.obliquity.reference_year_option = "obliquity_reference_year";
+    pism_config:surface.itm.paleo.obliquity.reference_year_type = "integer";
+    pism_config:surface.itm.paleo.obliquity.reference_year_units = "years";
 
     pism_config:surface.itm.phi =  17.5;
     pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
