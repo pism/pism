@@ -2465,23 +2465,6 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.eccentricity_type = "number";
     pism_config:surface.itm.paleo.eccentricity_units = "1";
 
-    pism_config:surface.itm.paleo.eccentricity.file = "";
-    pism_config:surface.itm.paleo.eccentricity.file_doc = "Name of the file containing paleo eccentricity over time.";
-    pism_config:surface.itm.paleo.eccentricity.file_option = "paleo_eccentricity_file";
-    pism_config:surface.itm.paleo.eccentricity.file_type = "string";
-
-    pism_config:surface.itm.paleo.eccentricity.period = 0;
-    pism_config:surface.itm.paleo.eccentricity.period_doc = "Length of the period of the eccentricity forcing data. Set to zero to disable.";
-    pism_config:surface.itm.paleo.eccentricity.period_option = "eccentricity_period";
-    pism_config:surface.itm.paleo.eccentricity.period_type = "integer";
-    pism_config:surface.itm.paleo.eccentricity.period_units = "years";
-
-    pism_config:surface.itm.paleo.eccentricity.reference_year = 0;
-    pism_config:surface.itm.paleo.eccentricity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.eccentricity.period`` is active.";
-    pism_config:surface.itm.paleo.eccentricity.reference_year_option = "eccentricity_reference_year";
-    pism_config:surface.itm.paleo.eccentricity.reference_year_type = "integer";
-    pism_config:surface.itm.paleo.eccentricity.reference_year_units = "years";
-
     pism_config:surface.itm.paleo.enabled = "false";
     pism_config:surface.itm.paleo.enabled_doc = "Use orbital parameters to compute insolation at TOA";
     pism_config:surface.itm.paleo.enabled_option = "itm_paleo";
@@ -2497,44 +2480,14 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.long_peri_type = "number";
     pism_config:surface.itm.paleo.long_peri_units = "degree";
 
-    pism_config:surface.itm.paleo.long_peri.file = "";
-    pism_config:surface.itm.paleo.long_peri.file_doc = "Name of the file containing paleo long_peri over time.";
-    pism_config:surface.itm.paleo.long_peri.file_option = "paleo_long_peri_file";
-    pism_config:surface.itm.paleo.long_peri.file_type = "string";
-
-    pism_config:surface.itm.paleo.long_peri.period = 0;
-    pism_config:surface.itm.paleo.long_peri.period_doc = "Length of the period of the long_peri forcing data. Set to zero to disable.";
-    pism_config:surface.itm.paleo.long_peri.period_option = "long_peri_period";
-    pism_config:surface.itm.paleo.long_peri.period_type = "integer";
-    pism_config:surface.itm.paleo.long_peri.period_units = "years"; 
-
-    pism_config:surface.itm.paleo.long_peri.reference_year = 0;
-    pism_config:surface.itm.paleo.long_peri.reference_year_doc = "Reference year to use when ``surface.itm.paleo.long_peri.period`` is active.";
-    pism_config:surface.itm.paleo.long_peri.reference_year_option = "long_peri_reference_year";
-    pism_config:surface.itm.paleo.long_peri.reference_year_type = "integer";
-    pism_config:surface.itm.paleo.long_peri.reference_year_units = "years";
-
     pism_config:surface.itm.paleo.obliquity =  23.44;
     pism_config:surface.itm.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.itm.paleo.obliquity_type = "number";
     pism_config:surface.itm.paleo.obliquity_units = "degree";
 
-    pism_config:surface.itm.paleo.obliquity.file = "";
-    pism_config:surface.itm.paleo.obliquity.file_doc = "Name of the file containing paleo obliquity over time.";
-    pism_config:surface.itm.paleo.obliquity.file_option = "paleo_obliquity_file";
-    pism_config:surface.itm.paleo.obliquity.file_type = "string";
-
-    pism_config:surface.itm.paleo.obliquity.period = 0;
-    pism_config:surface.itm.paleo.obliquity.period_doc = "Length of the period of the obliquity forcing data. Set to zero to disable.";
-    pism_config:surface.itm.paleo.obliquity.period_option = "obliquity_period";
-    pism_config:surface.itm.paleo.obliquity.period_type = "integer";
-    pism_config:surface.itm.paleo.obliquity.period_units = "years";
-
-    pism_config:surface.itm.paleo.obliquity.reference_year = 0;
-    pism_config:surface.itm.paleo.obliquity.reference_year_doc = "Reference year to use when ``surface.itm.paleo.obliquity.period`` is active.";
-    pism_config:surface.itm.paleo.obliquity.reference_year_option = "obliquity_reference_year";
-    pism_config:surface.itm.paleo.obliquity.reference_year_type = "integer";
-    pism_config:surface.itm.paleo.obliquity.reference_year_units = "years";
+    pism_config:surface.itm.paleo.periodic = "no";
+    pism_config:surface.itm.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.itm.paleo.periodic_type = "flag";
 
     pism_config:surface.itm.phi =  17.5;
     pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
@@ -2575,17 +2528,9 @@ netcdf pism_config {
     pism_config:surface.itm.std_dev.file_option = "itm_sd_file";
     pism_config:surface.itm.std_dev.file_type = "string";
 
-    pism_config:surface.itm.std_dev.period = 0;
-    pism_config:surface.itm.std_dev.period_doc = "Length of the period of the climate forcing data. Set to zero to disable.";
-    pism_config:surface.itm.std_dev.period_option = "itm_sd_period";
-    pism_config:surface.itm.std_dev.period_type = "integer";
-    pism_config:surface.itm.std_dev.period_units = "years";
-
-    pism_config:surface.itm.std_dev.reference_year = 0;
-    pism_config:surface.itm.std_dev.reference_year_doc = "Reference year to use when ``surface.pdd.std_dev.period`` is active.";
-    pism_config:surface.itm.std_dev.reference_year_option = "itm_sd_reference_year";
-    pism_config:surface.itm.std_dev.reference_year_type = "integer";
-    pism_config:surface.itm.std_dev.reference_year_units = "years";
+    pism_config:surface.itm.std_dev.periodic = "no";
+    pism_config:surface.itm.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.itm.std_dev.periodic_type = "flag";
 
     pism_config:surface.itm.std_dev_lapse_lat_base = 72.0;
     pism_config:surface.itm.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero";
