@@ -156,8 +156,8 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
     m_obliquity.reset(
         new ScalarForcing(*g->ctx(), "surface.itm.paleo", "obliquity", "degree", "degree", "obliquity of the earth"));
 
-    m_long_peri.reset(new ScalarForcing(*g->ctx(), "surface.itm.paleo", "long_peri", "degree", "degree",
-                                        "longitude of the perihelion"));
+    m_long_peri.reset(
+        new ScalarForcing(*g->ctx(), "surface.itm.paleo", "long_peri", "degree", "degree", "longitude of the perihelion"));
   } else {
     m_use_paleo_file = false;
   }
