@@ -163,10 +163,6 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
   }
 }
 
-TemperatureIndexITM::~TemperatureIndexITM() {
-  // empty
-}
-
 void TemperatureIndexITM::init_impl(const Geometry &geometry) {
 
   // call the default implementation (not the interface method init())

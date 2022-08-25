@@ -41,7 +41,7 @@ namespace surface {
 class TemperatureIndexITM : public SurfaceModel {
 public:
   TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~TemperatureIndexITM();
+  virtual ~TemperatureIndexITM() = default;
 
   // diagnostics (for the last time step)
   const IceModelVec2S &firn_depth() const;
