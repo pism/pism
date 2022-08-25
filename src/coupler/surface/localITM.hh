@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,17 +43,15 @@ namespace surface {
   modeled temperature away from the input temperature time series which contains
   the part of location-dependent temperature cycle on the time interval.
 
-  @note 
+  @note
   - Please avoid using `config.get...("...")` calls
-  inside those methods of this class which are called inside loops over 
+  inside those methods of this class which are called inside loops over
   spatial grids.  Doing otherwise increases computational costs.
   - This base class should be more general.  For instance, it could allow as
   input a time series for precipation rate.
 */
 class LocalMassBalanceITM {
 public:
-
-
   LocalMassBalanceITM(Config::ConstPtr config, units::System::Ptr system);
   virtual ~LocalMassBalanceITM();
 
@@ -63,11 +61,10 @@ public:
 
 
   virtual double get_albedo_melt(double melt, int mask_value, double dtseries) = 0;
-  virtual double get_tau_a(double surface_elevation) = 0;
+  virtual double get_tau_a(double surface_elevation)                           = 0;
 
   /*! Remove rain from precipitation. */
-  virtual void get_snow_accumulationITM(const std::vector<double> &T,
-                                     std::vector<double> &precip_rate) = 0;
+  virtual void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate) = 0;
 
   class Changes {
   public:
@@ -87,39 +84,26 @@ public:
 
 
     double T_melt;
-    double I_melt; 
-    double c_melt; 
+    double I_melt;
+    double c_melt;
     double ITM_melt;
-    double transmissivity; 
+    double transmissivity;
     double TOA_insol;
     double q_insol;
   };
 
 
-
-
-
-
-
-
-
-  //! (ITMs).  
+  //! (ITMs).
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
 
 
-
-  virtual Melt calculate_ETIM_melt(double dt_series,
-                                         const double &S,
-                                         const double &T,
-                                         const double &surface_elevation,
-                                         const double &delta,
-                                         const double &distance2,
-                                         const double &lat,
-                                         const double &albedo) = 0;
+  virtual Melt calculate_ETIM_melt(double dt_series, const double &S, const double &T, const double &surface_elevation,
+                                   const double &delta, const double &distance2, const double &lat,
+                                   const double &albedo) = 0;
 
 
-  /** 
+  /**
    * Take a step of the ITM model.
    *
    * @param[in] refreeze_fraction
@@ -129,14 +113,10 @@ public:
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
-  virtual Changes step(const double &refreeze_fraction,
-                       double thickness,
-                       double ITM_melt,
-                       double old_firn_depth,
-                       double old_snow_depth,
-                       double accumulation) = 0;
+  virtual Changes step(const double &refreeze_fraction, double thickness, double ITM_melt, double old_firn_depth,
+                       double old_snow_depth, double accumulation) = 0;
 
-  virtual double get_refreeze_fraction(const double &T)  = 0;
+  virtual double get_refreeze_fraction(const double &T) = 0;
 
 protected:
   std::string m_method;
@@ -147,7 +127,7 @@ protected:
 };
 
 
-//! A dEBM implementation 
+//! A dEBM implementation
 /*!
   after Krebs-Kanzow et al. 2018
 
@@ -156,70 +136,48 @@ class ITMMassBalance : public LocalMassBalanceITM {
 
 public:
   ITMMassBalance(Config::ConstPtr config, units::System::Ptr system);
-  virtual ~ITMMassBalance() {}
+  virtual ~ITMMassBalance() {
+  }
 
   virtual unsigned int get_timeseries_length(double dt);
 
   virtual double get_albedo_melt(double melt, int mask_value, double dtseries);
 
   virtual double get_refreeze_fraction(const double &T);
-  
 
 
-  virtual Melt calculate_ETIM_melt(double dt_series,
-                                         const double &S,
-                                         const double &T,
-                                         const double &surface_elevation,
-                                         const double &delta,
-                                         const double &distance2,
-                                         const double &lat,
-                                         const double &albedo);
+  virtual Melt calculate_ETIM_melt(double dt_series, const double &S, const double &T, const double &surface_elevation,
+                                   const double &delta, const double &distance2, const double &lat,
+                                   const double &albedo);
 
-  virtual void get_snow_accumulationITM(const std::vector<double> &T,
-                                     std::vector<double> &precip_rate);
+  virtual void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate);
 
-  virtual Changes step(const double &refreeze_fraction,
-                       double thickness,
-                       double ITM_melt,
-                       double firn_depth,
-                       double snow_depth,
-                       double accumulation);
+  virtual Changes step(const double &refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
+                       double snow_depth, double accumulation);
 
 
-
-  virtual double get_tau_a(double surface_elevation);  
-  
-
+  virtual double get_tau_a(double surface_elevation);
 
 
   virtual double get_h_phi(const double &phi, const double &lat, const double &delta);
 
-  virtual double get_q_insol(
-  const double &solar_constant,
-  const double &distance2, 
-  const double &h_phi, 
-  const double &lat, 
-  const double &delta);
+  virtual double get_q_insol(const double &solar_constant, const double &distance2, const double &h_phi,
+                             const double &lat, const double &delta);
 
-  virtual double get_TOA_insol(
-  const double &solar_constant,
-  const double &distance2, 
-  const double &h0, 
-  const double &lat, 
-  const double &delta);
+  virtual double get_TOA_insol(const double &solar_constant, const double &distance2, const double &h0,
+                               const double &lat, const double &delta);
 
 protected:
-
   double CalovGreveIntegrand(double sigma, double TacC);
-  bool precip_as_snow,          //!< interpret all the precipitation as snow (no rain)
-    refreeze_ice_melt;          //!< refreeze melted ice
-  double Tmin,             //!< the temperature below which all precipitation is snow
-    Tmax;             //!< the temperature above which all precipitation is rain
+  bool precip_as_snow,       //!< interpret all the precipitation as snow (no rain)
+      refreeze_ice_melt;     //!< refreeze melted ice
+  double Tmin,               //!< the temperature below which all precipitation is snow
+      Tmax;                  //!< the temperature above which all precipitation is rain
   double pdd_threshold_temp; //!< threshold temperature for the PDD computation
 };
 
 
-	} // end of namespace surface
+} // end of namespace surface
 } // end of namespace pism
 
 #endif

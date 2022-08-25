@@ -21,12 +21,10 @@
 
 #include <memory>
 
-#include "pism/util/iceModelVec2T.hh"
-#include "pism/coupler/SurfaceModel.hh"
 #include "localITM.hh"
+#include "pism/coupler/SurfaceModel.hh"
 #include "pism/util/ScalarForcing.hh"
-
-// #include "localMassBalance.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 namespace surface {
@@ -34,7 +32,7 @@ namespace surface {
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
-/*! 
+/*!
   Temperature-index schemes are far from perfect as a way of modeling surface mass
   balance on ice sheets which experience surface melt, but they are known to have
   reasonable data requirements and to do a good job when tuned appropriately
@@ -46,21 +44,21 @@ public:
   virtual ~TemperatureIndexITM();
 
   // diagnostics (for the last time step)
-  const IceModelVec2S& firn_depth() const;
-  const IceModelVec2S& snow_depth() const;
+  const IceModelVec2S &firn_depth() const;
+  const IceModelVec2S &snow_depth() const;
   // these represent totals (not rates) over the time step
-  const IceModelVec2S& air_temp_sd() const;
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const IceModelVec2S &air_temp_sd() const;
+  const IceModelVec2S &accumulation_impl() const;
+  const IceModelVec2S &melt_impl() const;
+  const IceModelVec2S &runoff_impl() const;
   //???
-  const IceModelVec2S& surface_insolation_melt() const;
-  const IceModelVec2S& surface_temperature_melt() const;
-  const IceModelVec2S& surface_offset_melt() const;
-  const IceModelVec2S& albedo() const;
-  const IceModelVec2S& transmissivity() const;
-  const IceModelVec2S& TOAinsol() const;
-  const IceModelVec2S& qinsol() const;
+  const IceModelVec2S &surface_insolation_melt() const;
+  const IceModelVec2S &surface_temperature_melt() const;
+  const IceModelVec2S &surface_offset_melt() const;
+  const IceModelVec2S &albedo() const;
+  const IceModelVec2S &transmissivity() const;
+  const IceModelVec2S &TOAinsol() const;
+  const IceModelVec2S &qinsol() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -72,15 +70,15 @@ protected:
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const IceModelVec2S &mass_flux_impl() const;
+  virtual const IceModelVec2S &temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
-  
-  bool albedo_anomaly_true(double time) ;
+
+  bool albedo_anomaly_true(double time);
   double get_distance2(double time);
   double get_delta(double time);
-  double get_distance2_paleo(double time); 
+  double get_distance2_paleo(double time);
   double get_lambda_paleo(double time);
   double get_delta_paleo(double time);
 
