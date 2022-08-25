@@ -62,11 +62,11 @@ std::string LocalMassBalanceITM::method() const {
 
 ITMMassBalance::ITMMassBalance(Config::ConstPtr config, units::System::Ptr system)
     : LocalMassBalanceITM(config, system) {
-  precip_as_snow     = m_config->get_flag("surface.itm.interpret_precip_as_snow");
-  Tmin               = m_config->get_number("surface.itm.air_temp_all_precip_as_snow");
-  Tmax               = m_config->get_number("surface.itm.air_temp_all_precip_as_rain");
-  refreeze_ice_melt  = m_config->get_flag("surface.itm.refreeze_ice_melt");
-  pdd_threshold_temp = m_config->get_number("surface.itm.positive_threshold_temp");
+  precip_as_snow     = config->get_flag("surface.itm.interpret_precip_as_snow");
+  Tmin               = config->get_number("surface.itm.air_temp_all_precip_as_snow");
+  Tmax               = config->get_number("surface.itm.air_temp_all_precip_as_rain");
+  refreeze_ice_melt  = config->get_flag("surface.itm.refreeze_ice_melt");
+  pdd_threshold_temp = config->get_number("surface.itm.positive_threshold_temp");
 
 
   m_method = "insolation temperature melt";
@@ -129,7 +129,7 @@ double ITMMassBalance::get_tau_a(double surface_elevation) {
 }
 
 
-double ITMMassBalance::get_h_phi(const double &phi, const double &lat, const double &delta) {
+double ITMMassBalance::get_h_phi(double phi, double lat, double delta) {
   // calculate the hour angle at which the sun reaches phi (for melting period during the day)
   double input_h_phi         = (sin(phi) - sin(lat) * sin(delta)) / (cos(lat) * cos(delta));
   double input_h_phi_clipped = std::max(-1., std::min(input_h_phi, 1.));
@@ -137,8 +137,8 @@ double ITMMassBalance::get_h_phi(const double &phi, const double &lat, const dou
 }
 
 
-double ITMMassBalance::get_q_insol(const double &solar_constant, const double &distance2, const double &h_phi,
-                                   const double &lat, const double &delta) {
+double ITMMassBalance::get_q_insol(double solar_constant, double distance2, double h_phi,
+                                   double lat, double delta) {
   if (h_phi == 0) {
     return 0.;
   } else {
@@ -146,8 +146,8 @@ double ITMMassBalance::get_q_insol(const double &solar_constant, const double &d
   }
 }
 
-double ITMMassBalance::get_TOA_insol(const double &solar_constant, const double &distance2, const double &h0,
-                                     const double &lat, const double &delta) {
+double ITMMassBalance::get_TOA_insol(double solar_constant, double distance2, double h0,
+                                     double lat, double delta) {
   if (h0 == 0) {
     return 0.;
   } else {
@@ -168,10 +168,10 @@ double ITMMassBalance::get_TOA_insol(const double &solar_constant, const double 
  */
 
 
-ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series, const double &S, const double &T,
-                                                         const double &surface_elevation, const double &delta,
-                                                         const double &distance2, const double &lat,
-                                                         const double &albedo) {
+ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series, double S, double T,
+                                                         double surface_elevation, double delta,
+                                                         double distance2, double lat,
+                                                         double albedo) {
   assert(dt_series > 0.0);
 
   Melt ETIM_melt;
@@ -270,7 +270,7 @@ void ITMMassBalance::get_snow_accumulationITM(const std::vector<double> &T, std:
 }
 
 
-double ITMMassBalance::get_refreeze_fraction(const double &T) {
+double ITMMassBalance::get_refreeze_fraction(double T) {
   double refreeze;
   double Tmin_refreeze = m_config->get_number("surface.itm.air_temp_all_refreeze");
   double Tmax_refreeze = m_config->get_number("surface.itm.air_temp_no_refreeze");
@@ -301,7 +301,7 @@ double ITMMassBalance::get_refreeze_fraction(const double &T) {
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
  */
-ITMMassBalance::Changes ITMMassBalance::step(const double &refreeze_fraction, double thickness, double ITM_melt,
+ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double thickness, double ITM_melt,
                                              double old_firn_depth, double old_snow_depth, double accumulation) {
 
 

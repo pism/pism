@@ -20,6 +20,7 @@
 #define __localITM_hh
 
 #include "pism/util/iceModelVec.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 namespace surface {
@@ -98,9 +99,9 @@ public:
     Inputs `t`, `dt_series` are in seconds.  */
 
 
-  virtual Melt calculate_ETIM_melt(double dt_series, const double &S, const double &T, const double &surface_elevation,
-                                   const double &delta, const double &distance2, const double &lat,
-                                   const double &albedo) = 0;
+  virtual Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
+                                   double delta, double distance2, double lat,
+                                   double albedo) = 0;
 
 
   /**
@@ -113,10 +114,10 @@ public:
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
-  virtual Changes step(const double &refreeze_fraction, double thickness, double ITM_melt, double old_firn_depth,
+  virtual Changes step(double refreeze_fraction, double thickness, double ITM_melt, double old_firn_depth,
                        double old_snow_depth, double accumulation) = 0;
 
-  virtual double get_refreeze_fraction(const double &T) = 0;
+  virtual double get_refreeze_fraction(double T) = 0;
 
 protected:
   std::string m_method;
@@ -143,29 +144,29 @@ public:
 
   virtual double get_albedo_melt(double melt, int mask_value, double dtseries);
 
-  virtual double get_refreeze_fraction(const double &T);
+  virtual double get_refreeze_fraction(double T);
 
 
-  virtual Melt calculate_ETIM_melt(double dt_series, const double &S, const double &T, const double &surface_elevation,
-                                   const double &delta, const double &distance2, const double &lat,
-                                   const double &albedo);
+  virtual Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
+                                   double delta, double distance2, double lat,
+                                   double albedo);
 
   virtual void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate);
 
-  virtual Changes step(const double &refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
+  virtual Changes step(double refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
                        double snow_depth, double accumulation);
 
 
   virtual double get_tau_a(double surface_elevation);
 
 
-  virtual double get_h_phi(const double &phi, const double &lat, const double &delta);
+  virtual double get_h_phi(double phi, double lat, double delta);
 
-  virtual double get_q_insol(const double &solar_constant, const double &distance2, const double &h_phi,
-                             const double &lat, const double &delta);
+  virtual double get_q_insol(double solar_constant, double distance2, double h_phi,
+                             double lat, double delta);
 
-  virtual double get_TOA_insol(const double &solar_constant, const double &distance2, const double &h0,
-                               const double &lat, const double &delta);
+  virtual double get_TOA_insol(double solar_constant, double distance2, double h0,
+                               double lat, double delta);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);
