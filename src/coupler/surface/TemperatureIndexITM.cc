@@ -210,18 +210,11 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   // call the default implementation (not the interface method init())
   SurfaceModel::init_impl(geometry);
 
-  // report user's modeling choices
   {
     m_log->message(2,
-                   "* Initializing insolation based surface processes scheme.\n"
-                   "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-                   "  Surface mass balance and ice upper surface temperature are outputs.\n"
-                   "  See PISM User's Manual for control of degree-day factors.\n");
-
-   /* m_log->message(2,
-                   "  Computing melt: %s.\n",
-                   m_mbscheme->method().c_str());
-*/
+                   "* Initializing dEBM-simple, the diurnal Energy Balance Model (simple version).\n"
+                   "  Inputs:  precipitation and 2m air temperature from an atmosphere model.\n"
+                   "  Outputs: SMB and ice upper surface temperature.\n");
   }
 
   // initializing the model state
