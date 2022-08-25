@@ -338,13 +338,13 @@ double TemperatureIndexITM::get_lambda_paleo(double time) {
   // estimates solar longitude at current time in the year
   // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
-  double epsilon_deg = 0, ecc = 0, peri_deg = 0;
+  double ecc = 0, peri_deg = 0;
   if (m_use_paleo_file) {
-    epsilon_deg = m_obliquity->value(time), ecc = m_eccentricity->value(time), peri_deg = m_long_peri->value(time);
+    ecc         = m_eccentricity->value(time);
+    peri_deg    = m_long_peri->value(time);
   } else {
-    ecc         = m_config->get_number("surface.itm.paleo.eccentricity"),
-    peri_deg    = m_config->get_number("surface.itm.paleo.long_peri"),
-    epsilon_deg = m_config->get_number("surface.itm.paleo.obliquity");
+    ecc         = m_config->get_number("surface.itm.paleo.eccentricity");
+    peri_deg    = m_config->get_number("surface.itm.paleo.long_peri");
   }
 
   double lambda_m, lambda, delta_lambda;

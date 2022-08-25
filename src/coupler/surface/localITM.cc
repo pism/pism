@@ -308,8 +308,12 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
   Changes result;
 
 
-  double firn_depth = old_firn_depth, snow_depth = old_snow_depth, max_snow_melted = ITM_melt, firn_melted = 0.0,
-         snow_melted = 0.0, ice_melted = 0.0;
+  double
+    firn_depth      = old_firn_depth,
+    snow_depth      = old_snow_depth,
+    max_snow_melted = ITM_melt,
+    firn_melted     = 0.0,
+    snow_melted     = 0.0;
 
   assert(thickness >= 0);
 
@@ -333,28 +337,25 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
 
   if (ITM_melt <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
-    firn_melted = 0.0, ice_melted = 0.0;
+    firn_melted = 0.0;
   } else if (max_snow_melted <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of
     // the energy available for melt was used up in melting snow.
     snow_melted = max_snow_melted;
     firn_melted = 0.0;
-    ice_melted  = 0.0;
   } else if (max_snow_melted <= firn_depth + snow_depth) {
     // All of the snow is melted but some firn is left; in any case, all of
     // the energy available for melt was used up in melting snow.
     snow_melted = snow_depth;
     firn_melted = max_snow_melted - snow_melted;
-    ice_melted  = 0.0;
   } else {
     // All (firn and snow_depth meters) of snow melted. Excess_melt is
     // available to melt ice.
     firn_melted = firn_depth;
     snow_melted = snow_depth;
-    ice_melted  = ITM_melt - (firn_melted + snow_melted); //
   }
 
-  double melt                 = ITM_melt, //snow_melted + firn_melted + ice_melted,
+  double melt                 = ITM_melt,
       ice_created_by_refreeze = 0.0;
 
 
