@@ -377,7 +377,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
-  LocalMassBalanceITM::Melt ETIM_melt;
+  ITMMassBalance::Melt ETIM_melt;
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
   }
@@ -537,7 +537,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
           const double accumulation = P[k] * dtseries;
 
-          LocalMassBalanceITM::Changes changes;
+          ITMMassBalance::Changes changes;
 
           if (force_albedo) {
 

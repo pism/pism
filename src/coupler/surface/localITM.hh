@@ -51,21 +51,40 @@ namespace surface {
   - This base class should be more general.  For instance, it could allow as
   input a time series for precipation rate.
 */
-class LocalMassBalanceITM {
+
+//! A dEBM-simple implementation
+/*!
+  after Krebs-Kanzow et al. 2018
+*/
+class ITMMassBalance {
+
 public:
-  LocalMassBalanceITM(Config::ConstPtr config, units::System::Ptr system);
-  virtual ~LocalMassBalanceITM();
+  ITMMassBalance(Config::ConstPtr config, units::System::Ptr system);
 
-  std::string method() const;
+  unsigned int get_timeseries_length(double dt);
 
-  virtual unsigned int get_timeseries_length(double dt) = 0;
+  double get_albedo_melt(double melt, int mask_value, double dtseries);
 
+  double get_refreeze_fraction(double T);
 
-  virtual double get_albedo_melt(double melt, int mask_value, double dtseries) = 0;
-  virtual double get_tau_a(double surface_elevation)                           = 0;
+  class Melt {
+  public:
+    Melt();
 
-  /*! Remove rain from precipitation. */
-  virtual void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate) = 0;
+    double T_melt;
+    double I_melt;
+    double c_melt;
+    double ITM_melt;
+    double transmissivity;
+    double TOA_insol;
+    double q_insol;
+  };
+
+  Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
+                                   double delta, double distance2, double lat,
+                                   double albedo);
+
+  void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate);
 
   class Changes {
   public:
@@ -78,103 +97,59 @@ public:
     double smb;
   };
 
-
-  class Melt {
-  public:
-    Melt();
+  Changes step(double refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
+               double snow_depth, double accumulation);
 
 
-    double T_melt;
-    double I_melt;
-    double c_melt;
-    double ITM_melt;
-    double transmissivity;
-    double TOA_insol;
-    double q_insol;
-  };
+  double get_tau_a(double surface_elevation);
 
 
-  //! (ITMs).
-  /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
-    Inputs `t`, `dt_series` are in seconds.  */
+  double get_h_phi(double phi, double lat, double delta);
 
+  double get_q_insol(double solar_constant, double distance2, double h_phi,
+                     double lat, double delta);
 
-  virtual Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
-                                   double delta, double distance2, double lat,
-                                   double albedo) = 0;
-
-
-  /**
-   * Take a step of the ITM model.
-   *
-   * @param[in] refreeze_fraction
-   * @param[in] albedo
-   * @param[in] melt
-   * @param[in] old_firn_depth firn depth [ice equivalent meters]
-   * @param[in] old_snow_depth snow depth [ice equivalent meters]
-   * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
-   */
-  virtual Changes step(double refreeze_fraction, double thickness, double ITM_melt, double old_firn_depth,
-                       double old_snow_depth, double accumulation) = 0;
-
-  virtual double get_refreeze_fraction(double T) = 0;
-
-protected:
-  std::string m_method;
-
-  const Config::ConstPtr m_config;
-  const units::System::Ptr m_unit_system;
-  const double m_seconds_per_day;
-};
-
-
-//! A dEBM implementation
-/*!
-  after Krebs-Kanzow et al. 2018
-
-*/
-class ITMMassBalance : public LocalMassBalanceITM {
-
-public:
-  ITMMassBalance(Config::ConstPtr config, units::System::Ptr system);
-  virtual ~ITMMassBalance() {
-  }
-
-  virtual unsigned int get_timeseries_length(double dt);
-
-  virtual double get_albedo_melt(double melt, int mask_value, double dtseries);
-
-  virtual double get_refreeze_fraction(double T);
-
-
-  virtual Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
-                                   double delta, double distance2, double lat,
-                                   double albedo);
-
-  virtual void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate);
-
-  virtual Changes step(double refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
-                       double snow_depth, double accumulation);
-
-
-  virtual double get_tau_a(double surface_elevation);
-
-
-  virtual double get_h_phi(double phi, double lat, double delta);
-
-  virtual double get_q_insol(double solar_constant, double distance2, double h_phi,
-                             double lat, double delta);
-
-  virtual double get_TOA_insol(double solar_constant, double distance2, double h0,
-                               double lat, double delta);
+  double get_TOA_insol(double solar_constant, double distance2, double h0,
+                       double lat, double delta);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);
-  bool precip_as_snow,       //!< interpret all the precipitation as snow (no rain)
-      refreeze_ice_melt;     //!< refreeze melted ice
-  double Tmin,               //!< the temperature below which all precipitation is snow
-      Tmax;                  //!< the temperature above which all precipitation is rain
-  double pdd_threshold_temp; //!< threshold temperature for the PDD computation
+  //! interpret all the precipitation as snow (no rain)
+  bool precip_as_snow;
+  //! refreeze melted ice
+  double refreeze_ice_melt;
+  //! the temperature below which all precipitation is snow
+  double Tmin;
+  //! the temperature above which all precipitation is rain
+  double  Tmax;
+  //! threshold temperature for the PDD computation
+  double pdd_threshold_temp;
+
+  double m_year_length;
+
+  unsigned int m_n_per_year;
+
+  double m_ice_density;
+  double m_albedo_snow;
+  double m_albedo_ice;
+  double m_albedo_land;
+  double m_albedo_ocean;
+  double m_albedo_slope;
+
+  double m_tau_a_slope;
+  double m_tau_a_intercept;
+  double m_water_density;
+
+  double m_itm_c;
+  double m_itm_lambda;
+  double m_bm_temp;
+
+  double m_L;
+  double m_solar_constant;
+  double m_phi;
+
+  double m_Tmin_refreeze;
+  double m_Tmax_refreeze;
 };
 
 
