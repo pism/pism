@@ -65,7 +65,7 @@ protected:
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& precipitation_impl() const;
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 

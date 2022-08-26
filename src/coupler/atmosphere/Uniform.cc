@@ -45,11 +45,11 @@ void Uniform::update_impl(const Geometry &geometry, double t, double dt) {
   (void) dt;
 }
 
-const IceModelVec2S& Uniform::mean_precipitation_impl() const {
+const IceModelVec2S& Uniform::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Uniform::mean_annual_temp_impl() const {
+const IceModelVec2S& Uniform::air_temperature_impl() const {
   return *m_temperature;
 }
 

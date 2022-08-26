@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,11 +60,11 @@ void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) c
 void PrecipitationScaling::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->copy_from(m_input_model->precipitation());
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
-const IceModelVec2S& PrecipitationScaling::mean_precipitation_impl() const {
+const IceModelVec2S& PrecipitationScaling::precipitation_impl() const {
   return *m_precipitation;
 }
 

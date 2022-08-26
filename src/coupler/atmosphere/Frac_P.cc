@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -112,7 +112,7 @@ void Frac_P::end_pointwise_access_impl() const {
 
 void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
-  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->copy_from(m_input_model->precipitation());
 
   if (m_1d_scaling) {
     m_precipitation->scale(m_1d_scaling->value(t + 0.5 * dt));
@@ -135,7 +135,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Frac_P::mean_precipitation_impl() const {
+const IceModelVec2S& Frac_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

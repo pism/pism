@@ -57,8 +57,8 @@ def write_state(model):
         os.remove(o_diagnostics)
 
 def check_model(model, T, P, ts=None, Ts=None, Ps=None):
-    check(model.mean_annual_temp(), T)
-    check(model.mean_precipitation(), P)
+    check(model.air_temperature(), T)
+    check(model.precipitation(), P)
 
     model.init_timeseries(ts)
 
@@ -74,11 +74,11 @@ def check_model(model, T, P, ts=None, Ts=None, Ps=None):
     model.max_timestep(ts[0])
 
 def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
-    check_difference(modifier.mean_annual_temp(),
-                     model.mean_annual_temp(),
+    check_difference(modifier.air_temperature(),
+                     model.air_temperature(),
                      T)
-    check_difference(modifier.mean_precipitation(),
-                     model.mean_precipitation(),
+    check_difference(modifier.precipitation(),
+                     model.precipitation(),
                      P)
 
     model.init_timeseries(ts)
@@ -488,7 +488,7 @@ class FracP1D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_ratio(modifier.mean_precipitation(), self.model.mean_precipitation(),
+        check_ratio(modifier.precipitation(), self.model.precipitation(),
                     self.P_ratio)
 
         check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
@@ -527,7 +527,7 @@ class FracP2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_ratio(modifier.mean_precipitation(), self.model.mean_precipitation(),
+        check_ratio(modifier.precipitation(), self.model.precipitation(),
                     self.P_ratio)
 
         check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
@@ -597,7 +597,7 @@ class ElevationChange(TestCase):
 
         C = config.get_number("atmosphere.precip_exponential_factor_for_temperature")
         dT = -self.precip_dTdz * self.dz / 1000.0
-        P = sample(model.mean_precipitation())
+        P = sample(model.precipitation())
         dP = np.exp(C * dT) * P - P
 
         check_modifier(model, modifier, T=self.dT, P=dP,

@@ -88,11 +88,11 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp->average(t, dt);
 }
 
-const IceModelVec2S& Given::mean_precipitation_impl() const {
+const IceModelVec2S& Given::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Given::mean_annual_temp_impl() const {
+const IceModelVec2S& Given::air_temperature_impl() const {
   return *m_air_temp;
 }
 

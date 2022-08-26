@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -65,12 +65,12 @@ void AtmosphereModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
 }
 
-const IceModelVec2S& AtmosphereModel::mean_precipitation() const {
-  return this->mean_precipitation_impl();
+const IceModelVec2S& AtmosphereModel::precipitation() const {
+  return this->precipitation_impl();
 }
 
-const IceModelVec2S& AtmosphereModel::mean_annual_temp() const {
-  return this->mean_annual_temp_impl();
+const IceModelVec2S& AtmosphereModel::air_temperature() const {
+  return this->air_temperature_impl();
 }
 
 void AtmosphereModel::begin_pointwise_access() const {
@@ -162,7 +162,7 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_air_temp", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    result->copy_from(model->mean_annual_temp());
+    result->copy_from(model->air_temperature());
 
     return result;
   }
@@ -187,7 +187,7 @@ protected:
     IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "effective_precipitation", WITHOUT_GHOSTS));
     result->metadata(0) = m_vars[0];
 
-    result->copy_from(model->mean_precipitation());
+    result->copy_from(model->precipitation());
 
     return result;
   }
@@ -245,17 +245,17 @@ void AtmosphereModel::write_model_state_impl(const File &output) const {
   }
 }
 
-const IceModelVec2S& AtmosphereModel::mean_precipitation_impl() const {
+const IceModelVec2S& AtmosphereModel::precipitation_impl() const {
   if (m_input_model) {
-    return m_input_model->mean_precipitation();
+    return m_input_model->precipitation();
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
 }
 
-const IceModelVec2S& AtmosphereModel::mean_annual_temp_impl() const {
+const IceModelVec2S& AtmosphereModel::air_temperature_impl() const {
   if (m_input_model) {
-    return m_input_model->mean_annual_temp();
+    return m_input_model->air_temperature();
   } else {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }

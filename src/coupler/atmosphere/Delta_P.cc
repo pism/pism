@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,11 +56,11 @@ void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {
 void Delta_P::update_impl(const Geometry &geometry, double t, double dt) {
   m_input_model->update(geometry, t, dt);
 
-  m_precipitation->copy_from(m_input_model->mean_precipitation());
+  m_precipitation->copy_from(m_input_model->precipitation());
   m_precipitation->shift(m_forcing->value(t + 0.5 * dt));
 }
 
-const IceModelVec2S& Delta_P::mean_precipitation_impl() const {
+const IceModelVec2S& Delta_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

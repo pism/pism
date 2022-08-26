@@ -473,8 +473,8 @@ class Simple(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        T = sample(atmosphere.mean_annual_temp())
-        M = sample(atmosphere.mean_precipitation())
+        T = sample(atmosphere.air_temperature())
+        M = sample(atmosphere.precipitation())
 
         check_model(model, T, 0.0, M, accumulation=M)
 

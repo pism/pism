@@ -61,7 +61,7 @@ OrographicPrecipitation::~OrographicPrecipitation() {
   // empty
 }
 
-const IceModelVec2S &OrographicPrecipitation::mean_precipitation_impl() const {
+const IceModelVec2S &OrographicPrecipitation::precipitation_impl() const {
   return *m_precipitation;
 }
 

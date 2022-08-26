@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -47,8 +47,8 @@ void Simple::update_impl(const Geometry &geometry, double t, double dt) {
     m_atmosphere->update(geometry, t, dt);
   }
 
-  m_mass_flux->copy_from(m_atmosphere->mean_precipitation());
-  m_temperature->copy_from(m_atmosphere->mean_annual_temp());
+  m_mass_flux->copy_from(m_atmosphere->precipitation());
+  m_temperature->copy_from(m_atmosphere->air_temperature());
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);

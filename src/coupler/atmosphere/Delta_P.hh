@@ -37,7 +37,7 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mean_precipitation_impl() const;
+  const IceModelVec2S& precipitation_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;

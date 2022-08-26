@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -115,7 +115,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
   // temperature
   {
-    m_temperature->copy_from(m_input_model->mean_annual_temp());
+    m_temperature->copy_from(m_input_model->air_temperature());
 
     lapse_rate_correction(m_surface, reference_surface,
                           m_temp_lapse_rate, *m_temperature);
@@ -123,7 +123,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
   // precipitation
   {
-    m_precipitation->copy_from(m_input_model->mean_precipitation());
+    m_precipitation->copy_from(m_input_model->precipitation());
 
     switch (m_precip_method) {
     case SCALE:
@@ -151,11 +151,11 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   }
 }
 
-const IceModelVec2S& ElevationChange::mean_annual_temp_impl() const {
+const IceModelVec2S& ElevationChange::air_temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& ElevationChange::mean_precipitation_impl() const {
+const IceModelVec2S& ElevationChange::precipitation_impl() const {
   return *m_precipitation;
 }
 

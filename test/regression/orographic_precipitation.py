@@ -116,7 +116,7 @@ def run_model(grid, orography):
     water_density = config.get_number("constants.fresh_water.density")
 
     # convert from kg / (m^2 s) to mm/s
-    return model.mean_precipitation().numpy() / (1e-3 * water_density)
+    return model.precipitation().numpy() / (1e-3 * water_density)
 
 def max_error(spacing, wind_direction, flowline=True):
     """Compute the maximum error given a grid spacing and wind direction.

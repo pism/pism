@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -43,11 +43,11 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  //! \brief Sets result to the mean precipitation, in m/s ice equivalent.
-  const IceModelVec2S& mean_precipitation() const;
+  //! @brief Sets result to the mean precipitation, in "kg m-2 second-1".
+  const IceModelVec2S& precipitation() const;
 
-  //! \brief Sets result to the mean annual near-surface air temperature, in degrees Kelvin.
-  const IceModelVec2S& mean_annual_temp() const;
+  //! @brief Sets result to the mean near-surface air temperature, in degrees Kelvin.
+  const IceModelVec2S& air_temperature() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -71,8 +71,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual const IceModelVec2S& mean_precipitation_impl() const;
-  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+  virtual const IceModelVec2S& precipitation_impl() const;
+  virtual const IceModelVec2S& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;

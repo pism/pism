@@ -42,8 +42,8 @@ protected:
 
   virtual void init_impl(const Geometry &geometry);
 
-  virtual const IceModelVec2S& mean_precipitation_impl() const;
-  virtual const IceModelVec2S& mean_annual_temp_impl() const;
+  virtual const IceModelVec2S& precipitation_impl() const;
+  virtual const IceModelVec2S& air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;

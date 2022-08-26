@@ -90,12 +90,12 @@ void YearlyCycle::write_model_state_impl(const File &output) const {
 }
 
 //! Copies the stored precipitation field into result.
-const IceModelVec2S& YearlyCycle::mean_precipitation_impl() const {
+const IceModelVec2S& YearlyCycle::precipitation_impl() const {
   return m_precipitation;
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-const IceModelVec2S& YearlyCycle::mean_annual_temp_impl() const {
+const IceModelVec2S& YearlyCycle::air_temperature_impl() const {
   return m_air_temp_mean_annual;
 }
 

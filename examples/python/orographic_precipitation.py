@@ -76,7 +76,7 @@ def synthetic_geometry(grid, orography):
     model.update(geometry, 0, 1)
 
     # convert from mm/s to mm/hour
-    return model.mean_precipitation().numpy() * 3600
+    return model.precipitation().numpy() * 3600
 
 def input_file(filename):
 
@@ -95,7 +95,7 @@ def input_file(filename):
     model.init(geometry)
     model.update(geometry, 0, 1)
 
-    model.mean_precipitation().dump(config.get_string("output.file"))
+    model.precipitation().dump(config.get_string("output.file"))
 
 if __name__ == "__main__":
     ctx = PISM.Context()
