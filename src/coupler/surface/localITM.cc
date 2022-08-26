@@ -47,38 +47,38 @@ ITMMassBalance::Melt::Melt() {
   ITM_melt = 0.0;
 }
 
-ITMMassBalance::ITMMassBalance(Config::ConstPtr config, units::System::Ptr system) {
-  precip_as_snow     = config->get_flag("surface.itm.interpret_precip_as_snow");
-  Tmin               = config->get_number("surface.itm.air_temp_all_precip_as_snow");
-  Tmax               = config->get_number("surface.itm.air_temp_all_precip_as_rain");
-  refreeze_ice_melt  = config->get_flag("surface.itm.refreeze_ice_melt");
-  pdd_threshold_temp = config->get_number("surface.itm.positive_threshold_temp");
+ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) {
+  m_precip_as_snow     = config.get_flag("surface.itm.interpret_precip_as_snow");
+  m_Tmin               = config.get_number("surface.itm.air_temp_all_precip_as_snow");
+  m_Tmax               = config.get_number("surface.itm.air_temp_all_precip_as_rain");
+  m_refreeze_ice_melt  = config.get_flag("surface.itm.refreeze_ice_melt");
+  m_pdd_threshold_temp = config.get_number("surface.itm.positive_threshold_temp");
 
   m_year_length = units::convert(system, 1.0, "years", "seconds");
-  m_n_per_year = static_cast<unsigned int>(config->get_number("surface.itm.max_evals_per_year"));
+  m_n_per_year = static_cast<unsigned int>(config.get_number("surface.itm.max_evals_per_year"));
 
-  m_water_density = config->get_number("constants.fresh_water.density");
-  m_ice_density   = config->get_number("constants.ice.density");
-  m_albedo_snow   = config->get_number("surface.itm.albedo_snow");
-  m_albedo_ice    = config->get_number("surface.itm.albedo_ice");
-  m_albedo_land   = config->get_number("surface.itm.albedo_land"); //0.2
-  m_albedo_ocean  = config->get_number("surface.itm.albedo_ocean"); // 0.1;
-  m_albedo_slope  = config->get_number("surface.itm.albedo_slope"); //-790;
+  m_water_density = config.get_number("constants.fresh_water.density");
+  m_ice_density   = config.get_number("constants.ice.density");
+  m_albedo_snow   = config.get_number("surface.itm.albedo_snow");
+  m_albedo_ice    = config.get_number("surface.itm.albedo_ice");
+  m_albedo_land   = config.get_number("surface.itm.albedo_land"); //0.2
+  m_albedo_ocean  = config.get_number("surface.itm.albedo_ocean"); // 0.1;
+  m_albedo_slope  = config.get_number("surface.itm.albedo_slope"); //-790;
 
-  m_tau_a_slope     = config->get_number("surface.itm.tau_a_slope");
-  m_tau_a_intercept = config->get_number("surface.itm.tau_a_intercept");
+  m_tau_a_slope     = config.get_number("surface.itm.tau_a_slope");
+  m_tau_a_intercept = config.get_number("surface.itm.tau_a_intercept");
 
-  m_itm_c      = config->get_number("surface.itm.itm_c");
-  m_itm_lambda = config->get_number("surface.itm.itm_lambda");
-  m_bm_temp    = config->get_number("surface.itm.background_melting_temp");
+  m_itm_c      = config.get_number("surface.itm.itm_c");
+  m_itm_lambda = config.get_number("surface.itm.itm_lambda");
+  m_bm_temp    = config.get_number("surface.itm.background_melting_temp");
 
-  m_L = config->get_number("constants.fresh_water.latent_heat_of_fusion");
-  m_solar_constant = config->get_number("surface.itm.solar_constant");
+  m_L = config.get_number("constants.fresh_water.latent_heat_of_fusion");
+  m_solar_constant = config.get_number("surface.itm.solar_constant");
 
-  m_phi = config->get_number("surface.itm.phi") * M_PI / 180.0;
+  m_phi = config.get_number("surface.itm.phi") * M_PI / 180.0;
 
-  m_Tmin_refreeze = config->get_number("surface.itm.air_temp_all_refreeze");
-  m_Tmax_refreeze = config->get_number("surface.itm.air_temp_no_refreeze");
+  m_Tmin_refreeze = config.get_number("surface.itm.air_temp_all_refreeze");
+  m_Tmax_refreeze = config.get_number("surface.itm.air_temp_no_refreeze");
 }
 
 
@@ -194,7 +194,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series, doubl
   ETIM_melt.q_insol   = q_insol;
 
   assert(dt_series > 0.0);
-  double Teff = CalovGreveIntegrand(S, T - pdd_threshold_temp);
+  double Teff = CalovGreveIntegrand(S, T - m_pdd_threshold_temp);
   if (Teff < 1.e-4) {
     Teff = 0;
   }
@@ -247,10 +247,10 @@ void ITMMassBalance::get_snow_accumulationITM(const std::vector<double> &T, std:
       continue;
     }
 
-    if (precip_as_snow || T[i] <= Tmin) { // T <= Tmin, all precip is snow
+    if (m_precip_as_snow or T[i] <= m_Tmin) { // T <= Tmin, all precip is snow
       // no change
-    } else if (T[i] < Tmax) { // linear transition from Tmin to Tmax
-      P[i] *= (Tmax - T[i]) / (Tmax - Tmin);
+    } else if (T[i] < m_Tmax) { // linear transition from Tmin to Tmax
+      P[i] *= (m_Tmax - T[i]) / (m_Tmax - m_Tmin);
     } else { // T >= Tmax, all precip is rain -- ignore it
       P[i] = 0.0;
     }
@@ -346,7 +346,7 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
       ice_created_by_refreeze = 0.0;
 
 
-  if (refreeze_ice_melt) {
+  if (m_refreeze_ice_melt) {
     ice_created_by_refreeze = melt * refreeze_fraction;
   } else {
     // Should this only be snow melted?
@@ -360,7 +360,7 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
   // FIXME: need to add snow that hasn't melted, is this correct?
   // firn_depth += (snow_depth - snow_melted);
   // Turn firn into ice at X times accumulation
-  // firn_depth -= accumulation *  m_config->get_number("surface.pdd.firn_compaction_to_accumulation_ratio");
+  // firn_depth -= accumulation *  config.get_number("surface.pdd.firn_compaction_to_accumulation_ratio");
 
 
   const double runoff = melt - ice_created_by_refreeze;
@@ -371,7 +371,6 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
   result.melt       = melt;
   result.runoff     = runoff;
   result.smb        = thickness + smb >= 0 ? smb : -thickness;
-
 
   assert(thickness + result.smb >= 0);
 

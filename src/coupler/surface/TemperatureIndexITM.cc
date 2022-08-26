@@ -76,7 +76,7 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
     m_input_albedo = nullptr;
   }
 
-  m_mbscheme.reset(new ITMMassBalance(m_config, m_sys));
+  m_mbscheme.reset(new ITMMassBalance(*m_config, m_sys));
 
   // initialize the spatially-variable air temperature standard deviation
 

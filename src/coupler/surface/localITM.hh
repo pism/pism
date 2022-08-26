@@ -20,7 +20,7 @@
 #define __localITM_hh
 
 #include "pism/util/iceModelVec.hh"
-#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Units.hh"
 
 namespace pism {
 namespace surface {
@@ -59,7 +59,7 @@ namespace surface {
 class ITMMassBalance {
 
 public:
-  ITMMassBalance(Config::ConstPtr config, units::System::Ptr system);
+  ITMMassBalance(const Config &config, units::System::Ptr system);
 
   unsigned int get_timeseries_length(double dt);
 
@@ -115,21 +115,23 @@ public:
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);
   //! interpret all the precipitation as snow (no rain)
-  bool precip_as_snow;
+  bool m_precip_as_snow;
   //! refreeze melted ice
-  double refreeze_ice_melt;
+  bool m_refreeze_ice_melt;
   //! the temperature below which all precipitation is snow
-  double Tmin;
+  double m_Tmin;
   //! the temperature above which all precipitation is rain
-  double  Tmax;
+  double m_Tmax;
   //! threshold temperature for the PDD computation
-  double pdd_threshold_temp;
+  double m_pdd_threshold_temp;
 
   double m_year_length;
 
   unsigned int m_n_per_year;
 
   double m_ice_density;
+  double m_water_density;
+
   double m_albedo_snow;
   double m_albedo_ice;
   double m_albedo_land;
@@ -138,7 +140,6 @@ protected:
 
   double m_tau_a_slope;
   double m_tau_a_intercept;
-  double m_water_density;
 
   double m_itm_c;
   double m_itm_lambda;
