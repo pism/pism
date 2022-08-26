@@ -97,7 +97,6 @@ protected:
   double m_melt_conversion_factor;
   double m_refreeze_fraction;
 
-
   //! K; daily amount of randomness
   double m_base_pddStdDev;
 
@@ -157,7 +156,7 @@ protected:
 
   std::unique_ptr<ScalarForcing> m_obliquity;
 
-  std::unique_ptr<ScalarForcing> m_long_peri;
+  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
 
   bool m_use_paleo_file;
 };

@@ -21,6 +21,7 @@
 
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/Units.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
 namespace surface {
@@ -61,11 +62,11 @@ class ITMMassBalance {
 public:
   ITMMassBalance(const Config &config, units::System::Ptr system);
 
-  unsigned int get_timeseries_length(double dt);
+  unsigned int timeseries_length(double dt);
 
-  double get_albedo_melt(double melt, int mask_value, double dtseries);
+  double albedo(double melt, MaskValue cell_type, double dtseries);
 
-  double get_refreeze_fraction(double T);
+  double refreeze_fraction(double T);
 
   class Melt {
   public:
@@ -80,11 +81,11 @@ public:
     double q_insol;
   };
 
-  Melt calculate_ETIM_melt(double dt_series, double S, double T, double surface_elevation,
-                                   double delta, double distance2, double lat,
-                                   double albedo);
+  Melt calculate_melt(double dt_series, double S, double T, double surface_elevation,
+                      double delta, double distance2, double lat,
+                      double albedo);
 
-  void get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &precip_rate);
+  void get_snow_accumulation(const std::vector<double> &T, std::vector<double> &precip_rate);
 
   class Changes {
   public:
@@ -106,11 +107,9 @@ public:
 
   double get_h_phi(double phi, double lat, double delta);
 
-  double get_q_insol(double solar_constant, double distance2, double h_phi,
-                     double lat, double delta);
+  double get_q_insol(double distance2, double h_phi, double lat, double delta);
 
-  double get_TOA_insol(double solar_constant, double distance2, double h0,
-                       double lat, double delta);
+  double get_TOA_insol(double distance2, double h0, double lat, double delta);
 
 protected:
   double CalovGreveIntegrand(double sigma, double TacC);
@@ -125,8 +124,11 @@ protected:
   //! threshold temperature for the PDD computation
   double m_pdd_threshold_temp;
 
+  //! year length used to compute the time series length required to get m_n_per_year
+  //! evaluations
   double m_year_length;
 
+  //! number of small time steps per year
   unsigned int m_n_per_year;
 
   double m_ice_density;
@@ -136,8 +138,11 @@ protected:
   double m_albedo_ice;
   double m_albedo_land;
   double m_albedo_ocean;
+
+  //! slope used in the linear parameterization of the albedo as a function of melt
   double m_albedo_slope;
 
+  //! slope used in the linear parameterization of transmissivity
   double m_tau_a_slope;
   double m_tau_a_intercept;
 
@@ -145,8 +150,11 @@ protected:
   double m_itm_lambda;
   double m_bm_temp;
 
+  //! latent heat of fusion
   double m_L;
   double m_solar_constant;
+
+  //! minimum solar elevation angle above which melt is possible
   double m_phi;
 
   double m_Tmin_refreeze;

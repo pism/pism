@@ -18,16 +18,10 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cmath>          // for erfc() in CalovGreveIntegrand()
-#include <ctime>          // for time(), used to initialize random number gen
-#include <gsl/gsl_math.h> // M_PI
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_rng.h>
-#include <iostream>
+#include <cmath>          // M_PI and erfc() in CalovGreveIntegrand()
 
 #include "localITM.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -85,7 +79,7 @@ ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) 
 /*! \brief Compute the number of points for temperature and
     precipitation time-series.
  */
-unsigned int ITMMassBalance::get_timeseries_length(double dt) {
+unsigned int ITMMassBalance::timeseries_length(double dt) {
   double dt_years = dt / m_year_length;
 
   return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
@@ -103,14 +97,16 @@ double ITMMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 }
 
 
-double ITMMassBalance::get_albedo_melt(double melt, int mask_value, double dtseries) {
+double ITMMassBalance::albedo(double melt,
+                              MaskValue cell_type,
+                              double dtseries) {
   // melt has a unit of meters ice equivalent
   // dtseries has a unit of seconds
-  if (mask_value == 4) { // mask value for ice free ocean
+  if (cell_type == MASK_ICE_FREE_OCEAN) {
     return m_albedo_ocean;
   }
 
-  if (mask_value == 0) { // mask value for bedrock
+  if (cell_type == MASK_ICE_FREE_BEDROCK) {
     return m_albedo_land;
   }
 
@@ -133,24 +129,23 @@ double ITMMassBalance::get_h_phi(double phi, double lat, double delta) {
 }
 
 
-double ITMMassBalance::get_q_insol(double solar_constant, double distance2, double h_phi,
+double ITMMassBalance::get_q_insol(double distance2, double h_phi,
                                    double lat, double delta) {
   if (h_phi == 0) {
     return 0.;
   } else {
-    return solar_constant * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi)) / h_phi;
+    return m_solar_constant * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi)) / h_phi;
   }
 }
 
-double ITMMassBalance::get_TOA_insol(double solar_constant, double distance2, double h0,
+double ITMMassBalance::get_TOA_insol(double distance2, double h0,
                                      double lat, double delta) {
   if (h0 == 0) {
     return 0.;
   } else {
-    return solar_constant * distance2 * (h0 * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h0)) / M_PI;
+    return m_solar_constant * distance2 * (h0 * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h0)) / M_PI;
   }
 }
-
 
 //!
 /* compute diurnal melt scheme  by equation (6) by Uta Krebs-Kanzow et al., The Cryosphere, 2018
@@ -162,58 +157,46 @@ double ITMMassBalance::get_TOA_insol(double solar_constant, double distance2, do
  * @param[out] melt pointer to a pre-allocated array with N-1 elements
  * output in mm water equivalent
  */
-
-
-ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series, double S, double T,
-                                                         double surface_elevation, double delta,
-                                                         double distance2, double lat,
-                                                         double albedo) {
+ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt_series, double S, double T,
+                                                    double surface_elevation, double delta,
+                                                    double distance2, double lat,
+                                                    double albedo) {
   assert(dt_series > 0.0);
 
-  Melt ETIM_melt;
+  Melt result;
 
-  const double tau_a      = get_tau_a(surface_elevation);
+  const double tau_a = get_tau_a(surface_elevation);
   // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp.
 
-
-
-
-  double h_phi = get_h_phi(m_phi, lat, delta);
-
-
-  double h0 = get_h_phi(0, lat, delta);
-
-
+  double h_phi            = get_h_phi(m_phi, lat, delta);
+  double h0               = get_h_phi(0, lat, delta);
   double quotient_delta_t = h_phi / M_PI;
 
-  ETIM_melt.transmissivity = tau_a;
+  result.transmissivity = tau_a;
 
-  double q_insol = get_q_insol(m_solar_constant, distance2, h_phi, lat, delta);
+  double q_insol = get_q_insol(distance2, h_phi, lat, delta);
 
-  ETIM_melt.TOA_insol = get_TOA_insol(m_solar_constant, distance2, h0, lat, delta);
-  ETIM_melt.q_insol   = q_insol;
+  result.TOA_insol = get_TOA_insol(distance2, h0, lat, delta);
+  result.q_insol   = q_insol;
 
-  assert(dt_series > 0.0);
   double Teff = CalovGreveIntegrand(S, T - m_pdd_threshold_temp);
   if (Teff < 1.e-4) {
     Teff = 0;
   }
 
-  ETIM_melt.T_melt = quotient_delta_t * dt_series / (m_water_density * m_L) * m_itm_lambda * (Teff);
+  result.T_melt = quotient_delta_t * dt_series / (m_water_density * m_L) * m_itm_lambda * (Teff);
 
   if (T < m_bm_temp) {
-    ETIM_melt.ITM_melt = 0.;
+    result.ITM_melt = 0.;
   } else {
-    ETIM_melt.ITM_melt =
+    result.ITM_melt =
         quotient_delta_t * dt_series / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_itm_c + m_itm_lambda * (Teff));
   }
 
+  result.I_melt = dt_series / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
+  result.c_melt = dt_series / (m_water_density * m_L) * m_itm_c * quotient_delta_t;
 
-  ETIM_melt.I_melt = dt_series / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
-  ETIM_melt.c_melt = dt_series / (m_water_density * m_L) * m_itm_c * quotient_delta_t;
-
-
-  return ETIM_melt;
+  return result;
 }
 
 
@@ -233,7 +216,7 @@ ITMMassBalance::Melt ITMMassBalance::calculate_ETIM_melt(double dt_series, doubl
  * @param[in] T air temperature (array of length N)
  * @param[in] N array length
  */
-void ITMMassBalance::get_snow_accumulationITM(const std::vector<double> &T, std::vector<double> &P) {
+void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::vector<double> &P) {
 
 
   assert(T.size() == P.size());
@@ -258,7 +241,7 @@ void ITMMassBalance::get_snow_accumulationITM(const std::vector<double> &T, std:
 }
 
 
-double ITMMassBalance::get_refreeze_fraction(double T) {
+double ITMMassBalance::refreeze_fraction(double T) {
 
   if (T <= m_Tmin_refreeze) {
     return 1.0;

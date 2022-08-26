@@ -2490,7 +2490,7 @@ netcdf pism_config {
     pism_config:surface.itm.paleo.periodic_type = "flag";
 
     pism_config:surface.itm.phi =  17.5;
-    pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is posisble. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018"; 
+    pism_config:surface.itm.phi_doc = "minimum solar elevation angle above which melt is possible. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018";
     pism_config:surface.itm.phi_type = "number";
     pism_config:surface.itm.phi_units = "degree";   
 

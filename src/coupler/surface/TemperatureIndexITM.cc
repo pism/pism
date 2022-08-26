@@ -156,7 +156,7 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
     m_obliquity.reset(
         new ScalarForcing(*g->ctx(), "surface.itm.paleo", "obliquity", "degree", "degree", "obliquity of the earth"));
 
-    m_long_peri.reset(
+    m_perihelion_longitude.reset(
         new ScalarForcing(*g->ctx(), "surface.itm.paleo", "long_peri", "degree", "degree", "longitude of the perihelion"));
   } else {
     m_use_paleo_file = false;
@@ -303,7 +303,7 @@ double TemperatureIndexITM::get_distance2_paleo(double time) {
   double peri_deg = 0;
   if (m_use_paleo_file) {
     ecc      = m_eccentricity->value(time);
-    peri_deg = m_long_peri->value(time);
+    peri_deg = m_perihelion_longitude->value(time);
   } else {
     ecc      = m_config->get_number("surface.itm.paleo.eccentricity");
     peri_deg = m_config->get_number("surface.itm.paleo.long_peri");
@@ -337,7 +337,7 @@ double TemperatureIndexITM::get_lambda_paleo(double time) {
   double ecc = 0, peri_deg = 0;
   if (m_use_paleo_file) {
     ecc         = m_eccentricity->value(time);
-    peri_deg    = m_long_peri->value(time);
+    peri_deg    = m_perihelion_longitude->value(time);
   } else {
     ecc         = m_config->get_number("surface.itm.paleo.eccentricity");
     peri_deg    = m_config->get_number("surface.itm.paleo.long_peri");
@@ -361,19 +361,14 @@ double TemperatureIndexITM::get_lambda_paleo(double time) {
 
 void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double dt) {
 
-  // make a copy of the pointer to convince clang static analyzer that its value does not
-  // change during the call
-  // FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
-
   // update to ensure that temperature and precipitation time series are correct:
-
   m_atmosphere->update(geometry, t, dt);
 
-
+  // Use near-surface air temperature as the top-of-the-ice temperature:
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
-  // set up air temperature and precipitation time series
-  int N = m_mbscheme->get_timeseries_length(dt);
+  // Set up air temperature and precipitation time series
+  int N = m_mbscheme->timeseries_length(dt);
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
@@ -393,25 +388,26 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   const auto &latitude         = geometry.latitude;
   const auto &surface_altitude = geometry.ice_surface_elevation;
 
-  IceModelVec::AccessList list{ &mask,
-                                &H,
-                                m_air_temp_sd.get(),
-                                &m_mass_flux,
-                                &m_firn_depth,
-                                &m_snow_depth,
-                                m_accumulation.get(),
-                                m_melt.get(),
-                                m_runoff.get(),
-                                &m_tempmelt,
-                                &m_insolmelt,
-                                &m_cmelt,
-                                &m_albedo,
-                                &m_transmissivity,
-                                &m_TOAinsol,
-                                &m_qinsol };
-
-  list.add(latitude);
-  list.add(surface_altitude);
+  IceModelVec::AccessList list
+    { &mask,
+      &H,
+      m_air_temp_sd.get(),
+      &m_mass_flux,
+      &m_firn_depth,
+      &m_snow_depth,
+      m_accumulation.get(),
+      m_melt.get(),
+      m_runoff.get(),
+      &m_tempmelt,
+      &m_insolmelt,
+      &m_cmelt,
+      &m_albedo,
+      &m_transmissivity,
+      &m_TOAinsol,
+      &m_qinsol,
+      &latitude,
+      &surface_altitude
+    };
 
   if ((bool)m_input_albedo) {
     m_input_albedo->update(t, dt);
@@ -419,26 +415,22 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
     list.add(*m_input_albedo.get());
   }
 
-  const double sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-               sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
+  double
+    ice_density    = m_config->get_number("constants.ice.density"),
+    sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
-  const bool force_albedo = m_config->get_flag("surface.itm.anomaly");
-
+  bool
+    force_albedo = m_config->get_flag("surface.itm.anomaly"),
+    paleo        = m_config->get_flag("surface.itm.paleo.enabled");
 
   m_atmosphere->init_timeseries(ts);
   m_atmosphere->begin_pointwise_access();
-  const double ice_density = m_config->get_number("constants.ice.density");
-
-
-  // use different calculations of solar radiation in dependence of the "paleo" flag
-  bool paleo = m_config->get_flag("surface.itm.paleo.enabled");
-
 
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-
 
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -470,7 +462,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
         }
       }
 
-
       if ((bool)m_input_albedo) {
         m_input_albedo->interp(i, j, Alb);
       }
@@ -498,8 +489,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
       }
 
       // Use temperature time series to remove rainfall from precipitation
-      m_mbscheme->get_snow_accumulationITM(T,  // air temperature (input)
-                                           P); // precipitation rate (input-output)
+      m_mbscheme->get_snow_accumulation(T,  // air temperature (input)
+                                        P); // precipitation rate (input-output)
 
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
@@ -507,24 +498,29 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
-
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
-        double ice = H(i, j), firn = m_firn_depth(i, j), snow = m_snow_depth(i, j), surfelev = surface_altitude(i, j),
-               albedo_loc = m_albedo(i, j);
+        double
+          ice        = H(i, j),
+          firn       = m_firn_depth(i, j),
+          snow       = m_snow_depth(i, j),
+          surfelev   = surface_altitude(i, j),
+          albedo_loc = m_albedo(i, j);
 
+        double
+          A   = 0.0,            // accumulation
+          M   = 0.0,            // melt
+          R   = 0.0,            // runoff
+          SMB = 0.0,            // resulting mass balance
+          Mi  = 0.0,            // insolation melt
+          Mt  = 0.0,            // temperature melt
+          Mc  = 0.0,            // offset melt
+          Tr  = 0.0,            // transmissivity, this is just for testing
+          Ti  = 0.0,            // top of the atmosphere insolation
+          Qi  = 0.0,            // insolation averaged over \Delta t_Phi
+          Al  = 0.0;
 
-        // accumulation, melt, runoff over this time-step
-        double A = 0.0, M = 0.0, R = 0.0, SMB = 0.0,
-               Mi = 0.0, // insolation melt
-            Mt    = 0.0, // temperature melt
-            Mc    = 0.0, // offset melt
-            Tr    = 0.0, // transmissivity, this is just for testing
-            Ti    = 0.0, // top of the atmosphere insolation
-            Qi    = 0.0, // insolation averaged over \Delta t _ Phi
-            Al    = 0.0;
-
-
+        // beginning of the loop over small time steps:
         for (int k = 0; k < N; ++k) {
 
           if (ts[k] >= next_snow_depth_reset) {
@@ -533,7 +529,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
               next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
             }
           }
-
 
           const double accumulation = P[k] * dtseries;
 
@@ -550,15 +545,16 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             albedo_loc = Alb[k];
           }
 
-          double delta = get_delta(ts[k]), distance2 = get_distance2(ts[k]);
+          double delta = get_delta(ts[k]);
+          double distance2 = get_distance2(ts[k]);
           if (paleo) {
             delta     = get_delta_paleo(ts[k]);
             distance2 = get_distance2_paleo(ts[k]);
           }
 
 
-          ETIM_melt = m_mbscheme->calculate_ETIM_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
-                                                      lat * M_PI / 180., albedo_loc);
+          ETIM_melt = m_mbscheme->calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
+                                                 lat * M_PI / 180., albedo_loc);
 
           //  no melt over ice-free ocean
           if (mask.ice_free_ocean(i, j)) {
@@ -568,18 +564,17 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             ETIM_melt.ITM_melt = 0.;
           }
 
-
           changes = m_mbscheme->step(m_refreeze_fraction, ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
 
           if (not(bool) m_input_albedo) {
-            albedo_loc = m_mbscheme->get_albedo_melt(changes.melt, mask(i, j), dtseries);
+            MaskValue cell_type = static_cast<MaskValue>(mask.as_int(i, j));
+            albedo_loc = m_mbscheme->albedo(changes.melt, cell_type, dtseries);
           }
           if (force_albedo) {
             if (albedo_anomaly_true(ts[k])) {
               albedo_loc = m_config->get_number("surface.itm.anomaly_value");
             }
           }
-
 
           // update ice thickness
           ice += changes.smb;
@@ -612,7 +607,6 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
         m_transmissivity(i, j) = Tr / N; //ETIM_melt.transmissivity;
         m_TOAinsol(i, j)       = Ti / N;
         m_qinsol(i, j)         = Qi / N;
-
 
         // set melt terms at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
