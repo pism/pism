@@ -370,7 +370,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   m_atmosphere->update(geometry, t, dt);
 
 
-  m_temperature->copy_from(m_atmosphere->mean_annual_temp());
+  m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // set up air temperature and precipitation time series
   int N = m_mbscheme->get_timeseries_length(dt);
