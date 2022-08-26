@@ -310,14 +310,15 @@ Simple diurnal Energy Balance Model "dEBM-simple"
 :|variables|: none
 :|implementation|: ``pism::surface::TemperatureIndexITM``
 
-This model
+This PISM module implements the "simple" version of the diurnal energy balance model
+developed by :cite:`KrebsKanzow2018` plus parameterizations of albedo and atmospheric
+transmissivity that make it possible to run the model in standalone, prognostic mode.
+Please see :cite:`Zeitzetal2021` (section 2) for details.
 
-Beyond the work of :cite:`KrebsKanzow2018`, we additionally introduce parameterizations of albedo and atmospheric transmissivity to make it
-possible to run the model in standalone, prognostic mode
+It is designed to use monthly forcing by near-surface air temperature and precipitation
+from one of PISM's atmosphere models.
 
 In particular the nonlinear albedo–melt relation (see Sect. 2.3.2) serves as an approximation to the melt–albedo feedback.
-
-This PISM component implements the model described in :cite:`Zeitzetal2021`.
 
 Similarly to the :ref:`sec-surface-pdd` model, this model computes the solid (snow) precipitation rate using the air temperature threshold
 with a linear transition. All precipitation during periods with air temperatures above
@@ -345,6 +346,7 @@ The incoming radiation, which reaches the surface, is obtained from the mean top
 The parameterization of `\tau_\text{A}` is set by the configuration parameters :config:`surface.itm.tau_a_intercept` and :config:`surface.itm.tau_a_slope` and describes how much the transmissivity increases with surface height.
 The paramterization of the albedo depends on the melt rate during the previous time step. The parameters are set by :config:`surface.itm.albedo_snow` (upper bound of the albedo), :config:`surface.itm.albedo_ice` (lower bound of the albedo), and :config:`surface.itm.albedo_slope` (slope of the linear part of the parameterization).
 The albedo can also be read in from a time dependend spatial file, use option :config:`surface.itm.albedo_input_set` and :config:`surface.itm.albedo_input_file`.
+
 It probably makes sense to have at least monthly resolution in this file.
 
 The top of the atmosphere insolation is by default calculated assuming present day values of orbital parameters. Here, the value of the solar constant can be set with :config:`surface.itm.solar_constant`.
