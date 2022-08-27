@@ -40,7 +40,8 @@ namespace surface {
 */
 class TemperatureIndexITM : public SurfaceModel {
 public:
-  TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  TemperatureIndexITM(IceGrid::ConstPtr g,
+                      std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~TemperatureIndexITM() = default;
 
   // diagnostics (for the last time step)
@@ -84,15 +85,8 @@ protected:
 
 
 protected:
-  //! mass balance scheme to use
 
-  std::unique_ptr<ITMMassBalance> m_mbscheme;
-
-  //! if not NULL then user wanted fausto PDD stuff
-  // std::unique_ptr<FaustoGrevePDDObject> m_faustogreve;
-
-  //! holds degree-day factors in location-independent case
-  // LocalITM::DegreeDayFactors m_base_ddf;
+  ITMMassBalance m_mbscheme;
 
   double m_melt_conversion_factor;
   double m_refreeze_fraction;

@@ -45,6 +45,7 @@ namespace surface {
 
 TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
     : SurfaceModel(g, input),
+      m_mbscheme(*m_config, m_sys),
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
       m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
       m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
@@ -75,8 +76,6 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
   } else {
     m_input_albedo = nullptr;
   }
-
-  m_mbscheme.reset(new ITMMassBalance(*m_config, m_sys));
 
   // initialize the spatially-variable air temperature standard deviation
 
@@ -368,7 +367,7 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // Set up air temperature and precipitation time series
-  int N = m_mbscheme->timeseries_length(dt);
+  int N = m_mbscheme.timeseries_length(dt);
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
@@ -489,8 +488,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
       }
 
       // Use temperature time series to remove rainfall from precipitation
-      m_mbscheme->get_snow_accumulation(T,  // air temperature (input)
-                                        P); // precipitation rate (input-output)
+      m_mbscheme.get_snow_accumulation(T,  // air temperature (input)
+                                       P); // precipitation rate (input-output)
 
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
@@ -553,8 +552,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
           }
 
 
-          ETIM_melt = m_mbscheme->calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
-                                                 lat * M_PI / 180., albedo_loc);
+          ETIM_melt = m_mbscheme.calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
+                                                lat * M_PI / 180., albedo_loc);
 
           //  no melt over ice-free ocean
           if (mask.ice_free_ocean(i, j)) {
@@ -564,11 +563,11 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
             ETIM_melt.ITM_melt = 0.;
           }
 
-          changes = m_mbscheme->step(m_refreeze_fraction, ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
+          changes = m_mbscheme.step(m_refreeze_fraction, ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
 
           if (not(bool) m_input_albedo) {
             MaskValue cell_type = static_cast<MaskValue>(mask.as_int(i, j));
-            albedo_loc = m_mbscheme->albedo(changes.melt, cell_type, dtseries);
+            albedo_loc = m_mbscheme.albedo(changes.melt, cell_type, dtseries);
           }
           if (force_albedo) {
             if (albedo_anomaly_true(ts[k])) {
@@ -637,7 +636,8 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 
   m_atmosphere->end_pointwise_access();
 
-  m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
+  m_next_balance_year_start =
+    compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
 
