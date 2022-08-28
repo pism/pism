@@ -102,8 +102,7 @@ public:
                double snow_depth, double accumulation);
 
 
-  double get_tau_a(double surface_elevation);
-
+  double atmosphere_transmissivity(double elevation);
 
   double get_h_phi(double phi, double lat, double delta);
 

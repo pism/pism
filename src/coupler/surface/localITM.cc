@@ -76,8 +76,7 @@ ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) 
 }
 
 
-/*! \brief Compute the number of points for temperature and
-    precipitation time-series.
+/*! @brief The number of points for temperature and precipitation time-series.
  */
 unsigned int ITMMassBalance::timeseries_length(double dt) {
   double dt_years = dt / m_year_length;
@@ -97,11 +96,10 @@ double ITMMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
 }
 
 
-double ITMMassBalance::albedo(double melt,
-                              MaskValue cell_type,
-                              double dtseries) {
+double ITMMassBalance::albedo(double melt, MaskValue cell_type, double dt) {
   // melt has a unit of meters ice equivalent
-  // dtseries has a unit of seconds
+  //
+  // dt has a unit of seconds
   if (cell_type == MASK_ICE_FREE_OCEAN) {
     return m_albedo_ocean;
   }
@@ -110,14 +108,14 @@ double ITMMassBalance::albedo(double melt,
     return m_albedo_land;
   }
 
-  double result = m_albedo_snow + m_albedo_slope * melt * m_ice_density / (dtseries);
+  double result = m_albedo_snow + m_albedo_slope * melt * m_ice_density / dt;
   return std::max(result, m_albedo_ice);
 }
 
 
-double ITMMassBalance::get_tau_a(double surface_elevation) {
+double ITMMassBalance::atmosphere_transmissivity(double elevation) {
   // transmissivity of the atmosphere, linear fit
-  return m_tau_a_intercept + m_tau_a_slope * surface_elevation;
+  return m_tau_a_intercept + m_tau_a_slope * elevation;
 }
 
 
@@ -149,33 +147,31 @@ double ITMMassBalance::get_TOA_insol(double distance2, double h0,
 
 //!
 /* compute diurnal melt scheme  by equation (6) by Uta Krebs-Kanzow et al., The Cryosphere, 2018
- * @param dt_series length of the step for the time-series
+ * @param dt length of the step for the time-series
  * @param T air temperature at time [k]
  * @param insolation at time [k]
  * @param surface_elevation
  * @param albedo which was should be figured by get_albedo (?)
  * @param[out] melt pointer to a pre-allocated array with N-1 elements
+ *
  * output in mm water equivalent
  */
-ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt_series, double S, double T,
+ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt, double S, double T,
                                                     double surface_elevation, double delta,
                                                     double distance2, double lat,
                                                     double albedo) {
-  assert(dt_series > 0.0);
+  assert(dt > 0.0);
+  // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp.
 
   Melt result;
 
-  const double tau_a = get_tau_a(surface_elevation);
-  // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp.
-
+  double tau_a            = atmosphere_transmissivity(surface_elevation);
   double h_phi            = get_h_phi(m_phi, lat, delta);
   double h0               = get_h_phi(0, lat, delta);
   double quotient_delta_t = h_phi / M_PI;
+  double q_insol          = get_q_insol(distance2, h_phi, lat, delta);
 
   result.transmissivity = tau_a;
-
-  double q_insol = get_q_insol(distance2, h_phi, lat, delta);
-
   result.TOA_insol = get_TOA_insol(distance2, h0, lat, delta);
   result.q_insol   = q_insol;
 
@@ -184,21 +180,20 @@ ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt_series, double S, 
     Teff = 0;
   }
 
-  result.T_melt = quotient_delta_t * dt_series / (m_water_density * m_L) * m_itm_lambda * (Teff);
+  result.T_melt = quotient_delta_t * dt / (m_water_density * m_L) * m_itm_lambda * Teff;
 
   if (T < m_bm_temp) {
     result.ITM_melt = 0.;
   } else {
     result.ITM_melt =
-        quotient_delta_t * dt_series / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_itm_c + m_itm_lambda * (Teff));
+        quotient_delta_t * dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_itm_c + m_itm_lambda * Teff);
   }
 
-  result.I_melt = dt_series / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
-  result.c_melt = dt_series / (m_water_density * m_L) * m_itm_c * quotient_delta_t;
+  result.I_melt = dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
+  result.c_melt = dt / (m_water_density * m_L) * m_itm_c * quotient_delta_t;
 
   return result;
 }
-
 
 //! \brief Extract snow accumulation from mixed (snow and rain)
 //! precipitation using the temperature time-series.
@@ -212,12 +207,10 @@ ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt_series, double S, 
  *
  * Sets P[i] to the *solid* (snow) accumulation *rate*.
  *
- * @param[in,out] P precipitation rate (array of length N)
  * @param[in] T air temperature (array of length N)
- * @param[in] N array length
+ * @param[in,out] P precipitation rate (array of length N)
  */
 void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::vector<double> &P) {
-
 
   assert(T.size() == P.size());
   const size_t N = T.size();
@@ -292,18 +285,12 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
 
   assert(snow_depth >= 0);
 
-
   // firn depth cannot exceed thickness - snow_depth
   firn_depth = std::min(firn_depth, thickness - snow_depth);
 
   assert(firn_depth >= 0);
 
-  double ice_thickness = thickness - snow_depth - firn_depth;
-
-  assert(ice_thickness >= 0);
-
   snow_depth += accumulation;
-
 
   if (ITM_melt <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
@@ -325,9 +312,9 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
     snow_melted = snow_depth;
   }
 
-  double melt                 = ITM_melt,
-      ice_created_by_refreeze = 0.0;
-
+  double
+    melt                    = ITM_melt,
+    ice_created_by_refreeze = 0.0;
 
   if (m_refreeze_ice_melt) {
     ice_created_by_refreeze = melt * refreeze_fraction;
@@ -335,7 +322,6 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
     // Should this only be snow melted?
     ice_created_by_refreeze = (firn_melted + snow_melted) * refreeze_fraction;
   }
-
 
   snow_depth = std::max(snow_depth - snow_melted, 0.0);
 
