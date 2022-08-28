@@ -58,15 +58,12 @@ namespace surface {
   after Krebs-Kanzow et al. 2018
 */
 class ITMMassBalance {
-
 public:
   ITMMassBalance(const Config &config, units::System::Ptr system);
 
   unsigned int timeseries_length(double dt);
 
   double albedo(double melt, MaskValue cell_type, double dtseries);
-
-  double refreeze_fraction(double T);
 
   class Melt {
   public:
@@ -102,6 +99,10 @@ public:
                double snow_depth, double accumulation);
 
 
+private:
+
+  double refreeze_fraction(double T);
+
   double atmosphere_transmissivity(double elevation);
 
   double get_h_phi(double phi, double lat, double delta);
@@ -110,7 +111,6 @@ public:
 
   double get_TOA_insol(double distance2, double h0, double lat, double delta);
 
-protected:
   double CalovGreveIntegrand(double sigma, double TacC);
   //! interpret all the precipitation as snow (no rain)
   bool m_precip_as_snow;
