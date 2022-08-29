@@ -38,7 +38,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
   // will be closed at the end of scope
-  File input(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+  File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
 
   // Assume that we are expected to use 1D scaling if the input file contains a scalar
   // time-series.

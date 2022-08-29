@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAFPFORCING_H_
-#define _PAFPFORCING_H_
+#ifndef PISM_ATMOSPHERE_FRAC_P
+#define PISM_ATMOSPHERE_FRAC_P
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/iceModelVec2T.hh"
@@ -57,4 +57,4 @@ private:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAFPFORCING_H_ */
+#endif /* PISM_ATMOSPHERE_FRAC_P */
