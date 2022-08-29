@@ -27,6 +27,7 @@ nitpicky = True
 extensions = ['sphinx.ext.mathjax',
               'sphinx.ext.githubpages',
               'sphinxcontrib.bibtex',
+              'sphinxcontrib.tikz',
               'pism_config']
 bibtex_bibfiles=["../ice-bib.bib"]
 
