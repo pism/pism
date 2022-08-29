@@ -16,12 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PADPFORCING_H_
-#define _PADPFORCING_H_
-
-#include <memory>
+#ifndef PISM_ATMOSPHERE_DELTA_P
+#define PISM_ATMOSPHERE_DELTA_P
 
 #include "pism/coupler/AtmosphereModel.hh"
+#include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
 
@@ -33,9 +32,13 @@ class Delta_P : public AtmosphereModel {
 public:
   Delta_P(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Delta_P() = default;
+
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
+
+  void begin_pointwise_access_impl() const;
+  void end_pointwise_access_impl() const;
 
   const IceModelVec2S& precipitation_impl() const;
 
@@ -44,7 +47,9 @@ private:
 
   mutable std::vector<double> m_offset_values;
 
-  std::unique_ptr<ScalarForcing> m_forcing;
+  std::unique_ptr<ScalarForcing> m_1d_offsets;
+
+  std::shared_ptr<IceModelVec2T> m_2d_offsets;
 
   IceModelVec2S::Ptr m_precipitation;
 };
@@ -52,4 +57,4 @@ private:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PADPFORCING_H_ */
+#endif /* PISM_ATMOSPHERE_DELTA_P */
