@@ -164,7 +164,7 @@ class PIK(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
-class DeltaT(TestCase):
+class DeltaT1D(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_delta_T_input")
         self.grid = shallow_grid()
@@ -191,7 +191,43 @@ class DeltaT(TestCase):
 
         check_modifier(self.model, modifier, T=self.dT, ts=[0.5], Ts=[self.dT], Ps=[0])
 
-class DeltaP(TestCase):
+class DeltaT2D(TestCase):
+    def setUp(self):
+        self.filename = tmp_name("atmosphere_delta_T_input")
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.geometry.ice_thickness.set(1000.0)
+        self.model = PISM.AtmosphereUniform(self.grid)
+        self.delta_T = 5.0
+
+        delta_T = PISM.IceModelVec2S(self.grid, "delta_T", PISM.WITHOUT_GHOSTS)
+        delta_T.set_attrs("climate", "temperature offset", "K", "K", "", 0)
+        delta_T.set(self.delta_T)
+
+        try:
+            output = PISM.util.prepare_output(self.filename)
+            delta_T.write(output)
+        finally:
+            output.close()
+
+        config.set_string("atmosphere.delta_T.file", self.filename)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+    def test_atmosphere_frac_p(self):
+        "Modifier 'delta_T': 2D offsets"
+
+        modifier = PISM.AtmosphereDeltaT(self.grid, self.model)
+
+        modifier.init(self.geometry)
+
+        modifier.update(self.geometry, 0, 1)
+
+        check_modifier(self.model, modifier, T=self.delta_T, P=0.0,
+                       ts=[0.5], Ts=[self.delta_T], Ps=[0])
+
+class DeltaP1D(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_delta_P_input")
         self.grid = shallow_grid()
@@ -217,6 +253,43 @@ class DeltaP(TestCase):
         modifier.update(self.geometry, 0, 1)
 
         check_modifier(self.model, modifier, P=self.dP, ts=[0.5], Ts=[0], Ps=[self.dP])
+
+class DeltaP2D(TestCase):
+    def setUp(self):
+        self.filename = tmp_name("atmosphere_delta_P_input")
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.geometry.ice_thickness.set(1000.0)
+        self.model = PISM.AtmosphereUniform(self.grid)
+        self.delta_P = 5.0
+
+        delta_P = PISM.IceModelVec2S(self.grid, "delta_P", PISM.WITHOUT_GHOSTS)
+        delta_P.set_attrs("climate", "precipitation offset",
+                          "kg m-2 s-1", "kg m-2 s-1", "", 0)
+        delta_P.set(self.delta_P)
+
+        try:
+            output = PISM.util.prepare_output(self.filename)
+            delta_P.write(output)
+        finally:
+            output.close()
+
+        config.set_string("atmosphere.delta_P.file", self.filename)
+
+    def tearDown(self):
+        os.remove(self.filename)
+
+    def test_atmosphere_frac_p(self):
+        "Modifier 'delta_P': 2D offsets"
+
+        modifier = PISM.AtmosphereDeltaP(self.grid, self.model)
+
+        modifier.init(self.geometry)
+
+        modifier.update(self.geometry, 0, 1)
+
+        check_modifier(self.model, modifier, P=self.delta_P, T=0.0,
+                       ts=[0.5], Ps=[self.delta_P], Ts=[0])
 
 class Given(TestCase):
     def setUp(self):
