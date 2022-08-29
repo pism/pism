@@ -24,5 +24,3 @@ Technical notes
    ocean-th.rst
 
    blatter-pattyn.rst
-
-   pdd-model.rst
