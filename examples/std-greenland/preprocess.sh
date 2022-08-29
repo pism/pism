@@ -78,6 +78,7 @@ ncap2 -O -s "time=-time" $TEMPSERIES $TEMPSERIES
 ncatted -O -a units,time,m,c,"years since 1-1-1" $TEMPSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $TEMPSERIES
 ncatted -O -a units,delta_T,m,c,"Kelvin" $TEMPSERIES
+ncap2 -O -S add_time_bounds.txt $TEMPSERIES  $TEMPSERIES
 echo "done."
 echo
 
@@ -95,6 +96,7 @@ ncpdq -O --rdr=-time $SLSERIES $SLSERIES
 ncap2 -O -s "time=-time" $SLSERIES $SLSERIES
 ncatted -O -a units,time,m,c,"years since 1-1-1" $SLSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $SLSERIES
+ncap2 -O -S add_time_bounds.txt $SLSERIES  $SLSERIES
 echo "done."
 echo
 
