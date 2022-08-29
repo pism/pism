@@ -70,9 +70,6 @@ ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) 
   m_solar_constant = config.get_number("surface.itm.solar_constant");
 
   m_phi = config.get_number("surface.itm.phi") * M_PI / 180.0;
-
-  m_Tmin_refreeze = config.get_number("surface.itm.air_temp_all_refreeze");
-  m_Tmax_refreeze = config.get_number("surface.itm.air_temp_no_refreeze");
 }
 
 
@@ -234,20 +231,6 @@ void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::ve
 }
 
 
-double ITMMassBalance::refreeze_fraction(double T) {
-
-  if (T <= m_Tmin_refreeze) {
-    return 1.0;
-  }
-
-  if ((m_Tmin_refreeze < T) and (T <= m_Tmax_refreeze)) {
-    return 1.0 / (m_Tmin_refreeze - m_Tmax_refreeze) * T + m_Tmax_refreeze / (m_Tmax_refreeze - m_Tmin_refreeze);
-  }
-
-  return 0.0;
-}
-
-
 //! \brief Compute the surface mass balance at a location from the amount of
 //! melted snow and the accumulation amount in a time interval.
 /*!
@@ -266,10 +249,7 @@ double ITMMassBalance::refreeze_fraction(double T) {
  */
 ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double thickness, double ITM_melt,
                                              double old_firn_depth, double old_snow_depth, double accumulation) {
-
-
   Changes result;
-
 
   double
     firn_depth      = old_firn_depth,
@@ -345,7 +325,6 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
 
   return result;
 }
-
 
 } // end of namespace surface
 } // end of namespace pism

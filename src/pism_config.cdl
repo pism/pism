@@ -2348,16 +2348,6 @@ netcdf pism_config {
     pism_config:surface.itm.air_temp_all_precip_as_snow_type = "number";
     pism_config:surface.itm.air_temp_all_precip_as_snow_units = "Kelvin";
 
-    pism_config:surface.itm.air_temp_all_refreeze = 268.65;
-    pism_config:surface.itm.air_temp_all_refreeze_doc = "threshold temperature below which all meltwater refreezes to ice";
-    pism_config:surface.itm.air_temp_all_refreeze_type = "number";
-    pism_config:surface.itm.air_temp_all_refreeze_units = "Kelvin";
-
-    pism_config:surface.itm.air_temp_no_refreeze = 278;
-    pism_config:surface.itm.air_temp_no_refreeze_doc = "threshold temperature above which no meltwater refreezes to ice";
-    pism_config:surface.itm.air_temp_no_refreeze_type = "number";
-    pism_config:surface.itm.air_temp_no_refreeze_units = "Kelvin";
-
     pism_config:surface.itm.albedo_ice = 0.47;
     pism_config:surface.itm.albedo_ice_doc = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
     pism_config:surface.itm.albedo_ice_type = "number";

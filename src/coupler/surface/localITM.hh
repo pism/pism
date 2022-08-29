@@ -101,8 +101,6 @@ public:
 
 private:
 
-  double refreeze_fraction(double T);
-
   double atmosphere_transmissivity(double elevation);
 
   double get_h_phi(double phi, double lat, double delta);
@@ -155,9 +153,6 @@ private:
 
   //! minimum solar elevation angle above which melt is possible
   double m_phi;
-
-  double m_Tmin_refreeze;
-  double m_Tmax_refreeze;
 };
 
 
