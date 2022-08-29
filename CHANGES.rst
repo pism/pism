@@ -1,5 +1,14 @@
 .. default-role:: literal
 
+
+Changes since the last release
+==============================
+
+- Support 2D precipitation offsets in `-atmosphere ...,delta_P`. If the input file set
+  using `atmosphere.delta_P.file` contains a scalar time series `delta_P`, use that as a
+  time-dependent constant-in-space forcing. If the input file contains a 2D variable
+  `delta_P`, use that as a time-and-space-dependent forcing.
+
 Changes since v1.2
 ==================
 
