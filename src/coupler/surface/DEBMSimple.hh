@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSTEMPERATUREINDEXITM_H_
-#define _PSTEMPERATUREINDEXITM_H_
+#ifndef PISM_DEBM_SIMPLE_H
+#define PISM_DEBM_SIMPLE_H
 
 #include <memory>
 
@@ -38,11 +38,11 @@ namespace surface {
   reasonable data requirements and to do a good job when tuned appropriately
   [@ref Hock05].
 */
-class TemperatureIndexITM : public SurfaceModel {
+class DEBMSimple : public SurfaceModel {
 public:
-  TemperatureIndexITM(IceGrid::ConstPtr g,
+  DEBMSimple(IceGrid::ConstPtr g,
                       std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~TemperatureIndexITM() = default;
+  virtual ~DEBMSimple() = default;
 
   // diagnostics (for the last time step)
   const IceModelVec2S &firn_depth() const;
@@ -158,4 +158,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSTEMPERATUREINDEXITM_H_ */
+#endif /* PISM_DEBM_SIMPLE_H */

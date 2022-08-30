@@ -18,7 +18,7 @@
 
 #include <algorithm> // std::min
 
-#include "TemperatureIndexITM.hh"
+#include "DEBMSimple.hh"
 #include "localITM.hh"
 #include "localMassBalance.hh"
 #include "pism/coupler/AtmosphereModel.hh"
@@ -43,7 +43,7 @@ namespace surface {
 
 ///// PISM surface model implementing a dEBM scheme.
 
-TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
+DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
     : SurfaceModel(g, input),
       m_mbscheme(*m_config, m_sys),
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
@@ -162,7 +162,7 @@ TemperatureIndexITM::TemperatureIndexITM(IceGrid::ConstPtr g, std::shared_ptr<at
   }
 }
 
-void TemperatureIndexITM::init_impl(const Geometry &geometry) {
+void DEBMSimple::init_impl(const Geometry &geometry) {
 
   // call the default implementation (not the interface method init())
   SurfaceModel::init_impl(geometry);
@@ -227,11 +227,11 @@ void TemperatureIndexITM::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep TemperatureIndexITM::max_timestep_impl(double my_t) const {
+MaxTimestep DEBMSimple::max_timestep_impl(double my_t) const {
   return m_atmosphere->max_timestep(my_t);
 }
 
-double TemperatureIndexITM::compute_next_balance_year_start(double time) {
+double DEBMSimple::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
   double balance_year_start_day = m_config->get_number("surface.pdd.balance_year_start_day"),
          one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
@@ -245,7 +245,7 @@ double TemperatureIndexITM::compute_next_balance_year_start(double time) {
 }
 
 
-bool TemperatureIndexITM::albedo_anomaly_true(double time) {
+bool DEBMSimple::albedo_anomaly_true(double time) {
   // This function is only here to perform darkening experiments, where the albedo over the whole ice sheet is reduced artificially during the summer months.
 
   // compute the time corresponding to the beginning of the darkening
@@ -271,7 +271,7 @@ bool TemperatureIndexITM::albedo_anomaly_true(double time) {
 }
 
 
-double TemperatureIndexITM::get_distance2(double time) {
+double DEBMSimple::get_distance2(double time) {
   // get the distance between earth and sun
   double a0 = 1.000110, a1 = 0.034221, a2 = 0.000719, b0 = 0., b1 = 0.001280, b2 = 0.000077, distance2 = 1.;
 
@@ -282,7 +282,7 @@ double TemperatureIndexITM::get_distance2(double time) {
 }
 
 
-double TemperatureIndexITM::get_delta(double time) {
+double DEBMSimple::get_delta(double time) {
   // get the earth declination delta
   double a0 = 0.006918, a1 = -0.399912, a2 = -0.006758, a3 = -0.002697, b0 = 0., b1 = 0.070257, b2 = 0.000907,
          b3 = 0.000148, delta = 1.;
@@ -295,7 +295,7 @@ double TemperatureIndexITM::get_delta(double time) {
 }
 
 
-double TemperatureIndexITM::get_distance2_paleo(double time) {
+double DEBMSimple::get_distance2_paleo(double time) {
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double lambda   = get_lambda_paleo(time);
   double ecc      = 0;
@@ -314,7 +314,7 @@ double TemperatureIndexITM::get_distance2_paleo(double time) {
 }
 
 
-double TemperatureIndexITM::get_delta_paleo(double time) {
+double DEBMSimple::get_delta_paleo(double time) {
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
   double epsilon_deg = 0;
   if (m_use_paleo_file) {
@@ -329,7 +329,7 @@ double TemperatureIndexITM::get_delta_paleo(double time) {
 }
 
 
-double TemperatureIndexITM::get_lambda_paleo(double time) {
+double DEBMSimple::get_lambda_paleo(double time) {
   // estimates solar longitude at current time in the year
   // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
   // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
@@ -358,7 +358,7 @@ double TemperatureIndexITM::get_lambda_paleo(double time) {
 }
 
 
-void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double dt) {
+void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
@@ -641,74 +641,74 @@ void TemperatureIndexITM::update_impl(const Geometry &geometry, double t, double
 }
 
 
-const IceModelVec2S &TemperatureIndexITM::mass_flux_impl() const {
+const IceModelVec2S &DEBMSimple::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &TemperatureIndexITM::temperature_impl() const {
+const IceModelVec2S &DEBMSimple::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &TemperatureIndexITM::accumulation_impl() const {
+const IceModelVec2S &DEBMSimple::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &TemperatureIndexITM::melt_impl() const {
+const IceModelVec2S &DEBMSimple::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &TemperatureIndexITM::runoff_impl() const {
+const IceModelVec2S &DEBMSimple::runoff_impl() const {
   return *m_runoff;
 }
 
-const IceModelVec2S &TemperatureIndexITM::firn_depth() const {
+const IceModelVec2S &DEBMSimple::firn_depth() const {
   return m_firn_depth;
 }
 
-const IceModelVec2S &TemperatureIndexITM::snow_depth() const {
+const IceModelVec2S &DEBMSimple::snow_depth() const {
   return m_snow_depth;
 }
 
-const IceModelVec2S &TemperatureIndexITM::air_temp_sd() const {
+const IceModelVec2S &DEBMSimple::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-const IceModelVec2S &TemperatureIndexITM::surface_insolation_melt() const {
+const IceModelVec2S &DEBMSimple::surface_insolation_melt() const {
   return m_insolmelt;
 }
 
-const IceModelVec2S &TemperatureIndexITM::surface_temperature_melt() const {
+const IceModelVec2S &DEBMSimple::surface_temperature_melt() const {
   return m_tempmelt;
 }
 
-const IceModelVec2S &TemperatureIndexITM::surface_offset_melt() const {
+const IceModelVec2S &DEBMSimple::surface_offset_melt() const {
   return m_cmelt;
 }
 
-const IceModelVec2S &TemperatureIndexITM::albedo() const {
+const IceModelVec2S &DEBMSimple::albedo() const {
   return m_albedo;
 }
 
-const IceModelVec2S &TemperatureIndexITM::transmissivity() const {
+const IceModelVec2S &DEBMSimple::transmissivity() const {
   return m_transmissivity;
 }
 
-const IceModelVec2S &TemperatureIndexITM::TOAinsol() const {
+const IceModelVec2S &DEBMSimple::TOAinsol() const {
   return m_TOAinsol;
 }
 
-const IceModelVec2S &TemperatureIndexITM::qinsol() const {
+const IceModelVec2S &DEBMSimple::qinsol() const {
   return m_qinsol;
 }
 
-void TemperatureIndexITM::define_model_state_impl(const File &output) const {
+void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   m_firn_depth.define(output, PISM_DOUBLE);
   m_snow_depth.define(output, PISM_DOUBLE);
   m_albedo.define(output, PISM_DOUBLE);
 }
 
-void TemperatureIndexITM::write_model_state_impl(const File &output) const {
+void DEBMSimple::write_model_state_impl(const File &output) const {
   SurfaceModel::write_model_state_impl(output);
   m_firn_depth.write(output);
   m_snow_depth.write(output);
@@ -720,10 +720,10 @@ namespace diagnostics {
 enum AmountKind { AMOUNT, MASS };
 
 /*! @brief Report surface insolation melt, averaged over the reporting interval */
-class SurfaceInsolationMelt : public DiagAverageRate<TemperatureIndexITM> {
+class SurfaceInsolationMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceInsolationMelt(const TemperatureIndexITM *m, AmountKind kind)
-      : DiagAverageRate<TemperatureIndexITM>(
+  SurfaceInsolationMelt(const DEBMSimple *m, AmountKind kind)
+      : DiagAverageRate<DEBMSimple>(
             m, kind == AMOUNT ? "surface_insolation_melt_flux" : "surface_insolation_melt_rate", TOTAL_CHANGE),
         m_kind(kind),
         m_melt_mass(m_grid, "insolation_melt_mass", WITHOUT_GHOSTS) {
@@ -767,10 +767,10 @@ private:
 };
 
 /*! @brief Report surface temperature melt, averaged over the reporting interval */
-class SurfaceTemperatureMelt : public DiagAverageRate<TemperatureIndexITM> {
+class SurfaceTemperatureMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceTemperatureMelt(const TemperatureIndexITM *m, AmountKind kind)
-      : DiagAverageRate<TemperatureIndexITM>(
+  SurfaceTemperatureMelt(const DEBMSimple *m, AmountKind kind)
+      : DiagAverageRate<DEBMSimple>(
             m, kind == AMOUNT ? "surface_temperature_melt_flux" : "surface_temperature_melt_rate", TOTAL_CHANGE),
         m_kind(kind),
         m_melt_mass(m_grid, "temperature_melt_mass", WITHOUT_GHOSTS) {
@@ -814,10 +814,10 @@ private:
 };
 
 /*! @brief Report surface offset melt, averaged over the reporting interval */
-class SurfaceOffsetMelt : public DiagAverageRate<TemperatureIndexITM> {
+class SurfaceOffsetMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceOffsetMelt(const TemperatureIndexITM *m, AmountKind kind)
-      : DiagAverageRate<TemperatureIndexITM>(
+  SurfaceOffsetMelt(const DEBMSimple *m, AmountKind kind)
+      : DiagAverageRate<DEBMSimple>(
             m, kind == AMOUNT ? "surface_offset_melt_flux" : "surface_offset_melt_rate", TOTAL_CHANGE),
         m_kind(kind),
         m_melt_mass(m_grid, "offset_melt_mass", WITHOUT_GHOSTS) {
@@ -862,7 +862,7 @@ private:
 
 } // end of namespace diagnostics
 
-DiagnosticList TemperatureIndexITM::diagnostics_impl() const {
+DiagnosticList DEBMSimple::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
