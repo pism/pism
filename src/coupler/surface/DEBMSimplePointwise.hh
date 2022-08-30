@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PISM_DEBM_SIMPLE_AT_A_POINT_H
-#define PISM_DEBM_SIMPLE_AT_A_POINT_H
+#ifndef PISM_DEBM_SIMPLE_POINTWISE_H
+#define PISM_DEBM_SIMPLE_POINTWISE_H
 
 #include "pism/util/Units.hh"
 #include "pism/util/Mask.hh"
@@ -29,9 +29,9 @@ namespace surface {
 /*!
   after Krebs-Kanzow et al. 2018
 */
-class ITMMassBalance {
+class DEBMSimplePointwise {
 public:
-  ITMMassBalance(const Config &config, units::System::Ptr system);
+  DEBMSimplePointwise(const Config &config, units::System::Ptr system);
 
   unsigned int timeseries_length(double dt);
 
@@ -132,4 +132,4 @@ private:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif  /* PISM_DEBM_SIMPLE_AT_A_POINT_H */
+#endif  /* PISM_DEBM_SIMPLE_POINTWISE_H */

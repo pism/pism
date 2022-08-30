@@ -19,15 +19,12 @@
 #include <algorithm> // std::min
 
 #include "DEBMSimple.hh"
-#include "localITM.hh"
-#include "localMassBalance.hh"
+
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
@@ -41,11 +38,11 @@
 namespace pism {
 namespace surface {
 
-///// PISM surface model implementing a dEBM scheme.
+///// PISM surface model implementing a dEBM-Simple scheme.
 
 DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
     : SurfaceModel(g, input),
-      m_mbscheme(*m_config, m_sys),
+      m_model(*m_config, m_sys),
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
       m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
       m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
@@ -210,8 +207,8 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   }
 
   {
-    regrid("ITM surface model", m_snow_depth);
-    regrid("ITM surface model", m_firn_depth);
+    regrid("dEBM-Simple surface model", m_snow_depth);
+    regrid("dEBM-Simple surface model", m_firn_depth);
   }
   const bool force_albedo = m_config->get_flag("surface.itm.anomaly");
   if (force_albedo)
@@ -366,11 +363,11 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // Set up air temperature and precipitation time series
-  int N = m_mbscheme.timeseries_length(dt);
+  int N = m_model.timeseries_length(dt);
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
-  ITMMassBalance::Melt ETIM_melt;
+  DEBMSimplePointwise::Melt melt_info;
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
   }
@@ -487,8 +484,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       }
 
       // Use temperature time series to remove rainfall from precipitation
-      m_mbscheme.get_snow_accumulation(T,  // air temperature (input)
-                                       P); // precipitation rate (input-output)
+      m_model.get_snow_accumulation(T,  // air temperature (input)
+                                    P); // precipitation rate (input-output)
 
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
@@ -530,7 +527,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           const double accumulation = P[k] * dtseries;
 
-          ITMMassBalance::Changes changes;
+          DEBMSimplePointwise::Changes changes;
 
           if (force_albedo) {
 
@@ -551,22 +548,22 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           }
 
 
-          ETIM_melt = m_mbscheme.calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
-                                                lat * M_PI / 180., albedo_loc);
+          melt_info = m_model.calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
+                                             lat * M_PI / 180., albedo_loc);
 
           //  no melt over ice-free ocean
           if (mask.ice_free_ocean(i, j)) {
-            ETIM_melt.T_melt   = 0.;
-            ETIM_melt.I_melt   = 0.;
-            ETIM_melt.c_melt   = 0.;
-            ETIM_melt.ITM_melt = 0.;
+            melt_info.T_melt   = 0.;
+            melt_info.I_melt   = 0.;
+            melt_info.c_melt   = 0.;
+            melt_info.ITM_melt = 0.;
           }
 
-          changes = m_mbscheme.step(ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
+          changes = m_model.step(ice, melt_info.ITM_melt, firn, snow, accumulation);
 
           if (not(bool) m_input_albedo) {
             MaskValue cell_type = static_cast<MaskValue>(mask.as_int(i, j));
-            albedo_loc = m_mbscheme.albedo(changes.melt, cell_type, dtseries);
+            albedo_loc = m_model.albedo(changes.melt, cell_type, dtseries);
           }
           if (force_albedo) {
             if (albedo_anomaly_true(ts[k])) {
@@ -587,13 +584,13 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           {
             A += accumulation;
             M += changes.melt;
-            Mt += ETIM_melt.T_melt;
-            Mi += ETIM_melt.I_melt;
-            Mc += ETIM_melt.c_melt;
+            Mt += melt_info.T_melt;
+            Mi += melt_info.I_melt;
+            Mc += melt_info.c_melt;
             R += changes.runoff;
-            SMB += changes.smb, Tr += ETIM_melt.transmissivity;
-            Ti += ETIM_melt.TOA_insol;
-            Qi += ETIM_melt.q_insol;
+            SMB += changes.smb, Tr += melt_info.transmissivity;
+            Ti += melt_info.TOA_insol;
+            Qi += melt_info.q_insol;
             Al += albedo_loc;
           }
         } // end of the time-stepping loop
@@ -602,7 +599,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         m_firn_depth(i, j)     = firn;
         m_snow_depth(i, j)     = snow;
         m_albedo(i, j)         = Al / N;
-        m_transmissivity(i, j) = Tr / N; //ETIM_melt.transmissivity;
+        m_transmissivity(i, j) = Tr / N; //melt_info.transmissivity;
         m_TOAinsol(i, j)       = Ti / N;
         m_qinsol(i, j)         = Qi / N;
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2022 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,28 +20,28 @@
 #include <cassert>
 #include <cmath>          // M_PI and erfc() in CalovGreveIntegrand()
 
-#include "localITM.hh"
+#include "DEBMSimplePointwise.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
 
-ITMMassBalance::Changes::Changes() {
+DEBMSimplePointwise::Changes::Changes() {
   snow_depth = 0.0;
   melt       = 0.0;
   runoff     = 0.0;
   smb        = 0.0;
 }
 
-ITMMassBalance::Melt::Melt() {
+DEBMSimplePointwise::Melt::Melt() {
   T_melt   = 0.0;
   I_melt   = 0.0;
   c_melt   = 0.0;
   ITM_melt = 0.0;
 }
 
-ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) {
+DEBMSimplePointwise::DEBMSimplePointwise(const Config &config,
+                                         units::System::Ptr system) {
   m_precip_as_snow     = config.get_flag("surface.itm.interpret_precip_as_snow");
   m_Tmin               = config.get_number("surface.itm.air_temp_all_precip_as_snow");
   m_Tmax               = config.get_number("surface.itm.air_temp_all_precip_as_rain");
@@ -76,14 +76,14 @@ ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) 
 
 /*! @brief The number of points for temperature and precipitation time-series.
  */
-unsigned int ITMMassBalance::timeseries_length(double dt) {
+unsigned int DEBMSimplePointwise::timeseries_length(double dt) {
   double dt_years = dt / m_year_length;
 
   return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
 }
 
 
-double ITMMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
+double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double TacC) {
 
   if (sigma == 0) {
     return std::max(TacC, 0.0);
@@ -93,8 +93,12 @@ double ITMMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
   }
 }
 
-
-double ITMMassBalance::albedo(double melt, MaskValue cell_type, double dt) {
+/*!
+ * @param[in] melt melt amount (meters ice thickness equivalent)
+ * @param[in] cell_type cell type mask (used to exclude ice free areas)
+ * @param[in] dt time step length (seconds)
+ */
+double DEBMSimplePointwise::albedo(double melt, MaskValue cell_type, double dt) {
   // melt has a unit of meters ice equivalent
   //
   // dt has a unit of seconds
@@ -106,18 +110,27 @@ double ITMMassBalance::albedo(double melt, MaskValue cell_type, double dt) {
     return m_albedo_land;
   }
 
-  double result = m_albedo_snow + m_albedo_slope * melt * m_ice_density / dt;
+  double melt_rate = melt / dt;
+  double result = m_albedo_snow + m_albedo_slope * melt_rate * m_ice_density ;
   return std::max(result, m_albedo_ice);
 }
 
 
-double ITMMassBalance::atmosphere_transmissivity(double elevation) {
+/*!
+ * @param[in] elevation elevation above the geoid (meters)
+ */
+double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) {
   // transmissivity of the atmosphere (linear fit)
   return m_tau_a_intercept + m_tau_a_slope * elevation;
 }
 
 
-double ITMMassBalance::get_h_phi(double phi, double lat, double delta) {
+/*!
+ * @param[in] phi angle (FIXME)
+ * @param[in] lat latitude (radians)
+ * @param[in] delta (FIXME)
+ */
+double DEBMSimplePointwise::get_h_phi(double phi, double lat, double delta) {
   // calculate the hour angle at which the sun reaches phi (for melting period during the day)
   double input_h_phi         = (sin(phi) - sin(lat) * sin(delta)) / (cos(lat) * cos(delta));
   double input_h_phi_clipped = std::max(-1., std::min(input_h_phi, 1.));
@@ -125,7 +138,15 @@ double ITMMassBalance::get_h_phi(double phi, double lat, double delta) {
 }
 
 
-double ITMMassBalance::get_q_insol(double distance2, double h_phi,
+/*!
+ * Insolation flux
+ *
+ * @param[in] distance2 FIXME
+ * @param[in] h_phi FIXME
+ * @param[in] lat latitude (radians)
+ * @param[in] delta FIXME
+ */
+double DEBMSimplePointwise::get_q_insol(double distance2, double h_phi,
                                    double lat, double delta) {
   if (h_phi == 0) {
     return 0.;
@@ -134,8 +155,16 @@ double ITMMassBalance::get_q_insol(double distance2, double h_phi,
   }
 }
 
-double ITMMassBalance::get_TOA_insol(double distance2, double h0,
-                                     double lat, double delta) {
+/*!
+ * Top of the atmosphere insolation
+ *
+ * @param[in] distance2 FIXME
+ * @param[in] h0 FIXME
+ * @param[in] lat latitude (radians)
+ * @param[in] delta FIXME
+ */
+double DEBMSimplePointwise::get_TOA_insol(double distance2, double h0,
+                                          double lat, double delta) {
   if (h0 == 0) {
     return 0.;
   } else {
@@ -154,10 +183,10 @@ double ITMMassBalance::get_TOA_insol(double distance2, double h0,
  *
  * output in mm water equivalent
  */
-ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt, double S, double T,
-                                                    double surface_elevation, double delta,
-                                                    double distance2, double lat,
-                                                    double albedo) {
+DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double dt, double S, double T,
+                                                              double surface_elevation, double delta,
+                                                              double distance2, double lat,
+                                                              double albedo) {
   assert(dt > 0.0);
   // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp.
 
@@ -205,10 +234,10 @@ ITMMassBalance::Melt ITMMassBalance::calculate_melt(double dt, double S, double 
  *
  * Sets P[i] to the *solid* (snow) accumulation *rate*.
  *
- * @param[in] T air temperature (array of length N)
- * @param[in,out] P precipitation rate (array of length N)
+ * @param[in] T air temperature
+ * @param[in,out] P precipitation rate
  */
-void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::vector<double> &P) {
+void DEBMSimplePointwise::get_snow_accumulation(const std::vector<double> &T, std::vector<double> &P) {
 
   assert(T.size() == P.size());
   const size_t N = T.size();
@@ -236,26 +265,20 @@ void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::ve
 //! melted snow and the accumulation amount in a time interval.
 /*!
  *
- * `accumulation` has units "meter / second".
- *
  * - a fraction of the melted snow and ice refreezes, conceptualized
- *   as superimposed ice, and this is controlled by parameter \c
- *   refreeze_fraction
+ *   as superimposed ice
  *
- * - the excess of 'ITM_melt' is used to melt both the ice that came
- *   from refreeze and then any ice which is already present.
- *
- * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
- * is influenced by R. Hock (personal communication).
+ * - the excess of 'ITM_melt' is used to melt both the ice that came from refreeze and
+ *   then any ice which is already present. (FIXME - I don't think this is true.)
  */
-ITMMassBalance::Changes ITMMassBalance::step(double thickness, double ITM_melt,
-                                             double old_firn_depth, double old_snow_depth, double accumulation) {
+DEBMSimplePointwise::Changes DEBMSimplePointwise::step(double thickness, double input_melt,
+                                                       double old_firn_depth, double old_snow_depth, double accumulation) {
   Changes result;
 
   double
     firn_depth      = old_firn_depth,
     snow_depth      = old_snow_depth,
-    max_snow_melted = ITM_melt,
+    max_snow_melted = input_melt,
     firn_melted     = 0.0,
     snow_melted     = 0.0;
 
@@ -273,7 +296,7 @@ ITMMassBalance::Changes ITMMassBalance::step(double thickness, double ITM_melt,
 
   snow_depth += accumulation;
 
-  if (ITM_melt <= 0.0) { // The "no melt" case.
+  if (input_melt <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
     firn_melted = 0.0;
   } else if (max_snow_melted <= snow_depth) {
@@ -294,10 +317,12 @@ ITMMassBalance::Changes ITMMassBalance::step(double thickness, double ITM_melt,
   }
 
   double
-    melt                    = ITM_melt,
+    melt                    = input_melt,
     ice_created_by_refreeze = 0.0;
 
   if (m_refreeze_ice_melt) {
+    // FIXME: incorrect in the case when all ice melted and there was excess energy that
+    // could have melted more
     ice_created_by_refreeze = melt * m_refreeze_fraction;
   } else {
     // Should this only be snow melted?
@@ -305,16 +330,10 @@ ITMMassBalance::Changes ITMMassBalance::step(double thickness, double ITM_melt,
   }
 
   snow_depth = std::max(snow_depth - snow_melted, 0.0);
-
   firn_depth = std::max(firn_depth - firn_melted, 0.0);
-  // FIXME: need to add snow that hasn't melted, is this correct?
-  // firn_depth += (snow_depth - snow_melted);
-  // Turn firn into ice at X times accumulation
-  // firn_depth -= accumulation *  config.get_number("surface.pdd.firn_compaction_to_accumulation_ratio");
 
-
-  const double runoff = melt - ice_created_by_refreeze;
-  const double smb    = accumulation - runoff;
+  double runoff = melt - ice_created_by_refreeze;
+  double smb    = accumulation - runoff;
 
   result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;

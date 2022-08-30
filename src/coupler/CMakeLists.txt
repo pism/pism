@@ -69,5 +69,5 @@ add_library (boundary OBJECT
   ./surface/EISMINTII.cc
   ./surface/NoGLRetreat.cc
   ./surface/DEBMSimple.cc
-  ./surface/localITM.cc
+  ./surface/DEBMSimplePointwise.cc
   )

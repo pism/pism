@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include "localITM.hh"
+#include "DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/iceModelVec2T.hh"
@@ -83,7 +83,7 @@ private:
   double get_lambda_paleo(double time);
   double get_delta_paleo(double time);
 
-  ITMMassBalance m_mbscheme;
+  DEBMSimplePointwise m_model;
 
   //! K; daily amount of randomness
   double m_base_pddStdDev;
