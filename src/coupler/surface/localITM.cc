@@ -46,6 +46,7 @@ ITMMassBalance::ITMMassBalance(const Config &config, units::System::Ptr system) 
   m_Tmin               = config.get_number("surface.itm.air_temp_all_precip_as_snow");
   m_Tmax               = config.get_number("surface.itm.air_temp_all_precip_as_rain");
   m_refreeze_ice_melt  = config.get_flag("surface.itm.refreeze_ice_melt");
+  m_refreeze_fraction  = config.get_number("surface.itm.refreeze");
   m_pdd_threshold_temp = config.get_number("surface.itm.positive_threshold_temp");
 
   m_year_length = units::convert(system, 1.0, "years", "seconds");
@@ -247,7 +248,7 @@ void ITMMassBalance::get_snow_accumulation(const std::vector<double> &T, std::ve
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
  */
-ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double thickness, double ITM_melt,
+ITMMassBalance::Changes ITMMassBalance::step(double thickness, double ITM_melt,
                                              double old_firn_depth, double old_snow_depth, double accumulation) {
   Changes result;
 
@@ -297,10 +298,10 @@ ITMMassBalance::Changes ITMMassBalance::step(double refreeze_fraction, double th
     ice_created_by_refreeze = 0.0;
 
   if (m_refreeze_ice_melt) {
-    ice_created_by_refreeze = melt * refreeze_fraction;
+    ice_created_by_refreeze = melt * m_refreeze_fraction;
   } else {
     // Should this only be snow melted?
-    ice_created_by_refreeze = (firn_melted + snow_melted) * refreeze_fraction;
+    ice_created_by_refreeze = (firn_melted + snow_melted) * m_refreeze_fraction;
   }
 
   snow_depth = std::max(snow_depth - snow_melted, 0.0);

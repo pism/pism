@@ -61,7 +61,7 @@ public:
   const IceModelVec2S &TOAinsol() const;
   const IceModelVec2S &qinsol() const;
 
-protected:
+private:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
@@ -83,13 +83,7 @@ protected:
   double get_lambda_paleo(double time);
   double get_delta_paleo(double time);
 
-
-protected:
-
   ITMMassBalance m_mbscheme;
-
-  double m_melt_conversion_factor;
-  double m_refreeze_fraction;
 
   //! K; daily amount of randomness
   double m_base_pddStdDev;

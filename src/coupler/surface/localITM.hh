@@ -95,7 +95,7 @@ public:
     double smb;
   };
 
-  Changes step(double refreeze_fraction, double thickness, double ITM_melt, double firn_depth,
+  Changes step(double thickness, double ITM_melt, double firn_depth,
                double snow_depth, double accumulation);
 
 
@@ -114,6 +114,8 @@ private:
   bool m_precip_as_snow;
   //! refreeze melted ice
   bool m_refreeze_ice_melt;
+  //! refreeze fraction
+  double m_refreeze_fraction;
   //! the temperature below which all precipitation is snow
   double m_Tmin;
   //! the temperature above which all precipitation is rain

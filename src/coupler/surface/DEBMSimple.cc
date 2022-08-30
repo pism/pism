@@ -61,7 +61,6 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_sd_use_param      = m_config->get_flag("surface.itm.std_dev_use_param");
   m_sd_param_a        = m_config->get_number("surface.itm.std_dev_param_a");
   m_sd_param_b        = m_config->get_number("surface.itm.std_dev_param_b");
-  m_refreeze_fraction = m_config->get_number("surface.itm.refreeze");
 
   ForcingOptions albedo_input(*m_grid->ctx(), "surface.itm.albedo_input");
   if (not albedo_input.filename.empty()) {
@@ -563,7 +562,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             ETIM_melt.ITM_melt = 0.;
           }
 
-          changes = m_mbscheme.step(m_refreeze_fraction, ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
+          changes = m_mbscheme.step(ice, ETIM_melt.ITM_melt, firn, snow, accumulation);
 
           if (not(bool) m_input_albedo) {
             MaskValue cell_type = static_cast<MaskValue>(mask.as_int(i, j));
