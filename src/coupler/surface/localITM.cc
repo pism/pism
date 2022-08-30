@@ -112,7 +112,7 @@ double ITMMassBalance::albedo(double melt, MaskValue cell_type, double dt) {
 
 
 double ITMMassBalance::atmosphere_transmissivity(double elevation) {
-  // transmissivity of the atmosphere, linear fit
+  // transmissivity of the atmosphere (linear fit)
   return m_tau_a_intercept + m_tau_a_slope * elevation;
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,42 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __localITM_hh
-#define __localITM_hh
+#ifndef PISM_DEBM_SIMPLE_AT_A_POINT_H
+#define PISM_DEBM_SIMPLE_AT_A_POINT_H
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {
 namespace surface {
-
-//! \brief Base class for a model which computes surface mass flux rate (ice
-//! thickness per time) from precipitation and temperature.
-/*!
-  This is a process model.  At each spatial location, it uses a 1D array, with a
-  time dimension, for the temperature used in melting snow or ice.  At each spatial
-  location it assumes the precipitation is time-independent.
-
-  This process model does not know its location on the ice sheet, but
-  simply computes the surface mass balance from three quantities:
-  - the time interval \f$[t,t+\Delta t]\f$,
-  - time series of values of surface temperature at \f$N\f$ equally-spaced
-  times in the time interval
-  - a scalar precipation rate which is taken to apply in the time interval.
-
-  This model also uses degree day factors passed-in in DegreeDayFactors `ddf`,
-  and the standard deviation `pddStdDev`.  The latter is the standard deviation of the
-  modeled temperature away from the input temperature time series which contains
-  the part of location-dependent temperature cycle on the time interval.
-
-  @note
-  - Please avoid using `config.get...("...")` calls
-  inside those methods of this class which are called inside loops over
-  spatial grids.  Doing otherwise increases computational costs.
-  - This base class should be more general.  For instance, it could allow as
-  input a time series for precipation rate.
-*/
 
 //! A dEBM-simple implementation
 /*!
@@ -157,8 +129,7 @@ private:
   double m_phi;
 };
 
-
 } // end of namespace surface
 } // end of namespace pism
 
-#endif
+#endif  /* PISM_DEBM_SIMPLE_AT_A_POINT_H */
