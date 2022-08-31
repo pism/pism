@@ -54,10 +54,13 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
       m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS),
       m_qinsol(m_grid, "qinsol", WITHOUT_GHOSTS) {
 
-  m_base_pddStdDev    = m_config->get_number("surface.itm.std_dev");
   m_sd_use_param      = m_config->get_flag("surface.itm.std_dev_use_param");
   m_sd_param_a        = m_config->get_number("surface.itm.std_dev_param_a");
   m_sd_param_b        = m_config->get_number("surface.itm.std_dev_param_b");
+
+  m_constant_eccentricity         = m_config->get_number("surface.itm.paleo.eccentricity");
+  m_constant_perihelion_longitude = m_config->get_number("surface.itm.paleo.long_peri");
+  m_constant_obliquity            = m_config->get_number("surface.itm.paleo.obliquity");
 
   ForcingOptions albedo_input(*m_grid->ctx(), "surface.itm.albedo_input");
   if (not albedo_input.filename.empty()) {
@@ -89,7 +92,9 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
                                                          buffer_size, air_temp_sd.periodic, LINEAR);
     m_use_air_temp_sd_file = true;
   } else {
-    m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
+    double temp_std_dev = m_config->get_number("surface.itm.std_dev");
+
+    m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", temp_std_dev);
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
     m_use_air_temp_sd_file = false;
   }
@@ -266,91 +271,116 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
   return false;
 }
 
-
-double DEBMSimple::get_distance2(double time) {
-  // get the distance between earth and sun
-  double a0 = 1.000110, a1 = 0.034221, a2 = 0.000719, b0 = 0., b1 = 0.001280, b2 = 0.000077, distance2 = 1.;
+/*!
+ * The distance between the Earth and the Sun
+ *
+ * Implements equation 2.2.9 from Liou (2002)
+ */
+double DEBMSimple::earch_sun_distance(double time) {
+  double
+    a0 = 1.000110,
+    a1 = 0.034221,
+    a2 = 0.000719,
+    b0 = 0.,
+    b1 = 0.001280,
+    b2 = 0.000077;
 
   double t  = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
-  distance2 = a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2. * t) + b2 * sin(2. * t);
-  // Equation 2.2.9 from Liou (2002)
-  return distance2;
+
+  return (a0 + b0 +
+          a1 * cos(t) + b1 * sin(t) +
+          a2 * cos(2. * t) + b2 * sin(2. * t));
 }
 
-
-double DEBMSimple::get_delta(double time) {
-  // get the earth declination delta
-  double a0 = 0.006918, a1 = -0.399912, a2 = -0.006758, a3 = -0.002697, b0 = 0., b1 = 0.070257, b2 = 0.000907,
-         b3 = 0.000148, delta = 1.;
+/*!
+ * Earth declination
+ *
+ * Implements equation 2.2.10 from Liou (2002)
+ */
+double DEBMSimple::earth_declination(double time) {
+   double
+     a0 = 0.006918,
+     a1 = -0.399912,
+     a2 = -0.006758,
+     a3 = -0.002697,
+     b0 = 0.,
+     b1 = 0.070257,
+     b2 = 0.000907,
+     b3 = 0.000148;
 
   double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
-  delta =
-      a0 + b0 + a1 * cos(t) + b1 * sin(t) + a2 * cos(2. * t) + b2 * sin(2. * t) + a3 * cos(3. * t) + b3 * sin(3. * t);
-  // Equation 2.2.10 from Liou (2002)
-  return delta;
+
+  return (a0 + b0 +
+          a1 * cos(t) + b1 * sin(t) +
+          a2 * cos(2. * t) + b2 * sin(2. * t) +
+          a3 * cos(3. * t) + b3 * sin(3. * t));
 }
 
 
-double DEBMSimple::get_distance2_paleo(double time) {
-  // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
-  double lambda   = get_lambda_paleo(time);
-  double ecc      = 0;
-  double peri_deg = 0;
+/*!
+ * Distance from the Earth to the Sun (FIXME -- not really: it is a ratio)
+ *
+ * Implements equation A1 in Zeitz et al.
+ *
+ * See also equation 2.2.5 from Liou (2002).
+ */
+double DEBMSimple::earch_sun_distance_paleo(double time) {
+  double ecc      = m_constant_eccentricity;
+  double peri_deg = m_constant_perihelion_longitude;
   if (m_use_paleo_file) {
     ecc      = m_eccentricity->value(time);
     peri_deg = m_perihelion_longitude->value(time);
-  } else {
-    ecc      = m_config->get_number("surface.itm.paleo.eccentricity");
-    peri_deg = m_config->get_number("surface.itm.paleo.long_peri");
   }
-  double distance2 = pow((1. - ecc * cos(lambda - peri_deg * M_PI / 180.)), 2) / pow((1. - ecc * ecc), 2);
-  // From Equation 2.2.5 Liou (2002)
-  // (a/r)^2
-  return distance2;
+  double peri_rad = peri_deg * M_PI / 180.0;
+
+  return pow((1. - ecc * cos(lambda_paleo(time) - peri_rad)) / (1. - ecc * ecc), 2);
 }
 
 
-double DEBMSimple::get_delta_paleo(double time) {
-  // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
-  double epsilon_deg = 0;
+/*!
+ * Earth declination
+ *
+ * Implements equation in the text just above equation A1 in Zeitz et al.
+ *
+ * See also equation 2.2.4 of Liou (2002).
+ */
+double DEBMSimple::earth_declination_paleo(double time) {
+  double epsilon_deg = m_constant_obliquity;
   if (m_use_paleo_file) {
     epsilon_deg = m_obliquity->value(time);
-  } else {
-    epsilon_deg = m_config->get_number("surface.itm.paleo.obliquity");
   }
-  double lambda = get_lambda_paleo(time);
-  double delta  = sin(epsilon_deg * M_PI / 180.) * sin(lambda);
-  // Equation 2.2.4 of Liou (2002)
-  return delta;
+
+  return sin(epsilon_deg * M_PI / 180.) * sin(lambda_paleo(time));
 }
 
 
-double DEBMSimple::get_lambda_paleo(double time) {
-  // estimates solar longitude at current time in the year
-  // Method is using an approximation from :cite:`Berger_1978` section 3 (lambda = 0 at spring equinox).
-  // for now the orbital parameters are as config parameters, but it would be best, if I could read in a time series
-  double ecc = 0, peri_deg = 0;
+/*!
+ * Estimates solar longitude at current time in the year
+ *
+ * Implements equation A2 in Zeitz et al.
+ */
+double DEBMSimple::lambda_paleo(double time) {
+  double ecc = m_constant_eccentricity;
+  double peri_deg = m_constant_perihelion_longitude;
   if (m_use_paleo_file) {
     ecc         = m_eccentricity->value(time);
     peri_deg    = m_perihelion_longitude->value(time);
-  } else {
-    ecc         = m_config->get_number("surface.itm.paleo.eccentricity");
-    peri_deg    = m_config->get_number("surface.itm.paleo.long_peri");
   }
 
-  double lambda_m, lambda, delta_lambda;
-  delta_lambda = 2. * M_PI * (m_grid->ctx()->time()->year_fraction(time) - 80. / 365.);
   // lambda = 0 at March equinox (80th day of the year)
+  double year_fraction = m_grid->ctx()->time()->year_fraction(time);
+  double delta_lambda = 2. * M_PI * (year_fraction - 80. / 365.);
   double beta     = sqrt(1 - ecc * ecc);
   double peri_rad = peri_deg * M_PI / 180.;
-  lambda_m        = -2. * ((ecc / 2. + (pow(ecc, 3)) / 8.) * (1. + beta) * sin(-peri_rad) -
-                    (pow(ecc, 2)) / 4. * (1. / 2. + beta) * sin(-2. * peri_rad) +
-                    (pow(ecc, 3)) / 8. * (1. / 3. + beta) * sin(-3. * peri_rad)) +
-             delta_lambda;
-  lambda = (lambda_m + (2. * ecc - (pow(ecc, 3)) / 4.) * sin(lambda_m - peri_rad) +
-            (5. / 4.) * (ecc * ecc) * sin(2. * (lambda_m - peri_rad)) +
-            (13. / 12.) * (pow(ecc, 3)) * sin(3. * (lambda_m - peri_rad)));
-  return lambda;
+
+  double lambda_m = (-2. * ((ecc / 2. + (pow(ecc, 3)) / 8.) * (1. + beta) * sin(-peri_rad) -
+                           (pow(ecc, 2)) / 4. * (1. / 2. + beta) * sin(-2. * peri_rad) +
+                           (pow(ecc, 3)) / 8. * (1. / 3. + beta) * sin(-3. * peri_rad)) +
+                     delta_lambda);
+
+  return (lambda_m + (2. * ecc - (pow(ecc, 3)) / 4.) * sin(lambda_m - peri_rad) +
+          (5. / 4.) * (ecc * ecc) * sin(2. * (lambda_m - peri_rad)) +
+          (13. / 12.) * (pow(ecc, 3)) * sin(3. * (lambda_m - peri_rad)));
 }
 
 
@@ -540,11 +570,11 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             albedo_loc = Alb[k];
           }
 
-          double delta = get_delta(ts[k]);
-          double distance2 = get_distance2(ts[k]);
+          double delta = earth_declination(ts[k]);
+          double distance2 = earch_sun_distance(ts[k]);
           if (paleo) {
-            delta     = get_delta_paleo(ts[k]);
-            distance2 = get_distance2_paleo(ts[k]);
+            delta     = earth_declination_paleo(ts[k]);
+            distance2 = earch_sun_distance_paleo(ts[k]);
           }
 
 

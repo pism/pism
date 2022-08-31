@@ -70,7 +70,7 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Config &config,
   m_L = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   m_solar_constant = config.get_number("surface.itm.solar_constant");
 
-  m_phi = config.get_number("surface.itm.phi") * M_PI / 180.0;
+  m_phi = config.get_number("surface.itm.phi", "radian");
 }
 
 
@@ -141,13 +141,15 @@ double DEBMSimplePointwise::get_h_phi(double phi, double lat, double delta) {
 /*!
  * Insolation flux
  *
+ * Implements equation 5 in Zeitz et al (FIXME -- maybe???)
+ *
  * @param[in] distance2 FIXME
  * @param[in] h_phi FIXME
  * @param[in] lat latitude (radians)
  * @param[in] delta FIXME
  */
 double DEBMSimplePointwise::get_q_insol(double distance2, double h_phi,
-                                   double lat, double delta) {
+                                        double lat, double delta) {
   if (h_phi == 0) {
     return 0.;
   } else {
@@ -181,7 +183,10 @@ double DEBMSimplePointwise::get_TOA_insol(double distance2, double h0,
  * @param albedo which was should be figured by get_albedo (?)
  * @param[out] melt pointer to a pre-allocated array with N-1 elements
  *
- * output in mm water equivalent
+ *
+ * Implements equation (1) in Zeitz et al
+ *
+ * output in mm water equivalent (FIXME???)
  */
 DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double dt, double S, double T,
                                                               double surface_elevation, double delta,

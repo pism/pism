@@ -77,16 +77,15 @@ private:
   double compute_next_balance_year_start(double time);
 
   bool albedo_anomaly_true(double time);
-  double get_distance2(double time);
-  double get_delta(double time);
-  double get_distance2_paleo(double time);
-  double get_lambda_paleo(double time);
-  double get_delta_paleo(double time);
+
+  double earch_sun_distance(double time);
+  double earth_declination(double time);
+
+  double earch_sun_distance_paleo(double time);
+  double lambda_paleo(double time);
+  double earth_declination_paleo(double time);
 
   DEBMSimplePointwise m_model;
-
-  //! K; daily amount of randomness
-  double m_base_pddStdDev;
 
   double m_next_balance_year_start;
 
@@ -139,6 +138,10 @@ private:
 
   bool m_sd_use_param, m_use_air_temp_sd_file;
   double m_sd_param_a, m_sd_param_b;
+
+  double m_constant_eccentricity;
+  double m_constant_perihelion_longitude;
+  double m_constant_obliquity;
 
   std::unique_ptr<ScalarForcing> m_eccentricity;
 
