@@ -2240,104 +2240,6 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
 
-    pism_config:surface.delta_T.file = "";
-    pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";
-    pism_config:surface.delta_T.file_option = "surface_delta_T_file";
-    pism_config:surface.delta_T.file_type = "string";
-
-    pism_config:surface.delta_T.periodic = "no";
-    pism_config:surface.delta_T.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.delta_T.periodic_type = "flag";
-
-    pism_config:surface.elevation_change.file = "";
-    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
-    pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
-    pism_config:surface.elevation_change.file_type = "string";
-
-    pism_config:surface.elevation_change.periodic = "no";
-    pism_config:surface.elevation_change.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.elevation_change.periodic_type = "flag";
-
-    pism_config:surface.elevation_change.smb.exp_factor = 0;
-    pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
-    pism_config:surface.elevation_change.smb.exp_factor_option = "smb_exp_factor";
-    pism_config:surface.elevation_change.smb.exp_factor_type = "number";
-    pism_config:surface.elevation_change.smb.exp_factor_units = "Kelvin-1";
-
-    pism_config:surface.elevation_change.smb.lapse_rate = 0;
-    pism_config:surface.elevation_change.smb.lapse_rate_doc = "Lapse rate for the surface mass balance.";
-    pism_config:surface.elevation_change.smb.lapse_rate_option = "smb_lapse_rate";
-    pism_config:surface.elevation_change.smb.lapse_rate_type = "number";
-    pism_config:surface.elevation_change.smb.lapse_rate_units = "(m / year) / km";
-
-    pism_config:surface.elevation_change.smb.method = "shift";
-    pism_config:surface.elevation_change.smb.method_choices = "scale,shift";
-    pism_config:surface.elevation_change.smb.method_doc = "Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.";
-    pism_config:surface.elevation_change.smb.method_option = "smb_adjustment";
-    pism_config:surface.elevation_change.smb.method_type = "keyword";
-
-    pism_config:surface.elevation_change.temperature_lapse_rate = 0;
-    pism_config:surface.elevation_change.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
-    pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
-    pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
-    pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
-
-    pism_config:surface.force_to_thickness.alpha = 0.01;
-    pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
-    pism_config:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
-    pism_config:surface.force_to_thickness.alpha_type = "number";
-    pism_config:surface.force_to_thickness.alpha_units = "year-1";
-
-    pism_config:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
-    pism_config:surface.force_to_thickness.ice_free_alpha_factor_doc = ":config:`surface.force_to_thickness.alpha` is multiplied by this factor in areas that are ice-free according to the target ice thickness and :config:`surface.force_to_thickness.ice_free_thickness_threshold`";
-    pism_config:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
-    pism_config:surface.force_to_thickness.ice_free_alpha_factor_type = "number";
-    pism_config:surface.force_to_thickness.ice_free_alpha_factor_units = "1";
-
-    pism_config:surface.force_to_thickness.ice_free_thickness_threshold = 1.0;
-    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_doc = "threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use :config:`surface.force_to_thickness.ice_free_alpha_factor`.";
-    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_option = "force_to_thickness_ice_free_thickness_threshold";
-    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_type = "number";
-    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_units = "meters";
-
-    pism_config:surface.force_to_thickness.start_time = -4.54e9;
-    pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
-    pism_config:surface.force_to_thickness.start_time_type = "number";
-    pism_config:surface.force_to_thickness.start_time_units = "years";
-
-    pism_config:surface.force_to_thickness_file = "";
-    pism_config:surface.force_to_thickness_file_doc = "The name of the file to read the target ice thickness from.";
-    pism_config:surface.force_to_thickness_file_option = "force_to_thickness_file";
-    pism_config:surface.force_to_thickness_file_type = "string";
-
-    pism_config:surface.given.file = "";
-    pism_config:surface.given.file_doc = "Name of the file containing climate forcing fields.";
-    pism_config:surface.given.file_option = "surface_given_file";
-    pism_config:surface.given.file_type = "string";
-
-    pism_config:surface.given.periodic = "no";
-    pism_config:surface.given.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.given.periodic_type = "flag";
-
-    pism_config:surface.given.smb_max = 91000;
-    pism_config:surface.given.smb_max_doc = "Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.";
-    pism_config:surface.given.smb_max_type = "number";
-    pism_config:surface.given.smb_max_units = "kg m-2 year-1";
-
-    pism_config:surface.ismip6.file = "";
-    pism_config:surface.ismip6.file_doc = "Name of the file containing climate forcing anomaly fields.";
-    pism_config:surface.ismip6.file_option = "surface_ismip6_file";
-    pism_config:surface.ismip6.file_type = "string";
-
-    pism_config:surface.ismip6.periodic = "no";
-    pism_config:surface.ismip6.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.ismip6.periodic_type = "flag";
-
-    pism_config:surface.ismip6.reference_file = "";
-    pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
-    pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
-    pism_config:surface.ismip6.reference_file_type = "string";
-
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "threshold temperature above which all precipitation is rain; must exceed surface.debm_simple.air_temp_all_precip_as_snow to avoid division by zero, because difference is in a denominator";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";
@@ -2414,6 +2316,16 @@ netcdf pism_config {
     pism_config:surface.debm_simple.background_melting_temp_type = "number";
     pism_config:surface.debm_simple.background_melting_temp_units = "Kelvin";
 
+    pism_config:surface.debm_simple.c1 = 29.0;
+    pism_config:surface.debm_simple.c1_doc = "tuning parameter controlling temperature-driven melt";
+    pism_config:surface.debm_simple.c1_type = "number";
+    pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
+
+    pism_config:surface.debm_simple.c2 = -93.0;
+    pism_config:surface.debm_simple.c2_doc = "tuning parameter controlling background melt";
+    pism_config:surface.debm_simple.c2_type = "number";
+    pism_config:surface.debm_simple.c2_units = "W m-2";
+
     pism_config:surface.debm_simple.daily_cycle = "yes";
     pism_config:surface.debm_simple.daily_cycle_doc = "if set to yes, the insolation melt module takes the diurnal cycle into account (see Krebs-Kanzow 2018)";
     pism_config:surface.debm_simple.daily_cycle_type = "flag";
@@ -2426,16 +2338,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.interpret_precip_as_snow = "no";
     pism_config:surface.debm_simple.interpret_precip_as_snow_doc = "Interpret precipitation as snow fall.";
     pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";
-
-    pism_config:surface.debm_simple.c2 = -93.0;
-    pism_config:surface.debm_simple.c2_doc = "factor in melt calculation";
-    pism_config:surface.debm_simple.c2_type = "number";
-    pism_config:surface.debm_simple.c2_units = "W m-2";
-
-    pism_config:surface.debm_simple.c1 = 29.0;
-    pism_config:surface.debm_simple.c1_doc = "factor in melt calculation";
-    pism_config:surface.debm_simple.c1_type = "number";
-    pism_config:surface.debm_simple.c1_units = "W m-2 K-1";
 
     pism_config:surface.debm_simple.max_evals_per_year = 52;
     pism_config:surface.debm_simple.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
@@ -2553,6 +2455,104 @@ netcdf pism_config {
     pism_config:surface.debm_simple.tau_a_slope_doc = "slope in transmissivity parametrization";
     pism_config:surface.debm_simple.tau_a_slope_type = "number";
     pism_config:surface.debm_simple.tau_a_slope_units = "m-1";
+
+    pism_config:surface.delta_T.file = "";
+    pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";
+    pism_config:surface.delta_T.file_option = "surface_delta_T_file";
+    pism_config:surface.delta_T.file_type = "string";
+
+    pism_config:surface.delta_T.periodic = "no";
+    pism_config:surface.delta_T.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.delta_T.periodic_type = "flag";
+
+    pism_config:surface.elevation_change.file = "";
+    pism_config:surface.elevation_change.file_doc = "Name of the file containing the reference surface elevation field (variable :var:`usurf`).";
+    pism_config:surface.elevation_change.file_option = "surface_elevation_change_file";
+    pism_config:surface.elevation_change.file_type = "string";
+
+    pism_config:surface.elevation_change.periodic = "no";
+    pism_config:surface.elevation_change.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.elevation_change.periodic_type = "flag";
+
+    pism_config:surface.elevation_change.smb.exp_factor = 0;
+    pism_config:surface.elevation_change.smb.exp_factor_doc = "Exponential for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.exp_factor_option = "smb_exp_factor";
+    pism_config:surface.elevation_change.smb.exp_factor_type = "number";
+    pism_config:surface.elevation_change.smb.exp_factor_units = "Kelvin-1";
+
+    pism_config:surface.elevation_change.smb.lapse_rate = 0;
+    pism_config:surface.elevation_change.smb.lapse_rate_doc = "Lapse rate for the surface mass balance.";
+    pism_config:surface.elevation_change.smb.lapse_rate_option = "smb_lapse_rate";
+    pism_config:surface.elevation_change.smb.lapse_rate_type = "number";
+    pism_config:surface.elevation_change.smb.lapse_rate_units = "(m / year) / km";
+
+    pism_config:surface.elevation_change.smb.method = "shift";
+    pism_config:surface.elevation_change.smb.method_choices = "scale,shift";
+    pism_config:surface.elevation_change.smb.method_doc = "Choose the SMB adjustment method. ``scale``: use temperature-change-dependent scaling factor. ``shift``: use the SMB lapse rate.";
+    pism_config:surface.elevation_change.smb.method_option = "smb_adjustment";
+    pism_config:surface.elevation_change.smb.method_type = "keyword";
+
+    pism_config:surface.elevation_change.temperature_lapse_rate = 0;
+    pism_config:surface.elevation_change.temperature_lapse_rate_doc = "Lapse rate for the temperature at the top of the ice.";
+    pism_config:surface.elevation_change.temperature_lapse_rate_option = "temp_lapse_rate";
+    pism_config:surface.elevation_change.temperature_lapse_rate_type = "number";
+    pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
+
+    pism_config:surface.force_to_thickness.alpha = 0.01;
+    pism_config:surface.force_to_thickness.alpha_doc = "exponential coefficient in force-to-thickness mechanism";
+    pism_config:surface.force_to_thickness.alpha_option = "force_to_thickness_alpha";
+    pism_config:surface.force_to_thickness.alpha_type = "number";
+    pism_config:surface.force_to_thickness.alpha_units = "year-1";
+
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor_doc = ":config:`surface.force_to_thickness.alpha` is multiplied by this factor in areas that are ice-free according to the target ice thickness and :config:`surface.force_to_thickness.ice_free_thickness_threshold`";
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor_type = "number";
+    pism_config:surface.force_to_thickness.ice_free_alpha_factor_units = "1";
+
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold = 1.0;
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_doc = "threshold of ice thickness in the force-to-thickness target field. Used to determine whether to use :config:`surface.force_to_thickness.ice_free_alpha_factor`.";
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_option = "force_to_thickness_ice_free_thickness_threshold";
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_type = "number";
+    pism_config:surface.force_to_thickness.ice_free_thickness_threshold_units = "meters";
+
+    pism_config:surface.force_to_thickness.start_time = -4.54e9;
+    pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
+    pism_config:surface.force_to_thickness.start_time_type = "number";
+    pism_config:surface.force_to_thickness.start_time_units = "years";
+
+    pism_config:surface.force_to_thickness_file = "";
+    pism_config:surface.force_to_thickness_file_doc = "The name of the file to read the target ice thickness from.";
+    pism_config:surface.force_to_thickness_file_option = "force_to_thickness_file";
+    pism_config:surface.force_to_thickness_file_type = "string";
+
+    pism_config:surface.given.file = "";
+    pism_config:surface.given.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.given.file_option = "surface_given_file";
+    pism_config:surface.given.file_type = "string";
+
+    pism_config:surface.given.periodic = "no";
+    pism_config:surface.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.given.periodic_type = "flag";
+
+    pism_config:surface.given.smb_max = 91000;
+    pism_config:surface.given.smb_max_doc = "Maximum climatic mass balance value (used to check input data). Corresponds to 100 m/year ice equivalent.";
+    pism_config:surface.given.smb_max_type = "number";
+    pism_config:surface.given.smb_max_units = "kg m-2 year-1";
+
+    pism_config:surface.ismip6.file = "";
+    pism_config:surface.ismip6.file_doc = "Name of the file containing climate forcing anomaly fields.";
+    pism_config:surface.ismip6.file_option = "surface_ismip6_file";
+    pism_config:surface.ismip6.file_type = "string";
+
+    pism_config:surface.ismip6.periodic = "no";
+    pism_config:surface.ismip6.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip6.periodic_type = "flag";
+
+    pism_config:surface.ismip6.reference_file = "";
+    pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
+    pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
+    pism_config:surface.ismip6.reference_file_type = "string";
 
     pism_config:surface.models = "given";
     pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
