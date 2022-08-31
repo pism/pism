@@ -117,12 +117,15 @@ private:
   double m_tau_a_slope;
   double m_tau_a_intercept;
 
-  double m_itm_c;
-  double m_itm_lambda;
+  // tuning parameters of the melt equation
+  double m_c1;
+  double m_c2;
+
   double m_bm_temp;
 
   //! latent heat of fusion
   double m_L;
+  //! the solar constant
   double m_solar_constant;
 
   //! minimum solar elevation angle above which melt is possible

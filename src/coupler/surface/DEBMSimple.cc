@@ -54,15 +54,15 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
       m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS),
       m_qinsol(m_grid, "qinsol", WITHOUT_GHOSTS) {
 
-  m_sd_use_param      = m_config->get_flag("surface.itm.std_dev_use_param");
-  m_sd_param_a        = m_config->get_number("surface.itm.std_dev_param_a");
-  m_sd_param_b        = m_config->get_number("surface.itm.std_dev_param_b");
+  m_sd_use_param      = m_config->get_flag("surface.debm_simple.std_dev_use_param");
+  m_sd_param_a        = m_config->get_number("surface.debm_simple.std_dev_param_a");
+  m_sd_param_b        = m_config->get_number("surface.debm_simple.std_dev_param_b");
 
-  m_constant_eccentricity         = m_config->get_number("surface.itm.paleo.eccentricity");
-  m_constant_perihelion_longitude = m_config->get_number("surface.itm.paleo.long_peri");
-  m_constant_obliquity            = m_config->get_number("surface.itm.paleo.obliquity");
+  m_constant_eccentricity         = m_config->get_number("surface.debm_simple.paleo.eccentricity");
+  m_constant_perihelion_longitude = m_config->get_number("surface.debm_simple.paleo.long_peri");
+  m_constant_obliquity            = m_config->get_number("surface.debm_simple.paleo.obliquity");
 
-  ForcingOptions albedo_input(*m_grid->ctx(), "surface.itm.albedo_input");
+  ForcingOptions albedo_input(*m_grid->ctx(), "surface.debm_simple.albedo_input");
   if (not albedo_input.filename.empty()) {
     m_log->message(2, " Albedo is read in from %s...", albedo_input.filename.c_str());
 
@@ -78,7 +78,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
 
   // initialize the spatially-variable air temperature standard deviation
 
-  ForcingOptions air_temp_sd(*m_grid->ctx(), "surface.itm.std_dev");
+  ForcingOptions air_temp_sd(*m_grid->ctx(), "surface.debm_simple.std_dev");
   if (not air_temp_sd.filename.empty()) {
     m_log->message(2, "  Reading standard deviation of near-surface air temperature from '%s'...\n",
                    air_temp_sd.filename.c_str());
@@ -92,7 +92,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
                                                          buffer_size, air_temp_sd.periodic, LINEAR);
     m_use_air_temp_sd_file = true;
   } else {
-    double temp_std_dev = m_config->get_number("surface.itm.std_dev");
+    double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev");
 
     m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", temp_std_dev);
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
@@ -145,19 +145,19 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
                      "W m-2", "", 0);
   m_qinsol.set(0.0);
 
-  std::string paleo_file = m_config->get_string("surface.itm.paleo.file");
+  std::string paleo_file = m_config->get_string("surface.debm_simple.paleo.file");
 
   if (not paleo_file.empty()) {
     m_use_paleo_file = true;
 
     m_eccentricity.reset(
-        new ScalarForcing(*g->ctx(), "surface.itm.paleo", "eccentricity", "", "", "eccentricity of the earth"));
+        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "eccentricity", "", "", "eccentricity of the earth"));
 
     m_obliquity.reset(
-        new ScalarForcing(*g->ctx(), "surface.itm.paleo", "obliquity", "degree", "degree", "obliquity of the earth"));
+        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "obliquity", "degree", "degree", "obliquity of the earth"));
 
     m_perihelion_longitude.reset(
-        new ScalarForcing(*g->ctx(), "surface.itm.paleo", "long_peri", "degree", "degree", "longitude of the perihelion"));
+        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "long_peri", "degree", "degree", "longitude of the perihelion relative to the vernal equinox"));
   } else {
     m_use_paleo_file = false;
   }
@@ -178,11 +178,11 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
-  std::string firn_file = m_config->get_string("surface.itm.firn_depth_file");
+  std::string firn_file = m_config->get_string("surface.debm_simple.firn_depth_file");
 
   if (input.type == INIT_RESTART) {
     if (not firn_file.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "surface.itm.firn_depth_file is not allowed when"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "surface.debm_simple.firn_depth_file is not allowed when"
                                                          " re-starting from a PISM output file.");
     }
 
@@ -192,7 +192,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   } else if (input.type == INIT_BOOTSTRAP) {
 
     m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
-    m_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.itm.albedo_snow"));
+    m_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.debm_simple.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
@@ -202,7 +202,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   } else {
 
     m_snow_depth.set(0.0);
-    m_albedo.set(m_config->get_number("surface.itm.albedo_snow"));
+    m_albedo.set(m_config->get_number("surface.debm_simple.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.set(0.0);
@@ -215,7 +215,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     regrid("dEBM-Simple surface model", m_snow_depth);
     regrid("dEBM-Simple surface model", m_firn_depth);
   }
-  const bool force_albedo = m_config->get_flag("surface.itm.anomaly");
+  const bool force_albedo = m_config->get_flag("surface.debm_simple.anomaly");
   if (force_albedo)
     m_log->message(2, " Albedo forcing sets summer albedo values to lower value\n");
   // finish up
@@ -250,15 +250,15 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
   // This function is only here to perform darkening experiments, where the albedo over the whole ice sheet is reduced artificially during the summer months.
 
   // compute the time corresponding to the beginning of the darkening
-  double anomaly_start_day = m_config->get_number("surface.itm.anomaly_start_day"),
-         anomaly_end_day   = m_config->get_number("surface.itm.anomaly_end_day"),
+  double anomaly_start_day = m_config->get_number("surface.debm_simple.anomaly_start_day"),
+         anomaly_end_day   = m_config->get_number("surface.debm_simple.anomaly_end_day"),
          one_day           = units::convert(m_sys, 1.0, "days", "seconds"),
          one_year          = units::convert(m_sys, 1.0, "years", "seconds"),
          year_start        = m_grid->ctx()->time()->calendar_year_start(time),
          anomaly_start     = year_start + (anomaly_start_day - 1.0) * one_day,
          anomaly_end       = year_start + (anomaly_end_day - 1.0) * one_day;
 
-  int frequency = m_config->get_number("surface.itm.anomaly_frequency");
+  int frequency = m_config->get_number("surface.debm_simple.anomaly_frequency");
 
   double period_seconds = frequency * one_year;
   double tmp            = time - floor(time / period_seconds) * period_seconds;
@@ -277,6 +277,7 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
  * Implements equation 2.2.9 from Liou (2002)
  */
 double DEBMSimple::earch_sun_distance(double time) {
+  // These coefficients come from Table 2.2 in Liou 2002
   double
     a0 = 1.000110,
     a1 = 0.034221,
@@ -446,8 +447,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
   bool
-    force_albedo = m_config->get_flag("surface.itm.anomaly"),
-    paleo        = m_config->get_flag("surface.itm.paleo.enabled");
+    force_albedo = m_config->get_flag("surface.debm_simple.anomaly"),
+    paleo        = m_config->get_flag("surface.debm_simple.paleo.enabled");
 
   m_atmosphere->init_timeseries(ts);
   m_atmosphere->begin_pointwise_access();
@@ -537,13 +538,13 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           M   = 0.0,            // melt
           R   = 0.0,            // runoff
           SMB = 0.0,            // resulting mass balance
-          Mi  = 0.0,            // insolation melt
-          Mt  = 0.0,            // temperature melt
-          Mc  = 0.0,            // offset melt
+          Mi  = 0.0,            // insolation melt contribution
+          Mt  = 0.0,            // temperature melt contribution
+          Mc  = 0.0,            // background melt contribution
           Tr  = 0.0,            // transmissivity, this is just for testing
           Ti  = 0.0,            // top of the atmosphere insolation
           Qi  = 0.0,            // insolation averaged over \Delta t_Phi
-          Al  = 0.0;
+          Al  = 0.0;            // albedo
 
         // beginning of the loop over small time steps:
         for (int k = 0; k < N; ++k) {
@@ -562,7 +563,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           if (force_albedo) {
 
             if (albedo_anomaly_true(ts[k])) {
-              albedo_loc = m_config->get_number("surface.itm.anomaly_value");
+              albedo_loc = m_config->get_number("surface.debm_simple.anomaly_value");
             }
           }
 
@@ -597,7 +598,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           }
           if (force_albedo) {
             if (albedo_anomaly_true(ts[k])) {
-              albedo_loc = m_config->get_number("surface.itm.anomaly_value");
+              albedo_loc = m_config->get_number("surface.debm_simple.anomaly_value");
             }
           }
 
@@ -612,16 +613,17 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           assert(snow >= 0);
           // update total accumulation, melt, and runoff
           {
-            A += accumulation;
-            M += changes.melt;
-            Mt += melt_info.T_melt;
-            Mi += melt_info.I_melt;
-            Mc += melt_info.c_melt;
-            R += changes.runoff;
-            SMB += changes.smb, Tr += melt_info.transmissivity;
-            Ti += melt_info.TOA_insol;
-            Qi += melt_info.q_insol;
-            Al += albedo_loc;
+            A   += accumulation;
+            M   += changes.melt;
+            Mt  += melt_info.T_melt;
+            Mi  += melt_info.I_melt;
+            Mc  += melt_info.c_melt;
+            R   += changes.runoff;
+            SMB += changes.smb;
+            Tr  += melt_info.transmissivity;
+            Ti  += melt_info.TOA_insol;
+            Qi  += melt_info.q_insol;
+            Al  += albedo_loc;
           }
         } // end of the time-stepping loop
 

@@ -42,35 +42,35 @@ DEBMSimplePointwise::Melt::Melt() {
 
 DEBMSimplePointwise::DEBMSimplePointwise(const Config &config,
                                          units::System::Ptr system) {
-  m_precip_as_snow     = config.get_flag("surface.itm.interpret_precip_as_snow");
-  m_Tmin               = config.get_number("surface.itm.air_temp_all_precip_as_snow");
-  m_Tmax               = config.get_number("surface.itm.air_temp_all_precip_as_rain");
-  m_refreeze_ice_melt  = config.get_flag("surface.itm.refreeze_ice_melt");
-  m_refreeze_fraction  = config.get_number("surface.itm.refreeze");
-  m_pdd_threshold_temp = config.get_number("surface.itm.positive_threshold_temp");
+  m_precip_as_snow     = config.get_flag("surface.debm_simple.interpret_precip_as_snow");
+  m_Tmin               = config.get_number("surface.debm_simple.air_temp_all_precip_as_snow");
+  m_Tmax               = config.get_number("surface.debm_simple.air_temp_all_precip_as_rain");
+  m_refreeze_ice_melt  = config.get_flag("surface.debm_simple.refreeze_ice_melt");
+  m_refreeze_fraction  = config.get_number("surface.debm_simple.refreeze");
+  m_pdd_threshold_temp = config.get_number("surface.debm_simple.positive_threshold_temp");
 
   m_year_length = units::convert(system, 1.0, "years", "seconds");
-  m_n_per_year = static_cast<unsigned int>(config.get_number("surface.itm.max_evals_per_year"));
+  m_n_per_year = static_cast<unsigned int>(config.get_number("surface.debm_simple.max_evals_per_year"));
 
   m_water_density = config.get_number("constants.fresh_water.density");
   m_ice_density   = config.get_number("constants.ice.density");
-  m_albedo_snow   = config.get_number("surface.itm.albedo_snow");
-  m_albedo_ice    = config.get_number("surface.itm.albedo_ice");
-  m_albedo_land   = config.get_number("surface.itm.albedo_land"); //0.2
-  m_albedo_ocean  = config.get_number("surface.itm.albedo_ocean"); // 0.1;
-  m_albedo_slope  = config.get_number("surface.itm.albedo_slope"); //-790;
+  m_albedo_snow   = config.get_number("surface.debm_simple.albedo_snow");
+  m_albedo_ice    = config.get_number("surface.debm_simple.albedo_ice");
+  m_albedo_land   = config.get_number("surface.debm_simple.albedo_land"); //0.2
+  m_albedo_ocean  = config.get_number("surface.debm_simple.albedo_ocean"); // 0.1;
+  m_albedo_slope  = config.get_number("surface.debm_simple.albedo_slope"); //-790;
 
-  m_tau_a_slope     = config.get_number("surface.itm.tau_a_slope");
-  m_tau_a_intercept = config.get_number("surface.itm.tau_a_intercept");
+  m_tau_a_slope     = config.get_number("surface.debm_simple.tau_a_slope");
+  m_tau_a_intercept = config.get_number("surface.debm_simple.tau_a_intercept");
 
-  m_itm_c      = config.get_number("surface.itm.itm_c");
-  m_itm_lambda = config.get_number("surface.itm.itm_lambda");
-  m_bm_temp    = config.get_number("surface.itm.background_melting_temp");
+  m_c2      = config.get_number("surface.debm_simple.c2");
+  m_c1 = config.get_number("surface.debm_simple.c1");
+  m_bm_temp    = config.get_number("surface.debm_simple.background_melting_temp");
 
   m_L = config.get_number("constants.fresh_water.latent_heat_of_fusion");
-  m_solar_constant = config.get_number("surface.itm.solar_constant");
+  m_solar_constant = config.get_number("surface.debm_simple.solar_constant");
 
-  m_phi = config.get_number("surface.itm.phi", "radian");
+  m_phi = config.get_number("surface.debm_simple.phi", "radian");
 }
 
 
@@ -212,17 +212,17 @@ DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double dt, double 
     Teff = 0;
   }
 
-  result.T_melt = quotient_delta_t * dt / (m_water_density * m_L) * m_itm_lambda * Teff;
+  result.T_melt = quotient_delta_t * dt / (m_water_density * m_L) * m_c1 * Teff;
 
   if (T < m_bm_temp) {
     result.ITM_melt = 0.;
   } else {
     result.ITM_melt =
-        quotient_delta_t * dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_itm_c + m_itm_lambda * Teff);
+        quotient_delta_t * dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_c2 + m_c1 * Teff);
   }
 
   result.I_melt = dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
-  result.c_melt = dt / (m_water_density * m_L) * m_itm_c * quotient_delta_t;
+  result.c_melt = dt / (m_water_density * m_L) * m_c2 * quotient_delta_t;
 
   return result;
 }
