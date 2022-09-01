@@ -23,7 +23,6 @@
 
 #include "DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/iceModelVec2T.hh"
 
 namespace pism {
@@ -58,7 +57,6 @@ public:
   const IceModelVec2S &surface_offset_melt() const;
   const IceModelVec2S &albedo() const;
   const IceModelVec2S &transmissivity() const;
-  const IceModelVec2S &TOAinsol() const;
   const IceModelVec2S &qinsol() const;
 
 private:
@@ -77,13 +75,6 @@ private:
   double compute_next_balance_year_start(double time);
 
   bool albedo_anomaly_true(double time);
-
-  double earch_sun_distance(double time);
-  double earth_declination(double time);
-
-  double earch_sun_distance_paleo(double time);
-  double lambda_paleo(double time);
-  double earth_declination_paleo(double time);
 
   DEBMSimplePointwise m_model;
 
@@ -130,26 +121,11 @@ private:
   //! transmissivity field
   IceModelVec2S m_transmissivity;
 
-  //! TOA insol field
-  IceModelVec2S m_TOAinsol;
-
   //! q insol field
   IceModelVec2S m_qinsol;
 
   bool m_sd_use_param, m_use_air_temp_sd_file;
   double m_sd_param_a, m_sd_param_b;
-
-  double m_constant_eccentricity;
-  double m_constant_perihelion_longitude;
-  double m_constant_obliquity;
-
-  std::unique_ptr<ScalarForcing> m_eccentricity;
-
-  std::unique_ptr<ScalarForcing> m_obliquity;
-
-  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
-
-  bool m_use_paleo_file;
 };
 
 } // end of namespace surface

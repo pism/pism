@@ -19,10 +19,16 @@
 #ifndef PISM_DEBM_SIMPLE_POINTWISE_H
 #define PISM_DEBM_SIMPLE_POINTWISE_H
 
-#include "pism/util/Units.hh"
+#include <memory>
+
 #include "pism/util/Mask.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
+
+class Context;
+class Time;
+
 namespace surface {
 
 //! A dEBM-simple implementation
@@ -31,27 +37,30 @@ namespace surface {
 */
 class DEBMSimplePointwise {
 public:
-  DEBMSimplePointwise(const Config &config, units::System::Ptr system);
+  DEBMSimplePointwise(const Context &ctx);
 
   unsigned int timeseries_length(double dt);
 
-  double albedo(double melt, MaskValue cell_type, double dtseries);
+  double albedo(double melt_rate, MaskValue cell_type);
 
   class Melt {
   public:
     Melt();
 
-    double T_melt;
-    double I_melt;
-    double c_melt;
-    double ITM_melt;
+    double temperature_melt;
+    double insolation_melt;
+    double background_melt;
+    double total_melt;
     double transmissivity;
-    double TOA_insol;
     double q_insol;
   };
 
-  Melt calculate_melt(double dt_series, double S, double T, double surface_elevation,
-                      double delta, double distance2, double lat,
+  Melt calculate_melt(double time,
+                      double dt,
+                      double T_std_deviation,
+                      double T,
+                      double surface_elevation,
+                      double lat,
                       double albedo);
 
   void get_snow_accumulation(const std::vector<double> &T, std::vector<double> &precip_rate);
@@ -67,19 +76,29 @@ public:
     double smb;
   };
 
-  Changes step(double thickness, double ITM_melt, double firn_depth,
+  Changes step(double ice_thickness, double max_melt, double firn_depth,
                double snow_depth, double accumulation);
 
-
 private:
+  double eccentricity(double time);
+  double obliquity(double time);
+  double perihelion_longitude(double time);
+
+  double distance_factor(double time);
+  double solar_declination(double time);
+
+  double distance_factor_paleo(double time);
+  double solar_longitude(double year_fraction,
+                         double eccentricity,
+                         double perihelion_longitude);
+
+  double solar_declination_paleo(double time);
 
   double atmosphere_transmissivity(double elevation);
 
   double get_h_phi(double phi, double lat, double delta);
 
   double get_q_insol(double distance2, double h_phi, double lat, double delta);
-
-  double get_TOA_insol(double distance2, double h0, double lat, double delta);
 
   double CalovGreveIntegrand(double sigma, double TacC);
   //! interpret all the precipitation as snow (no rain)
@@ -92,8 +111,8 @@ private:
   double m_Tmin;
   //! the temperature above which all precipitation is rain
   double m_Tmax;
-  //! threshold temperature for the PDD computation
-  double m_pdd_threshold_temp;
+  //! threshold temperature for the computation of temperature-driven melt
+  double m_positive_threshold_temperature;
 
   //! year length used to compute the time series length required to get m_n_per_year
   //! evaluations
@@ -130,6 +149,19 @@ private:
 
   //! minimum solar elevation angle above which melt is possible
   double m_phi;
+
+  std::unique_ptr<ScalarForcing> m_eccentricity;
+  std::unique_ptr<ScalarForcing> m_obliquity;
+  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
+
+  bool m_paleo;
+  bool m_use_paleo_file;
+
+  double m_constant_eccentricity;
+  double m_constant_perihelion_longitude;
+  double m_constant_obliquity;
+
+  std::shared_ptr<const Time> m_time;
 };
 
 } // end of namespace surface

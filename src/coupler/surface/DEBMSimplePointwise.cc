@@ -22,6 +22,8 @@
 
 #include "DEBMSimplePointwise.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 namespace surface {
@@ -34,20 +36,25 @@ DEBMSimplePointwise::Changes::Changes() {
 }
 
 DEBMSimplePointwise::Melt::Melt() {
-  T_melt   = 0.0;
-  I_melt   = 0.0;
-  c_melt   = 0.0;
-  ITM_melt = 0.0;
+  temperature_melt = 0.0;
+  insolation_melt  = 0.0;
+  background_melt  = 0.0;
+  total_melt       = 0.0;
 }
 
-DEBMSimplePointwise::DEBMSimplePointwise(const Config &config,
-                                         units::System::Ptr system) {
+DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
+
+  const Config &config = *ctx.config();
+  auto system = ctx.unit_system();
+
+  m_time = ctx.time();
+
   m_precip_as_snow     = config.get_flag("surface.debm_simple.interpret_precip_as_snow");
   m_Tmin               = config.get_number("surface.debm_simple.air_temp_all_precip_as_snow");
   m_Tmax               = config.get_number("surface.debm_simple.air_temp_all_precip_as_rain");
   m_refreeze_ice_melt  = config.get_flag("surface.debm_simple.refreeze_ice_melt");
   m_refreeze_fraction  = config.get_number("surface.debm_simple.refreeze");
-  m_pdd_threshold_temp = config.get_number("surface.debm_simple.positive_threshold_temp");
+  m_positive_threshold_temperature = config.get_number("surface.debm_simple.positive_threshold_temp");
 
   m_year_length = units::convert(system, 1.0, "years", "seconds");
   m_n_per_year = static_cast<unsigned int>(config.get_number("surface.debm_simple.max_evals_per_year"));
@@ -63,14 +70,37 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Config &config,
   m_tau_a_slope     = config.get_number("surface.debm_simple.tau_a_slope");
   m_tau_a_intercept = config.get_number("surface.debm_simple.tau_a_intercept");
 
+  m_c1      = config.get_number("surface.debm_simple.c1");
   m_c2      = config.get_number("surface.debm_simple.c2");
-  m_c1 = config.get_number("surface.debm_simple.c1");
-  m_bm_temp    = config.get_number("surface.debm_simple.background_melting_temp");
+  m_bm_temp = config.get_number("surface.debm_simple.background_melting_temp");
 
-  m_L = config.get_number("constants.fresh_water.latent_heat_of_fusion");
+  m_L              = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   m_solar_constant = config.get_number("surface.debm_simple.solar_constant");
 
   m_phi = config.get_number("surface.debm_simple.phi", "radian");
+
+  m_constant_eccentricity         = config.get_number("surface.debm_simple.paleo.eccentricity");
+  m_constant_perihelion_longitude = config.get_number("surface.debm_simple.paleo.long_peri", "radian");
+  m_constant_obliquity            = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
+
+  m_paleo = config.get_flag("surface.debm_simple.paleo.enabled");
+
+  std::string paleo_file = config.get_string("surface.debm_simple.paleo.file");
+
+  if (not paleo_file.empty()) {
+    m_use_paleo_file = true;
+
+    m_eccentricity.reset(
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "", "", "eccentricity of the earth"));
+
+    m_obliquity.reset(
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian", "degree", "obliquity of the earth"));
+
+    m_perihelion_longitude.reset(
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "long_peri", "radian", "degree", "longitude of the perihelion relative to the vernal equinox"));
+  } else {
+    m_use_paleo_file = false;
+  }
 }
 
 
@@ -82,7 +112,14 @@ unsigned int DEBMSimplePointwise::timeseries_length(double dt) {
   return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
 }
 
-
+/*!
+ * The integrand in equation 6 of
+ *
+ * R. Calov and R. Greve, “A semi-analytical solution for the positive degree-day model
+ * with stochastic temperature variations,” Journal of Glaciology, vol. 51, Art. no. 172,
+ * 2005.
+ *
+ */
 double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double TacC) {
 
   if (sigma == 0) {
@@ -93,12 +130,14 @@ double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double TacC) {
   }
 }
 
-/*!
- * @param[in] melt melt amount (meters ice thickness equivalent)
+/*! Albedo parameterized as a function of the melt rate
+ *
+ * See equation 7 in Zeitz et al.
+ *
+ * @param[in] melt_rate melt amount (meters (ice equivalent) per second)
  * @param[in] cell_type cell type mask (used to exclude ice free areas)
- * @param[in] dt time step length (seconds)
  */
-double DEBMSimplePointwise::albedo(double melt, MaskValue cell_type, double dt) {
+double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) {
   // melt has a unit of meters ice equivalent
   //
   // dt has a unit of seconds
@@ -110,13 +149,17 @@ double DEBMSimplePointwise::albedo(double melt, MaskValue cell_type, double dt) 
     return m_albedo_land;
   }
 
-  double melt_rate = melt / dt;
   double result = m_albedo_snow + m_albedo_slope * melt_rate * m_ice_density ;
   return std::max(result, m_albedo_ice);
 }
 
 
-/*!
+/*! Returns atmosphere transmissivity
+ *
+ * Note: it has no units and acts as a scaling factor.
+ *
+ * See appendix A2 in Zeitz et al 2021.
+ *
  * @param[in] elevation elevation above the geoid (meters)
  */
 double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) {
@@ -126,103 +169,93 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) {
 
 
 /*!
- * @param[in] phi angle (FIXME)
- * @param[in] lat latitude (radians)
- * @param[in] delta (FIXME)
+ * Returns the hour angle at which the sun reaches phi (for melting period during the day)
+ *
+ * Implements equation (2) in Zeitz et al 2021 (solved for h_{\Phi}).
+ *
+ * This equation goes back to equation 10 in Krebs-Kanzow 2018.
+ *
+ * @param[in] phi angle (radians)
+ * @param[in] latitude latitude (radians)
+ * @param[in] declination solar declination angle (radians)
  */
-double DEBMSimplePointwise::get_h_phi(double phi, double lat, double delta) {
-  // calculate the hour angle at which the sun reaches phi (for melting period during the day)
-  double input_h_phi         = (sin(phi) - sin(lat) * sin(delta)) / (cos(lat) * cos(delta));
-  double input_h_phi_clipped = std::max(-1., std::min(input_h_phi, 1.));
-  return acos(input_h_phi_clipped);
+double DEBMSimplePointwise::get_h_phi(double phi, double latitude, double declination) {
+  double cos_h_phi = (sin(phi) - sin(latitude) * sin(declination)) / (cos(latitude) * cos(declination));
+  return acos(pism::clip(cos_h_phi, -1.0, 1.0));
 }
 
 
 /*!
- * Insolation flux
+ * Returns average top of atmosphere insolation during the daily melt period.
  *
  * Implements equation 5 in Zeitz et al (FIXME -- maybe???)
+ *
+ * See also 2.2.21 in Liou
  *
  * @param[in] distance2 FIXME
  * @param[in] h_phi FIXME
  * @param[in] lat latitude (radians)
  * @param[in] delta FIXME
  */
-double DEBMSimplePointwise::get_q_insol(double distance2, double h_phi,
-                                        double lat, double delta) {
+double DEBMSimplePointwise::get_q_insol(double distance2, double h_phi, double lat, double delta) {
   if (h_phi == 0) {
     return 0.;
   } else {
-    return m_solar_constant * distance2 * (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi)) / h_phi;
-  }
-}
-
-/*!
- * Top of the atmosphere insolation
- *
- * @param[in] distance2 FIXME
- * @param[in] h0 FIXME
- * @param[in] lat latitude (radians)
- * @param[in] delta FIXME
- */
-double DEBMSimplePointwise::get_TOA_insol(double distance2, double h0,
-                                          double lat, double delta) {
-  if (h0 == 0) {
-    return 0.;
-  } else {
-    return m_solar_constant * distance2 * (h0 * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h0)) / M_PI;
+    double tmp = (h_phi * sin(lat) * sin(delta) + cos(lat) * cos(delta) * sin(h_phi));
+    return m_solar_constant * distance2 * tmp / h_phi;
   }
 }
 
 //!
 /* compute diurnal melt scheme  by equation (6) by Uta Krebs-Kanzow et al., The Cryosphere, 2018
- * @param dt length of the step for the time-series
- * @param T air temperature at time [k]
- * @param insolation at time [k]
- * @param surface_elevation
- * @param albedo which was should be figured by get_albedo (?)
- * @param[out] melt pointer to a pre-allocated array with N-1 elements
- *
  *
  * Implements equation (1) in Zeitz et al
  *
  * output in mm water equivalent (FIXME???)
  */
-DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double dt, double S, double T,
-                                                              double surface_elevation, double delta,
-                                                              double distance2, double lat,
+DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double time,
+                                                              double dt,
+                                                              double T_std_deviation,
+                                                              double T,
+                                                              double surface_elevation,
+                                                              double latitude,
                                                               double albedo) {
   assert(dt > 0.0);
-  // if background melting is true, use effective pdd temperatures and do not allow melting below background meltin temp.
 
-  Melt result;
+  double latitude_rad = (latitude / 180.0) * M_PI;
 
-  double tau_a            = atmosphere_transmissivity(surface_elevation);
-  double h_phi            = get_h_phi(m_phi, lat, delta);
-  double h0               = get_h_phi(0, lat, delta);
-  double quotient_delta_t = h_phi / M_PI;
-  double q_insol          = get_q_insol(distance2, h_phi, lat, delta);
+  double declination = 0.0;
+  double distance2   = 0.0;
+  if (m_paleo) {
+    declination      = solar_declination_paleo(time);
+    distance2        = distance_factor_paleo(time);
+  } else {
+    declination      = solar_declination(time);
+    distance2        = distance_factor(time);
+  }
 
-  result.transmissivity = tau_a;
-  result.TOA_insol = get_TOA_insol(distance2, h0, lat, delta);
-  result.q_insol   = q_insol;
+  double tau_a   = atmosphere_transmissivity(surface_elevation);
+  double h_phi   = get_h_phi(m_phi, latitude_rad, declination);
+  double q_insol = get_q_insol(distance2, h_phi, latitude_rad, declination);
 
-  double Teff = CalovGreveIntegrand(S, T - m_pdd_threshold_temp);
+  double Teff = CalovGreveIntegrand(T_std_deviation, T - m_positive_threshold_temperature);
   if (Teff < 1.e-4) {
     Teff = 0;
   }
 
-  result.T_melt = quotient_delta_t * dt / (m_water_density * m_L) * m_c1 * Teff;
+  double A = dt * (h_phi / M_PI / (m_water_density * m_L));
+
+  Melt result;
+  result.transmissivity = tau_a;
+  result.q_insol        = q_insol;
+  result.insolation_melt  = A * (tau_a * (1. - albedo) * q_insol);
+  result.temperature_melt = A * m_c1 * Teff;
+  result.background_melt  = A * m_c2;
+  result.total_melt = result.insolation_melt + result.temperature_melt + result.background_melt;
 
   if (T < m_bm_temp) {
-    result.ITM_melt = 0.;
-  } else {
-    result.ITM_melt =
-        quotient_delta_t * dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol + m_c2 + m_c1 * Teff);
+    result.total_melt = 0.0;
   }
-
-  result.I_melt = dt / (m_water_density * m_L) * (tau_a * (1. - albedo) * q_insol) * quotient_delta_t;
-  result.c_melt = dt / (m_water_density * m_L) * m_c2 * quotient_delta_t;
 
   return result;
 }
@@ -349,6 +382,159 @@ DEBMSimplePointwise::Changes DEBMSimplePointwise::step(double thickness, double 
   assert(thickness + result.smb >= 0);
 
   return result;
+}
+
+/*!
+ * Eccentricity of the Earth’s orbit (no units).
+ */
+double DEBMSimplePointwise::eccentricity(double time) {
+  if (m_use_paleo_file) {
+    return m_eccentricity->value(time);
+  }
+  return m_constant_eccentricity;
+}
+
+/*!
+ * Returns the obliquity of the ecliptic in radians.
+ */
+double DEBMSimplePointwise::obliquity(double time) {
+  if (m_use_paleo_file) {
+    return m_obliquity->value(time);
+  }
+  return m_constant_obliquity;
+}
+
+/*!
+ * Returns the longitude of the perihelion in radians.
+ */
+double DEBMSimplePointwise::perihelion_longitude(double time) {
+  if (m_use_paleo_file) {
+    return m_perihelion_longitude->value(time);
+  }
+  return m_constant_perihelion_longitude;
+}
+
+
+/*!
+ * The factor scaling top of atmosphere insolation during the melt period according to the
+ * Earth's distance from the Sun.
+ *
+ * The returned value is `(d_bar / d)^2`, where `d_bar` is the average distance from the
+ * Earth to the Sun and `d` is the *current* distance at a given time.
+ *
+ * Implements equation 2.2.9 from Liou (2002).
+ *
+ * Liou states: "Note that the factor (a/r)^2 never departs from the unity by more than
+ * 3.5%." (`a/r` in Liou is equivalent to `d_bar/d` here.)
+ */
+double DEBMSimplePointwise::distance_factor(double time) {
+  // These coefficients come from Table 2.2 in Liou 2002
+  double
+    a0 = 1.000110,
+    a1 = 0.034221,
+    a2 = 0.000719,
+    b0 = 0.,
+    b1 = 0.001280,
+    b2 = 0.000077;
+
+  double t = 2. * M_PI * m_time->year_fraction(time);
+
+  return (a0 + b0 +
+          a1 * cos(t) + b1 * sin(t) +
+          a2 * cos(2. * t) + b2 * sin(2. * t));
+}
+
+/*!
+ * Earth declination
+ *
+ * Implements equation 2.2.10 from Liou (2002)
+ */
+double DEBMSimplePointwise::solar_declination(double time) {
+  // These coefficients come from Table 2.2 in Liou 2002
+   double
+     a0 = 0.006918,
+     a1 = -0.399912,
+     a2 = -0.006758,
+     a3 = -0.002697,
+     b0 = 0.,
+     b1 = 0.070257,
+     b2 = 0.000907,
+     b3 = 0.000148;
+
+  double t = 2. * M_PI * m_time->year_fraction(time);
+
+  return (a0 + b0 +
+          a1 * cos(t) + b1 * sin(t) +
+          a2 * cos(2. * t) + b2 * sin(2. * t) +
+          a3 * cos(3. * t) + b3 * sin(3. * t));
+}
+
+
+/*!
+ * Return factor
+ *
+ * Implements equation A1 in Zeitz et al.
+ *
+ * See also equation 2.2.5 from Liou (2002).
+ */
+double DEBMSimplePointwise::distance_factor_paleo(double time) {
+  double E   = eccentricity(time);
+  double L_p = perihelion_longitude(time);
+  double year_fraction = m_time->year_fraction(time);
+  double lambda = solar_longitude(year_fraction, E, L_p);
+
+  return pow((1. - E * cos(lambda - L_p)) / (1.0 - E * E), 2);
+}
+
+
+/*!
+ * Earth declination
+ *
+ * Implements equation in the text just above equation A1 in Zeitz et al.
+ *
+ * See also equation 2.2.4 of Liou (2002).
+ */
+double DEBMSimplePointwise::solar_declination_paleo(double time) {
+  double epsilon = obliquity(time);
+  double lambda  = solar_longitude(m_time->year_fraction(time),
+                                   eccentricity(time),
+                                   perihelion_longitude(time));
+
+  // FIXME: from equation 2.2.4 in Liou this is not the angle itself but its sine. Need to
+  // double check.
+  return sin(epsilon) * sin(lambda);
+}
+
+
+/*!
+ * Estimates solar longitude at current time in the year.
+ *
+ * @param[in] year_fraction year fraction (between 0 and 1)
+ * @param[in] eccentricity eccentricity of the earth’s orbit
+ * @param[in] perihelion_longitude perihelion longitude (radians)
+ *
+ * Implements equation A2 in Zeitz et al.
+ */
+double DEBMSimplePointwise::solar_longitude(double year_fraction,
+                                            double eccentricity,
+                                            double perihelion_longitude) {
+
+  // Shortcuts to make formulas below easier to read:
+  double E   = eccentricity;
+  double L_p = perihelion_longitude;
+
+  // lambda = 0 at March equinox (80th day of the year)
+  double delta_lambda  = 2. * M_PI * (year_fraction - 80. / 365.);
+  double beta          = sqrt(1 - E * E);
+
+  double lambda_m = (-2. * ((E / 2. + (pow(E, 3)) / 8.) * (1. + beta) * sin(-L_p) -
+                           (pow(E, 2)) / 4. * (1. / 2. + beta) * sin(-2. * L_p) +
+                           (pow(E, 3)) / 8. * (1. / 3. + beta) * sin(-3. * L_p)) +
+                     delta_lambda);
+
+  return (lambda_m + (2. * E - (pow(E, 3)) / 4.) * sin(lambda_m - L_p) +
+          (5. / 4.) * (E * E) * sin(2. * (lambda_m - L_p)) +
+          (13. / 12.) * (pow(E, 3)) * sin(3. * (lambda_m - L_p)));
 }
 
 } // end of namespace surface

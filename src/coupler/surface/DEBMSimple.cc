@@ -29,7 +29,6 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/IceModelVec2CellType.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/iceModelVec2T.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -42,7 +41,7 @@ namespace surface {
 
 DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
     : SurfaceModel(g, input),
-      m_model(*m_config, m_sys),
+      m_model(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
       m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
       m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
@@ -51,16 +50,11 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
       m_cmelt(m_grid, "surface_offset_melt_flux", WITHOUT_GHOSTS),
       m_albedo(m_grid, "albedo", WITHOUT_GHOSTS),
       m_transmissivity(m_grid, "transmissivity", WITHOUT_GHOSTS),
-      m_TOAinsol(m_grid, "TOAinsol", WITHOUT_GHOSTS),
       m_qinsol(m_grid, "qinsol", WITHOUT_GHOSTS) {
 
   m_sd_use_param      = m_config->get_flag("surface.debm_simple.std_dev_use_param");
   m_sd_param_a        = m_config->get_number("surface.debm_simple.std_dev_param_a");
   m_sd_param_b        = m_config->get_number("surface.debm_simple.std_dev_param_b");
-
-  m_constant_eccentricity         = m_config->get_number("surface.debm_simple.paleo.eccentricity");
-  m_constant_perihelion_longitude = m_config->get_number("surface.debm_simple.paleo.long_peri");
-  m_constant_obliquity            = m_config->get_number("surface.debm_simple.paleo.obliquity");
 
   ForcingOptions albedo_input(*m_grid->ctx(), "surface.debm_simple.albedo_input");
   if (not albedo_input.filename.empty()) {
@@ -137,30 +131,10 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_transmissivity.set_attrs("diagnostic", "transmissivity", "", "", "", 0);
   m_transmissivity.set(0.0);
 
-  m_TOAinsol.set_attrs("diagnostic", "insolation at the top of the atmosphere", "W m-2", "W m-2", "", 0);
-  m_TOAinsol.set(0.0);
-
   m_qinsol.set_attrs("diagnostic",
                      "insolation at the top of the atmosphere, when the sun is above the elvation angle Phi", "W m-2",
                      "W m-2", "", 0);
   m_qinsol.set(0.0);
-
-  std::string paleo_file = m_config->get_string("surface.debm_simple.paleo.file");
-
-  if (not paleo_file.empty()) {
-    m_use_paleo_file = true;
-
-    m_eccentricity.reset(
-        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "eccentricity", "", "", "eccentricity of the earth"));
-
-    m_obliquity.reset(
-        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "obliquity", "degree", "degree", "obliquity of the earth"));
-
-    m_perihelion_longitude.reset(
-        new ScalarForcing(*g->ctx(), "surface.debm_simple.paleo", "long_peri", "degree", "degree", "longitude of the perihelion relative to the vernal equinox"));
-  } else {
-    m_use_paleo_file = false;
-  }
 }
 
 void DEBMSimple::init_impl(const Geometry &geometry) {
@@ -271,119 +245,6 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
   return false;
 }
 
-/*!
- * The distance between the Earth and the Sun
- *
- * Implements equation 2.2.9 from Liou (2002)
- */
-double DEBMSimple::earch_sun_distance(double time) {
-  // These coefficients come from Table 2.2 in Liou 2002
-  double
-    a0 = 1.000110,
-    a1 = 0.034221,
-    a2 = 0.000719,
-    b0 = 0.,
-    b1 = 0.001280,
-    b2 = 0.000077;
-
-  double t  = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
-
-  return (a0 + b0 +
-          a1 * cos(t) + b1 * sin(t) +
-          a2 * cos(2. * t) + b2 * sin(2. * t));
-}
-
-/*!
- * Earth declination
- *
- * Implements equation 2.2.10 from Liou (2002)
- */
-double DEBMSimple::earth_declination(double time) {
-   double
-     a0 = 0.006918,
-     a1 = -0.399912,
-     a2 = -0.006758,
-     a3 = -0.002697,
-     b0 = 0.,
-     b1 = 0.070257,
-     b2 = 0.000907,
-     b3 = 0.000148;
-
-  double t = 2. * M_PI * m_grid->ctx()->time()->year_fraction(time);
-
-  return (a0 + b0 +
-          a1 * cos(t) + b1 * sin(t) +
-          a2 * cos(2. * t) + b2 * sin(2. * t) +
-          a3 * cos(3. * t) + b3 * sin(3. * t));
-}
-
-
-/*!
- * Distance from the Earth to the Sun (FIXME -- not really: it is a ratio)
- *
- * Implements equation A1 in Zeitz et al.
- *
- * See also equation 2.2.5 from Liou (2002).
- */
-double DEBMSimple::earch_sun_distance_paleo(double time) {
-  double ecc      = m_constant_eccentricity;
-  double peri_deg = m_constant_perihelion_longitude;
-  if (m_use_paleo_file) {
-    ecc      = m_eccentricity->value(time);
-    peri_deg = m_perihelion_longitude->value(time);
-  }
-  double peri_rad = peri_deg * M_PI / 180.0;
-
-  return pow((1. - ecc * cos(lambda_paleo(time) - peri_rad)) / (1. - ecc * ecc), 2);
-}
-
-
-/*!
- * Earth declination
- *
- * Implements equation in the text just above equation A1 in Zeitz et al.
- *
- * See also equation 2.2.4 of Liou (2002).
- */
-double DEBMSimple::earth_declination_paleo(double time) {
-  double epsilon_deg = m_constant_obliquity;
-  if (m_use_paleo_file) {
-    epsilon_deg = m_obliquity->value(time);
-  }
-
-  return sin(epsilon_deg * M_PI / 180.) * sin(lambda_paleo(time));
-}
-
-
-/*!
- * Estimates solar longitude at current time in the year
- *
- * Implements equation A2 in Zeitz et al.
- */
-double DEBMSimple::lambda_paleo(double time) {
-  double ecc = m_constant_eccentricity;
-  double peri_deg = m_constant_perihelion_longitude;
-  if (m_use_paleo_file) {
-    ecc         = m_eccentricity->value(time);
-    peri_deg    = m_perihelion_longitude->value(time);
-  }
-
-  // lambda = 0 at March equinox (80th day of the year)
-  double year_fraction = m_grid->ctx()->time()->year_fraction(time);
-  double delta_lambda = 2. * M_PI * (year_fraction - 80. / 365.);
-  double beta     = sqrt(1 - ecc * ecc);
-  double peri_rad = peri_deg * M_PI / 180.;
-
-  double lambda_m = (-2. * ((ecc / 2. + (pow(ecc, 3)) / 8.) * (1. + beta) * sin(-peri_rad) -
-                           (pow(ecc, 2)) / 4. * (1. / 2. + beta) * sin(-2. * peri_rad) +
-                           (pow(ecc, 3)) / 8. * (1. / 3. + beta) * sin(-3. * peri_rad)) +
-                     delta_lambda);
-
-  return (lambda_m + (2. * ecc - (pow(ecc, 3)) / 4.) * sin(lambda_m - peri_rad) +
-          (5. / 4.) * (ecc * ecc) * sin(2. * (lambda_m - peri_rad)) +
-          (13. / 12.) * (pow(ecc, 3)) * sin(3. * (lambda_m - peri_rad)));
-}
-
 
 void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
@@ -398,7 +259,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
-  DEBMSimplePointwise::Melt melt_info;
+
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
   }
@@ -429,7 +290,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &m_cmelt,
       &m_albedo,
       &m_transmissivity,
-      &m_TOAinsol,
       &m_qinsol,
       &latitude,
       &surface_altitude
@@ -444,11 +304,11 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   double
     ice_density    = m_config->get_number("constants.ice.density"),
     sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base"),
+    forcing_albedo_value = m_config->get_number("surface.debm_simple.anomaly_value");
 
   bool
-    force_albedo = m_config->get_flag("surface.debm_simple.anomaly"),
-    paleo        = m_config->get_flag("surface.debm_simple.paleo.enabled");
+    force_albedo = m_config->get_flag("surface.debm_simple.anomaly");
 
   m_atmosphere->init_timeseries(ts);
   m_atmosphere->begin_pointwise_access();
@@ -533,6 +393,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           surfelev   = surface_altitude(i, j),
           albedo_loc = m_albedo(i, j);
 
+        auto cell_type = static_cast<MaskValue>(mask.as_int(i, j));
+
         double
           A   = 0.0,            // accumulation
           M   = 0.0,            // melt
@@ -542,7 +404,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           Mt  = 0.0,            // temperature melt contribution
           Mc  = 0.0,            // background melt contribution
           Tr  = 0.0,            // transmissivity, this is just for testing
-          Ti  = 0.0,            // top of the atmosphere insolation
           Qi  = 0.0,            // insolation averaged over \Delta t_Phi
           Al  = 0.0;            // albedo
 
@@ -556,50 +417,35 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             }
           }
 
-          const double accumulation = P[k] * dtseries;
+          auto accumulation = P[k] * dtseries;
 
-          DEBMSimplePointwise::Changes changes;
-
-          if (force_albedo) {
-
-            if (albedo_anomaly_true(ts[k])) {
-              albedo_loc = m_config->get_number("surface.debm_simple.anomaly_value");
-            }
+          if (force_albedo and albedo_anomaly_true(ts[k])) {
+            albedo_loc = forcing_albedo_value;;
           }
 
           if ((bool)m_input_albedo) {
             albedo_loc = Alb[k];
           }
 
-          double delta = earth_declination(ts[k]);
-          double distance2 = earch_sun_distance(ts[k]);
-          if (paleo) {
-            delta     = earth_declination_paleo(ts[k]);
-            distance2 = earch_sun_distance_paleo(ts[k]);
-          }
-
-
-          melt_info = m_model.calculate_melt(dtseries, S[k], T[k], surfelev, delta, distance2,
-                                             lat * M_PI / 180., albedo_loc);
+          auto melt_info = m_model.calculate_melt(ts[k], dtseries, S[k], T[k], surfelev,
+                                                  lat, albedo_loc);
 
           //  no melt over ice-free ocean
           if (mask.ice_free_ocean(i, j)) {
-            melt_info.T_melt   = 0.;
-            melt_info.I_melt   = 0.;
-            melt_info.c_melt   = 0.;
-            melt_info.ITM_melt = 0.;
+            melt_info.temperature_melt = 0.0;
+            melt_info.insolation_melt  = 0.0;
+            melt_info.background_melt  = 0.0;
+            melt_info.total_melt       = 0.0;
           }
 
-          changes = m_model.step(ice, melt_info.ITM_melt, firn, snow, accumulation);
+          auto changes = m_model.step(ice, melt_info.total_melt, firn, snow, accumulation);
 
           if (not(bool) m_input_albedo) {
-            MaskValue cell_type = static_cast<MaskValue>(mask.as_int(i, j));
-            albedo_loc = m_model.albedo(changes.melt, cell_type, dtseries);
+            albedo_loc = m_model.albedo(changes.melt / dtseries, cell_type);
           }
-          if (force_albedo) {
-            if (albedo_anomaly_true(ts[k])) {
-              albedo_loc = m_config->get_number("surface.debm_simple.anomaly_value");
-            }
+
+          if (force_albedo and albedo_anomaly_true(ts[k])) {
+            albedo_loc = forcing_albedo_value;
           }
 
           // update ice thickness
@@ -615,13 +461,12 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           {
             A   += accumulation;
             M   += changes.melt;
-            Mt  += melt_info.T_melt;
-            Mi  += melt_info.I_melt;
-            Mc  += melt_info.c_melt;
+            Mt  += melt_info.temperature_melt;
+            Mi  += melt_info.insolation_melt;
+            Mc  += melt_info.background_melt;
             R   += changes.runoff;
             SMB += changes.smb;
             Tr  += melt_info.transmissivity;
-            Ti  += melt_info.TOA_insol;
             Qi  += melt_info.q_insol;
             Al  += albedo_loc;
           }
@@ -632,7 +477,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         m_snow_depth(i, j)     = snow;
         m_albedo(i, j)         = Al / N;
         m_transmissivity(i, j) = Tr / N; //melt_info.transmissivity;
-        m_TOAinsol(i, j)       = Ti / N;
         m_qinsol(i, j)         = Qi / N;
 
         // set melt terms at this point, converting
@@ -719,10 +563,6 @@ const IceModelVec2S &DEBMSimple::albedo() const {
 
 const IceModelVec2S &DEBMSimple::transmissivity() const {
   return m_transmissivity;
-}
-
-const IceModelVec2S &DEBMSimple::TOAinsol() const {
-  return m_TOAinsol;
 }
 
 const IceModelVec2S &DEBMSimple::qinsol() const {
@@ -905,7 +745,6 @@ DiagnosticList DEBMSimple::diagnostics_impl() const {
     { "firn_depth", Diagnostic::wrap(m_firn_depth) },
     { "albedo", Diagnostic::wrap(m_albedo) },
     { "transmissivity", Diagnostic::wrap(m_transmissivity) },
-    { "TOAinsol", Diagnostic::wrap(m_TOAinsol) },
     { "qinsol", Diagnostic::wrap(m_qinsol) }
   };
 
