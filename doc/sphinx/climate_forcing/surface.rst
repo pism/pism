@@ -416,7 +416,7 @@ Transmissivity of the atmosphere
 
 dEBM-simple assumes that the transmissivity of the atmosphere is a linear function of the
 local surface altitude. Similarly to the albedo parameterization, the coefficients of this
-function are obtained using a linear regression of MAR v3.11 data. This parametrization
+function are obtained using a linear regression of MAR v3.11 data. This parameterization
 also relies on the assumption that the mean transmissivity does not change in a changing
 climate.
 
@@ -458,7 +458,7 @@ The dEBM-simple model can be used for long-term simulation.
 Using only monthly temperatures and precipitation as input, can compute temperature- and insolation-driven
 melt rates.
 
-The top of the atmosphere insolation is by default calculated assuming present day values of orbital parameters. Here, the value of the solar constant can be set with :config:`surface.debm_simple.solar_constant`.
+
 For paleo simulations, use the option :opt:`-itm_paleo` or set the configuration parameter :config:`surface.debm_simple.paleo.enabled` to true.
 The orbital parameters can either be set to constants or be read from a time-dependent file.
 Use the configuration parameters :config:`surface.debm_simple.paleo.eccentricity`. :config:`surface.debm_simple.paleo.obliquity`, and :config:`surface.debm_simple.paleo.long_peri` for the former and the option :config:`surface.debm_simple.paleo.file` to read them in in a time-dependent file.
