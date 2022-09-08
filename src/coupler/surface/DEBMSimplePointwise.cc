@@ -483,6 +483,11 @@ double DEBMSimplePointwise::distance_factor_paleo(double time) {
   double year_fraction = m_time->year_fraction(time);
   double lambda = solar_longitude(year_fraction, E, L_p);
 
+  if (E == 1.0) {
+    // protect from division by zero
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "invalid eccentricity value: 1.0");
+  }
   return pow((1.0 + E * cos(lambda - L_p)) / (1.0 - E * E), 2);
 }
 
