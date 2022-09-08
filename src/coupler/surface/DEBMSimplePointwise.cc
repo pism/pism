@@ -493,7 +493,7 @@ double DEBMSimplePointwise::distance_factor_paleo(double time) {
 
 
 /*!
- * Earth declination
+ * Solar declination
  *
  * Implements equation in the text just above equation A1 in Zeitz et al.
  *
@@ -505,9 +505,7 @@ double DEBMSimplePointwise::solar_declination_paleo(double time) {
                                    eccentricity(time),
                                    perihelion_longitude(time));
 
-  // FIXME: from equation 2.2.4 in Liou this is not the angle itself but its sine. Need to
-  // double check.
-  return sin(epsilon) * sin(lambda);
+  return asin(sin(epsilon) * sin(lambda));
 }
 
 
