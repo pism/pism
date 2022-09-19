@@ -40,30 +40,30 @@ public:
   double background_melt;
   double total_melt;
   double transmissivity;
-  double q_insol;
+  double insolation;
 };
 
 //! A dEBM-simple implementation
 /*!
-  after Krebs-Kanzow et al. 2018
+ * This class implements dEBM-simple, the simple diurnal energy balance model described in
+ *
+ * M. Zeitz, R. Reese, J. Beckmann, U. Krebs-Kanzow, and R. Winkelmann, “Impact of the
+ * melt–albedo feedback on the future evolution of the Greenland Ice Sheet with
+ * PISM-dEBM-simple,” The Cryosphere, vol. 15, Art. no. 12, Dec. 2021.
 */
 class DEBMSimplePointwise {
 public:
   DEBMSimplePointwise(const Context &ctx);
 
-  unsigned int timeseries_length(double dt);
-
   double albedo(double melt_rate, MaskValue cell_type);
 
-  DEBMSimpleMelt calculate_melt(double time,
-                                double dt,
-                                double T_std_deviation,
-                                double T,
-                                double surface_elevation,
-                                double lat,
-                                double albedo);
-
-  void get_snow_accumulation(const std::vector<double> &T, std::vector<double> &precip_rate);
+  DEBMSimpleMelt melt(double time,
+                      double dt,
+                      double T_std_deviation,
+                      double T,
+                      double surface_elevation,
+                      double lat,
+                      double albedo);
 
   class Changes {
   public:
@@ -91,35 +91,22 @@ public:
 
   double atmosphere_transmissivity(double elevation);
 
+  double h_phi(double phi, double lat, double delta);
+
 private:
   double solar_longitude(double year_fraction,
                          double eccentricity,
                          double perihelion_longitude);
 
-  double get_h_phi(double phi, double lat, double delta);
-
-  double get_q_insol(double distance2, double h_phi, double lat, double delta);
+  double insolation(double distance_factor, double h_phi, double latitude, double declination);
 
   double CalovGreveIntegrand(double sigma, double TacC);
-  //! interpret all the precipitation as snow (no rain)
-  bool m_precip_as_snow;
   //! refreeze melted ice
   bool m_refreeze_ice_melt;
   //! refreeze fraction
   double m_refreeze_fraction;
-  //! the temperature below which all precipitation is snow
-  double m_Tmin;
-  //! the temperature above which all precipitation is rain
-  double m_Tmax;
   //! threshold temperature for the computation of temperature-driven melt
   double m_positive_threshold_temperature;
-
-  //! year length used to compute the time series length required to get m_n_per_year
-  //! evaluations
-  double m_year_length;
-
-  //! number of small time steps per year
-  unsigned int m_n_per_year;
 
   double m_ice_density;
   double m_water_density;
@@ -133,8 +120,8 @@ private:
   double m_albedo_slope;
 
   //! slope used in the linear parameterization of transmissivity
-  double m_tau_a_slope;
-  double m_tau_a_intercept;
+  double m_transmissivity_slope;
+  double m_transmissivity_intercept;
 
   // tuning parameters of the melt equation
   double m_c1;

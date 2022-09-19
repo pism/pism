@@ -56,6 +56,14 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_sd_param_a        = m_config->get_number("surface.debm_simple.std_dev_param_a");
   m_sd_param_b        = m_config->get_number("surface.debm_simple.std_dev_param_b");
 
+  m_precip_as_snow = m_config->get_flag("surface.debm_simple.interpret_precip_as_snow");
+  m_Tmax           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_rain");
+  m_Tmin           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_snow");
+
+  m_year_length = units::convert(g->ctx()->unit_system(), 1.0, "years", "seconds");
+
+  m_n_per_year = static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
+
   ForcingOptions albedo_input(*m_grid->ctx(), "surface.debm_simple.albedo_input");
   if (not albedo_input.filename.empty()) {
     m_log->message(2, " Albedo is read in from %s...", albedo_input.filename.c_str());
@@ -245,6 +253,40 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
   return false;
 }
 
+/** @brief Extracts snow accumulation from mixed (snow and rain) precipitation using a
+  *  temperature threshold with a linear transition.
+  *
+  * Rain is removed entirely from the surface mass balance, and will not be included in
+  * the computed runoff, which is meltwater runoff.
+  *
+  * There is an linear transition for Tmin below which all precipitation is interpreted as
+  * snow, and Tmax above which all precipitation is rain (see, e.g. [\ref Hock2005b]).
+  *
+  * Returns the *solid* (snow) accumulation *rate*.
+  *
+  * @param[in] T air temperature
+  * @param[in] P precipitation rate
+  */
+double DEBMSimple::snow_accumulation(double T, double P) {
+
+  // do not allow negative precipitation
+  if (P < 0.0) {
+    return 0.0;
+  }
+
+  if (m_precip_as_snow or T <= m_Tmin) {
+    // T <= Tmin, all precip is snow
+    return P;
+  }
+
+  if (T < m_Tmax) { // linear transition from Tmin to Tmax
+    return P * (m_Tmax - T) / (m_Tmax - m_Tmin);
+  }
+
+  // T >= Tmax, all precip is rain -- ignore it
+  return 0.0;
+}
+
 
 void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
@@ -255,7 +297,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // Set up air temperature and precipitation time series
-  int N = m_model.timeseries_length(dt);
+  int N = timeseries_length(dt);
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
@@ -375,9 +417,10 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       }
 
       // Use temperature time series to remove rainfall from precipitation
-      m_model.get_snow_accumulation(T,  // air temperature (input)
-                                    P); // precipitation rate (input-output)
-
+      for (int k = 0; k < N; ++k) {
+        P[i] = snow_accumulation(T[i],  // air temperature (input)
+                                 P[i]); // precipitation rate (input, gets overwritten)
+      }
 
       // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
       // balance (and diagnostics: accumulation, melt, runoff)
@@ -427,8 +470,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             albedo_loc = Alb[k];
           }
 
-          auto melt_info = m_model.calculate_melt(ts[k], dtseries, S[k], T[k], surfelev,
-                                                  lat, albedo_loc);
+          auto melt_info = m_model.melt(ts[k], dtseries, S[k], T[k], surfelev,
+                                        lat, albedo_loc);
 
           //  no melt over ice-free ocean
           if (mask.ice_free_ocean(i, j)) {
@@ -467,7 +510,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             R   += changes.runoff;
             SMB += changes.smb;
             Tr  += melt_info.transmissivity;
-            Qi  += melt_info.q_insol;
+            Qi  += melt_info.insolation;
             Al  += albedo_loc;
           }
         } // end of the time-stepping loop
@@ -729,6 +772,14 @@ private:
 };
 
 } // end of namespace diagnostics
+
+/*! @brief The number of points for temperature and precipitation time-series.
+ */
+unsigned int DEBMSimple::timeseries_length(double dt) {
+  double dt_years = dt / m_year_length;
+
+  return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
+}
 
 DiagnosticList DEBMSimple::diagnostics_impl() const {
   using namespace diagnostics;

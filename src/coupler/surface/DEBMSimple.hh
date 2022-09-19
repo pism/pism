@@ -76,6 +76,10 @@ private:
 
   bool albedo_anomaly_true(double time);
 
+  double snow_accumulation(double T, double P);
+
+  unsigned int timeseries_length(double dt);
+
   DEBMSimplePointwise m_model;
 
   double m_next_balance_year_start;
@@ -124,8 +128,22 @@ private:
   //! q insol field
   IceModelVec2S m_qinsol;
 
+  //! year length used to compute the time series length required to get m_n_per_year
+  //! evaluations
+  double m_year_length;
+
+  //! number of small time steps per year
+  unsigned int m_n_per_year;
+
   bool m_sd_use_param, m_use_air_temp_sd_file;
   double m_sd_param_a, m_sd_param_b;
+
+  //! interpret all the precipitation as snow (no rain)
+  bool m_precip_as_snow;
+  //! the temperature below which all precipitation is snow
+  double m_Tmin;
+  //! the temperature above which all precipitation is rain
+  double m_Tmax;
 };
 
 } // end of namespace surface
