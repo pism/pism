@@ -31,6 +31,18 @@ class Time;
 
 namespace surface {
 
+class DEBMSimpleMelt {
+public:
+  DEBMSimpleMelt();
+
+  double temperature_melt;
+  double insolation_melt;
+  double background_melt;
+  double total_melt;
+  double transmissivity;
+  double q_insol;
+};
+
 //! A dEBM-simple implementation
 /*!
   after Krebs-Kanzow et al. 2018
@@ -43,25 +55,13 @@ public:
 
   double albedo(double melt_rate, MaskValue cell_type);
 
-  class Melt {
-  public:
-    Melt();
-
-    double temperature_melt;
-    double insolation_melt;
-    double background_melt;
-    double total_melt;
-    double transmissivity;
-    double q_insol;
-  };
-
-  Melt calculate_melt(double time,
-                      double dt,
-                      double T_std_deviation,
-                      double T,
-                      double surface_elevation,
-                      double lat,
-                      double albedo);
+  DEBMSimpleMelt calculate_melt(double time,
+                                double dt,
+                                double T_std_deviation,
+                                double T,
+                                double surface_elevation,
+                                double lat,
+                                double albedo);
 
   void get_snow_accumulation(const std::vector<double> &T, std::vector<double> &precip_rate);
 

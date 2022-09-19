@@ -35,7 +35,7 @@ DEBMSimplePointwise::Changes::Changes() {
   smb        = 0.0;
 }
 
-DEBMSimplePointwise::Melt::Melt() {
+DEBMSimpleMelt::DEBMSimpleMelt() {
   temperature_melt = 0.0;
   insolation_melt  = 0.0;
   background_melt  = 0.0;
@@ -213,13 +213,13 @@ double DEBMSimplePointwise::get_q_insol(double distance2, double h_phi, double l
  *
  * output in mm water equivalent (FIXME???)
  */
-DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double time,
-                                                              double dt,
-                                                              double T_std_deviation,
-                                                              double T,
-                                                              double surface_elevation,
-                                                              double latitude,
-                                                              double albedo) {
+DEBMSimpleMelt DEBMSimplePointwise::calculate_melt(double time,
+                                                   double dt,
+                                                   double T_std_deviation,
+                                                   double T,
+                                                   double surface_elevation,
+                                                   double latitude,
+                                                   double albedo) {
   assert(dt > 0.0);
 
   double latitude_rad = (latitude / 180.0) * M_PI;
@@ -245,7 +245,7 @@ DEBMSimplePointwise::Melt DEBMSimplePointwise::calculate_melt(double time,
 
   double A = dt * (h_phi / M_PI / (m_water_density * m_L));
 
-  Melt result;
+  DEBMSimpleMelt result;
   result.transmissivity = tau_a;
   result.q_insol        = q_insol;
   result.insolation_melt  = A * (tau_a * (1. - albedo) * q_insol);
