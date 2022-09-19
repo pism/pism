@@ -79,7 +79,6 @@ public:
   Changes step(double ice_thickness, double max_melt, double firn_depth,
                double snow_depth, double accumulation);
 
-private:
   double eccentricity(double time);
   double obliquity(double time);
   double perihelion_longitude(double time);
@@ -96,6 +95,7 @@ private:
 
   double atmosphere_transmissivity(double elevation);
 
+private:
   double get_h_phi(double phi, double lat, double delta);
 
   double get_q_insol(double distance2, double h_phi, double lat, double delta);
