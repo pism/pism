@@ -84,18 +84,18 @@ public:
   double perihelion_longitude(double time);
 
   double distance_factor(double time);
-  double solar_declination(double time);
-
   double distance_factor_paleo(double time);
-  double solar_longitude(double year_fraction,
-                         double eccentricity,
-                         double perihelion_longitude);
 
+  double solar_declination(double time);
   double solar_declination_paleo(double time);
 
   double atmosphere_transmissivity(double elevation);
 
 private:
+  double solar_longitude(double year_fraction,
+                         double eccentricity,
+                         double perihelion_longitude);
+
   double get_h_phi(double phi, double lat, double delta);
 
   double get_q_insol(double distance2, double h_phi, double lat, double delta);

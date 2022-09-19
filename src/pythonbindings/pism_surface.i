@@ -13,6 +13,7 @@
 #include "coupler/surface/ForceThickness.hh"
 #include "coupler/surface/Initialization.hh"
 #include "coupler/surface/Factory.hh"
+#include "coupler/surface/DEBMSimplePointwise.hh"
 %}
 
 %shared_ptr(pism::surface::SurfaceModel)
@@ -78,3 +79,7 @@
 
 %rename(SurfaceFactory) pism::surface::Factory;
 %include "coupler/surface/Factory.hh"
+
+%shared_ptr(pism::surface::DEBMSimplePointwise)
+%rename(SurfaceDEBMSimplePointwise) pism::surface::DEBMSimplePointwise;
+%include "coupler/surface/DEBMSimplePointwise.hh"
