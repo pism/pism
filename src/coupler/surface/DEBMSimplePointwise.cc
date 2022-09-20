@@ -292,7 +292,6 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
 
   DEBMSimpleMelt result;
 
-  result.transmissivity   = transmissivity;
   result.insolation       = insolation;
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
   result.temperature_melt = A * m_c1 * Teff;

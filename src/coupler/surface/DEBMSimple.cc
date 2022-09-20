@@ -446,7 +446,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           Mi  = 0.0,            // insolation melt contribution
           Mt  = 0.0,            // temperature melt contribution
           Mc  = 0.0,            // background melt contribution
-          Tr  = 0.0,            // transmissivity, this is just for testing
           Qi  = 0.0,            // insolation averaged over \Delta t_Phi
           Al  = 0.0;            // albedo
 
@@ -509,7 +508,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             Mc  += melt_info.background_melt;
             R   += changes.runoff;
             SMB += changes.smb;
-            Tr  += melt_info.transmissivity;
             Qi  += melt_info.insolation;
             Al  += albedo_loc;
           }
@@ -519,7 +517,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         m_firn_depth(i, j)     = firn;
         m_snow_depth(i, j)     = snow;
         m_albedo(i, j)         = Al / N;
-        m_transmissivity(i, j) = Tr / N; //melt_info.transmissivity;
+        m_transmissivity(i, j) = m_model.atmosphere_transmissivity(surfelev);
         m_qinsol(i, j)         = Qi / N;
 
         // set melt terms at this point, converting

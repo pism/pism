@@ -39,7 +39,6 @@ public:
   double insolation_melt;
   double background_melt;
   double total_melt;
-  double transmissivity;
   double insolation;
 };
 
