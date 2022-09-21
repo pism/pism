@@ -2253,10 +2253,10 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_ice = 0.47;
     pism_config:surface.debm_simple.albedo_ice_doc = "albedo value for bare ice, i.e. lowest possible value in albedo parametrization";
     pism_config:surface.debm_simple.albedo_ice_type = "number";
-    pism_config:surface.debm_simple.albedo_ice_units = "";
+    pism_config:surface.debm_simple.albedo_ice_units = "1";
 
     pism_config:surface.debm_simple.albedo_input.file = "";
-    pism_config:surface.debm_simple.albedo_input.file_doc = "the file with the albedo values to use (needs to cover one year and will be interpreted as periodic in time)";
+    pism_config:surface.debm_simple.albedo_input.file_doc = "the file with the albedo values to use";
     pism_config:surface.debm_simple.albedo_input.file_type = "string";
 
     pism_config:surface.debm_simple.albedo_input.periodic = "no";
@@ -2264,12 +2264,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_input.periodic_type = "flag";
 
     pism_config:surface.debm_simple.albedo_land = 0.2;
-    pism_config:surface.debm_simple.albedo_land_doc = "albedo value over land, if no ice is present";
+    pism_config:surface.debm_simple.albedo_land_doc = "albedo of ice-free land";
     pism_config:surface.debm_simple.albedo_land_type = "number";
     pism_config:surface.debm_simple.albedo_land_units = "";
 
     pism_config:surface.debm_simple.albedo_ocean = 0.1;
-    pism_config:surface.debm_simple.albedo_ocean_doc = "albedo value over ocean";
+    pism_config:surface.debm_simple.albedo_ocean_doc = "albedo of ice-free ocean";
     pism_config:surface.debm_simple.albedo_ocean_type = "number";
     pism_config:surface.debm_simple.albedo_ocean_units = "";
 
@@ -2281,7 +2281,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_snow = 0.82;
     pism_config:surface.debm_simple.albedo_snow_doc = "albedo value for fresh snow, i.e. albedo without melting, in albedo parametrization";
     pism_config:surface.debm_simple.albedo_snow_type = "number";
-    pism_config:surface.debm_simple.albedo_snow_units = "";
+    pism_config:surface.debm_simple.albedo_snow_units = "1";
 
     pism_config:surface.debm_simple.anomaly = "no";
     pism_config:surface.debm_simple.anomaly_doc = "if yes, bare ice albedo is applied everywhere between start day and end day with a frequency on frequency years, set frequeqncy larger simulation time in order to apply albedo forcing only once";
