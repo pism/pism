@@ -405,7 +405,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
       }
 
-      // apply standard deviation param over ice if in use
+      // apply standard deviation parameterization over ice if in use
       if (m_sd_use_param and mask.icy(i, j)) {
         for (int k = 0; k < N; ++k) {
           S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;

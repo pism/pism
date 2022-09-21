@@ -2307,10 +2307,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.anomaly_value_type = "number";
     pism_config:surface.debm_simple.anomaly_value_units = "";
 
-    pism_config:surface.debm_simple.background_melting = "yes";
-    pism_config:surface.debm_simple.background_melting_doc = "if yes, that we use pdd positive temperatures instead of just air temperatures in the itm equation";
-    pism_config:surface.debm_simple.background_melting_type = "flag";
-
     pism_config:surface.debm_simple.background_melting_temp = 266.65;
     pism_config:surface.debm_simple.background_melting_temp_doc = "threshold temperature below which no melting occurs";
     pism_config:surface.debm_simple.background_melting_temp_type = "number";
@@ -2326,10 +2322,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m-2";
 
-    pism_config:surface.debm_simple.daily_cycle = "yes";
-    pism_config:surface.debm_simple.daily_cycle_doc = "if set to yes, the insolation melt module takes the diurnal cycle into account (see Krebs-Kanzow 2018)";
-    pism_config:surface.debm_simple.daily_cycle_type = "flag";
-
     pism_config:surface.debm_simple.firn_depth_file = "";
     pism_config:surface.debm_simple.firn_depth_file_doc = "The name of the file to read the firn_depth from.";
     pism_config:surface.debm_simple.firn_depth_file_option = "itm_firn_depth_file";
@@ -2340,15 +2332,9 @@ netcdf pism_config {
     pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";
 
     pism_config:surface.debm_simple.max_evals_per_year = 52;
-    pism_config:surface.debm_simple.max_evals_per_year_doc = "maximum number of times the ITM scheme will ask for air temperature and precipitation to build location-dependent time series for computing melt and snow accumulation; the default means the ITM uses weekly samples of the annual cycle; see also surface.pdd.std_dev";
+    pism_config:surface.debm_simple.max_evals_per_year_doc = "maximum number of air temperature and precipitation samples per year used to build location-dependent time series for computing melt and snow accumulation; the default means use weekly samples of the annual cycle";
     pism_config:surface.debm_simple.max_evals_per_year_type = "integer";
     pism_config:surface.debm_simple.max_evals_per_year_units = "count";
-
-    pism_config:surface.debm_simple.method = "daily";
-    pism_config:surface.debm_simple.method_choices = "daily,not_daily,albedo_forcing";
-    pism_config:surface.debm_simple.method_doc = "itm implementation method";
-    pism_config:surface.debm_simple.method_option = "itm_method";
-    pism_config:surface.debm_simple.method_type = "keyword";
 
     pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
     pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
@@ -2361,7 +2347,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.enabled_type = "flag";
 
     pism_config:surface.debm_simple.paleo.file = "";
-    pism_config:surface.debm_simple.paleo.file_doc = "Name of the file containing paleo parameters";
+    pism_config:surface.debm_simple.paleo.file_doc = "File containing orbital parameters (eccentricity, obliquity, perihelion longitude) for paleo-simulations";
     pism_config:surface.debm_simple.paleo.file_option = "debm_simple_paleo_file";
     pism_config:surface.debm_simple.paleo.file_type = "string";
 
@@ -2380,28 +2366,23 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.periodic_type = "flag";
 
     pism_config:surface.debm_simple.phi =  17.5;
-    pism_config:surface.debm_simple.phi_doc = "minimum solar elevation angle above which melt is possible. See Equation (9) by Uta Krebs-Kanzow et al., The Cryosphere, 2018";
+    pism_config:surface.debm_simple.phi_doc = "Minimum solar elevation angle above which melt is possible.";
     pism_config:surface.debm_simple.phi_type = "number";
     pism_config:surface.debm_simple.phi_units = "degree";
 
     pism_config:surface.debm_simple.positive_threshold_temp = 273.15;
-    pism_config:surface.debm_simple.positive_threshold_temp_doc = "temperature used to determine meaning of 'positive' degree day temperature";
+    pism_config:surface.debm_simple.positive_threshold_temp_doc = "temperature threshold used to define the 'positive' degree day temperature";
     pism_config:surface.debm_simple.positive_threshold_temp_type = "number";
     pism_config:surface.debm_simple.positive_threshold_temp_units = "Kelvin";
 
     pism_config:surface.debm_simple.refreeze = 0.6;
-    pism_config:surface.debm_simple.refreeze_doc = "EISMINT-Greenland value :cite:`RitzEISMINT`";
+    pism_config:surface.debm_simple.refreeze_doc = "Refreeze fraction: this fraction of snow melt is assumed to re-freeze. See also :config:`surface.debm_simple.refreeze_ice_melt`.";
     pism_config:surface.debm_simple.refreeze_type = "number";
     pism_config:surface.debm_simple.refreeze_units = "1";
 
     pism_config:surface.debm_simple.refreeze_ice_melt = "yes";
-    pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze surface.pdd.refreeze fraction of melted ice, otherwise all of the melted ice runs off.";
+    pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
-
-    pism_config:surface.debm_simple.snow_depth_crit = 0.02;
-    pism_config:surface.debm_simple.snow_depth_crit_doc = "scale of snow depth for albedo calculation, see Krapp et al. 2017, Table 3 (2.8 cm was just too arbitrary, so 3.5 cm is the center of the interval consistent with optimal solutions (see 3.4 parameter sensitivity)";
-    pism_config:surface.debm_simple.snow_depth_crit_type = "number";
-    pism_config:surface.debm_simple.snow_depth_crit_units = "m";
 
     pism_config:surface.debm_simple.solar_constant = 1367.;
     pism_config:surface.debm_simple.solar_constant_doc = "constant for solar radiation";
@@ -2409,36 +2390,26 @@ netcdf pism_config {
     pism_config:surface.debm_simple.solar_constant_units = "W m-2";
 
     pism_config:surface.debm_simple.std_dev = 5.0;
-    pism_config:surface.debm_simple.std_dev_doc = "std dev of daily temp variation; = EISMINT-Greenland value :cite:`RitzEISMINT`";
+    pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";
     pism_config:surface.debm_simple.std_dev_type = "number";
     pism_config:surface.debm_simple.std_dev_units = "Kelvin";
 
     pism_config:surface.debm_simple.std_dev.file = "";
-    pism_config:surface.debm_simple.std_dev.file_doc = "The name of the file to read `air_temp_sd` (standard deviation of air temperature) from.";
-    pism_config:surface.debm_simple.std_dev.file_option = "itm_sd_file";
+    pism_config:surface.debm_simple.std_dev.file_doc = "The file to read `air_temp_sd` (standard deviation of air temperature) from.";
+    pism_config:surface.debm_simple.std_dev.file_option = "debm_simple_sd_file";
     pism_config:surface.debm_simple.std_dev.file_type = "string";
 
     pism_config:surface.debm_simple.std_dev.periodic = "no";
     pism_config:surface.debm_simple.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
 
-    pism_config:surface.debm_simple.std_dev_lapse_lat_base = 72.0;
-    pism_config:surface.debm_simple.std_dev_lapse_lat_base_doc = "std_dev is a function of latitude, with value surface.pdd.std_dev at this latitude; this value only active if surface.pdd.std_dev_lapse_lat_rate is nonzero";
-    pism_config:surface.debm_simple.std_dev_lapse_lat_base_type = "number";
-    pism_config:surface.debm_simple.std_dev_lapse_lat_base_units = "degree_north";
-
-    pism_config:surface.debm_simple.std_dev_lapse_lat_rate = 0.0;
-    pism_config:surface.debm_simple.std_dev_lapse_lat_rate_doc = "std_dev is a function of latitude, with rate of change with respect to latitude given by this constant";
-    pism_config:surface.debm_simple.std_dev_lapse_lat_rate_type = "number";
-    pism_config:surface.debm_simple.std_dev_lapse_lat_rate_units = "Kelvin / degree_north";
-
     pism_config:surface.debm_simple.std_dev_param_a = -0.15;
-    pism_config:surface.debm_simple.std_dev_param_a_doc = "Parameter a in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param_a_doc = "Parameter a in `\\sigma = a*T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
     pism_config:surface.debm_simple.std_dev_param_a_type = "number";
-    pism_config:surface.debm_simple.std_dev_param_a_units = "pure number";
+    pism_config:surface.debm_simple.std_dev_param_a_units = "1";
 
     pism_config:surface.debm_simple.std_dev_param_b = 0.66;
-    pism_config:surface.debm_simple.std_dev_param_b_doc = "Parameter b in Sigma = a*T + b, with T in degrees C. Used only if surface.pdd.std_dev_use_param is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param_b_doc = "Parameter b in `\\sigma = a*T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
     pism_config:surface.debm_simple.std_dev_param_b_type = "number";
     pism_config:surface.debm_simple.std_dev_param_b_units = "Kelvin";
 
@@ -2446,13 +2417,13 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by geometry.ice_free_thickness_standard.";
     pism_config:surface.debm_simple.std_dev_use_param_type = "flag";
 
-    pism_config:surface.debm_simple.tau_a_intercept = 0.65;  // the best fit is 0.57;
-    pism_config:surface.debm_simple.tau_a_intercept_doc = "intercept in transmissivity parametrization";
+    pism_config:surface.debm_simple.tau_a_intercept = 0.65;
+    pism_config:surface.debm_simple.tau_a_intercept_doc = "intercept in the parametrization of atmosphere transmissivity";
     pism_config:surface.debm_simple.tau_a_intercept_type = "number";
     pism_config:surface.debm_simple.tau_a_intercept_units = "";
 
-    pism_config:surface.debm_simple.tau_a_slope = 0.000032;// the best fit is 0.000037;
-    pism_config:surface.debm_simple.tau_a_slope_doc = "slope in transmissivity parametrization";
+    pism_config:surface.debm_simple.tau_a_slope = 0.000032;
+    pism_config:surface.debm_simple.tau_a_slope_doc = "slope in the parametrization of atmosphere transmissivity";
     pism_config:surface.debm_simple.tau_a_slope_type = "number";
     pism_config:surface.debm_simple.tau_a_slope_units = "m-1";
 
