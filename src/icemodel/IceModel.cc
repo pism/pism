@@ -170,7 +170,7 @@ void IceModel::reset_counters() {
       int last_multiple = year - year % year_increment;
       // correct last_multiple if 'year' is negative
       // and not a multiple of year_increment:
-      last_multiple -= year_increment * (year % year_increment < 0);
+      last_multiple -= year_increment * static_cast<int>(year % year_increment < 0);
 
       units::DateTime last_date{last_multiple, 1, 1, 0, 0, 0.0};
 

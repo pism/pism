@@ -282,7 +282,6 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
     } else {
       // Only one time record or no time dimension at all: set fake time bounds assuming
       // that the user wants to use constant-in-time forcing for the whole simulation
-      extrapolate = true;
 
       // this value does not matter
       m_data->time = {0.0};
@@ -321,7 +320,7 @@ void IceModelVec2T::init_periodic_data(const File &file) {
   auto n_records = file.nrecords(name, metadata().get_string("standard_name"),
                                  ctx->unit_system());
 
-  auto buffer_required = n_records + 2 * (m_data->interp_type == LINEAR);
+  auto buffer_required = n_records + 2 * static_cast<int>(m_data->interp_type == LINEAR);
 
   if (m_data->buffer_size < buffer_required) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -342,12 +341,12 @@ void IceModelVec2T::init_periodic_data(const File &file) {
                                   0.0, m_impl->interpolation_type, tmp_array.get());
     }
 
-    auto t = ctx->time();
+    auto time = ctx->time();
     auto log = ctx->log();
     log->message(5, " %s: reading entry #%02d, time %s...\n",
                  name.c_str(),
                  j,
-                 t->date(m_data->time[j]).c_str());
+                 time->date(m_data->time[j]).c_str());
 
     set_record(offset + j);
   }

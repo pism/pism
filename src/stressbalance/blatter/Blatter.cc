@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -199,7 +199,7 @@ bool Blatter::partially_submerged_face(int face, const double *z, const double *
     below = false;
 
   for (int n = 0; n < N; ++n) {
-    int k = nodes[n];
+    auto k = nodes[n];
     if (z[k] > sea_level[k]) {
       above = true;
     } else {

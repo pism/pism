@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ private:
   const IceModelVec2S& precipitation_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
-  void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+  void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
 
   mutable std::vector<double> m_offset_values;
 
