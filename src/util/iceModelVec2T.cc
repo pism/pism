@@ -406,7 +406,20 @@ void IceModelVec2T::init_periodic_data(const File &file) {
       const double dt = 1.0; // arbitrary; could be any positive number
       m_data->time.insert(m_data->time.begin(), t0 - dt);
     }
-    m_data->time.push_back(t1);
+    if (t1 - m_data->time.back() > 0.0) {
+      m_data->time.push_back(t1);
+    } else {
+      // The last time record is at the end of the time interval covered by forcing. This
+      // means that the last record we added (set_record(m_data->buffer_size - 1) above)
+      // is the same as the one before it. Only one of them is needed.
+      //
+      // Here we use an arbitrary time *after* the end of the forcing time interval to
+      // ensure that m_data->time is strictly increasing.
+      //
+      // Note: this time will not be used.
+      const double dt = 1.0; // arbitrary; could be any positive number
+      m_data->time.push_back(t1 + dt);
+    }
   }
 }
 
