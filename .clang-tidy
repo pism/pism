@@ -1,0 +1,5 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,readability-*,bugprone-*,portability-*,mpi-*,performance-*,-readability-isolate-declaration,-bugprone-easily-swappable-parameters,-readability-function-cognitive-complexity,-performance-unnecessary-value-param,-readability-identifier-length'
+WarningsAsErrors: ''
+CheckOptions:
+...
