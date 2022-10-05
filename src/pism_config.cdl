@@ -1706,7 +1706,7 @@ netcdf pism_config {
     pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
 
     pism_config:ocean.pico.limit_pressure_melting_at_surface = "no";
-    pism_config:ocean.pico.limit_pressure_melting_at_surface_doc = "If set to true, the lower limit of pressure melting point is set at surface pressure melting";
+    pism_config:ocean.pico.limit_pressure_melting_at_surface_doc = "If set to true, the lower limit for the PICO ocean input temperature is shifted from pressure melting point at grounding line depth to surface pressure melting point, assuming that the ocean water reaching the grounding line stems from the ocean surface or from warmer intermediate water masses.";
     pism_config:ocean.pico.limit_pressure_melting_at_surface_option = "pico_surf_pressure_melt";
     pism_config:ocean.pico.limit_pressure_melting_at_surface_type = "flag";
 

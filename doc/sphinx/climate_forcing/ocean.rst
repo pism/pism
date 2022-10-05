@@ -142,13 +142,13 @@ overturning circulation in ice shelf cavities that drives the exchange with open
 water masses. It is based on the ocean box model of :cite:`OlbersHellmer2010` and includes
 a geometric approach which makes it applicable to ice shelves that evolve in two
 horizontal dimensions. For each ice shelf, PICO solves the box model equations describing
-the transport between coarse ocean boxes. It applies a boundary layer melt formulation
-:cite:`HellmerOlbers1989`, :cite:`HollandJenkins1999`. The overturning circulation is
-driven by the ice-pump :cite:`LewisPerkin1986`: melting at the ice-shelf base reduces the
-density of ambient water masses. Buoyant water rising along the shelf base draws in ocean
-water at depth, which flows across the continental shelf towards the deep grounding lines.
-The model captures this circulation by defining consecutive boxes following the flow
-within the ice shelf cavity, with the first box adjacent to the grounding line. The
+the transport between consecutive coarse ocean boxes at the ice shelf's subsurface. It
+applies a boundary layer melt formulation :cite:`HellmerOlbers1989`, :cite:`HollandJenkins1999`.
+The overturning circulation is driven by the ice-pump :cite:`LewisPerkin1986`: melting at the
+ice-shelf base reduces the density of ambient water masses. Buoyant water rising along the shelf
+base draws in ocean water at depth, which flows across the continental shelf towards the deep
+grounding lines. The model captures this circulation by defining consecutive boxes following the
+flow within the ice shelf cavity, with the first box adjacent to the grounding line. The
 extents of the ocean boxes are computed adjusting to the evolving grounding lines and
 calving fronts. Open ocean properties in front of the shelf as well as the geometry of the
 shelf determine basal melt rate and basal temperature at each grid point.
@@ -169,18 +169,30 @@ Forcing ocean temperature and salinity are taken from the water masses that occu
 floor in front of the ice shelves, which extends down to a specified continental shelf
 depth (see :config:`ocean.pico.continental_shelf_depth`). These water masses are
 transported by the overturning circulation into the ice shelf cavity and towards the
-grounding line. The basin mask defines regions of similar, large-scale ocean conditions;
+grounding line. PICO applies the pressure melting temperature at grounding line depth as
+the lower limit on ocean input temperature. Assuming that no phyical processes are at play
+between the cooling of surface water and the sinking and transport to the grounding line,
+alternatively the surface melting point can be chosen as lower bound in PICO by
+setting :config:`ocean.pico.limit_pressure_melting_at_surface`. Within the PICO boxes,
+however, melting can lower the water temperature even up to the pressure melting point.
+
+The basin mask defines regions of similar, large-scale ocean conditions;
 each region is marked with a distinct positive integer. In PICO, ocean input temperature
 and salinity are averaged on the continental shelf within each basins. For each ice shelf,
 the input values for the overturning circulation are calculated as an area-weighted average
-over all neighboring basins that intersect the ice shelf. Large ice shelves, that cover
-across two basins, that do not share an ocean boundary (and hence are not neighbors), are
-considered as two separate ice shelves with individual ocean inputs. Only those neighboring
-basins are considered in the average, in which the ice shelf has in fact a connection to
-the ocean. If ice shelves become isolated within a basin without an open ocean connection,
-ocean inputs of the neighoring basin will be considered. The indices of the basin neighbors
-are defined at bootstrap and are stored as metadata in the basin state variable and will be
-read at restart. If ocean input parameters cannot be identified, standard values are used
+over all neighboring basins that intersect the ice shelf. PICO infers for the basin adjacency
+at bootsrap for a given initial coastline and stores this indices in the :var:`basins` state
+variable metadata and will be read at restart. As changing ice and bed geomentry can alter basin
+adjacency, setting :config:`ocean.pico.update_basin_neighbors` will update basin neighbors at
+each PISM time step. However, this can lead to flipping neighbor and hence alternating
+melting conditions.
+
+Large ice shelves, that cover across two basins, that do not share an ocean boundary (and
+hence are not neighbors), are considered as two separate ice shelves with individual ocean
+inputs. Only those neighboring basins are considered in the average, in which the ice shelf
+has in fact a connection to the ocean. If ice shelves become isolated within a basin without
+an open ocean connection, ocean inputs of the neighoring basin will be considered. If ocean
+input parameters cannot be identified, standard values are used
 (**Warning:** this could strongly influence melt rates computed by PICO). In regions where
 the PICO geometry cannot be identified, :cite:`BeckmannGoosse2003` is applied.
 
