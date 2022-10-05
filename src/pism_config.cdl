@@ -1705,6 +1705,11 @@ netcdf pism_config {
     pism_config:ocean.pico.heat_exchange_coefficent_type = "number";
     pism_config:ocean.pico.heat_exchange_coefficent_units = "meters second-1";
 
+    pism_config:ocean.pico.limit_pressure_melting_at_surface = "no";
+    pism_config:ocean.pico.limit_pressure_melting_at_surface_doc = "If set to true, the lower limit for the PICO ocean input temperature is shifted from pressure melting point at grounding line depth to surface pressure melting point, assuming that the ocean water reaching the grounding line stems from the ocean surface or from warmer intermediate water masses.";
+    pism_config:ocean.pico.limit_pressure_melting_at_surface_option = "pico_surf_pressure_melt";
+    pism_config:ocean.pico.limit_pressure_melting_at_surface_type = "flag";
+
     pism_config:ocean.pico.maximum_ice_rise_area = 1e5;
     pism_config:ocean.pico.maximum_ice_rise_area_doc = "Specifies an area threshold that separates ice rises from continental regions.";
     pism_config:ocean.pico.maximum_ice_rise_area_type = "number";
@@ -1725,6 +1730,11 @@ netcdf pism_config {
     pism_config:ocean.pico.periodic = "no";
     pism_config:ocean.pico.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.pico.periodic_type = "flag";
+
+    pism_config:ocean.pico.update_basin_neighbors = "no";
+    pism_config:ocean.pico.update_basin_neighbors_doc = "If set to true, PICO basin neighbors are computed in each time step according to current ice shelf front.";
+    pism_config:ocean.pico.update_basin_neighbors_option = "update_pico_neighbors";
+    pism_config:ocean.pico.update_basin_neighbors_type = "flag";
 
     pism_config:ocean.pik_melt_factor = 5e-3;
     pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the ``-ocean pik`` ocean heat flux parameterization; see :cite:`Martinetal2011`";

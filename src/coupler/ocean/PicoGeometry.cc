@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,6 +32,7 @@ namespace ocean {
 PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
     : Component(grid),
       m_continental_shelf(grid, "pico_contshelf_mask", WITHOUT_GHOSTS),
+      m_isolated_basin(grid, "pico_isolated_mask", WITHOUT_GHOSTS),
       m_boxes(grid, "pico_box_mask", WITHOUT_GHOSTS),
       m_ice_shelves(grid, "pico_shelf_mask", WITHOUT_GHOSTS),
       m_basin_mask(m_grid, "basins", WITH_GHOSTS),
@@ -59,6 +60,10 @@ const IceModelVec2Int &PicoGeometry::continental_shelf_mask() const {
   return m_continental_shelf;
 }
 
+const IceModelVec2Int &PicoGeometry::isolated_basin_mask() const {
+  return m_isolated_basin;
+}
+
 const IceModelVec2Int &PicoGeometry::box_mask() const {
   return m_boxes;
 }
@@ -75,13 +80,92 @@ const IceModelVec2Int &PicoGeometry::basin_mask() const {
   return m_basin_mask;
 }
 
-void PicoGeometry::init() {
+void PicoGeometry::init(const IceModelVec2CellType &cell_type) {
 
+  auto input_opts = process_input_options(m_grid->com, m_config);
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  m_basin_mask.regrid(opt.filename, CRITICAL);
+  std::string basins_file = opt.filename;
+  if (input_opts.type == INIT_RESTART) {
+    basins_file = input_opts.filename;
+    m_log->message(2, "PICO: re-starting from %s...\n",
+                   basins_file.c_str());
+  }
+
+  m_basin_mask.regrid(basins_file, CRITICAL);
 
   m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
+
+  // Array of 0 and 1 indicating whether a specific basin is present: basins[k] = 1 if
+  // m_basin_mask contains `k` and 0 otherwise:
+  std::vector<int> basins(m_n_basins, 0);
+  {
+    IceModelVec::AccessList list{m_basin_mask};
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      size_t b = m_basin_mask.as_int(i, j);
+      if (b < basins.size()) {
+        basins[b] = 1;
+      }
+    }
+    std::vector<int> tmp(basins.size(), 0);
+    GlobalMax(m_grid->com, basins.data(), tmp.data(), basins.size());
+    basins = tmp;
+  }
+
+  bool failed_to_read_adjacency = false;
+  {
+    File input_file(m_grid->com, basins_file, PISM_NETCDF3, PISM_READONLY);
+    // note: we skip the "0" basin here
+    for (size_t k = 1; k < basins.size(); ++k) {
+      if (basins[k] == 0) {
+        // skip non-existent basins
+        continue;
+      }
+      auto attr_name = pism::printf("basin_%02d_neighbors", (int)k);
+      auto value = input_file.read_double_attribute(m_basin_mask.get_name(),
+                                                    attr_name);
+      if (value.size() == 2) {
+        m_basin_neighbors[k] = {(int)value[0], (int)value[1]};
+      } else {
+        failed_to_read_adjacency = true;
+        break;
+      }
+    }
+  }
+
+  // Update basin adjacency.
+  if (failed_to_read_adjacency) {
+    m_log->message(2,
+                   "PICO: computing the list of basin neighbors using the basin mask\n"
+                   "      and the current ice extent...\n");
+    m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
+  } else {
+    m_log->message(2, "PICO: reading the list of basin neighbors from %s...\n",
+                   basins_file.c_str());
+  }
+
+  // report
+  {
+    // build a list of basins with corresponding neighbor IDs:
+    std::vector<std::string> basin_info;
+    for (const auto &p : m_basin_neighbors) {
+      // make a list of neighbor IDs for this basin:
+      std::vector<std::string> neighbors;
+      for (const auto &n : p.second) {
+        neighbors.emplace_back(pism::printf("%d", n));
+      }
+
+      std::string neighbor_list = pism::join(neighbors, ",");
+      basin_info.emplace_back(pism::printf("%d: {%s}", p.first, neighbor_list.c_str()));
+    }
+    // make a comma-separated list:
+    auto joined = pism::join(basin_info, ", ");
+
+    m_log->message(2, "PICO basin neighbors: %s.\n", joined.c_str());
+  }
 }
 
 /*!
@@ -98,7 +182,11 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
   // basin_neighbors() below uses the cell type mask to find
   // adjacent basins by iterating over the current ice front. This means that basin
   // adjacency cannot be pre-computed during initialization.
-  {
+  //
+  bool update_basin_neighbors = m_config->get_flag("ocean.pico.update_basin_neighbors");
+
+  if (update_basin_neighbors) {
+
     m_basin_neighbors = basin_neighbors(cell_type, m_basin_mask);
 
     // report
@@ -111,6 +199,21 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
       m_log->message(3, "PICO: basin %d neighbors: %s\n",
                      p.first, neighbor_list.c_str());
     }
+  }
+
+  // Update m_basin_mask metadata to make sure that adjacency information is saved to the
+  // output file:
+  for (const auto &p : m_basin_neighbors) {
+    int basin = p.first;
+
+    // convert set<int> to vector<double>:
+    std::vector<double> neighbors{};
+    for (const auto &n : p.second) {
+      neighbors.emplace_back(n);
+    }
+
+    auto attr_name = pism::printf("basin_%02d_neighbors", basin);
+    m_basin_mask.metadata().set_numbers(attr_name, neighbors);
   }
 
   bool exclude_ice_rises = m_config->get_flag("ocean.pico.exclude_ice_rises");
@@ -137,6 +240,14 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
 
   // computing ice_shelf_mask and box_mask could be done at the same time
   {
+    double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
+
+    compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth,
+                                   m_continental_shelf);
+
+    compute_isolated_basin_mask(bed_elevation, m_ice_rises, m_basin_mask, continental_shelf_depth,
+                                m_isolated_basin);
+
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
     auto n_shelves = static_cast<int>(max(m_ice_shelves)) + 1;
 
@@ -145,14 +256,11 @@ void PicoGeometry::update(const IceModelVec2S &bed_elevation,
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, n_shelves,
                                       most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
+
     split_ice_shelves(cell_type, m_basin_mask, m_basin_neighbors,
                       most_shelf_cells_in_basin, cfs_in_basins_per_shelf, n_shelves,
                       m_ice_shelves);
 
-    double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
-
-    compute_continental_shelf_mask(bed_elevation, m_ice_rises, continental_shelf_depth,
-                                   m_continental_shelf);
   }
 
   int n_boxes = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
@@ -451,6 +559,68 @@ void PicoGeometry::compute_continental_shelf_mask(const IceModelVec2S &bed_eleva
   result.copy_from(m_tmp);
 }
 
+
+void PicoGeometry::compute_isolated_basin_mask(const IceModelVec2S &bed_elevation,
+                                               const IceModelVec2Int &ice_rise_mask,
+                                               const IceModelVec2Int &basin_mask,
+                                               double bed_elevation_threshold,
+                                               IceModelVec2Int &result) {
+
+  IceModelVec::AccessList list{ &bed_elevation, &ice_rise_mask, &basin_mask, &m_tmp };
+
+  //n_basins = static_cast<int>(max(basin_mask)) + 1;
+
+  //for (const auto &b : m_n_basins) {
+  for (int b = 0; b < m_n_basins; b++) {
+
+
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      if (b == 0) {
+        m_tmp(i, j) = 0.0;
+      }
+
+      // candidates
+      if (bed_elevation(i, j) > bed_elevation_threshold and basin_mask.as_int(i, j) == b) {
+        m_tmp(i, j) = 1.0;
+      }
+
+      // area, that cannot be transgressed
+      if (ice_rise_mask.as_int(i, j) == CONTINENTAL) {
+        m_tmp(i, j) = 0.0;
+      }
+
+      // initial area from which to fill
+      if ((ice_rise_mask.as_int(i, j) == OCEAN or ice_rise_mask.as_int(i, j) ==FLOATING) and bed_elevation(i, j) <= bed_elevation_threshold and basin_mask.as_int(i, j) == b) {
+        m_tmp(i, j) = 2.0;
+      }
+    }
+
+    // use "iceberg identification" to label parts *not* connected to the continental ice
+    // sheet
+
+    {
+      m_tmp.put_on_proc0(*m_tmp_p0);
+
+      ParallelSection rank0(m_grid->com);
+      try {
+        if (m_grid->rank() == 0) {
+          petsc::VecArray mask_p0(*m_tmp_p0);
+          label_connected_components(mask_p0.get(), m_grid->My(), m_grid->Mx(), true, 2.0);
+        }
+      } catch (...) {
+        rank0.failed();
+      }
+      rank0.check();
+
+      m_tmp.get_from_proc0(*m_tmp_p0);
+    }
+  }
+
+  result.copy_from(m_tmp);
+}
+
 /*!
  * Compute the mask identifying ice shelves.
  *
@@ -675,6 +845,7 @@ void PicoGeometry::identify_calving_front_connection(const IceModelVec2CellType 
     }
   }
 }
+
 
 
 /*!

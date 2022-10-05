@@ -60,7 +60,13 @@ Changes since v1.2
 - Implement experiments A,B,C,D,E from the ISMIP-HOM intercomparison.
 - Adjust PICO ocean input average across covered basins, in which the ice shelf has
   in fact a connection to the ocean. Large ice shelves, that cover across two basins,
-  that do not share an ocean boundary, are split into two separate ice shelf instances
+  that do not share an ocean boundary, are split into two separate ice shelf instances.
+- Define PICO basin neighbors at bootstrap and store this list in the basins
+  variable metadata. Option `-update_pico_neighbors` will update basin adjacency at each
+  time step according to current ocean boundary
+- Add PICO option `pico_surf_pressure_melt` to limit the ocean input temperature to surface
+  melting point, assuming that ocean water will not cool below this value when transported to
+  the grounding line.  
 - Implement scaling of calving rates using a time-dependent factor. Set
   `calving.rate_scaling.file` to the name of the file containing `frac_calving_rate`
   (units: "1").
