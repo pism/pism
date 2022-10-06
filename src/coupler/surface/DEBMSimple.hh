@@ -76,9 +76,9 @@ private:
 
   bool albedo_anomaly_true(double time);
 
-  double snow_accumulation(double T, double P);
+  double snow_accumulation(double T, double P) const;
 
-  unsigned int timeseries_length(double dt);
+  unsigned int timeseries_length(double dt) const;
 
   DEBMSimplePointwise m_model;
 

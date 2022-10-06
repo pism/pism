@@ -54,7 +54,7 @@ class DEBMSimplePointwise {
 public:
   DEBMSimplePointwise(const Context &ctx);
 
-  double albedo(double melt_rate, MaskValue cell_type);
+  double albedo(double melt_rate, MaskValue cell_type) const;
 
   DEBMSimpleMelt melt(double time,
                       double dt,
@@ -75,31 +75,20 @@ public:
     double smb;
   };
 
-  Changes step(double ice_thickness, double max_melt, double firn_depth,
-               double snow_depth, double accumulation);
+  Changes step(double ice_thickness,
+               double max_melt,
+               double firn_depth,
+               double snow_depth,
+               double accumulation) const;
 
-  double eccentricity(double time);
-  double obliquity(double time);
-  double perihelion_longitude(double time);
-
-  double distance_factor(double time);
-  double distance_factor_paleo(double time);
-
-  double solar_declination(double time);
-  double solar_declination_paleo(double time);
-
-  double atmosphere_transmissivity(double elevation);
-
-  double h_phi(double phi, double lat, double delta);
+  // public because it is a diagnostic field
+  double atmosphere_transmissivity(double elevation) const;
 
 private:
-  double solar_longitude(double year_fraction,
-                         double eccentricity,
-                         double perihelion_longitude);
+  double eccentricity(double time) const;
+  double obliquity(double time) const;
+  double perihelion_longitude(double time) const;
 
-  double insolation(double distance_factor, double h_phi, double latitude, double declination);
-
-  double CalovGreveIntegrand(double sigma, double TacC);
   //! refreeze melted ice
   bool m_refreeze_ice_melt;
   //! refreeze fraction

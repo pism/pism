@@ -40,7 +40,7 @@ namespace surface {
 ///// PISM surface model implementing a dEBM-Simple scheme.
 
 DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-    : SurfaceModel(g, input),
+  : SurfaceModel(g, std::move(input)),
       m_model(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
       m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
@@ -70,7 +70,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
 
     File file(m_grid->com, albedo_input.filename, PISM_GUESS, PISM_READONLY);
 
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
     m_input_albedo           = IceModelVec2T::ForcingField(m_grid, file, "albedo",
                                                            "", // no standard name
                                                            buffer_size, albedo_input.periodic, LINEAR);
@@ -85,7 +85,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
     m_log->message(2, "  Reading standard deviation of near-surface air temperature from '%s'...\n",
                    air_temp_sd.filename.c_str());
 
-    int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
     File file(m_grid->com, air_temp_sd.filename, PISM_GUESS, PISM_READONLY);
 
@@ -198,8 +198,9 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     regrid("dEBM-Simple surface model", m_firn_depth);
   }
   const bool force_albedo = m_config->get_flag("surface.debm_simple.anomaly");
-  if (force_albedo)
+  if (force_albedo) {
     m_log->message(2, " Albedo forcing sets summer albedo values to lower value\n");
+  }
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
@@ -240,17 +241,13 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
          anomaly_start     = year_start + (anomaly_start_day - 1.0) * one_day,
          anomaly_end       = year_start + (anomaly_end_day - 1.0) * one_day;
 
-  int frequency = m_config->get_number("surface.debm_simple.anomaly_frequency");
+  int frequency = static_cast<int>(m_config->get_number("surface.debm_simple.anomaly_frequency"));
 
   double period_seconds = frequency * one_year;
   double tmp            = time - floor(time / period_seconds) * period_seconds;
   bool frequency_true   = (tmp < one_year);
 
-  if (time >= anomaly_start and time <= anomaly_end and frequency_true) {
-    return true;
-  }
-
-  return false;
+  return (time >= anomaly_start and time <= anomaly_end and frequency_true);
 }
 
 /** @brief Extracts snow accumulation from mixed (snow and rain) precipitation using a
@@ -267,7 +264,7 @@ bool DEBMSimple::albedo_anomaly_true(double time) {
   * @param[in] T air temperature
   * @param[in] P precipitation rate
   */
-double DEBMSimple::snow_accumulation(double T, double P) {
+double DEBMSimple::snow_accumulation(double T, double P) const {
 
   // do not allow negative precipitation
   if (P < 0.0) {
@@ -290,6 +287,8 @@ double DEBMSimple::snow_accumulation(double T, double P) {
 
 void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
+  const double melting_point = 273.15;
+
   // update to ensure that temperature and precipitation time series are correct:
   m_atmosphere->update(geometry, t, dt);
 
@@ -297,7 +296,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // Set up air temperature and precipitation time series
-  int N = timeseries_length(dt);
+  int N = static_cast<int>(timeseries_length(dt));
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
@@ -340,7 +339,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   if ((bool)m_input_albedo) {
     m_input_albedo->update(t, dt);
     m_input_albedo->init_interpolation(ts);
-    list.add(*m_input_albedo.get());
+    list.add(*m_input_albedo);
   }
 
   double
@@ -408,7 +407,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       // apply standard deviation parameterization over ice if in use
       if (m_sd_use_param and mask.icy(i, j)) {
         for (int k = 0; k < N; ++k) {
-          S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
+          S[k] = m_sd_param_a * (T[k] - melting_point) + m_sd_param_b;
           if (S[k] < 0.0) {
             S[k] = 0.0;
           }
@@ -665,9 +664,9 @@ protected:
       m_melt_mass.copy_from(melt_amount);
       m_melt_mass.scale(m_grid->cell_area());
       return m_melt_mass;
-    } else {
-      return melt_amount;
     }
+
+    return melt_amount;
   }
 
 private:
@@ -712,9 +711,9 @@ protected:
       m_melt_mass.copy_from(melt_amount);
       m_melt_mass.scale(m_grid->cell_area());
       return m_melt_mass;
-    } else {
-      return melt_amount;
     }
+
+    return melt_amount;
   }
 
 private:
@@ -759,9 +758,9 @@ protected:
       m_melt_mass.copy_from(melt_amount);
       m_melt_mass.scale(m_grid->cell_area());
       return m_melt_mass;
-    } else {
-      return melt_amount;
     }
+
+    return melt_amount;
   }
 
 private:
@@ -773,7 +772,7 @@ private:
 
 /*! @brief The number of points for temperature and precipitation time-series.
  */
-unsigned int DEBMSimple::timeseries_length(double dt) {
+unsigned int DEBMSimple::timeseries_length(double dt) const {
   double dt_years = dt / m_year_length;
 
   return std::max(1U, static_cast<unsigned int>(ceil(m_n_per_year * dt_years)));
