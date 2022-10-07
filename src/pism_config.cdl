@@ -578,11 +578,6 @@ netcdf pism_config {
     pism_config:bootstrapping.defaults.bwp_type = "number";
     pism_config:bootstrapping.defaults.bwp_units = "Pascal";
 
-    pism_config:bootstrapping.defaults.enwat = 0.0;
-    pism_config:bootstrapping.defaults.enwat_doc = "effective englacial water thickness value to use if variable enwat is absent in bootstrapping file";
-    pism_config:bootstrapping.defaults.enwat_type = "number";
-    pism_config:bootstrapping.defaults.enwat_units = "meters";
-
     pism_config:bootstrapping.defaults.geothermal_flux = 0.042;
     pism_config:bootstrapping.defaults.geothermal_flux_doc = "geothermal flux value to use if bheatflx variable is absent in bootstrapping file";
     pism_config:bootstrapping.defaults.geothermal_flux_type = "number";
@@ -1307,11 +1302,6 @@ netcdf pism_config {
     pism_config:hydrology.null_diffusion_time_type = "number";
     pism_config:hydrology.null_diffusion_time_units = "365days";
 
-    pism_config:hydrology.null_strip_width = -1.0;
-    pism_config:hydrology.null_strip_width_doc = "if negative then mechanism is inactive; width of strip around computational domain in which water velocity and water amount are set to zero; used by hydrology::Routing and hydrology::Distributed";
-    pism_config:hydrology.null_strip_width_type = "number";
-    pism_config:hydrology.null_strip_width_units = "meters";
-
     pism_config:hydrology.regularizing_porosity = 0.01;
     pism_config:hydrology.regularizing_porosity_doc = "phi_0 in notes; regularizes pressure equation by multiplying time derivative term";
     pism_config:hydrology.regularizing_porosity_option = "hydrology_regularizing_porosity";
@@ -1387,11 +1377,6 @@ netcdf pism_config {
     pism_config:hydrology.tillwat_max_option = "hydrology_tillwat_max";
     pism_config:hydrology.tillwat_max_type = "number";
     pism_config:hydrology.tillwat_max_units = "meters";
-
-    pism_config:hydrology.use_const_bmelt = "no";
-    pism_config:hydrology.use_const_bmelt_doc = "if \"yes\", subglacial hydrology model sees basal melt rate which is constant and given by hydrology.const_bmelt";
-    pism_config:hydrology.use_const_bmelt_option = "hydrology_use_const_bmelt";
-    pism_config:hydrology.use_const_bmelt_type = "flag";
 
     pism_config:input.bootstrap = "no";
     pism_config:input.bootstrap_doc = "It true, use bootstrapping heuristics when initializing PISM.";
