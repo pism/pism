@@ -2283,30 +2283,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_snow_type = "number";
     pism_config:surface.debm_simple.albedo_snow_units = "1";
 
-    pism_config:surface.debm_simple.anomaly = "no";
-    pism_config:surface.debm_simple.anomaly_doc = "if yes, bare ice albedo is applied everywhere between start day and end day with a frequency on frequency years, set frequeqncy larger simulation time in order to apply albedo forcing only once";
-    pism_config:surface.debm_simple.anomaly_type = "flag";
-
-    pism_config:surface.debm_simple.anomaly_end_day = 253;
-    pism_config:surface.debm_simple.anomaly_end_day_doc = "day of the year when albedo forcing ends if surface.debm_simple.anomaly = yes, 253 is 31st of August";
-    pism_config:surface.debm_simple.anomaly_end_day_type = "integer";
-    pism_config:surface.debm_simple.anomaly_end_day_units = "ordinal day number";
-
-    pism_config:surface.debm_simple.anomaly_frequency = 1;
-    pism_config:surface.debm_simple.anomaly_frequency_doc = "albedo forcing is applied every frequency years";
-    pism_config:surface.debm_simple.anomaly_frequency_type = "integer";
-    pism_config:surface.debm_simple.anomaly_frequency_units = "yr-1";
-
-    pism_config:surface.debm_simple.anomaly_start_day = 152;
-    pism_config:surface.debm_simple.anomaly_start_day_doc = "day of the year when albedo forcing starts if surface.debm_simple.anomaly = yes, 152 is 1st of June";
-    pism_config:surface.debm_simple.anomaly_start_day_type = "integer";
-    pism_config:surface.debm_simple.anomaly_start_day_units = "ordinal day number";
-
-    pism_config:surface.debm_simple.anomaly_value = 0.47;
-    pism_config:surface.debm_simple.anomaly_value_doc = "albedo forcing with this value";
-    pism_config:surface.debm_simple.anomaly_value_type = "number";
-    pism_config:surface.debm_simple.anomaly_value_units = "";
-
     pism_config:surface.debm_simple.background_melting_temp = 266.65;
     pism_config:surface.debm_simple.background_melting_temp_doc = "threshold temperature below which no melting occurs";
     pism_config:surface.debm_simple.background_melting_temp_type = "number";

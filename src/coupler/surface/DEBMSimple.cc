@@ -197,10 +197,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     regrid("dEBM-Simple surface model", m_snow_depth);
     regrid("dEBM-Simple surface model", m_firn_depth);
   }
-  const bool force_albedo = m_config->get_flag("surface.debm_simple.anomaly");
-  if (force_albedo) {
-    m_log->message(2, " Albedo forcing sets summer albedo values to lower value\n");
-  }
+
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
@@ -226,28 +223,6 @@ double DEBMSimple::compute_next_balance_year_start(double time) {
     return balance_year_start;
   }
   return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
-}
-
-
-bool DEBMSimple::albedo_anomaly_true(double time) {
-  // This function is only here to perform darkening experiments, where the albedo over the whole ice sheet is reduced artificially during the summer months.
-
-  // compute the time corresponding to the beginning of the darkening
-  double anomaly_start_day = m_config->get_number("surface.debm_simple.anomaly_start_day"),
-         anomaly_end_day   = m_config->get_number("surface.debm_simple.anomaly_end_day"),
-         one_day           = units::convert(m_sys, 1.0, "days", "seconds"),
-         one_year          = units::convert(m_sys, 1.0, "years", "seconds"),
-         year_start        = m_grid->ctx()->time()->calendar_year_start(time),
-         anomaly_start     = year_start + (anomaly_start_day - 1.0) * one_day,
-         anomaly_end       = year_start + (anomaly_end_day - 1.0) * one_day;
-
-  int frequency = static_cast<int>(m_config->get_number("surface.debm_simple.anomaly_frequency"));
-
-  double period_seconds = frequency * one_year;
-  double tmp            = time - floor(time / period_seconds) * period_seconds;
-  bool frequency_true   = (tmp < one_year);
-
-  return (time >= anomaly_start and time <= anomaly_end and frequency_true);
 }
 
 /** @brief Extracts snow accumulation from mixed (snow and rain) precipitation using a
@@ -345,11 +320,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   double
     ice_density    = m_config->get_number("constants.ice.density"),
     sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base"),
-    forcing_albedo_value = m_config->get_number("surface.debm_simple.anomaly_value");
-
-  bool
-    force_albedo = m_config->get_flag("surface.debm_simple.anomaly");
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
 
   m_atmosphere->init_timeseries(ts);
   m_atmosphere->begin_pointwise_access();
@@ -460,10 +431,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           auto accumulation = P[k] * dtseries;
 
-          if (force_albedo and albedo_anomaly_true(ts[k])) {
-            albedo_loc = forcing_albedo_value;;
-          }
-
           if ((bool)m_input_albedo) {
             albedo_loc = Alb[k];
           }
@@ -483,10 +450,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           if (not(bool) m_input_albedo) {
             albedo_loc = m_model.albedo(changes.melt / dtseries, cell_type);
-          }
-
-          if (force_albedo and albedo_anomaly_true(ts[k])) {
-            albedo_loc = forcing_albedo_value;
           }
 
           // update ice thickness
