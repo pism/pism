@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020 David Maxwell
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022 David Maxwell
 //
 // This file is part of PISM.
 //
@@ -175,17 +175,12 @@ void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
                                                      const std::string &design_var_name) {
   IPDesignVariableParameterization::set_scales(config, design_var_name);
 
-  std::string key("inverse.design.param_trunc_");
-  key += design_var_name;
-  key += "0";
+  auto key = pism::printf("inverse.design.param_trunc_%s0", design_var_name.c_str());
 
   double d0 = config.get_number(key);
   m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
 
-
-  key = "inverse.design.param_";
-  key += design_var_name;
-  key += "_eps";
+  key = pism::printf("inverse.design.param_%s_eps", design_var_name.c_str());
   m_d_eps = config.get_number(key);
 }
 
