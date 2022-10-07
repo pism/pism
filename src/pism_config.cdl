@@ -1446,16 +1446,6 @@ netcdf pism_config {
     pism_config:inverse.design.param_option = "inv_design_param";
     pism_config:inverse.design.param_type = "keyword";
 
-    pism_config:inverse.design.param_hardav_eps = 1e4;
-    pism_config:inverse.design.param_hardav_eps_doc = "tiny vertically-averaged hardness used as a substitute for 0 in some tauc parameterizations";
-    pism_config:inverse.design.param_hardav_eps_type = "number";
-    pism_config:inverse.design.param_hardav_eps_units = "Pascal second^(1/3)";
-
-    pism_config:inverse.design.param_hardav_scale = 1e8;
-    pism_config:inverse.design.param_hardav_scale_doc = "typical size of ice hardness";
-    pism_config:inverse.design.param_hardav_scale_type = "number";
-    pism_config:inverse.design.param_hardav_scale_units = "Pascal second^(1/3)";
-
     pism_config:inverse.design.param_tauc_eps = 100;
     pism_config:inverse.design.param_tauc_eps_doc = "tiny yield stress used as a substitute for 0 in some tauc parameterizations";
     pism_config:inverse.design.param_tauc_eps_type = "number";
@@ -1465,11 +1455,6 @@ netcdf pism_config {
     pism_config:inverse.design.param_tauc_scale_doc = "typical size of yield stresses";
     pism_config:inverse.design.param_tauc_scale_type = "number";
     pism_config:inverse.design.param_tauc_scale_units = "Pascal";
-
-    pism_config:inverse.design.param_trunc_hardav0 = 1e6;
-    pism_config:inverse.design.param_trunc_hardav0_doc = "transition point of change to linear behaviour for design variable parameterization type ``trunc``";
-    pism_config:inverse.design.param_trunc_hardav0_type = "number";
-    pism_config:inverse.design.param_trunc_hardav0_units = "Pascal second^(1/3)";
 
     pism_config:inverse.design.param_trunc_tauc0 = 1000;
     pism_config:inverse.design.param_trunc_tauc0_doc = "transition point of change to linear behaviour for design variable parameterization type ``trunc``";
@@ -1540,12 +1525,6 @@ netcdf pism_config {
     pism_config:inverse.state_func_doc = "functional used for inversion design variables";
     pism_config:inverse.state_func_option = "inv_state_func";
     pism_config:inverse.state_func_type = "keyword";
-
-    pism_config:inverse.target_misfit = 100;
-    pism_config:inverse.target_misfit_doc = "desired root misfit for SSA inversions";
-    pism_config:inverse.target_misfit_option = "inv_target_misfit";
-    pism_config:inverse.target_misfit_type = "number";
-    pism_config:inverse.target_misfit_units = "meter / year";
 
     pism_config:inverse.tikhonov.atol = 1e-10;
     pism_config:inverse.tikhonov.atol_doc = "absolute threshold for Tikhonov stopping criterion";
