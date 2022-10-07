@@ -26,17 +26,17 @@ Runoff_SMB::Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "-ocean_runoff_smb",
+                                    "ocean.runoff_to_ocean_melt",
                                     "delta_T",
                                     "Kelvin",
                                     "Kelvin",
                                     "air temperature offsets"));
 
   m_temp_to_runoff_a       = m_config->get_number("surface.temp_to_runoff_a");
-  m_runoff_to_ocean_melt_b = m_config->get_number("ocean.runoff_to_ocean_melt_b");
+  m_runoff_to_ocean_melt_b = m_config->get_number("ocean.runoff_to_ocean_melt.b");
 
-  m_runoff_to_ocean_melt_power_alpha = m_config->get_number("ocean.runoff_to_ocean_melt_power_alpha");
-  m_runoff_to_ocean_melt_power_beta  = m_config->get_number("ocean.runoff_to_ocean_melt_power_beta");
+  m_runoff_to_ocean_melt_power_alpha = m_config->get_number("ocean.runoff_to_ocean_melt.power_alpha");
+  m_runoff_to_ocean_melt_power_beta  = m_config->get_number("ocean.runoff_to_ocean_melt.power_beta");
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
