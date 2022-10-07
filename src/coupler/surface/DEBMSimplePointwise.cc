@@ -77,12 +77,15 @@ static double CalovGreveIntegrand(double sigma, double temperature) {
  *
  * Equation 2 in Zeitz et al should be equivalent but misses "acos(...)".
  *
+ * The return value is in the range [0, pi].
+ *
  * @param[in] phi angle (radians)
  * @param[in] latitude latitude (radians)
  * @param[in] declination solar declination angle (radians)
  */
-static double h_phi(double phi, double latitude, double declination) {
-  double cos_h_phi = (sin(phi) - sin(latitude) * sin(declination)) / (cos(latitude) * cos(declination));
+static double hour_angle(double phi, double latitude, double declination) {
+  double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
+                      (cos(latitude) * cos(declination)));
   return acos(pism::clip(cos_h_phi, -1.0, 1.0));
 }
 
@@ -162,7 +165,7 @@ static double distance_factor_present_day(double year_fraction) {
 static double distance_factor_paleo(double eccentricity,
                                     double perihelion_longitude,
                                     double solar_longitude) {
-  double E   = eccentricity;
+  double E = eccentricity;
 
   if (E == 1.0) {
     // protect from division by zero
@@ -201,6 +204,8 @@ static double solar_declination_present_day(double year_fraction) {
 /*!
  * Solar declination (radians). This is the "paleo" version used when
  * the trigonometric expansion (equation 2.2.10 in Liou 2002) is not valid.
+ *
+ * The return value is in the range [-pi/2, pi/2].
  *
  * Implements equation in the text just above equation A1 in Zeitz et al.
  *
@@ -253,22 +258,23 @@ static double solar_declination_paleo(double obliquity,
  *
  * @param[in] solar constant solar constant, W/m^2
  * @param[in] distance_factor square of the ratio of the mean sun-earth distance to the current sun-earth distance (no units)
- * @param[in] h_phi hour angle (radians) when the sun reaches the critical angle Phi
+ * @param[in] hour_angle hour angle (radians) when the sun reaches the critical angle Phi
  * @param[in] latitude latitude (radians)
  * @param[in] declination declination (radians)
  *
  */
 static double insolation(double solar_constant,
                          double distance_factor,
-                         double h_phi,
+                         double hour_angle,
                          double latitude,
                          double declination) {
-  if (h_phi == 0) {
+  if (hour_angle == 0) {
     return 0.0;
   }
 
-  return ((solar_constant / h_phi) * distance_factor *
-          (h_phi * sin(latitude) * sin(declination) + cos(latitude) * cos(declination) * sin(h_phi)));
+  return ((solar_constant / hour_angle) * distance_factor *
+          (hour_angle * sin(latitude) * sin(declination) +
+           cos(latitude) * cos(declination) * sin(hour_angle)));
 }
 
 // NOLINTEND(readability-magic-numbers)
@@ -423,7 +429,7 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
   }
 
   double transmissivity = atmosphere_transmissivity(surface_elevation);
-  double h_phi          = details::h_phi(m_phi, latitude_rad, declination);
+  double h_phi          = details::hour_angle(m_phi, latitude_rad, declination);
   double insolation     = details::insolation(m_solar_constant,
                                               distance_factor,
                                               h_phi,
