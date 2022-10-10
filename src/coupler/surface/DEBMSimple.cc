@@ -45,12 +45,12 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
       m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
       m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
       m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS),
-      m_tempmelt(m_grid, "surface_temperature_melt_flux", WITHOUT_GHOSTS),
-      m_insolmelt(m_grid, "surface_insolation_melt_flux", WITHOUT_GHOSTS),
-      m_cmelt(m_grid, "surface_offset_melt_flux", WITHOUT_GHOSTS),
-      m_albedo(m_grid, "albedo", WITHOUT_GHOSTS),
-      m_transmissivity(m_grid, "transmissivity", WITHOUT_GHOSTS),
-      m_qinsol(m_grid, "qinsol", WITHOUT_GHOSTS) {
+      m_temperature_driven_melt(m_grid, "debms_temperature_driven_melt_flux", WITHOUT_GHOSTS),
+      m_insolation_driven_melt(m_grid, "debms_insolation_driven_melt_flux", WITHOUT_GHOSTS),
+      m_background_melt(m_grid, "debms_background_melt_flux", WITHOUT_GHOSTS),
+      m_surface_albedo(m_grid, "surface_albedo", WITHOUT_GHOSTS),
+      m_transmissivity(m_grid, "atmosphere_transmissivity", WITHOUT_GHOSTS),
+      m_insolation(m_grid, "insolation", WITHOUT_GHOSTS) {
 
   m_sd_use_param      = m_config->get_flag("surface.debm_simple.std_dev_use_param");
   m_sd_param_a        = m_config->get_number("surface.debm_simple.std_dev_param_a");
@@ -60,22 +60,27 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_Tmax           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_rain");
   m_Tmin           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_snow");
 
+  // note: does not need to be calendar-aware
   m_year_length = units::convert(g->ctx()->unit_system(), 1.0, "years", "seconds");
 
   m_n_per_year = static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
 
   ForcingOptions albedo_input(*m_grid->ctx(), "surface.debm_simple.albedo_input");
   if (not albedo_input.filename.empty()) {
-    m_log->message(2, " Albedo is read in from %s...", albedo_input.filename.c_str());
+    m_log->message(2, " Surface albedo is read in from %s...", albedo_input.filename.c_str());
 
     File file(m_grid->com, albedo_input.filename, PISM_GUESS, PISM_READONLY);
 
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
-    m_input_albedo           = IceModelVec2T::ForcingField(m_grid, file, "albedo",
-                                                           "", // no standard name
-                                                           buffer_size, albedo_input.periodic, LINEAR);
+    m_input_albedo  = IceModelVec2T::ForcingField(m_grid,
+                                                  file,
+                                                  "albedo",
+                                                  "surface_albedo",
+                                                  buffer_size,
+                                                  albedo_input.periodic,
+                                                  LINEAR);
   } else {
-    m_input_albedo = nullptr;
+    m_input_albedo  = nullptr;
   }
 
   // initialize the spatially-variable air temperature standard deviation
@@ -116,14 +121,20 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
     m_runoff       = allocate_runoff(g);
     m_temperature  = allocate_temperature(g);
 
-    m_tempmelt.set_attrs("diagnostic", "surface temp melt", "kg m-2", "kg m-2", "", 0);
-    m_tempmelt.set(0.0);
+    m_temperature_driven_melt.set_attrs("diagnostic",
+                                        "temperature-driven melt in dEBM-simple",
+                                        "kg m-2", "kg m-2", "", 0);
+    m_temperature_driven_melt.set(0.0);
 
-    m_insolmelt.set_attrs("diagnostic", "surface insol melt", "kg m-2", "kg m-2", "", 0);
-    m_insolmelt.set(0.0);
+    m_insolation_driven_melt.set_attrs("diagnostic",
+                                       "insolation-driven melt in dEBM-simple",
+                                       "kg m-2", "kg m-2", "", 0);
+    m_insolation_driven_melt.set(0.0);
 
-    m_cmelt.set_attrs("diagnostic", "surface c melt", "kg m-2", "kg m-2", "", 0);
-    m_cmelt.set(0.0);
+    m_background_melt.set_attrs("diagnostic",
+                                "background melt in dEBM-simple",
+                                "kg m-2", "kg m-2", "", 0);
+    m_background_melt.set(0.0);
   }
 
   m_snow_depth.set_attrs("diagnostic", "snow cover depth (set to zero once a year)", "m", "m", "", 0);
@@ -133,16 +144,20 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_firn_depth.metadata().set_number("valid_min", 0.0);
   m_firn_depth.set(0.0);
 
-  m_albedo.set_attrs("diagnostic", "albedo", "", "", "", 0);
-  m_albedo.set(0.0);
+  m_surface_albedo.set_attrs("diagnostic", "surface_albedo", "1", "1", "surface_albedo", 0);
+  m_surface_albedo.set(0.0);
 
-  m_transmissivity.set_attrs("diagnostic", "transmissivity", "", "", "", 0);
+  m_transmissivity.set_attrs("diagnostic", "atmosphere_transmissivity", "", "", "", 0);
   m_transmissivity.set(0.0);
 
-  m_qinsol.set_attrs("diagnostic",
-                     "insolation at the top of the atmosphere, when the sun is above the elvation angle Phi", "W m-2",
-                     "W m-2", "", 0);
-  m_qinsol.set(0.0);
+  m_insolation.set_attrs("diagnostic",
+                         "average topf of the atmosphere insolation "
+                         "during the period when the sun is above the critical angle Phi",
+                         "W m-2",
+                         "W m-2",
+                         "",
+                         0);
+  m_insolation.set(0.0);
 }
 
 void DEBMSimple::init_impl(const Geometry &geometry) {
@@ -164,17 +179,18 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
 
   if (input.type == INIT_RESTART) {
     if (not firn_file.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "surface.debm_simple.firn_depth_file is not allowed when"
-                                                         " re-starting from a PISM output file.");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "surface.debm_simple.firn_depth_file is not allowed when"
+                                    " re-starting from a PISM output file.");
     }
 
     m_firn_depth.read(input.filename, input.record);
     m_snow_depth.read(input.filename, input.record);
-    m_albedo.read(input.filename, input.record);
+    m_surface_albedo.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
 
     m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
-    m_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.debm_simple.albedo_snow"));
+    m_surface_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.debm_simple.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
@@ -184,7 +200,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   } else {
 
     m_snow_depth.set(0.0);
-    m_albedo.set(m_config->get_number("surface.debm_simple.albedo_snow"));
+    m_surface_albedo.set(m_config->get_number("surface.debm_simple.albedo_snow"));
 
     if (firn_file.empty()) {
       m_firn_depth.set(0.0);
@@ -194,8 +210,9 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   }
 
   {
-    regrid("dEBM-Simple surface model", m_snow_depth);
-    regrid("dEBM-Simple surface model", m_firn_depth);
+    regrid("dEBM-simple surface model", m_snow_depth);
+    regrid("dEBM-simple surface model", m_firn_depth);
+    regrid("dEBM-simple surface model", m_surface_albedo);
   }
 
   // finish up
@@ -288,7 +305,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   const auto &mask             = geometry.cell_type;
   const auto &H                = geometry.ice_thickness;
-  const auto &latitude         = geometry.latitude;
   const auto &surface_altitude = geometry.ice_surface_elevation;
 
   IceModelVec::AccessList list
@@ -301,13 +317,13 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       m_accumulation.get(),
       m_melt.get(),
       m_runoff.get(),
-      &m_tempmelt,
-      &m_insolmelt,
-      &m_cmelt,
-      &m_albedo,
+      &m_temperature_driven_melt,
+      &m_insolation_driven_melt,
+      &m_background_melt,
+      &m_surface_albedo,
       &m_transmissivity,
-      &m_qinsol,
-      &latitude,
+      &m_insolation,
+      &geometry.latitude,
       &surface_altitude
     };
 
@@ -330,7 +346,9 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      // the temperature time series from the AtmosphereModel and its modifiers
+      double latitude = geometry.latitude(i, j);
+
+      // Get the temperature time series from an atmosphere model and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
       if (mask.ice_free_ocean(i, j)) {
@@ -341,22 +359,12 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       } else {
         // elsewhere, get precipitation from the atmosphere model
         m_atmosphere->precip_time_series(i, j, P);
-      }
 
-      // convert precipitation from "kg m-2 second-1" to "m second-1" (PDDMassBalance expects
-      // accumulation in m/second ice equivalent)
-      for (int k = 0; k < N; ++k) {
-        P[k] = P[k] / ice_density;
-        // kg / (m^2 * second) / (kg / m^3) = m / second
-      }
-
-      // interpolate temperature standard deviation time series
-      if (m_use_air_temp_sd_file) {
-        m_air_temp_sd->interp(i, j, S);
-      } else {
-        double tmp = (*m_air_temp_sd)(i, j);
+        // Use temperature time series to remove rainfall from precipitation and convert to
+        // m/s ice equivalent.
         for (int k = 0; k < N; ++k) {
-          S[k] = tmp;
+          P[i] = snow_accumulation(T[i],  // air temperature (input)
+                                   P[i] / ice_density); // precipitation rate (input, gets overwritten)
         }
       }
 
@@ -364,47 +372,42 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         m_input_albedo->interp(i, j, Alb);
       }
 
-      // apply standard deviation lapse rate on top of prescribed values
-      double lat = latitude(i, j);
+      // standard deviation of daily variability of air temperature
+      {
+        // interpolate temperature standard deviation time series
+        //
+        // Note: this works when m_air_temp_sd is constant in time.
+        m_air_temp_sd->interp(i, j, S);
 
-      if (sigmalapserate != 0.0) {
-
-        for (int k = 0; k < N; ++k) {
-          S[k] += sigmalapserate * (lat - sigmabaselat);
-        }
-        (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
-      }
-
-      // apply standard deviation parameterization over ice if in use
-      if (m_sd_use_param and mask.icy(i, j)) {
-        for (int k = 0; k < N; ++k) {
-          S[k] = m_sd_param_a * (T[k] - melting_point) + m_sd_param_b;
-          if (S[k] < 0.0) {
-            S[k] = 0.0;
+        if (sigmalapserate != 0.0) {
+          // apply standard deviation lapse rate on top of prescribed values
+          for (int k = 0; k < N; ++k) {
+            S[k] += sigmalapserate * (latitude - sigmabaselat);
           }
+          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
+        } else if (m_sd_use_param and mask.icy(i, j)) {
+          // apply standard deviation parameterization over ice if in use
+          for (int k = 0; k < N; ++k) {
+            S[k] = m_sd_param_a * (T[k] - melting_point) + m_sd_param_b;
+            if (S[k] < 0.0) {
+              S[k] = 0.0;
+            }
+          }
+          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
         }
-        (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
       }
 
-      // Use temperature time series to remove rainfall from precipitation
-      for (int k = 0; k < N; ++k) {
-        P[i] = snow_accumulation(T[i],  // air temperature (input)
-                                 P[i]); // precipitation rate (input, gets overwritten)
-      }
-
-      // Use degree-day factors, the number of PDDs, and the snow precipitation to get surface mass
-      // balance (and diagnostics: accumulation, melt, runoff)
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
         double
-          ice        = H(i, j),
-          firn       = m_firn_depth(i, j),
-          snow       = m_snow_depth(i, j),
-          surfelev   = surface_altitude(i, j),
-          albedo_loc = m_albedo(i, j);
+          ice_thickness = H(i, j),
+          firn          = m_firn_depth(i, j),
+          snow          = m_snow_depth(i, j),
+          surfelev      = surface_altitude(i, j),
+          albedo        = m_surface_albedo(i, j);
 
         auto cell_type = static_cast<MaskValue>(mask.as_int(i, j));
 
@@ -431,30 +434,28 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           auto accumulation = P[k] * dtseries;
 
-          if ((bool)m_input_albedo) {
-            albedo_loc = Alb[k];
+          DEBMSimpleMelt melt_info{};
+          if (not mask::ice_free_ocean(cell_type)) {
+            melt_info = m_model.melt(ts[k],
+                                     dtseries,
+                                     S[k],
+                                     T[k],
+                                     surfelev,
+                                     latitude,
+                                     (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
-          auto melt_info = m_model.melt(ts[k], dtseries, S[k], T[k], surfelev,
-                                        lat, albedo_loc);
+          auto changes = m_model.step(ice_thickness, melt_info.total_melt, firn, snow, accumulation);
 
-          //  no melt over ice-free ocean
-          if (mask.ice_free_ocean(i, j)) {
-            melt_info.temperature_melt = 0.0;
-            melt_info.insolation_melt  = 0.0;
-            melt_info.background_melt  = 0.0;
-            melt_info.total_melt       = 0.0;
-          }
-
-          auto changes = m_model.step(ice, melt_info.total_melt, firn, snow, accumulation);
-
-          if (not(bool) m_input_albedo) {
-            albedo_loc = m_model.albedo(changes.melt / dtseries, cell_type);
+          if ((bool) m_input_albedo) {
+            albedo = Alb[k];
+          } else {
+            albedo = m_model.albedo(changes.melt / dtseries, cell_type);
           }
 
           // update ice thickness
-          ice += changes.smb;
-          assert(ice >= 0);
+          ice_thickness += changes.smb;
+          assert(ice_thickness >= 0);
           // update firn depth
           firn += changes.firn_depth;
           assert(firn >= 0);
@@ -471,22 +472,22 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             R   += changes.runoff;
             SMB += changes.smb;
             Qi  += melt_info.insolation;
-            Al  += albedo_loc;
+            Al  += albedo;
           }
         } // end of the time-stepping loop
 
         // set firn and snow depths
         m_firn_depth(i, j)     = firn;
         m_snow_depth(i, j)     = snow;
-        m_albedo(i, j)         = Al / N;
+        m_surface_albedo(i, j)         = Al / N;
         m_transmissivity(i, j) = m_model.atmosphere_transmissivity(surfelev);
-        m_qinsol(i, j)         = Qi / N;
+        m_insolation(i, j)     = Qi / N;
 
         // set melt terms at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
-        m_tempmelt(i, j)  = Mt * ice_density;
-        m_insolmelt(i, j) = Mi * ice_density;
-        m_cmelt(i, j)     = Mc * ice_density;
+        m_temperature_driven_melt(i, j)  = Mt * ice_density;
+        m_insolation_driven_melt(i, j) = Mi * ice_density;
+        m_background_melt(i, j)     = Mc * ice_density;
 
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
@@ -499,6 +500,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           m_mass_flux(i, j) = SMB * ice_density / dt;
         }
       }
+
       if (mask.ice_free_ocean(i, j)) {
         m_firn_depth(i, j) = 0.0; // no firn in the ocean
         m_snow_depth(i, j) = 0.0; // snow over the ocean does not stick
@@ -548,42 +550,42 @@ const IceModelVec2S &DEBMSimple::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
-const IceModelVec2S &DEBMSimple::surface_insolation_melt() const {
-  return m_insolmelt;
+const IceModelVec2S &DEBMSimple::insolation_driven_melt() const {
+  return m_insolation_driven_melt;
 }
 
-const IceModelVec2S &DEBMSimple::surface_temperature_melt() const {
-  return m_tempmelt;
+const IceModelVec2S &DEBMSimple::temperature_driven_melt() const {
+  return m_temperature_driven_melt;
 }
 
-const IceModelVec2S &DEBMSimple::surface_offset_melt() const {
-  return m_cmelt;
+const IceModelVec2S &DEBMSimple::background_melt() const {
+  return m_background_melt;
 }
 
-const IceModelVec2S &DEBMSimple::albedo() const {
-  return m_albedo;
+const IceModelVec2S &DEBMSimple::surface_albedo() const {
+  return m_surface_albedo;
 }
 
-const IceModelVec2S &DEBMSimple::transmissivity() const {
+const IceModelVec2S &DEBMSimple::atmosphere_transmissivity() const {
   return m_transmissivity;
 }
 
-const IceModelVec2S &DEBMSimple::qinsol() const {
-  return m_qinsol;
+const IceModelVec2S &DEBMSimple::insolation() const {
+  return m_insolation;
 }
 
 void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   m_firn_depth.define(output, PISM_DOUBLE);
   m_snow_depth.define(output, PISM_DOUBLE);
-  m_albedo.define(output, PISM_DOUBLE);
+  m_surface_albedo.define(output, PISM_DOUBLE);
 }
 
 void DEBMSimple::write_model_state_impl(const File &output) const {
   SurfaceModel::write_model_state_impl(output);
   m_firn_depth.write(output);
   m_snow_depth.write(output);
-  m_albedo.write(output);
+  m_surface_albedo.write(output);
 }
 
 namespace diagnostics {
@@ -591,21 +593,29 @@ namespace diagnostics {
 enum AmountKind { AMOUNT, MASS };
 
 /*! @brief Report surface insolation melt, averaged over the reporting interval */
-class SurfaceInsolationMelt : public DiagAverageRate<DEBMSimple> {
+class DEBMSInsolationMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceInsolationMelt(const DEBMSimple *m, AmountKind kind)
-      : DiagAverageRate<DEBMSimple>(
-            m, kind == AMOUNT ? "surface_insolation_melt_flux" : "surface_insolation_melt_rate", TOTAL_CHANGE),
+  DEBMSInsolationMelt(const DEBMSimple *m, AmountKind kind)
+    : DiagAverageRate<DEBMSimple>(m,
+                                  kind == AMOUNT
+                                  ? "debms_insolation_driven_melt_flux"
+                                  : "debms_insolation_driven_melt_flux",
+                                  TOTAL_CHANGE),
         m_kind(kind),
-        m_melt_mass(m_grid, "insolation_melt_mass", WITHOUT_GHOSTS) {
+        m_melt_mass(m_grid, "debm_insolation_driven_melt_mass", WITHOUT_GHOSTS) {
 
-    std::string name          = "surface_insolation_melt_flux",
-                long_name     = "surface insolation melt, averaged over the reporting interval",
-                standard_name = "surface_insolation_melt_flux", accumulator_units = "kg m-2",
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+    std::string
+      name          = "debms_insolation_driven_melt_flux",
+      long_name     = "surface insolation melt, averaged over the reporting interval",
+      standard_name = "",
+      accumulator_units = "kg m-2",
+      internal_units = "kg m-2 second-1",
+      external_units = "kg m-2 year-1";
     if (kind == MASS) {
-      name          = "surface_insolation_melt_rate";
-      standard_name = "", accumulator_units = "kg", internal_units = "kg second-1";
+      name          = "debms_insolation_driven_melt_rate";
+      standard_name = "";
+      accumulator_units = "kg";
+      internal_units = "kg second-1";
       external_units = "Gt year-1";
     }
 
@@ -621,7 +631,7 @@ public:
 
 protected:
   const IceModelVec2S &model_input() {
-    const IceModelVec2S &melt_amount = model->surface_insolation_melt();
+    const auto &melt_amount = model->insolation_driven_melt();
 
     if (m_kind == MASS) {
       m_melt_mass.copy_from(melt_amount);
@@ -638,21 +648,29 @@ private:
 };
 
 /*! @brief Report surface temperature melt, averaged over the reporting interval */
-class SurfaceTemperatureMelt : public DiagAverageRate<DEBMSimple> {
+class DEBMSTemperatureMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceTemperatureMelt(const DEBMSimple *m, AmountKind kind)
-      : DiagAverageRate<DEBMSimple>(
-            m, kind == AMOUNT ? "surface_temperature_melt_flux" : "surface_temperature_melt_rate", TOTAL_CHANGE),
+  DEBMSTemperatureMelt(const DEBMSimple *m, AmountKind kind)
+      : DiagAverageRate<DEBMSimple>(m,
+                                    kind == AMOUNT
+                                    ? "debms_temperature_driven_melt_flux"
+                                    : "debms_temperature_driven_melt_rate",
+                                    TOTAL_CHANGE),
         m_kind(kind),
         m_melt_mass(m_grid, "temperature_melt_mass", WITHOUT_GHOSTS) {
 
-    std::string name          = "surface_temperature_melt_flux",
-                long_name     = "surface temperature melt, averaged over the reporting interval",
-                standard_name = "surface_temperature_melt_flux", accumulator_units = "kg m-2",
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+    std::string
+      name          = "debms_temperature_driven_melt_flux",
+      long_name     = "temperature-driven melt, averaged over the reporting interval",
+      standard_name = "",
+      accumulator_units = "kg m-2",
+      internal_units = "kg m-2 second-1",
+      external_units = "kg m-2 year-1";
     if (kind == MASS) {
-      name          = "surface_temperature_melt_rate";
-      standard_name = "", accumulator_units = "kg", internal_units = "kg second-1";
+      name          = "debms_temperature_driven_melt_rate";
+      standard_name = "";
+      accumulator_units = "kg";
+      internal_units = "kg second-1";
       external_units = "Gt year-1";
     }
 
@@ -668,7 +686,7 @@ public:
 
 protected:
   const IceModelVec2S &model_input() {
-    const IceModelVec2S &melt_amount = model->surface_temperature_melt();
+    const auto &melt_amount = model->temperature_driven_melt();
 
     if (m_kind == MASS) {
       m_melt_mass.copy_from(melt_amount);
@@ -684,21 +702,24 @@ private:
   IceModelVec2S m_melt_mass;
 };
 
-/*! @brief Report surface offset melt, averaged over the reporting interval */
-class SurfaceOffsetMelt : public DiagAverageRate<DEBMSimple> {
+/*! @brief Report surface backround melt, averaged over the reporting interval */
+class DEBMSBackroundMelt : public DiagAverageRate<DEBMSimple> {
 public:
-  SurfaceOffsetMelt(const DEBMSimple *m, AmountKind kind)
-      : DiagAverageRate<DEBMSimple>(
-            m, kind == AMOUNT ? "surface_offset_melt_flux" : "surface_offset_melt_rate", TOTAL_CHANGE),
+  DEBMSBackroundMelt(const DEBMSimple *m, AmountKind kind)
+      : DiagAverageRate<DEBMSimple>(m,
+                                    kind == AMOUNT
+                                    ? "debms_background_melt_flux"
+                                    : "debms_background_melt_rate",
+                                    TOTAL_CHANGE),
         m_kind(kind),
-        m_melt_mass(m_grid, "offset_melt_mass", WITHOUT_GHOSTS) {
+        m_melt_mass(m_grid, "backround_melt_mass", WITHOUT_GHOSTS) {
 
-    std::string name          = "surface_offset_melt_flux",
-                long_name     = "surface offset melt, averaged over the reporting interval",
-                standard_name = "surface_offset_melt_flux", accumulator_units = "kg m-2",
+    std::string name          = "debms_background_melt_flux",
+                long_name     = "background melt, averaged over the reporting interval",
+                standard_name = "debms_background_melt_flux", accumulator_units = "kg m-2",
                 internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
     if (kind == MASS) {
-      name          = "surface_offset_melt_rate";
+      name          = "debms_background_melt_rate";
       standard_name = "", accumulator_units = "kg", internal_units = "kg second-1";
       external_units = "Gt year-1";
     }
@@ -715,7 +736,7 @@ public:
 
 protected:
   const IceModelVec2S &model_input() {
-    const IceModelVec2S &melt_amount = model->surface_offset_melt();
+    const auto &melt_amount = model->background_melt();
 
     if (m_kind == MASS) {
       m_melt_mass.copy_from(melt_amount);
@@ -745,18 +766,18 @@ DiagnosticList DEBMSimple::diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    { "surface_insolation_melt_flux", Diagnostic::Ptr(new SurfaceInsolationMelt(this, AMOUNT)) },
-    { "surface_insolation_melt_rate", Diagnostic::Ptr(new SurfaceInsolationMelt(this, MASS)) },
-    { "surface_temperature_melt_flux", Diagnostic::Ptr(new SurfaceTemperatureMelt(this, AMOUNT)) },
-    { "surface_temperature_melt_rate", Diagnostic::Ptr(new SurfaceTemperatureMelt(this, MASS)) },
-    { "surface_offset_melt_flux", Diagnostic::Ptr(new SurfaceOffsetMelt(this, AMOUNT)) },
-    { "surface_offset_melt_rate", Diagnostic::Ptr(new SurfaceOffsetMelt(this, MASS)) },
+    { "debms_insolation_driven_melt_flux", Diagnostic::Ptr(new DEBMSInsolationMelt(this, AMOUNT)) },
+    { "debms_insolation_driven_melt_rate", Diagnostic::Ptr(new DEBMSInsolationMelt(this, MASS)) },
+    { "debms_temperature_driven_melt_flux", Diagnostic::Ptr(new DEBMSTemperatureMelt(this, AMOUNT)) },
+    { "debms_temperature_driven_melt_rate", Diagnostic::Ptr(new DEBMSTemperatureMelt(this, MASS)) },
+    { "debms_background_melt_flux", Diagnostic::Ptr(new DEBMSBackroundMelt(this, AMOUNT)) },
+    { "debms_background_melt_rate", Diagnostic::Ptr(new DEBMSBackroundMelt(this, MASS)) },
     { "air_temp_sd", Diagnostic::wrap(*m_air_temp_sd) },
     { "snow_depth", Diagnostic::wrap(m_snow_depth) },
     { "firn_depth", Diagnostic::wrap(m_firn_depth) },
-    { "albedo", Diagnostic::wrap(m_albedo) },
-    { "transmissivity", Diagnostic::wrap(m_transmissivity) },
-    { "qinsol", Diagnostic::wrap(m_qinsol) }
+    { "surface_albedo", Diagnostic::wrap(m_surface_albedo) },
+    { "atmosphere_transmissivity", Diagnostic::wrap(m_transmissivity) },
+    { "insolation", Diagnostic::wrap(m_insolation) }
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());

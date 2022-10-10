@@ -40,7 +40,7 @@ namespace surface {
 class DEBMSimple : public SurfaceModel {
 public:
   DEBMSimple(IceGrid::ConstPtr g,
-                      std::shared_ptr<atmosphere::AtmosphereModel> input);
+             std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~DEBMSimple() = default;
 
   // diagnostics (for the last time step)
@@ -51,13 +51,16 @@ public:
   const IceModelVec2S &accumulation_impl() const;
   const IceModelVec2S &melt_impl() const;
   const IceModelVec2S &runoff_impl() const;
-  //???
-  const IceModelVec2S &surface_insolation_melt() const;
-  const IceModelVec2S &surface_temperature_melt() const;
-  const IceModelVec2S &surface_offset_melt() const;
-  const IceModelVec2S &albedo() const;
-  const IceModelVec2S &transmissivity() const;
-  const IceModelVec2S &qinsol() const;
+
+  // Contributions to melt from insolation, temperature, and the background melt:
+  const IceModelVec2S &insolation_driven_melt() const;
+  const IceModelVec2S &temperature_driven_melt() const;
+  const IceModelVec2S &background_melt() const;
+
+  // diagnostics
+  const IceModelVec2S &surface_albedo() const;
+  const IceModelVec2S &atmosphere_transmissivity() const;
+  const IceModelVec2S &insolation() const;
 
 private:
   virtual void init_impl(const Geometry &geometry);
@@ -73,8 +76,6 @@ private:
   virtual const IceModelVec2S &temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
-
-  bool albedo_anomaly_true(double time);
 
   double snow_accumulation(double T, double P) const;
 
@@ -108,16 +109,16 @@ private:
   IceModelVec2S::Ptr m_runoff;
 
   //! total temperature melt during the last time step
-  IceModelVec2S m_tempmelt;
+  IceModelVec2S m_temperature_driven_melt;
 
   //! total insolation melt during the last time step
-  IceModelVec2S m_insolmelt;
+  IceModelVec2S m_insolation_driven_melt;
 
-  //! total cmelt during the last timestep
-  IceModelVec2S m_cmelt;
+  //! total background_melt during the last timestep
+  IceModelVec2S m_background_melt;
 
   //! albedo field
-  IceModelVec2S m_albedo;
+  IceModelVec2S m_surface_albedo;
 
   //! if albedo is given as input field
   std::shared_ptr<IceModelVec2T> m_input_albedo;
@@ -125,8 +126,8 @@ private:
   //! transmissivity field
   IceModelVec2S m_transmissivity;
 
-  //! q insol field
-  IceModelVec2S m_qinsol;
+  //! insolation at the top of the atmosphere
+  IceModelVec2S m_insolation;
 
   //! year length used to compute the time series length required to get m_n_per_year
   //! evaluations

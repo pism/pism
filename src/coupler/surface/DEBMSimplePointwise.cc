@@ -313,7 +313,7 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   m_c2                             = config.get_number("surface.debm_simple.c2");
   m_constant_eccentricity          = config.get_number("surface.debm_simple.paleo.eccentricity");
   m_constant_obliquity             = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
-  m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.long_peri", "radian");
+  m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.perihelion_longitude", "radian");
   m_paleo                          = config.get_flag("surface.debm_simple.paleo.enabled");
   m_phi                            = config.get_number("surface.debm_simple.phi", "radian");
   m_positive_threshold_temperature = config.get_number("surface.debm_simple.positive_threshold_temp");
@@ -341,7 +341,7 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
         new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian", "degree", "obliquity of the earth"));
 
     m_perihelion_longitude.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "long_peri", "radian", "degree", "longitude of the perihelion relative to the vernal equinox"));
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian", "degree", "longitude of the perihelion relative to the vernal equinox"));
   } else {
     m_use_paleo_file = false;
   }
