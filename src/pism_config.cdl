@@ -2326,15 +2326,15 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.file_option = "debm_simple_paleo_file";
     pism_config:surface.debm_simple.paleo.file_type = "string";
 
-    pism_config:surface.debm_simple.paleo.perihelion_longitude =  102.94719;
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
-
     pism_config:surface.debm_simple.paleo.obliquity =  23.44;
     pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth.";
     pism_config:surface.debm_simple.paleo.obliquity_type = "number";
     pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
+
+    pism_config:surface.debm_simple.paleo.perihelion_longitude =  102.94719;
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox";
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
+    pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
 
     pism_config:surface.debm_simple.paleo.periodic = "no";
     pism_config:surface.debm_simple.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
