@@ -204,6 +204,9 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: manual_pdf
+      - store_artifacts:
+          path: manual_pdf/pism_manual.pdf
+          destination: pism_manual.pdf
 
   deploy-manual-pdf:
     docker:
