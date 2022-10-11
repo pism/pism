@@ -306,17 +306,17 @@ Prefix: ``surface.pdd.``.
 Simple diurnal Energy Balance Model "dEBM-simple"
 +++++++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: ``-surface itm``
-:|variables|: none
-:|implementation|: ``pism::surface::TemperatureIndexITM``
+:|options|: ``-surface debm_simple``
+:|variables|: :var:`albedo`
+:|implementation|: ``pism::surface::DEBMSimple``
+
+This PISM module implements the "simple" version of the diurnal energy balance model
+developed by :cite:`Zeitzetal2021`. It follows :cite:`KrebsKanzow2018` and includes
+parameterizations of the surface albedo and atmospheric transmissivity that make it
+possible to run it model in a standalone, prognostic mode.
 
 It is designed to use monthly forcing by near-surface air temperature and precipitation
 from one of PISM's atmosphere models.
-
-This PISM module implements the "simple" version of the diurnal energy balance model
-developed by :cite:`KrebsKanzow2018` plus parameterizations of albedo and atmospheric
-transmissivity that make it possible to run the model in standalone, prognostic mode that
-are described in :cite:`Zeitzetal2021`.
 
 As for other surface models, its outputs are
 
@@ -325,7 +325,7 @@ As for other surface models, its outputs are
 
 It re-interprets near-surface air temperature to produce the top surface ice temperature.
 
-Similarly to :ref:`sec-surface-pdd`, SMB is defined as
+Similarly to the :ref:`sec-surface-pdd`, SMB is defined as
 
 .. math::
 
@@ -337,13 +337,9 @@ Solid accumulation is approximated using provided total precipitation and a line
 transition from interpreting it as "all snow" when the air temperature is below
 :config:`surface.debm_simple.air_temp_all_precip_as_snow` (default of `0^\circ C`) to "all
 rain" when the air temperature is above
-:config:`surface.debm_simple.air_temp_all_precip_as_rain` (default of `2^\circ C`) with a
-linear transition in between.
-
-.. note::
-
-   Part of the precipitation interpreted as rain is assumed to run off instantaneously and
-   does not contribute to reported modeled runoff.
+:config:`surface.debm_simple.air_temp_all_precip_as_rain` (default of `2^\circ C`).
+Alternatively, all precipitation is interpreted as snow if
+:config:`surface.debm_simple.interpret_precip_as_snow` is set.
 
 The melt rate is approximated by
 
@@ -352,20 +348,67 @@ The melt rate is approximated by
 
    M = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2\right),
 
-Here
 
-- `\Delta t_{\Phi} / \Delta t` is the fraction of the day during which the sun is above
-  the elevation angle `\Phi` (:config:`surface.debm_simple.phi`) and melt can occur,
-- `\tau_A` is the transmissivity of the atmosphere,
-- `\alpha_S` is the surface albedo,
-- `\bar S_{\Phi}` is the mean top of the atmosphere insolation during the part of the day
-  when the sun is above the elevation angle `\Phi`.
-- `T_{\text{eff}}` is the "effective temperature" FIXME
-- `c_1` (:config:`surface.debm_simple.c1`) and `c_2` (:config:`surface.debm_simple.c2`)
-  are tuning parameters controlling the temperature-driven melt and background melt
-  respectively,
-- `\rho_w` is the fresh water density (:config:`constants.fresh_water.density`),
-- `L_m` is the latent heat of fusion (:config:`constants.fresh_water.latent_heat_of_fusion`).
+.. list-table:: Notation used in :eq:`eq-debm-melt`
+   :header-rows: 1
+
+   * - Quantity
+     - Description
+
+   * - `\Phi`
+     - Minimal solar elevation angle. It is assumed that melt can occur only when the sun
+       is above this angle.
+
+   * - `\Delta t_{\Phi} / \Delta t`
+     - Fraction of the day during which the sun is above the elevation angle `\Phi`
+       (:config:`surface.debm_simple.phi`) and melt can occur
+
+   * - `\tau_A`
+     - Transmissivity of the atmosphere
+
+   * - `\alpha_S`
+     - Surface albedo
+
+   * - `\bar S_{\Phi}`
+     - Mean top of the atmosphere insolation during the part of the day when the sun
+       is above the elevation angle `\Phi`.
+
+   * - `T_{\text{eff}}`
+     - "Effective air temperature" computed using provided (usually monthly) air
+       temperature records and taking into account stochastic temperature variations (see
+       :cite:`Zeitzetal2021` and :cite:`CalovGreve05`)
+
+   * - `c_1`
+     - Tuning parameter controlling temperature-driven melt
+       (:config:`surface.debm_simple.c1`)
+
+   * - `c_2`
+     - Tuning parameter controlling background melt (:config:`surface.debm_simple.c2`)
+
+   * - `\rho_w`
+     - Fresh water density (:config:`constants.fresh_water.density`)
+
+   * - `L_m`
+     - Latent heat of fusion (:config:`constants.fresh_water.latent_heat_of_fusion`)
+
+Once the amount melted is computed
+
+.. note::
+
+   - Part of the precipitation interpreted as rain is assumed to run off instantaneously
+     and *does not* contribute to reported modeled runoff.
+
+   - Melt is prohibited if the air temperature is below a threshold, which can be set by
+     :config:`surface.debm_simple.background_melting_temp`. This is to avoid melt rates from
+     high insolation values and low albedo values, when it is too cold to actually melt.
+
+   - When used with periodic climate data (air temperature and precipitation) that is read
+     from a file (see section :ref:`sec-atmosphere-given`), use of
+     :config:`time_stepping.hit_multiples` is recommended: set it to the length of the
+     climate data period in years.
+
+The following sections describe implementations of melt contributions due to insolation
+`\bar S_{\Phi},` effective air temperature `T_{\text{eff}}`, and the background melt parameter `c_2`.
 
 .. _sec-debm-simple-insolation-driven-melt:
 
@@ -377,10 +420,64 @@ Insolation-driven melt
 
    M_i = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} \right),
 
-Part of the melt is driven by the incoming radiation reaching the surface, is
-obtained from the mean top of the atmosphere insolation over the time `\Delta t_\Phi`
-`\bar{S_\Phi}`, computed internally, and the parameterized transmissivity of the
-atmosphere `\tau_\text{A}`.
+This part of the melt is driven by the mean insolation during the melt period `\bar
+S_{\Phi}` and includes influences of the atmosphere transmissivity `\tau_{A}` and the
+surface albedo `\alpha_S`.
+
+.. _sec-debm-simple-insolation:
+
+Mean top of the atmosphere insolation
+#####################################
+
+The mean top of the atmosphere insolation during the part of the day when the sun is above
+`\Phi` degrees is approximated by
+
+.. math::
+   :label: eq-debm-toa-insolation
+
+   \bar S_{\Phi} = \frac{S_0}{h_{\Phi}}  \left( \frac{\bar d}{d} \right)^2
+   \left( h_{\Phi}  \sin(\phi)  \sin(\delta) + \cos(\phi)  \cos(\delta)  \sin(h_{\Phi}) \right)
+
+where
+
+- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant`,
+- `\bar d / d` is the ratio of the length of the semimajor axis of the Earth's orbit to
+  the Earth-Sun distance,
+- `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
+- `\phi` is the latitude
+- `\delta` is the solar declination angle.
+
+In short, `\bar S_{\Phi}` is a function of latitude, the factor `\bar d / d`, and the
+solar declination angle `\delta`. In the "present day" case both of these quantities are
+periodic (with the period of one year) and approximated using trigonometric expansions
+(see :cite:`Liou2002`).
+
+.. _sec-debm-paleo:
+
+Paleo simulation
+%%%%%%%%%%%%%%%%
+
+Trigonometric expansions for `\bar d / d` and `\delta` above are not applicable for times
+far from present; in this case we use more general (and more computationally expensive)
+formulas (:cite:`Liou2002`, chapter 2). Set :config:`surface.debm_simple.paleo.enabled` to
+switch to using the "paleo" mode.
+
+In this case
+
+- the ratio `\bar d / d` is a function of the eccentricity of the Earth's orbit and the
+  perihelion longitude,
+- the solar declination `\delta` is a function of the eccentricity of the Earth's orbit,
+  the perihelion longitude, and the Earth's obliquity.
+
+The values of these are set using the following configuration parameters (prefix:
+``surface.debm_simple.paleo.``):
+
+.. pism-parameters::
+   :prefix: surface.debm_simple.paleo.
+   :exclude: .+(enabled|file|periodic)$
+
+Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
+:var:`obliquity`, and :var:`perihelion_longitude` from the file specified using :config:`surface.debm_simple.paleo.file`.
 
 .. _sec-debm-simple-albedo:
 
@@ -395,19 +492,21 @@ assumes that the surface albedo is a linear function of the modeled melt rate.
 
    \alpha_S = \max\left( \alpha_{\text{max}} + C\cdot M, \alpha_{\text{min}}\right).
 
-Here `M` is the melt rate and `C` is the tuning parameter obtained by fitting this
-approximation to the output of the regional climate model MARv3.11.
+Here `M` is the melt rate and `C` is the tuning parameter
+(:config:`surface.debm_simple.albedo_slope`) obtained by fitting this approximation to the
+output of the regional climate model MARv3.11.
 
-In this approach, the albedo decreases linearly with increasing melt from a maximal value
-(the fresh-snow albedo :config:`surface.debm_simple.albedo_snow`) for regions with no
-melting to the minimum (the bare-ice albedo :config:`surface.debm_simple.albedo_ice`).
+In this approach, the albedo decreases linearly with increasing melt from the maximum
+value (the fresh-snow albedo :config:`surface.debm_simple.albedo_snow`) for regions with
+no melting to the minimum (the bare-ice albedo :config:`surface.debm_simple.albedo_ice`).
 
 Alternatively, albedo (variable :var:`albedo`; no units) can be read from a file specified
 using :config:`surface.debm_simple.albedo_input.file`.
 
 .. note::
 
-   It is recommended to use at monthly resolution in this file.
+   It is recommended to use a monthly records of albedo in
+   :config:`surface.debm_simple.albedo_input.file`.
 
 .. _sec-debm-simple-transmissivity:
 
@@ -427,57 +526,29 @@ climate.
 where `a` is controlled by :config:`surface.debm_simple.tau_a_intercept` and `b` by
 :config:`surface.debm_simple.tau_a_slope`.
 
-.. _sec-debm-simple-insolation:
+.. _sec-debm-simple-temperature-and-background-melt:
 
-Mean top of the atmosphere insolation
-#####################################
-
-The mean top of the atmosphere insolation during the part of the day when the sun is above
-`\Phi` degrees is approximated by
+Temperature-driven and background melt
+======================================
 
 .. math::
-   :label: eq-debm-toa-insolation
+   :label: eq-debm-temperature-and-background-melt
 
-   \bar S_{\Phi} = \frac{S_0}{\Delta t_{\Phi} \pi} \left( \frac{\bar d}{d} \right)^2
-   \left( h_{\Phi} \sin \phi \sin \delta + \cos \phi \cos \delta \sin h_{\Phi} \right),
+   M_t = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( c_1 T_\text{eff} + c_2 \right),
 
-where
+The method of computing the effective temperature `T_{\text{eff}}` is similar to the one
+described in section :ref:`sec-surface-pdd`, i.e. as the magnitude of the temperature
+excursion above a "positivity" threshold
+(:config:`surface.debm_simple.positive_threshold_temp`, usually `0\!\phantom{|}^\circ
+\text{C}`).
 
-- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant`,
-- `\bar d / d` is the ratio of the length of the semimajor axis of the Earth's orbit to
-  the Earth-Sun distance,
-- `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
-- `\phi` is the latitude
-- `\delta` is the solar declination angle.
-
-- eccentricity
-- obliquity
-- perihelion longitude
-
-The dEBM-simple model can be used for long-term simulation.
-Using only monthly temperatures and precipitation as input, can compute temperature- and insolation-driven
-melt rates.
-
-
-For paleo simulations, use the option :opt:`-itm_paleo` or set the configuration parameter :config:`surface.debm_simple.paleo.enabled` to true.
-The orbital parameters can either be set to constants or be read from a time-dependent file.
-Use the configuration parameters :config:`surface.debm_simple.paleo.eccentricity`. :config:`surface.debm_simple.paleo.obliquity`, and :config:`surface.debm_simple.paleo.long_peri` for the former and the option :config:`surface.debm_simple.paleo.file` to read them in in a time-dependent file.
-
-The method of computing the effective temperature is analogous to the Temperature Index method described in section :ref:`sec-surface-pdd`, i.e. as the magnitude of the temperature
-excursion above `0\!\phantom{|}^\circ \text{C}`.
-The configuration parameters controlling the standard deviation use the prefix ``surface.debm_simple.std_dev.``
+The daily air temperature variation can be constant (the default; set using
+:config:`surface.debm_simple.std_dev`), read from a file (specified using
+:config:`surface.debm_simple.std_dev.file`), or computed using a parameterization. These
+mechanisms are controlled by parameters with the prefix ``surface.debm_simple.std_dev.``:
 
 .. pism-parameters::
    :prefix: surface.debm_simple.std_dev.
-
-By default PISM uses a constant value for standard deviation, which is set by the configuration parameter :config:`surface.debm_simple.std_dev`.
-
-Note that melt is prohibited if the air temperature is below a threshold, which can be set by :config:`surface.debm_simple.background_melting_temp`. This is to avoid melt rates from high insolation values and low albedo values, when it is too cold to actually melt.
-
-Note that when used with periodic climate data (air temperature and precipitation) that is
-read from a file (see section :ref:`sec-atmosphere-given`), use of
-:config:`time_stepping.hit_multiples` is recommended: set it to the length of the climate
-data period in years.
 
 This model provides the following scalar:
 
@@ -501,7 +572,6 @@ corresponds to ice gain):
 
 This makes it easy to compare the surface mass balance computed by the model to its
 individual components:
-
 
 .. _sec-surface-pik:
 
