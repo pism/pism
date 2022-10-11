@@ -60,6 +60,12 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_Tmax           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_rain");
   m_Tmin           = m_config->get_number("surface.debm_simple.air_temp_all_precip_as_snow");
 
+  if (m_Tmax <= m_Tmin) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "surface.debm_simple.air_temp_all_precip_as_rain has to exceed "
+                                  "surface.debm_simple.air_temp_all_precip_as_snow");
+  }
+
   // note: does not need to be calendar-aware
   m_year_length = units::convert(g->ctx()->unit_system(), 1.0, "years", "seconds");
 
