@@ -2341,12 +2341,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.paleo.periodic_type = "flag";
 
     pism_config:surface.debm_simple.phi =  17.5;
-    pism_config:surface.debm_simple.phi_doc = "Minimum solar elevation angle above which melt is possible.";
+    pism_config:surface.debm_simple.phi_doc = "Threshold solar elevation angle above which melt is possible";
     pism_config:surface.debm_simple.phi_type = "number";
     pism_config:surface.debm_simple.phi_units = "degree";
 
     pism_config:surface.debm_simple.positive_threshold_temp = 273.15;
-    pism_config:surface.debm_simple.positive_threshold_temp_doc = "Temperature threshold used to define the 'positive' temperature";
+    pism_config:surface.debm_simple.positive_threshold_temp_doc = "Temperature threshold used to define the \"positive\" temperature";
     pism_config:surface.debm_simple.positive_threshold_temp_type = "number";
     pism_config:surface.debm_simple.positive_threshold_temp_units = "Kelvin";
 
@@ -2360,7 +2360,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
 
     pism_config:surface.debm_simple.solar_constant = 1367.0;
-    pism_config:surface.debm_simple.solar_constant_doc = "Constant for solar radiation";
+    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area";
     pism_config:surface.debm_simple.solar_constant_type = "number";
     pism_config:surface.debm_simple.solar_constant_units = "W m-2";
 
@@ -2378,19 +2378,19 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
 
-    pism_config:surface.debm_simple.std_dev_param_a = -0.15;
-    pism_config:surface.debm_simple.std_dev_param_a_doc = "Parameter `a` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
-    pism_config:surface.debm_simple.std_dev_param_a_type = "number";
-    pism_config:surface.debm_simple.std_dev_param_a_units = "1";
+    pism_config:surface.debm_simple.std_dev_param.a = -0.15;
+    pism_config:surface.debm_simple.std_dev_param.a_doc = "Parameter `a` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param.a_type = "number";
+    pism_config:surface.debm_simple.std_dev_param.a_units = "1";
 
-    pism_config:surface.debm_simple.std_dev_param_b = 0.66;
-    pism_config:surface.debm_simple.std_dev_param_b_doc = "Parameter `b` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
-    pism_config:surface.debm_simple.std_dev_param_b_type = "number";
-    pism_config:surface.debm_simple.std_dev_param_b_units = "Kelvin";
+    pism_config:surface.debm_simple.std_dev_param.b = 0.66;
+    pism_config:surface.debm_simple.std_dev_param.b_doc = "Parameter `b` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param.b_type = "number";
+    pism_config:surface.debm_simple.std_dev_param.b_units = "Kelvin";
 
-    pism_config:surface.debm_simple.std_dev_use_param = "no";
-    pism_config:surface.debm_simple.std_dev_use_param_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
-    pism_config:surface.debm_simple.std_dev_use_param_type = "flag";
+    pism_config:surface.debm_simple.std_dev_param.enabled = "no";
+    pism_config:surface.debm_simple.std_dev_param.enabled_doc = "Parameterize standard deviation as a linear function of air temperature over ice-covered grid cells. The region of application is controlled by :config:`geometry.ice_free_thickness_standard`.";
+    pism_config:surface.debm_simple.std_dev_param.enabled_type = "flag";
 
     pism_config:surface.debm_simple.tau_a_intercept = 0.65;
     pism_config:surface.debm_simple.tau_a_intercept_doc = "Intercept in the parametrization of atmosphere transmissivity";

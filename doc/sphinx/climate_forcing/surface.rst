@@ -301,7 +301,7 @@ Prefix: ``surface.pdd.``.
 .. pism-parameters::
    :prefix: surface.pdd.
 
-.. _sec-surface-itm:
+.. _sec-surface-debm-simple:
 
 Simple diurnal Energy Balance Model "dEBM-simple"
 +++++++++++++++++++++++++++++++++++++++++++++++++
@@ -391,7 +391,9 @@ The melt rate is approximated by
    * - `L_m`
      - Latent heat of fusion (:config:`constants.fresh_water.latent_heat_of_fusion`)
 
-Once the amount melted is computed
+A fraction (:config:`surface.debm_simple.refreeze`) of computed melt amount is assumed to
+re-freeze. By default only snow melt is allowed to refreeze; set
+:config:`surface.debm_simple.refreeze_ice_melt` to refreeze both snow and ice melt.
 
 .. note::
 
@@ -448,16 +450,16 @@ where
 - `\delta` is the solar declination angle.
 
 In short, `\bar S_{\Phi}` is a function of latitude, the factor `\bar d / d`, and the
-solar declination angle `\delta`. In the "present day" case both of these quantities are
-periodic (with the period of one year) and approximated using trigonometric expansions
+solar declination angle `\delta`. In the "present day" case both `\bar d / d` and `\delta`
+are periodic (with the period of one year) and approximated using trigonometric expansions
 (see :cite:`Liou2002`).
 
 .. rubric:: Paleo simulation
 
-Trigonometric expansions for `\bar d / d` and `\delta` above are not applicable for times
-far from present; in this case we use more general (and more computationally expensive)
-formulas (:cite:`Liou2002`, chapter 2). Set :config:`surface.debm_simple.paleo.enabled` to
-switch to using the "paleo" mode.
+Trigonometric expansions for `\bar d / d` and `\delta` mentioned above are not applicable
+for times far from present; in this case we use more general (and more computationally
+expensive) formulas (:cite:`Liou2002`, chapter 2). Set
+:config:`surface.debm_simple.paleo.enabled` to switch to using the "paleo" mode.
 
 In this case
 
