@@ -452,10 +452,7 @@ solar declination angle `\delta`. In the "present day" case both of these quanti
 periodic (with the period of one year) and approximated using trigonometric expansions
 (see :cite:`Liou2002`).
 
-.. _sec-debm-paleo:
-
-Paleo simulation
-%%%%%%%%%%%%%%%%
+.. rubric:: Paleo simulation
 
 Trigonometric expansions for `\bar d / d` and `\delta` above are not applicable for times
 far from present; in this case we use more general (and more computationally expensive)
@@ -549,29 +546,6 @@ mechanisms are controlled by parameters with the prefix ``surface.debm_simple.st
 
 .. pism-parameters::
    :prefix: surface.debm_simple.std_dev.
-
-This model provides the following scalar:
-
-- :var:`surface_accumulation_rate`
-- :var:`surface_melt_rate`
-- :var:`surface_runoff_rate`
-
-and these 2D diagnostic quantities (averaged over reporting intervals; positive flux
-corresponds to ice gain):
-
-- :var:`surface_accumulation_flux`
-- :var:`surface_melt_flux`
-- :var:`surface_runoff_flux`
-- :var:`surface_insolation_melt_flux`
-- :var:`surface_temperature_melt_flux`
-- :var:`surface_offset_melt_flux`
-- :var:`albedo`
-- :var:`transmissivity`
-- :var:`TOAinsol`, the daily insolation at the top of the atmosphere
-- :var:`qinsol`, the average insolation at the top of the atmosphere, averaged over the time of the day when the solar angle is higher than `\Phi`.
-
-This makes it easy to compare the surface mass balance computed by the model to its
-individual components:
 
 .. _sec-surface-pik:
 
