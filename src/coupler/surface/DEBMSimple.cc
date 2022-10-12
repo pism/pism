@@ -451,7 +451,11 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
                                      (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
-          auto changes = m_model.step(ice_thickness, melt_info.total_melt, firn, snow, accumulation);
+          auto changes = m_model.step(ice_thickness,
+                                      melt_info.total_melt,
+                                      firn,
+                                      snow,
+                                      accumulation);
 
           if ((bool) m_input_albedo) {
             albedo = Alb[k];
@@ -485,7 +489,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         // set firn and snow depths
         m_firn_depth(i, j)     = firn;
         m_snow_depth(i, j)     = snow;
-        m_surface_albedo(i, j)         = Al / N;
+        m_surface_albedo(i, j) = Al / N;
         m_transmissivity(i, j) = m_model.atmosphere_transmissivity(surfelev);
         m_insolation(i, j)     = Qi / N;
 
