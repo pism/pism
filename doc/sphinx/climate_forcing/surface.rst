@@ -398,9 +398,9 @@ Once the amount melted is computed
    - Part of the precipitation interpreted as rain is assumed to run off instantaneously
      and *does not* contribute to reported modeled runoff.
 
-   - Melt is prohibited if the air temperature is below a threshold, which can be set by
+   - Melt is prohibited if the air temperature is below a threshold set by
      :config:`surface.debm_simple.background_melting_temp`. This is to avoid melt rates from
-     high insolation values and low albedo values, when it is too cold to actually melt.
+     high insolation values and low albedo values when it is too cold to actually melt.
 
    - When used with periodic climate data (air temperature and precipitation) that is read
      from a file (see section :ref:`sec-atmosphere-given`), use of
