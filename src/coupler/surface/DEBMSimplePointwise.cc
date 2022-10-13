@@ -453,7 +453,11 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
   result.temperature_melt = A * m_c1 * Teff;
   result.background_melt  = A * m_c2;
-  result.total_melt       = result.insolation_melt + result.temperature_melt + result.background_melt;
+
+  double total_melt = (result.insolation_melt + result.temperature_melt +
+                       result.background_melt);
+  // this model should not produce negative melt rates
+  result.total_melt = std::max(total_melt, 0.0);
 
   if (T < m_bm_temp) {
     result.total_melt = 0.0;
