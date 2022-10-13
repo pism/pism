@@ -2379,12 +2379,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
 
     pism_config:surface.debm_simple.std_dev_param.a = -0.15;
-    pism_config:surface.debm_simple.std_dev_param.a_doc = "Parameter `a` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param.a_doc = "Parameter `a` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_param.enabled` is set to yes.";
     pism_config:surface.debm_simple.std_dev_param.a_type = "number";
     pism_config:surface.debm_simple.std_dev_param.a_units = "1";
 
     pism_config:surface.debm_simple.std_dev_param.b = 0.66;
-    pism_config:surface.debm_simple.std_dev_param.b_doc = "Parameter `b` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_use_param` is set to yes.";
+    pism_config:surface.debm_simple.std_dev_param.b_doc = "Parameter `b` in `\\sigma = a \\cdot T + b`, with `T` in degrees Celsius. Used only if :config:`surface.debm_simple.std_dev_param.enabled` is set to yes.";
     pism_config:surface.debm_simple.std_dev_param.b_type = "number";
     pism_config:surface.debm_simple.std_dev_param.b_units = "Kelvin";
 
