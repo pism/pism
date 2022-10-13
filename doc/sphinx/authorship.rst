@@ -5,7 +5,7 @@
 Authorship
 ==========
 
-   *Copyright* |copy| *2004 -- 2021 the PISM authors.*
+   *Copyright* |copy| *2004 -- 2022 the PISM authors.*
 
    *This file is part of PISM. PISM is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License as published by the Free
@@ -34,7 +34,7 @@ Research (PIK), and several additional developers listed here.
    * - Jed Brown (ANL)
      - source code original author, SSA numerics, PETSc underpinnings 
    * - **Ed Bueler** (UAF)
-     - principal investigator, verification, earth deformation, SIA numerics,
+     - former principal investigator, verification, earth deformation, SIA numerics,
        thermodynamics, documentation
    * - Dani DellaGiustina (UAF)
      - regional tools and modeling 
@@ -48,10 +48,10 @@ Research (PIK), and several additional developers listed here.
      - ice streams: physics and numerics
    * - Regine Hock (UAF)
      - surface mass and energy balance 
-   * - **Constantine Khroulev** (UAF)
+   * - **Constantine Khrulev** (UAF)
      - source code primary author, input/output, software design, climate couplers,
-       parallelization, testing, user support, most documentation, most bug fixes,
-       regional tools, ...
+       higher-order stress balance, parallelization, testing, user support, most
+       documentation, most bug fixes, regional tools, ...
    * - Anders Levermann (PIK)
      - calving, ice shelf processes 
    * - Craig Lingle (UAF)
@@ -61,15 +61,17 @@ Research (PIK), and several additional developers listed here.
    * - Mattias Mengel (PIK)
      - marine ice sheet processes 
    * - David Maxwell (UAF)
-     - inversion, SSA finite elements, python bindings 
+     - inversion, SSA finite elements, Python bindings
    * - Ward van Pelt (IMAU)
-     - hydrology analysis and design
+     - subglacial hydrology analysis and design
    * - Ronja Reese (PIK)
      - sub-shelf mass balance, ice shelf numerics, bug fixes
    * - Julien Seguinot (ETH)
      - bug fixes, temperature index model 
    * - Ricarda Winkelmann (PIK)
-     - Antarctica processes, coupling, and modeling  
+     - Antarctica processes, coupling, and modeling
+   * - Maria Zeitz (PIK)
+     - surface mass and energy balance
    * - Florian Ziemen (MPI)
      - bug fixes, sliding 
 
