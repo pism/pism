@@ -1,0 +1,74 @@
+# -*- mode: yaml -*-
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+#
+# Run "git shortlog -sn" to list some authors
+
+cff-version: 1.2.0
+title: 'Parallel Ice Sheet Model (PISM)'
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Constantine
+    family-names: Khrulev
+    email: ckhroulev@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0003-2170-7454'
+  - given-names: Andy
+    family-names: Aschwanden
+    email: aaschwanden@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0001-8149-2315'
+  - given-names: Ed
+    family-names: Bueler
+    email: elbueler@alaska.edu
+    affiliation: University of Alaska Fairbanks
+    orcid: 'https://orcid.org/0000-0001-8232-4145'
+  - given-names: David
+    family-names: Maxwell
+    email: damaxwell@alaska.edu
+    affiliation: University of Alaska Fairbanks
+  - given-names: Torsten
+    family-names: Albrecht
+    email: albrecht@pik-potsdam.de
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0001-7459-2860'
+  - given-names: Jed
+    family-names: Brown
+    email: jed@jedbrown.org
+    affiliation: University of Colorado Boulder
+    orcid: 'https://orcid.org/0000-0002-9945-0639'
+  - given-names: Ronja
+    family-names: Reese
+    affiliation: University of Northumbria at Newcastle
+    orcid: 'https://orcid.org/0000-0001-7625-040X'
+  - given-names: Ricarda
+    family-names: Winkelmann
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0003-1248-3217'
+  - given-names: Matthias
+    family-names: Mengel
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    orcid: 'https://orcid.org/0000-0001-6724-9685'
+
+repository-code: 'https://github.com/pism/pism/'
+url: 'https://www.pism.io'
+
+abstract: The Parallel Ice Sheet Model (PISM) is an open-source modelling framework for
+  ice sheets and glaciers. Its features include a hierarchy of available stress balances,
+  marine ice sheet physics with dynamic calving fronts, an enthalpy-based conservation of
+  energy scheme, bed deformation and subglacial hydrology components, extensible coupling
+  to atmospheric and ocean models, and comprehensive user documentation. PISM uses
+  distributed-memory (PETSc- and MPI-based) parallelism for high-resolution simulations.
+
+  PISM is jointly developed at the University of Alaska, Fairbanks (UAF) and the Potsdam
+  Institute for Climate Impact Research (PIK).
+
+keywords:
+  - ice sheet model
+  - open source
+  - geophysics
+  - sea level
+license: GPL-3.0+
