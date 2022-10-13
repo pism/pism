@@ -341,8 +341,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),
-    sigmalapserate = m_config->get_number("surface.pdd.std_dev_lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev_lapse_lat_base");
+    sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
+    sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   m_atmosphere->init_timeseries(ts);
   m_atmosphere->begin_pointwise_access();
