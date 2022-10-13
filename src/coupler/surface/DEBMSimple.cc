@@ -368,8 +368,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         // Use temperature time series to remove rainfall from precipitation and convert to
         // m/s ice equivalent.
         for (int k = 0; k < N; ++k) {
-          P[i] = snow_accumulation(T[i],  // air temperature (input)
-                                   P[i] / ice_density); // precipitation rate (input, gets overwritten)
+          P[k] = snow_accumulation(T[k],  // air temperature (input)
+                                   P[k] / ice_density); // precipitation rate (input, gets overwritten)
         }
       }
 
