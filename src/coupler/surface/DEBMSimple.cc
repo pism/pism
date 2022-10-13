@@ -71,19 +71,21 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
 
   m_n_per_year = static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
 
-  ForcingOptions albedo_input(*m_grid->ctx(), "surface.debm_simple.albedo_input");
-  if (not albedo_input.filename.empty()) {
-    m_log->message(2, " Surface albedo is read in from %s...", albedo_input.filename.c_str());
+  auto albedo_input = m_config->get_string("surface.debm_simple.albedo_input.file");
+  if (not albedo_input.empty()) {
 
-    File file(m_grid->com, albedo_input.filename, PISM_GUESS, PISM_READONLY);
+    m_log->message(2, " Surface albedo is read in from %s...", albedo_input.c_str());
+
+    File file(m_grid->com, albedo_input, PISM_GUESS, PISM_READONLY);
 
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
+    bool periodic = m_config->get_flag("surface.debm_simple.albedo_input.periodic");
     m_input_albedo  = IceModelVec2T::ForcingField(m_grid,
                                                   file,
                                                   "albedo",
                                                   "surface_albedo",
                                                   buffer_size,
-                                                  albedo_input.periodic,
+                                                  periodic,
                                                   LINEAR);
   } else {
     m_input_albedo  = nullptr;
