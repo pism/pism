@@ -136,8 +136,9 @@ private:
   //! number of small time steps per year
   unsigned int m_n_per_year;
 
-  bool m_sd_use_param, m_use_air_temp_sd_file;
-  double m_sd_param_a, m_sd_param_b;
+  bool m_sd_use_param;
+  double m_sd_param_a;
+  double m_sd_param_b;
 
   //! interpret all the precipitation as snow (no rain)
   bool m_precip_as_snow;

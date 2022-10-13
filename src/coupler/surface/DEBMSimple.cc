@@ -93,25 +93,24 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
 
   // initialize the spatially-variable air temperature standard deviation
 
-  ForcingOptions air_temp_sd(*m_grid->ctx(), "surface.debm_simple.std_dev");
-  if (not air_temp_sd.filename.empty()) {
+  auto air_temp_sd = m_config->get_string("surface.debm_simple.std_dev.file");
+  if (not air_temp_sd.empty()) {
     m_log->message(2, "  Reading standard deviation of near-surface air temperature from '%s'...\n",
-                   air_temp_sd.filename.c_str());
+                   air_temp_sd.c_str());
 
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, air_temp_sd.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, air_temp_sd, PISM_GUESS, PISM_READONLY);
 
-    m_air_temp_sd          = IceModelVec2T::ForcingField(m_grid, file, "air_temp_sd",
-                                                         "", // no standard name
-                                                         buffer_size, air_temp_sd.periodic, LINEAR);
-    m_use_air_temp_sd_file = true;
+    bool periodic = m_config->get_flag("surface.debm_simple.std_dev.periodic");
+    m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file, "air_temp_sd",
+                                                "", // no standard name
+                                                buffer_size, periodic, LINEAR);
   } else {
     double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev");
 
     m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", temp_std_dev);
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
-    m_use_air_temp_sd_file = false;
   }
 
   m_air_temp_sd->set_attrs("climate_forcing", "standard deviation of near-surface air temperature", "Kelvin", "Kelvin",
@@ -306,10 +305,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   // update standard deviation time series
-  if (m_use_air_temp_sd_file) {
-    m_air_temp_sd->update(t, dt);
-    m_air_temp_sd->init_interpolation(ts);
-  }
+  m_air_temp_sd->update(t, dt);
+  m_air_temp_sd->init_interpolation(ts);
 
   const auto &mask             = geometry.cell_type;
   const auto &H                = geometry.ice_thickness;
