@@ -50,7 +50,7 @@ cmd_prog="mpiexec -n $NN ${PISMPREFIX}pismr -regional -i $STARTNAME \
   -ssa_dirichlet_bc -ssa_e $SSAE -ys 0 -y $YEARS -o $NAME -o_size big \
   -thickness_calving_threshold $CTHICK $STRONGKSP \
   -ts_file ts-${NAME} -ts_times 0:monthly:${YEARS} \
-  -extra_file ex-${NAME} -extra_times 0:${exdt}:${YEARS} -extra_vars ${exvars} \
+  -spatial_file ex-${NAME} -spatial_times 0:${exdt}:${YEARS} -spatial_vars ${exvars} \
   -options_left"
 echo "running command:"
 echo

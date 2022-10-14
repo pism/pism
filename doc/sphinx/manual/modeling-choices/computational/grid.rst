@@ -227,7 +227,7 @@ If the ``proj`` attribute contains the string "``+init=epsg:XXXX``" where ``XXXX
 describing the projection in use.
 
 "Mapping" variables following CF metadata conventions in input files are copied to output
-files (including ``-extra_file``\s) but are **not** used to compute latitude/longitude
+files (including ``-spatial_file``\s) but are **not** used to compute latitude/longitude
 coordinates.
 
 To simplify post-processing and analysis with CDO PISM adds the PROJ string (if known)

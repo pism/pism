@@ -76,7 +76,7 @@ enhancement parameter, which we also return to later in section :ref:`sec-params
 
 Then there are longish options describing the fields we want as output, including scalar
 time series ("``-ts_file ts_g20km_10ka.nc -ts_times -10000:yearly:0``"; see section
-:ref:`sec-practical-usage`) and space-dependent fields ("``-extra_file ...``"; again see
+:ref:`sec-practical-usage`) and space-dependent fields ("``-spatial_file ...``"; again see
 section :ref:`sec-practical-usage`), and finally the named output file ("``-o
 g20km_10ka.nc``").
 

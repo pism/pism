@@ -217,7 +217,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
        :config:`time_stepping.hit_ts_times`; see section :ref:`sec-saving-time-series`
 
    * - ``-extra_... reporting``
-     - the ``-extra_times`` option and the configuration parameter
+     - the ``-spatial_times`` option and the configuration parameter
        :config:`time_stepping.hit_extra_times`; see section :ref:`sec-saving-diagnostics`
 
    * - ``surface``

@@ -92,13 +92,13 @@ RESNAME=${RESDIR}${stage}_${GRIDNAME}.nc
 TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=200000
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
-expackage="-extra_times 0:1000:$RUNTIME -extra_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
+expackage="-spatial_times 0:1000:$RUNTIME -spatial_vars bmelt,tillwat,velsurf_mag,temppabase,diffusivity,hardav"
 echo
 echo "$SCRIPTNAME  -no_mass (no surface change) SIA for $RUNTIME a"
 cmd="$PISM_MPIDO $NN $PISM_EXEC -i $INNAME $PIKPHYS_COUPLING  \
     $SIA_ENHANCEMENT -no_mass \
     -ys 0 -y $RUNTIME \
-    -extra_file $EXTRANAME $expackage \
+    -spatial_file $EXTRANAME $expackage \
     -o $RESNAME"
 $DO $cmd
 #exit # <-- uncomment to stop here
@@ -114,7 +114,7 @@ TSNAME=${RESDIR}ts_${stage}_${GRIDNAME}.nc
 RUNTIME=100000
 EXTRANAME=${RESDIR}extra_${stage}_${GRIDNAME}.nc
 exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,cell_grounded_fraction,ice_area_specific_volume,amount_fluxes,basal_mass_flux_grounded,basal_mass_flux_floating"
-expackage="-extra_times 0:1000:$RUNTIME -extra_vars $exvars"
+expackage="-spatial_times 0:1000:$RUNTIME -spatial_vars $exvars"
 
 echo
 echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNTIME a"
@@ -122,7 +122,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -bootstrap -Lz 5000 -skip -skip_max $SKIP -i $IN
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-    -extra_file $EXTRANAME $expackage \
+    -spatial_file $EXTRANAME $expackage \
     -o $RESNAME -o_size big"
 $DO $cmd
 

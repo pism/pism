@@ -167,9 +167,9 @@ class Experiment:
         extra_file = "ex_" + output_file
         ts_file = "ts_" + output_file
 
-        options = ["-extra_file %s" % extra_file,
-                   "-extra_times 0:50:3e4",
-                   "-extra_vars $extra_vars",
+        options = ["-spatial_file %s" % extra_file,
+                   "-spatial_times 0:50:3e4",
+                   "-spatial_vars $extra_vars",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-output.sizes.medium sftgif",

@@ -35,7 +35,7 @@ the existing file will be moved to ``foo.nc~`` and the new time series will go i
 ``-ts_append``.
 
 PISM buffers time-series data and writes it at the end of the run, once 10000 values are
-stored, or when an ``-extra_file`` is saved, whichever comes first. Sending an ``USR1``
+stored, or when an ``-spatial_file`` is saved, whichever comes first. Sending an ``USR1``
 (or ``USR2``) signal to a PISM process flushes these buffers, making it possible to
 monitor the run. (See section :ref:`sec-signal` for more about PISM's signal handling.)
 

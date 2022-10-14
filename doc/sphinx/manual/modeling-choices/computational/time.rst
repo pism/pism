@@ -34,7 +34,7 @@ date in the chosen calendar* (see :config:`time.reference_date` and
 It is also possible to provide *units*: for example, ``-ys 1day -ye 2weeks`` will start the
 run from January 2, 1 and run for 14 days (until January 15).
 
-In addition to this, :opt:`-ys` and :opt:`-ye` (as well as :opt:`-extra_times`, etc) can
+In addition to this, :opt:`-ys` and :opt:`-ye` (as well as :opt:`-spatial_times`, etc) can
 take *dates* of the form ``Y-M-D``, so ``-ys 2000-1-1 -ye 2100-1-1`` would tell PISM to
 run for 100 years from January 1, 2000.
 
@@ -94,7 +94,7 @@ require precise application of forcing data or reporting on particular dates
 (paleo-climate runs, for example).
 
 In addition to setting run start and end times, the calendar setting also affects the
-interpretation of "monthly" and "yearly" reporting with :opt:`-extra_times`,
+interpretation of "monthly" and "yearly" reporting with :opt:`-spatial_times`,
 :opt:`-ts_times`, and :opt:`-save_times` (see :ref:`sec-saving-diagnostics`,
 :ref:`sec-saving-time-series`, and :ref:`sec-snapshots`).
 

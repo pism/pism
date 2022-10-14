@@ -1815,7 +1815,7 @@ netcdf pism_config {
 
     pism_config:output.extra.file = "";
     pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
-    pism_config:output.extra.file_option = "extra_file";
+    pism_config:output.extra.file_option = "spatial_file";
     pism_config:output.extra.file_type = "string";
 
     pism_config:output.extra.split = "no";
@@ -1830,12 +1830,12 @@ netcdf pism_config {
 
     pism_config:output.extra.times = "";
     pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
-    pism_config:output.extra.times_option = "extra_times";
+    pism_config:output.extra.times_option = "spatial_times";
     pism_config:output.extra.times_type = "string";
 
     pism_config:output.extra.vars = "";
     pism_config:output.extra.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
-    pism_config:output.extra.vars_option = "extra_vars";
+    pism_config:output.extra.vars_option = "spatial_vars";
     pism_config:output.extra.vars_type = "string";
 
     pism_config:output.file = "unnamed.nc";

@@ -11,7 +11,7 @@ infile="circular_shelfonly.nc"
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 1000"
 
-extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -extra_file "
+extra="-spatial_times 1 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -spatial_file "
 
 pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc"
 

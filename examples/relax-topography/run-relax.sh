@@ -197,7 +197,7 @@ EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $BOOTNAME -bootstrap 
      $GRID $COUPLER \
      -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o_size $OSIZE -o $OUTNAME -o_format $OFORMAT"
 
 $PISM_DO $cmd
@@ -223,7 +223,7 @@ echo
 cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME 
      $COUPLER \
      -ts_file $TSNAME -ts_times $TSTIMES \
-     -extra_file $EXNAME -extra_vars $EXVARS -extra_times $EXTIMES \
+     -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
      -ys $STARTTIME -ye $ENDTIME -o_size $OSIZE -o $OUTNAME -o_format $OFORMAT"
 
 $PISM_DO $cmd

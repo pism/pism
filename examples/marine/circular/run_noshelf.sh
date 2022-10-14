@@ -15,7 +15,7 @@ pismopts="-i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_dirichlet_bc 
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 10 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf,mass_fluxes -extra_file ns_ex.nc"
+extra="-spatial_times 10 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf,mass_fluxes -spatial_file ns_ex.nc"
 ts="-ts_file ns_ts.nc -ts_times 1"
 
 $doit $pismopts -y $length -ssa_method fd -cfbc -part_grid -o ns_o.nc $extra $ts

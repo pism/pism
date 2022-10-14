@@ -31,9 +31,9 @@ pismr -bootstrap -i input.nc -regrid_file in.nc -regrid_vars enthalpy \
       -energy.ch_warming.temperate_ice_thermal_conductivity_ratio 1.0 \
       -surface given,delta_T \
       -surface_delta_T_file input.nc -surface_delta_T_period 1 \
-      -extra_file ex_${suffix}.nc \
-      -extra_vars ${extra_vars} \
-      -extra_times 10days \
+      -spatial_file ex_${suffix}.nc \
+      -spatial_vars ${extra_vars} \
+      -spatial_times 10days \
       -y 10 \
       -calendar 360_day \
       -o o_${suffix}.nc -verbose 1

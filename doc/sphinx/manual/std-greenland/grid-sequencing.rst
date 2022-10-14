@@ -85,7 +85,7 @@ options:
    ./spinup.sh $NN const 200    5 hybrid  g5km_gridseq.nc
 
 Environment variable ``EXSTEP`` specifies the time in years between writing the
-spatially-dependent, and large-file-size-generating, frames for the ``-extra_file ...``
+spatially-dependent, and large-file-size-generating, frames for the ``-spatial_file ...``
 diagnostic output.
 
 .. warning::

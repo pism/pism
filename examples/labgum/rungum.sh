@@ -32,7 +32,7 @@ timediag="-ts_file ts_$oname -ts_times $ts_dt"
 
 ex_dt=10s
 exvars="diffusivity,flux_mag,velbar_mag,velsurf_mag,mask,thk,wvelsurf"
-exdiag="-extra_file ex_$oname -extra_vars $exvars -extra_times $ex_dt"
+exdiag="-spatial_file ex_$oname -spatial_vars $exvars -spatial_times $ex_dt"
 
 dt="-time_stepping.resolution 1e-6 -max_dt $ts_dt"
 

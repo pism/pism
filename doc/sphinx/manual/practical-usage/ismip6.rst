@@ -89,7 +89,7 @@ Output variables
 ^^^^^^^^^^^^^^^^
 
 See :numref:`tab-ismip6-variables` for a list of variables requested by ISMIP6. Note that
-they have names different from the ones listed in :ref:`sec-extra_vars` and use MKS units.
+they have names different from the ones listed in :ref:`sec-spatial_vars` and use MKS units.
 To reduce the amount of post-processing output files require PISM can follow these
 conventions.
 
@@ -100,7 +100,7 @@ To save *all* the diagnostics requested by ISMIP6 use the short-cut
 
 .. code-block:: bash
 
-   pismr -extra_vars ismip6 ...
+   pismr -spatial_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
 :config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are

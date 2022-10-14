@@ -20,7 +20,7 @@ creating PISM-readable data files, and modeling with such.
 
 To do this, use the option :opt:`-test_climate_models` (which is equivalent to
 :opt:`-stress_balance none` and :opt:`-energy none`) together with PISM's reporting
-capabilities (:opt:`-extra_file`, :opt:`-extra_times`, :opt:`-extra_vars`).
+capabilities (:opt:`-spatial_file`, :opt:`-spatial_times`, :opt:`-spatial_vars`).
 
 Turning "off" ice dynamics saves computational time while allowing one to use the same
 options as in an actual modeling run. Note that :opt:`-test_climate_models` does *not*
@@ -35,8 +35,8 @@ correctly:
 .. code-block:: none
 
    mpiexec -n 2 pismr -eisII A -y 1000 -o state.nc
-   pismr -i state.nc -surface given -extra_times 0.0:0.1:2.5 \
-         -extra_file movie.nc -extra_vars climatic_mass_balance,ice_surface_temp \
+   pismr -i state.nc -surface given -spatial_times 0.0:0.1:2.5 \
+         -spatial_file movie.nc -spatial_vars climatic_mass_balance,ice_surface_temp \
          -ys 0 -ye 2.5
 
 Using ``pismr -eisII A`` merely generates demonstration climate data, using EISMINT II
@@ -58,9 +58,9 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
 
     pismr -test_climate_models -no_mass -i g20km_10ka.nc \
           -atmosphere searise_greenland -surface pdd \
-          -ys 0 -ye 1 -extra_times 0:1week:1 \
-          -extra_file foo.nc \
-          -extra_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
+          -ys 0 -ye 1 -spatial_times 0:1week:1 \
+          -spatial_file foo.nc \
+          -spatial_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot,precipitation
     
 produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the variable
 :var:`air_temp` and a noticeable decrease in the surface mass balance during summer months
@@ -83,8 +83,8 @@ The command
     pismr -i g20km_pre100.nc -bootstrap -Mx 51 -My 101 -Mz 11 \
           -atmosphere searise_greenland \
           -surface pdd -ys 0 -ye 2.5 \
-          -extra_file foo.nc -extra_times 0:0.1:2.5 \
-          -extra_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
+          -spatial_file foo.nc -spatial_times 0:0.1:2.5 \
+          -spatial_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
           -ts_file ts.nc -ts_times 0:0.1:2.5 \
           -o bar.nc
 
@@ -107,9 +107,9 @@ section :ref:`sec-surface-pdd`) is "reasonable":
 
    pismr -i g20km_pre100.nc -atmosphere searise_greenland,precip_scaling \
          -surface pdd -atmosphere_precip_scaling_file pism_dT.nc \
-         -extra_times 0:1week:3 -ys 0 -ye 3 \
-         -extra_file pddmovie.nc -o_order zyx \
-         -extra_vars climatic_mass_balance,air_temp_snapshot
+         -spatial_times 0:1week:3 -ys 0 -ye 3 \
+         -spatial_file pddmovie.nc -o_order zyx \
+         -spatial_vars climatic_mass_balance,air_temp_snapshot
 
 This produces the file ``pddmovie.nc`` with several variables:
 :var:`climatic_mass_balance` (instantaneous net accumulation (ablation) rate),
@@ -149,9 +149,9 @@ We can also test the surface temperature forcing code with the following command
     pismr -i g20km_pre100.nc -surface simple \
           -atmosphere searise_greenland,delta_T \
           -atmosphere_delta_T_file pism_dT.nc \
-          -extra_times 100 -ys -125e3 -ye 0 \
-          -extra_vars ice_surface_temp \
-          -extra_file dT_movie.nc -o_order zyx \
+          -spatial_times 100 -ys -125e3 -ye 0 \
+          -spatial_vars ice_surface_temp \
+          -spatial_file dT_movie.nc -o_order zyx \
           -test_climate_models -no_mass
     
 The output ``dT_movie.nc`` and ``pism_dT.nc`` were used to create

@@ -59,7 +59,7 @@ RUNTIME=2000
 
 EXTRANAME=${RESDIR}extra_${stage}.nc
 exvars="thk,usurf,velbase_mag,velbar_mag,mask,diffusivity,tauc,bmelt,tillwat,temppabase,hardav,Href,gl_mask"
-expackage="-extra_times 0:10:$RUNTIME -extra_vars $exvars"
+expackage="-spatial_times 0:10:$RUNTIME -spatial_vars $exvars"
 
 echo
 echo "$SCRIPTNAME  continue but regrid to $GRIDNAME and run for 2000 a"
@@ -69,7 +69,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
     -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
-    -extra_file $EXTRANAME $expackage \
+    -spatial_file $EXTRANAME $expackage \
     -o $RESNAME -o_size big"
 
 $DO $cmd

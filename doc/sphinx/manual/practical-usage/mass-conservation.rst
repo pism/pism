@@ -41,7 +41,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars mass_fluxes,...
+   pismr -spatial_file ex.nc -spatial_times N -spatial_vars mass_fluxes,...
 
 to save all fluxes needed to "balance the books" in terms of ice mass.
 
@@ -58,7 +58,7 @@ To save these, use the shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars amount_fluxes,...
+   pismr -spatial_file ex.nc -spatial_times N -spatial_vars amount_fluxes,...
 
 .. rubric:: Comments
 
@@ -128,7 +128,7 @@ Use a shortcut
 
 .. code-block:: none
 
-   pismr -extra_file ex.nc -extra_times N -extra_vars hydrology_fluxes,...
+   pismr -spatial_file ex.nc -spatial_times N -spatial_vars hydrology_fluxes,...
 
 to save all diagnostics mentioned above.
 
@@ -143,7 +143,7 @@ runoff to the effective mass balance. Use diagnostic quantities
 per area per time) and `surface_accumulation_rate`, `surface_melt_rate`,
 `surface_runoff_rate` (units of mass per time).
 
-To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
+To save all these, use `-spatial_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
 
 .. _sec-mass-conservation-rough-bed:
 

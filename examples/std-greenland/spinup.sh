@@ -38,11 +38,11 @@ usage:
     BOOTFILE  optional name of input file; default = $PISM_DATANAME
 
 consider setting optional environment variables (see script for meaning):
-    EXSTEP       spacing in years between -extra_files outputs; defaults to 100
-    EXVARS       desired -extra_vars; defaults to 'diffusivity,temppabase,
+    EXSTEP       spacing in years between -spatial_files outputs; defaults to 100
+    EXVARS       desired -spatial_vars; defaults to 'diffusivity,temppabase,
                    tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'
                    plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid
-    NODIAGS      if set, DON'T use -ts_file or -extra_file
+    NODIAGS      if set, DON'T use -ts_file or -spatial_file
     USEPIK       if set, add -pik -subgl
     PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ
                    [default=0.25]
@@ -310,7 +310,7 @@ if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
   EXNAME=ex_$OUTNAME
   EXTIMES=-$DURATION:$EXSTEP:0
   # check_stationarity.py can be applied to $EXNAME
-  DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -extra_file $EXNAME -extra_times $EXTIMES -extra_vars $EXVARS"
+  DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -spatial_file $EXNAME -spatial_times $EXTIMES -spatial_vars $EXVARS"
 else
   DIAGNOSTICS=""
 fi

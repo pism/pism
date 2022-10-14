@@ -15,7 +15,7 @@ pismopts="-y $length -i $infile -bootstrap $grid -stress_balance ssa+sia -ssa_me
 
 doit="mpiexec -n $N pismr $pismopts"
 
-extra="-extra_times 1 -extra_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -extra_file"
+extra="-spatial_times 1 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar -spatial_file"
 
 # run with strength extension and part_grid but no CFBC
 # this could be a regression for the option combination "-part_grid"

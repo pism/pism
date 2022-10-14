@@ -10,9 +10,9 @@ grid="-Mx $xx -My $yy -Mz 11 -Mbz 1 -Lz 1500 -Lbz 0 -y $length"
 
 physics="-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc -part_grid"
 
-extra="-extra_vars thk,mask,velbar_mag,Href,velbar"
+extra="-spatial_vars thk,mask,velbar_mag,Href,velbar"
 
-extra="$extra -extra_times 5 -extra_file ex.nc"
+extra="$extra -spatial_times 5 -spatial_file ex.nc"
 ts="-ts_file ts.nc -ts_times 1"
 
 output="-o o.nc -o_order zyx $extra $ts"

@@ -128,7 +128,7 @@ x = linspace(0, 400e3, Mx)
 run_length = options.y
 
 opt = "-ssa_method fd -Lx 250 -o_order zyx"
-extras = " -extra_file ex.nc -extra_vars flux_mag,thk,nuH,flux_divergence,velbar -extra_times 1"
+extras = " -spatial_file ex.nc -spatial_vars flux_mag,thk,nuH,flux_divergence,velbar -spatial_times 1"
 
 if options.step_plot:
     plotter = step
