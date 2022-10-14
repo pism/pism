@@ -19,7 +19,7 @@
 
 #include <memory>
 #include <cassert>
-#include <cmath>                // isnan
+#include <cmath>                // isfinite
 
 #include "io_helpers.hh"
 #include "File.hh"
@@ -984,9 +984,9 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 
       compute_range(grid.com, output, data_size, &min, &max);
 
-      if (std::isnan(min) or std::isnan(max)) {
+      if ((not std::isfinite(min)) or (not std::isfinite(max))) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Variable '%s' ('%s') contains not-a-number (NaN)",
+                                      "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
                                       variable.get_name().c_str(),
                                       variable.get_string("long_name").c_str());
       }
