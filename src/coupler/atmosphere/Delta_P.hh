@@ -20,7 +20,7 @@
 #define PISM_ATMOSPHERE_DELTA_P
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
@@ -49,7 +49,7 @@ private:
 
   std::unique_ptr<ScalarForcing> m_1d_offsets;
 
-  std::shared_ptr<IceModelVec2T> m_2d_offsets;
+  std::shared_ptr<array::Forcing> m_2d_offsets;
 
   array::Scalar::Ptr m_precipitation;
 };
