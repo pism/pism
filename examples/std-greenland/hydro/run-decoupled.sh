@@ -29,7 +29,7 @@ CALVING="-front_retreat_file pism_Greenland_5km_v1.1.nc"
 
 # run this to check for no shock: continue g2km_gridseq.nc run
 NAME=cont.nc
-cmd="$MPIDO pismr -i $INNAME -skip -skip_max 20 $CLIMATE $PHYS $CALVING -ts_file ts_$NAME -ts_times 0:yearly:$DURATION -y $DURATION -o $NAME"
+cmd="$MPIDO pismr -i $INNAME -skip -skip_max 20 $CLIMATE $PHYS $CALVING -scalar_file ts_$NAME -scalar_times 0:yearly:$DURATION -y $DURATION -o $NAME"
 #$PISM_DO $cmd
 echo
 
@@ -39,13 +39,13 @@ EXVARDIST="${EXVAR},bwp,bwprel,hydrovelbase_mag"
 
 # -hydrology routing
 NAME=routing-decoupled.nc
-cmd="$MPIDO pismr -i $INNAME -no_mass -energy none -stress_balance none $CLIMATE -spatial_file ex_$NAME -spatial_times 0:monthly:$DURATION -spatial_vars $EXVAR -ts_file ts_$NAME -ts_times 0:daily:$DURATION -hydrology routing -hydrology_bmelt_file $INNAME -ys 0 -y $DURATION -max_dt 0.03 -o $NAME"
+cmd="$MPIDO pismr -i $INNAME -no_mass -energy none -stress_balance none $CLIMATE -spatial_file ex_$NAME -spatial_times 0:monthly:$DURATION -spatial_vars $EXVAR -scalar_file ts_$NAME -scalar_times 0:daily:$DURATION -hydrology routing -hydrology_bmelt_file $INNAME -ys 0 -y $DURATION -max_dt 0.03 -o $NAME"
 $PISM_DO $cmd
 echo
 
 # -hydrology distributed
 NAME=distributed-decoupled.nc
-cmd="$MPIDO pismr -i $INNAME -no_mass -energy none -stress_balance none $CLIMATE -spatial_file ex_$NAME -spatial_times 0:monthly:$DURATION -spatial_vars $EXVARDIST -ts_file ts_$NAME -ts_times 0:daily:$DURATION -hydrology distributed -hydrology_bmelt_file $INNAME -hydrology_velbase_mag_file $INNAME -ys 0 -y $DURATION -max_dt 0.03 -o $NAME"
+cmd="$MPIDO pismr -i $INNAME -no_mass -energy none -stress_balance none $CLIMATE -spatial_file ex_$NAME -spatial_times 0:monthly:$DURATION -spatial_vars $EXVARDIST -scalar_file ts_$NAME -scalar_times 0:daily:$DURATION -hydrology distributed -hydrology_bmelt_file $INNAME -hydrology_velbase_mag_file $INNAME -ys 0 -y $DURATION -max_dt 0.03 -o $NAME"
 $PISM_DO $cmd
 echo
 

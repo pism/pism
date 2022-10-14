@@ -13,7 +13,7 @@ files="verify-12.nc ice_volume-12.nc"
 rm -f $files
 GRID="-Mx 31 -My 31 -Mz 31 -y 5000 -ys 1000"
 OPTS="-test B -max_dt 25 -o_size small"
-TS_OPTS="-ts_file ice_volume-12.nc -ts_vars ice_volume -ts_times 1000:25:1e4"
+TS_OPTS="-scalar_file ice_volume-12.nc -scalar_vars ice_volume -scalar_times 1000:25:1e4"
 # run test B 
 
 set -x

@@ -60,7 +60,7 @@ echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNT
 cmd="$PISM_MPIDO $NN pismr -eisII $EXP $GRIDORINPUT -ys 0 -y $DUR \
  -skip -skip_max $SKIP -o $ROOT.nc -spatial_file ex_$ROOT.nc \
  -spatial_vars thk,temppabase,velsurf_mag,velbar_mag,flux_mag,diffusivity,bmelt,taud_mag \
- -spatial_times 1000:1000:$DUR -ts_file ts_$ROOT.nc \
- -ts_times 0:100:$DUR"
+ -spatial_times 1000:1000:$DUR -scalar_file ts_$ROOT.nc \
+ -scalar_times 0:100:$DUR"
 $PISM_DO $cmd
 

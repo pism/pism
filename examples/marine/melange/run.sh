@@ -13,7 +13,7 @@ physics="-stress_balance ssa+sia -ssa_dirichlet_bc -cfbc -part_grid"
 extra="-spatial_vars thk,mask,velbar_mag,Href,velbar"
 
 extra="$extra -spatial_times 5 -spatial_file ex.nc"
-ts="-ts_file ts.nc -ts_times 1"
+ts="-scalar_file ts.nc -scalar_times 1"
 
 output="-o o.nc -o_order zyx $extra $ts"
 

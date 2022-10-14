@@ -42,7 +42,7 @@ consider setting optional environment variables (see script for meaning):
     EXVARS       desired -spatial_vars; defaults to 'diffusivity,temppabase,
                    tempicethk_basal,bmelt,tillwat,velsurf_mag,mask,thk,topg,usurf'
                    plus ',hardav,velbase_mag,tauc' if DYNAMICS=hybrid
-    NODIAGS      if set, DON'T use -ts_file or -spatial_file
+    NODIAGS      if set, DON'T use -scalar_file or -spatial_file
     USEPIK       if set, add -pik -subgl
     PARAM_PPQ    sets (hybrid-only) option -pseudo_plastic_q \$PARAM_PPQ
                    [default=0.25]
@@ -310,7 +310,7 @@ if [ -z "${NODIAGS}" ] ; then  # check if env var is NOT set
   EXNAME=ex_$OUTNAME
   EXTIMES=-$DURATION:$EXSTEP:0
   # check_stationarity.py can be applied to $EXNAME
-  DIAGNOSTICS="-ts_file $TSNAME -ts_times $TSTIMES -spatial_file $EXNAME -spatial_times $EXTIMES -spatial_vars $EXVARS"
+  DIAGNOSTICS="-scalar_file $TSNAME -scalar_times $TSTIMES -spatial_file $EXNAME -spatial_times $EXTIMES -spatial_vars $EXVARS"
 else
   DIAGNOSTICS=""
 fi

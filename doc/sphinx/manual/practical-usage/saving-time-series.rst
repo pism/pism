@@ -6,17 +6,17 @@ Scalar diagnostic quantities
 ----------------------------
 
 It is also possible to save time-series of certain scalar diagnostic quantities using a
-combination of the options ``-ts_file``, ``-ts_times``, and ``-ts_vars``. For example,
+combination of the options ``-scalar_file``, ``-scalar_times``, and ``-scalar_vars``. For example,
 
 .. code-block:: none
 
    pismr -i foo.nc -y 1e4 -o output.nc \
-         -ts_file time-series.nc -ts_times 0:1:1e4 \
-         -ts_vars ice_volume_glacierized,ice_area_glacierized_grounded
+         -scalar_file time-series.nc -scalar_times 0:1:1e4 \
+         -scalar_vars ice_volume_glacierized,ice_area_glacierized_grounded
 
 will run for 10000 years, saving total ice volume and grounded ice area to
 ``time-series.nc`` *yearly*. See tables :ref:`sec-ts-parameters` below for the list of
-options and :ref:`sec-ts_vars` for the full list of supported time-series.
+options and :ref:`sec-scalar_vars` for the full list of supported time-series.
 
 .. note::
 
@@ -24,12 +24,12 @@ options and :ref:`sec-ts_vars` for the full list of supported time-series.
    does not affect adaptive time-stepping. Here, however, PISM will save exactly the
    number of time-series records requested.
 
-Omitting the :opt:`-ts_vars` makes PISM save *all* available variables listed in
-:ref:`sec-ts_vars`. Because scalar time-series take minimal storage space, compared to
+Omitting the :opt:`-scalar_vars` makes PISM save *all* available variables listed in
+:ref:`sec-scalar_vars`. Because scalar time-series take minimal storage space, compared to
 spatially-varying data, this is usually a reasonable choice. Run PISM with the
 option :opt:`-list_diagnostics scalar` to see the list of all available time-series.
 
-If the file ``foo.nc``, specified by ``-ts_file foo.nc``, already exists then by default
+If the file ``foo.nc``, specified by ``-scalar_file foo.nc``, already exists then by default
 the existing file will be moved to ``foo.nc~`` and the new time series will go into
 ``foo.nc``. To append the time series onto the end of the existing file, use option
 ``-ts_append``.

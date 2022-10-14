@@ -95,7 +95,7 @@ require precise application of forcing data or reporting on particular dates
 
 In addition to setting run start and end times, the calendar setting also affects the
 interpretation of "monthly" and "yearly" reporting with :opt:`-spatial_times`,
-:opt:`-ts_times`, and :opt:`-save_times` (see :ref:`sec-saving-diagnostics`,
+:opt:`-scalar_times`, and :opt:`-save_times` (see :ref:`sec-saving-diagnostics`,
 :ref:`sec-saving-time-series`, and :ref:`sec-snapshots`).
 
 .. note::

@@ -33,7 +33,7 @@ controlling this feature. The section :ref:`sec-spatial_vars` list all the varia
    available. To print a warning and continue instead of stopping, set
    :config:`output.extra.stop_missing` to "false".
 
-Note that options :opt:`-spatial_times`, :opt:`-save_times`, :opt:`-ts_times` take *dates*
+Note that options :opt:`-spatial_times`, :opt:`-save_times`, :opt:`-scalar_times` take *dates*
 if a non-trivial calendar is selected. Here are some examples.
 
 .. code-block:: bash
@@ -66,7 +66,7 @@ year", and "yearly" is "every :math:`3.14\ldots\times10^7`" seconds, otherwise P
 month lengths computed using the selected calendar.
 
 It is frequently desirable to save diagnostic quantities at regular intervals for the
-whole duration of the run; options :opt:`-spatial_times`, :opt:`-ts_times`, and
+whole duration of the run; options :opt:`-spatial_times`, :opt:`-scalar_times`, and
 :opt:`-save_times` provide a shortcut. For example, use ``-spatial_times yearly`` to save at
 the end of every year.
 
@@ -99,7 +99,7 @@ the option :opt:`-list_diagnostics spatial`, which prints the list of diagnostic
 
 The :opt:`-spatial_file` mechanism modifies PISM's adaptive time-stepping scheme so as to
 step to, and save at, *exactly* the times requested. By contrast, as noted in subsection
-:ref:`sec-saving-time-series`, the :opt:`-ts_file` mechanism does not alter PISM's
+:ref:`sec-saving-time-series`, the :opt:`-scalar_file` mechanism does not alter PISM's
 time-steps and instead uses linear interpolation to save at the requested times in between
 PISM's actual time-steps.
 

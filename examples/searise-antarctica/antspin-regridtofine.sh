@@ -68,7 +68,7 @@ cmd="$PISM_MPIDO $NN $PISM_EXEC -skip -skip_max $SKIP \
     -regrid_file $INNAME -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
-    -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
+    -scalar_file $TSNAME -scalar_times 0:1:$RUNTIME \
     -spatial_file $EXTRANAME $expackage \
     -o $RESNAME -o_size big"
 

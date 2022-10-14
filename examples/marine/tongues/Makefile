@@ -5,7 +5,7 @@ mass=-part_grid
 misc=-o_order zyx -energy none -o output.nc
 extra=-spatial_times 5 -spatial_file ex.nc -spatial_vars velbar_mag,thk,mask,taud,velbar
 length=-y 1500
-ts=-ts_file ts.nc -ts_times 1
+ts=-scalar_file ts.nc -scalar_times 1
 
 options=${grid} ${ssa} ${mass} ${misc} ${length} ${ts}
 

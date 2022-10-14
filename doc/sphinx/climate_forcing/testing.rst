@@ -85,7 +85,7 @@ The command
           -surface pdd -ys 0 -ye 2.5 \
           -spatial_file foo.nc -spatial_times 0:0.1:2.5 \
           -spatial_vars climatic_mass_balance,air_temp_snapshot,smelt,srunoff,saccum
-          -ts_file ts.nc -ts_times 0:0.1:2.5 \
+          -scalar_file ts.nc -scalar_times 0:0.1:2.5 \
           -o bar.nc
 
 will produce ``foo.nc`` containing a "movie" very similar to the one created by the

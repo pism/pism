@@ -170,9 +170,9 @@ class Experiment:
         options = ["-spatial_file %s" % extra_file,
                    "-spatial_times 0:50:3e4",
                    "-spatial_vars $extra_vars",
-                   "-ts_file %s" % ts_file,
-                   "-ts_times 0:50:3e4",
                    "-output.sizes.medium sftgif",
+                   "-scalar_file %s" % ts_file,
+                   "-scalar_times 0:50:3e4",
                    "-o %s" % output_file,
                    ]
 

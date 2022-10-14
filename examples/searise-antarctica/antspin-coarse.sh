@@ -121,7 +121,7 @@ echo "$SCRIPTNAME  run into steady state with constant climate forcing for $RUNT
 cmd="$PISM_MPIDO $NN $PISM_EXEC -bootstrap -Lz 5000 -skip -skip_max $SKIP -i $INNAME \
     $SIA_ENHANCEMENT $PIKPHYS_COUPLING $PIKPHYS $FULLPHYS \
     -ys 0 -y $RUNTIME \
-    -ts_file $TSNAME -ts_times 0:1:$RUNTIME \
+    -scalar_file $TSNAME -scalar_times 0:1:$RUNTIME \
     -spatial_file $EXTRANAME $expackage \
     -o $RESNAME -o_size big"
 $DO $cmd

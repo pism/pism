@@ -24,7 +24,7 @@ viewers="-view $diagnostics"
 
 extra="-spatial_times 10 -spatial_vars $diagnostics -spatial_file ${output_basename}_ex.nc"
 
-ts="-ts_times 10 -ts_file ${output_basename}_ts.nc"
+ts="-scalar_times 10 -scalar_file ${output_basename}_ts.nc"
 
 misc_options="-cfbc -part_grid -o_order zyx"
 

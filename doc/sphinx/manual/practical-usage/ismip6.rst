@@ -106,17 +106,17 @@ The list of variables is stored in the configuration parameter
 :config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are
 required to provide. (Add ``base,ligroundf`` to this list for Antarctic projections.)
 
-To save all the time series supported by PISM, omit the ``-ts_vars`` option:
+To save all the time series supported by PISM, omit the ``-scalar_vars`` option:
 
 .. code-block:: bash
 
-   pismr -ts_times TIMES -ts_file ts.nc
+   pismr -scalar_times TIMES -scalar_file ts.nc
 
-To save all variables requested by ISMIP6, use ``-ts_vars ismip6``:
+To save all variables requested by ISMIP6, use ``-scalar_vars ismip6``:
 
 .. code-block:: bash
 
-   pismr -ts_times TIMES -ts_file ts.nc -ts_vars ismip6
+   pismr -scalar_times TIMES -scalar_file ts.nc -scalar_vars ismip6
 
 .. list-table:: ISMIP6 variables
    :name: tab-ismip6-variables

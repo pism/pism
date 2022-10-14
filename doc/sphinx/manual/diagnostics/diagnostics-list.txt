@@ -943,7 +943,7 @@ Spatially-variable fields
    :Description: vertical velocity of ice at ice surface, relative to the geoid
    :Standard name: ``land_ice_surface_upward_velocity``
 
-.. _sec-ts_vars:
+.. _sec-scalar_vars:
 
 Scalar time-series
 ------------------

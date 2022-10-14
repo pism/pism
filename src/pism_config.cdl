@@ -1956,17 +1956,17 @@ netcdf pism_config {
 
     pism_config:output.timeseries.filename = "";
     pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
-    pism_config:output.timeseries.filename_option = "ts_file";
+    pism_config:output.timeseries.filename_option = "scalar_file";
     pism_config:output.timeseries.filename_type = "string";
 
     pism_config:output.timeseries.times = "";
     pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
-    pism_config:output.timeseries.times_option = "ts_times";
+    pism_config:output.timeseries.times_option = "scalar_times";
     pism_config:output.timeseries.times_type = "string";
 
     pism_config:output.timeseries.variables = "";
     pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
-    pism_config:output.timeseries.variables_option = "ts_vars";
+    pism_config:output.timeseries.variables_option = "scalar_vars";
     pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.use_MKS = "false";

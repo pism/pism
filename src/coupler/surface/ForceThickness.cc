@@ -189,27 +189,27 @@ PISM="${PISM_PREFIX}${PISM_EXEC}"
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
     -surface pdd -pdd_fausto \
-    -o no_force.nc -ts_file ts_no_force.nc -ts_times -1000:yearly:0"
+    -o no_force.nc -scalar_file ts_no_force.nc -scalar_times -1000:yearly:0"
 $PISM_DO $cmd
 
 echo
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
   -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc \
-  -o default_force.nc -ts_file ts_default_force.nc -ts_times -1000:yearly:0"
+  -o default_force.nc -scalar_file ts_default_force.nc -scalar_times -1000:yearly:0"
 $PISM_DO $cmd
 
 echo
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
     -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc -force_to_thickness_alpha 0.005 \
-    -o weak_force.nc -ts_file ts_weak_force.nc -ts_times -1000:yearly:0"
+    -o weak_force.nc -scalar_file ts_weak_force.nc -scalar_times -1000:yearly:0"
 $PISM_DO $cmd
 
 
 cmd="$PISM_MPIDO $NN $PISM -ys -1000.0 -ye 0 -skip 5 -i green_ssl2_110ka.nc -atmosphere searise_greenland \
     -surface pdd,forcing -pdd_fausto -force_to_thickness_file green20km_y1.nc -force_to_thickness_alpha 0.05 \
-    -o strong_force.nc -ts_file ts_strong_force.nc -ts_times -1000:yearly:0"
+    -o strong_force.nc -scalar_file ts_strong_force.nc -scalar_times -1000:yearly:0"
 $PISM_DO $cmd
 
 \endcode
