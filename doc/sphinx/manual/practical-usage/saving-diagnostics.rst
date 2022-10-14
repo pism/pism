@@ -31,7 +31,7 @@ controlling this feature. The section :ref:`sec-spatial_vars` list all the varia
    Some diagnostics are only available if the simulation uses a sub-model that provides
    them. PISM will stop with an error message if a diagnostic is requested but not
    available. To print a warning and continue instead of stopping, set
-   :config:`output.extra.stop_missing` to "false".
+   :config:`output.diagnostics.spatial.stop_missing` to "false".
 
 Note that options :opt:`-spatial_times`, :opt:`-save_times`, :opt:`-scalar_times` take *dates*
 if a non-trivial calendar is selected. Here are some examples.
@@ -108,7 +108,7 @@ PISM's actual time-steps.
 Parameters
 ==========
 
-Prefix: ``output.extra.``
+Prefix: ``output.diagnostics.spatial.``
 
 .. pism-parameters::
-   :prefix: output.extra.
+   :prefix: output.diagnostics.spatial.

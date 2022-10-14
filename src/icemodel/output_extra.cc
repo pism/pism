@@ -117,18 +117,18 @@ void IceModel::init_extras() {
   m_last_extra = 0;               // will be set in write_extras()
   m_next_extra = 0;
 
-  m_extra_filename   = m_config->get_string("output.extra.file");
-  std::string times  = m_config->get_string("output.extra.times");
-  std::string vars   = m_config->get_string("output.extra.vars");
-  bool        split  = m_config->get_flag("output.extra.split");
-  bool        append = m_config->get_flag("output.extra.append");
+  m_extra_filename   = m_config->get_string("output.diagnostics.spatial.file");
+  std::string times  = m_config->get_string("output.diagnostics.spatial.times");
+  std::string vars   = m_config->get_string("output.diagnostics.spatial.vars");
+  bool        split  = m_config->get_flag("output.diagnostics.spatial.split");
+  bool        append = m_config->get_flag("output.diagnostics.spatial.append");
 
   bool extra_file_set = not m_extra_filename.empty();
   bool times_set = not times.empty();
 
   if (extra_file_set ^ times_set) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "you need to set both output.extra.file and output.extra.times"
+                       "you need to set both output.diagnostics.spatial.file and output.diagnostics.spatial.times"
                        " to save spatial time-series.");
   }
 
@@ -140,17 +140,17 @@ void IceModel::init_extras() {
   try {
     m_extra_times = m_time->parse_times(times);
   } catch (RuntimeError &e) {
-    e.add_context("parsing the output.extra.times argument %s", times.c_str());
+    e.add_context("parsing the output.diagnostics.spatial.times argument %s", times.c_str());
     throw;
   }
 
   if (m_extra_times.size() == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "output.extra.times cannot be empty");
+    throw RuntimeError(PISM_ERROR_LOCATION, "output.diagnostics.spatial.times cannot be empty");
   }
 
   if (append and split) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "both output.extra.split and output.extra.append are set.");
+                       "both output.diagnostics.spatial.split and output.diagnostics.spatial.append are set.");
   }
 
   if (append) {
@@ -227,7 +227,7 @@ void IceModel::init_extras() {
     m_log->message(2, "variables requested: %s\n", vars.c_str());
   } else {
     m_log->message(2,
-                   "PISM WARNING: output.extra.vars was not set. Writing the model state...\n");
+                   "PISM WARNING: output.diagnostics.spatial.vars was not set. Writing the model state...\n");
   } // end of the else clause after "if (extra_vars_set)"
 }
 
@@ -312,7 +312,7 @@ void IceModel::write_extras() {
                  filename.c_str(), m_time->date(m_time->current()).c_str());
 
   // default behavior is to move the file aside if it exists already; option allows appending
-  bool append = m_config->get_flag("output.extra.append");
+  bool append = m_config->get_flag("output.diagnostics.spatial.append");
   auto mode = m_extra_file_is_ready or append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
 
   const Profiling &profiling = m_ctx->profiling();

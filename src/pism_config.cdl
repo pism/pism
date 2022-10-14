@@ -1808,35 +1808,60 @@ netcdf pism_config {
     pism_config:output.compression_level_type = "integer";
     pism_config:output.compression_level_units = "count";
 
-    pism_config:output.extra.append = "no";
-    pism_config:output.extra.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.extra.split` is set.";
-    pism_config:output.extra.append_option = "extra_append";
-    pism_config:output.extra.append_type = "flag";
+    pism_config:output.diagnostics.scalar.append = "false";
+    pism_config:output.diagnostics.scalar.append_doc = "If true, append to the scalar time series output file.";
+    pism_config:output.diagnostics.scalar.append_option = "ts_append";
+    pism_config:output.diagnostics.scalar.append_type = "flag";
 
-    pism_config:output.extra.file = "";
-    pism_config:output.extra.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
-    pism_config:output.extra.file_option = "spatial_file";
-    pism_config:output.extra.file_type = "string";
+    pism_config:output.diagnostics.scalar.buffer_size = 10000;
+    pism_config:output.diagnostics.scalar.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
+    pism_config:output.diagnostics.scalar.buffer_size_type = "integer";
+    pism_config:output.diagnostics.scalar.buffer_size_units = "count";
 
-    pism_config:output.extra.split = "no";
-    pism_config:output.extra.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
-    pism_config:output.extra.split_option = "extra_split";
-    pism_config:output.extra.split_type = "flag";
+    pism_config:output.diagnostics.scalar.filename = "";
+    pism_config:output.diagnostics.scalar.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
+    pism_config:output.diagnostics.scalar.filename_option = "scalar_file";
+    pism_config:output.diagnostics.scalar.filename_type = "string";
 
-    pism_config:output.extra.stop_missing = "yes";
-    pism_config:output.extra.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
-    pism_config:output.extra.stop_missing_option = "extra_stop_missing";
-    pism_config:output.extra.stop_missing_type = "flag";
+    pism_config:output.diagnostics.scalar.times = "";
+    pism_config:output.diagnostics.scalar.times_doc = "List or range of times defining reporting time intervals.";
+    pism_config:output.diagnostics.scalar.times_option = "scalar_times";
+    pism_config:output.diagnostics.scalar.times_type = "string";
 
-    pism_config:output.extra.times = "";
-    pism_config:output.extra.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
-    pism_config:output.extra.times_option = "spatial_times";
-    pism_config:output.extra.times_type = "string";
+    pism_config:output.diagnostics.scalar.variables = "";
+    pism_config:output.diagnostics.scalar.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
+    pism_config:output.diagnostics.scalar.variables_option = "scalar_vars";
+    pism_config:output.diagnostics.scalar.variables_type = "string";
 
-    pism_config:output.extra.vars = "";
-    pism_config:output.extra.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
-    pism_config:output.extra.vars_option = "spatial_vars";
-    pism_config:output.extra.vars_type = "string";
+    pism_config:output.diagnostics.spatial.append = "no";
+    pism_config:output.diagnostics.spatial.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.diagnostics.spatial.split` is set.";
+    pism_config:output.diagnostics.spatial.append_option = "extra_append";
+    pism_config:output.diagnostics.spatial.append_type = "flag";
+
+    pism_config:output.diagnostics.spatial.file = "";
+    pism_config:output.diagnostics.spatial.file_doc = "Name of the file that will contain spatially-variable diagnostics. Should be different from :config:`output.file`.";
+    pism_config:output.diagnostics.spatial.file_option = "spatial_file";
+    pism_config:output.diagnostics.spatial.file_type = "string";
+
+    pism_config:output.diagnostics.spatial.split = "no";
+    pism_config:output.diagnostics.spatial.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
+    pism_config:output.diagnostics.spatial.split_option = "extra_split";
+    pism_config:output.diagnostics.spatial.split_type = "flag";
+
+    pism_config:output.diagnostics.spatial.stop_missing = "yes";
+    pism_config:output.diagnostics.spatial.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
+    pism_config:output.diagnostics.spatial.stop_missing_option = "extra_stop_missing";
+    pism_config:output.diagnostics.spatial.stop_missing_type = "flag";
+
+    pism_config:output.diagnostics.spatial.times = "";
+    pism_config:output.diagnostics.spatial.times_doc = "List or a range of times defining reporting intervals for spatially-variable diagnostics.";
+    pism_config:output.diagnostics.spatial.times_option = "spatial_times";
+    pism_config:output.diagnostics.spatial.times_type = "string";
+
+    pism_config:output.diagnostics.spatial.vars = "";
+    pism_config:output.diagnostics.spatial.vars_doc = "Comma-separated list of spatially-variable diagnostics.";
+    pism_config:output.diagnostics.spatial.vars_option = "spatial_vars";
+    pism_config:output.diagnostics.spatial.vars_type = "string";
 
     pism_config:output.file = "unnamed.nc";
     pism_config:output.file_doc = "The file to save final model results to.";
@@ -1943,31 +1968,6 @@ netcdf pism_config {
     pism_config:output.snapshot.times_doc = "List or a range of times to save model state snapshots at.";
     pism_config:output.snapshot.times_option = "save_times";
     pism_config:output.snapshot.times_type = "string";
-
-    pism_config:output.timeseries.append = "false";
-    pism_config:output.timeseries.append_doc = "If true, append to the scalar time series output file.";
-    pism_config:output.timeseries.append_option = "ts_append";
-    pism_config:output.timeseries.append_type = "flag";
-
-    pism_config:output.timeseries.buffer_size = 10000;
-    pism_config:output.timeseries.buffer_size_doc = "Number of scalar diagnostic time-series records to hold in memory before writing to disk. (PISM writes this many time-series records to reduce I/O costs.) Send the USR2 signal to flush time-series.";
-    pism_config:output.timeseries.buffer_size_type = "integer";
-    pism_config:output.timeseries.buffer_size_units = "count";
-
-    pism_config:output.timeseries.filename = "";
-    pism_config:output.timeseries.filename_doc = "Name of the file to save scalar time series to. Leave empty to disable reporting scalar time-series.";
-    pism_config:output.timeseries.filename_option = "scalar_file";
-    pism_config:output.timeseries.filename_type = "string";
-
-    pism_config:output.timeseries.times = "";
-    pism_config:output.timeseries.times_doc = "List or range of times defining reporting time intervals.";
-    pism_config:output.timeseries.times_option = "scalar_times";
-    pism_config:output.timeseries.times_type = "string";
-
-    pism_config:output.timeseries.variables = "";
-    pism_config:output.timeseries.variables_doc = "Requested scalar (time-series) diagnostics. Leave empty to save all available diagnostics.";
-    pism_config:output.timeseries.variables_option = "scalar_vars";
-    pism_config:output.timeseries.variables_type = "string";
 
     pism_config:output.use_MKS = "false";
     pism_config:output.use_MKS_doc = "Use MKS units in output files.";
@@ -2736,7 +2736,7 @@ netcdf pism_config {
     pism_config:time_stepping.assume_bed_elevation_changed_type = "flag";
 
     pism_config:time_stepping.hit_extra_times = "yes";
-    pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.extra.times`.";
+    pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.spatial.times`.";
     pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";
     pism_config:time_stepping.hit_extra_times_type = "flag";
 
@@ -2752,7 +2752,7 @@ netcdf pism_config {
     pism_config:time_stepping.hit_save_times_type = "flag";
 
     pism_config:time_stepping.hit_ts_times = "no";
-    pism_config:time_stepping.hit_ts_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.timeseries.times`.";
+    pism_config:time_stepping.hit_ts_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.scalar.times`.";
     pism_config:time_stepping.hit_ts_times_type = "flag";
 
     pism_config:time_stepping.maximum_time_step = 60.0;

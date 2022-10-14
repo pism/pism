@@ -44,9 +44,9 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 //! Initializes the code writing scalar time-series.
 void IceModel::init_timeseries() {
 
-  m_ts_filename = m_config->get_string("output.timeseries.filename");
+  m_ts_filename = m_config->get_string("output.diagnostics.scalar.filename");
 
-  auto times = m_config->get_string("output.timeseries.times");
+  auto times = m_config->get_string("output.diagnostics.scalar.times");
   bool times_set = not times.empty();
 
   if (times_set xor not m_ts_filename.empty()) {
@@ -69,7 +69,7 @@ void IceModel::init_timeseries() {
   m_log->message(2, "  saving scalar time-series to '%s'\n", m_ts_filename.c_str());
   m_log->message(2, "  times requested: %s\n", times.c_str());
 
-  m_ts_vars = set_split(m_config->get_string("output.timeseries.variables"), ',');
+  m_ts_vars = set_split(m_config->get_string("output.diagnostics.scalar.variables"), ',');
   if (not m_ts_vars.empty()) {
     m_ts_vars = process_ts_shortcuts(*m_config, m_ts_vars);
     m_log->message(2, "variables requested: %s\n", set_join(m_ts_vars, ",").c_str());
@@ -78,7 +78,7 @@ void IceModel::init_timeseries() {
   // prepare the output file
   {
     // default behavior is to move the file aside if it exists already; option allows appending
-    bool append = m_config->get_flag("output.timeseries.append");
+    bool append = m_config->get_flag("output.diagnostics.scalar.append");
     auto mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
     File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted

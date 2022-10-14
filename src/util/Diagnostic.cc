@@ -154,7 +154,7 @@ TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &
   m_current_time = 0;
   m_start        = 0;
 
-  m_buffer_size = static_cast<size_t>(m_config->get_number("output.timeseries.buffer_size"));
+  m_buffer_size = static_cast<size_t>(m_config->get_number("output.diagnostics.scalar.buffer_size"));
 
   m_variable["ancillary_variables"] = name + "_aux";
 
