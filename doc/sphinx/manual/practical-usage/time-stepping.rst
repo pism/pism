@@ -37,7 +37,7 @@ step length.
 
    #. If  :config:`time_stepping.hit_scalar_times` is set, PISM will adjust time step lengths
       to "hit" times requested with :config:`output.diagnostics.scalar.times`.
-   #. If :config:`time_stepping.hit_extra_times` is set (the default), PISM will adjust
+   #. If :config:`time_stepping.hit_spatial_times` is set (the default), PISM will adjust
       time step lengths to "hit" times requested with :config:`output.diagnostics.spatial.times`.
    #. If :config:`time_stepping.hit_save_times` is set, PISM will adjust time step lengths
       to "hit" times requested with :config:`output.snapshot.times`.
@@ -218,7 +218,7 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
 
    * - ``-spatial_... reporting``
      - the ``-spatial_times`` option and the configuration parameter
-       :config:`time_stepping.hit_extra_times`; see section :ref:`sec-saving-diagnostics`
+       :config:`time_stepping.hit_spatial_times`; see section :ref:`sec-saving-diagnostics`
 
    * - ``surface``
      - a surface or an atmosphere model
