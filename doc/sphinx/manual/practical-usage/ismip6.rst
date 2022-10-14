@@ -103,7 +103,7 @@ To save *all* the diagnostics requested by ISMIP6 use the short-cut
    pismr -spatial_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
-:config:`output.ISMIP6_extra_variables` and contains variables Greenland projections are
+:config:`output.ISMIP6_spatial_variables` and contains variables Greenland projections are
 required to provide. (Add ``base,ligroundf`` to this list for Antarctic projections.)
 
 To save all the time series supported by PISM, omit the ``-scalar_vars`` option:

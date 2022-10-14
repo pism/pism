@@ -33,7 +33,7 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 
   if (result.find("ismip6") != result.end()) {
     result.erase("ismip6");
-    for (auto v : set_split(config.get_string("output.ISMIP6_ts_variables"), ',')) {
+    for (auto v : set_split(config.get_string("output.ISMIP6_scalar_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -107,7 +107,7 @@ void IceModel::init_timeseries() {
 //! Computes the maximum time-step we can take and still hit all `-scalar_times`.
 MaxTimestep IceModel::ts_max_timestep(double my_t) {
 
-  if ((not m_config->get_flag("time_stepping.hit_ts_times")) or
+  if ((not m_config->get_flag("time_stepping.hit_scalar_times")) or
       m_ts_diagnostics.empty()) {
     return MaxTimestep("reporting (-scalar_times)");
   }

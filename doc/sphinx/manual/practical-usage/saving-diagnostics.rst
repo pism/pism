@@ -89,7 +89,7 @@ interval. This implies, for example, that ``0:1:10`` will produce 10 records at 
 If the file ``foo.nc``, specified by ``-spatial_file foo.nc``, already exists then by
 default the existing file will be moved to ``foo.nc~`` and the new time series will go
 into ``foo.nc``. To append the time series onto the end of the existing file, use option
-:opt:`-extra_append`.
+:opt:`-spatial_append`.
 
 The list of available diagnostic quantities depends on the model setup. For example, a run
 with only one vertical grid level in the bedrock thermal layer will not be able to save

@@ -1770,13 +1770,13 @@ netcdf pism_config {
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
     pism_config:output.ISMIP6_type = "flag";
 
-    pism_config:output.ISMIP6_extra_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
-    pism_config:output.ISMIP6_extra_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_extra_variables_type = "string";
+    pism_config:output.ISMIP6_scalar_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
+    pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_ts_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
-    pism_config:output.ISMIP6_ts_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_ts_variables_type = "string";
+    pism_config:output.ISMIP6_spatial_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
+    pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
+    pism_config:output.ISMIP6_spatial_variables_type = "string";
 
     pism_config:output.checkpoint.exit = "no";
     pism_config:output.checkpoint.exit_doc = "If ``true`` PISM will exit with after checkpointing.";
@@ -1810,7 +1810,7 @@ netcdf pism_config {
 
     pism_config:output.diagnostics.scalar.append = "false";
     pism_config:output.diagnostics.scalar.append_doc = "If true, append to the scalar time series output file.";
-    pism_config:output.diagnostics.scalar.append_option = "ts_append";
+    pism_config:output.diagnostics.scalar.append_option = "scalar_append";
     pism_config:output.diagnostics.scalar.append_type = "flag";
 
     pism_config:output.diagnostics.scalar.buffer_size = 10000;
@@ -1835,7 +1835,7 @@ netcdf pism_config {
 
     pism_config:output.diagnostics.spatial.append = "no";
     pism_config:output.diagnostics.spatial.append_doc = "Append to an existing output file.  No effect if file does not yet exist, and no effect if :config:`output.diagnostics.spatial.split` is set.";
-    pism_config:output.diagnostics.spatial.append_option = "extra_append";
+    pism_config:output.diagnostics.spatial.append_option = "spatial_append";
     pism_config:output.diagnostics.spatial.append_type = "flag";
 
     pism_config:output.diagnostics.spatial.file = "";
@@ -1845,12 +1845,12 @@ netcdf pism_config {
 
     pism_config:output.diagnostics.spatial.split = "no";
     pism_config:output.diagnostics.spatial.split_doc = "Save spatially-variable diagnostics to separate files (one per time record).";
-    pism_config:output.diagnostics.spatial.split_option = "extra_split";
+    pism_config:output.diagnostics.spatial.split_option = "spatial_split";
     pism_config:output.diagnostics.spatial.split_type = "flag";
 
     pism_config:output.diagnostics.spatial.stop_missing = "yes";
     pism_config:output.diagnostics.spatial.stop_missing_doc = "Stop if requested variable is not available instead of warning.";
-    pism_config:output.diagnostics.spatial.stop_missing_option = "extra_stop_missing";
+    pism_config:output.diagnostics.spatial.stop_missing_option = "spatial_stop_missing";
     pism_config:output.diagnostics.spatial.stop_missing_type = "flag";
 
     pism_config:output.diagnostics.spatial.times = "";
@@ -2735,10 +2735,10 @@ netcdf pism_config {
     pism_config:time_stepping.assume_bed_elevation_changed_doc = "If set, assume that bed elevation changes every time step. If not set, PISM tries to avoid unnecessary computations if the bed deformation model did not update bed elevation (to reduce the computational cost a little bit).";
     pism_config:time_stepping.assume_bed_elevation_changed_type = "flag";
 
-    pism_config:time_stepping.hit_extra_times = "yes";
-    pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.spatial.times`.";
-    pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";
-    pism_config:time_stepping.hit_extra_times_type = "flag";
+    pism_config:time_stepping.count_steps = "no";
+    pism_config:time_stepping.count_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
+    pism_config:time_stepping.count_steps_option = "count_steps";
+    pism_config:time_stepping.count_steps_type = "flag";
 
     pism_config:time_stepping.hit_multiples = 0.0;
     pism_config:time_stepping.hit_multiples_doc = "Hit every X years, where X is specified using this parameter. Use 0 to disable.";
@@ -2751,9 +2751,14 @@ netcdf pism_config {
     pism_config:time_stepping.hit_save_times_option = "save_force_output_times";
     pism_config:time_stepping.hit_save_times_type = "flag";
 
-    pism_config:time_stepping.hit_ts_times = "no";
-    pism_config:time_stepping.hit_ts_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.scalar.times`.";
-    pism_config:time_stepping.hit_ts_times_type = "flag";
+    pism_config:time_stepping.hit_scalar_times = "no";
+    pism_config:time_stepping.hit_scalar_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.scalar.times`.";
+    pism_config:time_stepping.hit_scalar_times_type = "flag";
+
+    pism_config:time_stepping.hit_spatial_times = "yes";
+    pism_config:time_stepping.hit_spatial_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.diagnostics.spatial.times`.";
+    pism_config:time_stepping.hit_spatial_times_option = "spatial_force_output_times";
+    pism_config:time_stepping.hit_spatial_times_type = "flag";
 
     pism_config:time_stepping.maximum_time_step = 60.0;
     pism_config:time_stepping.maximum_time_step_doc = "Maximum allowed time step length";

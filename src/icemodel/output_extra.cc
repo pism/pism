@@ -33,7 +33,7 @@ namespace pism {
 MaxTimestep IceModel::extras_max_timestep(double my_t) {
 
   if ((not m_save_extra) or
-      (not m_config->get_flag("time_stepping.hit_extra_times"))) {
+      (not m_config->get_flag("time_stepping.hit_spatial_times"))) {
     return MaxTimestep("reporting (-spatial_times)");
   }
 
@@ -103,7 +103,7 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
     }
 
     result.erase("ismip6");
-    for (const auto& v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+    for (const auto& v : set_split(config.get_string("output.ISMIP6_spatial_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -212,11 +212,11 @@ void IceModel::init_extras() {
       if (m_extra_times.size() > 5000 and m_config->get_string("output.format") == "netcdf4_parallel") {
         throw RuntimeError(PISM_ERROR_LOCATION,
                            "more than 5000 times requested."
-                           "Please use -extra_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
+                           "Please use -spatial_split to avoid a crash caused by a bug in NetCDF versions older than 4.7.3.\n"
                            "Alternatively\n"
                            "- split this simulation into several runs and then concatenate results\n"
                            "- select a different output.format value\n"
-                           "- upgrade NetCDF to 4.7.3");
+                           "- upgrade NetCDF to 4.7.3 or newer");
       }
     }
   }

@@ -35,7 +35,7 @@ step length.
 
 #. Reporting.
 
-   #. If  :config:`time_stepping.hit_ts_times` is set, PISM will adjust time step lengths
+   #. If  :config:`time_stepping.hit_scalar_times` is set, PISM will adjust time step lengths
       to "hit" times requested with :config:`output.diagnostics.scalar.times`.
    #. If :config:`time_stepping.hit_extra_times` is set (the default), PISM will adjust
       time step lengths to "hit" times requested with :config:`output.diagnostics.spatial.times`.
@@ -212,11 +212,11 @@ Information on the number of nonlinear (outer) and linear (inner) iterations is 
    * - ``max``
      - maximum allowed `\dt` set with :config:`time_stepping.maximum_time_step`
 
-   * - ``-ts_... reporting``
+   * - ``-scalar_... reporting``
      - the ``-scalar_times`` option and the configuration parameter
-       :config:`time_stepping.hit_ts_times`; see section :ref:`sec-saving-time-series`
+       :config:`time_stepping.hit_scalar_times`; see section :ref:`sec-saving-time-series`
 
-   * - ``-extra_... reporting``
+   * - ``-spatial_... reporting``
      - the ``-spatial_times`` option and the configuration parameter
        :config:`time_stepping.hit_extra_times`; see section :ref:`sec-saving-diagnostics`
 
