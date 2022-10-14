@@ -8,7 +8,11 @@ Changes since v2.0.4
   non-standard location.
 - Minor documentation fixes.
 - Fix metadata of the `flux_staggered` diagnostic.
-- Stop with an error message if a regridded variable contains `NaN`.
+- Stop with an error message if a regridded variable contains values that are not finite
+  (`NaN` or infinity).
+- Fix a bug in the code reading in periodic time-dependent forcing: the case where the
+  last time record coincides with the end of the covered time interval (end of the period)
+  needs special handling.
 
 Changes since v2.0.3
 ====================
