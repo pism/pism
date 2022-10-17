@@ -63,7 +63,7 @@ Vector1::Vector1(IceGrid::ConstPtr grid, const std::string &name)
 }
 
 Vector1::Vector1(IceGrid::ConstPtr grid, const std::string &name,
-                     unsigned int stencil_width)
+                 unsigned int stencil_width)
   : Vector(grid, name, stencil_width) {
   // empty
 }

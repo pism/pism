@@ -41,7 +41,7 @@ public:
   std::shared_ptr<Vector> duplicate() const;
 protected:
   Vector(IceGrid::ConstPtr grid, const std::string &name,
-                unsigned int stencil_width);
+         unsigned int stencil_width);
 };
 
 class Vector1 : public Vector {
@@ -54,7 +54,7 @@ public:
   using Array2D<Vector2d>::box;
 protected:
   Vector1(IceGrid::ConstPtr grid, const std::string &name,
-            unsigned int stencil_width);
+          unsigned int stencil_width);
 };
 
 class Vector2 : public Vector1 {
