@@ -23,7 +23,7 @@
 
 #include "DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {
@@ -44,23 +44,23 @@ public:
   virtual ~DEBMSimple() = default;
 
   // diagnostics (for the last time step)
-  const IceModelVec2S &firn_depth() const;
-  const IceModelVec2S &snow_depth() const;
+  const array::Scalar &firn_depth() const;
+  const array::Scalar &snow_depth() const;
   // these represent totals (not rates) over the time step
-  const IceModelVec2S &air_temp_sd() const;
-  const IceModelVec2S &accumulation_impl() const;
-  const IceModelVec2S &melt_impl() const;
-  const IceModelVec2S &runoff_impl() const;
+  const array::Scalar &air_temp_sd() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   // Contributions to melt from insolation, temperature, and the background melt:
-  const IceModelVec2S &insolation_driven_melt() const;
-  const IceModelVec2S &temperature_driven_melt() const;
-  const IceModelVec2S &background_melt() const;
+  const array::Scalar &insolation_driven_melt() const;
+  const array::Scalar &temperature_driven_melt() const;
+  const array::Scalar &background_melt() const;
 
   // diagnostics
-  const IceModelVec2S &surface_albedo() const;
-  const IceModelVec2S &atmosphere_transmissivity() const;
-  const IceModelVec2S &insolation() const;
+  const array::Scalar &surface_albedo() const;
+  const array::Scalar &atmosphere_transmissivity() const;
+  const array::Scalar &insolation() const;
 
 private:
   virtual void init_impl(const Geometry &geometry);
@@ -72,8 +72,8 @@ private:
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual const IceModelVec2S &mass_flux_impl() const;
-  virtual const IceModelVec2S &temperature_impl() const;
+  virtual const array::Scalar &mass_flux_impl() const;
+  virtual const array::Scalar &temperature_impl() const;
 
   double compute_next_balance_year_start(double time);
 
@@ -86,48 +86,48 @@ private:
   double m_next_balance_year_start;
 
   //! cached surface mass balance rate
-  IceModelVec2S m_mass_flux;
+  array::Scalar m_mass_flux;
 
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_temperature;
 
   //! firn depth
-  IceModelVec2S m_firn_depth;
+  array::Scalar m_firn_depth;
 
   //! snow depth (reset once a year)
-  IceModelVec2S m_snow_depth;
+  array::Scalar m_snow_depth;
 
   //! standard deviation of the daily variability of the air temperature
-  std::shared_ptr<IceModelVec2T> m_air_temp_sd;
+  std::shared_ptr<array::Forcing> m_air_temp_sd;
 
   //! total accumulation during the last time step
-  IceModelVec2S::Ptr m_accumulation;
+  array::Scalar::Ptr m_accumulation;
 
   //! total melt during the last time step
-  IceModelVec2S::Ptr m_melt;
+  array::Scalar::Ptr m_melt;
 
   //! total runoff during the last time step
-  IceModelVec2S::Ptr m_runoff;
+  array::Scalar::Ptr m_runoff;
 
   //! total temperature melt during the last time step
-  IceModelVec2S m_temperature_driven_melt;
+  array::Scalar m_temperature_driven_melt;
 
   //! total insolation melt during the last time step
-  IceModelVec2S m_insolation_driven_melt;
+  array::Scalar m_insolation_driven_melt;
 
   //! total background_melt during the last timestep
-  IceModelVec2S m_background_melt;
+  array::Scalar m_background_melt;
 
   //! albedo field
-  IceModelVec2S m_surface_albedo;
+  array::Scalar m_surface_albedo;
 
   //! if albedo is given as input field
-  std::shared_ptr<IceModelVec2T> m_input_albedo;
+  std::shared_ptr<array::Forcing> m_input_albedo;
 
   //! transmissivity field
-  IceModelVec2S m_transmissivity;
+  array::Scalar m_transmissivity;
 
   //! insolation at the top of the atmosphere
-  IceModelVec2S m_insolation;
+  array::Scalar m_insolation;
 
   //! year length used to compute the time series length required to get m_n_per_year
   //! evaluations
