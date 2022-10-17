@@ -63,10 +63,10 @@ PISM uses the following classes to manage 2D and 3D fields, their I/O and metada
    * - `pism::array::Array3D`
      - scalar 3D fields (usually within the ice)
 
-Please see the documentation of these classes for more info. The base class `IceModelVec` is
+Please see the documentation of these classes for more info. The base class `array::Array` is
 a virtual class, so code should use the above derived classes.
 
-To create a scalar field, for example, one needs to create an instance of `IceModelVec2S`
+To create a scalar field, for example, one needs to create an instance of `array::Scalar`
 and then set its metadata:
 
 .. code-block:: c++
@@ -81,7 +81,7 @@ Here `grid` is an `IceGrid` instance, `thk` is the name of the NetCDF variable,
 `WITH_GHOSTS` means that storage for "ghost" ("halo") points will be allocated, and "2" is
 the number of ghosts (in other words: required stencil width).
 
-The `IceModelVec::set_attrs()` call sets commonly used NetCDF variable attributes seen in
+The `array::Array::set_attrs()` call sets commonly used NetCDF variable attributes seen in
 PISM output files:
 
 .. list-table::
@@ -156,7 +156,7 @@ If ``flag`` is ``OPTIONAL`` or ``OPTIONAL_FILL_MISSING`` PISM will fill the vari
 Write data to a file
 --------------------
 
-`IceModelVec::define()` will define all spatial dimensions used by a variable. However, we
+`array::Array::define()` will define all spatial dimensions used by a variable. However, we
 usually need to "prepare" a file by defining the time dimension and appending a value to
 the time variable.
 
@@ -194,5 +194,5 @@ PISM uses instances of the `ScalarForcing` class to read scalar forcing data; pl
 Read 2D forcing fields
 ----------------------
 
-PISM uses instances of the `IceModelVec2T` class to read 2D forcing fields that
-vary in time; please see `pism::surface::Given` for an example.
+PISM uses instances of the `array::Forcing` class to read 2D forcing fields that vary in
+time; please see `pism::surface::Given` for an example.

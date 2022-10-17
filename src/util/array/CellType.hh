@@ -26,12 +26,7 @@
 namespace pism {
 namespace array {
 
-//! "Cell type" mask. Adds convenience methods to IceModelVec2S. Not ghosted.
-/*!
- * We could achieve this with one template parameter (stencil width), but SWIG can't handle
- * `template<int width> class CellType : public std::conditional<width != 0, CellType<width-1>, array::Scalar>::type ...`
-
- */
+//! "Cell type" mask. Adds convenience methods to `array::Scalar`.
 class CellType : public Scalar {
 public:
   typedef std::shared_ptr<CellType> Ptr;

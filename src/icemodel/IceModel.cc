@@ -189,14 +189,14 @@ IceModel::~IceModel() {
 }
 
 
-//! Allocate all IceModelVecs defined in IceModel.
+//! Allocate all Arrays defined in IceModel.
 /*!
   This procedure allocates the memory used to store model state, diagnostic and
   work vectors and sets metadata.
 
   Default values should not be set here; please use set_vars_from_options().
 
-  All the memory allocated here is freed by IceModelVecs' destructors.
+  All the memory allocated here is freed by Arrays' destructors.
 */
 void IceModel::allocate_storage() {
 

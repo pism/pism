@@ -664,7 +664,7 @@ void IceModel::allocate_basal_yield_stress() {
 //! Allocate PISM's sub-models implementing some physical processes.
 /*!
   This method is called after memory allocation but before filling any of
-  IceModelVecs because all the physical parameters should be initialized before
+  Arrays because all the physical parameters should be initialized before
   setting up the coupling or filling model-state variables.
  */
 void IceModel::allocate_submodels() {

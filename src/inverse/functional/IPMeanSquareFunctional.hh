@@ -24,7 +24,7 @@
 namespace pism {
 namespace inverse {
 
-//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an array::Scalar.
 /*! If the vector has components \f$x_i\f$ the functional is
   \f[
   J(x) = c_N \sum_{i} w_i x_i^2
@@ -61,7 +61,7 @@ private:
 };
 
 
-//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an IceModelVec2S.
+//! Implements a functional corresponding to a (possibly weighted) sum of squares of components of an array::Scalar.
 /*! If the vector has component vectors \f$x_i\f$ the functional is
   \f[
   J(x) = c_N \sum_{i} w_i |x_i|^2

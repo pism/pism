@@ -762,7 +762,6 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
 }
 
 //! @brief Compute 2D deviatoric stresses.
-/*! Note: IceModelVec2 result has to have dof == 3. */
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const array::Vector1 &velocity,
                          const array::Scalar &hardness,

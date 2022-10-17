@@ -27,7 +27,7 @@
 namespace pism {
 
 /*!
- * Label connected components in a mask stored in an IceModelVec2S.
+ * Label connected components in a mask stored in an array::Scalar.
  *
  * This function allocates a copy on rank 0 and so should not be used if that is a
  * problem.

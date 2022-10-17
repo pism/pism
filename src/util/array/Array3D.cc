@@ -169,7 +169,7 @@ Note that this sums up all the values in a column, including ones
 above the ice. This may or may not be what you need. Also, take a look
 at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.
 
-As for the difference between IceModelVec2 and array::Scalar, the
+As for the difference between array::Array2D and array::Scalar, the
 former can store fields with more than 1 "degree of freedom" per grid
 point (such as 2D fields on the "staggered" grid, with the first
 degree of freedom corresponding to the i-offset and second to
@@ -179,7 +179,7 @@ array::Scalar is just array::Array2D with "dof == 1", and
 array::Vector is array::Array2D with "dof == 2". (Plus some extra
 methods, of course.)
 
-Either one of IceModelVec2 and array::Scalar would work in this
+Either one of array::Array2D and array::Scalar would work in this
 case.
 
 Computes output = A*output + B*sum_columns(input) + C

@@ -102,7 +102,6 @@ class Forcing;
 
 class IceGrid;
 class AgeModel;
-class IceModelVec2CellType;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;

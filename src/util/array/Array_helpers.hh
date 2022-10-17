@@ -24,7 +24,7 @@ namespace pism {
 namespace vec {
 
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
-//! IceModelVecs (scalar or vector).
+//! Arrays (scalar or vector).
 /*!
  */
 template<class V>

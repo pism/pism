@@ -107,8 +107,8 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
                         "node types: interior, boundary, exterior", // long name
                         "", "", "", 0); // no units or standard name
 
-  // Element::nodal_values() expects a ghosted IceModelVec2S. Ghosts if this field are never
-  // assigned to and not communicated, though.
+  // Element::nodal_values() expects a ghosted array::Scalar. Ghosts if this field are
+  // never assigned to and not communicated, though.
   m_boundary_integral.set_attrs("internal", // intent
                                 "residual contribution from lateral boundaries", // long name
                                 "", "", "", 0); // no units or standard name

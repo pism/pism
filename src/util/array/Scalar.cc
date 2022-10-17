@@ -65,12 +65,12 @@ Scalar2::Scalar2(IceGrid::ConstPtr grid, const std::string &name)
 
 } // end of namespace array
 
-//! Sets an array::Scalar to the magnitude of a 2D vector field with components `v_x` and
-//! `v_y`.
-/*! Computes the magnitude \b pointwise, so any of v_x, v_y and the IceModelVec
-  this is called on can be the same.
+/*! Sets the result to the magnitude of a 2D vector field with components `v_x` and `v_y`.
 
-  Does not communicate.
+    Computes the magnitude *pointwise*, so any of `v_x`, `v_y` and the `result` can be the
+    same.
+
+    Does not communicate.
  */
 void compute_magnitude(const array::Scalar &v_x,
                        const array::Scalar &v_y,

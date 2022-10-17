@@ -104,11 +104,11 @@ struct IceGrid::Impl {
   std::map<int,std::weak_ptr<petsc::DM> > dms;
 
   // This DM is used for I/O operations and is not owned by any
-  // IceModelVec (so far, anyway). We keep a pointer to it here to
+  // array::Array (so far, anyway). We keep a pointer to it here to
   // avoid re-allocating it many times.
   std::shared_ptr<petsc::DM> dm_scalar_global;
 
-  //! @brief A dictionary with pointers to IceModelVecs, for passing
+  //! @brief A dictionary with pointers to array::Arrays, for passing
   //! them from the one component to another (e.g. from IceModel to
   //! surface and ocean models).
   Vars variables;

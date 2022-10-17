@@ -50,7 +50,7 @@ protected:
   //! Storage for SSA coefficients at element nodes.
   //!
   //! All fields must be "double" or structures containing "double"
-  //! for IceModelVec2 to work correctly.
+  //! for array::Array2D<T> to work correctly.
   struct Coefficients {
     //! ice thickness
     double thickness;

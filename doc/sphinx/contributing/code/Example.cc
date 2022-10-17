@@ -58,7 +58,7 @@ MaxTimestep Example::max_timestep_impl(double t) const {
   return MaxTimestep("example ocean model");
 }
 
-void Example::shelf_base_temperature_impl(IceModelVec2S &result) const {
+void Example::shelf_base_temperature_impl(array::Scalar &result) const {
   // PISM uses MKS. This is obviously wrong, but this just an example.
   result.set(273.15);
 }
@@ -70,7 +70,7 @@ void Example::sea_level_elevation_impl(double &result) const {
 
 //! @brief Computes mass flux in [kg m-2 s-1], from assumption that
 //! basal heat flux rate converts to mass flux.
-void Example::shelf_base_mass_flux_impl(IceModelVec2S &result) const {
+void Example::shelf_base_mass_flux_impl(array::Scalar &result) const {
   result.copy_from(m_shelf_melt_rate);
 }
 

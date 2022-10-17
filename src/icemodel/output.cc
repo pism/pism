@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -268,7 +268,7 @@ void IceModel::define_diagnostics(const File &file, const std::set<std::string> 
 }
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
-//! fields stored in dedicated IceModelVecs.
+//! fields stored in dedicated Arrays.
 void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) {
   for (auto variable : variables) {
     auto diag = m_diagnostics.find(variable);

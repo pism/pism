@@ -54,7 +54,7 @@ namespace array {
 //! What "kind" of a vector to create: with or without ghosts.
 enum Kind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
 
-//! Makes sure that we call begin_access() and end_access() for all accessed IceModelVecs.
+//! Makes sure that we call begin_access() and end_access() for all accessed array::Arrays.
 class AccessScope {
 public:
   AccessScope();
@@ -177,7 +177,7 @@ T interpolate(const F &field, double x, double y) {
   }
   \endcode
 
-  IceModelVec::define() is here so that we can use the first approach.
+  array::Array::define() is here so that we can use the first approach.
 
   ## Tracking if a field changed
 

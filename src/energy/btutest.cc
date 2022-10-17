@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     options::Real dt_years(ctx->unit_system(),
                            "-dt", "Time-step, in years", "years", 1.0);
 
-    // allocate tools and IceModelVecs
+    // allocate tools and Arrays
     array::Scalar bedtoptemp(grid, "bedtoptemp");
     bedtoptemp.set_attrs("",
                          "temperature at top of bedrock thermal layer",

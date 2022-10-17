@@ -117,7 +117,7 @@ It it intended for inverse methods that simultaneously compute
 the pair \f$u\f$ and \f$\zeta\f$ without ever solving the %SSA
 directly.  Use this method in conjuction with
 \ref assemble_jacobian_state and \ref apply_jacobian_design and their friends.
-The vector \f$\zeta\f$ is not copied; a reference to the IceModelVec is
+The vector \f$\zeta\f$ is not copied; a reference to the array::Array is
 kept.
 */
 void IP_SSAHardavForwardProblem::set_design(array::Scalar &new_zeta) {
@@ -223,7 +223,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
   @param[out] du_a Computed corresponding perturbation of the state
                    variable. The array \a du_a should be extracted
-                   first from a Vec or an IceModelVec.
+                   first from a Vec or an array::Array.
 
   Typically this method is called via one of its overloads.
 */
@@ -404,7 +404,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
 
   @param[out] dzeta_a Computed corresponding perturbation of the
                       design variable. The array \a dzeta_a should be
-                      extracted first from a Vec or an IceModelVec.
+                      extracted first from a Vec or an array::Array.
 
   Typically this method is called via one of its overloads.
 */

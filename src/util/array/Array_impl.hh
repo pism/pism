@@ -82,7 +82,7 @@ struct Array::Impl {
   //! stencil width supported by the DA
   unsigned int da_stencil_width;
 
-  //! true if this IceModelVec is ghosted
+  //! true if this Array is ghosted
   bool ghosted;
 
   //! distributed mesh manager (DM)
@@ -91,14 +91,14 @@ struct Array::Impl {
   //! If true, use DMDAVecGetArrayDOF() in begin_access()
   bool begin_access_use_dof;
 
-  //! Map plane viewers. It is a map because a temporary IceModelVec can be used to view
+  //! Map plane viewers. It is a map because a temporary Array can be used to view
   //! different quantities
   std::map<std::string,std::shared_ptr<petsc::Viewer> > map_viewers;
 
   // used in begin_access() and end_access()
   int access_counter;
 
-  //! Internal IceModelVec "revision number"
+  //! Internal array::Array "revision number"
   int state_counter;
 
   // 2D Interpolation type (used by regrid())
