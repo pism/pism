@@ -85,6 +85,8 @@ public:
   CellType1(IceGrid::ConstPtr grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
+  using Scalar::star_int;
+  using Scalar::box_int;
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j) const {

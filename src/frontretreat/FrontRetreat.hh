@@ -40,7 +40,7 @@ public:
 
   void update_geometry(double dt,
                        const Geometry &geometry,
-                       const array::Scalar &bc_mask,
+                       const array::Scalar1 &bc_mask,
                        const array::Scalar &retreat_rate,
                        array::Scalar &Href,
                        array::Scalar1 &ice_thickness);

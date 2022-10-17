@@ -144,7 +144,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
  */
 void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
-                                   const array::Scalar &bc_mask,
+                                   const array::Scalar1 &bc_mask,
                                    const array::Scalar &retreat_rate,
                                    array::Scalar &Href,
                                    array::Scalar1 &ice_thickness) {

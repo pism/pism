@@ -38,10 +38,10 @@ public:
   std::shared_ptr<Scalar> duplicate() const;
 
   inline int as_int(int i, int j) const;
-  inline stencils::Star<int> star_int(int i, int j) const;
-  inline stencils::Box<int> box_int(int i, int j) const;
 
 protected:
+  inline stencils::Star<int> star_int(int i, int j) const;
+  inline stencils::Box<int> box_int(int i, int j) const;
   Scalar(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
 
@@ -61,6 +61,8 @@ public:
   Scalar1(IceGrid::ConstPtr grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
+  using Scalar::star_int;
+  using Scalar::box_int;
 protected:
   Scalar1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
