@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 #include "pism/coupler/AtmosphereModel.hh"
 
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -36,8 +36,8 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& precipitation_impl() const;
-  const IceModelVec2S& air_temperature_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -61,11 +61,11 @@ protected:
   // surface temperature lapse rate
   double m_temp_lapse_rate;
 
-  std::shared_ptr<IceModelVec2T> m_reference_surface;
+  std::shared_ptr<array::Forcing> m_reference_surface;
 
-  IceModelVec2S::Ptr m_precipitation;
-  IceModelVec2S::Ptr m_temperature;
-  IceModelVec2S m_surface;
+  array::Scalar::Ptr m_precipitation;
+  array::Scalar::Ptr m_temperature;
+  array::Scalar m_surface;
 };
 
 } // end of namespace atmosphere

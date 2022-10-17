@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,8 +24,8 @@
 namespace pism {
 namespace inverse {
 
-typedef IceModelVec2S  DesignVec;
-typedef IceModelVec2V  StateVec;
+typedef array::Scalar  DesignVec;
+typedef array::Vector  StateVec;
 
 // typedef TikhonovProblemListener<InverseProblem> Listener;
 // typedef typename Listener::Ptr ListenerPtr;
@@ -37,15 +37,15 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
                                                                  IPFunctional<DesignVec> &designFunctional,
                                                                  IPFunctional<StateVec> &stateFunctional)
 : m_ssaforward(ssaforward),
-  m_dGlobal(d0.grid(), "design variable (global)", WITHOUT_GHOSTS, d0.stencil_width()),
+  m_dGlobal(d0.grid(), "design variable (global)"),
   m_d0(d0),
-  m_dzeta(d0.grid(),"dzeta",WITH_GHOSTS, d0.stencil_width()),
-  m_u(d0.grid(), "state variable", WITH_GHOSTS, u_obs.stencil_width()),
-  m_du(d0.grid(), "du", WITH_GHOSTS, u_obs.stencil_width()),
+  m_dzeta(d0.grid(), "dzeta"),
+  m_u(d0.grid(), "state variable"),
+  m_du(d0.grid(), "du"),
   m_u_obs(u_obs),
   m_eta(eta),
-  m_d_Jdesign(d0.grid(), "Jdesign design variable", WITH_GHOSTS, d0.stencil_width()),
-  m_u_Jdesign(d0.grid(), "Jdesign state variable", WITH_GHOSTS, u_obs.stencil_width()),
+  m_d_Jdesign(d0.grid(), "Jdesign design variable"),
+  m_u_Jdesign(d0.grid(), "Jdesign state variable"),
   m_designFunctional(designFunctional),
   m_stateFunctional(stateFunctional)
 {
@@ -58,25 +58,21 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 
   m_velocityScale = grid->ctx()->config()->get_number("inverse.ssa.velocity_scale", "m second-1");
 
-
-  int design_stencil_width = m_d0.stencil_width();
-  int state_stencil_width = m_u_obs.stencil_width();
-  m_d.reset(new DesignVec(grid, "design variable", WITH_GHOSTS, design_stencil_width));
+  m_d.reset(new DesignVecGhosted(grid, "design variable"));
 
   m_dGlobal.copy_from(m_d0);
 
-  m_uGlobal.reset(new StateVec(grid, "state variable (global)",
-                               WITHOUT_GHOSTS, state_stencil_width));
+  m_uGlobal.reset(new StateVec(grid, "state variable (global)"));
 
-  m_u_diff.reset(new StateVec(grid, "state residual", WITH_GHOSTS, state_stencil_width));
+  m_u_diff.reset(new StateVec1(grid, "state residual"));
 
-  m_d_diff.reset(new DesignVec(grid, "design residual", WITH_GHOSTS, design_stencil_width));
+  m_d_diff.reset(new DesignVecGhosted(grid, "design residual"));
 
-  m_grad_state.reset(new StateVec(grid, "state gradient", WITHOUT_GHOSTS, state_stencil_width));
+  m_grad_state.reset(new StateVec(grid, "state gradient"));
 
-  m_grad_design.reset(new DesignVec(grid, "design gradient", WITHOUT_GHOSTS, design_stencil_width));
+  m_grad_design.reset(new DesignVec(grid, "design gradient"));
 
-  m_constraints.reset(new StateVec(grid,"PDE constraints",WITHOUT_GHOSTS,design_stencil_width));
+  m_constraints.reset(new StateVec(grid, "PDE constraints"));
 
   petsc::DM &da = m_ssaforward.get_da();
 

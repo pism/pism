@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2021 PISM Authors
+// Copyright (C) 2012-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,11 +20,11 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -50,7 +50,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change();
   }
 };
@@ -75,7 +75,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->surface_input_rate();
   }
 };
@@ -100,7 +100,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_due_to_input();
   }
 };
@@ -111,7 +111,7 @@ class SubglacialWaterFlux : public DiagAverageRate<Hydrology>
 public:
   SubglacialWaterFlux(const Hydrology *m)
     : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
-      m_flux_magnitude(m_grid, "flux_magnitude", WITHOUT_GHOSTS){
+      m_flux_magnitude(m_grid, "flux_magnitude"){
 
     m_vars = {{m_sys, "subglacial_water_flux"}};
     m_accumulator.metadata()["units"] = "m2";
@@ -135,7 +135,7 @@ protected:
     m_interval_length += dt;
   }
 
-  IceModelVec2S m_flux_magnitude;
+  array::Scalar m_flux_magnitude;
 };
 
 
@@ -159,7 +159,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_at_grounded_margin();
   }
 };
@@ -183,7 +183,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_at_grounding_line();
   }
 };
@@ -208,7 +208,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_due_to_conservation_error();
   }
 };
@@ -232,7 +232,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_at_domain_boundary();
   }
 };
@@ -257,7 +257,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->mass_change_due_to_lateral_flow();
   }
 };
@@ -274,20 +274,20 @@ Inputs::Inputs() {
 
 Hydrology::Hydrology(IceGrid::ConstPtr g)
   : Component(g),
-    m_Q(m_grid, "water_flux", WITHOUT_GHOSTS),
-    m_Wtill(m_grid, "tillwat", WITHOUT_GHOSTS),
-    m_W(m_grid, "bwat", WITH_GHOSTS, 1),
-    m_Pover(m_grid, "overburden_pressure", WITHOUT_GHOSTS),
-    m_surface_input_rate(m_grid, "water_input_rate_from_surface", WITHOUT_GHOSTS),
-    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt", WITHOUT_GHOSTS),
-    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow", WITHOUT_GHOSTS),
-    m_conservation_error_change(m_grid, "conservation_error_change", WITHOUT_GHOSTS),
-    m_grounded_margin_change(m_grid, "grounded_margin_change", WITHOUT_GHOSTS),
-    m_grounding_line_change(m_grid, "grounding_line_change", WITHOUT_GHOSTS),
-    m_input_change(m_grid, "water_mass_change_due_to_input", WITHOUT_GHOSTS),
-    m_no_model_mask_change(m_grid, "no_model_mask_change", WITHOUT_GHOSTS),
-    m_total_change(m_grid, "water_mass_change", WITHOUT_GHOSTS),
-    m_flow_change(m_grid, "water_mass_change_due_to_flow", WITHOUT_GHOSTS) {
+    m_Q(m_grid, "water_flux"),
+    m_Wtill(m_grid, "tillwat"),
+    m_W(m_grid, "bwat"),
+    m_Pover(m_grid, "overburden_pressure"),
+    m_surface_input_rate(m_grid, "water_input_rate_from_surface"),
+    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt"),
+    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow"),
+    m_conservation_error_change(m_grid, "conservation_error_change"),
+    m_grounded_margin_change(m_grid, "grounded_margin_change"),
+    m_grounding_line_change(m_grid, "grounding_line_change"),
+    m_input_change(m_grid, "water_mass_change_due_to_input"),
+    m_no_model_mask_change(m_grid, "no_model_mask_change"),
+    m_total_change(m_grid, "water_mass_change"),
+    m_flow_change(m_grid, "water_mass_change_due_to_flow") {
 
   m_surface_input_rate.set_attrs("internal",
                                  "hydrology model workspace for water input rate from the ice surface",
@@ -357,14 +357,14 @@ void Hydrology::restart(const File &input_file, int record) {
 }
 
 void Hydrology::bootstrap(const File &input_file,
-                          const IceModelVec2S &ice_thickness) {
+                          const array::Scalar &ice_thickness) {
   initialization_message();
   this->bootstrap_impl(input_file, ice_thickness);
 }
 
-void Hydrology::init(const IceModelVec2S &W_till,
-                           const IceModelVec2S &W,
-                           const IceModelVec2S &P) {
+void Hydrology::init(const array::Scalar &W_till,
+                           const array::Scalar &W,
+                           const array::Scalar &P) {
   initialization_message();
   this->init_impl(W_till, W, P);
 }
@@ -377,7 +377,7 @@ void Hydrology::restart_impl(const File &input_file, int record) {
 }
 
 void Hydrology::bootstrap_impl(const File &input_file,
-                               const IceModelVec2S &ice_thickness) {
+                               const array::Scalar &ice_thickness) {
   (void) ice_thickness;
 
   double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
@@ -387,9 +387,9 @@ void Hydrology::bootstrap_impl(const File &input_file,
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::init_impl(const IceModelVec2S &W_till,
-                                const IceModelVec2S &W,
-                                const IceModelVec2S &P) {
+void Hydrology::init_impl(const array::Scalar &W_till,
+                                const array::Scalar &W,
+                                const array::Scalar &P) {
   (void) W;
   (void) P;
   m_Wtill.copy_from(W_till);
@@ -416,7 +416,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
                           *inputs.basal_melt_rate,
                           m_basal_melt_rate);
 
-  IceModelVec::AccessList list{&m_W, &m_Wtill, &m_total_change};
+  array::AccessScope list{&m_W, &m_Wtill, &m_total_change};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -480,15 +480,15 @@ void Hydrology::write_model_state_impl(const File &output) const {
   Uses the standard hydrostatic (shallow) approximation of overburden pressure,
   \f[ P_0 = \rho_i g H \f]
 */
-void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
-                                            IceModelVec2S &result) const {
+void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
+                                            array::Scalar &result) const {
   // FIXME issue #15
 
   const double
     ice_density      = m_config->get_number("constants.ice.density"),
     standard_gravity = m_config->get_number("constants.standard_gravity");
 
-  IceModelVec::AccessList list{&ice_thickness, &result};
+  array::AccessScope list{&ice_thickness, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -497,17 +497,17 @@ void Hydrology::compute_overburden_pressure(const IceModelVec2S &ice_thickness,
   }
 }
 
-const IceModelVec2S& Hydrology::overburden_pressure() const {
+const array::Scalar& Hydrology::overburden_pressure() const {
   return m_Pover;
 }
 
 //! Return the effective thickness of the water stored in till.
-const IceModelVec2S& Hydrology::till_water_thickness() const {
+const array::Scalar& Hydrology::till_water_thickness() const {
   return m_Wtill;
 }
 
 //! Return the effective thickness of the transportable basal water layer.
-const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
+const array::Scalar& Hydrology::subglacial_water_thickness() const {
   return m_W;
 }
 
@@ -515,52 +515,52 @@ const IceModelVec2S& Hydrology::subglacial_water_thickness() const {
  * Return subglacial water flux (time-average over the time step requested at the time of
  * the update() call).
  */
-const IceModelVec2V& Hydrology::flux() const {
+const array::Vector& Hydrology::flux() const {
   return m_Q;
 }
 
-const IceModelVec2S& Hydrology::surface_input_rate() const {
+const array::Scalar& Hydrology::surface_input_rate() const {
   return m_surface_input_rate;
 }
 
-const IceModelVec2S& Hydrology::mass_change_at_grounded_margin() const {
+const array::Scalar& Hydrology::mass_change_at_grounded_margin() const {
   return m_grounded_margin_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change_at_grounding_line() const {
+const array::Scalar& Hydrology::mass_change_at_grounding_line() const {
   return m_grounding_line_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change_due_to_conservation_error() const {
+const array::Scalar& Hydrology::mass_change_due_to_conservation_error() const {
   return m_conservation_error_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change_at_domain_boundary() const {
+const array::Scalar& Hydrology::mass_change_at_domain_boundary() const {
   return m_no_model_mask_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change() const {
+const array::Scalar& Hydrology::mass_change() const {
   return m_total_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change_due_to_input() const {
+const array::Scalar& Hydrology::mass_change_due_to_input() const {
   return m_input_change;
 }
 
-const IceModelVec2S& Hydrology::mass_change_due_to_lateral_flow() const {
+const array::Scalar& Hydrology::mass_change_due_to_lateral_flow() const {
   return m_flow_change;
 }
 
 /*!
   Checks @f$ 0 \le W \le W^{max} @f$.
 */
-void check_bounds(const IceModelVec2S& W, double W_max) {
+void check_bounds(const array::Scalar& W, double W_max) {
 
   std::string name = W.metadata().get_string("long_name");
 
   IceGrid::ConstPtr grid = W.grid();
 
-  IceModelVec::AccessList list(W);
+  array::AccessScope list(W);
   ParallelSection loop(grid->com);
   try {
     for (Points p(*grid); p; p.next()) {
@@ -594,16 +594,16 @@ void check_bounds(const IceModelVec2S& W, double W_max) {
   @param[in] surface_input_rate surface input rate (kg m-2 s-1); set to NULL to ignore
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_surface_input_rate(const IceModelVec2CellType &mask,
-                                           const IceModelVec2S *surface_input_rate,
-                                           IceModelVec2S &result) {
+void Hydrology::compute_surface_input_rate(const array::CellType &mask,
+                                           const array::Scalar *surface_input_rate,
+                                           array::Scalar &result) {
 
   if (not surface_input_rate) {
     result.set(0.0);
     return;
   }
 
-  IceModelVec::AccessList list{surface_input_rate, &mask, &result};
+  array::AccessScope list{surface_input_rate, &mask, &result};
 
   const double
     water_density = m_config->get_number("constants.fresh_water.density");
@@ -628,11 +628,11 @@ void Hydrology::compute_surface_input_rate(const IceModelVec2CellType &mask,
   @param[in] basal_melt_rate basal melt rate (ice thickness per time)
   @param[out] result resulting input rate (water thickness per time)
 */
-void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
-                                        const IceModelVec2S &basal_melt_rate,
-                                        IceModelVec2S &result) {
+void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
+                                        const array::Scalar &basal_melt_rate,
+                                        array::Scalar &result) {
 
-  IceModelVec::AccessList list{&basal_melt_rate, &mask, &result};
+  array::AccessScope list{&basal_melt_rate, &mask, &result};
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -670,19 +670,19 @@ void Hydrology::compute_basal_melt_rate(const IceModelVec2CellType &mask,
   @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
-void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
-                               const IceModelVec2Int *no_model_mask,
+void Hydrology::enforce_bounds(const array::CellType &cell_type,
+                               const array::Scalar *no_model_mask,
                                double max_thickness,
                                double ocean_water_thickness,
-                               IceModelVec2S &water_thickness,
-                               IceModelVec2S &grounded_margin_change,
-                               IceModelVec2S &grounding_line_change,
-                               IceModelVec2S &conservation_error_change,
-                               IceModelVec2S &no_model_mask_change) {
+                               array::Scalar &water_thickness,
+                               array::Scalar &grounded_margin_change,
+                               array::Scalar &grounding_line_change,
+                               array::Scalar &conservation_error_change,
+                               array::Scalar &no_model_mask_change) {
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
 
-  IceModelVec::AccessList list{&water_thickness, &cell_type,
+  array::AccessScope list{&water_thickness, &cell_type,
       &grounded_margin_change, &grounding_line_change, &conservation_error_change,
       &no_model_mask_change};
 
@@ -735,7 +735,7 @@ void Hydrology::enforce_bounds(const IceModelVec2CellType &cell_type,
   }
 
   if (no_model_mask) {
-    const IceModelVec2Int &M = *no_model_mask;
+    const array::Scalar &M = *no_model_mask;
 
     list.add(M);
 

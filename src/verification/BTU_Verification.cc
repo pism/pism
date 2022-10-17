@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
 #include "pism/util/error_handling.hh"
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 namespace energy {
@@ -40,7 +41,7 @@ void BTU_Verification::initialize_bottom_surface_flux() {
   m_bottom_surface_flux.set(0.042);
 }
 
-void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),
@@ -70,7 +71,7 @@ void BTU_Verification::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   }
 
   // copy column values into 3D arrays
-  IceModelVec::AccessList list(*m_temp);
+  array::AccessScope list(*m_temp);
 
   ParallelSection loop(m_grid->com);
   try {

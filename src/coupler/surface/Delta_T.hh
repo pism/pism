@@ -43,11 +43,11 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const array::Scalar& temperature_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_temperature;
 };
 
 } // end of namespace surface

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #ifndef AGEMODEL_H
 #define AGEMODEL_H
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/Component.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
@@ -29,16 +28,16 @@ namespace pism {
 class AgeModelInputs {
 public:
   AgeModelInputs();
-  AgeModelInputs(const IceModelVec2S *ice_thickness,
-                 const IceModelVec3 *u3,
-                 const IceModelVec3 *v3,
-                 const IceModelVec3 *w3);
+  AgeModelInputs(const array::Scalar *ice_thickness,
+                 const array::Array3D *u3,
+                 const array::Array3D *v3,
+                 const array::Array3D *w3);
   void check() const;
 
-  const IceModelVec2S *ice_thickness;
-  const IceModelVec3 *u3;
-  const IceModelVec3 *v3;
-  const IceModelVec3 *w3;
+  const array::Scalar *ice_thickness;
+  const array::Array3D *u3;
+  const array::Array3D *v3;
+  const array::Array3D *w3;
 };
 
 class AgeModel : public Component {
@@ -49,14 +48,14 @@ public:
 
   void init(const InputOptions &opts);
 
-  const IceModelVec3 & age() const;
+  const array::Array3D & age() const;
 protected:
   MaxTimestep max_timestep_impl(double t) const;
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  IceModelVec3 m_ice_age;
-  IceModelVec3 m_work;
+  array::Array3D m_ice_age;
+  array::Array3D m_work;
   stressbalance::StressBalance *m_stress_balance;
 };
 

@@ -19,7 +19,7 @@
 #include <cmath>
 #include <petsc.h>
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 #include "IPDesignVariableParameterization.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -47,12 +47,12 @@ void IPDesignVariableParameterization::set_scales(const Config & config,
 }
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
-void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &zeta,
-                                                               IceModelVec2S &d,
+void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &zeta,
+                                                               array::Scalar &d,
                                                                bool communicate) {
   PetscErrorCode ierr;
 
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
   const IceGrid &grid = *zeta.grid();
 
@@ -80,11 +80,11 @@ void IPDesignVariableParameterization::convertToDesignVariable(IceModelVec2S &ze
 }
 
   //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
-void IPDesignVariableParameterization::convertFromDesignVariable(IceModelVec2S &d,
-                                                                 IceModelVec2S &zeta,
+void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &d,
+                                                                 array::Scalar &zeta,
                                                                  bool communicate) {
   PetscErrorCode ierr;
-  IceModelVec::AccessList list{&zeta, &d};
+  array::AccessScope list{&zeta, &d};
 
   const IceGrid &grid = *zeta.grid();
 

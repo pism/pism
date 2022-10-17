@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,8 +27,8 @@ namespace stressbalance {
 
 SIAFD_Regional::SIAFD_Regional(IceGrid::ConstPtr grid)
   : SIAFD(grid),
-    m_h_x_no_model(grid, "h_x_no_model", WITH_GHOSTS),
-    m_h_y_no_model(grid, "h_y_no_model", WITH_GHOSTS) {
+    m_h_x_no_model(grid, "h_x_no_model"),
+    m_h_y_no_model(grid, "h_y_no_model") {
   // empty
 }
 
@@ -40,7 +40,8 @@ void SIAFD_Regional::init() {
 }
 
 void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
-                                              IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                              array::Staggered1 &h_x,
+                                              array::Staggered1 &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
 
@@ -49,11 +50,11 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
                             inputs.geometry->cell_type,
                             m_h_x_no_model, m_h_y_no_model);
 
-  const IceModelVec2Int &no_model = *inputs.no_model_mask;
+  const array::Scalar2 &no_model = *inputs.no_model_mask;
 
   const int Mx = m_grid->Mx(), My = m_grid->My();
 
-  IceModelVec::AccessList list{&h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model};
+  array::AccessScope list{&h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model};
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

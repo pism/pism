@@ -36,7 +36,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_air_temp_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_air_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                      file,
                                                      "air_temp_anomaly",
                                                      "", // no standard name
@@ -44,7 +44,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
                                                      opt.periodic,
                                                      LINEAR);
 
-    m_precipitation_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_precipitation_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                           file,
                                                           "precipitation_anomaly",
                                                           "", // no standard name
@@ -102,11 +102,11 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Anomaly::precipitation_impl() const {
+const array::Scalar& Anomaly::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Anomaly::air_temperature_impl() const {
+const array::Scalar& Anomaly::air_temperature_impl() const {
   return *m_temperature;
 }
 

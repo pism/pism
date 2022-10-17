@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {
@@ -32,9 +32,9 @@ namespace stressbalance {
 SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
   : Component(g),
     m_EC(g->ctx()->enthalpy_converter()),
-    m_diffusive_flux(m_grid, "diffusive_flux", WITH_GHOSTS, 1),
-    m_u(m_grid, "uvel", WITH_GHOSTS, m_grid->z()),
-    m_v(m_grid, "vvel", WITH_GHOSTS, m_grid->z()) {
+    m_diffusive_flux(m_grid, "diffusive_flux"),
+    m_u(m_grid, "uvel", array::WITH_GHOSTS, m_grid->z()),
+    m_v(m_grid, "vvel", array::WITH_GHOSTS, m_grid->z()) {
   m_D_max = 0.0;
 
   m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
@@ -52,7 +52,7 @@ SSB_Modifier::SSB_Modifier(IceGrid::ConstPtr g)
 void SSB_Modifier::init() {
 }
 
-const IceModelVec2Stag& SSB_Modifier::diffusive_flux() {
+const array::Staggered& SSB_Modifier::diffusive_flux() {
   return m_diffusive_flux;
 }
 
@@ -61,11 +61,11 @@ double SSB_Modifier::max_diffusivity() const {
   return m_D_max;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_u() const {
+const array::Array3D& SSB_Modifier::velocity_u() const {
   return m_u;
 }
 
-const IceModelVec3& SSB_Modifier::velocity_v() const {
+const array::Array3D& SSB_Modifier::velocity_v() const {
   return m_v;
 }
 
@@ -98,7 +98,7 @@ ConstantInColumn::ConstantInColumn(IceGrid::ConstPtr g)
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
+void ConstantInColumn::update(const array::Vector &sliding_velocity,
                               const Inputs &inputs,
                               bool full_update) {
 
@@ -109,7 +109,7 @@ void ConstantInColumn::update(const IceModelVec2V &sliding_velocity,
   }
 
   // horizontal velocity and its maximum:
-  IceModelVec::AccessList list{&m_u, &m_v, &sliding_velocity};
+  array::AccessScope list{&m_u, &m_v, &sliding_velocity};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

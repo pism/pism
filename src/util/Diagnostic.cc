@@ -16,6 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <cmath>
 
 #include "Diagnostic.hh"
 #include "pism/util/Time.hh"
@@ -163,7 +164,7 @@ void Diagnostic::set_attrs(const std::string &long_name,
   }
 }
 
-IceModelVec::Ptr Diagnostic::compute() const {
+array::Array::Ptr Diagnostic::compute() const {
   // use the name of the first variable
   std::vector<std::string> names;
   for (const auto &v : m_vars) {
@@ -172,7 +173,7 @@ IceModelVec::Ptr Diagnostic::compute() const {
   std::string all_names = join(names, ",");
 
   m_grid->ctx()->log()->message(3, "-  Computing %s...\n", all_names.c_str());
-  IceModelVec::Ptr result = this->compute_impl();
+  array::Array::Ptr result = this->compute_impl();
   m_grid->ctx()->log()->message(3, "-  Done computing %s.\n", all_names.c_str());
 
   return result;

@@ -36,11 +36,11 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
   // empty
 }
 
-const IceModelVec2S& CompleteOceanModel::shelf_base_temperature_impl() const {
+const array::Scalar& CompleteOceanModel::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& CompleteOceanModel::shelf_base_mass_flux_impl() const {
+const array::Scalar& CompleteOceanModel::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

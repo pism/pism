@@ -218,7 +218,7 @@ void IceModel::model_state_setup() {
       break;
     case INIT_OTHER:
       {
-        IceModelVec2S
+        array::Scalar
           &W_till = *m_work2d[0],
           &W      = *m_work2d[1],
           &P      = *m_work2d[2];
@@ -323,7 +323,7 @@ void IceModel::model_state_setup() {
   // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
   // prescribed
   {
-    IceModelVec::AccessList list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
+    array::AccessScope list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -664,7 +664,7 @@ void IceModel::allocate_basal_yield_stress() {
 //! Allocate PISM's sub-models implementing some physical processes.
 /*!
   This method is called after memory allocation but before filling any of
-  IceModelVecs because all the physical parameters should be initialized before
+  Arrays because all the physical parameters should be initialized before
   setting up the coupling or filling model-state variables.
  */
 void IceModel::allocate_submodels() {

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,8 +19,8 @@
 #ifndef IPFUNCTIONAL_HH_1E2DIXE6
 #define IPFUNCTIONAL_HH_1E2DIXE6
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/fem/FEM.hh"
+#include "pism/util/IceGrid.hh"
 
 namespace pism {
 
@@ -54,7 +54,7 @@ public:
   virtual void valueAt(IMVecType &x, double *OUTPUT) = 0;
 
   //! Computes the gradient of the functional at the vector x.
-  /*! On an \f$m\times n\f$ IceGrid, an IceModelVec \f$x\f$ with \f$d\f$
+  /*! On an \f$m\times n\f$ IceGrid, an array::Array \f$x\f$ with \f$d\f$
     degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
     The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional
     \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
@@ -123,13 +123,13 @@ public:
 
 };
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2S> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Scalar> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2S> &f, IceModelVec2S &x, IceModelVec2S &gradient);
+void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient);
 
-//! Computes finite difference approximations of a IPFunctional<IceModelVec2V> gradient.
+//! Computes finite difference approximations of a IPFunctional<array::Vector> gradient.
 /*! Useful for debugging a hand coded gradient. */
-void gradientFD(IPFunctional<IceModelVec2V> &f, IceModelVec2V &x, IceModelVec2V &gradient);
+void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient);
 
 } // end of namespace inverse
 } // end of namespace pism

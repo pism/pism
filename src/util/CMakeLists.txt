@@ -23,11 +23,13 @@ set(PISMUTIL_SRC
   TerminationReason.cc
   VariableMetadata.cc
   error_handling.cc
-  iceModelVec.cc
-  iceModelVec2.cc
-  iceModelVec2T.cc
-  iceModelVec2V.cc
-  iceModelVec3.cc
+  array/CellType.cc
+  array/Array.cc
+  array/Forcing.cc
+  array/Vector.cc
+  array/Array3D.cc
+  array/Scalar.cc
+  array/Staggered.cc
   interpolation.cc
   io/LocalInterpCtx.cc
   io/File.cc

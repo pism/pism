@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,6 @@
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
-#include "iceModelVec.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
 #include "ConfigInterface.hh"
@@ -138,7 +137,7 @@ void Component::write_model_state_impl(const File &output) const {
  *
  * @param[in] module_name Module name, used to annotate options when run with -help.
  *
- * @param[out] variable pointer to an IceModelVec; @c variable has to
+ * @param[out] variable pointer to an array::Array; @c variable has to
  *             have metadata set for this to work.
  *
  * @param[in] flag Regridding flag. If set to
@@ -148,7 +147,7 @@ void Component::write_model_state_impl(const File &output) const {
  *            `-regrid_vars` are set *and* the name of the variable is
  *            found in the set of names given with `-regrid_vars`.
  */
-void Component::regrid(const std::string &module_name, IceModelVec &variable,
+void Component::regrid(const std::string &module_name, array::Array &variable,
                        RegriddingFlag flag) {
 
   auto regrid_file = m_config->get_string("input.regrid.file");

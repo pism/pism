@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -40,13 +40,15 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
     m_grid(IceGrid::Shallow(m_ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity)),
     m_sys(ctx->unit_system()),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
-    m_tauc(m_grid, "tauc", WITH_GHOSTS, m_stencil_width),
-    m_ice_enthalpy(m_grid, "enthalpy", WITH_GHOSTS, m_grid->z(), m_stencil_width),
-    m_bc_values(m_grid, "_bc", WITH_GHOSTS, m_stencil_width), // u_bc and v_bc
-    m_bc_mask(m_grid, "bc_mask", WITH_GHOSTS, m_stencil_width),
+    m_tauc(m_grid, "tauc"),
+    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_stencil_width),
+    m_bc_values(m_grid, "_bc"), // u_bc and v_bc
+    m_bc_mask(m_grid, "bc_mask"),
     m_geometry(m_grid),
     m_ssa(NULL)
 {
+  m_bc_mask.set_interpolation_type(NEAREST);
+
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.set_attrs("diagnostic",
                    "yield stress for basal till (plastic or pseudo-plastic model)",
@@ -148,9 +150,9 @@ void SSATestCase::report(const std::string &testname) {
   m_ctx->log()->message(1,
                         "NUMERICAL ERRORS in velocity relative to exact solution:\n");
 
-  const IceModelVec2V &vel_ssa = m_ssa->velocity();
+  const array::Vector &vel_ssa = m_ssa->velocity();
 
-  IceModelVec::AccessList list{&vel_ssa};
+  array::AccessScope list{&vel_ssa};
 
   double exactvelmax = 0, gexactvelmax = 0;
   for (Points p(*m_grid); p; p.next()) {
@@ -336,10 +338,9 @@ void SSATestCase::write(const std::string &filename) {
   m_ice_enthalpy.write(file);
   m_bc_values.write(file);
 
-  const IceModelVec2V &vel_ssa = m_ssa->velocity();
-  vel_ssa.write(file);
+  m_ssa->velocity().write(file);
 
-  IceModelVec2V exact(m_grid, "_exact", WITHOUT_GHOSTS);
+  array::Vector exact(m_grid, "_exact");
   exact.set_attrs("diagnostic",
                   "X-component of the SSA exact solution",
                   "m s-1", "m s-1", "", 0);
@@ -347,7 +348,7 @@ void SSATestCase::write(const std::string &filename) {
                   "Y-component of the SSA exact solution",
                   "m s-1", "m s-1", "", 1);
 
-  IceModelVec::AccessList list(exact);
+  array::AccessScope list(exact);
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

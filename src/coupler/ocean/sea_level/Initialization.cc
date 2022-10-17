@@ -82,7 +82,7 @@ void InitializationHelper::write_model_state_impl(const File &output) const {
   m_input_model->write_model_state(output);
 }
 
-const IceModelVec2S& InitializationHelper::sea_level_elevation_impl() const {
+const array::Scalar& InitializationHelper::sea_level_elevation_impl() const {
   return m_sea_level;
 }
 

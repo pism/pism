@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 PISM Authors
+// Copyright (C) 2004--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -36,9 +36,9 @@ namespace pism {
 */
 OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
   : MohrCoulombYieldStress(grid),
-    m_mask(m_grid, "diff_mask", WITH_GHOSTS),
-    m_usurf_difference(m_grid, "usurf_difference", WITH_GHOSTS),
-    m_usurf_target(m_grid, "usurf", WITH_GHOSTS)
+    m_mask(m_grid, "diff_mask"),
+    m_usurf_difference(m_grid, "usurf_difference"),
+    m_usurf_target(m_grid, "usurf")
 {
   // In this model tillphi is NOT time-independent.
   m_till_phi.set_time_independent(false);
@@ -219,13 +219,13 @@ void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
 
 //! Perform an iteration to adjust the till friction angle according to the difference
 //! between target and modeled surface elevations.
-void OptTillphiYieldStress::update_tillphi(const IceModelVec2S &ice_surface_elevation,
-                                           const IceModelVec2S &bed_topography,
-                                           const IceModelVec2CellType &cell_type) {
+void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elevation,
+                                           const array::Scalar &bed_topography,
+                                           const array::CellType &cell_type) {
 
   m_log->message(2, "* Updating till friction angle...\n");
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     { &m_till_phi, &m_usurf_target, &m_usurf_difference, &m_mask, &ice_surface_elevation, &bed_topography, &cell_type };
 
   m_mask.set(0.0);

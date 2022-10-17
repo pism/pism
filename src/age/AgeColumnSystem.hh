@@ -30,16 +30,16 @@ public:
   AgeColumnSystem(const std::vector<double>& storage_grid,
                   const std::string &my_prefix,
                   double dx, double dy, double dt,
-                  const IceModelVec3 &age,
-                  const IceModelVec3 &u3,
-                  const IceModelVec3 &v3,
-                  const IceModelVec3 &w3);
+                  const array::Array3D &age,
+                  const array::Array3D &u3,
+                  const array::Array3D &v3,
+                  const array::Array3D &w3);
 
   void init(int i, int j, double thickness);
 
   void solve(std::vector<double> &x);
 protected:
-  const IceModelVec3 &m_age3;
+  const array::Array3D &m_age3;
   double m_nu;
   std::vector<double> m_A, m_A_n, m_A_e, m_A_s, m_A_w;
 };

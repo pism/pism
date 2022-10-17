@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,6 @@ static char help[] =
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -109,7 +108,7 @@ void SSATestCasePlug::initializeSSACoefficients() {
   // Set boundary conditions (Dirichlet all the way around).
   m_bc_mask.set(0.0);
 
-  IceModelVec::AccessList list{&m_bc_values, &m_bc_mask, &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
+  array::AccessScope list{&m_bc_values, &m_bc_mask, &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

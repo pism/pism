@@ -28,7 +28,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"
@@ -62,13 +62,13 @@ where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
 SSAFD::SSAFD(IceGrid::ConstPtr grid)
   : SSA(grid),
-    m_hardness(grid, "hardness", WITHOUT_GHOSTS),
-    m_nuH(grid, "nuH", WITH_GHOSTS),
-    m_nuH_old(grid, "nuH_old", WITH_GHOSTS),
-    m_work(grid, "work_vector", WITH_GHOSTS,
+    m_hardness(grid, "hardness"),
+    m_nuH(grid, "nuH"),
+    m_nuH_old(grid, "nuH_old"),
+    m_work(grid, "work_vector", array::WITH_GHOSTS,
            2 /* stencil width */),
-    m_b(grid, "right_hand_side", WITHOUT_GHOSTS),
-    m_velocity_old(grid, "velocity_old", WITH_GHOSTS)
+    m_b(grid, "right_hand_side"),
+    m_velocity_old(grid, "velocity_old")
 {
 
   m_velocity_old.set_attrs("internal",
@@ -247,9 +247,10 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   using mask::ice_free_land;
   using mask::ice_free_ocean;
 
-  const IceModelVec2S
+  const array::Scalar1
+    &bed                   = inputs.geometry->bed_elevation;
+  const array::Scalar
     &thickness             = inputs.geometry->ice_thickness,
-    &bed                   = inputs.geometry->bed_elevation,
     &surface               = inputs.geometry->ice_surface_elevation,
     &sea_level             = inputs.geometry->sea_level_elevation,
     *water_column_pressure = inputs.water_column_pressure;
@@ -263,7 +264,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   // This constant is for debugging: simulations should not depend on the choice of
   // velocity used in ice-free areas.
-  const Vector2 ice_free_velocity(0.0, 0.0);
+  const Vector2d ice_free_velocity(0.0, 0.0);
 
   const bool
     use_cfbc       = m_config->get_flag("stress_balance.calving_front_stress_bc"),
@@ -278,7 +279,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
                          inputs.no_model_mask,
                          m_taud);
 
-  IceModelVec::AccessList list{&m_taud, &m_b};
+  array::AccessScope list{&m_taud, &m_b};
 
   if (inputs.bc_values and inputs.bc_mask) {
     list.add({inputs.bc_values, inputs.bc_mask});
@@ -297,7 +298,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    Vector2 taud = m_taud(i, j);
+    Vector2d taud = m_taud(i, j);
 
     if (flow_line_mode) {
       // no cross-flow driving stress in the flow line mode
@@ -504,11 +505,12 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   PetscErrorCode ierr = 0;
 
   // shortcut:
-  const IceModelVec2V &vel = m_velocity;
+  const array::Vector &vel = m_velocity;
 
-  const IceModelVec2S
+  const array::Scalar1
     &thickness         = inputs.geometry->ice_thickness,
-    &bed               = inputs.geometry->bed_elevation,
+    &bed               = inputs.geometry->bed_elevation;
+  const array::Scalar
     &surface           = inputs.geometry->ice_surface_elevation,
     &grounded_fraction = inputs.geometry->cell_grounded_fraction,
     &tauc              = *inputs.basal_yield_stress;
@@ -530,7 +532,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   ierr = MatZeroEntries(A);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
+  array::AccessScope list{&m_nuH, &tauc, &vel, &m_mask, &bed, &surface};
 
   if (inputs.bc_values && inputs.bc_mask) {
     list.add(*inputs.bc_mask);
@@ -995,7 +997,7 @@ void SSAFD::picard_iteration(const Inputs &inputs,
       m_default_pc_failure_count += 1;
 
       m_log->message(1,
-                 "  re-trying using the Additive Schwarz preconditioner...\n");
+                     "  re-trying using the Additive Schwarz preconditioner...\n");
 
       pc_setup_asm();
 
@@ -1101,7 +1103,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
       auto max_speed = m_config->get_number("stress_balance.ssa.fd.max_speed", "m second-1");
       int high_speed_counter = 0;
 
-      IceModelVec::AccessList list{&m_velocity_global};
+      array::AccessScope list{&m_velocity_global};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -1260,10 +1262,10 @@ void SSAFD::compute_nuH_norm(double &norm, double &norm_change) {
 
 //! \brief Computes vertically-averaged ice hardness on the staggered grid.
 void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
-  const IceModelVec2S
+  const array::Scalar
     &thickness = inputs.geometry->ice_thickness;
 
-  const IceModelVec3 &enthalpy = *inputs.enthalpy;
+  const array::Array3D &enthalpy = *inputs.enthalpy;
 
   const double
     *E_ij     = NULL,
@@ -1271,7 +1273,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
 
   std::vector<double> E(m_grid->Mz());
 
-  IceModelVec::AccessList list{&thickness, &enthalpy, &m_hardness, &m_mask};
+  array::AccessScope list{&thickness, &enthalpy, &m_hardness, &m_mask};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1349,7 +1351,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
   So scaling the enhancement factor by \f$C\f$ is equivalent to scaling
   ice hardness \f$B\f$ by \f$C^{-\frac1n}\f$.
 */
-void SSAFD::fracture_induced_softening(const IceModelVec2S *fracture_density) {
+void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
   if (not fracture_density) {
     return;
   }
@@ -1358,7 +1360,7 @@ void SSAFD::fracture_induced_softening(const IceModelVec2S *fracture_density) {
     epsilon = m_config->get_number("fracture_density.softening_lower_limit"),
     n_glen  = m_flow_law->exponent();
 
-  IceModelVec::AccessList list{&m_hardness, fracture_density};
+  array::AccessScope list{&m_hardness, fracture_density};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1426,11 +1428,11 @@ issue is handled when -cfbc is set.
 */
 void SSAFD::compute_nuH_staggered(const Geometry &geometry,
                                   double nuH_regularization,
-                                  IceModelVec2Stag &result) {
+                                  array::Staggered &result) {
 
-  const IceModelVec2V &uv = m_velocity; // shortcut
+  const array::Vector &uv = m_velocity; // shortcut
 
-  IceModelVec::AccessList list{&result, &uv, &m_hardness, &geometry.ice_thickness};
+  array::AccessScope list{&result, &uv, &m_hardness, &geometry.ice_thickness};
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1496,11 +1498,11 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
  */
 void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
                                        double nuH_regularization,
-                                       IceModelVec2Stag &result) {
+                                       array::Staggered &result) {
 
-  const IceModelVec2S &thickness = geometry.ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
-  const IceModelVec2V &uv = m_velocity; // shortcut
+  const array::Vector &uv = m_velocity; // shortcut
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1508,7 +1510,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&m_mask, &m_work, &m_velocity};
+  array::AccessScope list{&m_mask, &m_work, &m_velocity};
 
   assert(m_velocity.stencil_width() >= 2);
   assert(m_mask.stencil_width()     >= 2);
@@ -1577,8 +1579,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
         }
 
         m_flow_law->effective_viscosity(m_hardness(i,j,0),
-                                        secondInvariant_2D(Vector2(u_x, v_x),
-                                                           Vector2(u_y, v_y)),
+                                        secondInvariant_2D(Vector2d(u_x, v_x),
+                                                           Vector2d(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,0) = nu * H;
       } else {
@@ -1612,8 +1614,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
         }
 
         m_flow_law->effective_viscosity(m_hardness(i,j,1),
-                                        secondInvariant_2D(Vector2(u_x, v_x),
-                                                           Vector2(u_y, v_y)),
+                                        secondInvariant_2D(Vector2d(u_x, v_x),
+                                                           Vector2d(u_y, v_y)),
                                         &nu, NULL);
         result(i,j,1) = nu * H;
       } else {
@@ -1642,12 +1644,12 @@ void SSAFD::update_nuH_viewers() {
     return;
   }
 
-  IceModelVec2S tmp(m_grid, "nuH", WITHOUT_GHOSTS);
+  array::Scalar tmp(m_grid, "nuH");
   tmp.set_attrs("temporary",
                 "log10 of (viscosity * thickness)",
                 "Pa s m", "Pa s m", "", 0);
 
-  IceModelVec::AccessList list{&m_nuH, &tmp};
+  array::AccessScope list{&m_nuH, &tmp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1686,7 +1688,7 @@ void SSAFD::set_diagonal_matrix_entry(Mat A, int i, int j, int component,
 
 //! \brief Checks if a cell is near or at the ice front.
 /*!
- * You need to create IceModelVec::AccessList object and add mask to it.
+ * You need to create array::AccessScope object and add mask to it.
  *
  * Note that a cell is a CFBC location of one of four direct neighbors is ice-free.
  *
@@ -1752,9 +1754,10 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-IceModelVec::Ptr SSAFD_nuH::compute_impl() const {
+array::Array::Ptr SSAFD_nuH::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "nuH", WITH_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "nuH");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -1771,7 +1774,7 @@ DiagnosticList SSAFD::diagnostics_impl() const {
   return result;
 }
 
-const IceModelVec2Stag & SSAFD::integrated_viscosity() const {
+const array::Staggered & SSAFD::integrated_viscosity() const {
   return m_nuH;
 }
 

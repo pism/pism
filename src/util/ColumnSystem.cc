@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 PISM Authors
+// Copyright (C) 2004-2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,13 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // fabs()
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <cstring>              // memset
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Array3D.hh"
 #include "ColumnSystem.hh"
 
 #include "pism/util/error_handling.hh"
@@ -247,9 +248,9 @@ std::string TridiagonalSystem::prefix() const {
 columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
                                  const std::string &prefix,
                                  double dx, double dy, double dt,
-                                 const IceModelVec3 &u3,
-                                 const IceModelVec3 &v3,
-                                 const IceModelVec3 &w3)
+                                 const array::Array3D &u3,
+                                 const array::Array3D &v3,
+                                 const array::Array3D &w3)
   : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
   assert(dx > 0.0);
   assert(dy > 0.0);
@@ -284,11 +285,11 @@ const std::vector<double>& columnSystemCtx::z() const {
 }
 
 void columnSystemCtx::fine_to_coarse(const std::vector<double> &input, int i, int j,
-                                     IceModelVec3& output) const {
+                                     array::Array3D& output) const {
   m_interp->fine_to_coarse(&input[0], output.get_column(i, j));
 }
 
-void columnSystemCtx::coarse_to_fine(const IceModelVec3 &input, int i, int j,
+void columnSystemCtx::coarse_to_fine(const array::Array3D &input, int i, int j,
                                      double* output) const {
   m_interp->coarse_to_fine(input.get_column(i, j), m_ks, output);
 }

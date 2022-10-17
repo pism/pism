@@ -53,7 +53,7 @@ void Frac_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->scale(m_forcing->value(t + 0.5 * dt));
 }
 
-const IceModelVec2S& Frac_SMB::shelf_base_mass_flux_impl() const {
+const array::Scalar& Frac_SMB::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

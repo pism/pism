@@ -96,8 +96,8 @@ BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
 
 BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
   : Component(g),
-    m_bottom_surface_flux(m_grid, "bheatflx", WITHOUT_GHOSTS),
-    m_top_surface_flux(m_grid, "heat_flux_from_bedrock", WITHOUT_GHOSTS) {
+    m_bottom_surface_flux(m_grid, "bheatflx"),
+    m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {
 
   {
     m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
@@ -201,16 +201,16 @@ DiagnosticList BedThermalUnit::diagnostics_impl() const {
   return result;
 }
 
-void BedThermalUnit::update(const IceModelVec2S &bedrock_top_temperature,
+void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature,
                             double t, double dt) {
   this->update_impl(bedrock_top_temperature, t, dt);
 }
 
-const IceModelVec2S& BedThermalUnit::flux_through_top_surface() const {
+const array::Scalar& BedThermalUnit::flux_through_top_surface() const {
   return m_top_surface_flux;
 }
 
-const IceModelVec2S& BedThermalUnit::flux_through_bottom_surface() const {
+const array::Scalar& BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
 }
 
@@ -230,8 +230,8 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 
-IceModelVec::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hfgeoubed", WITHOUT_GHOSTS));
+array::Array::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
+  auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 
   result->copy_from(model->flux_through_top_surface());

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,21 +19,21 @@
 
 #include <cmath>                // fabs
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
-void lapse_rate_correction(const IceModelVec2S &surface,
-                           const IceModelVec2S &reference_surface,
+void lapse_rate_correction(const array::Scalar &surface,
+                           const array::Scalar &reference_surface,
                            double lapse_rate,
-                           IceModelVec2S &result) {
+                           array::Scalar &result) {
   IceGrid::ConstPtr grid = result.grid();
 
   if (fabs(lapse_rate) < 1e-12) {
     return;
   }
 
-  IceModelVec::AccessList list{&surface, &reference_surface, &result};
+  array::AccessScope list{&surface, &reference_surface, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();

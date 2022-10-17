@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -29,7 +29,7 @@ namespace calving {
 
 HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
   : Component(grid),
-    m_calving_rate(grid, "hayhurst_calving_rate", WITH_GHOSTS)
+    m_calving_rate(grid, "hayhurst_calving_rate")
 {
   m_calving_rate.set_attrs("diagnostic",
                            "horizontal calving rate due to Hayhurst calving",
@@ -62,10 +62,10 @@ void HayhurstCalving::init() {
 
 }
 
-void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
-                             const IceModelVec2S &ice_thickness,
-                             const IceModelVec2S &sea_level,
-                             const IceModelVec2S &bed_elevation) {
+void HayhurstCalving::update(const array::CellType1 &cell_type,
+                             const array::Scalar &ice_thickness,
+                             const array::Scalar &sea_level,
+                             const array::Scalar &bed_elevation) {
 
   using std::min;
 
@@ -76,7 +76,7 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
     // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
     unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
-  IceModelVec::AccessList list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -152,7 +152,7 @@ void HayhurstCalving::update(const IceModelVec2CellType &cell_type,
   }
 }
 
-const IceModelVec2S &HayhurstCalving::calving_rate() const {
+const array::Scalar &HayhurstCalving::calving_rate() const {
   return m_calving_rate;
 }
 

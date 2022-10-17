@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -22,12 +22,10 @@
 
 #include "CompleteOceanModel.hh"
 
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "PicoGeometry.hh"
 
 namespace pism {
-
-class IceModelVec2CellType;
 
 namespace ocean {
 
@@ -54,76 +52,76 @@ protected:
   std::map<std::string, Diagnostic::Ptr> diagnostics_impl() const;
 
 private:
-  IceModelVec2S m_Soc, m_Soc_box0;
-  IceModelVec2S m_Toc, m_Toc_box0, m_T_star;
-  IceModelVec2S m_overturning;
-  IceModelVec2S m_basal_melt_rate;
+  array::Scalar m_Soc, m_Soc_box0;
+  array::Scalar m_Toc, m_Toc_box0, m_T_star;
+  array::Scalar m_overturning;
+  array::Scalar1 m_basal_melt_rate;
 
   PicoGeometry m_geometry;
 
-  std::shared_ptr<IceModelVec2T> m_theta_ocean, m_salinity_ocean;
+  std::shared_ptr<array::Forcing> m_theta_ocean, m_salinity_ocean;
 
   void compute_ocean_input_per_basin(const PicoPhysics &physics,
-                                     const IceModelVec2Int &basin_mask,
-                                     const IceModelVec2Int &continental_shelf_mask,
-                                     const IceModelVec2S &salinity_ocean,
-                                     const IceModelVec2S &theta_ocean,
+                                     const array::Scalar &basin_mask,
+                                     const array::Scalar &continental_shelf_mask,
+                                     const array::Scalar &salinity_ocean,
+                                     const array::Scalar &theta_ocean,
                                      std::vector<double> &temperature,
                                      std::vector<double> &salinity) const;
 
   void set_ocean_input_fields(const PicoPhysics &physics,
-                              const IceModelVec2S &ice_thickness,
-                              const IceModelVec2CellType &mask,
-                              const IceModelVec2Int &basin_mask,
-                              const IceModelVec2Int &shelf_mask,
+                              const array::Scalar &ice_thickness,
+                              const array::CellType1 &mask,
+                              const array::Scalar &basin_mask,
+                              const array::Scalar &shelf_mask,
                               const std::vector<double> &basin_temperature,
                               const std::vector<double> &basin_salinity,
-                              IceModelVec2S &Toc_box0,
-                              IceModelVec2S &Soc_box0) const;
+                              array::Scalar &Toc_box0,
+                              array::Scalar &Soc_box0) const;
 
   void process_box1(const PicoPhysics &physics,
-                    const IceModelVec2S &ice_thickness,
-                    const IceModelVec2Int &shelf_mask,
-                    const IceModelVec2Int &box_mask,
-                    const IceModelVec2S &Toc_box0,
-                    const IceModelVec2S &Soc_box0,
-                    IceModelVec2S &basal_melt_rate,
-                    IceModelVec2S &basal_temperature,
-                    IceModelVec2S &T_star,
-                    IceModelVec2S &Toc,
-                    IceModelVec2S &Soc,
-                    IceModelVec2S &overturning);
+                    const array::Scalar &ice_thickness,
+                    const array::Scalar &shelf_mask,
+                    const array::Scalar &box_mask,
+                    const array::Scalar &Toc_box0,
+                    const array::Scalar &Soc_box0,
+                    array::Scalar &basal_melt_rate,
+                    array::Scalar &basal_temperature,
+                    array::Scalar &T_star,
+                    array::Scalar &Toc,
+                    array::Scalar &Soc,
+                    array::Scalar &overturning);
 
   void process_other_boxes(const PicoPhysics &physics,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec2Int &shelf_mask,
-                           const IceModelVec2Int &box_mask,
-                           IceModelVec2S &basal_melt_rate,
-                           IceModelVec2S &basal_temperature,
-                           IceModelVec2S &T_star,
-                           IceModelVec2S &Toc,
-                           IceModelVec2S &Soc) const;
+                           const array::Scalar &ice_thickness,
+                           const array::Scalar &shelf_mask,
+                           const array::Scalar &box_mask,
+                           array::Scalar &basal_melt_rate,
+                           array::Scalar &basal_temperature,
+                           array::Scalar &T_star,
+                           array::Scalar &Toc,
+                           array::Scalar &Soc) const;
 
   void beckmann_goosse(const PicoPhysics &physics,
-                       const IceModelVec2S &ice_thickness,
-                       const IceModelVec2Int &shelf_mask,
-                       const IceModelVec2CellType &cell_type,
-                       const IceModelVec2S &Toc_box0,
-                       const IceModelVec2S &Soc_box0,
-                       IceModelVec2S &basal_melt_rate,
-                       IceModelVec2S &basal_temperature,
-                       IceModelVec2S &Toc,
-                       IceModelVec2S &Soc);
+                       const array::Scalar &ice_thickness,
+                       const array::Scalar &shelf_mask,
+                       const array::CellType &cell_type,
+                       const array::Scalar &Toc_box0,
+                       const array::Scalar &Soc_box0,
+                       array::Scalar &basal_melt_rate,
+                       array::Scalar &basal_temperature,
+                       array::Scalar &Toc,
+                       array::Scalar &Soc);
 
   void compute_box_average(int box_id,
-                           const IceModelVec2S &field,
-                           const IceModelVec2Int &shelf_mask,
-                           const IceModelVec2Int &box_mask,
+                           const array::Scalar &field,
+                           const array::Scalar &shelf_mask,
+                           const array::Scalar &box_mask,
                            std::vector<double> &result) const;
 
   void compute_box_area(int box_id,
-                        const IceModelVec2Int &shelf_mask,
-                        const IceModelVec2Int &box_mask,
+                        const array::Scalar &shelf_mask,
+                        const array::Scalar &box_mask,
                         std::vector<double> &result) const;
 
   int m_n_basins, m_n_boxes, m_n_shelves;

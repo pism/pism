@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2021 Constantine Khroulev
+// Copyright (C) 2009--2022 Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -16,51 +16,43 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __IceModelVec2T_hh
-#define __IceModelVec2T_hh
+#ifndef PISM_ARRAY_FORCING
+#define PISM_ARRAY_FORCING
 
-#include "iceModelVec.hh"
-#include "MaxTimestep.hh"
-#include "interpolation.hh"     // InterpolationType
+#include "Scalar.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/interpolation.hh"     // InterpolationType
 
 namespace pism {
+namespace array {
 
-//! A class for storing and accessing 2D time-series (for climate forcing)
+//! @brief 2D time-dependent inputs (for climate forcing, etc)
 /*! This class was created to read time-dependent and spatially-varying climate
   forcing data, in particular snow temperatures and precipitation.
 
-  If requests (calls to update()) go in sequence, every records should be read
-  only once.
+  If requests (calls to update()) go in sequence, every record should be read only once.
 
   Note that this class is optimized for use with a PDD scheme -- it stores
   records so that data corresponding to a grid point are stored in adjacent
   memory locations.
 
-  IceModelVec2T is always global (%i.e. has no ghosts).
-
-  Both versions of interp() use piecewise-constant interpolation and
-  extrapolate (by a constant) outside the available range.
+  `Forcing` has no ghosts.
 */
-class IceModelVec2T : public IceModelVec2S {
+class Forcing : public array::Scalar {
 public:
-  static std::shared_ptr<IceModelVec2T>
-  ForcingField(IceGrid::ConstPtr grid,
-               const File &file,
-               const std::string &short_name,
-               const std::string &standard_name,
-               int max_buffer_size,
-               bool periodic,
-               InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
-  static std::shared_ptr<IceModelVec2T> Constant(IceGrid::ConstPtr grid,
-                                                 const std::string &short_name,
-                                                 double value);
+  Forcing(IceGrid::ConstPtr grid,
+          const File &file,
+          const std::string &short_name,
+          const std::string &standard_name,
+          unsigned int max_buffer_size,
+          bool periodic,
+          InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
-  IceModelVec2T(IceGrid::ConstPtr grid,
-                const std::string &short_name,
-                unsigned int buffer_size,
-                InterpolationType interpolation_type = PIECEWISE_CONSTANT);
-  virtual ~IceModelVec2T();
+  virtual ~Forcing();
+
+  static std::shared_ptr<Forcing>
+  Constant(IceGrid::ConstPtr grid, const std::string &short_name, double value);
 
   unsigned int buffer_size();
 
@@ -84,6 +76,14 @@ private:
 
   Data *m_data;
 
+  Forcing(IceGrid::ConstPtr grid,
+          const std::string &short_name,
+          unsigned int buffer_size,
+          InterpolationType interpolation_type);
+  void allocate(const std::string &short_name,
+                unsigned int buffer_size,
+                InterpolationType interpolation_type);
+
   double*** array3();
   void update(unsigned int start);
   void discard(int N);
@@ -91,7 +91,7 @@ private:
   void init_periodic_data(const File &file);
 };
 
-
+} // end of namespace array
 } // end of namespace pism
 
-#endif // __IceModelVec2T_hh
+#endif // PISM_ARRAY_FORCING

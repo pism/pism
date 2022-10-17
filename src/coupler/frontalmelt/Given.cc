@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@ namespace frontalmelt {
 Given::Given(IceGrid::ConstPtr grid)
   : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
 
-  m_frontal_melt_rate = IceModelVec2T::Constant(grid, "frontal_melt_rate", 0.0);
+  m_frontal_melt_rate = array::Forcing::Constant(grid, "frontal_melt_rate", 0.0);
 }
 
 void Given::init_impl(const Geometry &geometry) {
@@ -47,7 +47,7 @@ void Given::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_frontal_melt_rate = IceModelVec2T::ForcingField(m_grid,
+    m_frontal_melt_rate = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "frontal_melt_rate",
                                                       "", // no standard name
@@ -63,7 +63,7 @@ void Given::init_impl(const Geometry &geometry) {
 
 void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   // fill m_frontal_melt_rate with values read from an file
   m_frontal_melt_rate->update(t, dt);
@@ -72,7 +72,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   // post-processing: keep values at grounded (or grounded and floating) margins and in
   // the interior, filling the rest with zeros
 
-  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -99,7 +99,7 @@ MaxTimestep Given::max_timestep_impl(double t) const {
 }
 
 
-const IceModelVec2S& Given::frontal_melt_rate_impl() const {
+const array::Scalar& Given::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
 

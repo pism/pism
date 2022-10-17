@@ -37,7 +37,7 @@ void IceModel::update_fracture_density() {
 
     bc_mask.set(0.0);
 
-    IceModelVec::AccessList list{&bc_mask, &m_geometry.cell_type};
+    array::AccessScope list{&bc_mask, &m_geometry.cell_type};
 
     if (dirichlet_bc) {
       list.add(m_velocity_bc_mask);

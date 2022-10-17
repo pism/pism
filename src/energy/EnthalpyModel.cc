@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 #include "DrainageCalculator.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/energy/enthSystem.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
 #include "utilities.hh"
 #include "pism/util/pism_utilities.hh"
@@ -50,10 +50,10 @@ void EnthalpyModel::restart_impl(const File &input_file, int record) {
 }
 
 void EnthalpyModel::bootstrap_impl(const File &input_file,
-                                   const IceModelVec2S &ice_thickness,
-                                   const IceModelVec2S &surface_temperature,
-                                   const IceModelVec2S &climatic_mass_balance,
-                                   const IceModelVec2S &basal_heat_flux) {
+                                   const array::Scalar &ice_thickness,
+                                   const array::Scalar &surface_temperature,
+                                   const array::Scalar &climatic_mass_balance,
+                                   const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model from %s...\n",
                  input_file.filename().c_str());
@@ -72,11 +72,11 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
   }
 }
 
-void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &surface_temperature,
-                                    const IceModelVec2S &climatic_mass_balance,
-                                    const IceModelVec2S &basal_heat_flux) {
+void EnthalpyModel::initialize_impl(const array::Scalar &basal_melt_rate,
+                                    const array::Scalar &ice_thickness,
+                                    const array::Scalar &surface_temperature,
+                                    const array::Scalar &climatic_mass_balance,
+                                    const array::Scalar &basal_heat_flux) {
 
   m_log->message(2, "* Bootstrapping the enthalpy-based energy balance model...\n");
 
@@ -98,7 +98,7 @@ void EnthalpyModel::initialize_impl(const IceModelVec2S &basal_melt_rate,
 This method is documented by the page \ref bombproofenth and by [\ref
 AschwandenBuelerKhroulevBlatter].
 
-This method updates IceModelVec3 m_work and IceModelVec2S basal_melt_rate.
+This method updates array::Array3D m_work and array::Scalar basal_melt_rate.
 No communication of ghosts is done for any of these fields.
 
 We use an instance of enthSystemCtx.
@@ -122,15 +122,15 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   inputs.check();
 
   // give them names that are a bit shorter...
-  const IceModelVec3
+  const array::Array3D
     &strain_heating3 = *inputs.volumetric_heating_rate,
     &u3              = *inputs.u3,
     &v3              = *inputs.v3,
     &w3              = *inputs.w3;
 
-  const IceModelVec2CellType &cell_type = *inputs.cell_type;
+  const auto &cell_type = *inputs.cell_type;
 
-  const IceModelVec2S
+  const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
     &ice_thickness            = *inputs.ice_thickness,
@@ -146,7 +146,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   const double dz = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  IceModelVec::AccessList list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
+  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
       &ice_thickness, &basal_frictional_heating, &basal_heat_flux, &till_water_thickness,
       &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
       &m_work};

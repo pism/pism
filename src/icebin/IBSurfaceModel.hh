@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #ifndef _IBSURFACEMODEL_H_
 #define _IBSURFACEMODEL_H_
 
-#include "pism/util/iceModelVec.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -45,8 +44,8 @@ protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
 
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const array::Scalar& mass_flux_impl() const;
+  virtual const array::Scalar& temperature_impl() const;
 
 protected:
   bool _initialized;
@@ -54,12 +53,12 @@ protected:
 
 public:
   // Inputs from IceBin
-  pism::IceModelVec2S icebin_wflux;
-  pism::IceModelVec2S icebin_deltah;
-  pism::IceModelVec2S icebin_massxfer; // [kg m-2 s-1]
-  pism::IceModelVec2S icebin_enthxfer; // [J m-2 s-1]
+  pism::array::Scalar icebin_wflux;
+  pism::array::Scalar icebin_deltah;
+  pism::array::Scalar icebin_massxfer; // [kg m-2 s-1]
+  pism::array::Scalar icebin_enthxfer; // [J m-2 s-1]
   // Calculated
-  pism::IceModelVec2S surface_temp;
+  pism::array::Scalar surface_temp;
 };
 
 } // end of namespace surface

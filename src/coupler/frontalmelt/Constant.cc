@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -29,19 +28,21 @@ namespace frontalmelt {
 
 Constant::Constant(IceGrid::ConstPtr g)
   : FrontalMelt(g) {
-  m_frontal_melt_rate = allocate_frontal_melt_rate(g);
+  m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
+  m_frontal_melt_rate->set_attrs("diagnostic", "frontal melt rate",
+                                 "m s-1", "m day-1", "", 0);
 }
 
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2CellType &cell_type = inputs.geometry->cell_type;
+  const auto &cell_type = inputs.geometry->cell_type;
 
   const double
     melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");
 
-  IceModelVec::AccessList list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -54,7 +55,7 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   }
 }
 
-const IceModelVec2S& Constant::frontal_melt_rate_impl() const {
+const array::Scalar& Constant::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
   

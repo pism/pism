@@ -38,9 +38,9 @@ private:
 
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& shelf_base_temperature_impl() const;
+  const array::Scalar& shelf_base_temperature_impl() const;
 
-  IceModelVec2S::Ptr m_shelf_base_temperature;
+  array::Scalar::Ptr m_shelf_base_temperature;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 

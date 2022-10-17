@@ -31,16 +31,16 @@ namespace inverse {
   The parameters \f$c\f$, \f$q\f$ and \f$\epsilon\f$ are provided at construction.  Taking \f$q\f$=1 would
   yield a total variation functional, save for the regularizing parameter \f$\epsilon\f$.
 */
-class IPTotalVariationFunctional2S : public IPFunctional<IceModelVec2S> {
+class IPTotalVariationFunctional2S : public IPFunctional<array::Scalar> {
 public:
-  IPTotalVariationFunctional2S(IceGrid::ConstPtr grid, double c, double q, double eps, IceModelVec2Int *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(IceGrid::ConstPtr grid, double c, double q, double eps, array::Scalar *dirichletLocations=NULL);
 
-  virtual void valueAt(IceModelVec2S &x, double *OUTPUT);
-  virtual void gradientAt(IceModelVec2S &x, IceModelVec2S &gradient);
+  virtual void valueAt(array::Scalar &x, double *OUTPUT);
+  virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 protected:
 
-  IceModelVec2Int *m_dirichletIndices;
+  array::Scalar *m_dirichletIndices;
   double m_c; // scale parameter.
   double m_lebesgue_exp;
   double m_epsilon_sq; // Regularization parameter.

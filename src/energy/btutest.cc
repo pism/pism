@@ -127,13 +127,13 @@ int main(int argc, char *argv[]) {
     options::Real dt_years(ctx->unit_system(),
                            "-dt", "Time-step, in years", "years", 1.0);
 
-    // allocate tools and IceModelVecs
-    IceModelVec2S bedtoptemp(grid, "bedtoptemp", WITHOUT_GHOSTS);
+    // allocate tools and Arrays
+    array::Scalar bedtoptemp(grid, "bedtoptemp");
     bedtoptemp.set_attrs("",
                          "temperature at top of bedrock thermal layer",
                          "K", "K", "", 0);
 
-    IceModelVec2S heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base", WITHOUT_GHOSTS);
+    array::Scalar heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
     heat_flux_at_ice_base.set_attrs("",
                                     "upward geothermal flux at bedrock thermal layer base",
                                     "W m-2", "mW m-2", "", 0);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
 
       // compute exact ice temperature at z=0 at time y
       {
-        IceModelVec::AccessList list(bedtoptemp);
+        array::AccessScope list(bedtoptemp);
         for (Points p(*grid); p; p.next()) {
           const int i = p.i(), j = p.j();
 

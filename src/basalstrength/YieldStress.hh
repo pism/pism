@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PISMYIELDSTRESS_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
 
 namespace pism {
 
@@ -32,12 +31,12 @@ public:
 
   const Geometry *geometry;
 
-  const IceModelVec2S *till_water_thickness;
+  const array::Scalar *till_water_thickness;
 
-  const IceModelVec2S *subglacial_water_thickness;
+  const array::Scalar *subglacial_water_thickness;
 
   // inputs used by regional models
-  const IceModelVec2Int *no_model_mask;
+  const array::Scalar *no_model_mask;
 };
 
 //! \brief The PISM basal yield stress model interface (virtual base class)
@@ -54,7 +53,7 @@ public:
 
   void update(const YieldStressInputs &inputs, double t, double dt);
 
-  const IceModelVec2S& basal_material_yield_stress();
+  const array::Scalar& basal_material_yield_stress();
 
   std::string name() const;
 protected:
@@ -72,7 +71,7 @@ protected:
 
   DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2S m_basal_yield_stress;
+  array::Scalar2 m_basal_yield_stress;
 
   std::string m_name;
 };

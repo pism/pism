@@ -20,7 +20,7 @@
 #define PISM_ATMOSPHERE_DELTA_P
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
@@ -40,7 +40,7 @@ private:
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
-  const IceModelVec2S& precipitation_impl() const;
+  const array::Scalar& precipitation_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &result) const;
@@ -49,9 +49,9 @@ private:
 
   std::unique_ptr<ScalarForcing> m_1d_offsets;
 
-  std::shared_ptr<IceModelVec2T> m_2d_offsets;
+  std::shared_ptr<array::Forcing> m_2d_offsets;
 
-  IceModelVec2S::Ptr m_precipitation;
+  array::Scalar::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere

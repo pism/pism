@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -49,8 +49,8 @@ void IceCompModel::energy_step() {
 
   energy::EnergyModelStats stats;
 
-  IceModelVec2S &bedtoptemp              = *m_work2d[1];
-  IceModelVec2S &basal_enthalpy          = *m_work2d[2];
+  array::Scalar &bedtoptemp              = *m_work2d[1];
+  array::Scalar &basal_enthalpy          = *m_work2d[2];
   extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
   bedrock_surface_temperature(m_geometry.sea_level_elevation,
@@ -67,7 +67,7 @@ void IceCompModel::energy_step() {
   {
     inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
-    inputs.cell_type                = &m_geometry.cell_type;              // geometry
+    inputs.cell_type                = &m_geometry.cell_type;
     inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
     inputs.shelf_base_temp          = &m_ocean->shelf_base_temperature(); // ocean model
     inputs.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
@@ -100,7 +100,7 @@ void IceCompModel::energy_step() {
 
 void IceCompModel::initTestFG() {
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness};
+  array::AccessScope list{&m_geometry.ice_thickness};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -121,13 +121,13 @@ void IceCompModel::initTestFG() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+    array::Scalar bed_topography(m_grid, "topg");
     bed_topography.set(0.0);
 
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    array::Scalar bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
 
-    IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+    array::Scalar sea_level(m_grid, "sea_level");
     sea_level.set(0.0);
 
     m_beddef->bootstrap(bed_topography, bed_uplift, m_geometry.ice_thickness,
@@ -137,13 +137,13 @@ void IceCompModel::initTestFG() {
 
 void IceCompModel::initTestsKO() {
 
-  IceModelVec2S bed_topography(m_grid, "topg", WITHOUT_GHOSTS);
+  array::Scalar bed_topography(m_grid, "topg");
   bed_topography.set(0.0);
 
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  array::Scalar bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
-  IceModelVec2S sea_level(m_grid, "sea_level", WITHOUT_GHOSTS);
+  array::Scalar sea_level(m_grid, "sea_level");
   sea_level.set(0.0);
 
   m_geometry.ice_thickness.set(3000.0);
@@ -160,7 +160,7 @@ void IceCompModel::getCompSourcesTestFG() {
 
   // before temperature and flow step, set strain_heating_c from exact values
 
-  IceModelVec::AccessList list{&m_strain_heating3_comp};
+  array::AccessScope list{&m_strain_heating3_comp};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -195,9 +195,9 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_temperature};
+  array::AccessScope list{&m_geometry.ice_thickness, &ice_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -281,9 +281,9 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   }
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list{&ice_temperature, &bedrock_temp};
+  array::AccessScope list{&ice_temperature, &bedrock_temp};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -334,9 +334,9 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   std::vector<double> z(1, 0.0);
 
   energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const IceModelVec3 &ice_temperature = m->temperature();
+  const array::Array3D &ice_temperature = m->temperature();
 
-  IceModelVec::AccessList list(ice_temperature);
+  array::AccessScope list(ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -389,9 +389,9 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = m_config->get_number("constants.ice.density"),
     ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
-  const IceModelVec3 &strain_heating3 = m_stress_balance->volumetric_strain_heating();
+  const array::Array3D &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &strain_heating3};
+  array::AccessScope list{&m_geometry.ice_thickness, &strain_heating3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -443,12 +443,12 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     avUerr  = 0.0,
     avWerr  = 0.0;
 
-  const IceModelVec3
+  const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v(),
     &w3 = m_stress_balance->velocity_w();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &u3, &v3, &w3};
+  array::AccessScope list{&m_geometry.ice_thickness, &u3, &v3, &w3};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -513,9 +513,9 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
   // we just need one constant from exact solution:
   double bmelt = exactO(0.0).bmelt;
 
-  const IceModelVec2S &basal_melt_rate = m_energy_model->basal_melt_rate();
+  const array::Scalar &basal_melt_rate = m_energy_model->basal_melt_rate();
 
-  IceModelVec::AccessList list(basal_melt_rate);
+  array::AccessScope list(basal_melt_rate);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

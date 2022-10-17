@@ -49,7 +49,7 @@ bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
   return I.i == 0;
 }
 
-Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) const {
+Vector2d BlatterTestCFBC::u_bc(double x, double y, double z) const {
   (void) y;
 
   return blatter_xz_cfbc_exact(x, z, m_B, m_L, m_rho_i, m_rho_w, m_g);
@@ -58,7 +58,7 @@ Vector2 BlatterTestCFBC::u_bc(double x, double y, double z) const {
 void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
                                            const double *surface,
                                            const double *bed,
-                                           Vector2 *residual) {
+                                           Vector2d *residual) {
   (void) surface;
   (void) bed;
 
@@ -97,7 +97,7 @@ void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
 
 void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
                                        const fem::Q1Element3Face &face,
-                                       Vector2 *residual) {
+                                       Vector2d *residual) {
   // compute x and z coordinates of quadrature points
   double *x = m_work[0];
   {
@@ -129,8 +129,8 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
                                      const fem::Q1Element3Face &face,
                                      const double *tauc_nodal,
                                      const double *f_nodal,
-                                     const Vector2 *u_nodal,
-                                     Vector2 *residual) {
+                                     const Vector2d *u_nodal,
+                                     Vector2d *residual) {
   (void) tauc_nodal;
   (void) f_nodal;
   (void) u_nodal;
@@ -164,7 +164,7 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
 void BlatterTestCFBC::jacobian_basal(const fem::Q1Element3Face &face,
                                      const double *tauc_nodal,
                                      const double *f_nodal,
-                                     const Vector2 *u_nodal,
+                                     const Vector2d *u_nodal,
                                      double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]) {
   (void) face;
   (void) tauc_nodal;
@@ -181,10 +181,10 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
 
   Blatter::init_2d_parameters(inputs);
 
-  const IceModelVec2S &b = inputs.geometry->bed_elevation;
+  const array::Scalar &b = inputs.geometry->bed_elevation;
 
   {
-    IceModelVec::AccessList list{&b, &m_parameters};
+    array::AccessScope list{&b, &m_parameters};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();

@@ -62,7 +62,7 @@ class LingleClarkElastic(TestCase):
 
         bed_model = PISM.LingleClark(grid)
 
-        bed_uplift = PISM.IceModelVec2S(grid, "uplift", PISM.WITHOUT_GHOSTS)
+        bed_uplift = PISM.Scalar(grid, "uplift")
 
         # start with a flat bed, no ice, and no uplift
         geometry.bed_elevation.set(0.0)

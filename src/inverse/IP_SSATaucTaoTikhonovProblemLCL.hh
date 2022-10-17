@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2021  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2021, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,6 @@
 
 #include "TaoUtil.hh"
 #include "IPTwoBlockVec.hh"
-#include "pism/util/iceModelVec.hh"
 #include "IP_SSATaucForwardProblem.hh"
 #include "functional/IPFunctional.hh"
 
@@ -48,8 +47,8 @@ public:
 
   typedef std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCLListener> Ptr;
 
-  typedef IceModelVec2S DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Vector StateVec;
   
   IP_SSATaucTaoTikhonovProblemLCLListener() {}
   virtual ~IP_SSATaucTaoTikhonovProblemLCLListener() {}
@@ -86,8 +85,11 @@ public:
 /*! Experimental and not particularly functional. */
 class IP_SSATaucTaoTikhonovProblemLCL {
 public:
-  typedef IceModelVec2S DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Scalar1 DesignVecGhosted;
+
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
 
   typedef IP_SSATaucTaoTikhonovProblemLCLListener Listener;
   
@@ -130,14 +132,14 @@ protected:
   std::unique_ptr<IPTwoBlockVec> m_x;
 
   DesignVec m_dGlobal;
-  DesignVec::Ptr m_d;
+  DesignVecGhosted::Ptr m_d;
   DesignVec &m_d0;
-  DesignVec::Ptr m_d_diff;
-  DesignVec m_dzeta;
+  DesignVecGhosted::Ptr m_d_diff;
+  DesignVecGhosted m_dzeta;            // ghosted
 
   StateVec::Ptr m_uGlobal;
-  StateVec m_u;
-  StateVec m_du;
+  StateVec1 m_u;                 // ghosted
+  StateVec1 m_du;                // ghosted
   StateVec &m_u_obs;
   StateVec::Ptr m_u_diff;
 
@@ -153,14 +155,14 @@ protected:
   petsc::Mat m_Jstate;
   petsc::Mat m_Jdesign;
 
-  IceModelVec2S m_d_Jdesign;
-  IceModelVec2V m_u_Jdesign;
+  array::Scalar1 m_d_Jdesign;   // ghosted
+  array::Vector1 m_u_Jdesign;        // ghosted
 
   double m_constraintsScale;
   double m_velocityScale;
 
-  IPFunctional<IceModelVec2S> &m_designFunctional;
-  IPFunctional<IceModelVec2V> &m_stateFunctional;
+  IPFunctional<array::Scalar> &m_designFunctional;
+  IPFunctional<array::Vector> &m_stateFunctional;
 
   std::vector<Listener::Ptr> m_listeners;
 

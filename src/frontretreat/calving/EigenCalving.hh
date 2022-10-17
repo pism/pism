@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,8 +23,6 @@
 
 namespace pism {
 
-class Geometry;
-
 namespace calving {
 
 class EigenCalving : public StressCalving {
@@ -34,7 +32,7 @@ public:
 
   void init();
 
-  void update(const IceModelVec2CellType &cell_type, const IceModelVec2V &ice_velocity);
+  void update(const array::CellType &cell_type, const array::Vector1 &ice_velocity);
 protected:
   DiagnosticList diagnostics_impl() const;
 

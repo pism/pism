@@ -317,7 +317,7 @@ public:
 
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
-   * This is also the maximum number of records an IceModelVec2T can hold.
+   * This is also the maximum number of records an array::Forcing can hold.
    */
   static const int max_dm_dof = 10000;
 

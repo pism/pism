@@ -31,9 +31,9 @@ public:
 
 protected:
 
-  virtual const IceModelVec2S& accumulation_impl() const;
-  virtual const IceModelVec2S& melt_impl() const;
-  virtual const IceModelVec2S& runoff_impl() const;
+  virtual const array::Scalar& accumulation_impl() const;
+  virtual const array::Scalar& melt_impl() const;
+  virtual const array::Scalar& runoff_impl() const;
   
 private:
   void init_impl(const Geometry &geometry);
@@ -41,17 +41,17 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& temperature_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& temperature_impl() const;
 
-  void compute_mass_flux(const IceModelVec2S &surface, IceModelVec2S &result) const;
-  void compute_temperature(const IceModelVec2S &surface, IceModelVec2S &result) const;
+  void compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const;
+  void compute_temperature(const array::Scalar &surface, array::Scalar &result) const;
 
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_mass_flux;
+  array::Scalar::Ptr m_temperature;
 };
 
 } // end of namespace surface

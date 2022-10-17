@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,6 +19,7 @@
 #include "SIAFD_diagnostics.hh"
 #include "BedSmoother.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -48,10 +49,10 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   m_vars[0]["valid_max"] = {1};
 }
 
-IceModelVec::Ptr SIAFD_schoofs_theta::compute_impl() const {
-  const IceModelVec2S *surface = m_grid->variables().get_2d_scalar("surface_altitude");
+array::Array::Ptr SIAFD_schoofs_theta::compute_impl() const {
+  const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "schoofs_theta", WITHOUT_GHOSTS));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "schoofs_theta"));
   result->metadata(0) = m_vars[0];
 
   model->bed_smoother().theta(*surface, *result);
@@ -69,9 +70,9 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_topgsmooth::compute_impl() const {
+array::Array::Ptr SIAFD_topgsmooth::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topgsmooth", WITHOUT_GHOSTS));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "topgsmooth"));
   result->metadata() = m_vars[0];
 
   result->copy_from(model->bed_smoother().smoothed_bed());
@@ -88,16 +89,21 @@ SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
             "", "m", "m", 0);
 }
 
-IceModelVec::Ptr SIAFD_thksmooth::compute_impl() const {
+array::Array::Ptr SIAFD_thksmooth::compute_impl() const {
 
-  const IceModelVec2S        &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
-  const IceModelVec2S        &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const IceModelVec2CellType &mask      = *m_grid->variables().get_2d_cell_type("mask");
+  const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
+  const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thksmooth", WITHOUT_GHOSTS));
+  array::CellType2 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
+
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "thksmooth"));
   result->metadata(0) = m_vars[0];
 
-  model->bed_smoother().smoothed_thk(surface, thickness, mask,
+  model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
                                      *result);
   return result;
 }
@@ -114,12 +120,15 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
             "m2 s-1", "m2 s-1", 0);
 }
 
-IceModelVec::Ptr SIAFD_diffusivity::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "diffusivity", WITHOUT_GHOSTS));
+array::Array::Ptr SIAFD_diffusivity::compute_impl() const {
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "diffusivity"));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = *m_grid->variables().get_2d_cell_type("mask");
-
+  array::CellType1 cell_type(m_grid, "cell_type");
+  {
+    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
+    cell_type.copy_from(mask);
+  }
   bool include_floating_ice = true;
   staggered_to_regular(cell_type, model->diffusivity(), include_floating_ice, *result);
 
@@ -139,10 +148,10 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
             "m2 s-1", "m2 s-1", 1);
 }
 
-static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &output) {
+static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
   IceGrid::ConstPtr grid = output.grid();
 
-  IceModelVec::AccessList list{ &input, &output };
+  array::AccessScope list{ &input, &output };
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -152,8 +161,9 @@ static void copy_staggered_vec(const IceModelVec2Stag &input, IceModelVec2Stag &
   }
 }
 
-IceModelVec::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "diffusivity", WITHOUT_GHOSTS));
+array::Array::Ptr SIAFD_diffusivity_staggered::compute_impl() const {
+  auto result = std::make_shared<array::Staggered>(m_grid, "diffusivity");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -175,9 +185,10 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_x::compute_impl() const {
+array::Array::Ptr SIAFD_h_x::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_x", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "h_x");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -199,9 +210,10 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
             "", "", 1);
 }
 
-IceModelVec::Ptr SIAFD_h_y::compute_impl() const {
+array::Array::Ptr SIAFD_h_y::compute_impl() const {
 
-  IceModelVec2Stag::Ptr result(new IceModelVec2Stag(m_grid, "h_y", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Staggered>(m_grid, "h_y");
+
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 

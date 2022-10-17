@@ -42,11 +42,11 @@ TemperatureModel_Verification::TemperatureModel_Verification(IceGrid::ConstPtr g
   // empty
 }
 
-void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_melt_rate,
-                                                    const IceModelVec2S &ice_thickness,
-                                                    const IceModelVec2S &surface_temperature,
-                                                    const IceModelVec2S &climatic_mass_balance,
-                                                    const IceModelVec2S &basal_heat_flux) {
+void TemperatureModel_Verification::initialize_impl(const array::Scalar &basal_melt_rate,
+                                                    const array::Scalar &ice_thickness,
+                                                    const array::Scalar &surface_temperature,
+                                                    const array::Scalar &climatic_mass_balance,
+                                                    const array::Scalar &basal_heat_flux) {
 
   // ignore provided basal melt rate
   (void) basal_melt_rate;
@@ -76,7 +76,7 @@ void TemperatureModel_Verification::initialize_impl(const IceModelVec2S &basal_m
 
 void TemperatureModel_Verification::initTestFG() {
 
-  IceModelVec::AccessList list{&m_ice_temperature};
+  array::AccessScope list{&m_ice_temperature};
 
   const double time = m_testname == 'F' ? 0.0 : m_grid->ctx()->time()->current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;
@@ -114,7 +114,7 @@ void TemperatureModel_Verification::initTestsKO() {
   }
 
   // fill m_ice_temperature
-  IceModelVec::AccessList list(m_ice_temperature);
+  array::AccessScope list(m_ice_temperature);
 
   ParallelSection loop(m_grid->com);
   try {

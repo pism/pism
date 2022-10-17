@@ -81,9 +81,9 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     geometry = PISM.Geometry(grid)
 
-    v         = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-    Q         = PISM.IceModelVec2Stag(grid, "Q", PISM.WITHOUT_GHOSTS)
-    H_bc_mask = PISM.IceModelVec2Int(grid, "H_bc_mask", PISM.WITHOUT_GHOSTS)
+    v         = PISM.Vector(grid, "velocity")
+    Q         = PISM.Staggered(grid, "Q")
+    H_bc_mask = PISM.Scalar(grid, "H_bc_mask")
 
     ge = PISM.GeometryEvolution(grid)
 
@@ -153,8 +153,8 @@ def average_error(N):
 
     grid = geometry.ice_thickness.grid()
 
-    diff = PISM.IceModelVec2S(grid, "difference", PISM.WITHOUT_GHOSTS)
-    exact = PISM.IceModelVec2S(grid, "thk", PISM.WITHOUT_GHOSTS)
+    diff = PISM.Scalar(grid, "difference")
+    exact = PISM.Scalar(grid, "thk")
 
     L = min(grid.Lx(), grid.Ly())
     R_inner = 0.25 * L

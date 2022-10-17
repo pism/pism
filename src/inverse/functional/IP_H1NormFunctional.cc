@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,11 +20,12 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace inverse {
 
-void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IP_H1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -35,7 +36,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
 
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -67,7 +68,7 @@ void IP_H1NormFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTPUT) {
+void IP_H1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -82,7 +83,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
 
-  IceModelVec::AccessList list{&a, &b};
+  array::AccessScope list{&a, &b};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -121,7 +122,7 @@ void IP_H1NormFunctional2S::dot(IceModelVec2S &a, IceModelVec2S &b, double *OUTP
 }
 
 
-void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IP_H1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -135,7 +136,7 @@ void IP_H1NormFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient
 
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 

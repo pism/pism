@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,14 +25,14 @@
 #include <petscdmda.h>          // DMDALocalInfo
 
 #include "FEM.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
 
 
 namespace pism {
 
 class IceGrid;
-class IceModelVec2Int;
+namespace array { class Scalar; }
 
 struct Vector3 {
   double x, y, z;
@@ -173,7 +173,7 @@ public:
     j = m_j + m_j_offset[k];
   }
 
-  Vector2 normal(unsigned int side) const {
+  Vector2d normal(unsigned int side) const {
     assert(side < m_n_chi);
     return m_normals[side];
   }
@@ -207,7 +207,7 @@ public:
   }
 
   /*! @brief Get nodal values of an integer mask. */
-  void nodal_values(const IceModelVec2Int &x_global, int *result) const;
+  void nodal_values(const array::Scalar &x_global, int *result) const;
 
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
     into the element-local array `result`.
@@ -248,7 +248,7 @@ protected:
   Element2(const IceGrid &grid, int Nq, int n_chi, int block_size);
   Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
 
-  std::vector<Vector2> m_normals;
+  std::vector<Vector2d> m_normals;
 
   std::vector<double> m_side_lengths;
 };

@@ -20,15 +20,15 @@ namespace icebin {
 IBIceModel::IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceModel::Params const &_params)
     : pism::IceModel(g, context),
       params(_params),
-      base(m_grid, "", WITHOUT_GHOSTS),
-      cur(m_grid, "", WITHOUT_GHOSTS),
-      rate(m_grid, "", WITHOUT_GHOSTS),
-      M1(m_grid, "M1", pism::WITHOUT_GHOSTS),
-      M2(m_grid, "M2", pism::WITHOUT_GHOSTS),
-      H1(m_grid, "H1", pism::WITHOUT_GHOSTS),
-      H2(m_grid, "H2", pism::WITHOUT_GHOSTS),
-      V1(m_grid, "V1", pism::WITHOUT_GHOSTS),
-      V2(m_grid, "V2", pism::WITHOUT_GHOSTS)
+      base(m_grid, ""),
+      cur(m_grid, ""),
+      rate(m_grid, ""),
+      M1(m_grid, "M1"),
+      M2(m_grid, "M2"),
+      H1(m_grid, "H1"),
+      H2(m_grid, "H2"),
+      V1(m_grid, "V1"),
+      V2(m_grid, "V2")
 {
   // empty
 }
@@ -120,14 +120,14 @@ void IBIceModel::energy_step() {
   cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
 
   // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
-  IceModelVec2S const &Rb(m_stress_balance->basal_frictional_heating());
+  array::Scalar const &Rb(m_stress_balance->basal_frictional_heating());
   cur.basal_frictional_heating.add(my_dt, Rb);
 
   // NOTE: strain_heating is inf at the coastlines.
   // See: https://github.com/pism/pism/issues/292
   // ------------ Volumetric Strain Heating
   // strain_heating_sum += my_dt * sum_columns(strainheating3p)
-  const IceModelVec3 &strain_heating3(m_stress_balance->volumetric_strain_heating());
+  const array::Array3D &strain_heating3(m_stress_balance->volumetric_strain_heating());
   // cur.strain_heating = cur.strain_heating * 1.0 + my_dt * sum_columns(strain_heating3p)
   sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
 
@@ -135,8 +135,8 @@ void IBIceModel::energy_step() {
 }
 
 void IBIceModel::massContExplicitStep(double dt,
-                                      const IceModelVec2Stag &diffusive_flux,
-                                      const IceModelVec2V &advective_velocity) {
+                                      const array::Staggered &diffusive_flux,
+                                      const array::Vector &advective_velocity) {
 
   printf("BEGIN IBIceModel::MassContExplicitStep()\n");
 
@@ -148,7 +148,7 @@ void IBIceModel::massContExplicitStep(double dt,
   // This will call through to accumulateFluxes_massContExplicitStep()
   // in the inner loop
   {
-    AccessList access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
+    pism::array::AccessScope access{ &cur.pism_smb,           &cur.melt_grounded, &cur.melt_floating,
                        &cur.internal_advection, &cur.href_to_h,     &cur.nonneg_rule };
 
     // FIXME: this is obviously broken now that PISM uses GeometryEvolution instead.
@@ -165,7 +165,7 @@ void IBIceModel::massContExplicitStep(double dt,
 
 
   {
-    AccessList access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
+    pism::array::AccessScope access{ &ib_surface->icebin_massxfer, &ib_surface->icebin_enthxfer, &ib_surface->icebin_deltah,
                        &cur.icebin_xfer, &cur.icebin_deltah };
 
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
@@ -270,12 +270,12 @@ void IBIceModel::set_rate(double dt) {
   auto cur_ii(cur.all_vecs.begin());
   auto rate_ii(rate.all_vecs.begin());
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii, ++rate_ii) {
-    IceModelVec2S &vbase(base_ii->vec);
-    IceModelVec2S &vcur(cur_ii->vec);
-    IceModelVec2S &vrate(rate_ii->vec);
+    array::Scalar &vbase(base_ii->vec);
+    array::Scalar &vcur(cur_ii->vec);
+    array::Scalar &vrate(rate_ii->vec);
 
     {
-      AccessList access{ &vbase, &vcur, &vrate };
+      pism::array::AccessScope access{ &vbase, &vcur, &vrate };
       for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
         for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
           // rate = cur - base: Just for DELTA and EPISLON flagged vectors
@@ -298,12 +298,12 @@ void IBIceModel::reset_rate() {
   auto base_ii(base.all_vecs.begin());
   auto cur_ii(cur.all_vecs.begin());
   for (; base_ii != base.all_vecs.end(); ++base_ii, ++cur_ii) {
-    IceModelVec2S &vbase(base_ii->vec);
-    IceModelVec2S &vcur(cur_ii->vec);
+    array::Scalar &vbase(base_ii->vec);
+    array::Scalar &vcur(cur_ii->vec);
 
     // This cannot go in the loop above with PETSc because
     // vbase is needed on the RHS of the equations above.
-    AccessList access{ &vbase, &vcur };
+    pism::array::AccessScope access{ &vbase, &vcur };
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
       for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
         // base = cur: For ALL vectors
@@ -345,9 +345,9 @@ void IBIceModel::prepare_outputs(double t0) {
 void IBIceModel::prepare_initial_outputs() {
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
-  AccessList access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
+  pism::array::AccessScope access{ &ice_enthalpy, &M1, &M2, &H1, &H2, &V1, &V2, &m_geometry.ice_thickness };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       double const *Enth = ice_enthalpy.get_column(i, j);
@@ -415,13 +415,13 @@ by computing the average over icy neighbors. I think you can re-use
 the idea from IceModel::get_threshold_thickness(...) (iMpartm_grid->cc).  */
 
 
-void IBIceModel::compute_enth2(pism::IceModelVec2S &enth2, pism::IceModelVec2S &mass2) {
+void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &mass2) {
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
-  const IceModelVec3 *ice_enthalpy = &m_energy_model->enthalpy();
+  const array::Array3D *ice_enthalpy = &m_energy_model->enthalpy();
 
-  AccessList access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
+  pism::array::AccessScope access{ &m_geometry.ice_thickness, ice_enthalpy, &enth2, &mass2 };
   for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {
     for (int j = m_grid->ys(); j < m_grid->ys() + m_grid->ym(); ++j) {
       enth2(i, j) = 0;
@@ -458,10 +458,10 @@ in the vector provided.
 @param surface_temp OUT: Resulting surface temperature to use as the Dirichlet B.C.
 */
 void IBIceModel::construct_surface_temp(
-    pism::IceModelVec2S &deltah, // IN: Input from Icebin
+    pism::array::Scalar &deltah, // IN: Input from Icebin
     double default_val,
     double timestep_s,                 // Length of this coupling interval [s]
-    pism::IceModelVec2S &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
+    pism::array::Scalar &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
 
 {
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
@@ -469,10 +469,10 @@ void IBIceModel::construct_surface_temp(
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   {
-    AccessList access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };
+    pism::array::AccessScope access{ &ice_enthalpy, &deltah, &m_geometry.ice_thickness, &surface_temp };
 
     // First time around, set effective_surface_temp to top temperature
     for (int i = m_grid->xs(); i < m_grid->xs() + m_grid->xm(); ++i) {

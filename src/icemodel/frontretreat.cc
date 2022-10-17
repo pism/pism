@@ -68,7 +68,7 @@ void IceModel::front_retreat_step() {
     }
 
     if (m_frontal_melt) {
-      IceModelVec2S &flux_magnitude = *m_work2d[0];
+      array::Scalar &flux_magnitude = *m_work2d[0];
 
       compute_magnitude(m_subglacial_hydrology->flux(), flux_magnitude);
 
@@ -81,7 +81,7 @@ void IceModel::front_retreat_step() {
     }
   }
 
-  IceModelVec2S
+  array::Scalar
     &old_H    = *m_work2d[0],
     &old_Href = *m_work2d[1];
 
@@ -117,7 +117,7 @@ void IceModel::front_retreat_step() {
     if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
       assert(m_front_retreat);
 
-      IceModelVec2S &retreat_rate = *m_work2d[2];
+      array::Scalar &retreat_rate = *m_work2d[2];
       retreat_rate.set(0.0);
 
       if (m_eigen_calving) {
@@ -225,14 +225,14 @@ void IceModel::front_retreat_step() {
  *            overwrite them
  * @param[in,out] output computed change
  */
-void IceModel::compute_geometry_change(const IceModelVec2S &thickness,
-                                       const IceModelVec2S &Href,
-                                       const IceModelVec2S &thickness_old,
-                                       const IceModelVec2S &Href_old,
+void IceModel::compute_geometry_change(const array::Scalar &thickness,
+                                       const array::Scalar &Href,
+                                       const array::Scalar &thickness_old,
+                                       const array::Scalar &Href_old,
                                        bool add_values,
-                                       IceModelVec2S &output) {
+                                       array::Scalar &output) {
 
-  IceModelVec::AccessList list{&thickness, &thickness_old,
+  array::AccessScope list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
 
   for (Points p(*m_grid); p; p.next()) {

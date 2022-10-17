@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,17 +38,17 @@ public:
 
   void init();
 
-  void update(const IceModelVec2V &sliding_velocity,
+  void update(const array::Vector &sliding_velocity,
               const Inputs &inputs,
               bool full_update);
 private:
   std::shared_ptr<Blatter> m_solver;
 
-  void transfer(const IceModelVec2S &ice_thickness);
+  void transfer(const array::Scalar &ice_thickness);
 
-  void compute_max_diffusivity(const IceModelVec2V &velocity,
-                               const IceModelVec2S &ice_thickness,
-                               const IceModelVec2S &surface);
+  void compute_max_diffusivity(const array::Vector &velocity,
+                               const array::Scalar &ice_thickness,
+                               const array::Scalar1 &surface);
 };
 
 } // end of namespace stressbalance

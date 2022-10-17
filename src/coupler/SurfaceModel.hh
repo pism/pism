@@ -33,9 +33,6 @@ namespace atmosphere {
 class AtmosphereModel;
 }
 
-class Geometry;
-class IceModelVec2S;
-
 //! @brief Surface models and modifiers: provide top-surface
 //! temperature, mass flux, liquid water fraction, mass and thickness of the surface
 //! layer.
@@ -55,25 +52,25 @@ public:
   // the interface:
   void update(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& accumulation() const;
-  const IceModelVec2S& layer_mass() const;
-  const IceModelVec2S& layer_thickness() const;
-  const IceModelVec2S& liquid_water_fraction() const;
-  const IceModelVec2S& mass_flux() const;
-  const IceModelVec2S& melt() const;
-  const IceModelVec2S& runoff() const;
-  const IceModelVec2S& temperature() const;
+  const array::Scalar& accumulation() const;
+  const array::Scalar& layer_mass() const;
+  const array::Scalar& layer_thickness() const;
+  const array::Scalar& liquid_water_fraction() const;
+  const array::Scalar& mass_flux() const;
+  const array::Scalar& melt() const;
+  const array::Scalar& runoff() const;
+  const array::Scalar& temperature() const;
   
 protected:
 
-  virtual const IceModelVec2S& accumulation_impl() const;
-  virtual const IceModelVec2S& layer_mass_impl() const;
-  virtual const IceModelVec2S& layer_thickness_impl() const;
-  virtual const IceModelVec2S& liquid_water_fraction_impl() const;
-  virtual const IceModelVec2S& mass_flux_impl() const;
-  virtual const IceModelVec2S& melt_impl() const;
-  virtual const IceModelVec2S& runoff_impl() const;
-  virtual const IceModelVec2S& temperature_impl() const;
+  virtual const array::Scalar& accumulation_impl() const;
+  virtual const array::Scalar& layer_mass_impl() const;
+  virtual const array::Scalar& layer_thickness_impl() const;
+  virtual const array::Scalar& liquid_water_fraction_impl() const;
+  virtual const array::Scalar& mass_flux_impl() const;
+  virtual const array::Scalar& melt_impl() const;
+  virtual const array::Scalar& runoff_impl() const;
+  virtual const array::Scalar& temperature_impl() const;
 
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -86,26 +83,26 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  void dummy_accumulation(const IceModelVec2S& smb, IceModelVec2S& result);
-  void dummy_melt(const IceModelVec2S& smb, IceModelVec2S& result);
-  void dummy_runoff(const IceModelVec2S& smb, IceModelVec2S& result);
+  void dummy_accumulation(const array::Scalar& smb, array::Scalar& result);
+  void dummy_melt(const array::Scalar& smb, array::Scalar& result);
+  void dummy_runoff(const array::Scalar& smb, array::Scalar& result);
 
-  static IceModelVec2S::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_temperature(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_accumulation(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_melt(IceGrid::ConstPtr grid);
-  static IceModelVec2S::Ptr allocate_runoff(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_temperature(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_accumulation(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_melt(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_runoff(IceGrid::ConstPtr grid);
 
 protected:
-  IceModelVec2S::Ptr m_liquid_water_fraction;
-  IceModelVec2S::Ptr m_layer_mass;
-  IceModelVec2S::Ptr m_layer_thickness;
-  IceModelVec2S::Ptr m_accumulation;
-  IceModelVec2S::Ptr m_melt;
-  IceModelVec2S::Ptr m_runoff;
+  array::Scalar::Ptr m_liquid_water_fraction;
+  array::Scalar::Ptr m_layer_mass;
+  array::Scalar::Ptr m_layer_thickness;
+  array::Scalar::Ptr m_accumulation;
+  array::Scalar::Ptr m_melt;
+  array::Scalar::Ptr m_runoff;
   
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;

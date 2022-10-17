@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021, 2022 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -25,9 +25,6 @@
 
 namespace pism {
 
-class IceModelVec2S;
-class Geometry;
-  
 class FrontalMeltInputs {
 public:
   FrontalMeltInputs();
@@ -35,7 +32,7 @@ public:
   const Geometry *geometry;
 
   // used by DischargeRouting
-  const IceModelVec2S *subglacial_water_flux;
+  const array::Scalar *subglacial_water_flux;
 
 };
 
@@ -56,9 +53,9 @@ public:
 
   void update(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const IceModelVec2S& frontal_melt_rate() const;
+  const array::Scalar& frontal_melt_rate() const;
 
-  const IceModelVec2S& retreat_rate() const;
+  const array::Scalar& retreat_rate() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -72,20 +69,17 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-  virtual const IceModelVec2S& frontal_melt_rate_impl() const = 0;
+  virtual const array::Scalar& frontal_melt_rate_impl() const = 0;
 
-  void compute_retreat_rate(const Geometry &geometry, const IceModelVec2S &frontal_melt_rate,
-                            IceModelVec2S &result) const;
+  void compute_retreat_rate(const Geometry &geometry, const array::Scalar &frontal_melt_rate,
+                            array::Scalar &result) const;
 
 protected:
   std::shared_ptr<FrontalMelt> m_input_model;
 
-  static IceModelVec2S::Ptr allocate_frontal_melt_rate(IceGrid::ConstPtr g,
-                                                       int stencil_width = 0);
+  bool apply(const array::CellType1 &M, int i, int j);
 
-  bool apply(const IceModelVec2CellType &M, int i, int j);
-
-  IceModelVec2S m_retreat_rate;
+  array::Scalar m_retreat_rate;
   bool m_include_floating_ice;
 };
 

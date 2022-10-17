@@ -28,7 +28,7 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
@@ -140,8 +140,8 @@ StressBalance::StressBalance(IceGrid::ConstPtr g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_w(m_grid, "wvel_rel", WITHOUT_GHOSTS, m_grid->z()),
-    m_strain_heating(m_grid, "strain_heating", WITHOUT_GHOSTS, m_grid->z()),
+    m_w(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
+    m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
 
@@ -180,8 +180,8 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
     profiling.end("stress_balance.modifier");
 
     if (full_update) {
-      const IceModelVec3 &u = m_modifier->velocity_u();
-      const IceModelVec3 &v = m_modifier->velocity_v();
+      const array::Array3D &u = m_modifier->velocity_u();
+      const array::Array3D &v = m_modifier->velocity_v();
 
       profiling.begin("stress_balance.strain_heat");
       this->compute_volumetric_strain_heating(inputs);
@@ -215,11 +215,11 @@ CFLData StressBalance::max_timestep_cfl_3d() const {
   return m_cfl_3d;
 }
 
-const IceModelVec2V& StressBalance::advective_velocity() const {
+const array::Vector& StressBalance::advective_velocity() const {
   return m_shallow_stress_balance->velocity();
 }
 
-const IceModelVec2Stag& StressBalance::diffusive_flux() const {
+const array::Staggered& StressBalance::diffusive_flux() const {
   return m_modifier->diffusive_flux();
 }
 
@@ -227,23 +227,23 @@ double StressBalance::max_diffusivity() const {
   return m_modifier->max_diffusivity();
 }
 
-const IceModelVec3& StressBalance::velocity_u() const {
+const array::Array3D& StressBalance::velocity_u() const {
   return m_modifier->velocity_u();
 }
 
-const IceModelVec3& StressBalance::velocity_v() const {
+const array::Array3D& StressBalance::velocity_v() const {
   return m_modifier->velocity_v();
 }
 
-const IceModelVec3& StressBalance::velocity_w() const {
+const array::Array3D& StressBalance::velocity_w() const {
   return m_w;
 }
 
-const IceModelVec2S& StressBalance::basal_frictional_heating() const {
+const array::Scalar& StressBalance::basal_frictional_heating() const {
   return m_shallow_stress_balance->basal_frictional_heating();
 }
 
-const IceModelVec3& StressBalance::volumetric_strain_heating() const {
+const array::Array3D& StressBalance::volumetric_strain_heating() const {
   return m_strain_heating;
 }
 
@@ -277,15 +277,15 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
-void StressBalance::compute_vertical_velocity(const IceModelVec2CellType &mask,
-                                              const IceModelVec3 &u,
-                                              const IceModelVec3 &v,
-                                              const IceModelVec2S *basal_melt_rate,
-                                              IceModelVec3 &result) {
+void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
+                                              const array::Array3D &u,
+                                              const array::Array3D &v,
+                                              const array::Scalar *basal_melt_rate,
+                                              array::Array3D &result) {
 
   const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
 
-  IceModelVec::AccessList list{&u, &v, &mask, &result};
+  array::AccessScope list{&u, &v, &mask, &result};
 
   if (basal_melt_rate) {
     list.add(*basal_melt_rate);
@@ -507,14 +507,14 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
   const rheology::FlowLaw &flow_law = *m_shallow_stress_balance->flow_law();
   EnthalpyConverter::Ptr EC = m_shallow_stress_balance->enthalpy_converter();
 
-  const IceModelVec3
+  const array::Array3D
     &u = m_modifier->velocity_u(),
     &v = m_modifier->velocity_v();
 
-  const IceModelVec2S &thickness = inputs.geometry->ice_thickness;
-  const IceModelVec3  *enthalpy  = inputs.enthalpy;
+  const array::Scalar &thickness = inputs.geometry->ice_thickness;
+  const array::Array3D  *enthalpy  = inputs.enthalpy;
 
-  const IceModelVec2CellType &mask = inputs.geometry->cell_type;
+  const auto &mask = inputs.geometry->cell_type;
 
   double
     enhancement_factor = m_shallow_stress_balance->flow_enhancement_factor(),
@@ -522,7 +522,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
     exponent = 0.5 * (1.0 / n + 1.0),
     e_to_a_power = pow(enhancement_factor,-1.0/n);
 
-  IceModelVec::AccessList list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
+  array::AccessScope list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
 
   const std::vector<double> &z = m_grid->z();
   const unsigned int Mz = m_grid->Mz();
@@ -682,9 +682,9 @@ Note: strain rates will be derived from SSA velocities, using ghosts when
 necessary. Both implementations (SSAFD and SSAFEM) call
 update_ghosts() to ensure that ghost values are up to date.
  */
-void compute_2D_principal_strain_rates(const IceModelVec2V &V,
-                                       const IceModelVec2CellType &mask,
-                                       IceModelVec3 &result) {
+void compute_2D_principal_strain_rates(const array::Vector1 &V,
+                                       const array::CellType1 &mask,
+                                       array::Array2D<PrincipalStrainRates> &result) {
 
   using mask::ice_free;
 
@@ -692,18 +692,14 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
   double dx = grid->dx();
   double dy = grid->dy();
 
-  if (result.ndof() != 2) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.dof() == 2 is required");
-  }
-
-  IceModelVec::AccessList list{&V, &mask, &result};
+  array::AccessScope list{&V, &mask, &result};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ice_free(i,j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
+      result(i, j).eigen1 = 0.0;
+      result(i, j).eigen2 = 0.0;
       continue;
     }
 
@@ -759,19 +755,18 @@ void compute_2D_principal_strain_rates(const IceModelVec2V &V,
       B   = 0.5 * (u_x - v_y),
       Dxy = 0.5 * (v_x + u_y),  // B^2 = A^2 - u_x v_y
       q   = sqrt(B*B + Dxy*Dxy);
-    result(i,j,0) = A + q;
-    result(i,j,1) = A - q; // q >= 0 so e1 >= e2
+    result(i, j).eigen1 = A + q;
+    result(i, j).eigen2 = A - q; // q >= 0 so e1 >= e2
 
   }
 }
 
 //! @brief Compute 2D deviatoric stresses.
-/*! Note: IceModelVec2 result has to have dof == 3. */
 void compute_2D_stresses(const rheology::FlowLaw &flow_law,
-                         const IceModelVec2V &velocity,
-                         const IceModelVec2S &hardness,
-                         const IceModelVec2CellType &cell_type,
-                         IceModelVec3 &result) {
+                         const array::Vector1 &velocity,
+                         const array::Scalar &hardness,
+                         const array::CellType1 &cell_type,
+                         array::Array2D<DeviatoricStresses> &result) {
 
   using mask::ice_free;
 
@@ -781,19 +776,15 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     dx = grid->dx(),
     dy = grid->dy();
 
-  if (result.ndof() != 3) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "result.ndof() == 3 is required");
-  }
-
-  IceModelVec::AccessList list{&velocity, &hardness, &result, &cell_type};
+  array::AccessScope list{&velocity, &hardness, &result, &cell_type};
 
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j)) {
-      result(i,j,0) = 0.0;
-      result(i,j,1) = 0.0;
-      result(i,j,2) = 0.0;
+      result(i,j).xx = 0.0;
+      result(i,j).yy = 0.0;
+      result(i,j).xy = 0.0;
       continue;
     }
 
@@ -847,13 +838,13 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 
     double nu = 0.0;
     flow_law.effective_viscosity(hardness(i, j),
-                                 secondInvariant_2D(Vector2(u_x, v_x), Vector2(u_y, v_y)),
+                                 secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                  &nu, NULL);
 
     //get deviatoric stresses
-    result(i,j,0) = 2.0*nu*u_x;
-    result(i,j,1) = 2.0*nu*v_y;
-    result(i,j,2) = nu*(u_y+v_x);
+    result(i,j).xx = 2.0*nu*u_x;
+    result(i,j).yy = 2.0*nu*v_y;
+    result(i,j).xy = nu*(u_y+v_x);
   }
 }
 

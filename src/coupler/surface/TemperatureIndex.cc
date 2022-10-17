@@ -31,7 +31,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
 
@@ -43,9 +43,9 @@ namespace surface {
 TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
                                    std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g, input),
-    m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
-    m_firn_depth(m_grid, "firn_depth", WITHOUT_GHOSTS),
-    m_snow_depth(m_grid, "snow_depth", WITHOUT_GHOSTS) {
+    m_mass_flux(m_grid, "climatic_mass_balance"),
+    m_firn_depth(m_grid, "firn_depth"),
+    m_snow_depth(m_grid, "snow_depth") {
 
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
@@ -79,14 +79,14 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
-    m_air_temp_sd = IceModelVec2T::ForcingField(m_grid, file,
+    m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
                                                 sd_periodic,
                                                 LINEAR);
     m_sd_file_set = true;
   } else {
-    m_air_temp_sd.reset(new IceModelVec2T(m_grid, "air_temp_sd", 1));
+    m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", 0.0);
     m_sd_file_set = false;
   }
 
@@ -153,8 +153,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                      "  Using constant standard deviation of near-surface temperature.\n");
 
       SpatialVariableMetadata attributes = m_air_temp_sd->metadata();
-      // replace with a constant IceModelVec2T:
-      m_air_temp_sd = IceModelVec2T::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
+      // replace with a constant array::Forcing:
+      m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
       // restore metadata:
       m_air_temp_sd->metadata() = attributes;
     } else {
@@ -260,10 +260,10 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     m_air_temp_sd->init_interpolation(ts);
   }
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
-  const IceModelVec2S        &H    = geometry.ice_thickness;
+  const auto &mask = geometry.cell_type;
+  const auto &H    = geometry.ice_thickness;
 
-  IceModelVec::AccessList list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
+  array::AccessScope list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
                                &m_firn_depth, &m_snow_depth,
                                m_accumulation.get(), m_melt.get(), m_runoff.get()};
 
@@ -271,7 +271,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
-  const IceModelVec2S *latitude = nullptr;
+  const array::Scalar *latitude = nullptr;
   if (fausto_greve or sigmalapserate != 0.0) {
     latitude = &geometry.latitude;
 
@@ -279,7 +279,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   }
 
   if (fausto_greve) {
-    const IceModelVec2S
+    const array::Scalar
       *longitude        = &geometry.latitude,
       *surface_altitude = &geometry.ice_surface_elevation;
 
@@ -456,35 +456,35 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
 }
 
-const IceModelVec2S &TemperatureIndex::mass_flux_impl() const {
+const array::Scalar &TemperatureIndex::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &TemperatureIndex::temperature_impl() const {
+const array::Scalar &TemperatureIndex::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& TemperatureIndex::accumulation_impl() const {
+const array::Scalar& TemperatureIndex::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& TemperatureIndex::melt_impl() const {
+const array::Scalar& TemperatureIndex::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& TemperatureIndex::runoff_impl() const {
+const array::Scalar& TemperatureIndex::runoff_impl() const {
   return *m_runoff;
 }
 
-const IceModelVec2S& TemperatureIndex::firn_depth() const {
+const array::Scalar& TemperatureIndex::firn_depth() const {
   return m_firn_depth;
 }
 
-const IceModelVec2S& TemperatureIndex::snow_depth() const {
+const array::Scalar& TemperatureIndex::snow_depth() const {
   return m_snow_depth;
 }
 
-const IceModelVec2S& TemperatureIndex::air_temp_sd() const {
+const array::Scalar& TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 

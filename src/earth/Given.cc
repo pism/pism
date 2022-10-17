@@ -24,7 +24,7 @@ namespace bed {
 
 Given::Given(IceGrid::ConstPtr grid)
   : BedDef(grid),
-    m_topg_reference(grid, "topg", WITHOUT_GHOSTS) {
+    m_topg_reference(grid, "topg") {
 
   m_topg_reference.set_attrs("bed_deformation", "reference bed elevation",
                              "meters",
@@ -41,21 +41,21 @@ Given::Given(IceGrid::ConstPtr grid)
 
     File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_topg_delta = IceModelVec2T::ForcingField(m_grid,
-                                               file,
-                                               "topg_delta",
-                                               "", // no standard name
-                                               buffer_size,
-                                               periodic,
-                                               LINEAR);
+    m_topg_delta = std::make_shared<array::Forcing>(m_grid,
+                                                    file,
+                                                    "topg_delta",
+                                                    "", // no standard name
+                                                    buffer_size,
+                                                    periodic,
+                                                    LINEAR);
     m_topg_delta->set_attrs("bed_deformation",
                             "two-dimensional bed elevation changes",
                             "meters", "meters", "", 0);
   }
 }
 
-void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                      const IceModelVec2S &sea_level_elevation) {
+void Given::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                      const array::Scalar &sea_level_elevation) {
   (void) ice_thickness;
   (void) sea_level_elevation;
 
@@ -75,8 +75,8 @@ void Given::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickne
   }
 }
 
-void Given::update_impl(const IceModelVec2S &ice_thickness,
-                        const IceModelVec2S &sea_level_elevation,
+void Given::update_impl(const array::Scalar &ice_thickness,
+                        const array::Scalar &sea_level_elevation,
                         double t, double dt) {
   (void) ice_thickness;
   (void) sea_level_elevation;

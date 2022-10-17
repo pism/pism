@@ -1,4 +1,4 @@
-/* Copyright (C) 2020 PISM Authors
+/* Copyright (C) 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,14 +21,16 @@
 
 #include "FEM.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
-class IceModelVec;
-class IceModelVec2Int;
-class IceModelVec2S;
-class IceModelVec2V;
+namespace array {
+class Array;
+class Scalar;
+class Vector;
+}
+
 
 namespace fem {
 
@@ -45,17 +47,17 @@ protected:
   DirichletData();
   ~DirichletData();
 
-  void init(const IceModelVec2Int *indices, const IceModelVec *values, double weight = 1.0);
-  void finish(const IceModelVec *values);
+  void init(const array::Scalar *indices, const array::Array *values, double weight = 1.0);
+  void finish(const array::Array *values);
 
-  const IceModelVec2Int *m_indices;
+  const array::Scalar *m_indices;
   double m_indices_e[q1::n_chi];
   double m_weight;
 };
 
 class DirichletData_Scalar : public DirichletData {
 public:
-  DirichletData_Scalar(const IceModelVec2Int *indices, const IceModelVec2S *values,
+  DirichletData_Scalar(const array::Scalar *indices, const array::Scalar *values,
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
@@ -65,22 +67,22 @@ public:
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
 protected:
-  const IceModelVec2S *m_values;
+  const array::Scalar *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const IceModelVec2Int *indices, const IceModelVec2V *values,
+  DirichletData_Vector(const array::Scalar *indices, const array::Vector *values,
                        double weight);
   ~DirichletData_Vector();
 
-  void enforce(const Element2 &element, Vector2* x_e);
-  void enforce_homogeneous(const Element2 &element, Vector2* x_e);
-  void fix_residual(Vector2 const *const *const x_global, Vector2 **r_global);
-  void fix_residual_homogeneous(Vector2 **r);
+  void enforce(const Element2 &element, Vector2d* x_e);
+  void enforce_homogeneous(const Element2 &element, Vector2d* x_e);
+  void fix_residual(Vector2d const *const *const x_global, Vector2d **r_global);
+  void fix_residual_homogeneous(Vector2d **r);
   void fix_jacobian(Mat J);
 protected:
-  const IceModelVec2V *m_values;
+  const array::Vector *m_values;
 };
 
 } // end of namespace fem

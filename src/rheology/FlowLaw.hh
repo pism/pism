@@ -22,13 +22,14 @@
 #include <string>
 
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/Vector2.hh"
+#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
-class IceModelVec2S;
-class IceModelVec3;
-
+namespace array {
+class Scalar;
+class Array3D;
+}
 class Config;
 
 /*!
@@ -41,7 +42,7 @@ class Config;
  * u_z = v_z = 0 @f$) and neglect horizontal derivatives of the vertical velocity (@f$ w_x = w_y = 0
  * @f$).
  */
-static inline double secondInvariant_2D(const Vector2 &U_x, const Vector2 &U_y) {
+static inline double secondInvariant_2D(const Vector2d &U_x, const Vector2d &U_y) {
   const double
     u_x = U_x.u,
     u_y = U_y.u,
@@ -160,9 +161,9 @@ double averaged_hardness(const FlowLaw &ice,
                          const double *enthalpy);
 
 void averaged_hardness_vec(const FlowLaw &ice,
-                           const IceModelVec2S &ice_thickness,
-                           const IceModelVec3  &enthalpy,
-                           IceModelVec2S &result);
+                           const array::Scalar &ice_thickness,
+                           const array::Array3D  &enthalpy,
+                           array::Scalar &result);
 
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 

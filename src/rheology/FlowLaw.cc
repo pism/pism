@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,8 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Array3D.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
@@ -180,13 +181,13 @@ void FlowLaw::effective_viscosity(double B, double gamma, double eps,
 }
 
 void averaged_hardness_vec(const FlowLaw &ice,
-                           const IceModelVec2S &thickness,
-                           const IceModelVec3  &enthalpy,
-                           IceModelVec2S &result) {
+                           const array::Scalar &thickness,
+                           const array::Array3D  &enthalpy,
+                           array::Scalar &result) {
 
   const IceGrid &grid = *thickness.grid();
 
-  IceModelVec::AccessList list{&thickness, &result, &enthalpy};
+  array::AccessScope list{&thickness, &result, &enthalpy};
 
   ParallelSection loop(grid.com);
   try {

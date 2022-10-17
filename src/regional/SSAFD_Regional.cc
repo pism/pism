@@ -66,11 +66,11 @@ static int weight(int M_ij, int M_n, double h_ij, double h_n) {
   return 1;
 }
 
-void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                            const IceModelVec2S &surface_elevation,
-                                            const IceModelVec2CellType &cell_type,
-                                            const IceModelVec2Int *no_model_mask,
-                                            IceModelVec2V &result) const {
+void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
+                                            const array::Scalar1 &surface_elevation,
+                                            const array::CellType1 &cell_type,
+                                            const array::Scalar1 *no_model_mask,
+                                            array::Vector &result) const {
 
   SSAFD::compute_driving_stress(ice_thickness, surface_elevation, cell_type, no_model_mask, result);
 
@@ -82,7 +82,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
     Mx = m_grid->Mx(),
     My = m_grid->My();
 
-  IceModelVec::AccessList list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
+  array::AccessScope list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -140,7 +140,7 @@ void SSAFD_Regional::compute_driving_stress(const IceModelVec2S &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   } // end of the loop over grid points
 }
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
                                                 "", // no standard name
@@ -75,7 +75,7 @@ GivenTH::GivenTH(IceGrid::ConstPtr g)
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
                                                    "", // no standard name
@@ -115,7 +115,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
     } else {
       double salinity = m_config->get_number("constants.sea_water.salinity", "g / kg");
 
-      m_salinity_ocean = IceModelVec2T::Constant(m_grid, variable_name, salinity);
+      m_salinity_ocean = array::Forcing::Constant(m_grid, variable_name, salinity);
 
       m_log->message(2, "  Variable '%s' not found; using constant salinity: %f (g / kg).\n",
                      variable_name.c_str(), salinity);
@@ -145,12 +145,12 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
 
   Constants c(*m_config);
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
-  IceModelVec2S &temperature = *m_shelf_base_temperature;
-  IceModelVec2S &mass_flux = *m_shelf_base_mass_flux;
+  array::Scalar &temperature = *m_shelf_base_temperature;
+  array::Scalar &mass_flux = *m_shelf_base_mass_flux;
 
-  IceModelVec::AccessList list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
+  array::AccessScope list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
   for (Points p(*m_grid); p; p.next()) {

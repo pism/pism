@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -54,7 +54,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceMod
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_reference_surface = IceModelVec2T::ForcingField(m_grid,
+    m_reference_surface = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "usurf",
                                                       "", // no standard name
@@ -106,7 +106,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   m_reference_surface->update(t, dt);
   m_reference_surface->interp(t + 0.5*dt);
 
-  const IceModelVec2S &surface = geometry.ice_surface_elevation;
+  const array::Scalar &surface = geometry.ice_surface_elevation;
 
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,
@@ -117,7 +117,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   switch (m_smb_method) {
   case SCALE:
     {
-      IceModelVec::AccessList list{&surface, m_reference_surface.get(), m_mass_flux.get()};
+      array::AccessScope list{&surface, m_reference_surface.get(), m_mass_flux.get()};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
@@ -145,23 +145,23 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
 
 }
 
-const IceModelVec2S &ElevationChange::mass_flux_impl() const {
+const array::Scalar &ElevationChange::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ElevationChange::temperature_impl() const {
+const array::Scalar &ElevationChange::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &ElevationChange::accumulation_impl() const {
+const array::Scalar &ElevationChange::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ElevationChange::melt_impl() const {
+const array::Scalar &ElevationChange::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ElevationChange::runoff_impl() const {
+const array::Scalar &ElevationChange::runoff_impl() const {
   return *m_runoff;
 }
 

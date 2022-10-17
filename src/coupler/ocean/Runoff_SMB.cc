@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+#include <cmath>
 
 #include "Runoff_SMB.hh"
 #include "pism/util/ScalarForcing.hh"
@@ -60,7 +62,7 @@ void Runoff_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   mass_flux(m_forcing->value(t + 0.5 * dt), *m_shelf_base_mass_flux);
 }
 
-void Runoff_SMB::mass_flux(double delta_T, IceModelVec2S &result) const {
+void Runoff_SMB::mass_flux(double delta_T, array::Scalar &result) const {
 
   // short-cuts, just to make the formula below easier to read
   double

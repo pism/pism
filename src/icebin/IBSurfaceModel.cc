@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 PISM Authors
+// Copyright (C) 2008-2020, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,11 +34,11 @@ namespace icebin {
 
 IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
   : SurfaceModel(g),
-    icebin_wflux(m_grid, "icebin_wflux", WITHOUT_GHOSTS),
-    icebin_deltah(m_grid, "icebin_deltah", WITHOUT_GHOSTS),
-    icebin_massxfer(m_grid, "icebin_massxfer", WITHOUT_GHOSTS),
-    icebin_enthxfer(m_grid, "icebin_enthxfer", WITHOUT_GHOSTS),
-    surface_temp(m_grid, "surface_temp", WITHOUT_GHOSTS)
+    icebin_wflux(m_grid, "icebin_wflux"),
+    icebin_deltah(m_grid, "icebin_deltah"),
+    icebin_massxfer(m_grid, "icebin_massxfer"),
+    icebin_enthxfer(m_grid, "icebin_enthxfer"),
+    surface_temp(m_grid, "surface_temp")
 {
 
   printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
@@ -96,11 +96,11 @@ void IBSurfaceModel::update_impl(const Geometry &geometry, double t, double dt) 
   (void) dt;
 }
 
-const IceModelVec2S &IBSurfaceModel::mass_flux_impl() const {
+const array::Scalar &IBSurfaceModel::mass_flux_impl() const {
   return icebin_massxfer;
 }
 
-const IceModelVec2S &IBSurfaceModel::temperature_impl() const {
+const array::Scalar &IBSurfaceModel::temperature_impl() const {
   return surface_temp;
 }
 

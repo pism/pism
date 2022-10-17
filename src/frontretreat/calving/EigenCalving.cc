@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -57,11 +57,12 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::update(const IceModelVec2CellType &cell_type,
-                          const IceModelVec2V &ice_velocity) {
+void EigenCalving::update(const array::CellType &cell_type,
+                          const array::Vector1 &ice_velocity) {
 
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
+  assert(m_cell_type.stencil_width() >= 2);
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -74,7 +75,7 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
                                                    m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  IceModelVec::AccessList list{&m_cell_type, &m_calving_rate, &m_strain_rates};
+  array::AccessScope list{&m_cell_type, &m_calving_rate, &m_strain_rates};
 
   // Compute the horizontal calving rate
   for (Points pt(*m_grid); pt; pt.next()) {
@@ -94,8 +95,8 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
         for (int p = -1; p < 2; p += 2) {
           const int I = i + p * offset;
           if (m_cell_type.floating_ice(I, j) and not m_cell_type.ice_margin(I, j)) {
-            eigen1 += m_strain_rates(I, j, 0);
-            eigen2 += m_strain_rates(I, j, 1);
+            eigen1 += m_strain_rates(I, j).eigen1;
+            eigen2 += m_strain_rates(I, j).eigen2;
             N += 1;
           }
         }
@@ -103,8 +104,8 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
         for (int q = -1; q < 2; q += 2) {
           const int J = j + q * offset;
           if (m_cell_type.floating_ice(i, J) and not m_cell_type.ice_margin(i, J)) {
-            eigen1 += m_strain_rates(i, J, 0);
-            eigen2 += m_strain_rates(i, J, 1);
+            eigen1 += m_strain_rates(i, J).eigen1;
+            eigen2 += m_strain_rates(i, J).eigen2;
             N += 1;
           }
         }

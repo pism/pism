@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,24 +20,20 @@
 #ifndef ICEMODELVEC2CELLTYPE_H
 #define ICEMODELVEC2CELLTYPE_H
 
-#include "iceModelVec.hh"
-#include "Mask.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/Mask.hh"
 
 namespace pism {
+namespace array {
 
-//! "Cell type" mask. Adds convenience methods to IceModelVec2Int.
-class IceModelVec2CellType : public IceModelVec2Int {
+//! "Cell type" mask. Adds convenience methods to `array::Scalar`.
+class CellType : public Scalar {
 public:
+  typedef std::shared_ptr<CellType> Ptr;
+  typedef std::shared_ptr<const CellType> ConstPtr;
 
-  typedef std::shared_ptr<IceModelVec2CellType> Ptr;
-  typedef std::shared_ptr<const IceModelVec2CellType> ConstPtr;
+  CellType(IceGrid::ConstPtr grid, const std::string &name);
 
-  IceModelVec2CellType(IceGrid::ConstPtr grid, const std::string &name,
-                       IceModelVecKind ghostedp, int width = 1)
-    : IceModelVec2Int(grid, name, ghostedp, width) {
-    // empty
-  }
-  
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
   }
@@ -69,6 +65,23 @@ public:
   inline bool ice_free_land(int i, int j) const {
     return mask::ice_free_land(as_int(i, j));
   }
+protected:
+  CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
+};
+
+/*!
+ * Cell type array supporting width=1 stencil computations (ghosted).
+ */
+class CellType1 : public CellType {
+public:
+  typedef std::shared_ptr<CellType1> Ptr;
+  typedef std::shared_ptr<const CellType1> ConstPtr;
+
+  CellType1(IceGrid::ConstPtr grid, const std::string &name);
+  using Array2D<double>::star;
+  using Array2D<double>::box;
+  using Scalar::star_int;
+  using Scalar::box_int;
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j) const {
@@ -100,9 +113,22 @@ public:
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
+protected:
+  CellType1(IceGrid::ConstPtr grid, const std::string &name, int width);
 };
 
-} // end of namespace pism
+/*!
+ * Cell type array supporting width=2 stencil computations (ghosted).
+ */
+class CellType2 : public CellType1 {
+public:
+  typedef std::shared_ptr<CellType2> Ptr;
+  typedef std::shared_ptr<const CellType2> ConstPtr;
 
+  CellType2(IceGrid::ConstPtr grid, const std::string &name);
+};
+
+} // end of namespace array
+} // end of namespace pism
 
 #endif /* ICEMODELVEC2CELLTYPE_H */

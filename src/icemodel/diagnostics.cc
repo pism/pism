@@ -62,7 +62,7 @@ class IceMarginPressureDifference : public Diag<IceModel>
 public:
   IceMarginPressureDifference(IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
@@ -77,17 +77,17 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m)
             "Pa", "Pa", 0);
 }
 
-IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
+array::Array::Ptr IceMarginPressureDifference::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_margin_pressure_difference", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid,
+                                                "ice_margin_pressure_difference");
   result->metadata(0) = m_vars[0];
 
-  IceModelVec2CellType mask(m_grid, "mask", WITH_GHOSTS);
+  array::CellType1 mask(m_grid, "mask");
 
-  auto
-    &H         = model->geometry().ice_thickness,
-    &bed       = model->geometry().bed_elevation,
-    &sea_level = model->geometry().sea_level_elevation;
+  auto &H         = model->geometry().ice_thickness;
+  auto &bed       = model->geometry().bed_elevation;
+  auto &sea_level = model->geometry().sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
@@ -102,7 +102,7 @@ IceModelVec::Ptr IceMarginPressureDifference::compute_impl() const {
     rho_ocean = m_config->get_number("constants.sea_water.density"),
     g         = m_config->get_number("constants.standard_gravity");
 
-  IceModelVec::AccessList list{&H, &bed, &mask, &sea_level, result.get()};
+  array::AccessScope list{&H, &bed, &mask, &sea_level, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -173,8 +173,8 @@ public:
 protected:
   AreaType m_kind;
   void update_impl(double dt) {
-    const IceModelVec2S &input = model->geometry_evolution().bottom_surface_mass_balance();
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const array::Scalar &input = model->geometry_evolution().bottom_surface_mass_balance();
+    const auto &cell_type = model->geometry().cell_type;
 
     double ice_density = m_config->get_number("constants.ice.density");
 
@@ -182,7 +182,7 @@ protected:
     //
     // accumulator += BMB (m) * ice_density (kg / m^3)
 
-    IceModelVec::AccessList list{&input, &cell_type, &m_accumulator};
+    array::AccessScope list{&input, &cell_type, &m_accumulator};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -206,7 +206,7 @@ class HardnessAverage : public Diag<IceModel>
 public:
   HardnessAverage(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 HardnessAverage::HardnessAverage(const IceModel *m)
@@ -225,7 +225,7 @@ HardnessAverage::HardnessAverage(const IceModel *m)
 }
 
 //! \brief Computes vertically-averaged ice hardness.
-IceModelVec::Ptr HardnessAverage::compute_impl() const {
+array::Array::Ptr HardnessAverage::compute_impl() const {
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law().get();
   if (flow_law == NULL) {
@@ -236,15 +236,15 @@ IceModelVec::Ptr HardnessAverage::compute_impl() const {
     }
   }
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "hardav", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
-  IceModelVec::AccessList list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
+  array::AccessScope list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -274,7 +274,7 @@ class Rank : public Diag<IceModel>
 public:
   Rank(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 Rank::Rank(const IceModel *m)
@@ -285,12 +285,12 @@ Rank::Rank(const IceModel *m)
   m_vars[0].set_output_type(PISM_INT);
 }
 
-IceModelVec::Ptr Rank::compute_impl() const {
+array::Array::Ptr Rank::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "rank", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "rank");
   result->metadata() = m_vars[0];
 
-  IceModelVec::AccessList list{result.get()};
+  array::AccessScope list{result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     (*result)(p.i(),p.j()) = m_grid->rank();
@@ -305,7 +305,7 @@ class CTS : public Diag<IceModel>
 public:
   CTS(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 CTS::CTS(const IceModel *m)
@@ -318,9 +318,9 @@ CTS::CTS(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr CTS::compute_impl() const {
+array::Array::Ptr CTS::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "cts", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   energy::compute_cts(model->energy_balance_model()->enthalpy(),
@@ -335,7 +335,7 @@ class Temperature : public Diag<IceModel>
 public:
   Temperature(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 Temperature::Temperature(const IceModel *m)
@@ -348,20 +348,20 @@ Temperature::Temperature(const IceModel *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-IceModelVec::Ptr Temperature::compute_impl() const {
+array::Array::Ptr Temperature::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
-  const IceModelVec3 &enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list{result.get(), &enthalpy, &thickness};
+  array::AccessScope list{result.get(), &enthalpy, &thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -390,7 +390,7 @@ class TemperaturePA : public Diag<IceModel>
 public:
   TemperaturePA(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 
@@ -405,22 +405,22 @@ TemperaturePA::TemperaturePA(const IceModel *m)
   m_vars[0]["valid_max"] = {0};
 }
 
-IceModelVec::Ptr TemperaturePA::compute_impl() const {
+array::Array::Ptr TemperaturePA::compute_impl() const {
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "temp_pa", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
-  const IceModelVec3  &enthalpy  = model->energy_balance_model()->enthalpy();
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Array3D  &enthalpy  = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   double *Tij;
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list{result.get(), &enthalpy, &thickness};
+  array::AccessScope list{result.get(), &enthalpy, &thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -459,7 +459,7 @@ class TemperaturePABasal : public Diag<IceModel>
 public:
   TemperaturePABasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
@@ -472,22 +472,22 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
             "Celsius", "Celsius", 0);
 }
 
-IceModelVec::Ptr TemperaturePABasal::compute_impl() const {
+array::Array::Ptr TemperaturePABasal::compute_impl() const {
 
   bool cold_mode = m_config->get_flag("energy.temperature_based");
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "temp_pa_base", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
   result->metadata() = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
-  const IceModelVec3 &enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   const double *Enthij; // columns of these values
 
-  IceModelVec::AccessList list{result.get(), &enthalpy, &thickness};
+  array::AccessScope list{result.get(), &enthalpy, &thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -523,7 +523,7 @@ class IceEnthalpySurface : public Diag<IceModel>
 public:
   IceEnthalpySurface(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
@@ -537,17 +537,17 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr IceEnthalpySurface::compute_impl() const {
+array::Array::Ptr IceEnthalpySurface::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpysurf", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "enthalpysurf");
   result->metadata() = m_vars[0];
 
   // compute levels corresponding to 1 m below the ice surface:
 
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
-  IceModelVec::AccessList list{&ice_thickness, result.get()};
+  array::AccessScope list{&ice_thickness, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -574,7 +574,7 @@ class IceEnthalpyBasal : public Diag<IceModel>
 public:
   IceEnthalpyBasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
@@ -588,9 +588,9 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr IceEnthalpyBasal::compute_impl() const {
+array::Array::Ptr IceEnthalpyBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "enthalpybase", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "enthalpybase");
   result->metadata() = m_vars[0];
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
@@ -606,7 +606,7 @@ class TemperatureBasal : public Diag<IceModel>
 public:
   TemperatureBasal(const IceModel *m, AreaType flag);
 private:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 
   AreaType m_area_type;
 };
@@ -639,21 +639,21 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr TemperatureBasal::compute_impl() const {
+array::Array::Ptr TemperatureBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "basal_temperature", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "basal_temperature");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &thickness};
+  array::AccessScope list{&cell_type, result.get(), &thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -687,7 +687,7 @@ class TemperatureSurface : public Diag<IceModel>
 public:
   TemperatureSurface(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 TemperatureSurface::TemperatureSurface(const IceModel *m)
@@ -702,19 +702,19 @@ TemperatureSurface::TemperatureSurface(const IceModel *m)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr TemperatureSurface::compute_impl() const {
+array::Array::Ptr TemperatureSurface::compute_impl() const {
 
-  const IceModelVec2S &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = model->geometry().ice_thickness;
 
   auto enth = IceEnthalpySurface(model).compute();
-  auto result = IceModelVec::cast<IceModelVec2S>(enth);
+  auto result = array::Array::cast<array::Scalar>(enth);
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
   // result contains surface enthalpy; note that it is allocated by
   // IceEnthalpySurface::compute().
 
-  IceModelVec::AccessList list{result.get(), &thickness};
+  array::AccessScope list{result.get(), &thickness};
 
   double depth = 1.0,
     pressure = EC->pressure(depth);
@@ -744,7 +744,7 @@ class LiquidFraction : public Diag<IceModel>
 public:
   LiquidFraction(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 LiquidFraction::LiquidFraction(const IceModel *m)
@@ -758,9 +758,9 @@ LiquidFraction::LiquidFraction(const IceModel *m)
   m_vars[0]["valid_range"] = {0.0, 1.0};
 }
 
-IceModelVec::Ptr LiquidFraction::compute_impl() const {
+array::Array::Ptr LiquidFraction::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "liqfrac", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   bool cold_mode = m_config->get_flag("energy.temperature_based");
@@ -782,7 +782,7 @@ class TemperateIceThickness : public Diag<IceModel>
 public:
   TemperateIceThickness(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 TemperateIceThickness::TemperateIceThickness(const IceModel *m)
@@ -796,16 +796,16 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr TemperateIceThickness::compute_impl() const {
+array::Array::Ptr TemperateIceThickness::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "tempicethk");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const auto &cell_type = model->geometry().cell_type;
+  const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_enthalpy, &ice_thickness};
+  array::AccessScope list{&cell_type, result.get(), &ice_enthalpy, &ice_thickness};
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
@@ -853,7 +853,7 @@ class TemperateIceThicknessBasal : public Diag<IceModel>
 public:
   TemperateIceThicknessBasal(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
@@ -870,18 +870,18 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m)
 /*!
  * Uses linear interpolation to go beyond vertical grid resolution.
  */
-IceModelVec::Ptr TemperateIceThicknessBasal::compute_impl() const {
+array::Array::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "tempicethk_basal", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "tempicethk_basal");
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
-  const IceModelVec3& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S& ice_thickness = model->geometry().ice_thickness;
+  const auto &cell_type = model->geometry().cell_type;
+  const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &ice_enthalpy};
+  array::AccessScope list{&cell_type, result.get(), &ice_thickness, &ice_enthalpy};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1170,13 +1170,13 @@ public:
     const double
       ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S
+    const array::Scalar
       &dH = model->geometry_evolution().thickness_change_due_to_flow(),
       &dV = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
     auto cell_area = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&dH, &dV};
+    array::AccessScope list{&dH, &dV};
 
     double volume_change = 0.0;
     for (Points p(*m_grid); p; p.next()) {
@@ -1407,15 +1407,15 @@ public:
   }
 
   double compute() {
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const auto &cell_type = model->geometry().cell_type;
 
-    const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+    const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
     const double
       thickness_threshold = m_config->get_number("output.ice_free_thickness_standard"),
       cell_area           = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&ice_thickness, &cell_type};
+    array::AccessScope list{&ice_thickness, &cell_type};
 
     double volume = 0.0;
     for (Points p(*m_grid); p; p.next()) {
@@ -1445,15 +1445,15 @@ public:
   }
 
   double compute() {
-    const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+    const auto &cell_type = model->geometry().cell_type;
 
-    const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+    const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
     const double
       thickness_threshold = m_config->get_number("output.ice_free_thickness_standard"),
       cell_area           = m_grid->cell_area();
 
-    IceModelVec::AccessList list{&ice_thickness, &cell_type};
+    array::AccessScope list{&ice_thickness, &cell_type};
 
     double volume = 0.0;
     for (Points p(*m_grid); p; p.next()) {
@@ -1566,9 +1566,9 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
     ice_density = config.get_number("constants.ice.density"),
     cell_area   = grid.cell_area();
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
-  const IceModelVec2S *thickness_change = nullptr;
+  const array::Scalar *thickness_change = nullptr;
 
   switch (term) {
   case FLOW:
@@ -1588,9 +1588,9 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid term type");
   }
 
-  const IceModelVec2S &dV_flow = model->geometry_evolution().area_specific_volume_change_due_to_flow();
+  const array::Scalar &dV_flow = model->geometry_evolution().area_specific_volume_change_due_to_flow();
 
-  IceModelVec::AccessList list{&cell_type, thickness_change};
+  array::AccessScope list{&cell_type, thickness_change};
 
   if (term == FLOW) {
     list.add(dV_flow);
@@ -1738,15 +1738,15 @@ public:
   double compute() {
     const double ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S &calving = model->calving();
-    const IceModelVec2S &frontal_melt = model->frontal_melt();
-    const IceModelVec2S &forced_retreat = model->forced_retreat();
+    const array::Scalar &calving = model->calving();
+    const array::Scalar &frontal_melt = model->frontal_melt();
+    const array::Scalar &forced_retreat = model->forced_retreat();
 
     auto cell_area = m_grid->cell_area();
 
     double volume_change = 0.0;
 
-    IceModelVec::AccessList list{&calving, &frontal_melt, &forced_retreat};
+    array::AccessScope list{&calving, &frontal_melt, &forced_retreat};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -1779,13 +1779,13 @@ public:
   double compute() {
     const double ice_density = m_config->get_number("constants.ice.density");
 
-    const IceModelVec2S &calving = model->calving();
+    const array::Scalar &calving = model->calving();
 
     auto cell_area = m_grid->cell_area();
 
     double volume_change = 0.0;
 
-    IceModelVec::AccessList list{&calving};
+    array::AccessScope list{&calving};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -1831,7 +1831,7 @@ class ThicknessRateOfChange : public Diag<IceModel>
 public:
   ThicknessRateOfChange(const IceModel *m)
     : Diag<IceModel>(m),
-    m_last_thickness(m_grid, "last_ice_thickness", WITHOUT_GHOSTS),
+    m_last_thickness(m_grid, "last_ice_thickness"),
     m_interval_length(0.0) {
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
@@ -1854,9 +1854,9 @@ public:
                                "m", "m", "land_ice_thickness", 0);
   }
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "dHdt", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Scalar>(m_grid, "dHdt");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
@@ -1879,7 +1879,7 @@ protected:
   }
 
 protected:
-  IceModelVec2S m_last_thickness;
+  array::Scalar m_last_thickness;
   double m_interval_length;
 };
 
@@ -1891,7 +1891,7 @@ public:
                const std::string &var_name,
                const std::string &proj_string);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 protected:
   std::string m_var_name, m_proj_string;
 };
@@ -1929,10 +1929,10 @@ LatLonBounds::LatLonBounds(const IceModel *m,
   // will not be available and so this code will not run.
 }
 
-IceModelVec::Ptr LatLonBounds::compute_impl() const {
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid,
+array::Array::Ptr LatLonBounds::compute_impl() const {
+  array::Array3D::Ptr result(new array::Array3D(m_grid,
                                             m_var_name + "_bnds",
-                                            WITHOUT_GHOSTS,
+                                            array::WITHOUT_GHOSTS,
                                             {0.0, 1.0, 2.0, 3.0}));
   result->metadata(0) = m_vars[0];
 
@@ -1950,7 +1950,7 @@ class IceAreaFraction : public Diag<IceModel>
 public:
   IceAreaFraction(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceAreaFraction::IceAreaFraction(const IceModel *m)
@@ -1961,23 +1961,23 @@ IceAreaFraction::IceAreaFraction(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFraction::compute_impl() const {
+array::Array::Ptr IceAreaFraction::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, land_ice_area_fraction_name, WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, land_ice_area_fraction_name);
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2S
+  const array::Scalar1
     &thickness         = model->geometry().ice_thickness,
     &surface_elevation = model->geometry().ice_surface_elevation,
     &bed_topography    = model->geometry().bed_elevation;
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const array::CellType1 &cell_type = model->geometry().cell_type;
 
-  IceModelVec::AccessList list{&thickness, &surface_elevation, &bed_topography, &cell_type,
+  array::AccessScope list{&thickness, &surface_elevation, &bed_topography, &cell_type,
       result.get()};
 
   const bool do_part_grid = m_config->get_flag("geometry.part_grid.enabled");
-  const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;;
+  const array::Scalar &Href = model->geometry().ice_area_specific_volume;;
   if (do_part_grid) {
     list.add(Href);
   }
@@ -1997,7 +1997,7 @@ IceModelVec::Ptr IceAreaFraction::compute_impl() const {
         double H_reference = do_part_grid ? Href(i, j) : 0.0;
 
         if (H_reference > 0.0) {
-          const double H_threshold = part_grid_threshold_thickness(cell_type.star(i, j),
+          const double H_threshold = part_grid_threshold_thickness(cell_type.star_int(i, j),
                                                                    thickness.star(i, j),
                                                                    surface_elevation.star(i, j),
                                                                    bed_topography(i,j));
@@ -2029,7 +2029,7 @@ class IceAreaFractionGrounded : public Diag<IceModel>
 public:
   IceAreaFractionGrounded(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
@@ -2040,20 +2040,19 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, grounded_ice_sheet_area_fraction_name, WITHOUT_GHOSTS));
+array::Array::Ptr IceAreaFractionGrounded::compute_impl() const {
+  auto result = std::make_shared<array::Scalar>(m_grid, grounded_ice_sheet_area_fraction_name);
   result->metadata() = m_vars[0];
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
     ocean_density = m_config->get_number("constants.sea_water.density");
 
-  auto
-    &ice_thickness  = model->geometry().ice_thickness,
-    &sea_level      = model->geometry().sea_level_elevation,
-    &bed_topography = model->geometry().bed_elevation;
+  auto &ice_thickness  = model->geometry().ice_thickness;
+  auto &sea_level      = model->geometry().sea_level_elevation;
+  auto &bed_topography = model->geometry().bed_elevation;
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level,
                                  ice_thickness, bed_topography,
@@ -2062,7 +2061,7 @@ IceModelVec::Ptr IceAreaFractionGrounded::compute_impl() const {
   // All grounded areas have the grounded cell fraction of one, so now we make sure that ice-free
   // areas get the value of 0 (they are grounded but not covered by a grounded ice sheet).
 
-  IceModelVec::AccessList list{&cell_type, result.get()};
+  array::AccessScope list{&cell_type, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2085,7 +2084,7 @@ class IceAreaFractionFloating : public Diag<IceModel>
 public:
   IceAreaFractionFloating(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
@@ -2096,7 +2095,7 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m)
             "1", "1", 0);
 }
 
-IceModelVec::Ptr IceAreaFractionFloating::compute_impl() const {
+array::Array::Ptr IceAreaFractionFloating::compute_impl() const {
 
   auto ice_area_fraction = IceAreaFraction(model).compute();
   auto grounded_area_fraction = IceAreaFractionGrounded(model).compute();
@@ -2116,7 +2115,7 @@ class HeightAboveFloatation : public Diag<IceModel>
 public:
   HeightAboveFloatation(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
@@ -2131,23 +2130,22 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m)
   m_vars[0]["comment"] = "shows how close to floatation the ice is at a given location";
 }
 
-IceModelVec::Ptr HeightAboveFloatation::compute_impl() const {
+array::Array::Ptr HeightAboveFloatation::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "height_above_flotation", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "height_above_flotation");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
     ocean_density = m_config->get_number("constants.sea_water.density");
 
-  auto
-    &sea_level      = model->geometry().sea_level_elevation,
-    &ice_thickness  = model->geometry().ice_thickness,
-    &bed_topography = model->geometry().bed_elevation;
+  auto &sea_level      = model->geometry().sea_level_elevation;
+  auto &ice_thickness  = model->geometry().ice_thickness;
+  auto &bed_topography = model->geometry().bed_elevation;
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level};
+  array::AccessScope list{&cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2180,7 +2178,7 @@ class IceMass : public Diag<IceModel>
 public:
   IceMass(const IceModel *m);
 protected:
-  virtual IceModelVec::Ptr compute_impl() const;
+  virtual array::Array::Ptr compute_impl() const;
 };
 
 IceMass::IceMass(const IceModel *m)
@@ -2195,22 +2193,22 @@ IceMass::IceMass(const IceModel *m)
   m_vars[0]["_FillValue"] = {m_fill_value};
 }
 
-IceModelVec::Ptr IceMass::compute_impl() const {
+array::Array::Ptr IceMass::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_mass", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "ice_mass");
   result->metadata(0) = m_vars[0];
 
-  const IceModelVec2CellType &cell_type = model->geometry().cell_type;
+  const auto &cell_type = model->geometry().cell_type;
 
   const double
     ice_density = m_config->get_number("constants.ice.density");
 
-  const IceModelVec2S
+  const array::Scalar
     &ice_thickness = model->geometry().ice_thickness;
 
   auto cell_area = m_grid->cell_area();
 
-  IceModelVec::AccessList list{&cell_type, result.get(), &ice_thickness};
+  array::AccessScope list{&cell_type, result.get(), &ice_thickness};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2233,7 +2231,7 @@ IceModelVec::Ptr IceMass::compute_impl() const {
 
   // Add the mass of ice in Href:
   if (m_config->get_flag("geometry.part_grid.enabled")) {
-    const IceModelVec2S &Href = model->geometry().ice_area_specific_volume;
+    const array::Scalar &Href = model->geometry().ice_area_specific_volume;
     list.add(Href);
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -2253,7 +2251,7 @@ class BedTopographySeaLevelAdjusted : public Diag<IceModel>
 public:
   BedTopographySeaLevelAdjusted(const IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
@@ -2266,16 +2264,15 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
             "meters", "meters", 0);
 }
 
-IceModelVec::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
+array::Array::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "topg_sl_adjusted", WITHOUT_GHOSTS));
+  auto result = std::make_shared<array::Scalar>(m_grid, "topg_sl_adjusted");
   result->metadata(0) = m_vars[0];
 
-  auto
-    &bed       = model->geometry().bed_elevation,
-    &sea_level = model->geometry().sea_level_elevation;
+  auto &bed       = model->geometry().bed_elevation;
+  auto &sea_level = model->geometry().sea_level_elevation;
 
-  IceModelVec::AccessList list{&bed, &sea_level, result.get()};
+  array::AccessScope list{&bed, &sea_level, result.get()};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -2292,7 +2289,7 @@ class IceHardness : public Diag<IceModel>
 public:
   IceHardness(const IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 IceHardness::IceHardness(const IceModel *m)
@@ -2309,19 +2306,19 @@ IceHardness::IceHardness(const IceModel *m)
   m_vars[0]["comment"] = "units depend on the Glen exponent used by the flow law";
 }
 
-IceModelVec::Ptr IceHardness::compute_impl() const {
+array::Array::Ptr IceHardness::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "hardness", WITHOUT_GHOSTS, m_grid->z()));
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "hardness", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
-  const IceModelVec3  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+  const array::Array3D  &ice_enthalpy  = model->energy_balance_model()->enthalpy();
+  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &ice_thickness, result.get()};
+  array::AccessScope list{&ice_enthalpy, &ice_thickness, result.get()};
 
   const unsigned int Mz = m_grid->Mz();
 
@@ -2357,7 +2354,7 @@ class IceViscosity : public Diag<IceModel>
 public:
   IceViscosity(IceModel *m);
 protected:
-  IceModelVec::Ptr compute_impl() const;
+  array::Array::Ptr compute_impl() const;
 };
 
 IceViscosity::IceViscosity(IceModel *m)
@@ -2376,13 +2373,13 @@ static inline double square(double x) {
   return x * x;
 }
 
-IceModelVec::Ptr IceViscosity::compute_impl() const {
+array::Array::Ptr IceViscosity::compute_impl() const {
 
-  IceModelVec3::Ptr result(new IceModelVec3(m_grid, "effective_viscosity", WITHOUT_GHOSTS,
+  array::Array3D::Ptr result(new array::Array3D(m_grid, "effective_viscosity", array::WITHOUT_GHOSTS,
                                             m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  IceModelVec3 W(m_grid, "wvel", WITH_GHOSTS, m_grid->z());
+  array::Array3D W(m_grid, "wvel", array::WITH_GHOSTS, m_grid->z());
 
   using mask::ice_free;
 
@@ -2390,9 +2387,9 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
-  const IceModelVec2S &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
 
-  const IceModelVec3
+  const array::Array3D
     &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
     &U                = model->stress_balance()->velocity_u(),
     &V                = model->stress_balance()->velocity_v(),
@@ -2406,9 +2403,9 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
     dy = m_grid->dy();
   const std::vector<double> &z = m_grid->z();
 
-  const IceModelVec2CellType &mask = model->geometry().cell_type;
+  const array::CellType1 &mask = model->geometry().cell_type;
 
-  IceModelVec::AccessList list{&U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get()};
+  array::AccessScope list{&U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get()};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -2439,7 +2436,7 @@ IceModelVec::Ptr IceViscosity::compute_impl() const {
         *w_s = W.get_column(i, j - 1),
         *w_w = W.get_column(i - 1, j);
 
-      auto m = mask.star(i, j);
+      auto m = mask.star_int(i, j);
       const unsigned int
         east  = ice_free(m.e) ? 0 : 1,
         west  = ice_free(m.w) ? 0 : 1,
@@ -2555,9 +2552,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "thk", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Scalar>(m_grid, "thk");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_thickness);
@@ -2582,9 +2579,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "ice_base_elevation", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Scalar>(m_grid, "ice_base_elevation");
     result->metadata(0) = m_vars[0];
 
     ice_bottom_surface(model->geometry(), *result);
@@ -2609,9 +2606,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "usurf", WITHOUT_GHOSTS));
+    auto result = std::make_shared<array::Scalar>(m_grid, "usurf");
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->geometry().ice_surface_elevation);
@@ -2980,9 +2977,9 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
 
   double result = 0.0, meltarea = 0.0;
 
-  const IceModelVec3 &enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &enthalpy = m_energy_model->enthalpy();
 
-  IceModelVec::AccessList list{&enthalpy, &m_geometry.cell_type, &m_geometry.ice_thickness};
+  array::AccessScope list{&enthalpy, &m_geometry.cell_type, &m_geometry.ice_thickness};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -3033,9 +3030,9 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   const double a = m_grid->cell_area() * 1e-3 * 1e-3, // area unit (km^2)
     currtime = m_time->current(); // seconds
 
-  const IceModelVec3 &ice_age = m_age_model->age();
+  const array::Array3D &ice_age = m_age_model->age();
 
-  IceModelVec::AccessList list{&m_geometry.cell_type, &m_geometry.ice_thickness, &ice_age};
+  array::AccessScope list{&m_geometry.cell_type, &m_geometry.ice_thickness, &ice_age};
 
   const double one_year = units::convert(m_sys, 1.0, "year", "seconds");
   double original_ice_volume = 0.0;
@@ -3082,13 +3079,13 @@ double IceModel::ice_volume_temperate(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   auto cell_area = m_grid->cell_area();
 
   double volume = 0.0;
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_enthalpy};
+  array::AccessScope list{&m_geometry.ice_thickness, &ice_enthalpy};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -3123,13 +3120,13 @@ double IceModel::ice_volume_cold(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   double volume = 0.0;
 
   auto cell_area = m_grid->cell_area();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_enthalpy};
+  array::AccessScope list{&m_geometry.ice_thickness, &ice_enthalpy};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -3169,13 +3166,13 @@ double IceModel::ice_area_temperate(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   double area = 0.0;
 
   auto cell_area = m_grid->cell_area();
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_enthalpy};
+  array::AccessScope list{&m_geometry.ice_thickness, &ice_enthalpy};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {
@@ -3203,13 +3200,13 @@ double IceModel::ice_area_cold(double thickness_threshold) const {
 
   EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
+  const array::Array3D &ice_enthalpy = m_energy_model->enthalpy();
 
   double area = 0.0;
 
   auto cell_area = m_grid->cell_area();
 
-  IceModelVec::AccessList list{&ice_enthalpy, &m_geometry.ice_thickness};
+  array::AccessScope list{&ice_enthalpy, &m_geometry.ice_thickness};
   ParallelSection loop(m_grid->com);
   try {
     for (Points p(*m_grid); p; p.next()) {

@@ -58,10 +58,10 @@ class BlatterFlowline(object):
 
         geometry = PISM.Geometry(grid)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         enthalpy.set_attrs("internal", "enthalpy of ice", "J kg-1", "J kg-1", "", 0)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.Scalar(grid, "tauc", PISM.WITHOUT_GHOSTS)
         yield_stress.set_attrs("internal", "basal yield stress", "Pa", "Pa", "", 0)
 
         # this value is not important (we use an isothermal flow law)

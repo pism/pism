@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -35,7 +35,7 @@ Given::Given(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_air_temp = IceModelVec2T::ForcingField(m_grid,
+    m_air_temp = std::make_shared<array::Forcing>(m_grid,
                                              file,
                                              "air_temp",
                                              "", // no standard name
@@ -43,7 +43,7 @@ Given::Given(IceGrid::ConstPtr g)
                                              opt.periodic,
                                              LINEAR);
 
-    m_precipitation = IceModelVec2T::ForcingField(m_grid,
+    m_precipitation = std::make_shared<array::Forcing>(m_grid,
                                                   file,
                                                   "precipitation",
                                                   "", // no standard name
@@ -88,11 +88,11 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp->average(t, dt);
 }
 
-const IceModelVec2S& Given::precipitation_impl() const {
+const array::Scalar& Given::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& Given::air_temperature_impl() const {
+const array::Scalar& Given::air_temperature_impl() const {
   return *m_air_temp;
 }
 

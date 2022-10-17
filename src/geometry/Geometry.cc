@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,8 +19,7 @@
 
 #include "Geometry.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
@@ -34,16 +33,15 @@ namespace pism {
 Geometry::Geometry(const IceGrid::ConstPtr &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : m_stencil_width(static_cast<int>(grid->ctx()->config()->get_number("grid.max_stencil_width"))),
-    latitude(grid, "lat", WITHOUT_GHOSTS),
-    longitude(grid, "lon", WITHOUT_GHOSTS),
-    bed_elevation(grid, "topg", WITH_GHOSTS, m_stencil_width),
-    sea_level_elevation(grid, "sea_level", WITH_GHOSTS),
-    ice_thickness(grid, "thk", WITH_GHOSTS, m_stencil_width),
-    ice_area_specific_volume(grid, "ice_area_specific_volume", WITH_GHOSTS),
-    cell_type(grid, "mask", WITH_GHOSTS, m_stencil_width),
-    cell_grounded_fraction(grid, "cell_grounded_fraction", WITHOUT_GHOSTS),
-    ice_surface_elevation(grid, "usurf", WITH_GHOSTS, m_stencil_width) {
+  : latitude(grid, "lat"),
+    longitude(grid, "lon"),
+    bed_elevation(grid, "topg"),
+    sea_level_elevation(grid, "sea_level"),
+    ice_thickness(grid, "thk"),
+    ice_area_specific_volume(grid, "ice_area_specific_volume"),
+    cell_type(grid, "mask"),
+    cell_grounded_fraction(grid, "cell_grounded_fraction"),
+    ice_surface_elevation(grid, "usurf") {
 
   latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
   latitude.set_time_independent(true);
@@ -97,10 +95,10 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
   ensure_consistency(0.0);
 }
 
-void check_minimum_ice_thickness(const IceModelVec2S &ice_thickness) {
+void check_minimum_ice_thickness(const array::Scalar &ice_thickness) {
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
-  IceModelVec::AccessList list(ice_thickness);
+  array::AccessScope list(ice_thickness);
 
   ParallelSection loop(grid->com);
   try {
@@ -125,7 +123,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
   check_minimum_ice_thickness(ice_thickness);
 
-  IceModelVec::AccessList list{&sea_level_elevation, &bed_elevation,
+  array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,
       &cell_type, &ice_surface_elevation};
 
@@ -220,7 +218,7 @@ void Geometry::dump(const char *filename) const {
 
 /*! Compute the elevation of the bottom surface of the ice.
  */
-void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
+void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
   auto grid = result.grid();
   auto config = grid->ctx()->config();
@@ -230,11 +228,11 @@ void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result) {
     water_density = config->get_number("constants.sea_water.density"),
     alpha         = ice_density / water_density;
 
-  const IceModelVec2S &ice_thickness = geometry.ice_thickness;
-  const IceModelVec2S &bed_elevation = geometry.bed_elevation;
-  const IceModelVec2S &sea_level     = geometry.sea_level_elevation;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
+  const array::Scalar &bed_elevation = geometry.bed_elevation;
+  const array::Scalar &sea_level     = geometry.sea_level_elevation;
 
-  IceModelVec::AccessList list{&ice_thickness, &bed_elevation, &sea_level, &result};
+  array::AccessScope list{&ice_thickness, &bed_elevation, &sea_level, &result};
 
   ParallelSection loop(grid->com);
   try {
@@ -260,7 +258,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   auto grid = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
+  array::AccessScope list{&geometry.ice_thickness};
 
   double volume = 0.0;
 
@@ -299,7 +297,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
     ice_density       = config->get_number("constants.ice.density"),
     cell_area         = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness,
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
       &geometry.bed_elevation, &geometry.sea_level_elevation};
 
   double volume = 0.0;
@@ -334,7 +332,7 @@ double ice_area(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.ice_thickness};
+  array::AccessScope list{&geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -354,7 +352,7 @@ double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -375,7 +373,7 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
 
   auto cell_area = grid->cell_area();
 
-  IceModelVec::AccessList list{&geometry.cell_type, &geometry.ice_thickness};
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -412,13 +410,13 @@ double sea_level_rise_potential(const Geometry &geometry, double thickness_thres
  * @brief Set no_model_mask variable to have value 1 in strip of width 'strip' m around
  * edge of computational domain, and value 0 otherwise.
  */
-void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result) {
+void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result) {
 
   if (width <= 0.0) {
     return;
   }
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();

@@ -104,11 +104,11 @@ class TestXY(TestCase):
 
         geometry = PISM.Geometry(grid)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.Scalar(grid, "tauc")
         yield_stress.set(0.0)
 
         geometry.bed_elevation.set(0.0)
@@ -120,7 +120,7 @@ class TestXY(TestCase):
 
     def exact_solution(self, grid):
         "Returns an array with the exact solution"
-        exact = PISM.IceModelVec2V(grid, "exact", PISM.WITHOUT_GHOSTS)
+        exact = PISM.Vector(grid, "exact")
 
         with PISM.vec.Access(exact):
             for (i, j) in grid.points():
@@ -156,7 +156,7 @@ class TestXY(TestCase):
         model.update(inputs, True)
 
         # compute the error
-        error = PISM.IceModelVec2V(grid, "error", PISM.WITHOUT_GHOSTS)
+        error = PISM.Vector(grid, "error")
         error.copy_from(u_exact)
         error.add(-1.0, model.velocity())
 
@@ -322,11 +322,11 @@ class TestXZ(TestCase):
 
         geometry = PISM.Geometry(grid)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.Scalar(grid, "tauc")
 
         yield_stress.set(self.beta)
 
@@ -347,7 +347,7 @@ class TestXZ(TestCase):
 
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
-        exact = PISM.IceModelVec3(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
+        exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
         exact.set_attrs("exact", "x-component of the exact solution", "m / s", "m / year", "", 0)
 
         rho = config.get_number("constants.ice.density")
@@ -392,14 +392,14 @@ class TestXZ(TestCase):
 
         u_model_z = model.velocity_u_sigma().levels()
 
-        u_model = PISM.IceModelVec3(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
         u_model.set_attrs("model", "modeled velocity", "m / s", "m / year", "", 0)
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
 
         # compute the error
-        u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_error = PISM.Array3D(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
@@ -520,11 +520,11 @@ class TestCFBC(TestCase):
 
         geometry = PISM.Geometry(grid)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         # initialize enthalpy (the value used here is irrelevant)
         enthalpy.set(1e5)
 
-        yield_stress = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        yield_stress = PISM.Scalar(grid, "tauc")
         # this value is not important: we use a compensatory term at the base instead of
         # the sliding law
         yield_stress.set(0.0)
@@ -542,7 +542,7 @@ class TestCFBC(TestCase):
 
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
-        exact = PISM.IceModelVec3(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
+        exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
         exact.set_attrs("exact", "x-component of the exact solution", "m / s", "m / year", "", 0)
 
         rho_i = config.get_number("constants.ice.density")
@@ -584,14 +584,14 @@ class TestCFBC(TestCase):
 
         u_model_z = model.velocity_u_sigma().levels()
 
-        u_model = PISM.IceModelVec3(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
         u_model.set_attrs("model", "modeled velocity", "m / s", "m / year", "", 0)
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
 
         # compute the error
-        u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
+        u_error = PISM.Array3D(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
         u_error.set_attrs("exact", "error", "m / s", "m / year", "", 0)
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
@@ -689,10 +689,10 @@ class TestXZvanderVeen(TestCase):
         return grid
 
     def compute(self, grid):
-        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc = PISM.Scalar(grid, "tauc")
         tauc.set(0.0)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         enthalpy.set(0.0)
 
         Mz = 2
@@ -828,10 +828,10 @@ class TestXZHalfar(TestCase):
         return PISM.IceGrid(ctx.ctx, P)
 
     def compute(self, grid, Mz, coarsening_factor):
-        tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+        tauc = PISM.Scalar(grid, "tauc")
         tauc.set(0.0)
 
-        enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
+        enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITHOUT_GHOSTS, grid.z())
         enthalpy.set(0.0)
 
         model = PISM.BlatterTestHalfar(grid, Mz, coarsening_factor)
@@ -863,7 +863,7 @@ class TestXZHalfar(TestCase):
         Z = model.velocity_u_sigma().levels()
         grid = model.grid()
 
-        exact = PISM.IceModelVec3(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
+        exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
         exact.set_attrs("exact",
                         "x-component of the exact solution",
                         "m / s", "m / year", "", 0)
@@ -888,7 +888,7 @@ class TestXZHalfar(TestCase):
 
         # compute the error
         Z = model.velocity_u_sigma().levels()
-        u_error = PISM.IceModelVec3(grid, "error", PISM.WITHOUT_GHOSTS, Z)
+        u_error = PISM.Array3D(grid, "error", PISM.WITHOUT_GHOSTS, Z)
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,8 +21,7 @@
 #define PRESCRIBED_RETREAT_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
@@ -47,13 +46,13 @@ public:
   void init();
 
   void update(double t, double dt,
-              IceModelVec2S &ice_thickness,
-              IceModelVec2S &ice_area_specific_volume);
+              array::Scalar &ice_thickness,
+              array::Scalar &ice_area_specific_volume);
 
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  std::shared_ptr<IceModelVec2T> m_retreat_mask;
+  std::shared_ptr<array::Forcing> m_retreat_mask;
 };
 
 } // end of namespace pism

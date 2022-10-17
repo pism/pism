@@ -64,12 +64,12 @@ def create_grid():
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)
 
-    T = PISM.IceModelVec2S(grid, "shelfbtemp", PISM.WITHOUT_GHOSTS)
+    T = PISM.Scalar(grid, "shelfbtemp")
     T.set_attrs("climate", "shelf base temperature", "Kelvin", "Kelvin", "", 0)
     T.set(temperature)
     T.write(filename)
 
-    M = PISM.IceModelVec2S(grid, "shelfbmassflux", PISM.WITHOUT_GHOSTS)
+    M = PISM.Scalar(grid, "shelfbmassflux")
     M.set_attrs("climate", "shelf base mass flux", "kg m-2 s-1", "kg m-2 s-1", "", 0)
     M.set(mass_flux)
     M.write(filename)
@@ -91,7 +91,7 @@ def constant_test():
     geometry = create_geometry(grid)
 
     inputs = PISM.FrontalMeltInputs()
-    water_flux = PISM.IceModelVec2S(grid, "water_flux", PISM.WITHOUT_GHOSTS)
+    water_flux = PISM.Scalar(grid, "water_flux")
     water_flux.set(0.0)
     inputs.geometry = geometry
     inputs.subglacial_water_flux = water_flux
@@ -129,11 +129,10 @@ class DischargeRoutingTest(TestCase):
 
         self.grid = create_grid()
 
-        self.theta = PISM.IceModelVec2S(self.grid, "theta_ocean", PISM.WITHOUT_GHOSTS)
+        self.theta = PISM.Scalar(self.grid, "theta_ocean")
         self.theta.set(self.potential_temperature)
 
-        self.Qsg = PISM.IceModelVec2S(self.grid, "subglacial_water_flux",
-                                      PISM.WITHOUT_GHOSTS)
+        self.Qsg = PISM.Scalar(self.grid, "subglacial_water_flux")
         self.Qsg.set_attrs("climate", "subglacial water flux", "m2 / s", "m2 / s", "", 0)
 
         grid_spacing = 0.5 * (self.grid.dx() + self.grid.dy())
@@ -175,7 +174,7 @@ class GivenTest(TestCase):
     def create_input(self, filename, melt_rate):
         PISM.util.prepare_output(filename)
 
-        Fmr = PISM.IceModelVec2S(self.grid, "frontal_melt_rate", PISM.WITHOUT_GHOSTS)
+        Fmr = PISM.Scalar(self.grid, "frontal_melt_rate")
         Fmr.set_attrs("climate", "frontal melt rate", "m / s", "m / s", "", 0)
 
         Fmr.set(melt_rate)
@@ -195,7 +194,7 @@ class GivenTest(TestCase):
 
         config.set_string("frontal_melt.given.file", self.filename)
 
-        self.water_flux = PISM.IceModelVec2S(self.grid, "water_flux", PISM.WITHOUT_GHOSTS)
+        self.water_flux = PISM.Scalar(self.grid, "water_flux")
         self.water_flux.set(0.0)
 
         self.inputs = PISM.FrontalMeltInputs()

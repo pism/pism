@@ -33,10 +33,10 @@ geometry.sea_level_elevation.set(0.0)
 geometry.ice_area_specific_volume.set(0.0)
 geometry.ensure_consistency(0.0)
 
-tauc = PISM.IceModelVec2S(grid, "tauc", PISM.WITHOUT_GHOSTS)
+tauc = PISM.Scalar(grid, "tauc", PISM.WITHOUT_GHOSTS)
 tauc.set(1e6)
 
-enthalpy = PISM.IceModelVec3(grid, "enthalpy", PISM.WITH_GHOSTS)
+enthalpy = PISM.Array3D(grid, "enthalpy", PISM.WITH_GHOSTS)
 T = 260.0
 p = ctx.enthalpy_converter.pressure(1000.0)
 enthalpy.set(ctx.enthalpy_converter.enthalpy(T, 0.0, p))
@@ -60,11 +60,11 @@ try:
 except:
     print("failed")
 
-v_mag = PISM.IceModelVec2S(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
+v_mag = PISM.Scalar(grid, "vel_mag", PISM.WITHOUT_GHOSTS)
 
 v_mag.set_to_magnitude(ssa.velocity())
 
-node_type = PISM.IceModelVec2Int(grid, "node_type", PISM.WITHOUT_GHOSTS)
+node_type = PISM.Scalar(grid, "node_type")
 
 PISM.compute_node_types(geometry.ice_thickness, 1.0, node_type)
 

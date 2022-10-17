@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,8 @@
 
 #include "node_types.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 
@@ -58,15 +59,15 @@ Cell layout:
 (i-1,j-1) +-------S--------+ (i+1,j-1)
 ~~~
  */
-void compute_node_types(const IceModelVec2S &ice_thickness,
+void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
-                        IceModelVec2Int &result) {
+                        array::Scalar &result) {
 
   IceGrid::ConstPtr grid = ice_thickness.grid();
 
   const double &H_min = thickness_threshold;
 
-  IceModelVec::AccessList list{&ice_thickness, &result};
+  array::AccessScope list{&ice_thickness, &result};
 
   ParallelSection loop(grid->com);
   try {

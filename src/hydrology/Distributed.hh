@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -45,17 +45,17 @@ public:
   Distributed(IceGrid::ConstPtr g);
   virtual ~Distributed() = default;
 
-  const IceModelVec2S& subglacial_water_pressure() const;
+  const array::Scalar& subglacial_water_pressure() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
   virtual void bootstrap_impl(const File &input_file,
-                              const IceModelVec2S &ice_thickness);
+                              const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const IceModelVec2S &W_till,
-                               const IceModelVec2S &W,
-                               const IceModelVec2S &P);
+  virtual void init_impl(const array::Scalar &W_till,
+                               const array::Scalar &W,
+                               const array::Scalar &P);
 
   virtual double max_timestep_P_diff(double phi0, double dt_diff_w) const;
 
@@ -66,32 +66,32 @@ protected:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  void check_P_bounds(IceModelVec2S &P,
-                      const IceModelVec2S &P_o,
+  void check_P_bounds(array::Scalar &P,
+                      const array::Scalar &P_o,
                       bool enforce_upper);
 
-  void P_from_W_steady(const IceModelVec2S &W,
-                       const IceModelVec2S &P_overburden,
-                       const IceModelVec2S &sliding_speed,
-                       IceModelVec2S &result);
+  void P_from_W_steady(const array::Scalar &W,
+                       const array::Scalar &P_overburden,
+                       const array::Scalar &sliding_speed,
+                       array::Scalar &result);
 
   void update_P(double dt,
-                const IceModelVec2CellType &cell_type,
-                const IceModelVec2S &sliding_speed,
-                const IceModelVec2S &surface_input_rate,
-                const IceModelVec2S &basal_melt_rate,
-                const IceModelVec2S &P_overburden,
-                const IceModelVec2S &Wtill,
-                const IceModelVec2S &Wtill_new,
-                const IceModelVec2S &P,
-                const IceModelVec2S &W,
-                const IceModelVec2Stag &Ws,
-                const IceModelVec2Stag &K,
-                const IceModelVec2Stag &Q,
-                IceModelVec2S &P_new) const;
+                const array::CellType &cell_type,
+                const array::Scalar &sliding_speed,
+                const array::Scalar &surface_input_rate,
+                const array::Scalar &basal_melt_rate,
+                const array::Scalar &P_overburden,
+                const array::Scalar &Wtill,
+                const array::Scalar &Wtill_new,
+                const array::Scalar &P,
+                const array::Scalar1 &W,
+                const array::Staggered1 &Ws,
+                const array::Staggered1 &K,
+                const array::Staggered1 &Q,
+                array::Scalar &P_new) const;
 protected:
-  IceModelVec2S m_P;
-  IceModelVec2S m_Pnew;
+  array::Scalar1 m_P;
+  array::Scalar m_Pnew;
 private:
   void initialization_message() const;
 };

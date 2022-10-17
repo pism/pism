@@ -1,5 +1,5 @@
 /* VariableMetadata and SpatialVariableMetadata don't have default constructors. */
-/* This should go before IceModelVec so that IceModelVec::metadata()
+/* This should go before array::Array so that array::Array::metadata()
    is wrapped properly. */
 %feature("valuewrapper") pism::VariableMetadata;
 %feature("valuewrapper") pism::SpatialVariableMetadata;

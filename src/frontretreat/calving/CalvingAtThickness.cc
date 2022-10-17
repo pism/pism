@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 
 namespace pism {
@@ -33,7 +33,7 @@ namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
   : Component(g),
-    m_old_mask(m_grid, "old_mask", WITH_GHOSTS, 1) {
+    m_old_mask(m_grid, "old_mask") {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
   {
@@ -41,7 +41,7 @@ CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_calving_threshold = IceModelVec2T::ForcingField(m_grid,
+    m_calving_threshold = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "thickness_calving_threshold",
                                                       "", // no standard name
@@ -75,8 +75,8 @@ void CalvingAtThickness::init() {
     double calving_threshold = m_config->get_number("calving.thickness_calving.threshold");
 
     SpatialVariableMetadata attributes = m_calving_threshold->metadata();
-    // replace with a constant IceModelVec2T
-    m_calving_threshold = IceModelVec2T::Constant(m_grid,
+    // replace with a constant array::Forcing
+    m_calving_threshold = array::Forcing::Constant(m_grid,
                                                   "thickness_calving_threshold",
                                                   calving_threshold);
     // restore metadata
@@ -101,8 +101,8 @@ void CalvingAtThickness::init() {
  */
 void CalvingAtThickness::update(double t,
                                 double dt,
-                                IceModelVec2CellType &pism_mask,
-                                IceModelVec2S &ice_thickness) {
+                                array::CellType &pism_mask,
+                                array::Scalar &ice_thickness) {
 
   m_calving_threshold->update(t, dt);
   m_calving_threshold->average(t, dt);
@@ -112,7 +112,7 @@ void CalvingAtThickness::update(double t,
 
   const auto &threshold = *m_calving_threshold;
 
-  IceModelVec::AccessList list{&pism_mask, &ice_thickness, &m_old_mask, &threshold};
+  array::AccessScope list{&pism_mask, &ice_thickness, &m_old_mask, &threshold};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -128,7 +128,7 @@ void CalvingAtThickness::update(double t,
   ice_thickness.update_ghosts();
 }
 
-const IceModelVec2S& CalvingAtThickness::threshold() const {
+const array::Scalar& CalvingAtThickness::threshold() const {
   return *m_calving_threshold;
 }
 

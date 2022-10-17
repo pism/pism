@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
@@ -37,9 +37,11 @@ namespace surface {
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
-    m_target_thickness(m_grid, "thk", WITHOUT_GHOSTS),
-    m_ftt_mask(m_grid, "ftt_mask", WITHOUT_GHOSTS)
+    m_target_thickness(m_grid, "thk"),
+    m_ftt_mask(m_grid, "ftt_mask")
 {
+
+  m_ftt_mask.set_interpolation_type(NEAREST);
 
   m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
   m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
@@ -222,9 +224,9 @@ The script also has a run with no forcing, one with forcing at a lower alpha val
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
 void ForceThickness::adjust_mass_flux(double time,
-                                      const IceModelVec2S &ice_thickness,
-                                      const IceModelVec2CellType &cell_type,
-                                      IceModelVec2S &result) const {
+                                      const array::Scalar &ice_thickness,
+                                      const array::CellType &cell_type,
+                                      array::Scalar &result) const {
 
   if (time < m_start_time) {
     return;
@@ -235,7 +237,7 @@ void ForceThickness::adjust_mass_flux(double time,
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&cell_type, &ice_thickness,
+  array::AccessScope list{&cell_type, &ice_thickness,
       &m_target_thickness, &m_ftt_mask, &result};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -267,19 +269,19 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S &ForceThickness::mass_flux_impl() const {
+const array::Scalar &ForceThickness::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &ForceThickness::accumulation_impl() const {
+const array::Scalar &ForceThickness::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &ForceThickness::melt_impl() const {
+const array::Scalar &ForceThickness::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &ForceThickness::runoff_impl() const {
+const array::Scalar &ForceThickness::runoff_impl() const {
   return *m_runoff;
 }
 

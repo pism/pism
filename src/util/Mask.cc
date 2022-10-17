@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2018 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2018, 2022 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,20 +23,20 @@
 
 namespace pism {
 
-void GeometryCalculator::compute(const IceModelVec2S& sea_level,
-                                 const IceModelVec2S& bed,
-                                 const IceModelVec2S& thickness,
-                                 IceModelVec2Int& out_mask,
-                                 IceModelVec2S& out_surface) const {
+void GeometryCalculator::compute(const array::Scalar& sea_level,
+                                 const array::Scalar& bed,
+                                 const array::Scalar& thickness,
+                                 array::Scalar& out_mask,
+                                 array::Scalar& out_surface) const {
   compute_mask(sea_level, bed, thickness, out_mask);
   compute_surface(sea_level, bed, thickness, out_surface);
 }
 
-void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
-                                      const IceModelVec2S &bed,
-                                      const IceModelVec2S &thickness,
-                                      IceModelVec2Int &result) const {
-  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
+                                      const array::Scalar &bed,
+                                      const array::Scalar &thickness,
+                                      array::Scalar &result) const {
+  array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();
 
@@ -52,11 +52,11 @@ void GeometryCalculator::compute_mask(const IceModelVec2S &sea_level,
   }
 }
 
-void GeometryCalculator::compute_surface(const IceModelVec2S &sea_level,
-                                         const IceModelVec2S &bed,
-                                         const IceModelVec2S &thickness,
-                                         IceModelVec2S &result) const {
-  IceModelVec::AccessList list{&sea_level, &bed, &thickness, &result};
+void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
+                                         const array::Scalar &bed,
+                                         const array::Scalar &thickness,
+                                         array::Scalar &result) const {
+  array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
   const IceGrid &grid = *bed.grid();
 

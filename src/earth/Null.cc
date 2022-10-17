@@ -30,8 +30,8 @@ Null::Null(IceGrid::ConstPtr g)
   // empty
 }
 
-void Null::init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                     const IceModelVec2S &sea_level_elevation) {
+void Null::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                     const array::Scalar &sea_level_elevation) {
   m_log->message(2,
              "* Initializing the dummy (no-op) bed deformation model...\n");
 
@@ -45,8 +45,8 @@ MaxTimestep Null::max_timestep_impl(double t) const {
   return MaxTimestep("bed_def none");
 }
 
-void Null::update_impl(const IceModelVec2S &ice_thickness,
-                       const IceModelVec2S &sea_level_elevation,
+void Null::update_impl(const array::Scalar &ice_thickness,
+                       const array::Scalar &sea_level_elevation,
                        double t, double dt) {
   (void) ice_thickness;
   (void) sea_level_elevation;

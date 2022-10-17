@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #include <cassert>
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
 #include "tempSystem.hh"
 #include "pism/util/Mask.hh"
 
@@ -32,11 +31,11 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
                              const std::string &prefix,
                              double dx, double dy, double dt,
                              const Config &config,
-                             const IceModelVec3 &T3,
-                             const IceModelVec3 &u3,
-                             const IceModelVec3 &v3,
-                             const IceModelVec3 &w3,
-                             const IceModelVec3 &strain_heating3)
+                             const array::Array3D &T3,
+                             const array::Array3D &u3,
+                             const array::Array3D &v3,
+                             const array::Array3D &w3,
+                             const array::Array3D &strain_heating3)
   : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
     m_T3(T3),
     m_strain_heating3(strain_heating3) {

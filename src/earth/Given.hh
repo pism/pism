@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 #define PISM_BEDDEF_GIVEN
 
 #include "BedDef.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace bed {
@@ -34,16 +34,16 @@ public:
   Given(IceGrid::ConstPtr grid);
   virtual ~Given() = default;
 protected:
-  void init_impl(const InputOptions &opts, const IceModelVec2S &ice_thickness,
-                 const IceModelVec2S &sea_level_elevation);
+  void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
+                 const array::Scalar &sea_level_elevation);
 
-  void update_impl(const IceModelVec2S &ice_thickness,
-                   const IceModelVec2S &sea_level_elevation,
+  void update_impl(const array::Scalar &ice_thickness,
+                   const array::Scalar &sea_level_elevation,
                    double t, double dt);
 
-  IceModelVec2S m_topg_reference;
+  array::Scalar m_topg_reference;
 
-  std::shared_ptr<IceModelVec2T> m_topg_delta;
+  std::shared_ptr<array::Forcing> m_topg_delta;
 };
 
 } // end of namespace bed

@@ -53,7 +53,7 @@ void Delta_SMB::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->shift(m_forcing->value(t + 0.5 * dt));
 }
 
-const IceModelVec2S& Delta_SMB::shelf_base_mass_flux_impl() const {
+const array::Scalar& Delta_SMB::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

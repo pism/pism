@@ -11,6 +11,15 @@
 
 %shared_ptr(pism::stressbalance::StressBalance)
 
+%ignore pism::array::Array2D< pism::stressbalance::DeviatoricStresses >::array;
+%ignore pism::array::Array2D< pism::stressbalance::DeviatoricStresses >::add;
+%shared_ptr(pism::array::Array2D< pism::stressbalance::DeviatoricStresses >)
+%template(ArrayDeviatoricStresses) pism::array::Array2D<pism::stressbalance::DeviatoricStresses>;
+
+%ignore pism::array::Array2D< pism::stressbalance::PrincipalStrainRates >::array;
+%ignore pism::array::Array2D< pism::stressbalance::PrincipalStrainRates >::add;
+%shared_ptr(pism::array::Array2D< pism::stressbalance::PrincipalStrainRates >)
+%template(ArrayPrincipalStrainRates) pism::array::Array2D<pism::stressbalance::PrincipalStrainRates>;
 %include "stressbalance/StressBalance.hh"
 
 %shared_ptr(pism::stressbalance::ZeroSliding)

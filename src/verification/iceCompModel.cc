@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,8 +59,8 @@ using units::convert;
 IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
   : IceModel(grid, context),
     m_testname(test),
-    m_HexactL(m_grid, "HexactL", WITHOUT_GHOSTS),
-    m_strain_heating3_comp(m_grid, "strain_heating_comp", WITHOUT_GHOSTS, m_grid->z()),
+    m_HexactL(m_grid, "HexactL"),
+    m_strain_heating3_comp(m_grid, "strain_heating_comp", array::WITHOUT_GHOSTS, m_grid->z()),
     m_bedrock_is_ice_forK(false)
 {
 
@@ -266,7 +266,7 @@ void IceCompModel::initialize_2d() {
   m_geometry.bed_elevation.set(0.0);
   m_geometry.sea_level_elevation.set(0.0);
 
-  IceModelVec2S uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  array::Scalar uplift(m_grid, "uplift");
   uplift.set(0.0);
 
   m_beddef->bootstrap(m_geometry.bed_elevation,
@@ -308,7 +308,7 @@ void IceCompModel::initTestABCDH() {
 
   m_geometry.cell_type.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
 
   ParallelSection loop(m_grid->com);
   try {
@@ -344,7 +344,7 @@ void IceCompModel::initTestABCDH() {
   m_geometry.ice_thickness.update_ghosts();
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    array::Scalar bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
 
     if (m_testname == 'H') {
@@ -405,9 +405,9 @@ void IceCompModel::initTestL() {
   ExactLParameters L = exactL(rr);
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    array::Scalar bed_uplift(m_grid, "uplift");
 
-    IceModelVec::AccessList list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
+    array::AccessScope list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
 
     for (k = 0; k < MM; k++) {
       m_geometry.ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
@@ -430,7 +430,7 @@ void IceCompModel::initTestL() {
 void IceCompModel::reset_thickness_test_A() {
   const double LforAE = 750e3; // m
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -464,7 +464,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
     avHerr = 0.0,
     etaerr = 0.0;
 
-  IceModelVec::AccessList list(m_geometry.ice_thickness);
+  array::AccessScope list(m_geometry.ice_thickness);
   if (m_testname == 'L') {
     list.add(m_HexactL);
   }
@@ -847,7 +847,7 @@ void IceCompModel::reportErrors() {
 void IceCompModel::test_V_init() {
 
   {
-    IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+    array::Scalar bed_uplift(m_grid, "uplift");
     bed_uplift.set(0.0);
     m_geometry.bed_elevation.set(-1000);
 
@@ -859,7 +859,7 @@ void IceCompModel::test_V_init() {
   double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
     upstream_thk = 600.0;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
      &m_velocity_bc_mask, &m_velocity_bc_values};
 
@@ -873,7 +873,7 @@ void IceCompModel::test_V_init() {
       m_ice_thickness_bc_mask(i, j) = 1;
     } else {
       m_velocity_bc_mask(i,j) = 0;
-      m_velocity_bc_values(i,j)  = Vector2(0.0, 0.0);
+      m_velocity_bc_values(i,j)  = {0.0, 0.0};
       m_geometry.ice_thickness(i, j) = 0;
       m_ice_thickness_bc_mask(i, j) = 0;
     }

@@ -62,7 +62,7 @@ protected:
   void reset_thickness_test_A();
 
   // related to test L
-  IceModelVec2S m_HexactL;
+  array::Scalar m_HexactL;
   void initTestL();
 
   // related to tests F G; see iCMthermo.cc
@@ -81,7 +81,7 @@ protected:
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
                                               double &gmaxWerr, double &gavWerr); // scalar errors
   
-  IceModelVec3 m_strain_heating3_comp;
+  array::Array3D m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();

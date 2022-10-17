@@ -54,7 +54,7 @@
 #include "pism/age/AgeModel.hh"
 #include "pism/energy/EnergyModel.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
@@ -74,16 +74,19 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
     m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
-    m_basal_yield_stress(m_grid, "tauc", WITH_GHOSTS, m_wide_stencil),
-    m_basal_melt_rate(m_grid, "bmelt", WITHOUT_GHOSTS),
-    m_bedtoptemp(m_grid, "bedtoptemp", WITHOUT_GHOSTS),
-    m_velocity_bc_mask(m_grid, "vel_bc_mask", WITH_GHOSTS, m_wide_stencil),
-    m_velocity_bc_values(m_grid, "_bc", WITH_GHOSTS, m_wide_stencil), // u_bc and v_bc
-    m_ice_thickness_bc_mask(grid, "thk_bc_mask", WITH_GHOSTS),
+    m_basal_yield_stress(m_grid, "tauc"),
+    m_basal_melt_rate(m_grid, "bmelt"),
+    m_bedtoptemp(m_grid, "bedtoptemp"),
+    m_velocity_bc_mask(m_grid, "vel_bc_mask"),
+    m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
+    m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
     m_timestamp("timestamp", m_sys) {
+
+  m_velocity_bc_mask.set_interpolation_type(NEAREST);
+  m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
 
   // time-independent info
   {
@@ -124,10 +127,8 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
   {
     // 2d work vectors
     for (int j = 0; j < m_n_work2d; j++) {
-      std::shared_ptr<IceModelVec2S> ptr(new IceModelVec2S(m_grid,
-                                                           pism::printf("work_vector_%d", j),
-                                                           WITH_GHOSTS, m_wide_stencil));
-      m_work2d.push_back(ptr);
+      m_work2d.push_back(std::make_shared<array::Scalar2>(m_grid,
+                                                             pism::printf("work_vector_%d", j)));
     }
   }
 
@@ -138,7 +139,7 @@ IceModel::IceModel(const IceGrid::Ptr &grid,
 
     File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_surface_input_for_hydrology = IceModelVec2T::ForcingField(m_grid,
+    m_surface_input_for_hydrology = std::make_shared<array::Forcing>(m_grid,
                                                                 file,
                                                                 "water_input_rate",
                                                                 "", // no standard name
@@ -188,14 +189,14 @@ IceModel::~IceModel() {
 }
 
 
-//! Allocate all IceModelVecs defined in IceModel.
+//! Allocate all Arrays defined in IceModel.
 /*!
   This procedure allocates the memory used to store model state, diagnostic and
   work vectors and sets metadata.
 
   Default values should not be set here; please use set_vars_from_options().
 
-  All the memory allocated here is freed by IceModelVecs' destructors.
+  All the memory allocated here is freed by Arrays' destructors.
 */
 void IceModel::allocate_storage() {
 
@@ -330,7 +331,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   if (flag == REMOVE_ICEBERGS) {
     // clean up partially-filled cells that are not next to ice
-    IceModelVec::AccessList list{&m_geometry.ice_area_specific_volume,
+    array::AccessScope list{&m_geometry.ice_area_specific_volume,
                                  &m_geometry.cell_type};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -706,13 +707,23 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
+int test_bar(array::Scalar1& input) {
+  return input.grid()->Mx();
+}
+
+void test_foo(IceGrid::ConstPtr grid) {
+  array::Scalar2 foo(grid, "test");
+
+  test_bar(foo);
+}
+
 /*!
  * Note: don't forget to update IceRegionalModel::hydrology_step() if necessary.
  */
 void IceModel::hydrology_step() {
   hydrology::Inputs inputs;
 
-  IceModelVec2S &sliding_speed = *m_work2d[0];
+  array::Scalar &sliding_speed = *m_work2d[0];
   compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = nullptr;
@@ -727,7 +738,7 @@ void IceModel::hydrology_step() {
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
-    IceModelVec2S &surface_input_rate = *m_work2d[1];
+    array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
     surface_input_rate.scale(1.0 / m_dt);
     inputs.surface_input_rate = &surface_input_rate;
@@ -944,21 +955,21 @@ const bed::BedDef* IceModel::bed_deformation_model() const {
 /*!
  * Return thickness change due to calving (over the last time step).
  */
-const IceModelVec2S& IceModel::calving() const {
+const array::Scalar& IceModel::calving() const {
   return m_thickness_change.calving;
 }
 
 /*!
  * Return thickness change due to frontal melt (over the last time step).
  */
-const IceModelVec2S& IceModel::frontal_melt() const {
+const array::Scalar& IceModel::frontal_melt() const {
   return m_thickness_change.frontal_melt;
 }
 
 /*!
  * Return thickness change due to forced retreat (over the last time step).
  */
-const IceModelVec2S& IceModel::forced_retreat() const {
+const array::Scalar& IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
 }
 
@@ -1086,9 +1097,9 @@ void IceModel::reset_diagnostics() {
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const IceGrid::ConstPtr &grid)
-  : calving(grid, "thickness_change_due_to_calving", WITHOUT_GHOSTS),
-    frontal_melt(grid, "thickness_change_due_to_frontal_melt", WITHOUT_GHOSTS),
-    forced_retreat(grid, "thickness_change_due_to_forced_retreat", WITHOUT_GHOSTS) {
+  : calving(grid, "thickness_change_due_to_calving"),
+    frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
+    forced_retreat(grid, "thickness_change_due_to_forced_retreat") {
   // empty
 }
 

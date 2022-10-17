@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,25 @@ namespace pism {
 
 class MaxTimestep;
 class File;
-class IceModelVec;
+class Geometry;
+
+namespace array {
+template<typename T> class Array2D;
+class Array3D;
+class Array;
+class CellType1;
+class CellType2;
+class CellType;
+class Forcing;
+class Scalar1;
+class Scalar2;
+class Scalar;
+class Staggered1;
+class Staggered;
+class Vector1;
+class Vector2;
+class Vector;
+} // end of namespace array
 
 enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
 
@@ -129,7 +147,7 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual void regrid(const std::string &module_name, IceModelVec &variable,
+  virtual void regrid(const std::string &module_name, array::Array &variable,
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 protected:
   //! grid used by this component

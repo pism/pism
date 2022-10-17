@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -65,7 +65,7 @@ void IceEISModel::allocate_couplers() {
   }
 }
 
-void generate_trough_topography(IceModelVec2S &result) {
+void generate_trough_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
@@ -78,7 +78,7 @@ void generate_trough_topography(IceModelVec2S &result) {
     slope = b0 / L,
     dx61  = (2.0 * L) / 60; // = 25.0e3
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -92,7 +92,7 @@ void generate_trough_topography(IceModelVec2S &result) {
   }
 }
 
-void generate_mound_topography(IceModelVec2S &result) {
+void generate_mound_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
@@ -101,7 +101,7 @@ void generate_mound_topography(IceModelVec2S &result) {
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width
 
-  IceModelVec::AccessList list(result);
+  array::AccessScope list(result);
   for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -134,7 +134,7 @@ void IceEISModel::initialize_2d() {
   m_geometry.sea_level_elevation.set(0.0);
 
   // set uplift
-  IceModelVec2S bed_uplift(m_grid, "uplift", WITHOUT_GHOSTS);
+  array::Scalar bed_uplift(m_grid, "uplift");
   bed_uplift.set(0.0);
 
   // start with zero ice

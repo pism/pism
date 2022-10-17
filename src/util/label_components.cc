@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "label_components.hh"
 
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "connected_components.hh"
 #include "pism/util/petscwrappers/Vec.hh"
@@ -27,12 +27,12 @@
 namespace pism {
 
 /*!
- * Label connected components in a mask stored in an IceModelVec2Int.
+ * Label connected components in a mask stored in an array::Scalar.
  *
  * This function allocates a copy on rank 0 and so should not be used if that is a
  * problem.
  */
-void label_components(IceModelVec2Int &mask, bool identify_icebergs, double mask_grounded) {
+void label_components(array::Scalar &mask, bool identify_icebergs, double mask_grounded) {
   auto mask_p0 = mask.allocate_proc0_copy();
 
   mask.put_on_proc0(*mask_p0);

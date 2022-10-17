@@ -53,12 +53,12 @@ Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_offsets = IceModelVec2T::ForcingField(m_grid,
-                                               input,
-                                               variable_name,
-                                               "", // no standard name
-                                               buffer_size,
-                                               opt.periodic);
+    m_2d_offsets = std::make_shared<array::Forcing>(m_grid,
+                                                    input,
+                                                    variable_name,
+                                                    "", // no standard name
+                                                    buffer_size,
+                                                    opt.periodic);
 
     m_2d_offsets->set_attrs("climate_forcing",
                             long_name, units, external_units,
@@ -125,10 +125,10 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_offsets->update(t, dt);
     m_2d_offsets->average(t, dt);
 
-    IceModelVec2S &T = *m_temperature;
-    IceModelVec2T &delta = *m_2d_offsets;
+    auto &T = *m_temperature;
+    const auto &delta = *m_2d_offsets;
 
-    IceModelVec::AccessList list{&T, &delta};
+    array::AccessScope list{&T, &delta};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -138,7 +138,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Delta_T::air_temperature_impl() const {
+const array::Scalar& Delta_T::air_temperature_impl() const {
   return *m_temperature;
 }
 

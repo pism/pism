@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -16,22 +16,26 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef ICEMODELVEC_IMPL_H
-#define ICEMODELVEC_IMPL_H
+#ifndef PISM_ARRAY_IMPL_HH
+#define PISM_ARRAY_IMPL_HH
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "pism/util/array/Array.hh"
+
 #include <gsl/gsl_interp.h>
 
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
+namespace array {
 
-struct IceModelVec::Impl {
+struct Array::Impl {
   Impl() {
     access_counter = 0;
 
@@ -78,7 +82,7 @@ struct IceModelVec::Impl {
   //! stencil width supported by the DA
   unsigned int da_stencil_width;
 
-  //! true if this IceModelVec is ghosted
+  //! true if this Array is ghosted
   bool ghosted;
 
   //! distributed mesh manager (DM)
@@ -87,14 +91,14 @@ struct IceModelVec::Impl {
   //! If true, use DMDAVecGetArrayDOF() in begin_access()
   bool begin_access_use_dof;
 
-  //! Map plane viewers. It is a map because a temporary IceModelVec can be used to view
+  //! Map plane viewers. It is a map because a temporary Array can be used to view
   //! different quantities
   std::map<std::string,std::shared_ptr<petsc::Viewer> > map_viewers;
 
   // used in begin_access() and end_access()
   int access_counter;
 
-  //! Internal IceModelVec "revision number"
+  //! Internal array::Array "revision number"
   int state_counter;
 
   // 2D Interpolation type (used by regrid())
@@ -107,6 +111,7 @@ struct IceModelVec::Impl {
   gsl_interp_accel *bsearch_accel;
 };
 
+} // end of namespace array
 } // end of namespace pism
 
-#endif /* ICEMODELVEC_IMPL_H */
+#endif /* PISM_ARRAY_IMPL_HH */

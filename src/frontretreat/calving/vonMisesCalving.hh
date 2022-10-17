@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,16 +39,16 @@ public:
 
   void init();
 
-  void update(const IceModelVec2CellType &cell_type,
-              const IceModelVec2S &ice_thickness,
-              const IceModelVec2V &ice_velocity,
-              const IceModelVec3 &ice_enthalpy);
-  const IceModelVec2S& threshold() const;
+  void update(const array::CellType1 &cell_type,
+              const array::Scalar &ice_thickness,
+              const array::Vector1 &ice_velocity,
+              const array::Array3D &ice_enthalpy);
+  const array::Scalar& threshold() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
-  IceModelVec2S m_calving_threshold;
+  array::Scalar m_calving_threshold;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

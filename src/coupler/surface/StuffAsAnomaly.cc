@@ -98,7 +98,7 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
     }
   }
 
-  IceModelVec::AccessList list{&m_mass_flux, &m_mass_flux_0, &m_mass_flux_input,
+  array::AccessScope list{&m_mass_flux, &m_mass_flux_0, &m_mass_flux_input,
       &m_temp, &m_temp_0, &m_temp_input};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -109,11 +109,11 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
   }
 }
 
-const IceModelVec2S &StuffAsAnomaly::mass_flux_impl() const {
+const array::Scalar &StuffAsAnomaly::mass_flux_impl() const {
   return m_mass_flux;
 }
 
-const IceModelVec2S &StuffAsAnomaly::temperature_impl() const {
+const array::Scalar &StuffAsAnomaly::temperature_impl() const {
   return m_temp;
 }
 

@@ -55,23 +55,23 @@ void Simple::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S &Simple::mass_flux_impl() const {
+const array::Scalar &Simple::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Simple::temperature_impl() const {
+const array::Scalar &Simple::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Simple::accumulation_impl() const {
+const array::Scalar &Simple::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Simple::melt_impl() const {
+const array::Scalar &Simple::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Simple::runoff_impl() const {
+const array::Scalar &Simple::runoff_impl() const {
   return *m_runoff;
 }
 

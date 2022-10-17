@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021 PISM Authors
+/* Copyright (C) 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,10 +22,13 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Component.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
+#include "pism/util/array/Array2D.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 
-class IceModelVec2S;
 class Geometry;
 
 class FractureDensity : public Component {
@@ -35,21 +38,21 @@ public:
 
   void restart(const File &input_file, int record);
   void bootstrap(const File &input_file);
-  void initialize(const IceModelVec2S &density, const IceModelVec2S &age);
+  void initialize(const array::Scalar &density, const array::Scalar &age);
   void initialize();
 
   void update(double dt,
               const Geometry &geometry,
-              const IceModelVec2V &velocity,
-              const IceModelVec2S &hardness,
-              const IceModelVec2S &inflow_boundary_mask);
+              const array::Vector &velocity,
+              const array::Scalar &hardness,
+              const array::Scalar &inflow_boundary_mask);
 
-  const IceModelVec2S& density() const;
-  const IceModelVec2S& growth_rate() const;
-  const IceModelVec2S& healing_rate() const;
-  const IceModelVec2S& flow_enhancement() const;
-  const IceModelVec2S& age() const;
-  const IceModelVec2S& toughness() const;
+  const array::Scalar& density() const;
+  const array::Scalar& growth_rate() const;
+  const array::Scalar& healing_rate() const;
+  const array::Scalar& flow_enhancement() const;
+  const array::Scalar& age() const;
+  const array::Scalar& toughness() const;
 
 private:
 
@@ -58,23 +61,23 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  IceModelVec2S m_density;
-  IceModelVec2S m_density_new;
-  IceModelVec2S m_growth_rate;
-  IceModelVec2S m_healing_rate;
-  IceModelVec2S m_flow_enhancement;
-  IceModelVec2S m_age;
-  IceModelVec2S m_age_new;
-  IceModelVec2S m_toughness;
+  array::Scalar1 m_density;
+  array::Scalar m_density_new;
+  array::Scalar m_growth_rate;
+  array::Scalar m_healing_rate;
+  array::Scalar m_flow_enhancement;
+  array::Scalar1 m_age;
+  array::Scalar m_age_new;
+  array::Scalar m_toughness;
 
   //! major and minor principal components of horizontal strain-rate tensor (temporary storage)
-  IceModelVec3 m_strain_rates;
+  array::Array2D<stressbalance::PrincipalStrainRates> m_strain_rates;
 
   //! components of horizontal stress tensor along axes and shear stress (temporary storage)
-  IceModelVec3 m_deviatoric_stresses;
+  array::Array2D<stressbalance::DeviatoricStresses> m_deviatoric_stresses;
 
   //! Ghosted copy of the ice velocity
-  IceModelVec2V m_velocity;
+  array::Vector1 m_velocity;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;
 };

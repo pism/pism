@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>                // fabs()
 #include <cassert>
-#include <algorithm>            // for std::min
+#include <algorithm>            // for std::min()
 
 #include "Cache.hh"
 #include "pism/util/Time.hh"
@@ -127,35 +128,35 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   }
 }
 
-const IceModelVec2S &Cache::layer_thickness_impl() const {
+const array::Scalar &Cache::layer_thickness_impl() const {
   return *m_layer_thickness;
 }
 
-const IceModelVec2S &Cache::mass_flux_impl() const {
+const array::Scalar &Cache::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Cache::temperature_impl() const {
+const array::Scalar &Cache::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Cache::liquid_water_fraction_impl() const {
+const array::Scalar &Cache::liquid_water_fraction_impl() const {
   return *m_liquid_water_fraction;
 }
 
-const IceModelVec2S &Cache::layer_mass_impl() const {
+const array::Scalar &Cache::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
-const IceModelVec2S& Cache::accumulation_impl() const {
+const array::Scalar& Cache::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& Cache::melt_impl() const {
+const array::Scalar& Cache::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& Cache::runoff_impl() const {
+const array::Scalar& Cache::runoff_impl() const {
   return *m_runoff;
 }
 

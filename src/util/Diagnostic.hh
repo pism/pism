@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2021 PISM Authors
+// Copyright (C) 2010--2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -26,10 +26,9 @@
 #include "VariableMetadata.hh"
 #include "IceGrid.hh"
 #include "ConfigInterface.hh"
-#include "iceModelVec.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/IceModelVec2V.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -47,7 +46,7 @@ namespace pism {
  * methods of a class, but it is possible to define a (friend) function
  *
  * @code
- * IceModelVec::Ptr compute_bar(Foo* model, ...);
+ * array::Array::Ptr compute_bar(Foo* model, ...);
  * @endcode
  *
  * which is the same as creating a method `Foo::compute_bar()`, but you *can*
@@ -70,8 +69,8 @@ public:
   void update(double dt);
   void reset();
 
-  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated IceModelVec.
-  IceModelVec::Ptr compute() const;
+  //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
+  array::Array::Ptr compute() const;
 
   unsigned int n_variables() const;
 
@@ -97,7 +96,7 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual IceModelVec::Ptr compute_impl() const = 0;
+  virtual array::Array::Ptr compute_impl() const = 0;
 
   double to_internal(double x) const;
   double to_external(double x) const;
@@ -135,8 +134,8 @@ public:
   }
 protected:
 
-  IceModelVec::Ptr compute_impl() const {
-    auto result = duplicate(m_input);
+  array::Array::Ptr compute_impl() const {
+    auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
     for (unsigned int k = 0; k < m_vars.size(); ++k) {
@@ -181,7 +180,7 @@ public:
     : Diag<M>(m),
     m_factor(1.0),
     m_input_kind(kind),
-    m_accumulator(Diagnostic::m_grid, name + "_accumulator", WITHOUT_GHOSTS),
+    m_accumulator(Diagnostic::m_grid, name + "_accumulator"),
     m_interval_length(0.0),
     m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
@@ -244,9 +243,9 @@ protected:
     m_interval_length = 0.0;
   }
 
-  virtual IceModelVec::Ptr compute_impl() const {
-    IceModelVec2S::Ptr result(new IceModelVec2S(Diagnostic::m_grid,
-                                                "diagnostic", WITHOUT_GHOSTS));
+  virtual array::Array::Ptr compute_impl() const {
+    array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid,
+                                                "diagnostic"));
     result->metadata(0) = Diagnostic::m_vars.at(0);
 
     if (m_interval_length > 0.0) {
@@ -263,13 +262,13 @@ protected:
   double m_factor;
   InputKind m_input_kind;
   // the state (read from and written to files)
-  IceModelVec2S m_accumulator;
+  array::Scalar m_accumulator;
   // length of the reporting interval, accumulated along with the cumulative quantity
   double m_interval_length;
   VariableMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
-  virtual const IceModelVec2S& model_input() {
+  virtual const array::Scalar& model_input() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no default implementation");
   }
 };

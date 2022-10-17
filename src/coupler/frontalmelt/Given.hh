@@ -21,7 +21,7 @@
 
 #include "pism/coupler/FrontalMelt.hh"
 
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -39,9 +39,9 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
-  std::shared_ptr<IceModelVec2T> m_frontal_melt_rate;
+  std::shared_ptr<array::Forcing> m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

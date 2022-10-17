@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,10 @@
 #define STRESSCALVING_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Array2D.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/stressbalance/StressBalance.hh" // struct PrincipalStrainRates
 
 namespace pism {
 
@@ -33,16 +36,16 @@ public:
   StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
   virtual ~StressCalving() = default;
 
-  const IceModelVec2S &calving_rate() const;
+  const array::Scalar &calving_rate() const;
 
 protected:
   const int m_stencil_width;
 
-  IceModelVec3 m_strain_rates;
+  array::Array2D<stressbalance::PrincipalStrainRates> m_strain_rates;
 
-  IceModelVec2S m_calving_rate;
+  array::Scalar m_calving_rate;
 
-  IceModelVec2CellType m_cell_type;
+  array::CellType1 m_cell_type;
 };
 
 

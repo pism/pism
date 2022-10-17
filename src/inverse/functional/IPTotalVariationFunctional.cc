@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,18 +19,19 @@
 #include "IPTotalVariationFunctional.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace inverse {
 
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr grid,
                                                            double c, double exponent, double eps,
-                                                           IceModelVec2Int *dirichletLocations) :
-    IPFunctional<IceModelVec2S>(grid), m_dirichletIndices(dirichletLocations),
+                                                           array::Scalar *dirichletLocations) :
+    IPFunctional<array::Scalar>(grid), m_dirichletIndices(dirichletLocations),
     m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
 }
 
-void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
+void IPTotalVariationFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -42,7 +43,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   double x_e[Nk];
   double x_q[Nq_max], dxdx_q[Nq_max], dxdy_q[Nq_max];
 
-  IceModelVec::AccessList list(x);
+  array::AccessScope list(x);
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
@@ -74,7 +75,7 @@ void IPTotalVariationFunctional2S::valueAt(IceModelVec2S &x, double *OUTPUT) {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &gradient) {
+void IPTotalVariationFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
@@ -88,7 +89,7 @@ void IPTotalVariationFunctional2S::gradientAt(IceModelVec2S &x, IceModelVec2S &g
 
   double gradient_e[Nk];
 
-  IceModelVec::AccessList list{&x, &gradient};
+  array::AccessScope list{&x, &gradient};
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 

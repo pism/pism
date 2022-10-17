@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,14 +21,11 @@
 #define GEOMETRY_H
 
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
 class Geometry {
-private:
-  const int m_stencil_width;
 public:
   Geometry(const IceGrid::ConstPtr &grid);
 
@@ -40,28 +37,28 @@ public:
 
   // This is grid information, which is not (strictly speaking) ice geometry, but it should be
   // available everywhere we use ice geometry.
-  IceModelVec2S latitude;
-  IceModelVec2S longitude;
+  array::Scalar latitude;
+  array::Scalar longitude;
 
   // Part of ice geometry, but managed by the bed model and the ocean model. From the point of view
   // of the code updating ice geometry, these are inputs. These fields should be filled in before
   // passing a Geometry instance to the code that uses it.
-  IceModelVec2S bed_elevation;
-  IceModelVec2S sea_level_elevation;
+  array::Scalar2 bed_elevation;
+  array::Scalar1 sea_level_elevation;
 
   // the minimal "state"
-  IceModelVec2S ice_thickness;
-  IceModelVec2S ice_area_specific_volume; // previously known as Href
+  array::Scalar2 ice_thickness;
+  array::Scalar1 ice_area_specific_volume;
 
   // redundant fields (can be computed using the ones above)
-  IceModelVec2CellType cell_type;
-  IceModelVec2S cell_grounded_fraction;
-  IceModelVec2S ice_surface_elevation;
+  array::CellType2 cell_type;
+  array::Scalar cell_grounded_fraction;
+  array::Scalar2 ice_surface_elevation;
 
   void dump(const char *filename) const;
 };
 
-void ice_bottom_surface(const Geometry &geometry, IceModelVec2S &result);
+void ice_bottom_surface(const Geometry &geometry, array::Scalar &result);
 
 double ice_volume(const Geometry &geometry, double thickness_threshold);
 double ice_area_floating(const Geometry &geometry, double thickness_threshold);
@@ -71,7 +68,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
                                           double thickness_threshold);
 double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
 
-void set_no_model_strip(const IceGrid &grid, double width, IceModelVec2Int &result);
+void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result);
 
 } // end of namespace pism
 

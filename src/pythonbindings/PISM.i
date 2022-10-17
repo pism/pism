@@ -203,8 +203,8 @@
 
 %include pism_options.i
 
-%ignore pism::Vector2::operator=;
-%include "util/Vector2.hh"
+%ignore pism::Vector2d::operator=;
+%include "util/Vector2d.hh"
 
 %ignore pism::units::Unit::operator=;
 %rename(UnitSystem) pism::units::System;
@@ -252,10 +252,10 @@
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
-/* IceModelVec uses IceGrid and VariableMetadata so they have to be wrapped first. */
-%include pism_IceModelVec.i
+/* array::Array uses IceGrid and VariableMetadata so they have to be wrapped first. */
+%include pism_Array.i
 
-/* pism::Vars uses IceModelVec, so IceModelVec has to be wrapped first. */
+/* pism::Vars uses array::Array, so Array has to be wrapped first. */
 %include pism_Vars.i
 
 

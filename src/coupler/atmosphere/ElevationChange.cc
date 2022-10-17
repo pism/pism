@@ -32,7 +32,7 @@ namespace atmosphere {
 
 ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
-  m_surface(grid, "ice_surface_elevation", WITHOUT_GHOSTS) {
+  m_surface(grid, "ice_surface_elevation") {
 
   m_precip_lapse_rate = m_config->get_number("atmosphere.elevation_change.precipitation.lapse_rate",
                                              "(kg m-2 / s) / m");
@@ -56,7 +56,7 @@ ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<Atmosph
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_reference_surface = IceModelVec2T::ForcingField(m_grid,
+    m_reference_surface = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "usurf",
                                                       "", // no standard name
@@ -128,7 +128,7 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
     switch (m_precip_method) {
     case SCALE:
       {
-        IceModelVec::AccessList list{&m_surface, &reference_surface, m_precipitation.get()};
+        array::AccessScope list{&m_surface, &reference_surface, m_precipitation.get()};
 
         for (Points p(*m_grid); p; p.next()) {
           const int i = p.i(), j = p.j();
@@ -151,11 +151,11 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   }
 }
 
-const IceModelVec2S& ElevationChange::air_temperature_impl() const {
+const array::Scalar& ElevationChange::air_temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S& ElevationChange::precipitation_impl() const {
+const array::Scalar& ElevationChange::precipitation_impl() const {
   return *m_precipitation;
 }
 

@@ -45,7 +45,7 @@ class ForcingInput(unittest.TestCase):
         self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
                                          PISM.NOT_PERIODIC)
 
-        v = PISM.IceModelVec2S(self.grid, "v", PISM.WITHOUT_GHOSTS)
+        v = PISM.Scalar(self.grid, "v")
 
         units = "30 days since 1-1-1"
         N = 12
@@ -119,9 +119,9 @@ class ForcingInput(unittest.TestCase):
                 interpolation_type=PISM.PIECEWISE_CONSTANT):
         "Allocate and initialize forcing"
         input_file = PISM.File(ctx.com, self.filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-        forcing = PISM.IceModelVec2T.ForcingField(self.grid, input_file, "v", "",
-                                                  buffer_size, periodic,
-                                                  interpolation_type)
+        forcing = PISM.Forcing(self.grid, input_file, "v", "",
+                               buffer_size, periodic,
+                               interpolation_type)
         input_file.close()
 
         forcing.metadata().set_string("long_name", "test field")
@@ -256,9 +256,9 @@ class ForcingInput(unittest.TestCase):
         self.check_forcing(forcing, self.f[-1], 0, 1)
 
     def test_constant_field(self):
-        "Field allocatted using IceModelVec2T::Constant()"
+        "Field allocatted using Forcing::Constant()"
         f = 100.0
-        forcing = PISM.IceModelVec2T.Constant(self.grid, "v", f)
+        forcing = PISM.Forcing.Constant(self.grid, "v", f)
 
         self.check_forcing(forcing, f, 0, 1)
 
@@ -279,10 +279,8 @@ class ForcingInput(unittest.TestCase):
 
     def test_buffer_too_small(self):
         "Reading periodic data that does not fit in the buffer"
-        # Note: IceModelVec2T::init() will throw RuntimeError if the buffer is too small
+        # Note: Forcing::init() will throw RuntimeError if the buffer is too small
         # to hold all records of a periodic forcing field. This will never happen if this
-        # IceModelVec2T was allocated using IceModelVec2T::ForcingField because it ensures
-        # that the buffer is big enough.
         forcing = self.forcing(self.filename, buffer_size=2, periodic=False)
         try:
             forcing.init(self.filename, periodic=True)

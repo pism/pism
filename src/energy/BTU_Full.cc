@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,6 +23,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/Array3D.hh"
 #include "BedrockColumn.hh"
 
 namespace pism {
@@ -64,7 +65,7 @@ BTU_Full::BTU_Full(IceGrid::ConstPtr g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new IceModelVec3(m_grid, "litho_temp", WITHOUT_GHOSTS, z));
+    m_temp.reset(new array::Array3D(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z));
     m_temp->metadata(0).z().set_name("zb");
 
     std::map<std::string, std::string> z_attrs =
@@ -156,7 +157,7 @@ MaxTimestep BTU_Full::max_timestep_impl(double t) const {
 
 /** Perform a step of the bedrock thermal model.
 */
-void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
+void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
                            double t, double dt) {
   (void) t;
 
@@ -169,7 +170,7 @@ void BTU_Full::update_impl(const IceModelVec2S &bedrock_top_temperature,
     throw RuntimeError(PISM_ERROR_LOCATION, "dt < 0 is not allowed");
   }
 
-  IceModelVec::AccessList list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
+  array::AccessScope list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
 
   ParallelSection loop(m_grid->com);
   try {
@@ -220,7 +221,7 @@ void BTU_Full::update_flux_through_top_surface() {
   double dz = this->vertical_spacing();
   const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
 
-  IceModelVec::AccessList list{m_temp.get(), &m_top_surface_flux};
+  array::AccessScope list{m_temp.get(), &m_top_surface_flux};
 
   if (m_Mbz >= 3) {
 
@@ -243,7 +244,7 @@ void BTU_Full::update_flux_through_top_surface() {
   }
 }
 
-const IceModelVec3& BTU_Full::temperature() const {
+const array::Array3D& BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
     throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
   }
@@ -251,7 +252,7 @@ const IceModelVec3& BTU_Full::temperature() const {
   return *m_temp;
 }
 
-void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
+void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
 
   m_log->message(2,
                 "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"
@@ -261,7 +262,7 @@ void BTU_Full::bootstrap(const IceModelVec2S &bedrock_top_temperature) {
   double dz = this->vertical_spacing();
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
-  IceModelVec::AccessList list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
+  array::AccessScope list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 

@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019 David Maxwell
+# Copyright (C) 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2022 David Maxwell
 #
 # This file is part of PISM.
 #
@@ -84,9 +84,7 @@ if __name__ == "__main__":
     adjustTauc(vecs.ice_mask, tauc_prior)
 
     # Convert tauc_prior -> zeta_prior
-    zeta = PISM.IceModelVec2S()
-    WIDE_STENCIL = int(grid.ctx().config().get_number("grid.max_stencil_width"))
-    zeta.create(grid, "", PISM.WITH_GHOSTS, WIDE_STENCIL)
+    zeta = PISM.Scalar2(grid, "")
     ssarun.tauc_param.convertFromDesignVariable(tauc_prior, zeta)
     ssarun.ssa.linearize_at(zeta)
 
@@ -128,10 +126,8 @@ if __name__ == "__main__":
     d1 = PISM.vec.randVectorS(grid, 1)
     d2 = PISM.vec.randVectorS(grid, 1)
 
-    GNd1 = PISM.IceModelVec2S()
-    GNd1.create(grid, "", PISM.WITHOUT_GHOSTS)
-    GNd2 = PISM.IceModelVec2S()
-    GNd2.create(grid, "", PISM.WITHOUT_GHOSTS)
+    GNd1 = PISM.Scalar(grid, "")
+    GNd2 = PISM.Scalar(grid, "")
 
     solver_gn.apply_GN(d1, GNd1)
     solver_gn.apply_GN(d2, GNd2)

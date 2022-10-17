@@ -84,7 +84,7 @@ def random_vec_test():
 
 
 def vec_metadata_test():
-    "Test accessing IceModelVec metadata"
+    "Test accessing Array metadata"
     grid = create_dummy_grid()
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -97,7 +97,7 @@ def vec_metadata_test():
 
 
 def vars_ownership_test():
-    "Test passing IceModelVec ownership from Python to C++ (i.e. PISM)."
+    "Test passing Array ownership from Python to C++ (i.e. PISM)."
     grid = create_dummy_grid()
     variables = PISM.Vars()
 
@@ -885,8 +885,8 @@ def vertical_extrapolation_during_regridding_test():
 
     grid = PISM.IceGrid(ctx.ctx, params)
 
-    # create an IceModelVec that uses this grid
-    v = PISM.IceModelVec3(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
+    # create an Array that uses this grid
+    v = PISM.Array3D(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
     v.set(0.0)
 
     # set a column
@@ -906,8 +906,8 @@ def vertical_extrapolation_during_regridding_test():
 
         tall_grid = PISM.IceGrid(ctx.ctx, params)
 
-        # create an IceModelVec that uses this grid
-        v_tall = PISM.IceModelVec3(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
+        # create an Array that uses this grid
+        v_tall = PISM.Array3D(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
 
         # Try regridding without extrapolation. This should fail.
         try:
@@ -966,7 +966,7 @@ class PrincipalStrainRates(TestCase):
                                     0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
 
     def create_velocity(self, grid):
-        velocity = PISM.IceModelVec2V(grid, "bar", PISM.WITH_GHOSTS)
+        velocity = PISM.Vector1(grid, "bar")
         with PISM.vec.Access(nocomm=velocity):
             for (i, j) in grid.points():
                 u, v = self.u_exact(grid.x(i), grid.y(j))
@@ -977,7 +977,7 @@ class PrincipalStrainRates(TestCase):
         return velocity
 
     def create_cell_type(self, grid):
-        cell_type = PISM.IceModelVec2CellType(grid, "cell_type", PISM.WITH_GHOSTS)
+        cell_type = PISM.CellType1(grid, "cell_type")
         cell_type.set(PISM.MASK_GROUNDED)
         cell_type.update_ghosts()
 
@@ -988,8 +988,8 @@ class PrincipalStrainRates(TestCase):
 
         velocity = self.create_velocity(grid)
         cell_type = self.create_cell_type(grid)
-        strain_rates = PISM.IceModelVec3(grid, "strain_rates",
-                                         PISM.WITHOUT_GHOSTS, 2)
+        strain_rates = PISM.ArrayPrincipalStrainRates(grid, "strain_rates",
+                                                      PISM.WITHOUT_GHOSTS)
 
         PISM.compute_2D_principal_strain_rates(velocity, cell_type, strain_rates)
         rates = strain_rates.numpy()
@@ -1130,9 +1130,9 @@ class AgeModel(TestCase):
         "Check if AgeModel runs"
         ice_thickness = PISM.model.createIceThicknessVec(self.grid)
 
-        u = PISM.IceModelVec3(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
-        v = PISM.IceModelVec3(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
-        w = PISM.IceModelVec3(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
+        u = PISM.Array3D(self.grid, "u", PISM.WITHOUT_GHOSTS, self.grid.z())
+        v = PISM.Array3D(self.grid, "v", PISM.WITHOUT_GHOSTS, self.grid.z())
+        w = PISM.Array3D(self.grid, "w", PISM.WITHOUT_GHOSTS, self.grid.z())
 
         ice_thickness.set(4000.0)
         u.set(0.0)
@@ -1155,10 +1155,10 @@ class AgeModel(TestCase):
         os.remove(self.output_file)
 
 def checksum_test():
-    "Check if a small change in an IceModelVec affects checksum() output"
+    "Check if a small change in an Array affects checksum() output"
     grid = PISM.testing.shallow_grid(Mx=101, My=201)
 
-    v = PISM.IceModelVec2S(grid, "dummy", PISM.WITHOUT_GHOSTS)
+    v = PISM.Scalar(grid, "dummy")
     v.set(1e15)
 
     old_checksum = v.checksum(serial=False)
@@ -1564,10 +1564,10 @@ def grounding_line_flux_test():
 
     geometry.ensure_consistency(0)
 
-    velocity = PISM.IceModelVec2V(grid, "velocity", PISM.WITHOUT_GHOSTS)
-    thk_bc_mask = PISM.IceModelVec2Int(grid, "thk_bc_mask", PISM.WITHOUT_GHOSTS)
+    velocity = PISM.Vector(grid, "velocity")
+    thk_bc_mask = PISM.Scalar(grid, "thk_bc_mask")
     thk_bc_mask.set(0)
-    sia_flux = PISM.IceModelVec2Stag(grid, "sia_flux", PISM.WITHOUT_GHOSTS)
+    sia_flux = PISM.Staggered(grid, "sia_flux")
     sia_flux.set(0)
 
     dt = 365 * 86400
@@ -1581,7 +1581,8 @@ def grounding_line_flux_test():
 
     geometry_evolution.flow_step(geometry, dt, velocity, sia_flux, thk_bc_mask)
 
-    gl_flux = PISM.IceModelVec2S(grid, "grounding_line_flux", PISM.WITHOUT_GHOSTS)
+    gl_flux = PISM.Scalar(grid, "grounding_line_flux")
+
     PISM.grounding_line_flux(geometry.cell_type,
                              geometry_evolution.flux_staggered(),
                              dt,

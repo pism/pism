@@ -364,7 +364,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 
 FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
   : m_grid(grid), m_config(grid->ctx()->config()),
-    m_temp_mj(grid, "temp_mj_faustogreve", WITHOUT_GHOSTS)
+    m_temp_mj(grid, "temp_mj_faustogreve")
 {
 
   m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");
@@ -391,7 +391,7 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
   LocalMassBalance::DegreeDayFactors ddf;
   ddf.refreeze_fraction = m_refreeze_fraction;
 
-  IceModelVec::AccessList list(m_temp_mj);
+  array::AccessScope list(m_temp_mj);
   const double T_mj = m_temp_mj(i,j);
 
   if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
@@ -428,21 +428,21 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
 /*!
 Unfortunately this duplicates code in SeaRISEGreenland::update();
  */
-void FaustoGrevePDDObject::update_temp_mj(const IceModelVec2S &surfelev,
-                                          const IceModelVec2S &lat,
-                                          const IceModelVec2S &lon) {
+void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
+                                          const array::Scalar &lat,
+                                          const array::Scalar &lon) {
   const double
     d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // K
     gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
     c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
     kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
 
-  const IceModelVec2S
+  const array::Scalar
     &h        = surfelev,
     &lat_degN = lat,
     &lon_degE = lon;
 
-  IceModelVec::AccessList list{&h, &lat_degN, &lon_degE, &m_temp_mj};
+  array::AccessScope list{&h, &lat_degN, &lon_degE, &m_temp_mj};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

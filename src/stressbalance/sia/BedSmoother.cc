@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
@@ -32,15 +32,14 @@
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(IceGrid::ConstPtr g, int MAX_GHOSTS)
-    :
-  m_grid(g),
+BedSmoother::BedSmoother(IceGrid::ConstPtr g)
+    : m_grid(g),
       m_config(g->ctx()->config()),
-      m_topgsmooth(m_grid, "topgsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_maxtl(m_grid, "maxtl", WITH_GHOSTS, MAX_GHOSTS),
-      m_C2(m_grid, "C2bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C3(m_grid, "C3bedsmooth", WITH_GHOSTS, MAX_GHOSTS),
-      m_C4(m_grid, "C4bedsmooth", WITH_GHOSTS, MAX_GHOSTS)
+      m_topgsmooth(m_grid, "topgsmooth"),
+      m_maxtl(m_grid, "maxtl"),
+      m_C2(m_grid, "C2bedsmooth"),
+      m_C3(m_grid, "C3bedsmooth"),
+      m_C4(m_grid, "C3bedsmooth")
 {
 
   const Logger &log = *m_grid->ctx()->log();
@@ -96,7 +95,7 @@ Input lambda gives physical half-width (in m) of square over which to do the
 average.  Only square smoothing domains are allowed with this call, which is the
 default case.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
+void BedSmoother::preprocess_bed(const array::Scalar &topg) {
 
   if (m_smoothing_range <= 0.0) {
     // smoothing completely inactive.  we transfer the original bed topg,
@@ -121,7 +120,7 @@ void BedSmoother::preprocess_bed(const IceModelVec2S &topg) {
   preprocess_bed(topg, m_Nx, m_Ny);
 }
 
-const IceModelVec2S& BedSmoother::smoothed_bed() const {
+const array::Scalar& BedSmoother::smoothed_bed() const {
   return m_topgsmooth;
 }
 
@@ -129,7 +128,7 @@ const IceModelVec2S& BedSmoother::smoothed_bed() const {
 Inputs Nx,Ny gives half-width in number of grid points, over which to do the
 average.
  */
-void BedSmoother::preprocess_bed(const IceModelVec2S &topg,
+void BedSmoother::preprocess_bed(const array::Scalar &topg,
                                  unsigned int Nx, unsigned int Ny) {
 
   if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
@@ -281,12 +280,12 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::smoothed_thk(const IceModelVec2S &usurf,
-                               const IceModelVec2S &thk,
-                               const IceModelVec2CellType &mask,
-                               IceModelVec2S &result) const {
+void BedSmoother::smoothed_thk(const array::Scalar &usurf,
+                               const array::Scalar &thk,
+                               const array::CellType2 &mask,
+                               array::Scalar &result) const {
 
-  IceModelVec::AccessList list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
+  array::AccessScope list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.stencil_width();
   assert(mask.stencil_width()         >= GHOSTS);
@@ -348,14 +347,14 @@ maxGHOSTS, has at least GHOSTS stencil width, and throw an error if not.
 
 Call preprocess_bed() first.
  */
-void BedSmoother::theta(const IceModelVec2S &usurf, IceModelVec2S &result) const {
+void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const {
 
   if ((m_Nx < 0) || (m_Ny < 0)) {
     result.set(1.0);
     return;
   }
 
-  IceModelVec::AccessList list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
+  array::AccessScope list{&m_C2, &m_C3, &m_C4, &m_maxtl, &result, &m_topgsmooth, &usurf};
 
   unsigned int GHOSTS = result.stencil_width();
   assert(m_C2.stencil_width()         >= GHOSTS);

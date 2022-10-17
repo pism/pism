@@ -43,9 +43,9 @@ these classes*. (This is a summary.)
 
 - pism::IceGrid (computational grid)
 - pism::Component and pism::Component_TS (interface shared by most sub-models)
-- pism::IceModelVec2S, pism::IceModelVec2Stag, pism::IceModelVec2V, and pism::IceModelVec3 (storage)
+- pism::array::Scalar, pism::array::Staggered, pism::array::Vector, and pism::array::Array3D (storage)
 - pism::ScalarForcing (scalar time-dependent forcing)
-- pism::IceModelVec2T (2D time-dependent forcing)
+- pism::array::Forcing (2D time-dependent forcing)
 - pism::VariableMetadata (variable metadata such as physical units)
 - pism::Config (configuration parameter database)
 - pism::Time (time management, including calendars)
@@ -54,7 +54,7 @@ these classes*. (This is a summary.)
 ### Some important infrastructure concepts and techniques:
 
 - [Organization of PISM's computational grid](@ref computational_grid)
-- [pism::IceModelVec and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
+- [pism::array::Array and friends: storing, reading, writing, accessing 2D and 3D fields](@ref icemodelvec_use)
 - [PISM's model components and their interface](@ref pism_components)
 
 ### Other PISM documentation

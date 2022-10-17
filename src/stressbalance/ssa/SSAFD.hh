@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -25,6 +25,7 @@
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
+#include "pism/util/array/Staggered.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -36,7 +37,7 @@ public:
   SSAFD(IceGrid::ConstPtr g);
   virtual ~SSAFD() = default;
 
-  const IceModelVec2Stag & integrated_viscosity() const;
+  const array::Staggered & integrated_viscosity() const;
 protected:
   virtual void init_impl();
 
@@ -62,11 +63,11 @@ protected:
 
   virtual void compute_nuH_staggered(const Geometry &geometry,
                                      double nuH_regularization,
-                                     IceModelVec2Stag &result);
+                                     array::Staggered &result);
 
   virtual void compute_nuH_staggered_cfbc(const Geometry &geometry,
                                           double nuH_regularization,
-                                          IceModelVec2Stag &result);
+                                          array::Staggered &result);
 
   virtual void compute_nuH_norm(double &norm,
                                 double &norm_change);
@@ -85,10 +86,11 @@ protected:
 
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
-  virtual void fracture_induced_softening(const IceModelVec2S *fracture_density);
+  virtual void fracture_induced_softening(const array::Scalar *fracture_density);
 
   // objects used internally
-  IceModelVec2Stag m_hardness, m_nuH, m_nuH_old;
+  array::Staggered m_hardness;
+  array::Staggered1 m_nuH, m_nuH_old;
 
   struct Work {
     // u_x on the i offset
@@ -104,14 +106,14 @@ protected:
     // weight for the j offset
     double w_j;
   };
-  IceModelVec2<Work> m_work;
+  array::Array2D<Work> m_work;
 
   petsc::KSP m_KSP;
   petsc::Mat m_A;
-  IceModelVec2V m_b;            // right hand side
+  array::Vector m_b;            // right hand side
   double m_scaling;
 
-  IceModelVec2V m_velocity_old;
+  array::Vector1 m_velocity_old;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,7 +21,7 @@
 
 #include "Element.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
@@ -173,12 +173,12 @@ Element2::Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   // empty
 }
 
-void Element2::nodal_values(const IceModelVec2Int &x_global, int *result) const {
+void Element2::nodal_values(const array::Scalar &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
     const int
       ii = m_i + m_i_offset[k],
       jj = m_j + m_j_offset[k];
-    result[k] = x_global.as_int(ii, jj);
+    result[k] = floor(x_global(ii, jj) + 0.5);
   }
 }
 
@@ -301,14 +301,14 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
-  const Vector2
+  const Vector2d
     n01( 0.0, -1.0),  // south
     n12( 1.0,  0.0),  // east
     n23( 0.0,  1.0),  // north
     n30(-1.0,  0.0);  // west
 
   // "diagonal" sides
-  Vector2
+  Vector2d
     n13( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
     n20(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
 
@@ -318,8 +318,8 @@ P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int ty
 
   // coordinates of nodes of a Q1 element this P1 element is embedded in (up to
   // translation)
-  Vector2 p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
-  std::vector<Vector2> pts;
+  Vector2d p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
+  std::vector<Vector2d> pts;
 
   switch (type) {
   case 0:

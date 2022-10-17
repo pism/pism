@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,8 +29,8 @@ namespace surface {
 NoGLRetreat::NoGLRetreat(IceGrid::ConstPtr grid,
                          std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(grid, input),
-    m_smb_adjustment(grid, "smb_adjustment", WITHOUT_GHOSTS),
-    m_min_ice_thickness(grid, "minimum_ice_thickness", WITHOUT_GHOSTS) {
+    m_smb_adjustment(grid, "smb_adjustment"),
+    m_min_ice_thickness(grid, "minimum_ice_thickness") {
 
   m_smb_adjustment.metadata()["units"] = "kg m-2 s-1";
 
@@ -54,7 +54,7 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
   double rho_w = m_config->get_number("constants.sea_water.density");
   double eps = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  IceModelVec::AccessList list{&sea_level, &bed, &ice_thickness,
+  array::AccessScope list{&sea_level, &bed, &ice_thickness,
                                &m_min_ice_thickness};
 
   for (Points p(*m_grid); p; p.next()) {
@@ -86,7 +86,7 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
 
   double rho_i = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&mass_flux,
+  array::AccessScope list{&mass_flux,
                                &ice_thickness,
                                m_mass_flux.get(),
                                &m_smb_adjustment,
@@ -117,23 +117,23 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const IceModelVec2S& NoGLRetreat::mass_flux_impl() const {
+const array::Scalar& NoGLRetreat::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S& NoGLRetreat::accumulation_impl() const {
+const array::Scalar& NoGLRetreat::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S& NoGLRetreat::melt_impl() const {
+const array::Scalar& NoGLRetreat::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S& NoGLRetreat::runoff_impl() const {
+const array::Scalar& NoGLRetreat::runoff_impl() const {
   return *m_runoff;
 }
 
-const IceModelVec2S& NoGLRetreat::smb_adjustment() const {
+const array::Scalar& NoGLRetreat::smb_adjustment() const {
   return m_smb_adjustment;
 }
 
@@ -162,7 +162,7 @@ public:
   }
 
 protected:
-  const IceModelVec2S& model_input() {
+  const array::Scalar& model_input() {
     return model->smb_adjustment();
   }
 };

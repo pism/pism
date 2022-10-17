@@ -509,7 +509,7 @@ class File(TestCase):
         self.files = [self.file_with_time, self.file_without_time, self.file_inconsistent, self.file_dim_types]
 
         grid = PISM.testing.shallow_grid()
-        vec = PISM.IceModelVec2S(grid, "v", PISM.WITHOUT_GHOSTS)
+        vec = PISM.Scalar(grid, "v")
         vec.set_attrs("testing", "dummy variable for testing",
                       "Kelvin", "Celsius", "standard_name", 0)
         vec.set(1.0)

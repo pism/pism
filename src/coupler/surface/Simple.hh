@@ -44,15 +44,15 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& mass_flux_impl() const;
-  const IceModelVec2S& temperature_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& temperature_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
-  IceModelVec2S::Ptr m_mass_flux;
-  IceModelVec2S::Ptr m_temperature;
+  array::Scalar::Ptr m_mass_flux;
+  array::Scalar::Ptr m_temperature;
 };
 
 } // end of namespace surface

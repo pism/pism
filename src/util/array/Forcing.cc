@@ -21,24 +21,25 @@
 #include <cmath>                // std::floor
 #include <array>
 
-#include "iceModelVec2T.hh"
+#include "Forcing.hh"
 #include "pism/util/io/File.hh"
-#include "pism_utilities.hh"
-#include "Time.hh"
-#include "IceGrid.hh"
-#include "ConfigInterface.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/ConfigInterface.hh"
 
-#include "error_handling.hh"
-#include "io/io_helpers.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
+namespace array {
 
-struct IceModelVec2T::Data {
+struct Forcing::Data {
   Data()
     : array(nullptr),
       first(-1),
@@ -105,19 +106,22 @@ struct IceModelVec2T::Data {
  * @param[in] standard_name standard name (if available); leave blank to ignore
  * @param[in] max_buffer_size maximum buffer size for non-periodic fields
  * @param[in] periodic true if this forcing field should be interpreted as periodic
+ * @param[in] interpolation_type type of temporal interpolation (LINEAR or PIECEWISE_CONSTANT)
  */
-std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr grid,
-                                               const File &file,
-                                               const std::string &short_name,
-                                               const std::string &standard_name,
-                                               int max_buffer_size,
-                                               bool periodic,
-                                               InterpolationType interpolation_type) {
+Forcing::Forcing(IceGrid::ConstPtr grid,
+                 const File &file,
+                 const std::string &short_name,
+                 const std::string &standard_name,
+                 unsigned int max_buffer_size,
+                 bool periodic,
+                 InterpolationType interpolation_type)
+  : array::Scalar(grid, short_name, 0),
+    m_data(new Data()) {
 
-  int n_records = file.nrecords(short_name, standard_name,
-                                grid->ctx()->unit_system());
+  unsigned int n_records = file.nrecords(short_name, standard_name,
+                                         grid->ctx()->unit_system());
 
-  int buffer_size = 0;
+  unsigned int buffer_size = 0;
   if (periodic) {
     // In the periodic case we try to keep all the records in RAM.
     buffer_size = n_records;
@@ -134,16 +138,17 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::ForcingField(IceGrid::ConstPtr gri
   // Allocate storage for one record if the variable was not found. This is needed to be
   // able to cheaply allocate and then discard an "-atmosphere given" model
   // (atmosphere::Given) when "-surface given" (Given) is selected.
-  buffer_size = std::max(buffer_size, 1);
+  buffer_size = std::max(buffer_size, 1U);
 
-  return std::make_shared<IceModelVec2T>(grid, short_name, buffer_size,
-                                         interpolation_type);
+  allocate(short_name, buffer_size, interpolation_type);
 }
 
-std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
+std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
                                                        const std::string &short_name,
                                                        double value) {
-  auto result = std::make_shared<IceModelVec2T>(grid, short_name, 1, PIECEWISE_CONSTANT);
+  // note: cannot use std::make_shared because of a private constructor
+  std::shared_ptr<Forcing> result(new Forcing(grid, short_name, 1,
+                                              PIECEWISE_CONSTANT));
 
   // set constant value everywhere
   result->set(value);
@@ -161,12 +166,17 @@ std::shared_ptr<IceModelVec2T> IceModelVec2T::Constant(IceGrid::ConstPtr grid,
   return result;
 }
 
-IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_name,
-                             unsigned int buffer_size,
-                             InterpolationType interpolation_type)
-  : IceModelVec2S(grid, short_name, WITHOUT_GHOSTS, 1),
-    m_data(new Data())
-{
+Forcing::Forcing(IceGrid::ConstPtr grid, const std::string &short_name,
+                 unsigned int buffer_size,
+                 InterpolationType interpolation_type)
+  : array::Scalar(grid, short_name, 0),
+    m_data(new Data()) {
+  allocate(short_name, buffer_size, interpolation_type);
+}
+
+void Forcing::allocate(const std::string &short_name,
+                       unsigned int buffer_size,
+                       InterpolationType interpolation_type) {
   m_impl->report_range = false;
 
   m_data->interp_type            = interpolation_type;
@@ -198,31 +208,31 @@ IceModelVec2T::IceModelVec2T(IceGrid::ConstPtr grid, const std::string &short_na
   PISM_CHK(ierr, "DMCreateGlobalVector");
 }
 
-IceModelVec2T::~IceModelVec2T() {
+Forcing::~Forcing() {
   delete m_data;
 }
 
-unsigned int IceModelVec2T::buffer_size() {
+unsigned int Forcing::buffer_size() {
   return m_data->buffer_size;
 }
 
-double*** IceModelVec2T::array3() {
+double*** Forcing::array3() {
   return m_data->array;
 }
 
-void IceModelVec2T::begin_access() const {
+void Forcing::begin_access() const {
   if (m_impl->access_counter == 0) {
     PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_data->da, m_data->v, &m_data->array);
     PISM_CHK(ierr, "DMDAVecGetArrayDOF");
   }
 
   // this call will increment the m_access_counter
-  IceModelVec2S::begin_access();
+  array::Scalar::begin_access();
 }
 
-void IceModelVec2T::end_access() const {
+void Forcing::end_access() const {
   // this call will decrement the m_access_counter
-  IceModelVec2S::end_access();
+  array::Scalar::end_access();
 
   if (m_impl->access_counter == 0) {
     PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_data->da, m_data->v, &m_data->array);
@@ -231,12 +241,10 @@ void IceModelVec2T::end_access() const {
   }
 }
 
-void IceModelVec2T::init(const std::string &filename, bool periodic) {
+void Forcing::init(const std::string &filename, bool periodic) {
   try {
     auto ctx = m_impl->grid->ctx();
     auto time = ctx->time();
-
-    bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
 
     m_data->filename = filename;
 
@@ -275,6 +283,7 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
       m_data->time       = times;
       m_data->time_range = {bounds.front(), bounds.back()};
 
+      bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
       if (not (extrapolate or periodic)) {
         check_forcing_duration(*time, bounds.front(), bounds.back());
       }
@@ -312,7 +321,7 @@ void IceModelVec2T::init(const std::string &filename, bool periodic) {
  * Read all periodic data from the file and add two more records to simplify
  * interpolation.
  */
-void IceModelVec2T::init_periodic_data(const File &file) {
+void Forcing::init_periodic_data(const File &file) {
 
   auto ctx = grid()->ctx();
 
@@ -375,7 +384,7 @@ void IceModelVec2T::init_periodic_data(const File &file) {
   int first = 1;
   int last = buffer_required - 2;
 
-  IceModelVec::AccessList list{this};
+  array::AccessScope list{this};
 
   // compute values at the beginning (and so at the end) of the period
   double  **a2 = array();
@@ -423,7 +432,7 @@ void IceModelVec2T::init_periodic_data(const File &file) {
 }
 
 //! Read some data to make sure that the interval (t, t + dt) is covered.
-void IceModelVec2T::update(double t, double dt) {
+void Forcing::update(double t, double dt) {
 
   if (m_data->filename.empty()) {
     // We are not reading data from a file.
@@ -431,7 +440,7 @@ void IceModelVec2T::update(double t, double dt) {
   }
 
   if (m_data->period > 0.0) {
-    // we read all data in IceModelVec2T::init() (see above)
+    // we read all data in Forcing::init() (see above)
     return;
   }
 
@@ -478,13 +487,13 @@ void IceModelVec2T::update(double t, double dt) {
 }
 
 //! Update by reading at most buffer_size records from the file.
-void IceModelVec2T::update(unsigned int start) {
+void Forcing::update(unsigned int start) {
 
   unsigned int time_size = (int)m_data->time.size();
 
   if (start >= time_size) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "IceModelVec2T::update(int start): start = %d is invalid", start);
+                                  "Forcing::update(int start): start = %d is invalid", start);
   }
 
   unsigned int missing = std::min(m_data->buffer_size, time_size - start);
@@ -558,7 +567,7 @@ void IceModelVec2T::update(unsigned int start) {
 }
 
 //! Discard the first N records, shifting the rest of them towards the "beginning".
-void IceModelVec2T::discard(int number) {
+void Forcing::discard(int number) {
 
   if (number == 0) {
     return;
@@ -566,7 +575,7 @@ void IceModelVec2T::discard(int number) {
 
   m_data->n_records -= number;
 
-  AccessList l{this};
+  array::AccessScope l{this};
 
   double ***a3 = array3();
   for (Points p(*m_impl->grid); p; p.next()) {
@@ -579,9 +588,9 @@ void IceModelVec2T::discard(int number) {
 }
 
 //! Sets the record number n to the contents of the (internal) Vec v.
-void IceModelVec2T::set_record(int n) {
+void Forcing::set_record(int n) {
 
-  AccessList l{this};
+  array::AccessScope l{this};
 
   double  **a2 = array();
   double ***a3 = array3();
@@ -591,9 +600,9 @@ void IceModelVec2T::set_record(int n) {
   }
 }
 
-//! @brief Given the time t determines the maximum possible time-step this IceModelVec2T
+//! @brief Given the time t determines the maximum possible time-step this Forcing
 //! allows.
-MaxTimestep IceModelVec2T::max_timestep(double t) const {
+MaxTimestep Forcing::max_timestep(double t) const {
   auto time_size = m_data->time.size();
 
   if (m_data->period > 0.0) {
@@ -629,14 +638,14 @@ MaxTimestep IceModelVec2T::max_timestep(double t) const {
 }
 
 /*
- * @brief Initialize IceModelVec2T with the value at time `t`.
+ * @brief Initialize Forcing with the value at time `t`.
  *
  * @note This method does not check if an update() call is necessary!
  *
  * @param[in] t requested time
  *
  */
-void IceModelVec2T::interp(double t) {
+void Forcing::interp(double t) {
 
   init_interpolation({t});
 
@@ -647,7 +656,7 @@ void IceModelVec2T::interp(double t) {
   int R = m_data->interp->right(0);
   double alpha = m_data->interp->alpha(0);
 
-  AccessList l{this};
+  array::AccessScope l{this};
   double ***a3 = array3();
   double  **a2 = array();
 
@@ -667,7 +676,7 @@ void IceModelVec2T::interp(double t) {
  * @param dt length of the time interval, in seconds
  *
  */
-void IceModelVec2T::average(double t, double dt) {
+void Forcing::average(double t, double dt) {
 
   // if only one record, nothing to do
   if (m_data->time.size() == 1 or
@@ -744,7 +753,7 @@ void IceModelVec2T::average(double t, double dt) {
     weights = integration_weights(data, data_size, type, t, t + dt);
   }
 
-  AccessList l{this};
+  array::AccessScope l{this};
   double **a2 = array();
   double ***a3 = array3();
 
@@ -768,7 +777,7 @@ void IceModelVec2T::average(double t, double dt) {
  * @param ts requested times, in seconds
  *
  */
-void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
+void Forcing::init_interpolation(const std::vector<double> &ts) {
 
   assert(m_data->first >= 0);
 
@@ -805,7 +814,7 @@ void IceModelVec2T::init_interpolation(const std::vector<double> &ts) {
  *               init_interpolation()
  *
  */
-void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
+void Forcing::interp(int i, int j, std::vector<double> &result) {
   double ***a3 = array3();
 
   result.resize(m_data->interp->alpha().size());
@@ -813,4 +822,5 @@ void IceModelVec2T::interp(int i, int j, std::vector<double> &result) {
   m_data->interp->interpolate(a3[j][i], result.data());
 }
 
+} // end of namespace array
 } // end of namespace pism

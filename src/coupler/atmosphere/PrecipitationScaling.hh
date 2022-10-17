@@ -65,7 +65,7 @@ protected:
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
 
-  const IceModelVec2S& precipitation_impl() const;
+  const array::Scalar& precipitation_impl() const;
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
@@ -74,7 +74,7 @@ protected:
   std::unique_ptr<ScalarForcing> m_forcing;
   mutable std::vector<double> m_scaling_values;
 
-  IceModelVec2S::Ptr m_precipitation;
+  array::Scalar::Ptr m_precipitation;
 };
 
 } // end of namespace atmosphere

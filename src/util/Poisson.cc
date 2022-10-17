@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020 PISM Authors
+/* Copyright (C) 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,17 +22,19 @@
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 
 Poisson::Poisson(IceGrid::ConstPtr grid)
   : m_grid(grid),
     m_log(grid->ctx()->log()),
-    m_b(grid, "poisson_rhs", WITHOUT_GHOSTS),
-    m_x(grid, "poisson_x", WITHOUT_GHOSTS),
-    m_mask(grid, "poisson_mask", WITH_GHOSTS){
+    m_b(grid, "poisson_rhs"),
+    m_x(grid, "poisson_x"),
+    m_mask(grid, "poisson_mask") {
 
   m_da = m_x.dm();
+  m_mask.set_interpolation_type(NEAREST);
 
   // PETSc objects and settings
   {
@@ -62,7 +64,7 @@ Poisson::Poisson(IceGrid::ConstPtr grid)
  *
  * Set the mask to 2 to use zero Neumann BC.
  */
-int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double rhs,
+int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
@@ -116,7 +118,7 @@ int Poisson::solve(const IceModelVec2Int& mask, const IceModelVec2S& bc, double 
   return ksp_iterations;
 }
 
-const IceModelVec2S& Poisson::solution() const {
+const array::Scalar& Poisson::solution() const {
   return m_x;
 }
 
@@ -154,7 +156,7 @@ const IceModelVec2S& Poisson::solution() const {
 // b : rhs(eq2);
 //
 // print(''out)$
-void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
+void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
   const double
@@ -171,7 +173,7 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 
   ierr = MatZeroEntries(A); PISM_CHK(ierr, "MatZeroEntries");
 
-  IceModelVec::AccessList list{&mask};
+  array::AccessScope list{&mask};
 
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
@@ -255,10 +257,10 @@ void Poisson::assemble_matrix(const IceModelVec2Int &mask, Mat A) {
 }
 
 void Poisson::assemble_rhs(double rhs,
-                           const IceModelVec2Int &mask,
-                           const IceModelVec2S &bc,
-                           IceModelVec2S &b) {
-  IceModelVec::AccessList list{&mask, &bc, &b};
+                           const array::Scalar &mask,
+                           const array::Scalar &bc,
+                           array::Scalar &b) {
+  array::AccessScope list{&mask, &bc, &b};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();

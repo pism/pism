@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,8 +18,7 @@
  */
 #include "FrontRetreat.hh"
 
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
@@ -30,8 +29,8 @@ namespace pism {
 
 FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
   : Component(g),
-    m_cell_type(m_grid, "cell_type", WITH_GHOSTS, 1),
-    m_tmp(m_grid, "temporary_storage", WITH_GHOSTS, 1) {
+    m_cell_type(m_grid, "cell_type"),
+    m_tmp(m_grid, "temporary_storage") {
 
   m_tmp.set_attrs("internal", "additional mass loss at points near the front",
                   "m", "m", "", 0);
@@ -43,10 +42,10 @@ FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
  * Compute the modified mask to avoid "wrapping around" of front retreat at domain
  * boundaries.
  */
-void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
-                                         IceModelVec2CellType &output) const {
+void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
+                                         array::CellType1 &output) const {
 
-  IceModelVec::AccessList list{&input, &output};
+  array::AccessScope list{&input, &output};
 
   const int Mx = m_grid->Mx();
   const int My = m_grid->My();
@@ -71,9 +70,9 @@ void FrontRetreat::compute_modified_mask(const IceModelVec2CellType &input,
 /*!
  * Compute the maximum time step length provided a horizontal retreat rate.
  */
-MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
-                                       const IceModelVec2Int &bc_mask,
-                                       const IceModelVec2S &retreat_rate) const {
+MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
+                                       const array::Scalar &bc_mask,
+                                       const array::Scalar &retreat_rate) const {
 
   IceGrid::ConstPtr grid = retreat_rate.grid();
   units::System::Ptr sys = grid->ctx()->unit_system();
@@ -88,7 +87,7 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
     retreat_rate_mean = 0.0;
   int N_cells = 0;
 
-  IceModelVec::AccessList list{&cell_type, &bc_mask, &retreat_rate};
+  array::AccessScope list{&cell_type, &bc_mask, &retreat_rate};
 
   for (Points pt(*grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -145,14 +144,14 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
  */
 void FrontRetreat::update_geometry(double dt,
                                    const Geometry &geometry,
-                                   const IceModelVec2Int &bc_mask,
-                                   const IceModelVec2S &retreat_rate,
-                                   IceModelVec2S &Href,
-                                   IceModelVec2S &ice_thickness) {
+                                   const array::Scalar1 &bc_mask,
+                                   const array::Scalar &retreat_rate,
+                                   array::Scalar &Href,
+                                   array::Scalar1 &ice_thickness) {
 
-  const IceModelVec2S &bed = geometry.bed_elevation;
-  const IceModelVec2S &sea_level = geometry.sea_level_elevation;
-  const IceModelVec2S &surface_elevation = geometry.ice_surface_elevation;
+  const array::Scalar1 &bed = geometry.bed_elevation;
+  const array::Scalar1 &sea_level = geometry.sea_level_elevation;
+  const array::Scalar1 &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
     m_cell_type.copy_from(geometry.cell_type);
@@ -166,7 +165,7 @@ void FrontRetreat::update_geometry(double dt,
 
   m_tmp.set(0.0);
 
-  IceModelVec::AccessList list{&ice_thickness, &bc_mask,
+  array::AccessScope list{&ice_thickness, &bc_mask,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
       &surface_elevation};
 
@@ -188,7 +187,7 @@ void FrontRetreat::update_geometry(double dt,
         Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(m_cell_type.star(i, j),
+      double H_threshold = part_grid_threshold_thickness(m_cell_type.star_int(i, j),
                                                          ice_thickness.star(i, j),
                                                          surface_elevation.star(i, j),
                                                          bed(i, j));
@@ -210,9 +209,8 @@ void FrontRetreat::update_geometry(double dt,
         // termini.
         int N = 0;
         {
-          auto
-            M  = m_cell_type.star(i, j),
-            BC = bc_mask.star(i, j);
+          auto M  = m_cell_type.star(i, j);
+          auto BC = bc_mask.star_int(i, j);
 
           auto
             b  = bed.star(i, j),

@@ -22,9 +22,9 @@
 
 namespace pism {
 
-class IceModelVec2Int;
+namespace array { class Scalar; }
 
-void label_components(IceModelVec2Int &mask, bool identify_icebergs, double mask_grounded);
+void label_components(array::Scalar &mask, bool identify_icebergs, double mask_grounded);
 
 } // end of namespace pism
 

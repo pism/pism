@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,21 +23,14 @@ namespace pism {
 
 namespace vec {
 
-namespace details {
-
-void compute_params(const IceModelVec* const x, const IceModelVec* const y,
-                    const IceModelVec* const z, int &ghosts, bool &scatter);
-
-} // end of namespace details
-
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
-//! IceModelVecs (scalar or vector).
+//! Arrays (scalar or vector).
 /*!
  */
 template<class V>
 void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
 
-  IceModelVec::AccessList list{&x, &y, &result};
+  array::AccessScope list{&x, &y, &result};
   for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -54,7 +47,7 @@ void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
 template<class V>
 void copy(const V& source, V& destination, bool scatter=true) {
 
-  IceModelVec::AccessList list{&source, &destination};
+  array::AccessScope list{&source, &destination};
 
   for (Points p(*destination.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();

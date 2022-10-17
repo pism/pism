@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2022 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _PFMDISCHARGE_ROUTING_H_
 
 #include "pism/coupler/FrontalMelt.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {
@@ -31,22 +31,22 @@ public:
   DischargeRouting(IceGrid::ConstPtr g);
   virtual ~DischargeRouting() = default;
 
-  void initialize(const IceModelVec2S &theta);
+  void initialize(const array::Scalar &theta);
 
 private:
   void init_impl(const Geometry &geometry);
 
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 
   // input
-  std::shared_ptr<IceModelVec2T> m_theta_ocean;
+  std::shared_ptr<array::Forcing> m_theta_ocean;
 
   // output
-  IceModelVec2S::Ptr m_frontal_melt_rate;
+  array::Scalar1 m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

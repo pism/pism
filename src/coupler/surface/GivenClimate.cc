@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_temperature = IceModelVec2T::ForcingField(m_grid,
+    m_temperature = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "ice_surface_temp",
                                                 "", // no standard name
@@ -45,7 +45,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
                                                 opt.periodic,
                                                 LINEAR);
 
-    m_mass_flux = IceModelVec2T::ForcingField(m_grid,
+    m_mass_flux = std::make_shared<array::Forcing>(m_grid,
                                               file,
                                               "climatic_mass_balance",
                                               "land_ice_surface_specific_mass_balance_flux",
@@ -100,23 +100,23 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &Given::mass_flux_impl() const {
+const array::Scalar &Given::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &Given::temperature_impl() const {
+const array::Scalar &Given::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &Given::accumulation_impl() const {
+const array::Scalar &Given::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &Given::melt_impl() const {
+const array::Scalar &Given::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &Given::runoff_impl() const {
+const array::Scalar &Given::runoff_impl() const {
   return *m_runoff;
 }
 

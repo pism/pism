@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -26,7 +26,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -74,9 +74,9 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 SSA::SSA(IceGrid::ConstPtr g)
   : ShallowStressBalance(g),
-    m_mask(m_grid, "ssa_mask", WITH_GHOSTS, m_config->get_number("grid.max_stencil_width")),
-    m_taud(m_grid, "taud", WITHOUT_GHOSTS),
-    m_velocity_global(m_grid, "bar", WITHOUT_GHOSTS)
+    m_mask(m_grid, "ssa_mask"),
+    m_taud(m_grid, "taud"),
+    m_velocity_global(m_grid, "bar")
 {
 
   m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
@@ -234,11 +234,11 @@ static int weight(bool margin_bc,
 Computes the gravitational driving stress at the base of the ice:
 \f[ \tau_d = - \rho g H \nabla h \f]
  */
-void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &surface_elevation,
-                                 const IceModelVec2CellType &cell_type,
-                                 const IceModelVec2Int *no_model_mask,
-                                 IceModelVec2V &result) const {
+void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
+                                 const array::Scalar1 &surface_elevation,
+                                 const array::CellType1 &cell_type,
+                                 const array::Scalar1 *no_model_mask,
+                                 array::Vector &result) const {
 
   using mask::ice_free_ocean;
   using mask::floating_ice;
@@ -250,7 +250,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     dx = m_grid->dx(),
     dy = m_grid->dy();
 
-  IceModelVec::AccessList list{&surface_elevation, &cell_type, &ice_thickness, &result};
+  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
 
   if (no_model_mask) {
     list.add(*no_model_mask);
@@ -270,7 +270,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
       double
         h_x = diff_x_p(surface_elevation, i, j),
         h_y = diff_y_p(surface_elevation, i, j);
-      result(i, j) = - pressure * Vector2(h_x, h_y);
+      result(i, j) = - pressure * Vector2d(h_x, h_y);
       continue;
     }
 
@@ -296,7 +296,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
     stencils::Star<int> N(0);
 
     if (no_model_mask) {
-      N = no_model_mask->star(i, j);
+      N = no_model_mask->star_int(i, j);
     }
 
     // x-derivative
@@ -337,7 +337,7 @@ void SSA::compute_driving_stress(const IceModelVec2S &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2(h_x, h_y);
+    result(i, j) = - pressure * Vector2d(h_x, h_y);
   }
 }
 
@@ -347,11 +347,11 @@ std::string SSA::stdout_report() const {
 
 
 //! \brief Set the initial guess of the SSA velocity.
-void SSA::set_initial_guess(const IceModelVec2V &guess) {
+void SSA::set_initial_guess(const array::Vector &guess) {
   m_velocity.copy_from(guess);
 }
 
-const IceModelVec2V& SSA::driving_stress() const {
+const array::Vector& SSA::driving_stress() const {
   return m_taud;
 }
 
@@ -391,9 +391,9 @@ SSA_taud::SSA_taud(const SSA *m)
   }
 }
 
-IceModelVec::Ptr SSA_taud::compute_impl() const {
+array::Array::Ptr SSA_taud::compute_impl() const {
 
-  IceModelVec2V::Ptr result(new IceModelVec2V(m_grid, "result", WITHOUT_GHOSTS));
+  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -414,10 +414,10 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
     "this is the magnitude of the driving stress used by the SSA solver";
 }
 
-IceModelVec::Ptr SSA_taud_mag::compute_impl() const {
+array::Array::Ptr SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  IceModelVec2S::Ptr result(new IceModelVec2S(m_grid, "taud_mag", WITHOUT_GHOSTS));
+  array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata() = m_vars[0];
 
   compute_magnitude(model->driving_stress(), *result);

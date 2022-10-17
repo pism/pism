@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,17 +27,19 @@ namespace pism {
 namespace frontalmelt {
   
 DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
-  : FrontalMelt(grid, nullptr) {
+  : FrontalMelt(grid, nullptr),
+    m_frontal_melt_rate(grid, "frontal_melt_rate") {
 
-  m_frontal_melt_rate = allocate_frontal_melt_rate(grid, 1);
+  m_frontal_melt_rate.set_attrs("diagnostic", "frontal melt rate",
+                                "m s-1", "m day-1", "", 0);
 
   m_log->message(2,
                  "* Initializing the frontal melt model\n"
                  "  UAF-UT\n");
 
-  m_theta_ocean = IceModelVec2T::Constant(grid, "theta_ocean", 0.0);
+  m_theta_ocean = array::Forcing::Constant(grid, "theta_ocean", 0.0);
 
-  m_subglacial_discharge = IceModelVec2T::Constant(grid, "subglacial_discharge", 0.0);
+  m_subglacial_discharge = array::Forcing::Constant(grid, "subglacial_discharge", 0.0);
 }
 
 void DischargeGiven::init_impl(const Geometry &geometry) {
@@ -50,19 +52,19 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_theta_ocean = IceModelVec2T::ForcingField(m_grid,
-                                                file,
-                                                "theta_ocean",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic);
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
+                                                     file,
+                                                     "theta_ocean",
+                                                     "", // no standard name
+                                                     buffer_size,
+                                                     opt.periodic);
 
-    m_subglacial_discharge = IceModelVec2T::ForcingField(m_grid,
-                                                file,
-                                                "subglacial_discharge",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic);
+    m_subglacial_discharge = std::make_shared<array::Forcing>(m_grid,
+                                                              file,
+                                                              "subglacial_discharge",
+                                                              "", // no standard name
+                                                              buffer_size,
+                                                              opt.periodic);
   }
 
   m_theta_ocean->set_attrs("climate_forcing",
@@ -79,10 +81,10 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 }
 
 /*!
- * Initialize potential temperature from IceModelVecs instead of an input
+ * Initialize potential temperature from arrays instead of an input
  * file (for testing).
  */
-void DischargeGiven::initialize(const IceModelVec2S &theta, const IceModelVec2S &sgl) {
+void DischargeGiven::initialize(const array::Scalar &theta, const array::Scalar &sgl) {
   m_theta_ocean->copy_from(theta);
   m_subglacial_discharge->copy_from(sgl);
 }
@@ -97,13 +99,13 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   FrontalMeltPhysics physics(*m_config);
 
-  const IceModelVec2CellType &cell_type           = inputs.geometry->cell_type;
-  const IceModelVec2S        &bed_elevation       = inputs.geometry->bed_elevation;
-  const IceModelVec2S        &sea_level_elevation = inputs.geometry->sea_level_elevation;
+  const auto          &cell_type           = inputs.geometry->cell_type;
+  const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
+  const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
-  IceModelVec::AccessList list
+  array::AccessScope list
     {&bed_elevation, &cell_type, &sea_level_elevation,
-     m_theta_ocean.get(), m_subglacial_discharge.get(), m_frontal_melt_rate.get()};
+     m_theta_ocean.get(), m_subglacial_discharge.get(), &m_frontal_melt_rate};
 
   double
     water_density   = m_config->get_number("constants.fresh_water.density"),
@@ -128,11 +130,11 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
       double water_depth = sea_level_elevation(i, j) - bed_elevation(i, j);
 
-      (*m_frontal_melt_rate)(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
+      m_frontal_melt_rate(i, j) = physics.frontal_melt_from_undercutting(water_depth, q_sg, TF);
       // convert from m / day to m / s
-      (*m_frontal_melt_rate)(i, j) /= seconds_per_day;
+      m_frontal_melt_rate(i, j) /= seconds_per_day;
     } else {
-      (*m_frontal_melt_rate)(i, j) = 0.0;
+      m_frontal_melt_rate(i, j) = 0.0;
     }
   } // end of the loop over grid points
 
@@ -140,7 +142,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   // neighbors: front retreat code uses values at these locations (the rest is for
   // visualization).
 
-  m_frontal_melt_rate->update_ghosts();
+  m_frontal_melt_rate.update_ghosts();
 
   const Direction dirs[] = {North, East, South, West};
 
@@ -149,7 +151,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {
 
-      auto R = m_frontal_melt_rate->star(i, j);
+      auto R = m_frontal_melt_rate.star(i, j);
       auto M = cell_type.star(i, j);
 
       int N = 0;
@@ -164,14 +166,14 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
       }
 
       if (N > 0) {
-        (*m_frontal_melt_rate)(i, j) = R_sum / N;
+        m_frontal_melt_rate(i, j) = R_sum / N;
       }
     }
   }
 }
 
-const IceModelVec2S& DischargeGiven::frontal_melt_rate_impl() const {
-  return *m_frontal_melt_rate;
+const array::Scalar& DischargeGiven::frontal_melt_rate_impl() const {
+  return m_frontal_melt_rate;
 }
 
 MaxTimestep DischargeGiven::max_timestep_impl(double t) const {

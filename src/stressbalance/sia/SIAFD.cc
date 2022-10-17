@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2022 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
@@ -43,18 +43,18 @@ namespace stressbalance {
 SIAFD::SIAFD(IceGrid::ConstPtr g)
   : SSB_Modifier(std::move(g)),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
-    m_work_2d_0(m_grid, "work_vector_2d_0", WITH_GHOSTS, m_stencil_width),
-    m_work_2d_1(m_grid, "work_vector_2d_1", WITH_GHOSTS, m_stencil_width),
-    m_h_x(m_grid, "h_x", WITH_GHOSTS),
-    m_h_y(m_grid, "h_y", WITH_GHOSTS),
-    m_D(m_grid, "diffusivity", WITH_GHOSTS),
-    m_delta_0(m_grid, "delta_0", WITH_GHOSTS, m_grid->z()),
-    m_delta_1(m_grid, "delta_1", WITH_GHOSTS, m_grid->z()),
-    m_work_3d_0(m_grid, "work_3d_0", WITH_GHOSTS, m_grid->z()),
-    m_work_3d_1(m_grid, "work_3d_1", WITH_GHOSTS, m_grid->z())
+    m_work_2d_0(m_grid, "work_vector_2d_0"),
+    m_work_2d_1(m_grid, "work_vector_2d_1"),
+    m_h_x(m_grid, "h_x"),
+    m_h_y(m_grid, "h_y"),
+    m_D(m_grid, "diffusivity"),
+    m_delta_0(m_grid, "delta_0", array::WITH_GHOSTS, m_grid->z()),
+    m_delta_1(m_grid, "delta_1", array::WITH_GHOSTS, m_grid->z()),
+    m_work_3d_0(m_grid, "work_3d_0", array::WITH_GHOSTS, m_grid->z()),
+    m_work_3d_1(m_grid, "work_3d_1", array::WITH_GHOSTS, m_grid->z())
 {
   // bed smoother
-  m_bed_smoother = new BedSmoother(m_grid, m_stencil_width);
+  m_bed_smoother = new BedSmoother(m_grid);
 
   m_seconds_per_year = units::convert(m_sys, 1, "second", "years");
 
@@ -122,7 +122,7 @@ void SIAFD::init() {
 
 //! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
 //! heating.
-void SIAFD::update(const IceModelVec2V &sliding_velocity,
+void SIAFD::update(const array::Vector &sliding_velocity,
                    const Inputs &inputs,
                    bool full_update) {
 
@@ -195,7 +195,8 @@ void SIAFD::update(const IceModelVec2V &sliding_velocity,
   \param[out] h_y the Y-component of the surface gradient, on the staggered grid
 */
 void SIAFD::compute_surface_gradient(const Inputs &inputs,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+                                     array::Staggered1 &h_x,
+                                     array::Staggered1 &h_y) {
 
   const std::string method = m_config->get_string("stress_balance.sia.surface_gradient_method");
 
@@ -224,22 +225,23 @@ void SIAFD::compute_surface_gradient(const Inputs &inputs,
 }
 
 //! \brief Compute the ice surface gradient using the eta-transformation.
-void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
-                                 const IceModelVec2S &bed_elevation,
-                                 IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_eta(const array::Scalar2 &ice_thickness,
+                                 const array::Scalar2 &bed_elevation,
+                                 array::Staggered1 &h_x,
+                                 array::Staggered1 &h_y) {
   const double n = m_flow_law->exponent(), // presumably 3.0
     etapow  = (2.0 * n + 2.0)/n,  // = 8/3 if n = 3
     invpow  = 1.0 / etapow,
     dinvpow = (- n - 2.0) / (2.0 * n + 2.0);
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
-  IceModelVec2S &eta = m_work_2d_0;
+
+  array::Scalar2 &eta = m_work_2d_0;
 
   // compute eta = H^{8/3}, which is more regular, on reg grid
 
-  IceModelVec::AccessList list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
+  array::AccessScope list{&eta, &ice_thickness, &h_x, &h_y, &bed_elevation};
 
   unsigned int GHOSTS = eta.stencil_width();
-  assert(ice_thickness.stencil_width() >= GHOSTS);
 
   for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -250,7 +252,6 @@ void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
   // now use Mahaffy on eta to get grad h on staggered;
   // note   grad h = (3/8) eta^{-5/8} grad eta + grad b  because  h = H + b
 
-  assert(bed_elevation.stencil_width() >= 2);
   assert(eta.stencil_width() >= 2);
   assert(h_x.stencil_width() >= 1);
   assert(h_y.stencil_width() >= 1);
@@ -298,13 +299,14 @@ void SIAFD::surface_gradient_eta(const IceModelVec2S &ice_thickness,
 
 //! \brief Compute the ice surface gradient using the Mary Anne Mahaffy method;
 //! see [\ref Mahaffy].
-void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
-                                     IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
+                                     array::Staggered1 &h_x,
+                                     array::Staggered1 &h_y) {
   const double dx = m_grid->dx(), dy = m_grid->dy();  // convenience
 
-  const IceModelVec2S &h = ice_surface_elevation;
+  const array::Scalar &h = ice_surface_elevation;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &h};
+  array::AccessScope list{&h_x, &h_y, &h};
 
   // h_x and h_y have to have ghosts
   assert(h_x.stencil_width() >= 1);
@@ -373,21 +375,22 @@ void SIAFD::surface_gradient_mahaffy(const IceModelVec2S &ice_surface_elevation,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation,
-                                      const IceModelVec2CellType &cell_type,
-                                      IceModelVec2Stag &h_x, IceModelVec2Stag &h_y) {
+void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
+                                      const array::CellType2 &cell_type,
+                                      array::Staggered1 &h_x,
+                                      array::Staggered1 &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
-  const IceModelVec2S
+  const array::Scalar
     &h = ice_surface_elevation;
-  IceModelVec2S
+  array::Scalar
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
-  const IceModelVec2CellType &mask = cell_type;
+  const auto &mask = cell_type;
 
-  IceModelVec::AccessList list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
+  array::AccessScope list{&h_x, &h_y, &w_i, &w_j, &h, &mask};
 
   assert(mask.stencil_width() >= 2);
   assert(h.stencil_width()    >= 2);
@@ -545,21 +548,21 @@ void SIAFD::surface_gradient_haseloff(const IceModelVec2S &ice_surface_elevation
  */
 void SIAFD::compute_diffusivity(bool full_update,
                                 const Geometry &geometry,
-                                const IceModelVec3 *enthalpy,
-                                const IceModelVec3 *age,
-                                const IceModelVec2Stag &h_x,
-                                const IceModelVec2Stag &h_y,
-                                IceModelVec2Stag &result) {
-  IceModelVec2S
+                                const array::Array3D *enthalpy,
+                                const array::Array3D *age,
+                                const array::Staggered &h_x,
+                                const array::Staggered &h_y,
+                                array::Staggered &result) {
+  array::Scalar
     &thk_smooth = m_work_2d_0,
     &theta      = m_work_2d_1;
 
-  const IceModelVec2S
+  const array::Scalar
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
-  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
+  const auto &mask = geometry.cell_type;
+  array::Array3D* delta[] = {&m_delta_0, &m_delta_1};
 
   result.set(0.0);
 
@@ -576,13 +579,13 @@ void SIAFD::compute_diffusivity(bool full_update,
   rheology::grain_size_vostok gs_vostok;
 
   // get "theta" from Schoof (2003) bed smoothness calculation and the
-  // thickness relative to the smoothed bed; each IceModelVec2S involved must
+  // thickness relative to the smoothed bed; each array::Scalar involved must
   // have stencil width WIDE_GHOSTS for this too work
   m_bed_smoother->theta(h, theta);
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
+  array::AccessScope list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
 
   if (use_age) {
     assert(age->stencil_width() >= 2);
@@ -778,11 +781,11 @@ void SIAFD::compute_diffusivity(bool full_update,
   }
 }
 
-void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVec2Stag &h_y,
-                                   const IceModelVec2Stag &diffusivity,
-                                   IceModelVec2Stag &result) {
+void SIAFD::compute_diffusive_flux(const array::Staggered &h_x, const array::Staggered &h_y,
+                                   const array::Staggered &diffusivity,
+                                   array::Staggered &result) {
 
-  IceModelVec::AccessList list{&diffusivity, &h_x, &h_y, &result};
+  array::AccessScope list{&diffusivity, &h_x, &h_y, &result};
 
   for (int o = 0; o < 2; o++) {
     ParallelSection loop(m_grid->com);
@@ -815,19 +818,19 @@ void SIAFD::compute_diffusive_flux(const IceModelVec2Stag &h_x, const IceModelVe
  */
 void SIAFD::compute_I(const Geometry &geometry) {
 
-  IceModelVec2S &thk_smooth = m_work_2d_0;
-  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
-  IceModelVec3* delta[] = {&m_delta_0, &m_delta_1};
+  array::Scalar &thk_smooth = m_work_2d_0;
+  array::Array3D* I[] = {&m_work_3d_0, &m_work_3d_1};
+  array::Array3D* delta[] = {&m_delta_0, &m_delta_1};
 
-  const IceModelVec2S
+  const array::Scalar
     &h = geometry.ice_surface_elevation,
     &H = geometry.ice_thickness;
 
-  const IceModelVec2CellType &mask = geometry.cell_type;
+  const auto &mask = geometry.cell_type;
 
   m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
 
-  IceModelVec::AccessList list{delta[0], delta[1], I[0], I[1], &thk_smooth};
+  array::AccessScope list{delta[0], delta[1], I[0], I[1], &thk_smooth};
 
   assert(I[0]->stencil_width()     >= 1);
   assert(I[1]->stencil_width()     >= 1);
@@ -897,16 +900,16 @@ void SIAFD::compute_I(const Geometry &geometry) {
  * \param[out] v_out the Y-component of the resulting horizontal velocity field
  */
 void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry,
-                                           const IceModelVec2Stag &h_x,
-                                           const IceModelVec2Stag &h_y,
-                                           const IceModelVec2V &sliding_velocity,
-                                           IceModelVec3 &u_out, IceModelVec3 &v_out) {
+                                           const array::Staggered &h_x,
+                                           const array::Staggered &h_y,
+                                           const array::Vector &sliding_velocity,
+                                           array::Array3D &u_out, array::Array3D &v_out) {
 
   compute_I(geometry);
   // after the compute_I() call work_3d[0,1] contains I on the staggered grid
-  IceModelVec3* I[] = {&m_work_3d_0, &m_work_3d_1};
+  array::Array3D* I[] = {&m_work_3d_0, &m_work_3d_1};
 
-  IceModelVec::AccessList list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
+  array::AccessScope list{&u_out, &v_out, &h_x, &h_y, &sliding_velocity, I[0], I[1]};
 
   const unsigned int Mz = m_grid->Mz();
 
@@ -969,15 +972,15 @@ bool SIAFD::interglacial(double accumulation_time) const {
   return (accumulation_time >= m_holocene_start);
 }
 
-const IceModelVec2Stag& SIAFD::surface_gradient_x() const {
+const array::Staggered& SIAFD::surface_gradient_x() const {
   return m_h_x;
 }
 
-const IceModelVec2Stag& SIAFD::surface_gradient_y() const {
+const array::Staggered& SIAFD::surface_gradient_y() const {
   return m_h_y;
 }
 
-const IceModelVec2Stag& SIAFD::diffusivity() const {
+const array::Staggered1& SIAFD::diffusivity() const {
   return m_D;
 }
 

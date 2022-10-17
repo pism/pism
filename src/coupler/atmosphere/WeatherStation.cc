@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,6 @@
 #include "WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -89,11 +88,11 @@ void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) 
   m_temperature->set(m_air_temp_timeseries->average(t, dt));
 }
 
-const IceModelVec2S& WeatherStation::precipitation_impl() const {
+const array::Scalar& WeatherStation::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const IceModelVec2S& WeatherStation::air_temperature_impl() const {
+const array::Scalar& WeatherStation::air_temperature_impl() const {
   return *m_temperature;
 }
 

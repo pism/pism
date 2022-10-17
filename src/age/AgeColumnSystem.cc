@@ -26,10 +26,10 @@ namespace pism {
 AgeColumnSystem::AgeColumnSystem(const std::vector<double>& storage_grid,
                                  const std::string &my_prefix,
                                  double dx, double dy, double dt,
-                                 const IceModelVec3 &age,
-                                 const IceModelVec3 &u3,
-                                 const IceModelVec3 &v3,
-                                 const IceModelVec3 &w3)
+                                 const array::Array3D &age,
+                                 const array::Array3D &u3,
+                                 const array::Array3D &v3,
+                                 const array::Array3D &w3)
   : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3),
     m_age3(age) {
 

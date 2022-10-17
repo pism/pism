@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,12 +21,9 @@
 #define _PISMCALVINGATTHICKNESS_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
-
-class IceModelVec2T;
 
 namespace calving {
 
@@ -41,15 +38,15 @@ public:
   void init();
   void update(double t,
               double dt,
-              IceModelVec2CellType &pism_mask,
-              IceModelVec2S &ice_thickness);
+              array::CellType &pism_mask,
+              array::Scalar &ice_thickness);
 
-  const IceModelVec2S& threshold() const;
+  const array::Scalar& threshold() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  std::shared_ptr<IceModelVec2T> m_calving_threshold;
-  IceModelVec2CellType m_old_mask;
+  std::shared_ptr<array::Forcing> m_calving_threshold;
+  array::CellType1 m_old_mask;
 };
 
 } // end of namespace calving

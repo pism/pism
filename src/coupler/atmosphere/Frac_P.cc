@@ -53,7 +53,7 @@ Frac_P::Frac_P(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_scaling = IceModelVec2T::ForcingField(m_grid,
+    m_2d_scaling = std::make_shared<array::Forcing>(m_grid,
                                                input,
                                                variable_name,
                                                "", // no standard name
@@ -122,10 +122,10 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_scaling->update(t, dt);
     m_2d_scaling->average(t, dt);
 
-    IceModelVec2S &P = *m_precipitation;
-    IceModelVec2T &S = *m_2d_scaling;
+    array::Scalar &P = *m_precipitation;
+    array::Forcing &S = *m_2d_scaling;
 
-    IceModelVec::AccessList list{&P, &S};
+    array::AccessScope list{&P, &S};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -135,7 +135,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const IceModelVec2S& Frac_P::precipitation_impl() const {
+const array::Scalar& Frac_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

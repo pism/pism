@@ -19,48 +19,32 @@
 #include <cstring>
 #include <cstdlib>
 #include <cassert>
-
 #include <memory>
 
-#include <petscdmda.h>
+#include "pism/util/array/Array3D.hh"
 
-#include "iceModelVec.hh"
-#include "IceGrid.hh"
-#include "ConfigInterface.hh"
-
-#include "error_handling.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/IceModelVec_impl.hh"
+#include "pism/util/IceGrid.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array_impl.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
+namespace array {
 
-// this file contains method for derived class IceModelVec3
+// this file contains method for derived class array::Array3D
 
-// methods for base class IceModelVec and derived class IceModelVec2S
-// are in "iceModelVec.cc"
-
-IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid,
-                           const std::string &name,
-                           IceModelVecKind ghostedp,
-                           const std::vector<double> &levels,
-                           unsigned int stencil_width)
-  : IceModelVec(grid, name, ghostedp, 1, stencil_width, levels) {
+Array3D::Array3D(IceGrid::ConstPtr grid,
+                 const std::string &name,
+                 Kind ghostedp,
+                 const std::vector<double> &levels,
+                 unsigned int stencil_width)
+  : Array(grid, name, ghostedp, 1, stencil_width, levels) {
   set_begin_access_use_dof(true);
 }
-
-IceModelVec3::IceModelVec3(IceGrid::ConstPtr grid,
-                           const std::string &name,
-                           IceModelVecKind ghostedp,
-                           unsigned int dof,
-                           unsigned int stencil_width)
-  : IceModelVec(grid, name, ghostedp, dof, stencil_width, {0.0}) {
-  set_begin_access_use_dof(true);
-}
-
 
 //! Set all values of scalar quantity to given a single value in a particular column.
-void IceModelVec3::set_column(int i, int j, double c) {
+void Array3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
 #if (Pism_DEBUG==1)
   assert(m_array != NULL);
@@ -80,7 +64,7 @@ void IceModelVec3::set_column(int i, int j, double c) {
   }
 }
 
-void  IceModelVec3::set_column(int i, int j, const double *input) {
+void  Array3D::set_column(int i, int j, const double *input) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
@@ -99,7 +83,7 @@ static bool legal_level(const std::vector<double> &levels, double z) {
 #endif
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
-double IceModelVec3::interpolate(int i, int j, double z) const {
+double Array3D::interpolate(int i, int j, double z) const {
   auto zs = levels();
 
 #if (Pism_DEBUG==1)
@@ -108,7 +92,7 @@ double IceModelVec3::interpolate(int i, int j, double z) const {
 
   if (not legal_level(zs, z)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "IceModelVec3 interpolate(): level %f is not legal; name = %s",
+                                  "Array3D interpolate(): level %f is not legal; name = %s",
                                   z, m_impl->name.c_str());
   }
 #endif
@@ -132,23 +116,23 @@ double IceModelVec3::interpolate(int i, int j, double z) const {
   return valm + incr * (column[mcurr + 1] - valm);
 }
 
-double* IceModelVec3::get_column(int i, int j) {
+double* Array3D::get_column(int i, int j) {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
-const double* IceModelVec3::get_column(int i, int j) const {
+const double* Array3D::get_column(int i, int j) const {
 #if (Pism_DEBUG==1)
   check_array_indices(i, j, 0);
 #endif
   return ((double***) m_array)[j][i];
 }
 
-//! Copies a horizontal slice at level z of an IceModelVec3 into an IceModelVec2S gslice.
-void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output) {
-  IceModelVec::AccessList list{&data, &output};
+//! Copies a horizontal slice at level z of an Array3D into an Scalar gslice.
+void extract_surface(const Array3D &data, double z, Scalar &output) {
+  array::AccessScope list{&data, &output};
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -163,9 +147,9 @@ void extract_surface(const IceModelVec3 &data, double z, IceModelVec2S &output) 
 }
 
 
-//! Copies the values of an IceModelVec3 at the ice surface (specified by the level `z`) to an IceModelVec2S gsurf.
-void extract_surface(const IceModelVec3 &data, const IceModelVec2S &z, IceModelVec2S &output) {
-  IceModelVec::AccessList list{&data, &output, &z};
+//! Copies the values of an Array3D at the ice surface (specified by the level `z`) to an Scalar gsurf.
+void extract_surface(const Array3D &data, const Scalar &z, Scalar &output) {
+  array::AccessScope list{&data, &output, &z};
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -185,26 +169,26 @@ Note that this sums up all the values in a column, including ones
 above the ice. This may or may not be what you need. Also, take a look
 at IceModel::compute_ice_enthalpy(PetscScalar &result) in iMreport.cc.
 
-As for the difference between IceModelVec2 and IceModelVec2S, the
+As for the difference between array::Array2D and array::Scalar, the
 former can store fields with more than 1 "degree of freedom" per grid
 point (such as 2D fields on the "staggered" grid, with the first
 degree of freedom corresponding to the i-offset and second to
 j-offset).
 
-IceModelVec2S is just IceModelVec2 with "dof == 1", and
-IceModelVec2V is IceModelVec2 with "dof == 2". (Plus some extra
+array::Scalar is just array::Array2D with "dof == 1", and
+array::Vector is array::Array2D with "dof == 2". (Plus some extra
 methods, of course.)
 
-Either one of IceModelVec2 and IceModelVec2S would work in this
+Either one of array::Array2D and array::Scalar would work in this
 case.
 
 Computes output = A*output + B*sum_columns(input) + C
 
 @see https://github.com/pism/pism/issues/229 */
-void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &output) {
+void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
   const unsigned int Mz = data.grid()->Mz();
 
-  AccessList access{&data, &output};
+  AccessScope access{&data, &output};
 
   for (Points p(*data.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -219,8 +203,8 @@ void sum_columns(const IceModelVec3 &data, double A, double B, IceModelVec2S &ou
   }
 }
 
-void IceModelVec3::copy_from(const IceModelVec3 &input) {
-  IceModelVec::AccessList list {this, &input};
+void Array3D::copy_from(const Array3D &input) {
+  array::AccessScope list {this, &input};
 
   assert(levels().size() == input.levels().size());
   assert(ndof() == input.ndof());
@@ -251,17 +235,17 @@ void IceModelVec3::copy_from(const IceModelVec3 &input) {
   inc_state_counter();
 }
 
-std::shared_ptr<IceModelVec3> duplicate(const IceModelVec3 &source) {
+std::shared_ptr<Array3D> Array3D::duplicate() const {
 
-  auto result = std::make_shared<IceModelVec3>(source.grid(),
-                                               source.get_name(),
-                                               WITHOUT_GHOSTS,
-                                               source.levels());
+  auto result = std::make_shared<Array3D>(this->grid(),
+                                          this->get_name(),
+                                          WITHOUT_GHOSTS,
+                                          this->levels());
 
-  result->metadata() = source.metadata();
+  result->metadata() = this->metadata();
 
   return result;
 }
 
-
+} // end of namespace array
 } // end of namespace pism

@@ -46,8 +46,8 @@ private:
   void update_impl(const Geometry &geometry, double my_t, double my_dt);
   void init_impl(const Geometry &geometry);
 
-  void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
-  void mass_flux(const IceModelVec2S &ice_thickness, IceModelVec2S &result) const;
+  void melting_point_temperature(const array::Scalar &depth, array::Scalar &result) const;
+  void mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) const;
 };
 
 } // end of namespace ocean

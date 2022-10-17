@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -34,7 +34,7 @@ Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_shelf_base_mass_flux_anomaly = IceModelVec2T::ForcingField(m_grid,
+    m_shelf_base_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                                   file,
                                                                   "shelf_base_mass_flux_anomaly",
                                                                   "", // no standard name
@@ -79,7 +79,7 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
                                  *m_shelf_base_mass_flux);
 }
 
-const IceModelVec2S &Anomaly::shelf_base_mass_flux_impl() const {
+const array::Scalar &Anomaly::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,8 @@
 #define HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -35,16 +37,16 @@ public:
 
   void init();
 
-  void update(const IceModelVec2CellType &cell_type, const IceModelVec2S &ice_thickness,
-              const IceModelVec2S &sea_level, const IceModelVec2S &bed_elevation);
+  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+              const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
-  const IceModelVec2S &calving_rate() const;
+  const array::Scalar &calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
 protected:
-  IceModelVec2S m_calving_rate;
+  array::Scalar1 m_calving_rate;
 
   double m_B_tilde, m_exponent_r, m_sigma_threshold;
 

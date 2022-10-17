@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,10 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
@@ -98,11 +101,11 @@ protected:
   EnthalpyConverter::Ptr m_enthalpyconverter;
 
   // SSA coefficient variables.
-  IceModelVec2S m_tauc;
-  IceModelVec3 m_ice_enthalpy;
+  array::Scalar1 m_tauc;
+  array::Array3D m_ice_enthalpy;
 
-  IceModelVec2V m_bc_values;
-  IceModelVec2Int m_bc_mask;
+  array::Vector2 m_bc_values;
+  array::Scalar2 m_bc_mask;
 
   Geometry m_geometry;
 

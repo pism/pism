@@ -6,6 +6,7 @@
 #include <pism/util/io/io_helpers.hh>
 #include <pism/icebin/VecBundleWriter.hh>
 #include "pism/util/Context.hh"
+#include "pism/util/array/Array.hh"
 
 using namespace pism;
 
@@ -13,7 +14,7 @@ namespace pism {
 namespace icebin {
 
 VecBundleWriter::VecBundleWriter(pism::IceGrid::Ptr _grid, std::string const &_fname,
-                                 std::vector<pism::IceModelVec const *> &_vecs)
+                                 std::vector<pism::array::Array const *> &_vecs)
     : m_grid(_grid), fname(_fname), vecs(_vecs) {
 }
 
@@ -30,7 +31,7 @@ void VecBundleWriter::init() {
                   m_grid->ctx()->time()->units_string(),
                   m_grid->ctx()->unit_system());
 
-  for (pism::IceModelVec const *vec : vecs) {
+  for (pism::array::Array const *vec : vecs) {
     vec->define(file, PISM_DOUBLE);
   }
 }
@@ -45,7 +46,7 @@ void VecBundleWriter::write(double time_s) {
 
   io::append_time(file, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);
 
-  for (pism::IceModelVec const *vec : vecs) {
+  for (pism::array::Array const *vec : vecs) {
     vec->write(file);
   }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,9 @@
 #include "FloatKill.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace calving {
@@ -58,9 +57,9 @@ void FloatKill::init() {
  *
  * @return 0 on success
  */
-void FloatKill::update(IceModelVec2CellType &mask, IceModelVec2S &ice_thickness) {
+void FloatKill::update(array::CellType1 &mask, array::Scalar &ice_thickness) {
 
-  IceModelVec::AccessList list{&mask, &ice_thickness};
+  array::AccessScope list{&mask, &ice_thickness};
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 

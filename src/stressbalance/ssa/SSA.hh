@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define _SSA_H_
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -116,11 +116,11 @@ public:
 
   virtual void update(const Inputs &inputs, bool full_update);
 
-  void set_initial_guess(const IceModelVec2V &guess);
+  void set_initial_guess(const array::Vector &guess);
 
   virtual std::string stdout_report() const;
 
-  const IceModelVec2V& driving_stress() const;
+  const array::Vector& driving_stress() const;
 protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
@@ -129,22 +129,22 @@ protected:
 
   virtual DiagnosticList diagnostics_impl() const;
 
-  virtual void compute_driving_stress(const IceModelVec2S &ice_thickness,
-                                      const IceModelVec2S &surface_elevation,
-                                      const IceModelVec2CellType &cell_type,
-                                      const IceModelVec2Int *no_model_mask,
-                                      IceModelVec2V &result) const;
+  virtual void compute_driving_stress(const array::Scalar &ice_thickness,
+                                      const array::Scalar1 &surface_elevation,
+                                      const array::CellType1 &cell_type,
+                                      const array::Scalar1 *no_model_mask,
+                                      array::Vector &result) const;
 
   virtual void solve(const Inputs &inputs) = 0;
 
-  IceModelVec2CellType m_mask;
-  IceModelVec2V m_taud;
+  array::CellType2 m_mask;
+  array::Vector m_taud;
 
   std::string m_stdout_ssa;
 
   // objects used by the SSA solver (internally)
   std::shared_ptr<petsc::DM>  m_da;               // dof=2 DA
-  IceModelVec2V m_velocity_global; // global vector for solution
+  array::Vector m_velocity_global; // global vector for solution
 
   // profiling
   int m_event_ssa;

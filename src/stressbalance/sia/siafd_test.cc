@@ -35,7 +35,6 @@ static char help[] =
 #include "pism/util/Time.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_utilities.hh"
@@ -46,8 +45,8 @@ static char help[] =
 
 namespace pism {
 
-static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
-                                          const IceModelVec2S &thickness,
+static void compute_strain_heating_errors(const array::Array3D &strain_heating,
+                                          const array::Scalar &thickness,
                                           const IceGrid &grid,
                                           double &gmax_strain_heating_err,
                                           double &gav_strain_heating_err) {
@@ -60,7 +59,7 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
     ice_rho   = grid.ctx()->config()->get_number("constants.ice.density"),
     ice_c     = grid.ctx()->config()->get_number("constants.ice.specific_heat_capacity");
 
-  IceModelVec::AccessList list{&thickness, &strain_heating};
+  array::AccessScope list{&thickness, &strain_heating};
 
   ParallelSection loop(grid.com);
   try {
@@ -103,10 +102,10 @@ static void compute_strain_heating_errors(const IceModelVec3 &strain_heating,
 
 
 static void computeSurfaceVelocityErrors(const IceGrid &grid,
-                                         const IceModelVec2S &ice_thickness,
-                                         const IceModelVec3 &u3,
-                                         const IceModelVec3 &v3,
-                                         const IceModelVec3 &w3,
+                                         const array::Scalar &ice_thickness,
+                                         const array::Array3D &u3,
+                                         const array::Array3D &v3,
+                                         const array::Array3D &w3,
                                          double &gmaxUerr,
                                          double &gavUerr,
                                          double &gmaxWerr,
@@ -115,7 +114,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
   const double LforFG = 750000; // m
 
-  IceModelVec::AccessList list{&ice_thickness, &u3, &v3, &w3};
+  array::AccessScope list{&ice_thickness, &u3, &v3, &w3};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -153,11 +152,11 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
 static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
                                            const IceGrid &grid,
-                                           const IceModelVec2S &thickness,
-                                           const IceModelVec3 &temperature,
-                                           IceModelVec3 &enthalpy) {
+                                           const array::Scalar &thickness,
+                                           const array::Array3D &temperature,
+                                           array::Array3D &enthalpy) {
 
-  IceModelVec::AccessList list{&temperature, &enthalpy, &thickness};
+  array::AccessScope list{&temperature, &enthalpy, &thickness};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -180,11 +179,11 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 //! \brief Set the test F initial state.
 static void setInitStateF(IceGrid &grid,
                           EnthalpyConverter &EC,
-                          IceModelVec2S &bed,
-                          IceModelVec2Int &mask,
-                          IceModelVec2S &surface,
-                          IceModelVec2S &thickness,
-                          IceModelVec3 &enthalpy) {
+                          array::Scalar &bed,
+                          array::Scalar &mask,
+                          array::Scalar &surface,
+                          array::Scalar &thickness,
+                          array::Array3D &enthalpy) {
 
   double
     ST     = 1.67e-5,
@@ -194,7 +193,7 @@ static void setInitStateF(IceGrid &grid,
   bed.set(0.0);
   mask.set(MASK_GROUNDED);
 
-  IceModelVec::AccessList list{&thickness, &enthalpy};
+  array::AccessScope list{&thickness, &enthalpy};
 
   for (Points p(grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -225,11 +224,11 @@ static void setInitStateF(IceGrid &grid,
 
 static void reportErrors(const IceGrid &grid,
                          units::System::Ptr unit_system,
-                         const IceModelVec2S &thickness,
-                         const IceModelVec3 &u_sia,
-                         const IceModelVec3 &v_sia,
-                         const IceModelVec3 &w_sia,
-                         const IceModelVec3 &strain_heating) {
+                         const array::Scalar &thickness,
+                         const array::Array3D &u_sia,
+                         const array::Array3D &v_sia,
+                         const array::Array3D &w_sia,
+                         const array::Array3D &strain_heating) {
 
   Logger::ConstPtr log = grid.ctx()->log();
 
@@ -318,9 +317,9 @@ int main(int argc, char *argv[]) {
 
     const int WIDE_STENCIL = config->get_number("grid.max_stencil_width");
 
-    IceModelVec3
-      enthalpy(grid, "enthalpy", WITH_GHOSTS, grid->z(), WIDE_STENCIL),
-      age(grid, "age", WITHOUT_GHOSTS, grid->z());
+    array::Array3D
+      enthalpy(grid, "enthalpy", array::WITH_GHOSTS, grid->z(), WIDE_STENCIL),
+      age(grid, "age", array::WITHOUT_GHOSTS, grid->z());
 
     Geometry geometry(grid);
     geometry.sea_level_elevation.set(0.0);
@@ -371,12 +370,12 @@ int main(int argc, char *argv[]) {
     stress_balance.update(inputs, full_update);
 
     // Report errors relative to the exact solution:
-    const IceModelVec3
+    const array::Array3D
       &u3 = stress_balance.velocity_u(),
       &v3 = stress_balance.velocity_v(),
       &w3 = stress_balance.velocity_w();
 
-    const IceModelVec3 &sigma = stress_balance.volumetric_strain_heating();
+    const array::Array3D &sigma = stress_balance.volumetric_strain_heating();
 
     reportErrors(*grid, ctx->unit_system(),
                  geometry.ice_thickness, u3, v3, w3, sigma);

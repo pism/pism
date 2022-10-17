@@ -20,7 +20,7 @@
 #define _PSGIVEN_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {
@@ -33,18 +33,18 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S &temperature_impl() const;
-  const IceModelVec2S &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
 
-  const IceModelVec2S& accumulation_impl() const;
-  const IceModelVec2S& melt_impl() const;
-  const IceModelVec2S& runoff_impl() const;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
 
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
-  std::shared_ptr<IceModelVec2T> m_mass_flux;
-  std::shared_ptr<IceModelVec2T> m_temperature;
+  std::shared_ptr<array::Forcing> m_mass_flux;
+  std::shared_ptr<array::Forcing> m_temperature;
 };
 
 } // end of namespace surface

@@ -4,7 +4,7 @@
 // PISM Includes... want to be included first
 #include <petsc.h>
 #include <pism/util/IceGrid.hh>
-#include <pism/util/iceModelVec.hh>
+#include <pism/util/array/Scalar.hh>
 // --------------------------------
 
 namespace pism {
@@ -16,13 +16,12 @@ enthalpy.  This allows us to have only one C++ variable per advected
 quanity, instead of two. */
 struct MassEnthVec2S : public pism::PetscAccessible
 {
-    pism::IceModelVec2S mass;
-    pism::IceModelVec2S enth;
+    pism::array::Scalar mass;
+    pism::array::Scalar enth;
 
     ~MassEnthVec2S() {}
 
-    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name,
-                  pism::IceModelVecKind ghostedp, int width = 1);
+    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name);
 
     void set_attrs(
         const std::string &my_pism_intent,
@@ -58,14 +57,14 @@ struct MassEnthVec2S : public pism::PetscAccessible
 };
 
 struct VecWithFlags {
-    pism::IceModelVec2S &vec;
+    pism::array::Scalar &vec;
     int flags;
 
     /** IF this variable is used directly as a contractual ice model
     output, the name of that contract entry. */
     std::string contract_name;
 
-    VecWithFlags(pism::IceModelVec2S &_vec, int _flags, std::string const &_contract_name) :
+    VecWithFlags(pism::array::Scalar &_vec, int _flags, std::string const &_contract_name) :
         vec(_vec), flags(_flags), contract_name(_contract_name) {}
 };
 
@@ -86,10 +85,10 @@ public:
     // Other instances of MassEnergyBudget are used to compute differences.
 
     // ----------- Heat generation of flows [vertical]
-    pism::IceModelVec2S basal_frictional_heating;   //!< Total amount of basal friction heating [J/m^2]
-    pism::IceModelVec2S strain_heating; //!< Total amount of strain heating [J/m^2]
-    pism::IceModelVec2S geothermal_flux;    //!< Total amount of geothermal energy [J/m^2]
-    pism::IceModelVec2S upward_geothermal_flux; //!< Total amount of geothermal energy [J/m^2]
+    pism::array::Scalar basal_frictional_heating;   //!< Total amount of basal friction heating [J/m^2]
+    pism::array::Scalar strain_heating; //!< Total amount of strain heating [J/m^2]
+    pism::array::Scalar geothermal_flux;    //!< Total amount of geothermal energy [J/m^2]
+    pism::array::Scalar upward_geothermal_flux; //!< Total amount of geothermal energy [J/m^2]
 
     // ----------- Mass advection, with accompanying enthalpy change
     // The enthalpy reported for these mass fluxes are the enthalpies
@@ -110,10 +109,10 @@ public:
 //  MassEnthVec2S basal_runoff;     //!< Enthalpy here is predictable, since runoff is 0C 100% water fraction.
 
     MassEnthVec2S icebin_xfer;       //!< accumulation / ablation, as provided by Icebin
-    pism::IceModelVec2S icebin_deltah;  //!< Change in enthalpy of top layer
+    pism::array::Scalar icebin_deltah;  //!< Change in enthalpy of top layer
     MassEnthVec2S pism_smb;     //! SMB as seen by PISM in iMgeometry.cc massContExplicitSte().  Used to check icebin_xfer.mass, but does not figure into contract.
-    pism::IceModelVec2S href_to_h;
-    pism::IceModelVec2S nonneg_rule;
+    pism::array::Scalar href_to_h;
+    pism::array::Scalar nonneg_rule;
     MassEnthVec2S melt_grounded;        //!< basal melt (grounded) (from summing meltrate_grounded)
     MassEnthVec2S melt_floating;        //!< sub-shelf melt (from summing meltrate_floating)
 
@@ -145,14 +144,14 @@ public:
     std::ostream &print_formulas(std::ostream &out);
 
 protected:
-    void add_mass(pism::IceModelVec2S &vec, int flags,
+    void add_mass(pism::array::Scalar &vec, int flags,
         std::string const &contract_name)
     {
         all_vecs.push_back(VecWithFlags(vec, MASS | flags, contract_name));
     }
 
     /** @param contract_name The name of this variable in the ice model's output contract. */
-    void add_enth(pism::IceModelVec2S &vec, int flags,
+    void add_enth(pism::array::Scalar &vec, int flags,
         std::string const &contract_name)
     {
         all_vecs.push_back(VecWithFlags(vec, ENTH | flags, contract_name));
@@ -170,8 +169,7 @@ protected:
 
 public:
 
-    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix,
-                     pism::IceModelVecKind ghostedp, unsigned int width = 1);
+    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix);
 
     void set_epsilon(pism::IceGrid::ConstPtr grid);
 };

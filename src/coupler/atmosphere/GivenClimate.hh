@@ -20,7 +20,7 @@
 #define _PAGIVEN_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
@@ -37,8 +37,8 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const IceModelVec2S& precipitation_impl() const;
-  const IceModelVec2S& air_temperature_impl() const;
+  const array::Scalar& precipitation_impl() const;
+  const array::Scalar& air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -47,8 +47,8 @@ private:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  std::shared_ptr<IceModelVec2T> m_precipitation;
-  std::shared_ptr<IceModelVec2T> m_air_temp;
+  std::shared_ptr<array::Forcing> m_precipitation;
+  std::shared_ptr<array::Forcing> m_air_temp;
 };
 
 } // end of namespace atmosphere

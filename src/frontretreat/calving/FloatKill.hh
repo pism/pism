@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,9 +24,6 @@
 
 namespace pism {
 
-class IceModelVec2CellType;
-class IceModelVec2S;
-
 namespace calving {
 
 /*! \brief Calving mechanism removing floating ice. */
@@ -37,7 +34,7 @@ public:
   virtual ~FloatKill() = default;
 
   virtual void init();
-  void update(IceModelVec2CellType &pism_mask, IceModelVec2S &ice_thickness);
+  void update(array::CellType1 &pism_mask, array::Scalar &ice_thickness);
 
 protected:
   bool m_margin_only, m_calve_near_grounding_line;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,21 +34,21 @@
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/iceModelVec2T.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 
 IceRegionalModel::IceRegionalModel(IceGrid::Ptr g, std::shared_ptr<Context> c)
   : IceModel(g, c),
-    m_no_model_mask(m_grid, "no_model_mask", WITH_GHOSTS, 2),
-    m_usurf_stored(m_grid, "usurfstore", WITH_GHOSTS, 2),
-    m_thk_stored(m_grid, "thkstore", WITH_GHOSTS, 1)
+    m_no_model_mask(m_grid, "no_model_mask"),
+    m_usurf_stored(m_grid, "usurfstore"),
+    m_thk_stored(m_grid, "thkstore")
 {
-  // empty
+  m_no_model_mask.set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
-    m_ch_warming_flux.reset(new IceModelVec3(m_grid, "ch_warming_flux", WITHOUT_GHOSTS, m_grid->z()));
+    m_ch_warming_flux.reset(new array::Array3D(m_grid, "ch_warming_flux", array::WITHOUT_GHOSTS, m_grid->z()));
   }
 }
 
@@ -253,7 +253,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    IceModelVec::AccessList list
+    array::AccessScope list
       {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -291,7 +291,7 @@ void IceRegionalModel::energy_step() {
     bedrock_thermal_model_step();
 
     energy::Inputs inputs = energy_model_inputs();
-    const IceModelVec3 *strain_heating = inputs.volumetric_heating_rate;
+    const array::Array3D *strain_heating = inputs.volumetric_heating_rate;
     inputs.volumetric_heating_rate = m_ch_warming_flux.get();
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
@@ -344,9 +344,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_temp", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
                                 model->geometry().ice_thickness,
@@ -371,9 +371,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_liqfrac", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
                                           model->geometry().ice_thickness,
@@ -398,9 +398,9 @@ public:
   }
 
 protected:
-  IceModelVec::Ptr compute_impl() const {
+  array::Array::Ptr compute_impl() const {
 
-    IceModelVec3::Ptr result(new IceModelVec3(m_grid, "ch_heat_flux", WITHOUT_GHOSTS, m_grid->z()));
+    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
@@ -426,7 +426,7 @@ void IceRegionalModel::init_diagnostics() {
 void IceRegionalModel::hydrology_step() {
   hydrology::Inputs inputs;
 
-  IceModelVec2S &sliding_speed = *m_work2d[0];
+  array::Scalar &sliding_speed = *m_work2d[0];
   compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
   inputs.no_model_mask      = &m_no_model_mask;
@@ -441,7 +441,7 @@ void IceRegionalModel::hydrology_step() {
     inputs.surface_input_rate = m_surface_input_for_hydrology.get();
   } else if (m_config->get_flag("hydrology.surface_input_from_runoff")) {
     // convert [kg m-2] to [kg m-2 s-1]
-    IceModelVec2S &surface_input_rate = *m_work2d[1];
+    array::Scalar &surface_input_rate = *m_work2d[1];
     surface_input_rate.copy_from(m_surface->runoff());
     surface_input_rate.scale(1.0 / m_dt);
     inputs.surface_input_rate = &surface_input_rate;

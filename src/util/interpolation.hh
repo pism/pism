@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -25,7 +25,7 @@
 
 namespace pism {
 
-enum InterpolationType {LINEAR, NEAREST, PIECEWISE_CONSTANT};
+enum InterpolationType : int {LINEAR, NEAREST, PIECEWISE_CONSTANT};
 
 /**
  * Class encapsulating linear and piece-wise constant interpolation indexes and weights.

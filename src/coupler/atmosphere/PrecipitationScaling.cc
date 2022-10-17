@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+#include <cmath>                // exp()
 
 #include "PrecipitationScaling.hh"
 
@@ -64,7 +65,7 @@ void PrecipitationScaling::update_impl(const Geometry &geometry, double t, doubl
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
-const IceModelVec2S& PrecipitationScaling::precipitation_impl() const {
+const array::Scalar& PrecipitationScaling::precipitation_impl() const {
   return *m_precipitation;
 }
 

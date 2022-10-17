@@ -227,7 +227,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
 }
 
 void SteadyState::bootstrap_impl(const File &input_file,
-                                 const IceModelVec2S &ice_thickness) {
+                                 const array::Scalar &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
   init_time(m_config->get_string("hydrology.surface_input.file"));
@@ -262,9 +262,9 @@ void SteadyState::bootstrap_impl(const File &input_file,
   }
 }
 
-void SteadyState::init_impl(const IceModelVec2S &W_till,
-                            const IceModelVec2S &W,
-                            const IceModelVec2S &P) {
+void SteadyState::init_impl(const array::Scalar &W_till,
+                            const array::Scalar &W,
+                            const array::Scalar &P) {
   NullTransport::init_impl(W_till, W, P);
 
   m_Q.set(0.0);

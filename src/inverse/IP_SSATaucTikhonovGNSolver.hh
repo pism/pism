@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -22,7 +22,6 @@
 #include "IP_SSATaucForwardProblem.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/iceModelVec.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "functional/IPFunctional.hh"
 
@@ -57,8 +56,12 @@ protected:
 
 class IP_SSATaucTikhonovGNSolver {
 public:
-  typedef IceModelVec2S DesignVec;
-  typedef IceModelVec2V StateVec;
+  typedef array::Scalar DesignVec;
+  typedef array::Vector StateVec;
+  typedef array::Vector1 StateVec1;
+
+  typedef array::Scalar1 DesignVecGhosted;
+
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
   IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
@@ -85,7 +88,7 @@ public:
 
   virtual void evaluateGNFunctional(DesignVec &h, double *value);
 
-  virtual void apply_GN(IceModelVec2S &h, IceModelVec2S &out);
+  virtual void apply_GN(array::Scalar &h, array::Scalar &out);
   virtual void apply_GN(Vec h, Vec out);
 
   virtual TerminationReason::Ptr init();
@@ -111,29 +114,29 @@ protected:
 
   IP_SSATaucForwardProblem &m_ssaforward;
 
-  DesignVec m_x;
+  DesignVecGhosted m_x;
 
   DesignVec m_tmp_D1Global;
   DesignVec m_tmp_D2Global;
-  DesignVec m_tmp_D1Local;
-  DesignVec m_tmp_D2Local;
+  DesignVecGhosted m_tmp_D1Local;
+  DesignVecGhosted m_tmp_D2Local;
   StateVec  m_tmp_S1Global;
   StateVec  m_tmp_S2Global;
-  StateVec  m_tmp_S1Local;
-  StateVec  m_tmp_S2Local;
+  StateVec1  m_tmp_S1Local;      // ghosted
+  StateVec1  m_tmp_S2Local;      // ghosted
 
   DesignVec  m_GN_rhs;
 
-  DesignVec::Ptr m_d;
+  DesignVecGhosted::Ptr m_d;           // ghosted
   DesignVec &m_d0;
   DesignVec m_dGlobal;
-  DesignVec m_d_diff;
-  DesignVec m_d_diff_lin;
+  DesignVecGhosted m_d_diff;
+  DesignVecGhosted m_d_diff_lin;
 
-  DesignVec m_h;
+  DesignVecGhosted m_h;
   DesignVec m_hGlobal;
   DesignVec m_dalpha_rhs;
-  DesignVec m_dh_dalpha;
+  DesignVec m_dh_dalpha;        // ghosted
   DesignVec m_dh_dalphaGlobal;
 
   DesignVec m_grad_design;
@@ -143,7 +146,7 @@ protected:
   double m_val_design, m_val_state, m_value;
 
   StateVec &m_u_obs;
-  StateVec m_u_diff;
+  StateVec1 m_u_diff;            // ghosted
 
   petsc::KSP m_ksp;  
   petsc::Mat m_mat_GN;

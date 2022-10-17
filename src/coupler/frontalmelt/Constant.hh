@@ -36,11 +36,11 @@ private:
 
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const IceModelVec2S& frontal_melt_rate_impl() const;
+  const array::Scalar& frontal_melt_rate_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  IceModelVec2S::Ptr m_frontal_melt_rate;
+  array::Scalar::Ptr m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

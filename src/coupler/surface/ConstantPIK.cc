@@ -74,11 +74,11 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const IceModelVec2S
+  const array::Scalar
     &surface_elevation = geometry.ice_surface_elevation,
     &latitude          = geometry.latitude;
 
-  IceModelVec::AccessList list{ m_temperature.get(), &surface_elevation, &latitude };
+  array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j   = p.j();
@@ -91,23 +91,23 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
 }
 
-const IceModelVec2S &PIK::mass_flux_impl() const {
+const array::Scalar &PIK::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const IceModelVec2S &PIK::temperature_impl() const {
+const array::Scalar &PIK::temperature_impl() const {
   return *m_temperature;
 }
 
-const IceModelVec2S &PIK::accumulation_impl() const {
+const array::Scalar &PIK::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const IceModelVec2S &PIK::melt_impl() const {
+const array::Scalar &PIK::melt_impl() const {
   return *m_melt;
 }
 
-const IceModelVec2S &PIK::runoff_impl() const {
+const array::Scalar &PIK::runoff_impl() const {
   return *m_runoff;
 }
 

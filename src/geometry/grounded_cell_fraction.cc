@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -24,7 +24,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh" // clip
-#include "pism/util/iceModelVec.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -256,14 +256,14 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
  */
 void compute_grounded_cell_fraction(double ice_density,
                                     double ocean_density,
-                                    const IceModelVec2S &sea_level,
-                                    const IceModelVec2S &ice_thickness,
-                                    const IceModelVec2S &bed_topography,
-                                    IceModelVec2S &result) {
+                                    const array::Scalar1 &sea_level,
+                                    const array::Scalar1 &ice_thickness,
+                                    const array::Scalar1 &bed_topography,
+                                    array::Scalar &result) {
   IceGrid::ConstPtr grid = result.grid();
   double alpha = ice_density / ocean_density;
 
-  IceModelVec::AccessList list{&sea_level, &ice_thickness, &bed_topography, &result};
+  array::AccessScope list{&sea_level, &ice_thickness, &bed_topography, &result};
 
   ParallelSection loop(grid->com);
   try {

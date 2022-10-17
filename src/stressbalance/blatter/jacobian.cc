@@ -33,12 +33,12 @@ namespace stressbalance {
  * Computes the Jacobian contribution of the "main" part of the Blatter system.
  */
 void Blatter::jacobian_f(const fem::Q1Element3 &element,
-                         const Vector2 *u_nodal,
+                         const Vector2d *u_nodal,
                          const double *B_nodal,
                          double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
-  Vector2
+  Vector2d
     *u   = m_work2[0],
     *u_x = m_work2[1],
     *u_y = m_work2[2],
@@ -122,11 +122,11 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
 void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
                              const double *tauc_nodal,
                              const double *f_nodal,
-                             const Vector2 *u_nodal,
+                             const Vector2d *u_nodal,
                              double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
-  Vector2 *u = m_work2[0];
+  Vector2d *u = m_work2[0];
 
   double
     *tauc       = m_work[0],
@@ -169,7 +169,7 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
   PetscErrorCode ierr;
 
   // Dirichlet scaling
-  Vector2 scaling = {1.0, 1.0};
+  Vector2d scaling = {1.0, 1.0};
 
   // take care of Dirichlet nodes (both explicit and grid points outside the domain)
   //
@@ -197,7 +197,7 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
  * Compute the Jacobian matrix.
  */
 void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
-                               const Vector2 ***X, Mat A, Mat J) {
+                               const Vector2d ***X, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
 
   // Zero out the Jacobian in preparation for updating it.
@@ -244,7 +244,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   int node_type[Nk];
 
   // 2D vector quantities
-  Vector2 velocity[Nk];
+  Vector2d velocity[Nk];
 
   // note: we use info.da below because ice hardness is on the grid corresponding to the
   // current multigrid level
@@ -252,7 +252,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // FIXME: This communicates ghosts of ice hardness
   DataAccess<double***> hardness(info.da, 3, GHOSTED);
 
-  IceModelVec::AccessList list(m_parameters);
+  array::AccessScope list(m_parameters);
   auto *P = m_parameters.array();
 
   // loop over all the elements that have at least one owned node
@@ -352,7 +352,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
-                                          const Vector2 ***x,
+                                          const Vector2d ***x,
                                           Mat A, Mat J,
                                           Blatter *solver) {
   try {

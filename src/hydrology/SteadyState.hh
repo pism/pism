@@ -41,10 +41,10 @@ protected:
 
   void init_time(const std::string &input_file);
 
-  void init_impl(const IceModelVec2S &W_till, const IceModelVec2S &W, const IceModelVec2S &P);
+  void init_impl(const array::Scalar &W_till, const array::Scalar &W, const array::Scalar &P);
 
   void bootstrap_impl(const File &input_file,
-                      const IceModelVec2S &ice_thickness);
+                      const array::Scalar &ice_thickness);
   void restart_impl(const File &input_file, int record);
 
   void update_impl(double t, double dt, const Inputs& inputs);
