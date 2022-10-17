@@ -160,6 +160,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: manual_html
+      - store_artifacts:
+          path: manual_html
 
   deploy-manual-html:
     docker:
@@ -259,6 +261,8 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: doxygen
+      - store_artifacts:
+          path: doxygen
 
   deploy-doxygen:
     docker:
