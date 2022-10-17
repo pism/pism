@@ -160,8 +160,11 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: manual_html
+      - run:
+          name: Compress the manual
+          command: tar -czvf pism_manual.tgz manual_html
       - store_artifacts:
-          path: manual_html
+          path: pism_manual.tgz
 
   deploy-manual-html:
     docker:
@@ -261,8 +264,11 @@ jobs:
       - persist_to_workspace:
           root: .
           paths: doxygen
+      - run:
+          name: Compress the doxygen browser
+          command: tar -czvf pism_doxygen.tgz doxygen
       - store_artifacts:
-          path: doxygen
+          path: pism_doxygen.tgz
 
   deploy-doxygen:
     docker:
