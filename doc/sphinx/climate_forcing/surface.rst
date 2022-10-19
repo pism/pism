@@ -351,13 +351,14 @@ The melt rate is approximated by
 
 .. list-table:: Notation used in :eq:`eq-debm-melt`
    :header-rows: 1
+   :widths: 2,4
 
    * - Quantity
      - Description
 
    * - `\Phi`
-     - Minimal solar elevation angle. It is assumed that melt can occur only when the sun
-       is above this angle.
+     - Threshold for the solar elevation angle (:config:`surface.debm_simple.phi`). It is
+       assumed that melt can occur only when the sun is above this angle.
 
    * - `\Delta t_{\Phi} / \Delta t`
      - Fraction of the day during which the sun is above the elevation angle `\Phi`
