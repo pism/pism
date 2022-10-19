@@ -544,8 +544,9 @@ excursion above a "positivity" threshold
 
 The daily air temperature variation can be constant (the default; set using
 :config:`surface.debm_simple.std_dev`), read from a file (specified using
-:config:`surface.debm_simple.std_dev.file`), or computed using a parameterization. These
-mechanisms are controlled by parameters with the prefix ``surface.debm_simple.std_dev.``:
+:config:`surface.debm_simple.std_dev.file`, variable :var:`air_temp_sd` using the units of
+*Kelvin*), or computed using a parameterization. These mechanisms are controlled by
+parameters with the prefix ``surface.debm_simple.std_dev.``:
 
 .. pism-parameters::
    :prefix: surface.debm_simple.std_dev.
