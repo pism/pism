@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -232,7 +232,7 @@ public:
   typedef std::shared_ptr<IceGrid> Ptr;
   typedef std::shared_ptr<const IceGrid> ConstPtr;
 
-  IceGrid(std::shared_ptr<const Context> ctx, const GridParameters &p);
+  IceGrid(std::shared_ptr<const Context> context, const GridParameters &p);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);

@@ -167,12 +167,14 @@ std::string periodicity_to_string(Periodicity p) {
 SpacingType string_to_spacing(const std::string &keyword) {
   if (keyword == "quadratic") {
     return QUADRATIC;
-  } else if (keyword == "equal") {
-    return EQUAL;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice vertical spacing type '%s' is invalid.",
-                                  keyword.c_str());
   }
+
+  if (keyword == "equal") {
+    return EQUAL;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice vertical spacing type '%s' is invalid.",
+                                keyword.c_str());
 }
 
 //! Convert SpacingType to an STL string.
@@ -189,12 +191,14 @@ std::string spacing_to_string(SpacingType s) {
 GridRegistration string_to_registration(const std::string &keyword) {
   if (keyword == "center") {
     return CELL_CENTER;
-  } else if (keyword == "corner") {
-    return CELL_CORNER;
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid grid registration: %s",
-                                  keyword.c_str());
   }
+
+  if (keyword == "corner") {
+    return CELL_CORNER;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid grid registration: %s",
+                                keyword.c_str());
 }
 
 std::string registration_to_string(GridRegistration registration) {
@@ -228,10 +232,7 @@ IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
     p.periodicity = periodicity;
 
     double Lz = ctx->config()->get_number("grid.Lz");
-    p.z.resize(3);
-    p.z[0] = 0.0;
-    p.z[1] = 0.5 * Lz;
-    p.z[2] = 1.0 * Lz;
+    p.z = {0.0, 0.5 * Lz, Lz};
 
     p.ownership_ranges_from_options(ctx->size());
 
@@ -445,7 +446,7 @@ unsigned int IceGrid::kBelowHeight(double height) const {
                                   " grid Lz = %5.4f\n", height, Lz());
   }
 
-  return gsl_interp_accel_find(m_impl->bsearch_accel, &m_impl->z[0], m_impl->z.size(), height);
+  return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(), height);
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
@@ -473,7 +474,7 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
 
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
-    int tmp = Nx;
+    auto tmp = Nx;
     Nx = Ny;
     Ny = tmp;
   }
@@ -498,7 +499,7 @@ static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
   std::vector<unsigned int> result(Nx);
 
   for (unsigned int i=0; i < Nx; i++) {
-    result[i] = Mx / Nx + ((Mx % Nx) > i);
+    result[i] = Mx / Nx + static_cast<unsigned int>((Mx % Nx) > i);
   }
   return result;
 }
@@ -512,12 +513,12 @@ void IceGrid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_
 
   procs_x.resize(input_procs_x.size());
   for (unsigned int k = 0; k < input_procs_x.size(); ++k) {
-    procs_x[k] = input_procs_x[k];
+    procs_x[k] = static_cast<PetscInt>(input_procs_x[k]);
   }
 
   procs_y.resize(input_procs_y.size());
   for (unsigned int k = 0; k < input_procs_y.size(); ++k) {
-    procs_y[k] = input_procs_y[k];
+    procs_y[k] = static_cast<PetscInt>(input_procs_y[k]);
   }
 }
 
@@ -594,12 +595,14 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
 }
 
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
-static double compute_horizontal_spacing(double half_width, unsigned int M, bool cell_centered) {
+static double compute_horizontal_spacing(double half_width,
+                                         unsigned int M,
+                                         bool cell_centered) {
   if (cell_centered) {
     return 2.0 * half_width / M;
-  } else {
-    return 2.0 * half_width / (M - 1);
   }
+
+  return 2.0 * half_width / (M - 1);
 }
 
 //! Compute grid coordinates for one direction (X or Y).
@@ -688,7 +691,8 @@ void IceGrid::report_parameters() const {
               km(2*Lx()), km(2*Ly()), Lz());
 
   // report on grid cell dims
-  if ((dx() && dy()) > 1000.) {
+  const double one_km = 1000.0;
+  if (std::min(dx(), dy()) > one_km) {
     log.message(2,
                 "     horizontal grid cell   %.2f km x %.2f km\n",
                 km(dx()), km(dy()));
@@ -838,13 +842,13 @@ static int dm_hash(int dm_dof, int stencil_width) {
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-std::shared_ptr<petsc::DM> IceGrid::get_dm(int da_dof, int stencil_width) const {
+std::shared_ptr<petsc::DM> IceGrid::get_dm(int dm_dof, int stencil_width) const {
   std::shared_ptr<petsc::DM> result;
 
-  int j = dm_hash(da_dof, stencil_width);
+  int j = dm_hash(dm_dof, stencil_width);
 
   if (m_impl->dms[j].expired()) {
-    result = m_impl->create_dm(da_dof, stencil_width);
+    result = m_impl->create_dm(dm_dof, stencil_width);
     m_impl->dms[j] = result;
   } else {
     result = m_impl->dms[j].lock();
@@ -883,7 +887,7 @@ std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_widt
                                      (PetscInt)procs_x.size(),
                                      (PetscInt)procs_y.size(),
                                      da_dof, stencil_width,
-                                     &procs_x[0], &procs_y[0], // lx, ly
+                                     procs_x.data(), procs_y.data(), // lx, ly
                                      &result);
   PISM_CHK(ierr,"DMDACreate2d");
 
@@ -1114,7 +1118,7 @@ grid_info::grid_info(const File &file, const std::string &variable,
 
     auto dimensions = file.dimensions(var.name);
 
-    for (auto dimension_name : dimensions) {
+    for (const auto &dimension_name : dimensions) {
 
       AxisType dimtype = file.dimension_type(dimension_name, unit_system);
 
@@ -1212,8 +1216,8 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = config->get_number("grid.Mx");
-  My = config->get_number("grid.My");
+  Mx = static_cast<unsigned int>(config->get_number("grid.Mx"));
+  My = static_cast<unsigned int>(config->get_number("grid.My"));
 
   periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
@@ -1272,11 +1276,13 @@ void GridParameters::horizontal_size_from_options() {
 void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
   // Domain size
   {
-    Lx = 1000.0 * options::Real(unit_system,
-                                "-Lx", "Half of the grid extent in the Y direction, in km",
-                                "km", Lx / 1000.0);
-    Ly = 1000.0 * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
-                                "km", Ly / 1000.0);
+    const double km = 1000.0;
+    Lx = km * options::Real(unit_system,
+                            "-Lx", "Half of the grid extent in the Y direction, in km",
+                            "km", Lx / km);
+    Ly = km * options::Real(unit_system,
+                            "-Ly", "Half of the grid extent in the X direction, in km",
+                            "km", Ly / km);
   }
 
   // Alternatively: domain size and extent
@@ -1297,8 +1303,8 @@ void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::Syste
 }
 
 void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = z.size() > 0 ? z.back() : config->get_number("grid.Lz");
-  int Mz = z.size() > 0 ? z.size() : config->get_number("grid.Mz");
+  double Lz = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
+  int Mz = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
   double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
@@ -1359,7 +1365,9 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   if (not input_file.empty() and (not bootstrap)) {
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
-  } else if (not input_file.empty() and bootstrap) {
+  }
+
+  if (not input_file.empty() and bootstrap) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
@@ -1369,7 +1377,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
-    for (auto name : {"land_ice_thickness", "bedrock_altitude", "thk", "topg"}) {
+    for (const auto *name : {"land_ice_thickness", "bedrock_altitude", "thk", "topg"}) {
 
       grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
@@ -1413,7 +1421,9 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
                  result->Lz());
 
     return result;
-  } else {
+  }
+
+  {
     // This covers the two remaining cases "-i is not set, -bootstrap is set" and "-i is
     // not set, -bootstrap is not set either".
 
