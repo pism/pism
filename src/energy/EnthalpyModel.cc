@@ -234,7 +234,6 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       // post-process (drainage and bulge-limiting)
       double Hdrainedtotal = 0.0;
-      double Hfrozen = 0.0;
       {
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
@@ -279,45 +278,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
         // if there is subglacial water, don't allow ice base enthalpy to be below
         // pressure-melting; that is, assume subglacial water is at the pressure-
         // melting temperature and enforce continuity of temperature
-        {
-          if (Enthnew[0] < system.Enth_s(0) && till_water_thickness(i,j) > 0.0) {
-            const double E_difference = system.Enth_s(0) - Enthnew[0];
-
-            const double depth = H,
-              pressure         = EC->pressure(depth),
-              T_m              = EC->melting_temperature(pressure);
-
-            Enthnew[0] = system.Enth_s(0);
-            // This adjustment creates energy out of nothing. We will
-            // freeze some basal water, subtracting an equal amount of
-            // energy, to make up for it.
-            //
-            // Note that [E_difference] = J/kg, so
-            //
-            // U_difference = E_difference * ice_density * dx * dy * (0.5*dz)
-            //
-            // is the amount of energy created (we changed enthalpy of
-            // a block of ice with the volume equal to
-            // dx*dy*(0.5*dz); note that the control volume
-            // corresponding to the grid point at the base of the
-            // column has thickness 0.5*dz, not dz).
-            //
-            // Also, [L] = J/kg, so
-            //
-            // U_freeze_on = L * ice_density * dx * dy * Hfrozen,
-            //
-            // is the amount of energy created by freezing a water
-            // layer of thickness Hfrozen (using units of ice
-            // equivalent thickness).
-            //
-            // Setting U_difference = U_freeze_on and solving for
-            // Hfrozen, we find the thickness of the basal water layer
-            // we need to freeze co restore energy conservation.
-
-            Hfrozen = E_difference * (0.5*dz) / EC->L(T_m);
-          }
+        if (till_water_thickness(i, j) > 0.0) {
+          Enthnew[0] = std::max(Enthnew[0], system.Enth_s(0));
         }
-
       } // end of post-processing
 
       // compute basal melt rate
@@ -369,7 +332,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
           }
 
           // Add drained water from the column to basal melt rate.
-          m_basal_melt_rate(i, j) += (Hdrainedtotal - Hfrozen) / dt;
+          m_basal_melt_rate(i, j) += Hdrainedtotal / dt;
         } // end of the grounded case
       } // end of the basal melt rate computation
 
