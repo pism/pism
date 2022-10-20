@@ -134,21 +134,38 @@ macro(pism_check_build_dir_location)
   endif()
 endmacro()
 
-macro(pism_find_prerequisites)
+macro(pism_find_petsc)
   find_package(PkgConfig REQUIRED)
+
+  # save the old PKG_CONFIG_PATH
   set(OLD_PKG_CONFIG_PATH $ENV{PKG_CONFIG_PATH})
 
-  # PETSc
-  # set root of location to find PETSc's pkg-config
-
-  set(PETSC $ENV{PETSC_DIR}/$ENV{PETSC_ARCH})
-  set(ENV{PKG_CONFIG_PATH} ${PETSC}/lib/pkgconfig)
-
+  message(STATUS
+    "Looking for PETSc (PETSC_DIR='$ENV{PETSC_DIR}', PETSC_ARCH='$ENV{PETSC_ARCH}')...")
+  set(ENV{PKG_CONFIG_PATH} $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig)
   pkg_search_module(PETSC REQUIRED IMPORTED_TARGET "PETSc>=3.7.0")
-  message(STATUS "Found PETSc ${PETSC_VERSION} in ${PETSC_PREFIX}")
+
+  if (NOT PETSC_FOUND)
+    # If PETSc was configured with --prefix=... then PETSC_ARCH is irrelevant and we
+    # should ignore it.
+    message(STATUS
+      "Looking for PETSc (PETSC_DIR=$ENV{PETSC_DIR} ignoring PETSC_ARCH...)")
+    set(ENV{PKG_CONFIG_PATH} $ENV{PETSC_DIR}/lib/pkgconfig)
+    pkg_search_module(PETSC REQUIRED IMPORTED_TARGET "PETSc>=3.7.0")
+  endif()
+
+  if (PETSC_FOUND)
+    message(STATUS "Found PETSc ${PETSC_VERSION} in ${PETSC_PREFIX}")
+  endif()
+
   # restore old PKG_CONFIG_PATH
   set(ENV{PKG_CONFIG_PATH} ${OLD_PKG_CONFIG_PATH})
   unset(OLD_PKG_CONFIG_PATH)
+endmacro()
+
+macro(pism_find_prerequisites)
+
+  pism_find_petsc()
 
   # MPI
   find_package (MPI REQUIRED COMPONENTS C)
