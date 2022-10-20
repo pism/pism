@@ -12,6 +12,21 @@ Changes since the last release
   using `atmosphere.delta_T.file` contains a scalar time series `delta_T`, use that as a
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
   `delta_T`, use that as a time-and-space-dependent forcing.
+- Refactor utility classes used to store 2D and 3D arrays.
+- Remove a misguided energy conservation attempt that turned out to be harmful
+  (occasionally).
+- Fix a bug in the code reading periodic time-dependent forcing.
+- Update pre-processing scripts in `examples/std-greenland`.
+- Fix the scaling of the `uplift` diagnostic in `-bed_def given`.
+- Fix GSL-related build issues (unable to find GSL when it is installed in a non-standard
+  location).
+- Fix documentation of `...till_effective_fraction_overburden`.
+- Use `realpath()` to resolve relative file names. Now configuration parameters ending in
+  `.file`, when saved to output files and in PISM output to `stdout`, contain *absolute*
+  file names. This will make it easier to reproduce runs based on an output file.
+- Support checkpointing the HTCondor way (see commit 3740c41df).
+- Stop with an error message if a NetCDF variable in an input file contains not-a-number
+  or infinity.
 
 Changes since v1.2
 ==================
