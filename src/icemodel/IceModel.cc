@@ -707,16 +707,6 @@ void IceModel::step(bool do_mass_continuity,
   m_stdout_flags += " " + m_adaptive_timestep_reason;
 }
 
-int test_bar(array::Scalar1& input) {
-  return input.grid()->Mx();
-}
-
-void test_foo(IceGrid::ConstPtr grid) {
-  array::Scalar2 foo(grid, "test");
-
-  test_bar(foo);
-}
-
 /*!
  * Note: don't forget to update IceRegionalModel::hydrology_step() if necessary.
  */
