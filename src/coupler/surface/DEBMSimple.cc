@@ -42,7 +42,6 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   : SurfaceModel(g, std::move(input)),
       m_model(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),
-      m_firn_depth(m_grid, "firn_depth"),
       m_snow_depth(m_grid, "snow_depth"),
       m_temperature_driven_melt(m_grid, "debms_temperature_driven_melt_flux"),
       m_insolation_driven_melt(m_grid, "debms_insolation_driven_melt_flux"),
@@ -146,10 +145,6 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
   m_snow_depth.set_attrs("diagnostic", "snow cover depth (set to zero once a year)", "m", "m", "", 0);
   m_snow_depth.set(0.0);
 
-  m_firn_depth.set_attrs("diagnostic", "firn cover depth", "m", "m", "", 0);
-  m_firn_depth.metadata().set_number("valid_min", 0.0);
-  m_firn_depth.set(0.0);
-
   m_surface_albedo.set_attrs("diagnostic", "surface_albedo", "1", "1", "surface_albedo", 0);
   m_surface_albedo.set(0.0);
 
@@ -181,43 +176,20 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
-  std::string firn_file = m_config->get_string("surface.debm_simple.firn_depth_file");
-
+  auto default_albedo =  m_config->get_number("surface.debm_simple.albedo_snow");
   if (input.type == INIT_RESTART) {
-    if (not firn_file.empty()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "surface.debm_simple.firn_depth_file is not allowed when"
-                                    " re-starting from a PISM output file.");
-    }
-
-    m_firn_depth.read(input.filename, input.record);
     m_snow_depth.read(input.filename, input.record);
     m_surface_albedo.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
-
     m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
-    m_surface_albedo.regrid(input.filename, OPTIONAL, m_config->get_number("surface.debm_simple.albedo_snow"));
-
-    if (firn_file.empty()) {
-      m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
-    } else {
-      m_firn_depth.regrid(firn_file, CRITICAL);
-    }
+    m_surface_albedo.regrid(input.filename, OPTIONAL, default_albedo);
   } else {
-
     m_snow_depth.set(0.0);
-    m_surface_albedo.set(m_config->get_number("surface.debm_simple.albedo_snow"));
-
-    if (firn_file.empty()) {
-      m_firn_depth.set(0.0);
-    } else {
-      m_firn_depth.regrid(firn_file, CRITICAL);
-    }
+    m_surface_albedo.set(default_albedo);
   }
 
   {
     regrid("dEBM-simple surface model", m_snow_depth);
-    regrid("dEBM-simple surface model", m_firn_depth);
     regrid("dEBM-simple surface model", m_surface_albedo);
   }
 
@@ -316,7 +288,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &H,
       m_air_temp_sd.get(),
       &m_mass_flux,
-      &m_firn_depth,
       &m_snow_depth,
       m_accumulation.get(),
       m_melt.get(),
@@ -408,7 +379,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         // fields in the inner loop
         double
           ice_thickness = H(i, j),
-          firn          = m_firn_depth(i, j),
           snow          = m_snow_depth(i, j),
           surfelev      = surface_altitude(i, j),
           albedo        = m_surface_albedo(i, j);
@@ -451,7 +421,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           auto changes = m_model.step(ice_thickness,
                                       melt_info.total_melt,
-                                      firn,
                                       snow,
                                       accumulation);
 
@@ -464,9 +433,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           // update ice thickness
           ice_thickness += changes.smb;
           assert(ice_thickness >= 0);
-          // update firn depth
-          firn += changes.firn_depth;
-          assert(firn >= 0);
           // update snow depth
           snow += changes.snow_depth;
           assert(snow >= 0);
@@ -485,7 +451,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         } // end of the time-stepping loop
 
         // set firn and snow depths
-        m_firn_depth(i, j)     = firn;
         m_snow_depth(i, j)     = snow;
         m_surface_albedo(i, j) = Al / N;
         m_transmissivity(i, j) = m_model.atmosphere_transmissivity(surfelev);
@@ -510,7 +475,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       }
 
       if (mask.ice_free_ocean(i, j)) {
-        m_firn_depth(i, j) = 0.0; // no firn in the ocean
         m_snow_depth(i, j) = 0.0; // snow over the ocean does not stick
       }
     }
@@ -544,10 +508,6 @@ const array::Scalar &DEBMSimple::melt_impl() const {
 
 const array::Scalar &DEBMSimple::runoff_impl() const {
   return *m_runoff;
-}
-
-const array::Scalar &DEBMSimple::firn_depth() const {
-  return m_firn_depth;
 }
 
 const array::Scalar &DEBMSimple::snow_depth() const {
@@ -584,14 +544,12 @@ const array::Scalar &DEBMSimple::insolation() const {
 
 void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_firn_depth.define(output, PISM_DOUBLE);
   m_snow_depth.define(output, PISM_DOUBLE);
   m_surface_albedo.define(output, PISM_DOUBLE);
 }
 
 void DEBMSimple::write_model_state_impl(const File &output) const {
   SurfaceModel::write_model_state_impl(output);
-  m_firn_depth.write(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
 }
@@ -782,7 +740,6 @@ DiagnosticList DEBMSimple::diagnostics_impl() const {
     { "debms_background_melt_rate", Diagnostic::Ptr(new DEBMSBackroundMelt(this, MASS)) },
     { "air_temp_sd", Diagnostic::wrap(*m_air_temp_sd) },
     { "snow_depth", Diagnostic::wrap(m_snow_depth) },
-    { "firn_depth", Diagnostic::wrap(m_firn_depth) },
     { "surface_albedo", Diagnostic::wrap(m_surface_albedo) },
     { "atmosphere_transmissivity", Diagnostic::wrap(m_transmissivity) },
     { "insolation", Diagnostic::wrap(m_insolation) }

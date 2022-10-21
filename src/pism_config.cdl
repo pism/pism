@@ -2298,10 +2298,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m-2";
 
-    pism_config:surface.debm_simple.firn_depth_file = "";
-    pism_config:surface.debm_simple.firn_depth_file_doc = "The name of the file to read the :var:`firn_depth` from";
-    pism_config:surface.debm_simple.firn_depth_file_type = "string";
-
     pism_config:surface.debm_simple.interpret_precip_as_snow = "no";
     pism_config:surface.debm_simple.interpret_precip_as_snow_doc = "If true, interpret *all* precipitation as snow";
     pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";

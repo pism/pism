@@ -68,7 +68,6 @@ public:
   public:
     Changes();
 
-    double firn_depth;
     double snow_depth;
     double melt;
     double runoff;
@@ -77,7 +76,6 @@ public:
 
   Changes step(double ice_thickness,
                double max_melt,
-               double firn_depth,
                double snow_depth,
                double accumulation) const;
 

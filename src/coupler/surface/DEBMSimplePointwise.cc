@@ -285,7 +285,6 @@ DEBMSimplePointwise::Changes::Changes() {
   melt       = 0.0;
   runoff     = 0.0;
   smb        = 0.0;
-  firn_depth = 0.0;
 }
 
 DEBMSimpleMelt::DEBMSimpleMelt() {
@@ -474,17 +473,14 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
  */
 DEBMSimplePointwise::Changes DEBMSimplePointwise::step(double ice_thickness,
                                                        double max_melt,
-                                                       double old_firn_depth,
                                                        double old_snow_depth,
                                                        double accumulation) const {
   Changes result;
 
   double
-    firn_depth      = old_firn_depth,
     snow_depth      = old_snow_depth,
-    max_snow_melted = max_melt,
-    firn_melted     = 0.0,
-    snow_melted     = 0.0;
+    snow_melted     = 0.0,
+    ice_melted      = 0.0;
 
   assert(ice_thickness >= 0);
 
@@ -493,55 +489,35 @@ DEBMSimplePointwise::Changes DEBMSimplePointwise::step(double ice_thickness,
 
   assert(snow_depth >= 0);
 
-  // firn depth cannot exceed ice_thickness - snow_depth
-  firn_depth = std::min(firn_depth, ice_thickness - snow_depth);
-
-  assert(firn_depth >= 0);
-
   snow_depth += accumulation;
 
   if (max_melt <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
-    firn_melted = 0.0;
-  } else if (max_snow_melted <= snow_depth) {
-    // Some of the snow melted and some is left; in any case, all of
-    // the energy available for melt was used up in melting snow.
-    snow_melted = max_snow_melted;
-    firn_melted = 0.0;
-  } else if (max_snow_melted <= firn_depth + snow_depth) {
-    // All of the snow is melted but some firn is left; in any case, all of
-    // the energy available for melt was used up in melting snow.
-    snow_melted = snow_depth;
-    firn_melted = max_snow_melted - snow_melted;
+    ice_melted  = 0.0;
+  } else if (max_melt <= snow_depth) {
+    // Some of the snow melted and some is left; in any case, all of the energy available
+    // for melt was used up in melting snow.
+    snow_melted = max_melt;
+    ice_melted  = 0.0;
   } else {
-    // All (firn and snow_depth meters) of snow melted. Excess_melt is
-    // available to melt ice.
-    firn_melted = firn_depth;
+    // All (snow_depth meters) of snow melted. Excess melt is available to melt ice.
     snow_melted = snow_depth;
+    ice_melted  = std::min(max_melt - snow_melted, ice_thickness);
   }
 
-  double
-    melt                    = max_melt,
-    ice_created_by_refreeze = 0.0;
-
+  double ice_created_by_refreeze = m_refreeze_fraction * snow_melted;
   if (m_refreeze_ice_melt) {
-    // FIXME: incorrect in the case when all ice melted and there was excess energy that
-    // could have melted more
-    ice_created_by_refreeze = melt * m_refreeze_fraction;
-  } else {
-    // Should this only be snow melted?
-    ice_created_by_refreeze = (firn_melted + snow_melted) * m_refreeze_fraction;
+    ice_created_by_refreeze += m_refreeze_fraction * ice_melted;
   }
 
   snow_depth = std::max(snow_depth - snow_melted, 0.0);
-  firn_depth = std::max(firn_depth - firn_melted, 0.0);
 
-  double runoff = melt - ice_created_by_refreeze;
-  double smb    = accumulation - runoff;
+  double total_melt = (snow_melted + ice_melted);
+  double runoff     = total_melt - ice_created_by_refreeze;
+  double smb        = accumulation - runoff;
 
-  result.firn_depth = firn_depth - old_firn_depth;
   result.snow_depth = snow_depth - old_snow_depth;
-  result.melt       = melt;
+  result.melt       = total_melt;
   result.runoff     = runoff;
   result.smb        = ice_thickness + smb >= 0 ? smb : -ice_thickness;
 

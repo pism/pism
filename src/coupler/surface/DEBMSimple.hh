@@ -44,7 +44,6 @@ public:
   virtual ~DEBMSimple() = default;
 
   // diagnostics (for the last time step)
-  const array::Scalar &firn_depth() const;
   const array::Scalar &snow_depth() const;
   // these represent totals (not rates) over the time step
   const array::Scalar &air_temp_sd() const;
@@ -89,9 +88,6 @@ private:
   array::Scalar m_mass_flux;
 
   array::Scalar::Ptr m_temperature;
-
-  //! firn depth
-  array::Scalar m_firn_depth;
 
   //! snow depth (reset once a year)
   array::Scalar m_snow_depth;
