@@ -1062,8 +1062,9 @@ array::Array::Ptr PSB_vonmises_stress::compute_impl() const {
   auto velbar = array::Array::cast<array::Vector>(PSB_velbar(model).compute());
   array::Vector &velocity = *velbar;
 
-  auto eigen12 = array::Array::cast<array::Array3D>(PSB_strain_rates(model).compute());
-  array::Array3D &strain_rates = *eigen12;
+  using StrainRates = array::Array2D<PrincipalStrainRates>;
+  auto eigen12 = array::Array::cast<StrainRates>(PSB_strain_rates(model).compute());
+  const auto &strain_rates = *eigen12;
 
   const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
   const array::Array3D *enthalpy = m_grid->variables().get_3d_scalar("enthalpy");
@@ -1097,8 +1098,8 @@ array::Array::Ptr PSB_vonmises_stress::compute_impl() const {
       const double
         *enthalpy_column   = enthalpy->get_column(i, j),
         hardness           = averaged_hardness(*flow_law, H, k, z, enthalpy_column),
-        eigen1             = strain_rates(i, j, 0),
-        eigen2             = strain_rates(i, j, 1);
+        eigen1             = strain_rates(i, j).eigen1,
+        eigen2             = strain_rates(i, j).eigen2;
 
       // [\ref Morlighem2016] equation 6
       const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
