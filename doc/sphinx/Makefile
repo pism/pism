@@ -43,7 +43,7 @@ diag-2.json: dummy.nc
 	      -calving eigen_calving,thickness_calving,vonmises_calving \
 	      -frontal_melt constant \
 	      -verbose 1 -o_size none \
-	      -list_diagnostics_json > $@
+	      -list_diagnostics json > $@
 
 # dummy surface input rate to use with the steady hydrology model
 surface_input.nc: dummy.nc
@@ -60,7 +60,7 @@ diag.json: dummy.nc surface_input.nc
 	      -hydrology.surface_input.file surface_input.nc \
 	      -hydrology.add_water_input_to_till_storage false \
 	      -verbose 1 -o_size none \
-	      -list_diagnostics_json > $@
+	      -list_diagnostics json > $@
 
 # entries from diag-2.json will override ones in diag.json (in other words, the order
 # matters here)

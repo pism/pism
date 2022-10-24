@@ -27,7 +27,7 @@ options and :ref:`sec-ts_vars` for the full list of supported time-series.
 Omitting the :opt:`-ts_vars` makes PISM save *all* available variables listed in
 :ref:`sec-ts_vars`. Because scalar time-series take minimal storage space, compared to
 spatially-varying data, this is usually a reasonable choice. Run PISM with the
-:opt:`-list_diagnostics` option to see the list of all available time-series.
+option :opt:`-list_diagnostics scalar` to see the list of all available time-series.
 
 If the file ``foo.nc``, specified by ``-ts_file foo.nc``, already exists then by default
 the existing file will be moved to ``foo.nc~`` and the new time series will go into

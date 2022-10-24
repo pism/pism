@@ -66,9 +66,17 @@ Note the ``-help`` and ``-usage`` options for getting help at the command line.
    * - :opt:`-info`
      - Gives information about PETSc operations during the run.
 
-   * - :opt:`-list_diagnostics`
+   * - :opt:`-list_diagnostics all`
      - Prints a list of all available diagnostic outputs (time series and spatial) for the
-       run with the given options. Stops run after printing the list.
+       run with given options and stop.
+
+   * - :opt:`-list_diagnostics spatial`
+     - Prints a list of all available spatially-variable diagnostic outputs for the run
+       with given options and stop.
+
+   * - :opt:`-list_diagnostics scalar`
+     - Prints a list of all available spatially-variable diagnostic outputs for the run
+       with given options and stop.
 
    * - :opt:`-log_summary`
      - At the end of the run gives a performance summary and also a synopsis of the PETSc

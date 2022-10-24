@@ -159,16 +159,13 @@ int main(int argc, char *argv[]) {
 
     model->init();
 
-    const bool
-      list_ascii = options::Bool("-list_diagnostics",
-                                 "List available diagnostic quantities and stop"),
-      list_json = options::Bool("-list_diagnostics_json",
-                                "List available diagnostic quantities (JSON format) and stop");
+    auto list_type = options::Keyword("-list_diagnostics",
+                                      "List available diagnostic quantities and stop.",
+                                      "all,spatial,scalar,json",
+                                      "all");
 
-    if (list_ascii) {
-      model->list_diagnostics();
-    } else if (list_json) {
-      model->list_diagnostics_json();
+    if (list_type.is_set()) {
+      model->list_diagnostics(list_type);
     } else {
       auto termination_reason = model->run();
 

@@ -2936,32 +2936,37 @@ static Metadata ts_diag_metadata(const std::map<std::string,TSDiagnostic::Ptr> &
   return result;
 }
 
-void IceModel::list_diagnostics_json() const {
+void IceModel::list_diagnostics(const std::string &list_type) const {
 
-  m_log->message(1, "{\n");
+  if (list_type == "json") {
+    m_log->message(1, "{\n");
 
-  m_log->message(1, "\"spatial\" :\n");
-  print_diagnostics_json(*m_log, diag_metadata(m_diagnostics));
+    m_log->message(1, "\"spatial\" :\n");
+    print_diagnostics_json(*m_log, diag_metadata(m_diagnostics));
 
-  m_log->message(1, ",\n");        // separator
+    m_log->message(1, ",\n");        // separator
 
-  m_log->message(1, "\"scalar\" :\n");
-  print_diagnostics_json(*m_log, ts_diag_metadata(m_ts_diagnostics));
+    m_log->message(1, "\"scalar\" :\n");
+    print_diagnostics_json(*m_log, ts_diag_metadata(m_ts_diagnostics));
 
-  m_log->message(1, "}\n");
-}
+    m_log->message(1, "}\n");
 
-void IceModel::list_diagnostics() const {
+    return;
+  }
 
-  m_log->message(1, "\n");
-  m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
+  if (member(list_type, {"all", "spatial"})) {
+    m_log->message(1, "\n");
+    m_log->message(1, "======== Available 2D and 3D diagnostics ========\n");
 
-  print_diagnostics(*m_log, diag_metadata(m_diagnostics));
+    print_diagnostics(*m_log, diag_metadata(m_diagnostics));
+  }
 
-  // scalar time-series
-  m_log->message(1, "======== Available time-series ========\n");
+  if (member(list_type, {"all", "scalar"})) {
+    // scalar time-series
+    m_log->message(1, "======== Available time-series ========\n");
 
-  print_diagnostics(*m_log, ts_diag_metadata(m_ts_diagnostics));
+    print_diagnostics(*m_log, ts_diag_metadata(m_ts_diagnostics));
+  }
 }
 
 /*!

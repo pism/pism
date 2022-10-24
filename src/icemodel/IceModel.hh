@@ -131,8 +131,7 @@ public:
 
   virtual void save_results();
 
-  void list_diagnostics() const;
-  void list_diagnostics_json() const;
+  void list_diagnostics(const std::string &list_type) const;
 
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;

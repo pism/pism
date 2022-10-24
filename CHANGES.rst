@@ -27,6 +27,8 @@ Changes since the last release
 - Support checkpointing the HTCondor way (see commit 3740c41df).
 - Stop with an error message if a NetCDF variable in an input file contains not-a-number
   or infinity.
+- Use `-list_diagnostics all` to print the list of all diagnostics, `-list_diagnostics
+  spatial` for 2D and 3D variables, and `-list_diagnostics scalar` for scalar time series.
 
 Changes since v1.2
 ==================
