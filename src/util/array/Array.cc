@@ -69,7 +69,9 @@ Array::Array(IceGrid::ConstPtr grid,
   m_impl->dof = dof;
   m_impl->zlevels = zlevels;
 
-  auto max_stencil_width = grid->ctx()->config()->get_number("grid.max_stencil_width");
+  const auto &config = grid->ctx()->config();
+
+  auto max_stencil_width = static_cast<size_t>(config->get_number("grid.max_stencil_width"));
   if ((dof != 1) or (stencil_width > max_stencil_width)) {
     // use the requested stencil width *if* we have to
     m_impl->da_stencil_width = stencil_width;
@@ -366,7 +368,7 @@ std::shared_ptr<petsc::DM> Array::dm() const {
     // dof > 1 for vector, staggered grid 2D fields, etc. In this case zlevels.size() ==
     // 1. For 3D fields, dof == 1 (all 3D fields are scalar) and zlevels.size()
     // corresponds to dof of the underlying PETSc DM object.
-    auto da_dof = std::max(m_impl->zlevels.size(), (size_t)m_impl->dof);
+    auto da_dof = std::max((unsigned int)m_impl->zlevels.size(), m_impl->dof);
 
     // initialize the da member:
     m_impl->da = grid()->get_dm(da_dof, m_impl->da_stencil_width);
@@ -737,10 +739,10 @@ std::vector<double> Array::norm(int n) const {
   NormType type = int_to_normtype(n);
 
   if (m_impl->dof > 1) {
-    PetscErrorCode ierr = VecStrideNormAll(vec(), type, &result[0]);
+    PetscErrorCode ierr = VecStrideNormAll(vec(), type, result.data());
     PISM_CHK(ierr, "VecStrideNormAll");
   } else {
-    PetscErrorCode ierr = VecNorm(vec(), type, &result[0]);
+    PetscErrorCode ierr = VecNorm(vec(), type, result.data());
     PISM_CHK(ierr, "VecNorm");
   }
 
@@ -877,10 +879,12 @@ void Array::write(const File &file) const {
   double end_time = get_time();
 
   const double
+    minute     = 60.0,          // one minute in seconds
     time_spent = end_time - start_time,
-    megabyte = pow(2, 20),
-    mb_double = sizeof(double) * size() / megabyte,
-    mb_float =  sizeof(float) * size() / megabyte;
+    megabyte   = pow(2, 20),
+    N          = static_cast<double>(size()),
+    mb_double  = static_cast<double>(sizeof(double)) * N / megabyte,
+    mb_float   = static_cast<double>(sizeof(float)) * N / megabyte;
 
   std::string timestamp = pism::timestamp(m_impl->grid->com);
   std::string spacer(timestamp.size(), ' ');
@@ -891,7 +895,7 @@ void Array::write(const File &file) const {
                                   "   %s  in %f seconds (%f minutes).\n"
                                   "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
                                   timestamp.c_str(), m_impl->name.c_str(), mb_double, mb_float,
-                                  spacer.c_str(), time_spent, time_spent / 60.0,
+                                  spacer.c_str(), time_spent, time_spent / minute,
                                   spacer.c_str(),
                                   mb_double / time_spent, mb_float / time_spent);
   } else {
@@ -1122,7 +1126,7 @@ uint64_t Array::fletcher64_serial() const {
     PetscErrorCode ierr = VecGetLocalSize(*v, &size);
     PISM_CHK(ierr, "VecGetLocalSize");
 
-    result = pism::fletcher64((uint32_t*)array.get(), size * 2);
+    result = pism::fletcher64((uint32_t*)array.get(), static_cast<size_t>(size) * 2);
   }
   MPI_Bcast(&result, 1, MPI_UINT64_T, 0, com);
 
@@ -1137,7 +1141,8 @@ uint64_t Array::fletcher64_serial() const {
  * We assume that sizeof(double) == 2 * sizeof(uint32_t), i.e. double uses 64 bits.
  */
 uint64_t Array::fletcher64() const {
-  static_assert(sizeof(double) == 2 * sizeof(uint32_t), "Cannot compile Array::fletcher64() (sizeof(double) != 2 * sizeof(uint32_t))");
+  static_assert(sizeof(double) == 2 * sizeof(uint32_t),
+                "Cannot compile Array::fletcher64() (sizeof(double) != 2 * sizeof(uint32_t))");
 
   MPI_Status mpi_stat;
   const int checksum_tag = 42;
@@ -1156,7 +1161,7 @@ uint64_t Array::fletcher64() const {
   {
     petsc::VecArray v(vec());
     // compute checksums for local patches on all ranks
-    sum = pism::fletcher64((uint32_t*)v.get(), local_size * 2);
+    sum = pism::fletcher64((uint32_t*)v.get(), static_cast<size_t>(local_size) * 2);
   }
 
   if (rank == 0) {
@@ -1169,7 +1174,7 @@ uint64_t Array::fletcher64() const {
     }
 
     // compute the checksum of checksums
-    sum = pism::fletcher64((uint32_t*)sums.data(), comm_size * 2);
+    sum = pism::fletcher64((uint32_t*)sums.data(), static_cast<size_t>(comm_size) * 2);
   } else {
     MPI_Send(&sum, 1, MPI_UINT64_T, 0, checksum_tag, com);
   }

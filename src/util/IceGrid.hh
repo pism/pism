@@ -254,7 +254,7 @@ public:
 
   static Ptr FromOptions(std::shared_ptr<const Context> ctx);
 
-  std::shared_ptr<petsc::DM> get_dm(int dm_dof, int stencil_width) const;
+  std::shared_ptr<petsc::DM> get_dm(unsigned int dm_dof, unsigned int stencil_width) const;
 
   void report_parameters() const;
 

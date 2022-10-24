@@ -826,13 +826,13 @@ std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
 }
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
-static int dm_hash(int dm_dof, int stencil_width) {
-  if (dm_dof < 0 or dm_dof > IceGrid::max_dm_dof) {
+static unsigned int dm_hash(unsigned int dm_dof, unsigned int stencil_width) {
+  if (dm_dof > IceGrid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Invalid dm_dof argument: %d", dm_dof);
   }
 
-  if (stencil_width < 0 or stencil_width > IceGrid::max_stencil_width) {
+  if (stencil_width > IceGrid::max_stencil_width) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Invalid stencil_width argument: %d", stencil_width);
   }
@@ -842,19 +842,24 @@ static int dm_hash(int dm_dof, int stencil_width) {
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-std::shared_ptr<petsc::DM> IceGrid::get_dm(int dm_dof, int stencil_width) const {
-  std::shared_ptr<petsc::DM> result;
-
-  int j = dm_hash(dm_dof, stencil_width);
+std::shared_ptr<petsc::DM> IceGrid::get_dm(unsigned int dm_dof,
+                                           unsigned int stencil_width) const {
+  unsigned int j = dm_hash(dm_dof, stencil_width);
 
   if (m_impl->dms[j].expired()) {
-    result = m_impl->create_dm(dm_dof, stencil_width);
+    // note: here "result" is needed because m_impl->dms is a std::map of weak_ptr
+    //
+    // m_impl->dms[j] = m_impl->create_dm(dm_dof, stencil_width);
+    //
+    // would create a shared_ptr, then assign it to a weak_ptr. At this point the
+    // shared_ptr (the right hand side) will be destroyed and the corresponding weak_ptr
+    // will be a nullptr.
+    auto result = m_impl->create_dm(dm_dof, stencil_width);
     m_impl->dms[j] = result;
-  } else {
-    result = m_impl->dms[j].lock();
+    return result;
   }
 
-  return result;
+  return m_impl->dms[j].lock();
 }
 
 //! Return grid periodicity.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,9 +60,9 @@ namespace pism {
 void remove_narrow_tongues(const Geometry &geometry,
                            array::Scalar &ice_thickness) {
 
-  auto &mask      = geometry.cell_type;
-  auto &bed       = geometry.bed_elevation;
-  auto &sea_level = geometry.sea_level_elevation;
+  const auto &mask      = geometry.cell_type;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
   IceGrid::ConstPtr grid = mask.grid();
 
@@ -76,8 +76,10 @@ void remove_narrow_tongues(const Geometry &geometry,
     }
 
     stencils::Box<bool> ice_free;
-    auto M = mask.box(i, j);
+    auto M = mask.box_int(i, j);
 
+    // Note: i,j cannot be ice-free (see the if-block above), so it is either grounded ice
+    // or floating ice
     if (mask::grounded_ice(M.ij)) {
       using mask::ice_free_ocean;
       // if (i,j) is grounded ice then we will remove it if it has
@@ -90,7 +92,7 @@ void remove_narrow_tongues(const Geometry &geometry,
       ice_free.nw = ice_free_ocean(M.nw);
       ice_free.se = ice_free_ocean(M.se);
       ice_free.sw = ice_free_ocean(M.sw);
-    } else if (mask.floating_ice(i,j)) {
+    } else {
       // if (i,j) is floating then we will remove it if its neighbors are
       // ice-free, whether ice-free ocean or ice-free ground
       ice_free.n  = mask::ice_free(M.n);

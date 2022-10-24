@@ -109,7 +109,7 @@ double Array3D::interpolate(int i, int j, double z) const {
   }
 
   auto mcurr = gsl_interp_accel_find(m_impl->bsearch_accel,
-                                     &zs[0], zs.size(), z);
+                                     zs.data(), zs.size(), z);
 
   const double incr = (z - zs[mcurr]) / (zs[mcurr+1] - zs[mcurr]);
   const double valm = column[mcurr];
