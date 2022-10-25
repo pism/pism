@@ -24,6 +24,7 @@
 #include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"

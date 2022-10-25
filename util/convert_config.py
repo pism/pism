@@ -13,7 +13,7 @@ config.init_from_string("""
 {
  "constants" : {"ice" : {}, "fresh_water" : {},  "sea_water" : {}},
  "bootstrapping" : {"defaults" : {}},
- "calving" : {"eigen_calving" : {}, "thickness_calving" : {}, "float_kill" : {}},
+ "calving" : {"eigen_calving" : {}, "thickness_calving" : {}, "float_kill" : {}, "given_calving" : {}},
  "enthalpy_converter" : {},
  "flow_law" : {
    "gpbld" : {},
