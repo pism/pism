@@ -4,6 +4,7 @@ add_library(frontretreat OBJECT
   calving/CalvingAtThickness.cc
   calving/EigenCalving.cc
   calving/FloatKill.cc
+  calving/GivenRate.cc
   calving/HayhurstCalving.cc
   calving/StressCalving.cc
   calving/vonMisesCalving.cc

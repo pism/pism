@@ -636,7 +636,7 @@ netcdf pism_config {
     pism_config:calving.hayhurst_calving.sigma_threshold_units = "MPa";
 
     pism_config:calving.methods = "";
-    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``";
+    pism_config:calving.methods_doc = "comma-separated list of calving methods; one or more of ``eigen_calving``, ``float_kill``, ``thickness_calving``, ``given_calving``";
     pism_config:calving.methods_option = "calving";
     pism_config:calving.methods_type = "string";
 

@@ -72,6 +72,7 @@ class Hydrology;
 
 namespace calving {
 class EigenCalving;
+class GivenRate;
 class vonMisesCalving;
 class FloatKill;
 class HayhurstCalving;
@@ -265,6 +266,7 @@ protected:
   std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
+  std::shared_ptr<calving::GivenRate>          m_given_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
   std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
