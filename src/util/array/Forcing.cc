@@ -144,8 +144,8 @@ Forcing::Forcing(IceGrid::ConstPtr grid,
 }
 
 std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
-                                                       const std::string &short_name,
-                                                       double value) {
+                                           const std::string &short_name,
+                                           double value) {
   // note: cannot use std::make_shared because of a private constructor
   std::shared_ptr<Forcing> result(new Forcing(grid, short_name, 1,
                                               PIECEWISE_CONSTANT));
