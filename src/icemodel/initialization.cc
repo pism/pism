@@ -916,6 +916,7 @@ void IceModel::init_calving() {
   }
 
   if (member("given_calving", methods)) {
+    allocate_front_retreat = true;
 
     if (not m_given_calving) {
       m_given_calving.reset(new calving::GivenRate(m_grid));
