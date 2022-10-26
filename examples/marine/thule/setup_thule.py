@@ -2,7 +2,7 @@
 
 
 # Creates Thule setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Thule-domain
-# run as "python setup_thule.py -L 2e6 -M 101"
+# run as "python setup_thule.py -L 2e6 -M 401" for 5km resolution and 2000km domain width
 
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
@@ -15,6 +15,11 @@ Bl=-2000
 Ba=1100
 rc=0
 
+cd=700e3
+rhoi=910.0
+ac=0.3*rhoi
+t0=-10.0
+h0=100.0
 
 parser = OptionParser()
 
@@ -45,17 +50,25 @@ a=Bc-(Bc-Bl)*(r-rc)**2/(R-rc)**2
 topg=Ba*np.cos(3*np.pi*r/l)+a
 
 zeros = np.zeros((options.Mx, options.Mx))
-thk = zeros.copy()
+thk = zeros.copy() + h0
 
 v = zeros.copy()
 u = zeros.copy()
 
+temp = np.ones_like(zeros)*t0   # C
+smb  = np.ones_like(zeros)*ac   # m/yr*kg/m3
+
+calvmask = np.ones_like(zeros)
+calvmask[r>=cd]=0.0
+
 nc.create_dimensions(x, x)
 nc.write("topg", topg, attrs={"units": "m", "long_name": "bed_topography"})
-nc.write("climatic_mass_balance", zeros, attrs={"units": "kg m-2 year-1"})
-nc.write("ice_surface_temp", zeros, attrs={"units": "Celsius"})
+nc.write("climatic_mass_balance", smb, attrs={"units": "kg m-2 year-1"})
+nc.write("ice_surface_temp", temp, attrs={"units": "Celsius"})
 nc.write("thk", thk,
          attrs={"units": "m", "standard_name": "land_ice_thickness"})
+nc.write("land_ice_area_fraction_retreat", calvmask,
+         attrs={"long_name": "maximum ice extent mask"})
 nc.write("ubar", u,
          attrs={"units": "m/year", "long_name": "x-component of velocity"})
 nc.write("vbar", v,
