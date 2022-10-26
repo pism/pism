@@ -52,6 +52,11 @@ void IceModel::front_retreat_step() {
                               m_stress_balance->shallow()->velocity());
     }
 
+    if (m_given_calving) {
+      m_given_calving->update(m_time->current(), m_dt);
+    }
+
+
     if (m_hayhurst_calving) {
       m_hayhurst_calving->update(m_geometry.cell_type,
                                  m_geometry.ice_thickness,
@@ -110,12 +115,12 @@ void IceModel::front_retreat_step() {
 
   // calving
   if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or
-      m_float_kill_calving or m_thickness_threshold_calving) {
+      m_float_kill_calving or m_thickness_threshold_calving or m_given_calving) {
 
     old_H.copy_from(m_geometry.ice_thickness);
     old_Href.copy_from(m_geometry.ice_area_specific_volume);
 
-    if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
+    if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_given_calving) {
       assert(m_front_retreat);
 
       array::Scalar &retreat_rate = *m_work2d[2];
@@ -123,6 +128,10 @@ void IceModel::front_retreat_step() {
 
       if (m_eigen_calving) {
         retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+      }
+
+      if (m_given_calving) {
+        retreat_rate.add(1.0, m_given_calving->calving_rate());
       }
 
       if (m_hayhurst_calving) {
@@ -147,7 +156,7 @@ void IceModel::front_retreat_step() {
 
       m_geometry.ensure_consistency(thickness_threshold);
 
-      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving) {
+      if (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_given_calving) {
         remove_narrow_tongues(m_geometry, m_geometry.ice_thickness);
 
         m_geometry.ensure_consistency(thickness_threshold);
