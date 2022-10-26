@@ -99,17 +99,6 @@ void GivenRate::init() {
                    "  Calving rate: %3.3f meters year-1.\n", calving_rate);
   }
 
-
-  //const auto &givenrate = *m_given_calving_rate;
-  //IceModelVec::AccessList list{&m_calving_rate, &givenrate};
-
-  //for (Points pt(*m_grid); pt; pt.next()) {
-  //  const int i = pt.i(), j = pt.j();
-
-  //  m_calving_rate(i, j) = givenrate(i, j);
-  //}
-
-
 }
 
 /**
