@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
+/* Copyright (C) 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,39 +17,38 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMGIVENRATE_H_
-#define _PISMGIVENRATE_H_
+#ifndef PISM_GIVEN_CALVING_RATE_H
+#define PISM_GIVEN_CALVING_RATE_H
 
-#include "StressCalving.hh"
-#include "pism/util/IceModelVec2CellType.hh"
+#include "pism/util/Component.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
 class Geometry;
-class IceModelVec2T;
 
 namespace calving {
 
-/*! \brief Calving mechanism removing the ice at the shelf front for
-    a given rate (2D map). */
-
-class GivenRate : public StressCalving {
+/*! @brief Calving mechanism removing ice at the shelf front using a provided
+    time-dependent spatially-variable calving rate.
+ */
+class GivenRate : public Component {
 public:
   GivenRate(IceGrid::ConstPtr grid);
   virtual ~GivenRate() = default;
 
   void init();
-  void update(double t,
-              double dt);
+  void update(double t, double dt);
 
-  //const IceModelVec2S& givenrate() const;
+  const array::Scalar &calving_rate() const;
 
-protected:
+private:
   DiagnosticList diagnostics_impl() const;
-  std::shared_ptr<IceModelVec2T> m_given_calving_rate;
+
+  std::shared_ptr<array::Forcing> m_calving_rate;
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMGIVENRATE_H_ */
+#endif /* PISM_GIVEN_CALVING_RATE_H */

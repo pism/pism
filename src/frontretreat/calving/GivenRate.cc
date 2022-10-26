@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,35 +19,24 @@
 
 #include "GivenRate.hh"
 
-#include "pism/util/Mask.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/iceModelVec2T.hh"
 #include "pism/util/io/File.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/geometry/Geometry.hh"
-
-
 namespace pism {
-
-//! @brief Calving and iceberg removal code.
 namespace calving {
 
-
 GivenRate::GivenRate(IceGrid::ConstPtr grid)
-  : StressCalving(grid, 2) {
-
+  : Component(grid) {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.given_calving");
   {
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    auto buffer_size = static_cast<unsigned int>
+      (m_config->get_number("input.forcing.buffer_size"));
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_given_calving_rate = IceModelVec2T::ForcingField(m_grid,
+    m_calving_rate = std::make_shared<array::Forcing>(m_grid,
                                                       file,
                                                       "calving_rate",
                                                       "", // no standard name
@@ -55,18 +44,12 @@ GivenRate::GivenRate(IceGrid::ConstPtr grid)
                                                       opt.periodic,
                                                       LINEAR);
 
-    m_given_calving_rate->set_attrs("diagnostic",
-                                   "'calving rate' as used in given_calving method",
-                                   "m s-1", "m year-1",
-                                   "", 0); // no standard name
-    m_given_calving_rate->metadata()["valid_min"] = {0.0};
-
-    m_calving_rate.metadata()["valid_min"] = {0.0};
-    m_calving_rate.metadata().set_name("given_calving_rate");
-    m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to given calving rate",
-                           "m s-1", "m year-1", "", 0);
-
+    m_calving_rate->set_attrs("diagnostic",
+                              "'calving rate' as used in given_calving method",
+                              "m s-1",
+                              "m year-1",
+                              "", 0); // no standard name
+    m_calving_rate->metadata()["valid_min"] = {0.0};
   }
 }
 
@@ -76,70 +59,47 @@ void GivenRate::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.given_calving");
 
-  File file(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
-  auto variable_exists = file.find_variable(m_given_calving_rate->get_name());
-  if (variable_exists) {
+  File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+
+  if (file.find_variable(m_calving_rate->get_name())) {
     m_log->message(2,
                    "  Reading calving rate from file '%s'...\n",
                    opt.filename.c_str());
 
-    m_given_calving_rate->init(opt.filename, opt.periodic);
+    m_calving_rate->init(opt.filename, opt.periodic);
   } else {
-    double calving_rate = m_config->get_number("calving.given_calving.rate");
+    double
+      calving_rate          = m_config->get_number("calving.given_calving.rate", "m s-1"),
+      calving_rate_per_year = m_config->get_number("calving.given_calving.rate", "m year-1");
 
-    SpatialVariableMetadata attributes = m_given_calving_rate->metadata();
-    // replace with a constant IceModelVec2T
-    m_given_calving_rate = IceModelVec2T::Constant(m_grid,
-                                                 "given_calving_rate",
-                                                  calving_rate);
+    auto attributes = m_calving_rate->metadata();
+    // replace with a constant array::Forcing
+    m_calving_rate = array::Forcing::Constant(m_grid, "given_calving_rate", calving_rate);
     // restore metadata
-    m_given_calving_rate->metadata() = attributes;
+    m_calving_rate->metadata() = attributes;
 
     m_log->message(2,
-                   "  Calving rate: %3.3f meters year-1.\n", calving_rate);
+                   "  Calving rate: %3.3f meters year-1.\n", calving_rate_per_year);
   }
-
-
-  m_calving_rate.set(0.1);
 }
 
 /**
- * Updates calving rate according to given calving rate
+ * Updates the calving rate
  *
  * @param[in] t beginning of the time step
  * @param[in] dt length of the time step
- *
- * @return 0 on success
  */
-void GivenRate::update(double t,
-                       double dt) {
-
-  //m_given_calving_rate->update(t, dt);
-  //m_given_calving_rate->average(t, dt);
-
-  //m_calving_rate.copy_from(m_given_calving_rate);
-
-  //const auto &givenrate = *m_given_calving_rate;
-  //IceModelVec::AccessList list{&m_calving_rate, &givenrate};
-
-  //for (Points pt(*m_grid); pt; pt.next()) {
-  //  const int i = pt.i(), j = pt.j();
-
-  //  m_calving_rate(i, j) = givenrate(i, j) + 2000.0;
-  //}
-
-
-  m_log->message(2," Update given calving rate.\n");
-
-
+void GivenRate::update(double t, double dt) {
+  m_calving_rate->update(t, dt);
+  m_calving_rate->average(t, dt);
 }
 
-//const IceModelVec2S& GivenRate::givenrate() const {
-//  return *m_given_calving_rate;
-//}
+const array::Scalar& GivenRate::calving_rate() const {
+  return *m_calving_rate;
+}
 
 DiagnosticList GivenRate::diagnostics_impl() const {
-  return {{"given_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return {{"calving_rate", Diagnostic::wrap(*m_calving_rate)}};
 }
 
 } // end of namespace calving
