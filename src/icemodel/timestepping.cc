@@ -28,6 +28,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
+#include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
@@ -121,6 +122,10 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
     if (m_eigen_calving) {
       retreat_rate.add(1.0, m_eigen_calving->calving_rate());
+    }
+
+    if (m_given_calving) {
+      retreat_rate.add(1.0, m_given_calving->calving_rate());
     }
 
     if (m_hayhurst_calving) {

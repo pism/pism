@@ -20,33 +20,33 @@
 #ifndef _PISMGIVENRATE_H_
 #define _PISMGIVENRATE_H_
 
-#include "pism/util/Component.hh"
-#include "pism/util/iceModelVec.hh"
+#include "StressCalving.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
 namespace pism {
 
+class Geometry;
 class IceModelVec2T;
 
 namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front for
     a given rate (2D map). */
-class GivenRate : public Component
-{
+
+class GivenRate : public StressCalving {
 public:
-  GivenRate(IceGrid::ConstPtr g);
+  GivenRate(IceGrid::ConstPtr grid);
   virtual ~GivenRate() = default;
 
   void init();
   void update(double t,
               double dt);
 
-  const IceModelVec2S& calvingrate() const;
+  const IceModelVec2S& givenrate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
-  std::shared_ptr<IceModelVec2T> m_calving_rate;
+  std::shared_ptr<IceModelVec2T> m_given_calving_rate;
 };
 
 } // end of namespace calving
