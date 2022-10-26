@@ -42,7 +42,7 @@ public:
   void update(double t,
               double dt);
 
-  const IceModelVec2S& givenrate() const;
+  //const IceModelVec2S& givenrate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
