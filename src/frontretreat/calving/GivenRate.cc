@@ -99,6 +99,8 @@ void GivenRate::init() {
                    "  Calving rate: %3.3f meters year-1.\n", calving_rate);
   }
 
+
+  m_calving_rate.set(0.1);
 }
 
 /**
@@ -112,19 +114,19 @@ void GivenRate::init() {
 void GivenRate::update(double t,
                        double dt) {
 
-  m_given_calving_rate->update(t, dt);
-  m_given_calving_rate->average(t, dt);
+  //m_given_calving_rate->update(t, dt);
+  //m_given_calving_rate->average(t, dt);
 
   //m_calving_rate.copy_from(m_given_calving_rate);
 
-  const auto &givenrate = *m_given_calving_rate;
-  IceModelVec::AccessList list{&m_calving_rate, &givenrate};
+  //const auto &givenrate = *m_given_calving_rate;
+  //IceModelVec::AccessList list{&m_calving_rate, &givenrate};
 
-  for (Points pt(*m_grid); pt; pt.next()) {
-    const int i = pt.i(), j = pt.j();
+  //for (Points pt(*m_grid); pt; pt.next()) {
+  //  const int i = pt.i(), j = pt.j();
 
-    m_calving_rate(i, j) = givenrate(i, j) + 2000.0;
-  }
+  //  m_calving_rate(i, j) = givenrate(i, j) + 2000.0;
+  //}
 
 
   m_log->message(2," Update given calving rate.\n");
@@ -132,9 +134,9 @@ void GivenRate::update(double t,
 
 }
 
-const IceModelVec2S& GivenRate::givenrate() const {
-  return *m_given_calving_rate;
-}
+//const IceModelVec2S& GivenRate::givenrate() const {
+//  return *m_given_calving_rate;
+//}
 
 DiagnosticList GivenRate::diagnostics_impl() const {
   return {{"given_calving_rate", Diagnostic::wrap(m_calving_rate)}};
