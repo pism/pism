@@ -88,8 +88,8 @@ double FlowLaw::softness_paterson_budd(double T_pa) const {
 
 //! The flow law itself.
 double FlowLaw::flow(double stress, double enthalpy,
-                     double pressure, double gs) const {
-  return this->flow_impl(stress, enthalpy, pressure, gs);
+                     double pressure, double grain_size) const {
+  return this->flow_impl(stress, enthalpy, pressure, grain_size);
 }
 
 double FlowLaw::flow_impl(double stress, double enthalpy,
@@ -161,15 +161,15 @@ double FlowLaw::hardness_impl(double E, double p) const {
  * \param[out] nu effective viscosity
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
-void FlowLaw::effective_viscosity(double B, double gamma,
+void FlowLaw::effective_viscosity(double hardness, double gamma,
                                   double *nu, double *dnu) const {
-  effective_viscosity(B, gamma, m_schoofReg, nu, dnu);
+  effective_viscosity(hardness, gamma, m_schoofReg, nu, dnu);
 }
 
-void FlowLaw::effective_viscosity(double B, double gamma, double eps,
+void FlowLaw::effective_viscosity(double hardness, double gamma, double eps,
                                   double *nu, double *dnu) const {
   const double
-    my_nu = 0.5 * B * pow(eps + gamma, m_viscosity_power);
+    my_nu = 0.5 * hardness * pow(eps + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;
@@ -198,7 +198,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
       double H = thickness(i,j);
       const double *enthColumn = enthalpy.get_column(i, j);
       result(i,j) = averaged_hardness(ice, H, grid.kBelowHeight(H),
-                                      &(grid.z()[0]), enthColumn);
+                                      grid.z().data(), enthColumn);
     }
   } catch (...) {
     loop.failed();
@@ -213,12 +213,13 @@ void averaged_hardness_vec(const FlowLaw &ice,
  * See comment for hardness(). Note `E[0], ..., E[kbelowH]` must be valid.
  */
 double averaged_hardness(const FlowLaw &ice,
-                         double thickness, int kbelowH,
+                         double thickness,
+                         unsigned int kbelowH,
                          const double *zlevels,
                          const double *enthalpy) {
   double B = 0;
 
-  EnthalpyConverter &EC = *ice.EC();
+  const auto &EC = *ice.EC();
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
@@ -227,7 +228,7 @@ double averaged_hardness(const FlowLaw &ice,
       E0 = enthalpy[0],
       h0 = ice.hardness(E0, p0); // ice hardness at the left endpoint
 
-    for (int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
+    for (unsigned int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
       const double
         p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
         E1 = enthalpy[i], // enthalpy at the right endpoint

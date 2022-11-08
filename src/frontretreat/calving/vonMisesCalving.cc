@@ -79,7 +79,9 @@ void vonMisesCalving::init() {
                    "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);
   }
 
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
+  // grid "squareness" criterion
+  const double eps = 1e-2;
+  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > eps) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
                                   "dx = %f, dy = %f, relative difference = %f",
@@ -116,7 +118,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
                                &m_strain_rates, &m_calving_rate, &m_calving_threshold};
 
-  const double *z = &m_grid->z()[0];
+  const double *z = m_grid->z().data();
 
   double glen_exponent = m_flow_law->exponent();
 
@@ -142,8 +144,8 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
             velocity_magnitude += ice_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
-              unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(I, j));
+              auto k = m_grid->kBelowHeight(H);
+              hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(I, j));
             }
             eigen1 += m_strain_rates(I, j).eigen1;
             eigen2 += m_strain_rates(I, j).eigen2;
@@ -157,8 +159,8 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
             velocity_magnitude += ice_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
-              unsigned int k = m_grid->kBelowHeight(H);
-              hardness += averaged_hardness(*m_flow_law, H, k, &z[0], ice_enthalpy.get_column(i, J));
+              auto k = m_grid->kBelowHeight(H);
+              hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(i, J));
             }
             eigen1 += m_strain_rates(i, J).eigen1;
             eigen2 += m_strain_rates(i, J).eigen2;

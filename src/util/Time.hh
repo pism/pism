@@ -97,8 +97,8 @@ public:
    */
   units::Unit units() const;
 
-  //! \brief Returns the fraction of a year passed since the last beginning of
-  //! a year. Only useful in codes with a "yearly cycle" (such as the PDD model).
+  //! \brief Returns the fraction of a year that passed since the last beginning of a
+  //! year. Only useful in codes with a "yearly cycle" (such as the PDD model).
   double year_fraction(double T) const;
 
   //! \brief Convert the day number to the year fraction.
@@ -155,7 +155,7 @@ protected:
   //! Time resolution, in seconds.
   double m_t_eps;
 
-  //! number of seconds in a year, for "mod" and "year fraction"
+  //! number of seconds in a year, for "year fraction"
   double m_year_length;
 
   //! current time, in seconds since the reference time

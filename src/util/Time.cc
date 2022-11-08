@@ -684,7 +684,8 @@ double Time::convert_time_interval(double T, const std::string &units) const {
 
   for more details about supported calendars.
  */
-Time::Time(MPI_Comm com, Config::ConstPtr config,
+Time::Time(MPI_Comm com,
+           Config::ConstPtr config,
            const Logger &log,
            units::System::Ptr unit_system)
   : m_config(config),

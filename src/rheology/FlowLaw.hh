@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -97,7 +97,7 @@ public:
 
   double softness(double E, double p) const;
 
-  double flow(double stress, double E, double pressure, double grainsize) const;
+  double flow(double stress, double enthalpy, double pressure, double grain_size) const;
   void flow_n(const double *stress, const double *E,
               const double *pressure, const double *grainsize,
               unsigned int n, double *result) const;
@@ -156,7 +156,7 @@ protected:
 
 double averaged_hardness(const FlowLaw &ice,
                          double ice_thickness,
-                         int kbelowH,
+                         unsigned int kbelowH,
                          const double *zlevels,
                          const double *enthalpy);
 
