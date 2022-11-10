@@ -81,9 +81,6 @@ protected:
 
   virtual void update_nuH_viewers();
 
-  void set_diagonal_matrix_entry(Mat A, int i, int j, int component,
-                                         double value);
-
   virtual bool is_marginal(int i, int j, bool ssa_dirichlet_bc);
 
   virtual void fracture_induced_softening(const array::Scalar *fracture_density);
@@ -111,7 +108,7 @@ protected:
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   array::Vector m_b;            // right hand side
-  double m_scaling;
+  const double m_scaling;
 
   array::Vector1 m_velocity_old;
 
