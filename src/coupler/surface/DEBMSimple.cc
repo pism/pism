@@ -458,9 +458,9 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
         // set melt terms at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
-        m_temperature_driven_melt(i, j)  = Mt * ice_density;
-        m_insolation_driven_melt(i, j) = Mi * ice_density;
-        m_background_melt(i, j)     = Mc * ice_density;
+        m_temperature_driven_melt(i, j) = Mt * ice_density;
+        m_insolation_driven_melt(i, j)  = Mi * ice_density;
+        m_background_melt(i, j)         = Mc * ice_density;
 
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
