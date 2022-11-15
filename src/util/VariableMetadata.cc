@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2023 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -85,10 +85,11 @@ units::System::Ptr VariableMetadata::unit_system() const {
  */
 void VariableMetadata::check_range(const std::string &filename, double min, double max) {
 
-  const std::string &units_string = get_string("units");
+  auto units_string = get_string("units");
+  auto name_string = get_name();
   const char
     *units = units_string.c_str(),
-    *name = get_name().c_str(),
+    *name = name_string.c_str(),
     *file = filename.c_str();
 
   if (has_attribute("valid_min") and has_attribute("valid_max")) {

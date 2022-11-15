@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017 PISM Authors
+/* Copyright (C) 2015, 2017, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -87,7 +87,7 @@ void Logger::error(const char format[], ...) const {
 }
 
 void Logger::error_impl(const char buffer[]) const {
-  PetscErrorCode ierr = PetscFPrintf(m_impl->com, stderr, buffer);
+  PetscErrorCode ierr = PetscFPrintf(m_impl->com, stderr, "%s", buffer);
   PISM_CHK(ierr, "PetscFPrintf");
 }
 
