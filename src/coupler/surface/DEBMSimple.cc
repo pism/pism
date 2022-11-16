@@ -80,7 +80,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
     bool periodic = m_config->get_flag("surface.debm_simple.albedo_input.periodic");
     m_input_albedo  = std::make_shared<array::Forcing>(m_grid,
                                                        file,
-                                                       "albedo",
+                                                       "surface_albedo",
                                                        "surface_albedo",
                                                        buffer_size,
                                                        periodic,
@@ -191,6 +191,12 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   {
     regrid("dEBM-simple surface model", m_snow_depth);
     regrid("dEBM-simple surface model", m_surface_albedo);
+  }
+
+  if ((bool)m_input_albedo) {
+    auto filename = m_config->get_string("surface.debm_simple.albedo_input.file");
+    bool periodic = m_config->get_flag("surface.debm_simple.albedo_input.periodic");
+    m_input_albedo->init(filename, periodic);
   }
 
   // finish up

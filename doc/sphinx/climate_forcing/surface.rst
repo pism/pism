@@ -500,8 +500,8 @@ In this approach, the albedo decreases linearly with increasing melt from the ma
 value (the fresh-snow albedo :config:`surface.debm_simple.albedo_snow`) for regions with
 no melting to the minimum (the bare-ice albedo :config:`surface.debm_simple.albedo_ice`).
 
-Alternatively, albedo (variable :var:`albedo`; no units) can be read from a file specified
-using :config:`surface.debm_simple.albedo_input.file`.
+Alternatively, albedo (variable :var:`surface_albedo`; no units) can be read from a file
+specified using :config:`surface.debm_simple.albedo_input.file`.
 
 .. note::
 
