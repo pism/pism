@@ -2263,11 +2263,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_input.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.albedo_input.periodic_type = "flag";
 
-    pism_config:surface.debm_simple.albedo_land = 0.2;
-    pism_config:surface.debm_simple.albedo_land_doc = "Albedo of ice-free land";
-    pism_config:surface.debm_simple.albedo_land_type = "number";
-    pism_config:surface.debm_simple.albedo_land_units = "";
-
     pism_config:surface.debm_simple.albedo_ocean = 0.1;
     pism_config:surface.debm_simple.albedo_ocean_doc = "Albedo of ice-free ocean";
     pism_config:surface.debm_simple.albedo_ocean_type = "number";

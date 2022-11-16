@@ -303,7 +303,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
 
   m_L                              = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   m_albedo_ice                     = config.get_number("surface.debm_simple.albedo_ice");
-  m_albedo_land                    = config.get_number("surface.debm_simple.albedo_land");
   m_albedo_ocean                   = config.get_number("surface.debm_simple.albedo_ocean");
   m_albedo_slope                   = config.get_number("surface.debm_simple.albedo_slope");
   m_albedo_snow                    = config.get_number("surface.debm_simple.albedo_snow");
@@ -356,10 +355,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
 double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const {
   if (cell_type == MASK_ICE_FREE_OCEAN) {
     return m_albedo_ocean;
-  }
-
-  if (cell_type == MASK_ICE_FREE_BEDROCK) {
-    return m_albedo_land;
   }
 
   assert(melt_rate >= 0.0);

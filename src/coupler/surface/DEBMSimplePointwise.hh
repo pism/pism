@@ -99,7 +99,6 @@ private:
 
   double m_albedo_snow;
   double m_albedo_ice;
-  double m_albedo_land;
   double m_albedo_ocean;
 
   //! slope used in the linear parameterization of the albedo as a function of melt
