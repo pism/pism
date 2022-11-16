@@ -143,7 +143,7 @@ macro(pism_find_petsc)
   message(STATUS
     "Looking for PETSc (PETSC_DIR='$ENV{PETSC_DIR}', PETSC_ARCH='$ENV{PETSC_ARCH}')...")
   set(ENV{PKG_CONFIG_PATH} $ENV{PETSC_DIR}/$ENV{PETSC_ARCH}/lib/pkgconfig)
-  pkg_search_module(PETSC REQUIRED IMPORTED_TARGET "PETSc>=3.7.0")
+  pkg_search_module(PETSC IMPORTED_TARGET "PETSc>=3.7.0")
 
   if (NOT PETSC_FOUND)
     # If PETSc was configured with --prefix=... then PETSC_ARCH is irrelevant and we
