@@ -108,9 +108,9 @@ protected:
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   array::Vector m_b;            // right hand side
-  const double m_scaling;
 
   array::Vector1 m_velocity_old;
+  const double m_scaling;
 
   unsigned int m_default_pc_failure_count,
     m_default_pc_failure_max_count;
