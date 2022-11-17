@@ -399,10 +399,14 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
+  // FIXME: avoid re-computing declination and distance_factor (they depend on time, but
+  // not on the map-plane location)
   double declination     = 0.0;
   double distance_factor = 0.0;
+
   double year_fraction = m_time->year_fraction(time);
   if (m_paleo) {
+    // eccentricity and perihelion longitude are needed by both declination and distance_factor
     double eccentricity         = this->eccentricity(time);
     double perihelion_longitude = this->perihelion_longitude(time);
 
@@ -546,7 +550,7 @@ double DEBMSimplePointwise::obliquity(double time) const {
  */
 double DEBMSimplePointwise::perihelion_longitude(double time) const {
   if (m_use_paleo_file) {
-    return m_perihelion_longitude->value(time);
+    return m_perihelion_longitude->value(time); // FIXME: add remainder(..., 2*M_PI) and test
   }
   return m_constant_perihelion_longitude;
 }
