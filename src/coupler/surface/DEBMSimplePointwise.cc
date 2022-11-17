@@ -18,7 +18,7 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cmath>          // M_PI and erfc() in CalovGreveIntegrand()
+#include <cmath>
 
 #include "DEBMSimplePointwise.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -550,7 +550,7 @@ double DEBMSimplePointwise::obliquity(double time) const {
  */
 double DEBMSimplePointwise::perihelion_longitude(double time) const {
   if (m_use_paleo_file) {
-    return m_perihelion_longitude->value(time); // FIXME: add remainder(..., 2*M_PI) and test
+    return remainder(m_perihelion_longitude->value(time), 2.0 * M_PI);
   }
   return m_constant_perihelion_longitude;
 }
