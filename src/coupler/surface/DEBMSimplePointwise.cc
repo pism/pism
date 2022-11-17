@@ -393,7 +393,7 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
                                          double T,
                                          double surface_elevation,
                                          double latitude,
-                                         double albedo) {
+                                         double albedo) const {
   assert(dt > 0.0);
 
   const double degrees_to_radians = M_PI / 180.0;

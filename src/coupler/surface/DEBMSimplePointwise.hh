@@ -62,7 +62,7 @@ public:
                       double T,
                       double surface_elevation,
                       double lat,
-                      double albedo);
+                      double albedo) const;
 
   class Changes {
   public:
