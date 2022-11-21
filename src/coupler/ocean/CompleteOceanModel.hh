@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021 PISM Authors
+/* Copyright (C) 2018, 2021, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef COMPLETEOCEANMODEL_H
-#define COMPLETEOCEANMODEL_H
+#ifndef PISM_COMPLETEOCEANMODEL_H
+#define PISM_COMPLETEOCEANMODEL_H
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -51,4 +51,4 @@ protected:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* COMPLETEOCEANMODEL_H */
+#endif /* PISM_COMPLETEOCEANMODEL_H */
