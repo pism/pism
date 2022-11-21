@@ -46,7 +46,7 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr g)
   ForcingOptions opt(*m_grid->ctx(), "ocean.ismip6");
 
   {
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    unsigned int buffer_size = static_cast<unsigned int>(m_config->get_number("input.forcing.buffer_size"));
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -140,27 +140,6 @@ const array::Scalar& ISMIP6::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-/*!
- * Compute melting temperature at a given depth within the ice.
- */
-void ISMIP6::melting_point_temperature(const array::Scalar &depth,
-                                    array::Scalar &result) const {
-const double
-    T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"), // K
-    beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_number("constants.standard_gravity"),
-    ice_density = m_config->get_number("constants.ice.density");
-
-  array::AccessScope list{&depth, &result};
-
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-    const double pressure = ice_density * g * depth(i,j); // FIXME task #7297
-    // result is set to melting point at depth
-    result(i,j) = T0 - beta_CC * pressure;
-  }
-}
-
 //! \brief Computes mass flux in [kg m-2 s-1].
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
@@ -180,6 +159,7 @@ void ISMIP6::mass_flux(const array::Scalar &ice_thickness, const array::Scalar &
 
   array::AccessScope list{&ice_thickness, &shelfbtemp, &salinity_ocean, &result};
 
+  // NOLINTBEGIN(readability-magic-numbers)
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -211,9 +191,8 @@ void ISMIP6::mass_flux(const array::Scalar &ice_thickness, const array::Scalar &
     // convert from [m s-1] to [kg m-2 s-1]:
     result(i,j) *= ice_density;
   }
+  // NOLINTEND(readability-magic-numbers)
 }
-
-
 
 } // end of namespace ocean
 } // end of namespace pism

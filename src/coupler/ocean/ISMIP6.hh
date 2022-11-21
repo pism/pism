@@ -56,8 +56,6 @@ private:
   std::shared_ptr<array::Forcing> m_shelfbtemp;
   std::shared_ptr<array::Forcing> m_salinity_ocean;
   
-  void melting_point_temperature(const array::Scalar &depth,
-                                 array::Scalar &result) const;
   void mass_flux(const array::Scalar &ice_thickness,
                  const array::Scalar &m_shelfbtemp,
                  const array::Scalar &m_salinity_ocean,
