@@ -38,7 +38,7 @@ namespace ocean {
 
 
 ISMIP6::ISMIP6(IceGrid::ConstPtr g)
-  :  CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
+  :  CompleteOceanModel(g) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
@@ -73,10 +73,6 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr g)
   m_salinity_ocean->set_attrs("climate_forcing",
                               "ocean salinity",
                               "g/kg", "g/kg", "", 0);
-}
-
-ISMIP6::~ISMIP6() {
-  // empty
 }
 
 void ISMIP6::init_impl(const Geometry &geometry) {

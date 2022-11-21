@@ -60,14 +60,14 @@ private:
   
 
   void compute_thermal_forcing(const array::Scalar &ice_thickness,
-                               const array::Scalar &m_shelfbtemp,
-                               const array::Scalar &m_salinity_ocean,
-                               array::Scalar &thermal_forcing) ;
+                               const array::Scalar &shelfbtemp,
+                               const array::Scalar &salinity_ocean,
+                               array::Scalar &result) ;
 
-  void compute_avg_thermal_forcing(const array::CellType &mask,
-                                   const array::Scalar &m_basin_mask,
+  void compute_avg_thermal_forcing(const array::CellType &cell_type,
+                                   const array::Scalar &basin_mask,
                                    const array::Scalar &thermal_forcing,
-                                   std::vector<double> &basin_TF) ; // per basin
+                                   std::vector<double> &result) ; // per basin
 
   void mass_flux(const array::Scalar &thermal_forcing,
                  const array::Scalar &m_basin_mask,

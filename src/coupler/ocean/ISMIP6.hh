@@ -41,7 +41,7 @@ namespace ocean {
 class ISMIP6 : public CompleteOceanModel {
 public:
   ISMIP6(IceGrid::ConstPtr g);
-  virtual ~ISMIP6();
+  virtual ~ISMIP6() = default;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
