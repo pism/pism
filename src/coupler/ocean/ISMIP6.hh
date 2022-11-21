@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POISMIP6_H_
-#define _POISMIP6_H_
+#ifndef PISM_OCEAN_ISMIP6_H
+#define PISM_OCEAN_ISMIP6_H
 
 #include "CompleteOceanModel.hh"
-//#include "pism/coupler/OceanModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {
@@ -45,21 +45,25 @@ public:
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
-  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
 
   // outputs variables from ISMIP6 routine
-  const IceModelVec2S& shelf_base_temperature_impl() const;
-  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const array::Scalar& shelf_base_temperature_impl() const;
+  const array::Scalar& shelf_base_mass_flux_impl() const;
 
   // Variables to be read from input file
-  IceModelVec2T::Ptr m_shelfbtemp;
-  IceModelVec2T::Ptr m_salinity_ocean;
+  std::shared_ptr<array::Forcing> m_shelfbtemp;
+  std::shared_ptr<array::Forcing> m_salinity_ocean;
   
-  void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
-  void mass_flux(const IceModelVec2S &ice_thickness, const IceModelVec2S &m_shelfbtemp, const IceModelVec2S &m_salinity_ocean, IceModelVec2S &result) const;
+  void melting_point_temperature(const array::Scalar &depth,
+                                 array::Scalar &result) const;
+  void mass_flux(const array::Scalar &ice_thickness,
+                 const array::Scalar &m_shelfbtemp,
+                 const array::Scalar &m_salinity_ocean,
+                 array::Scalar &result) const;
 };
 
 } // end of namespace ocean
 } // end of namespace pism
-#endif /* _POISMIP6_H_ */
+#endif /* PISM_OCEAN_ISMIP6_H */

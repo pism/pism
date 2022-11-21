@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,9 @@
 #define _POISMIP6nl_H_
 
 #include "CompleteOceanModel.hh"
-//#include "pism/coupler/OceanModel.hh"
-#include "pism/util/iceModelVec2T.hh"
+
+#include "pism/util/array/Forcing.hh"
+
 
 namespace pism {
 namespace ocean {
@@ -41,7 +42,7 @@ namespace ocean {
 class ISMIP6nl : public CompleteOceanModel {
 public:
   ISMIP6nl(IceGrid::ConstPtr g);
-  virtual ~ISMIP6nl();
+  virtual ~ISMIP6nl() = default;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
@@ -49,24 +50,34 @@ private:
   void init_impl(const Geometry &geometry);
 
   // outputs variables from ISMIP6 routine
-  const IceModelVec2S& shelf_base_temperature_impl() const;
-  const IceModelVec2S& shelf_base_mass_flux_impl() const;
+  const array::Scalar& shelf_base_temperature_impl() const;
+  const array::Scalar& shelf_base_mass_flux_impl() const;
 
   // Variables to be read from input file
-  IceModelVec2Int m_basin_mask;
-  IceModelVec2T::Ptr m_shelfbtemp;
-  IceModelVec2T::Ptr m_salinity_ocean;
+  array::Scalar1 m_basin_mask;
+  std::shared_ptr<array::Forcing> m_shelfbtemp;
+  std::shared_ptr<array::Forcing> m_salinity_ocean;
   
 
-  void compute_thermal_forcing(const IceModelVec2S &ice_thickness, const IceModelVec2S &m_shelfbtemp, const IceModelVec2S &m_salinity_ocean, IceModelVec2S &thermal_forcing) ;
-  void compute_avg_thermal_forcing(const IceModelVec2CellType &mask, const IceModelVec2Int &m_basin_mask, const IceModelVec2S &thermal_forcing, std::vector<double> &basin_TF) ; // per basin
-  //void melting_point_temperature(const IceModelVec2S &depth, IceModelVec2S &result) const;
-  void mass_flux(const IceModelVec2S &thermal_forcing, const IceModelVec2Int &m_basin_mask, std::vector<double> &basin_TF, IceModelVec2S &result) ;
+  void compute_thermal_forcing(const array::Scalar &ice_thickness,
+                               const array::Scalar &m_shelfbtemp,
+                               const array::Scalar &m_salinity_ocean,
+                               array::Scalar &thermal_forcing) ;
+
+  void compute_avg_thermal_forcing(const array::CellType &mask,
+                                   const array::Scalar &m_basin_mask,
+                                   const array::Scalar &thermal_forcing,
+                                   std::vector<double> &basin_TF) ; // per basin
+
+  void mass_flux(const array::Scalar &thermal_forcing,
+                 const array::Scalar &m_basin_mask,
+                 std::vector<double> &basin_TF,
+                 array::Scalar &result) ;
 
   int m_n_basins;
 
   // temporary storage
-  IceModelVec2S m_thermal_forcing;
+  array::Scalar m_thermal_forcing;
 };
 
 } // end of namespace ocean

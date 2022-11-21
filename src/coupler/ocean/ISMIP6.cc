@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -27,7 +27,7 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/iceModelVec.hh"
+
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -47,27 +47,23 @@ ISMIP6::ISMIP6(IceGrid::ConstPtr g)
 
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
-    unsigned int evaluations_per_year = m_config->get_number("input.forcing.evaluations_per_year");
-    bool periodic = opt.period > 0;
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
-    m_shelfbtemp = IceModelVec2T::ForcingField(m_grid,
-                                               file,
-                                               "shelfbtemp",
-                                               "", // no standard name
-                                               buffer_size,
-                                               evaluations_per_year,
-                                               periodic,
-                                               LINEAR);
+    m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
+                                                    file,
+                                                    "shelfbtemp",
+                                                    "", // no standard name
+                                                    buffer_size,
+                                                    opt.periodic,
+                                                    LINEAR);
 
-   m_salinity_ocean = IceModelVec2T::ForcingField(m_grid,
+   m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                  file,
                                                   "salinity_ocean",
                                                   "", // no standard name
                                                    buffer_size,
-                                                  evaluations_per_year,
-                                                  periodic,
+                                                  opt.periodic,
                                                   LINEAR);
   }
 
@@ -90,11 +86,11 @@ void ISMIP6::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.ismip6");
 
-  m_shelfbtemp->init(opt.filename, opt.period, opt.reference_time);
-  m_salinity_ocean->init(opt.filename, opt.period, opt.reference_time);
+  m_shelfbtemp->init(opt.filename, opt.periodic);
+  m_salinity_ocean->init(opt.filename, opt.periodic);
 
   // read time-independent data right away:
-  if (m_shelfbtemp->n_records() == 1 && m_salinity_ocean->n_records() == 1) {
+  if (m_shelfbtemp->buffer_size() == 1 and m_salinity_ocean->buffer_size() == 1) {
     update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
   }
 }
@@ -114,17 +110,22 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_temperature->copy_from(*m_shelfbtemp);
   // FLO m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 
-  const IceModelVec2S &H = geometry.ice_thickness;
-
   // Set shelf base temperature to the melting temperature at the base (depth within the
   // ice equal to ice thickness).
   // FLO melting_point_temperature(H, *m_shelf_base_temperature);
 
-  mass_flux(H, *m_shelfbtemp, *m_salinity_ocean, *m_shelf_base_mass_flux); // call to ISMIP6 quadratic parametrisation
+  mass_flux(geometry.ice_thickness,
+            *m_shelfbtemp,
+            *m_salinity_ocean,
+            *m_shelf_base_mass_flux); // call to ISMIP6 quadratic parametrisation
 
-  m_melange_back_pressure_fraction->set(m_config->get_number("ocean.melange_back_pressure_fraction"));
+  double
+    ice_density   = m_config->get_number("constants.ice.density"),
+    water_density = m_config->get_number("constants.sea_water.density"),
+    g             = m_config->get_number("constants.standard_gravity");
 
-
+  compute_average_water_column_pressure(geometry, ice_density, water_density, g,
+                                        *m_water_column_pressure);
 }
 
 
@@ -135,26 +136,26 @@ MaxTimestep ISMIP6::max_timestep_impl(double t) const {
 }
 
 
-const IceModelVec2S& ISMIP6::shelf_base_temperature_impl() const {
+const array::Scalar& ISMIP6::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const IceModelVec2S& ISMIP6::shelf_base_mass_flux_impl() const {
+const array::Scalar& ISMIP6::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
 /*!
  * Compute melting temperature at a given depth within the ice.
  */
-void ISMIP6::melting_point_temperature(const IceModelVec2S &depth,
-                                    IceModelVec2S &result) const {
+void ISMIP6::melting_point_temperature(const array::Scalar &depth,
+                                    array::Scalar &result) const {
 const double
     T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"), // K
     beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
     g           = m_config->get_number("constants.standard_gravity"),
     ice_density = m_config->get_number("constants.ice.density");
 
-  IceModelVec::AccessList list{&depth, &result};
+  array::AccessScope list{&depth, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -168,7 +169,7 @@ const double
 /*!
  * Assumes that mass flux is proportional to the shelf-base heat flux.
  */
-void ISMIP6::mass_flux(const IceModelVec2S &ice_thickness, const IceModelVec2S &shelfbtemp, const IceModelVec2S &salinity_ocean, IceModelVec2S &result) const {
+void ISMIP6::mass_flux(const array::Scalar &ice_thickness, const array::Scalar &shelfbtemp, const array::Scalar &salinity_ocean, array::Scalar &result) const {
   const double
     //melt_factor       = m_config->get_number("ocean.pik_melt_factor"),
     L                 = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
@@ -181,7 +182,7 @@ void ISMIP6::mass_flux(const IceModelVec2S &ice_thickness, const IceModelVec2S &
 
   //FIXME: gamma_T should be a function of the friction velocity, not a const
 
-  IceModelVec::AccessList list{&ice_thickness, &shelfbtemp, &salinity_ocean, &result};
+  array::AccessScope list{&ice_thickness, &shelfbtemp, &salinity_ocean, &result};
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
