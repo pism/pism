@@ -12,13 +12,10 @@
 SCRIPTNAME="#(run_paleo.sh)"
 
 set -e  # exit on error
+set -u  # stop if a variable is not set
 
 echo "$SCRIPTNAME   Run 30km grid paleo-climate spinup script using -pik options"
 echo "$SCRIPTNAME   Run as './run_paleo.sh NN' for NN procs and 15km grid"
-
-# get user and platform-specific variables like working_dir, pismcodedir,
-# pism_exec and mpi command
-source set_environment.sh
 
 runname=`echo $PWD | awk -F/ '{print $NF}'`
 #echo $runname
