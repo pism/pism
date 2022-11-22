@@ -16,8 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cmath>                // NAN, std::isnan, std::pow
+#include <algorithm>            // std::min
+
 #include "enthSystem.hh"
-#include <gsl/gsl_math.h>       // GSL_NAN, gsl_isnan()
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
@@ -48,13 +50,13 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_R_cold   = -1.0;
   m_R_temp   = -1.0;
   m_lambda = -1.0;
-  m_D0 = GSL_NAN;
-  m_U0 = GSL_NAN;
-  m_B0 = GSL_NAN;
-  m_L_ks = GSL_NAN;
-  m_D_ks = GSL_NAN;
-  m_U_ks = GSL_NAN;
-  m_B_ks = GSL_NAN;
+  m_D0 = NAN;
+  m_U0 = NAN;
+  m_B0 = NAN;
+  m_L_ks = NAN;
+  m_D_ks = NAN;
+  m_U_ks = NAN;
+  m_B_ks = NAN;
 
   m_ice_density = config.get_number("constants.ice.density");
   m_ice_c   = config.get_number("constants.ice.specific_heat_capacity");
@@ -281,8 +283,9 @@ is already set.
 void enthSystemCtx::set_basal_dirichlet_bc(double Y) {
 #if (Pism_DEBUG==1)
   checkReadyToSolve();
-  if (gsl_isnan(m_D0) == 0 || gsl_isnan(m_U0) == 0 || gsl_isnan(m_B0) == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "setting basal boundary conditions twice in enthSystemCtx");
+  if (not std::isnan(m_D0) || not std::isnan(m_U0)  || not std::isnan(m_B0)) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "setting basal boundary conditions twice in enthSystemCtx");
   }
 #endif
   m_D0 = 1.0;
@@ -431,7 +434,7 @@ void enthSystemCtx::assemble_R() {
   // R[k] for k > m_ks are never used
 #if (Pism_DEBUG==1)
   for (unsigned int k = m_ks + 1; k < m_R.size(); ++k) {
-    m_R[k] = GSL_NAN;
+    m_R[k] = NAN;
   }
 #endif
 }
@@ -485,7 +488,7 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 
 #if (Pism_DEBUG==1)
   checkReadyToSolve();
-  if (gsl_isnan(m_D0) || gsl_isnan(m_U0) || gsl_isnan(m_B0)) {
+  if (std::isnan(m_D0) || std::isnan(m_U0) || std::isnan(m_B0)) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "solveThisColumn() should only be called after\n"
                        "  setting basal boundary condition in enthSystemCtx");
@@ -567,13 +570,13 @@ void enthSystemCtx::solve(std::vector<double> &x) {
 #if (Pism_DEBUG==1)
   // if success, mark column as done by making scheme params and b.c. coeffs invalid
   m_lambda = -1.0;
-  m_D0     = GSL_NAN;
-  m_U0     = GSL_NAN;
-  m_B0     = GSL_NAN;
-  m_L_ks = GSL_NAN;
-  m_D_ks = GSL_NAN;
-  m_U_ks = GSL_NAN;
-  m_B_ks = GSL_NAN;
+  m_D0     = NAN;
+  m_U0     = NAN;
+  m_B0     = NAN;
+  m_L_ks = NAN;
+  m_D_ks = NAN;
+  m_U_ks = NAN;
+  m_B_ks = NAN;
 #endif
 }
 

@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>                // std::pow
+#include <algorithm>            // std::min, std::max
+
 #include "FractureDensity.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"

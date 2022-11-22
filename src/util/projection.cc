@@ -18,7 +18,7 @@
  */
 
 #include <cstdlib>              // strtol
-#include <cmath>                // fabs
+#include <cmath>                // std::pow, std::sqrt, std::fabs
 
 #include "projection.hh"
 #include "VariableMetadata.hh"
@@ -182,7 +182,7 @@ void check_consistency_epsg(const MappingInfo &info) {
 
       double value = info.mapping.get_number(d.first);
 
-      if (fabs(value - d.second[0]) > 1e-12) {
+      if (std::fabs(value - d.second[0]) > 1e-12) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"
                                       "%s requires %s = %f,\n"
                                       "but the mapping variable has %s = %f.",

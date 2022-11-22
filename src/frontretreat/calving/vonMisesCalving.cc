@@ -17,6 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>                // std::pow, std::sqrt
+#include <algorithm>            // std::max
+
 #include "vonMisesCalving.hh"
 
 #include "pism/util/IceGrid.hh"
