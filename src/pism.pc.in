@@ -1,0 +1,12 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}/bin
+libdir=${prefix}/lib
+includedir=${prefix}/include
+compiler=@CMAKE_CXX_COMPILER@ @CMAKE_CXX_COMPILER_ARG1@
+
+Name: pism
+Description: Parallel Ice Sheet Model library
+Version: @Pism_VERSION@
+Libs: -L${libdir} -lpism
+Libs.private: -lpetsc
+Cflags: -I${includedir}

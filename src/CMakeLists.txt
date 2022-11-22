@@ -193,3 +193,7 @@ endif()
 if (Pism_DEBUG OR Pism_BUILD_PYTHON_BINDINGS)
   add_subdirectory (pythonbindings)
 endif()
+
+# Generate the pkg-config file
+configure_file(pism.pc.in ${CMAKE_CURRENT_BINARY_DIR}/pism.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pism.pc DESTINATION lib/pkgconfig)
