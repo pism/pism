@@ -112,7 +112,6 @@ void ISMIP6nl::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  m_log->message(2, "*ENTER UPDATE IMPL\n");
   m_shelfbtemp->update(t, dt);  // FLO
   m_salinity_ocean->update(t, dt);  // FLO
 
@@ -121,18 +120,15 @@ void ISMIP6nl::update_impl(const Geometry &geometry, double t, double dt) {
 
   m_shelf_base_temperature->copy_from(*m_shelfbtemp);
 
-  m_log->message(2, "*BEFORE COMPUTING TF\n");
   compute_thermal_forcing(geometry.ice_thickness,
                           *m_shelfbtemp, *m_salinity_ocean, m_thermal_forcing);
 
-  m_log->message(2, "*BEFORE COMPUTING AVG_TF\n");
   std::vector<double> basin_TF(m_n_basins);
   compute_avg_thermal_forcing(geometry.cell_type,
                               m_basin_mask,
                               m_thermal_forcing,
                               basin_TF); // per basin
 
-  m_log->message(2, "*BEFORE COMPUTING MASS_FLUX\n");
   mass_flux(m_thermal_forcing,
             m_basin_mask,
             basin_TF,
@@ -145,7 +141,6 @@ void ISMIP6nl::update_impl(const Geometry &geometry, double t, double dt) {
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
-  m_log->message(2, "*CALCULATION DONE\n");
 }
 
 MaxTimestep ISMIP6nl::max_timestep_impl(double t) const {
