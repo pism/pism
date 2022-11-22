@@ -1670,9 +1670,9 @@ netcdf pism_config {
     pism_config:ocean.ismip6.file_option = "ocean_ismip6_file";
     pism_config:ocean.ismip6.file_type = "string";
 
-    pism_config:ocean.ismip6.period = "no";
-    pism_config:ocean.ismip6.period_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:ocean.ismip6.period_type = "flag";
+    pism_config:ocean.ismip6.periodic = "no";
+    pism_config:ocean.ismip6.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.ismip6.periodic_type = "flag";
 
     pism_config:ocean.ismip6nl.file = "";
     pism_config:ocean.ismip6nl.file_doc = "Name of the file containing climate forcing fields.";
