@@ -2288,6 +2288,11 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.alpha_type = "number";
     pism_config:surface.force_to_thickness.alpha_units = "year-1";
 
+    pism_config:surface.force_to_thickness.file = "";
+    pism_config:surface.force_to_thickness.file_doc = "The name of the file to read the target ice thickness from.";
+    pism_config:surface.force_to_thickness.file_option = "force_to_thickness_file";
+    pism_config:surface.force_to_thickness.file_type = "string";
+
     pism_config:surface.force_to_thickness.ice_free_alpha_factor = 1.0;
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_doc = ":config:`surface.force_to_thickness.alpha` is multiplied by this factor in areas that are ice-free according to the target ice thickness and :config:`surface.force_to_thickness.ice_free_thickness_threshold`";
     pism_config:surface.force_to_thickness.ice_free_alpha_factor_option = "force_to_thickness_ice_free_alpha_factor";
@@ -2304,11 +2309,6 @@ netcdf pism_config {
     pism_config:surface.force_to_thickness.start_time_doc = "Starting time for the \"force to thickness\" modifier; the default is \"start from the creation of the Earth.\"";
     pism_config:surface.force_to_thickness.start_time_type = "number";
     pism_config:surface.force_to_thickness.start_time_units = "years";
-
-    pism_config:surface.force_to_thickness_file = "";
-    pism_config:surface.force_to_thickness_file_doc = "The name of the file to read the target ice thickness from.";
-    pism_config:surface.force_to_thickness_file_option = "force_to_thickness_file";
-    pism_config:surface.force_to_thickness_file_type = "string";
 
     pism_config:surface.given.file = "";
     pism_config:surface.given.file_doc = "Name of the file containing climate forcing fields.";
