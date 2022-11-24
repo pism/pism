@@ -87,7 +87,7 @@ void Logger::error(const char format[], ...) const {
 }
 
 void Logger::error_impl(const char buffer[]) const {
-  PetscErrorCode ierr = PetscFPrintf(m_impl->com, stderr, buffer);
+  PetscErrorCode ierr = PetscFPrintf(m_impl->com, stderr, "%s", buffer);
   PISM_CHK(ierr, "PetscFPrintf");
 }
 
