@@ -104,12 +104,13 @@ class Experiment:
         "Options corresponding to modeling choices."
         config_filename = self.config(step)
 
-        options = ["-energy none",  # isothermal setup; allows selecting cold-mode flow laws
+        options = ["-periodicity y", # flowline setup
+                   "-energy none",  # isothermal setup; allows selecting cold-mode flow laws
                    "-ssa_flow_law isothermal_glen",  # isothermal setup
                    "-yield_stress constant",
                    "-tauc %e" % MISMIP.C(self.experiment),
                    "-pseudo_plastic",
-                   "-gradient eta",
+                   "-gradient eta", # or haseloff
                    "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
                    "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
                    "-front_retreat_file %s" % input_file, # prescribe the maximum ice extent
@@ -193,7 +194,6 @@ class Experiment:
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-o %s" % output_file,
-                   "-o_order zyx",
                    ]
 
         return output_file, options
