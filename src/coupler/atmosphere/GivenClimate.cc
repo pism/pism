@@ -44,17 +44,17 @@ Given::Given(IceGrid::ConstPtr g)
                                              LINEAR);
 
     m_precipitation = std::make_shared<array::Forcing>(m_grid,
-                                                  file,
-                                                  "precipitation",
-                                                  "", // no standard name
-                                                  buffer_size,
-                                                  opt.periodic);
+                                                       file,
+                                                       "precipitation",
+                                                       "", // no standard name
+                                                       buffer_size,
+                                                       opt.periodic);
   }
 
   {
     m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
                           "Kelvin", "Kelvin", "", 0);
-    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C
+    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C)
   }
   {
     m_precipitation->set_attrs("model_state", "precipitation rate",

@@ -79,7 +79,7 @@ struct GeometryEvolution::Impl {
   array::Staggered1 flux_staggered;
 
   // Work space
-  array::Vector1    input_velocity; // a ghosted copy; not modified
+  array::Vector1   input_velocity; // a ghosted copy; not modified
   array::Scalar1   bed_elevation; // a copy; not modified
   array::Scalar1   sea_level;   // a copy; not modified
   array::Scalar1   ice_thickness; // updated in place
