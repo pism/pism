@@ -126,6 +126,11 @@ netcdf pism_config {
     pism_config:atmosphere.frac_P.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:atmosphere.frac_P.periodic_type = "flag";
 
+    pism_config:atmosphere.given.air_temperature_interpolation = "piecewise_linear";
+    pism_config:atmosphere.given.air_temperature_interpolation_choices = "piecewise_linear,piecewise_constant";
+    pism_config:atmosphere.given.air_temperature_interpolation_doc = "Temporal interpolation type used for near-surface air temperatures";
+    pism_config:atmosphere.given.air_temperature_interpolation_type = "keyword";
+
     pism_config:atmosphere.given.file = "";
     pism_config:atmosphere.given.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:atmosphere.given.file_option = "atmosphere_given_file";

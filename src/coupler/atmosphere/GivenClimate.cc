@@ -35,13 +35,17 @@ Given::Given(IceGrid::ConstPtr g)
 
     File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
 
+    auto interp_type = m_config->get_string("atmosphere.given.air_temperature_interpolation");
+
+    InterpolationType interpolation = interp_type == "piecewise_linear" ? LINEAR : PIECEWISE_CONSTANT;
+
     m_air_temp = std::make_shared<array::Forcing>(m_grid,
                                              file,
                                              "air_temp",
                                              "", // no standard name
                                              buffer_size,
                                              opt.periodic,
-                                             LINEAR);
+                                             interpolation);
 
     m_precipitation = std::make_shared<array::Forcing>(m_grid,
                                                        file,

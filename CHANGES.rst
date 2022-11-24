@@ -29,6 +29,9 @@ Changes since the last release
   or infinity.
 - Use `-list_diagnostics all` to print the list of all diagnostics, `-list_diagnostics
   spatial` for 2D and 3D variables, and `-list_diagnostics scalar` for scalar time series.
+- Support piecewise-constant temporal interpolation of near-surface air temperatures in
+  `-atmosphere given`: set `atmosphere.given.air_temperature_interpolation` to
+  `piecewise_constant`.
 
 Changes since v1.2
 ==================
