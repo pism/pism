@@ -4,10 +4,11 @@ set -e
 set -u
 set -x
 
-# Install the oldest supported PETSc in ~/local/petsc-3.7.0 using
-# ~/local/build/petsc-3.7.0 as the build directory.
+# Install an old PETSc version in ~/local/petsc-${version} using
+# ~/local/build/petsc-${version} as the build directory.
 
-version=3.7.0
+# The default below corresponds to the oldest version supported by PISM.
+version=${version:-3.7.0}
 build_dir=~/local/build/petsc-${version}
 
 rm -rf ${build_dir}

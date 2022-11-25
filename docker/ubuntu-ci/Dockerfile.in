@@ -87,10 +87,10 @@ RUN set -eux;\
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
 # compiles with PETSc 3.7. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
-COPY petsc-3_7_0.sh /tmp/
+COPY old-petsc.sh /tmp/
 RUN set -eux;\
         cd /tmp && \
-        ./petsc-3_7_0.sh && \
+        version=3.7.0 ./old-petsc.sh && \
         rm -rf ~/local/build
 
 # Build the oldest supported CMake version

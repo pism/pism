@@ -5,7 +5,7 @@ foreach(script petsc.sh hdf5.sh netcdf.sh pnetcdf.sh parallelio.sh)
 endforeach()
 
 configure_file(cmake-3_7_0.sh . COPYONLY)
-configure_file(petsc-3_7_0.sh . COPYONLY)
+configure_file(old-petsc.sh . COPYONLY)
 
 set(PISM_DOCKER_UBUNTU_VERSION 0.1.6)
 
