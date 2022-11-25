@@ -963,7 +963,7 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
 
       // applying thickness_change will lead to negative thickness
       if (H + dH < 0.0) {
-        thickness_change(i, j)    = H;
+        thickness_change(i, j)    = -H;
         conservation_error(i, j) += - (H + dH);
       }
 
@@ -972,7 +972,7 @@ void GeometryEvolution::ensure_nonnegativity(const IceModelVec2S &ice_thickness,
         dV = area_specific_volume_change(i, j);
 
       if (V + dV < 0.0) {
-        area_specific_volume_change(i, j)  = V;
+        area_specific_volume_change(i, j)  = -V;
         conservation_error(i, j)          += - (V + dV);
       }
     }
