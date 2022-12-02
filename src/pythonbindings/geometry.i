@@ -16,3 +16,5 @@
 %include "geometry/GeometryEvolution.hh"
 
 pism_class(pism::MPDATA2, "pism/geometry/MPDATA2.hh")
+
+pism_class(pism::UNO, "pism/geometry/UNO.hh")

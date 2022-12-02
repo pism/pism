@@ -52,10 +52,11 @@ add_library (pism
   energy/bootstrapping.cc
   energy/enthSystem.cc
   energy/tempSystem.cc
-  energy/utilities.cc  
+  energy/utilities.cc
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
   geometry/MPDATA2.cc
+  geometry/UNO.cc
   geometry/grounded_cell_fraction.cc
   geometry/flux_limiter.cc
   geometry/part_grid_threshold_thickness.cc
