@@ -58,7 +58,7 @@ public:
   // inputs used by regional stress balance models
   const array::Scalar2 *no_model_mask;
   const array::Scalar *no_model_ice_thickness;
-  const array::Scalar1 *no_model_surface_elevation;
+  const array::Scalar2 *no_model_surface_elevation;
 
   void dump(const char *filename) const;
 };

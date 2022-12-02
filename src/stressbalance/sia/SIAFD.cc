@@ -375,16 +375,16 @@ void SIAFD::surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
  * words, a purely local computation would require width=3 stencil of surface,
  * mask, and bed fields.)
  */
-void SIAFD::surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
+void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevation,
                                       const array::CellType2 &cell_type,
                                       array::Staggered1 &h_x,
                                       array::Staggered1 &h_y) {
   const double
     dx = m_grid->dx(),
     dy = m_grid->dy();  // convenience
-  const array::Scalar
+  const array::Scalar2
     &h = ice_surface_elevation;
-  array::Scalar
+  array::Scalar1
     &w_i = m_work_2d_0,
     &w_j = m_work_2d_1; // averaging weights
 
@@ -550,10 +550,10 @@ void SIAFD::compute_diffusivity(bool full_update,
                                 const Geometry &geometry,
                                 const array::Array3D *enthalpy,
                                 const array::Array3D *age,
-                                const array::Staggered &h_x,
-                                const array::Staggered &h_y,
-                                array::Staggered &result) {
-  array::Scalar
+                                const array::Staggered1 &h_x,
+                                const array::Staggered1 &h_y,
+                                array::Staggered1 &result) {
+  array::Scalar2
     &thk_smooth = m_work_2d_0,
     &theta      = m_work_2d_1;
 

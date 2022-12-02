@@ -77,7 +77,7 @@ protected:
                                     const array::Scalar2 &bed_elevation,
                                     array::Staggered1 &h_x,
                                     array::Staggered1 &h_y);
-  virtual void surface_gradient_haseloff(const array::Scalar &ice_surface_elevation,
+  virtual void surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevation,
                                          const array::CellType2 &cell_type,
                                          array::Staggered1 &h_x,
                                          array::Staggered1 &h_y);
@@ -89,9 +89,9 @@ protected:
                                    const Geometry &geometry,
                                    const array::Array3D *enthalpy,
                                    const array::Array3D *age,
-                                   const array::Staggered &h_x,
-                                   const array::Staggered &h_y,
-                                   array::Staggered &result);
+                                   const array::Staggered1 &h_x,
+                                   const array::Staggered1 &h_y,
+                                   array::Staggered1 &result);
 
   virtual void compute_diffusive_flux(const array::Staggered &h_x, const array::Staggered &h_y,
                                       const array::Staggered &diffusivity,
