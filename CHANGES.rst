@@ -12,6 +12,9 @@ Changes since the last release
   using `atmosphere.delta_T.file` contains a scalar time series `delta_T`, use that as a
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
   `delta_T`, use that as a time-and-space-dependent forcing.
+- Add the calving option `-calving given_calving` to define a constant
+  `-calving_rate 2000.0` or a given 2D calving rate `-given_calving_file ...`,
+  balancing the horizontal ice velocity at the terminus
 - Refactor utility classes used to store 2D and 3D arrays.
 - Remove a misguided energy conservation attempt that turned out to be harmful
   (occasionally).
