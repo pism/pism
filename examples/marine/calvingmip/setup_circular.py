@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 
-# Creates Thule setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Thule-domain
-# run as "python setup_thule.py -L 2e6 -M 401" for 5km resolution and 2000km domain width
+# Creates circular setup fpr CalvingMIP as in https://github.com/JRowanJordan/CalvingMIP/wiki/Circular-domain
+# Model parameters, see https://github.com/JRowanJordan/CalvingMIP/wiki/Experimental-parameters
+
+# run as "python setup_circular.py -L 1.6e6 -M 401" for 4km resolution and 1600 x 1600 km domain width
 
 from PISMNC import PISMDataset as NC
 from optparse import OptionParser
@@ -16,7 +18,7 @@ Ba=1100
 rc=0
 
 cd=700e3
-rhoi=910.0
+rhoi=910.0 #917.0
 ac=0.3*rhoi
 t0=-10.0
 h0=100.0
@@ -25,7 +27,7 @@ parser = OptionParser()
 
 parser.usage = "%prog [options]"
 parser.description = "Fills missing values in variables selected using -v in the file given by -f."
-parser.add_option("-o", dest="output_file_name", default="thule_input.nc",
+parser.add_option("-o", dest="output_file_name", default="circular_input.nc",
                   help="output file name")
 parser.add_option("-L", dest="length", default=100e3, type=float,
                   help="domain length, meters")
@@ -44,10 +46,8 @@ zeros = np.zeros((options.Mx, options.Mx))
 
 r=np.sqrt(xx**2+yy**2)
 theta=np.arctan2(yy,xx)
-l=R-np.cos(2*theta)*R/2
-a=Bc-(Bc-Bl)*(r-rc)**2/(R-rc)**2
+topg = Bc-(Bc-Bl)*(r-rc)**2./(R-rc)**2
 
-topg=Ba*np.cos(3*np.pi*r/l)+a
 
 zeros = np.zeros((options.Mx, options.Mx))
 thk = zeros.copy() + h0
