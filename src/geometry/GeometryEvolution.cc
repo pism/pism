@@ -396,8 +396,22 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
 /*!
  * Prevent advective ice flow from floating ice to ice-free land, as well as in the
  * ice-free areas.
+ *
+ * Note: positive `input` corresponds to the flux from `current` to `neighbor`.
  */
 static double limit_advective_flux(int current, int neighbor, double input) {
+
+  // No flow from ice-free ocean:
+  if ((ice_free_ocean(current) and input > 0.0) or
+      (ice_free_ocean(neighbor) and input < 0.0)) {
+    return 0.0;
+  }
+
+  // No flow from ice-free land:
+  if ((ice_free_land(current) and input > 0.0) or
+      (ice_free_land(neighbor) and input < 0.0)) {
+    return 0.0;
+  }
 
   // Case 1: Flow between grounded_ice and grounded_ice.
   if (grounded_ice(current) and grounded_ice(neighbor)) {
@@ -463,8 +477,22 @@ static double limit_advective_flux(int current, int neighbor, double input) {
 
 /*!
  * Prevent SIA-driven flow in ice shelves and ice-free areas.
+ *
+ * Note: positive `flux` corresponds to the flux from `current` to `neighbor`.
  */
 static double limit_diffusive_flux(int current, int neighbor, double flux) {
+
+  // No flow from ice-free ocean:
+  if ((ice_free_ocean(current) and flux > 0.0) or
+      (ice_free_ocean(neighbor) and flux < 0.0)) {
+    return 0.0;
+  }
+
+  // No flow from ice-free land:
+  if ((ice_free_land(current) and flux > 0.0) or
+      (ice_free_land(neighbor) and flux < 0.0)) {
+    return 0.0;
+  }
 
   // Case 1: Flow between grounded_ice and grounded_ice.
   if (grounded_ice(current) and grounded_ice(neighbor)) {
@@ -714,6 +742,7 @@ void GeometryEvolution::update_in_place(double dt,
 
       if (m_impl->use_part_grid) {
         if (m_impl->cell_type.ice_free_ocean(i, j) and m_impl->cell_type.next_to_ice(i, j)) {
+          assert(divQ <= 0.0);
           // Add the flow contribution to this partially filled cell.
           area_specific_volume(i, j) += -divQ * dt;
 
