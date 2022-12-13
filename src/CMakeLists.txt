@@ -56,6 +56,7 @@ add_library (pism
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
   geometry/grounded_cell_fraction.cc
+  geometry/flux_limiter.cc
   geometry/part_grid_threshold_thickness.cc
   icemodel/IceModel.cc
   icemodel/IceEISModel.cc
