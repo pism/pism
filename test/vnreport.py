@@ -20,7 +20,7 @@ class Plotter:
 
     def plot(self, x, vars, testname, plot_title):
         # This mask lets us choose data corresponding to a particular test:
-        test = array(list(map(chr, self.nc.variables['test'][:])))
+        test = array(list(map(lambda x: chr(int(x)), self.nc.variables['test'][:])))
         mask = (test == testname)
 
         # If we have less than 2 points to plot, then bail.
@@ -99,7 +99,7 @@ class Plotter:
         legend(loc='best', borderpad=1, labelspacing=0.5, handletextpad=0.75, handlelength=0.02)
         #  prop = FontProperties(size='smaller'),
         grid(True)
-        title("Test %s %s (%s)" % (testname, plot_title, self.nc.source))
+        title("Test %s %s" % (testname, plot_title))
 
         if self.save_figures:
             filename = "%s_%s_%s.%s" % (self.nc.source.replace(" ", "_"),
@@ -187,7 +187,7 @@ parser.add_argument("--file_format", dest="file_format", default="png",
 options = parser.parse_args()
 
 input_file = NC(options.filename, 'r')
-available_tests = unique(array(list(map(chr, input_file.variables['test'][:]))))
+available_tests = unique(array(list(map(lambda x: chr(int(x)), input_file.variables['test'][:]))))
 tests_to_plot = options.tests_to_plot
 
 if len(available_tests) == 1:
