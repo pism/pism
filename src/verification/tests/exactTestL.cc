@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2022 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -158,16 +158,14 @@ int exactL_list(const double *r, int N, double *H, double *b, double *a) {
 
   const double Lsqr = L * L;
   const double a0 = 0.3 / SperA;   /* m/s;  i.e. 0.3 m/a */
-  double *u;
   int stat, i;
 
-  u = (double *) malloc((size_t)N * sizeof(double)); /* temporary arrays */
+  std::vector<double> u(N);
 
   /* combination EPS_ABS = 1e-12, EPS_REL=0.0, method = 1 = RK Cash-Karp
      believed to be predictable and accurate */
-  stat = getU(r,N,u,1.0e-12,0.0,1);
+  stat = getU(r,N,u.data(),1.0e-12,0.0,1);
   if (stat != GSL_SUCCESS) {
-    free(u);
     return stat;
   }
 
@@ -177,7 +175,6 @@ int exactL_list(const double *r, int N, double *H, double *b, double *a) {
     a[i] = a0 * (1.0 - (2.0 * r[i] * r[i] / Lsqr));
   }
 
-  free(u);
   return 0;
 }
 
