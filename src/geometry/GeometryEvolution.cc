@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2022 PISM Authors
+/* Copyright (C) 2016--2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,6 +28,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
+
+#include "flux_limiter.hh"
 
 namespace pism {
 
@@ -273,6 +275,19 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   m_impl->profile.end("ge.interface_fluxes");
 
   m_impl->flux_staggered.update_ghosts();
+
+  {
+    // allocate temporary storage (FIXME: at some point I should evaluate whether it's OK
+    // to allocate this every time step)
+    IceModelVec2Stag flux_limited(m_grid, "limited_ice_flux", WITHOUT_GHOSTS);
+
+    make_nonnegative_preserving(dt,
+                                m_impl->ice_thickness, // in (uses ghosts)
+                                m_impl->flux_staggered, // in (uses ghosts)
+                                flux_limited);
+
+    m_impl->flux_staggered.copy_from(flux_limited);
+  }
 
   m_impl->profile.begin("ge.flux_divergence");
   compute_flux_divergence(dt,                         // in
