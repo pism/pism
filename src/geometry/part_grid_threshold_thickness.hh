@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2021 PISM Authors
+// Copyright (C) 2004-2017, 2021, 2022 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,8 @@
 
 namespace pism {
 
-double part_grid_threshold_thickness(stencils::Star<int> Mask,
-                                     stencils::Star<double> thickness,
+double part_grid_threshold_thickness(stencils::Star<int> cell_type,
+                                     stencils::Star<double> ice_thickness,
                                      stencils::Star<double> surface_elevation,
                                      double bed_elevation);
 
