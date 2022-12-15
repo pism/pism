@@ -23,8 +23,8 @@ This requires Python 3, NumPy, SciPy, and Matplotlib.
 The script `plot_results.py` also reports
 
     Exact volume: 4507018.717713624 m^2 (error: 0.04329382302239537 m^2)
-    Modeled volume: 4368807.384490967 m^2
-    Relative volume error: -3.0665799695806673 %
+    Modeled volume: 4401367.3011779785 m^2
+    Relative volume error: -2.3441530455689317 %
 
 Note that [Jaroschetal2013] state that the exact volume is 4.546878 * 10^6 m^2 and the
 script in the supplement reports
