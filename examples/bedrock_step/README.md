@@ -16,7 +16,9 @@ Run
 to reproduce the figure below and compare to Figure 3 in [Jaroschetal2013] (copied below).
 This requires Python 3, NumPy, SciPy, and Matplotlib.
 
-![img](figure.png "Steady-state and modeled geometry at 50000 years")
+<p align="center">
+  <img src="figure.png" alt="Steady-state and modeled geometry at 50000 years"/>
+</p>
 
 The script `plot_results.py` also reports
 
@@ -39,7 +41,9 @@ Their approximation of "exact" volume is less accurate: it appears to be obtaine
 trapezoidal quadrature and equally-spaced samples of a discontinuous function (ice
 thickness).
 
-![img](figure-jarosch2013.png "Figure 3 in Jarosch et al, 2013")
+<p align="center">
+  <img src="figure-jarosch2013.png" alt="Figure 3 in Jarosch et al, 2013"/>
+</p>
 
 ## Implementation notes
 
