@@ -11,7 +11,7 @@ We use a verification test described in section 6 of
 
 Run
 
-    make figure.png
+    make all
 
 to reproduce the figure below and compare to Figure 3 in [Jaroschetal2013] (copied below).
 This requires Python 3, NumPy, SciPy, and Matplotlib.

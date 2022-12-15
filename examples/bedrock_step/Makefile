@@ -1,3 +1,5 @@
+all: figure.png
+
 input.nc: bedrock_step.py
 	python3 $^ $@
 
