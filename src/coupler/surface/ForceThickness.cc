@@ -69,10 +69,10 @@ void ForceThickness::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing force-to-thickness mass-balance modifier...\n");
 
-  std::string input_file = m_config->get_string("surface.force_to_thickness_file");
+  std::string input_file = m_config->get_string("surface.force_to_thickness.file");
 
   if (input_file.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "surface.force_to_thickness_file cannot be empty");
+    throw RuntimeError(PISM_ERROR_LOCATION, "surface.force_to_thickness.file cannot be empty");
   }
 
   m_log->message(2,

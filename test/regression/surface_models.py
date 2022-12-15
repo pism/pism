@@ -624,7 +624,7 @@ class ForceThickness(TestCase):
         ice_density = config.get_number("constants.ice.density")
         self.dSMB   = -ice_density * alpha * self.dH
 
-        config.set_string("surface.force_to_thickness_file", self.filename)
+        config.set_string("surface.force_to_thickness.file", self.filename)
         config.set_number("surface.force_to_thickness.alpha", convert(alpha, "1/s", "1/year"))
 
     def forcing_test(self):

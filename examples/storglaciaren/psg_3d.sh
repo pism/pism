@@ -126,14 +126,14 @@ echo
 echo "$SCRIPTNAME  SSA run with force-to-thickness for $RUNLENGTH years on ${GS}m grid"
 cmd="$PISM_MPIDO $NN $PISM $EB -skip -skip_max $SKIP -bootstrap -i $INNAME $GRID \
      -regrid_file $INNAME $COUPLER_FORCING $FULLPHYS \
-     -surface.force_to_thickness_file $PISM_DATANAME \
+     -surface.force_to_thickness.file $PISM_DATANAME \
      -ts_file $TSNAME -ts_times $TSSTEP \
      -extra_file $EXNAME -extra_times $EXSTEP -extra_vars $EXVARS \
      -ys $STARTYEAR -y $RUNLENGTH -o_size big -o $OUTNAMEFULL"
 $PISM_DO $cmd
 echo
 
-COUPLER_ELEV="-surface elevation,forcing -surface.force_to_thickness_file $PISM_DATANAME -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,2 "
+COUPLER_ELEV="-surface elevation,forcing -surface.force_to_thickness.file $PISM_DATANAME -ice_surface_temp -6,0,1395,1400 -climatic_mass_balance -3,2.5,1200,1450,1615 -climatic_mass_balance_limits -3,2 "
 
 PARAMS="-pseudo_plastic -pseudo_plastic_q 0.5 -pseudo_plastic_uthreshold 5.0 -yield_stress mohr_coulomb -topg_to_phi 10,40,1000,1500 -sia_e 0.1"
 #PETSCSTUFF="-ssafd_ksp_type gmres -ssafd_ksp_norm_type unpreconditioned -ssafd_ksp_pc_side right -ssafd_pc_type asm -ssafd_sub_pc_type lu"
