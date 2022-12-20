@@ -425,7 +425,7 @@ class TestXZ(TestCase):
         assert expt_u >= 2.0
 
     def plot(self):
-        Ns = [11, 21, 41, 81]
+        Ns = [11, 21, 49, 129]
         mg_levels = [1, 2, 3, 4]
 
         try:
