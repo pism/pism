@@ -253,7 +253,6 @@ bool Blatter::marine_boundary(int face,
  *
  * @param[in] grid PISM's grid.
  * @param[in] Mz number of vertical levels
- * @param[in] n_levels maximum number of grid levels to use
  * @param[in] coarsening_factor grid coarsening factor
  */
 Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
