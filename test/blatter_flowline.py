@@ -93,8 +93,10 @@ class BlatterFlowline(object):
         geometry.ensure_consistency(0.0)
 
     def run(self):
+        opt = PISM.PETSc.Options()
+        opt.setValue("-bp_pc_mg_levels", self.mg_levels)
 
-        self.model = PISM.Blatter(self.grid, self.Mz, self.mg_levels, self.coarsening_factor)
+        self.model = PISM.Blatter(self.grid, self.Mz, self.coarsening_factor)
 
         inputs = PISM.StressBalanceInputs()
 
