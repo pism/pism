@@ -761,7 +761,7 @@ direct solver, which is PETSc's default.)
 
 In addition to this, we follow :cite:`BrownSmithAhmadia2013` in ordering unknowns so that
 columns are contiguous (and `u` and `v` are interleaved), allowing ILU factorization to
-compute a good approximation of ice velocities in areas where SIA applicable.
+compute a good approximation of ice velocities in areas where SIA is applicable.
 
 .. _sec-bp-pc-grid-coarsening:
 
