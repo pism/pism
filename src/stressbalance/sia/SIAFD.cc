@@ -557,11 +557,6 @@ void SIAFD::compute_diffusivity(bool full_update,
     &thk_smooth = m_work_2d_0,
     &theta      = m_work_2d_1;
 
-  const array::Scalar
-    &h = geometry.ice_surface_elevation,
-    &H = geometry.ice_thickness;
-
-  const auto &mask = geometry.cell_type;
   array::Array3D* delta[] = {&m_delta_0, &m_delta_1};
 
   result.set(0.0);
@@ -581,9 +576,12 @@ void SIAFD::compute_diffusivity(bool full_update,
   // get "theta" from Schoof (2003) bed smoothness calculation and the
   // thickness relative to the smoothed bed; each array::Scalar involved must
   // have stencil width WIDE_GHOSTS for this too work
-  m_bed_smoother->theta(h, theta);
+  m_bed_smoother->theta(geometry.ice_surface_elevation, theta);
 
-  m_bed_smoother->smoothed_thk(h, H, mask, thk_smooth);
+  m_bed_smoother->smoothed_thk(geometry.ice_surface_elevation,
+                               geometry.ice_thickness,
+                               geometry.cell_type,
+                               thk_smooth);
 
   array::AccessScope list{&result, &theta, &thk_smooth, &h_x, &h_y, enthalpy};
 
