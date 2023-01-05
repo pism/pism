@@ -56,6 +56,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
+#include "pism/age/Isochrones.hh"
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
@@ -273,6 +274,10 @@ void IceModel::model_state_setup() {
   if (m_age_model) {
     m_age_model->init(input);
     m_grid->variables().add(m_age_model->age());
+  }
+
+  if (m_isochrones) {
+    m_isochrones->init(m_geometry);
   }
 
   // Initialize the energy balance sub-model.
@@ -549,6 +554,22 @@ void IceModel::allocate_age_model() {
   }
 }
 
+void IceModel::allocate_isochrones() {
+
+  if (m_isochrones) {
+    return;
+  }
+
+  auto deposition_times = m_config->get_string("isochrones.deposition_times");
+  if (not deposition_times.empty()) {
+    m_log->message(2, "# Allocating isochrone tracking...\n");
+
+    m_isochrones = std::make_shared<Isochrones>(m_grid);
+
+    m_submodels["isochrones"] = m_isochrones.get();
+  }
+}
+
 void IceModel::allocate_energy_model() {
 
   if (m_energy_model != NULL) {
@@ -662,6 +683,7 @@ void IceModel::allocate_submodels() {
   // this has to happen *after* allocate_stressbalance()
   {
     allocate_age_model();
+    allocate_isochrones();
     allocate_energy_model();
     allocate_subglacial_hydrology();
   }

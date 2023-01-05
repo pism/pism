@@ -1550,6 +1550,15 @@ netcdf pism_config {
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
     pism_config:inverse.use_zeta_fixed_mask_type = "flag";
 
+    pism_config:isochrones.deposition_times = "";
+    pism_config:isochrones.deposition_times_doc = "List or a range of deposition times used to create isochronal layers";
+    pism_config:isochrones.deposition_times_type = "string";
+
+    pism_config:isochrones.max_n_layers = 100;
+    pism_config:isochrones.max_n_layers_doc = "maximum number of isochronal layers";
+    pism_config:isochrones.max_n_layers_type = "integer";
+    pism_config:isochrones.max_n_layers_units = "count";
+
     pism_config:ocean.anomaly.file = "";
     pism_config:ocean.anomaly.file_doc = "Name of the file containing shelf basal mass flux offset fields.";
     pism_config:ocean.anomaly.file_option = "ocean_anomaly_file";

@@ -43,6 +43,7 @@
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
+#include "pism/age/Isochrones.hh"
 #include "pism/energy/EnergyModel.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/array/Forcing.hh"
@@ -627,6 +628,15 @@ void IceModel::step(bool do_mass_continuity,
                               add_values,
                               m_thickness_change.calving);
     }
+  }
+
+  if (m_isochrones) {
+    m_isochrones->update(current_time, m_dt,
+                         m_stress_balance->velocity_u(),
+                         m_stress_balance->velocity_v(),
+                         m_geometry.ice_thickness,
+                         m_surface->mass_flux(),
+                         m_basal_melt_rate);
   }
 
   //! \li update the state variables in the subglacial hydrology model (typically
