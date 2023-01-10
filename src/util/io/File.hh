@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -121,6 +121,7 @@ public:
   void write_distributed_array(const std::string &variable_name,
                                const IceGrid &grid,
                                unsigned int z_count,
+                               bool time_dependent,
                                const double *input) const;
 
   void set_compression_level(int level) const;

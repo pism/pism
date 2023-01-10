@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -72,6 +72,7 @@ protected:
   void write_darray_impl(const std::string &variable_name,
                          const IceGrid &grid,
                          unsigned int z_count,
+                         bool time_dependent,
                          unsigned int record,
                          const double *input);
 
