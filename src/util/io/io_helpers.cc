@@ -1,4 +1,4 @@
-/* Copyright (C) 2015--2022 PISM Authors
+/* Copyright (C) 2015--2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -732,9 +732,11 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
   write_dimensions(var, grid, file);
 
+  bool time_dependent = not var.get_time_independent();
+
   // avoid writing time-independent variables more than once (saves time when writing to
   // extra_files)
-  if (var.get_time_independent()) {
+  if (not time_dependent) {
     bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
     if (written) {
       return;
@@ -765,9 +767,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
                      units,
                      glaciological_units).convert_doubles(tmp.data(), tmp.size());
 
-    file.write_distributed_array(name, grid, nlevels, tmp.data());
+    file.write_distributed_array(name, grid, nlevels, time_dependent, tmp.data());
   } else {
-    file.write_distributed_array(name, grid, nlevels, input);
+    file.write_distributed_array(name, grid, nlevels, time_dependent, input);
   }
 }
 

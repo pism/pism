@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -766,12 +766,13 @@ void File::write_variable(const std::string &variable_name,
 void File::write_distributed_array(const std::string &variable_name,
                                    const IceGrid &grid,
                                    unsigned int z_count,
+                                   bool time_dependent,
                                    const double *input) const {
   try {
     unsigned int t_length = nrecords();
     assert(t_length > 0);
 
-    m_impl->nc->write_darray(variable_name, grid, z_count, t_length - 1, input);
+    m_impl->nc->write_darray(variable_name, grid, z_count, time_dependent, t_length - 1, input);
   } catch (RuntimeError &e) {
     e.add_context("writing distributed array '%s' to '%s'",
                   variable_name.c_str(), filename().c_str());

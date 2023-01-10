@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -158,10 +158,11 @@ void NCFile::put_vara_double(const std::string &variable_name,
 void NCFile::write_darray(const std::string &variable_name,
                           const IceGrid &grid,
                           unsigned int z_count,
+                          bool time_dependent,
                           unsigned int record,
                           const double *input) {
   enddef();
-  this->write_darray_impl(variable_name, grid, z_count, record, input);
+  this->write_darray_impl(variable_name, grid, z_count, time_dependent, record, input);
 }
 
 /*!
@@ -170,15 +171,11 @@ void NCFile::write_darray(const std::string &variable_name,
 void NCFile::write_darray_impl(const std::string &variable_name,
                                const IceGrid &grid,
                                unsigned int z_count,
+                               bool time_dependent,
                                unsigned int record,
                                const double *input) {
   std::vector<std::string> dims;
   this->inq_vardimid(variable_name, dims);
-
-  unsigned int ndims = dims.size();
-
-  bool time_dependent = ((z_count  > 1 and ndims == 4) or
-                         (z_count == 1 and ndims == 3));
 
   std::vector<unsigned int> start, count;
 
