@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -223,7 +223,7 @@ public:
   //! @brief Returns the number of degrees of freedom per grid point.
   unsigned int ndof() const;
   unsigned int stencil_width() const;
-  std::vector<double> levels() const;
+  const std::vector<double>& levels() const;
 
   std::array<double,2> range() const;
   std::vector<double> norm(int n) const;

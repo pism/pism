@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008--2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -84,7 +84,8 @@ static bool legal_level(const std::vector<double> &levels, double z) {
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double Array3D::interpolate(int i, int j, double z) const {
-  auto zs = levels();
+  const auto& zs = levels();
+  auto N = zs.size();
 
 #if (Pism_DEBUG==1)
   assert(m_array != NULL);
@@ -99,17 +100,16 @@ double Array3D::interpolate(int i, int j, double z) const {
 
   const auto* column = get_column(i, j);
 
-  if (z >= zs.back()) {
-    unsigned int nlevels = zs.size();
-    return column[nlevels - 1];
+  if (z >= zs[N-1]) {
+    return column[N - 1];
   }
 
-  if (z <= zs.front()) {
+  if (z <= zs[0]) {
     return column[0];
   }
 
   auto mcurr = gsl_interp_accel_find(m_impl->bsearch_accel,
-                                     zs.data(), zs.size(), z);
+                                     zs.data(), N, z);
 
   const double incr = (z - zs[mcurr]) / (zs[mcurr+1] - zs[mcurr]);
   const double valm = column[mcurr];

@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -136,7 +136,7 @@ unsigned int Array::ndof() const {
   return m_impl->dof;
 }
 
-std::vector<double> Array::levels() const {
+const std::vector<double>& Array::levels() const {
   return m_impl->zlevels;
 }
 
