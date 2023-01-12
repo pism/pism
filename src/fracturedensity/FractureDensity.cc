@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,7 +57,6 @@ FractureDensity::FractureDensity(IceGrid::ConstPtr grid,
   m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
 
   m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
-  m_age.metadata()["glaciological_units"] = "years";
 
   m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
 

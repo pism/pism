@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -253,19 +253,17 @@ void IceModel::allocate_storage() {
   }
   // SSA Dirichlet B.C. values
   {
-    double fill_value = units::convert(m_sys, m_config->get_number("output.fill_value"),
-                                       "m year-1", "m second-1");
+    double fill_value = m_config->get_number("output.fill_value");
     const double huge_value = 1e6;
-    double valid_range = units::convert(m_sys, huge_value, "m year-1", "m second-1");
     // vel_bc
     m_velocity_bc_values.set_attrs("model_state",
-                                        "X-component of the SSA velocity boundary conditions",
-                                        "m s-1", "m year-1", "", 0);
+                                   "X-component of the SSA velocity boundary conditions",
+                                   "m s-1", "m s-1", "", 0);
     m_velocity_bc_values.set_attrs("model_state",
-                                        "Y-component of the SSA velocity boundary conditions",
-                                        "m s-1", "m year-1", "", 1);
+                                   "Y-component of the SSA velocity boundary conditions",
+                                   "m s-1", "m s-1", "", 1);
     for (int j : {0, 1}) {
-      m_velocity_bc_values.metadata(j)["valid_range"] = {-valid_range, valid_range};
+      m_velocity_bc_values.metadata(j)["valid_range"] = {-huge_value, huge_value};
       m_velocity_bc_values.metadata(j)["_FillValue"] = {fill_value};
     }
   }

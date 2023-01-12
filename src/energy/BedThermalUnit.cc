@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -109,7 +109,8 @@ BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
     // PROPOSED standard_name = lithosphere_upward_heat_flux
     m_bottom_surface_flux.set_attrs("model_state",
                                     "upward geothermal flux at the bottom bedrock surface",
-                                    "W m-2", "mW m-2", "", 0);
+                                    "W m-2", "W m-2", "", 0); // note: don't convert to
+                                                              // "mW m-2" when saving
 
     m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
     m_bottom_surface_flux.set_time_independent(true);

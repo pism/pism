@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -63,7 +63,7 @@ AgeModel::AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_
     m_stress_balance(stress_balance) {
 
   m_ice_age.set_attrs("model_state", "age of ice",
-                      "s", "years", "" /* no standard name*/, 0);
+                      "s", "s", "" /* no standard name*/, 0);
 
   m_ice_age.metadata()["valid_min"] = {0.0};
 

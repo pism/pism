@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -144,7 +144,7 @@ EnergyModel::EnergyModel(IceGrid::ConstPtr grid,
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.set_attrs("model_state",
                                 "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
-                                "m s-1", "m year-1", "", 0);
+                                "m s-1", "m s-1", "", 0);
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";

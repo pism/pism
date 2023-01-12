@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,7 +41,7 @@ InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_p
   {
     m_mass_flux.set_attrs("model_state",
                           "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
-                          "kg m-2 s-1", "kg m-2 year-1", "", 0);
+                          "kg m-2 s-1", "kg m-2 s-1", "", 0);
     m_mass_flux.set_time_independent(false);
 
     m_temperature.set_attrs("model_state",

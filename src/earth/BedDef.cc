@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -42,7 +42,7 @@ BedDef::BedDef(IceGrid::ConstPtr grid)
                         "m", "m", "bedrock_altitude", 0);
 
   m_uplift.set_attrs("model_state", "bedrock uplift rate",
-                     "m s-1", "mm year-1", "tendency_of_bedrock_altitude", 0);
+                     "m s-1", "m s-1", "tendency_of_bedrock_altitude", 0);
 }
 
 const array::Scalar& BedDef::bed_elevation() const {
