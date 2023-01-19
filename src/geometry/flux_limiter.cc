@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -104,9 +104,14 @@ void make_nonnegative_preserving(double dt,
     auto Q_n = flux.star(i, j + 1);
     auto Q_e = flux.star(i + 1, j);
 
-    if (x(i, j)     - dt * div(Q) >= eps   and
-        x(i + 1, j) - dt * div(Q_e) >= eps and
-        x(i, j + 1) - dt * div(Q_n) >= eps) {
+    const double
+      div_Q   = div(Q),
+      div_Q_e = div(Q_e),
+      div_Q_n = div(Q_n);
+
+    if ((div_Q   <= 0.0 or x(i, j)     - dt * div_Q   >= eps) and
+        (div_Q_e <= 0.0 or x(i + 1, j) - dt * div_Q_e >= eps) and
+        (div_Q_n <= 0.0 or x(i, j + 1) - dt * div_Q_n >= eps)) {
       // No need to limit fluxes: total fluxes out of cells (i, j), (i + 1, j), (i, j + 1)
       // may be able to create a negative thickness, but fluxes *into* these cells make up for it
       //
