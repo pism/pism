@@ -3076,37 +3076,63 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   return result;
 }
 
+namespace details {
+enum IceKind {ICE_COLD, ICE_TEMPERATE};
 
-//! Computes the temperate ice volume, in m^3.
-double IceModel::ice_volume_temperate(double thickness_threshold) const {
+static double ice_volume(const IceModelVec2S &ice_thickness,
+                         const IceModelVec3 &ice_enthalpy,
+                         IceKind kind,
+                         double thickness_threshold) {
 
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
+  auto grid = ice_thickness.grid();
+  auto ctx = grid->ctx();
+  auto EC = ctx->enthalpy_converter();
 
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
-
-  auto cell_area = m_grid->cell_area();
+  auto cell_area = grid->cell_area();
+  const auto& z = grid->z();
 
   double volume = 0.0;
 
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_enthalpy};
-  ParallelSection loop(m_grid->com);
+  // count the volume of a 3D grid cell if
+  //
+  // - it is temperate and we're asked for the temperate ice volume
+  // - it is cold and we're asked for the cold ice volume
+  //
+  // return zero otherwise
+  //
+  // uses the depth at the *bottom* of a cell to compute pressure
+  auto volume_counter = [EC, kind, cell_area](double z_min, double z_max, double H, double E) {
+    double depth = H - z_min;
+    double P = EC->pressure(depth);
+    double V = cell_area * (z_max - z_min);
+    bool temperate = EC->is_temperate_relaxed(E, P); // FIXME issue #15
+
+    switch (kind) {
+    case ICE_TEMPERATE:
+      return temperate ? V : 0.0;
+    default:
+    case ICE_COLD:
+      return (not temperate) ? V : 0.0;
+    }
+  };
+
+  IceModelVec::AccessList list{&ice_thickness, &ice_enthalpy};
+  ParallelSection loop(grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (Points p(*grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_geometry.ice_thickness(i,j) >= thickness_threshold) {
-        const int ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i,j));
-        const double *Enth = ice_enthalpy.get_column(i,j);
+      double H = ice_thickness(i, j);
+
+      if (H >= thickness_threshold) {
+        const int ks = grid->kBelowHeight(H);
+        const double *E = ice_enthalpy.get_column(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          if (EC->is_temperate_relaxed(Enth[k],EC->pressure(m_geometry.ice_thickness(i,j)))) { // FIXME issue #15
-            volume += (m_grid->z(k + 1) - m_grid->z(k)) * cell_area;
-          }
+          volume += volume_counter(z[k], z[k + 1], H, E[k]);
         }
 
-        if (EC->is_temperate_relaxed(Enth[ks],EC->pressure(m_geometry.ice_thickness(i,j)))) { // FIXME issue #15
-          volume += (m_geometry.ice_thickness(i,j) - m_grid->z(ks)) * cell_area;
-        }
+        volume += volume_counter(z[ks], H, H, E[ks]);
       }
     }
   } catch (...) {
@@ -3114,54 +3140,21 @@ double IceModel::ice_volume_temperate(double thickness_threshold) const {
   }
   loop.check();
 
+  return GlobalSum(grid->com, volume);
+}
 
-  return GlobalSum(m_grid->com, volume);
+} // end of namespace details
+
+//! Computes the temperate ice volume, in m^3.
+double IceModel::ice_volume_temperate(double thickness_threshold) const {
+  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
+                             details::ICE_TEMPERATE, thickness_threshold);
 }
 
 //! Computes the cold ice volume, in m^3.
 double IceModel::ice_volume_cold(double thickness_threshold) const {
-
-  EnthalpyConverter::Ptr EC = m_ctx->enthalpy_converter();
-
-  const IceModelVec3 &ice_enthalpy = m_energy_model->enthalpy();
-
-  double volume = 0.0;
-
-  auto cell_area = m_grid->cell_area();
-
-  IceModelVec::AccessList list{&m_geometry.ice_thickness, &ice_enthalpy};
-
-  ParallelSection loop(m_grid->com);
-  try {
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      const double thickness = m_geometry.ice_thickness(i, j);
-
-      // count all ice, including cells which have so little they
-      // are considered "ice-free"
-      if (thickness >= thickness_threshold) {
-        const int ks = m_grid->kBelowHeight(thickness);
-        const double *Enth = ice_enthalpy.get_column(i, j);
-
-        for (int k=0; k<ks; ++k) {
-          if (not EC->is_temperate_relaxed(Enth[k], EC->pressure(thickness))) { // FIXME issue #15
-            volume += (m_grid->z(k+1) - m_grid->z(k)) * cell_area;
-          }
-        }
-
-        if (not EC->is_temperate_relaxed(Enth[ks], EC->pressure(thickness))) { // FIXME issue #15
-          volume += (thickness - m_grid->z(ks)) * cell_area;
-        }
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-
-
-  return GlobalSum(m_grid->com, volume);
+  return details::ice_volume(m_geometry.ice_thickness, m_energy_model->enthalpy(),
+                             details::ICE_COLD, thickness_threshold);
 }
 
 //! Computes area of basal ice which is temperate, in m^2.
