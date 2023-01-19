@@ -139,8 +139,8 @@ public:
 
   double ice_volume_temperate(double thickness_threshold) const;
   double ice_volume_cold(double thickness_threshold) const;
-  double ice_area_temperate(double thickness_threshold) const;
-  double ice_area_cold(double thickness_threshold) const;
+  double temperate_base_area(double thickness_threshold) const;
+  double cold_base_area(double thickness_threshold) const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
