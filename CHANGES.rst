@@ -1,5 +1,47 @@
 .. default-role:: literal
 
+Changes since v2.0.5
+====================
+
+- Implement a flux limiter ensuring strict preservation of non-negativity of ice thickness
+  and therefore mass conservation up to rounding error.
+
+  This is a Zalesak-style (see flux corrected transport or FCT) limiter described in
+
+  P.K. Smolarkiewicz, "Comment on "A Positive Definite Advection Scheme Obtained by
+  Nonlinear Renormalization of the Advective Fluxes"," Monthly Weather Review, vol. 117,
+  Art. no. 11, 1989.
+
+  Note that this approach (unlike modifications of the discretization of SIA diffusivity
+  in the Jarosch et al paper mentioned below) works with *all* stress balance models.
+- Implement a benchmark setup checking mass conservation in an "isothermal SIA + mass
+  continuity" model setup with "rough" bed topography (see `examples/bedrock_step`).
+
+  This benchmark is described in
+
+  A.H. Jarosch, C.G. Schoof, and F.S. Anslow, "Restoring mass conservation to shallow ice
+  flow models over complex terrain," The Cryosphere, vol. 7, Art. no. 1, Feb. 2013.
+- Fix a bug in the code ensuring non-negativity of ice thickness. (The old code added too
+  much ice in an attempt to ensure non-negativity -- so much so that sometimes this caused
+  crashes with error messages stating that ice thickness exceeds `Lz`.)
+
+  Note that this "projection step" (`ice_thickness = max(tentative_ice_thickness, 0)`)
+  should have no effect now: the flux limiter mentioned above is designed to ensure
+  non-negativity. We keep this step, however, to maintain the ability to keep track of ice
+  thickness changes due to conservation errors (if they ever happen).
+- PISM no longer attempts to correct energy conservation by freezing basal water.
+
+  At each time step PISM checks basal enthalpy and if necessary modifies it to ensure
+  continuity of temperature in each `bedrock+ice` column. Sometimes this modification
+  creates energy; prior to this change PISM attempted to remove an equivalent amount of
+  energy by modifying the basal melt rate to freeze water stored at the base.
+
+  Under some conditions this basal melt rate adjustment *created mass* by freezing more
+  water than available and even led to crashes with error messages stating that ice
+  thickness exceeds `Lz`.
+- Fix bugs in scalar diagnostics `ice_volume_cold` and `ice_volume_temperate`.
+- Several insignificant fixes (compiler warnings, code cleanup, etc).
+
 Changes since v2.0.4
 ====================
 
