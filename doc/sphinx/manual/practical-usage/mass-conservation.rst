@@ -10,7 +10,7 @@ Balancing the books
 2D diagnostics
 --------------
 
-PISM provides a number of 2D diagnostics to keep track of mass conservation.\ [#]_
+PISM provides a number of 2D diagnostics to keep track of mass conservation.\ [#f1]_
 
 All of them are computed as time-averaged fluxes over requested reporting intervals.
 Positive values correspond to mass gain.
@@ -26,7 +26,7 @@ For ice mass, at every grid point we have
 
 All names on the right-hand side correspond to valid PISM diagnostic quantities.
 
-To check that all changes in mass are accounted for, download the script above and run\ [#]_
+To check that all changes in mass are accounted for, download the script above and run\ [#f2]_
 
 .. code-block:: bash
 
@@ -60,21 +60,20 @@ To save these, use the shortcut
 
    pismr -extra_file ex.nc -extra_times N -extra_vars amount_fluxes,...
 
-Comments
-^^^^^^^^
+.. rubric:: Comments
 
 - `tendency_of_ice_mass_due_to_flow` is the change in ice mass corresponding to flux
   divergence
 - `tendency_of_ice_mass_due_to_conservation_error` is the artificial change in ice mass
-  needed to "balance the books". This includes changes needed to preserve non-negativity
-  of ice thickness. [#f1]_
+  needed to "balance the books". It is uniformly zero in most simulations.
 - `tendency_of_ice_mass_due_to_surface_mass_balance` is the change due to the surface
   mass balance; note that this is *not* the same as the provided SMB: in ablation areas
-  this is the *effective* mass balance taking into account the amount of ice present
+  this is the *effective* mass balance taking into account the amount of ice present.
 - `tendency_of_ice_mass_due_to_basal_mass_balance` is the *effective* change due to
-  basal (grounded and sub-shelf) melting
+  basal (grounded and sub-shelf) melting.
 - `tendency_of_ice_mass_due_to_discharge` combines changes due to calving and frontal
-  melt
+  melt.
+
 
 Scalar diagnostics
 ------------------
@@ -90,8 +89,7 @@ computational domain. The "integrated" mass accounting error can be computed usi
    Click :download:`here <conservation/scalar_accounting_error.txt>` to download this
    `ncap2` script.
 
-Comments
-^^^^^^^^
+.. rubric:: Comments
 
 - `tendency_of_ice_mass_due_to_flow` is the integral of :math:`-\nabla \cdot Q` over the
   computational domain. This should be zero (up to the effect of rounding errors) in
@@ -107,7 +105,13 @@ Mass accounting in subglacial hydrology models
 ----------------------------------------------
 
 PISM's hydrology models provide all the diagnostic fields needed to keep track of changes
-in subglacial water thickness. [#]_
+in subglacial water thickness.
+
+.. note::
+
+   We keep track of :math:`W_{\text{till}} + W`, i.e. the sum of the effective thickness
+   of subglacial water stored in till *and* the effective thickness of subglacial water in
+   the transport layer (if applicable).
 
 At every grid point we have
 
@@ -141,14 +145,47 @@ per area per time) and `surface_accumulation_rate`, `surface_melt_rate`,
 
 To save all these, use `-extra_vars` shortcuts `pdd_fluxes` and `pdd_rates`.
 
-.. [#] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
+.. _sec-mass-conservation-rough-bed:
 
-.. [#] `ncap2` is a part of NCO_.
+Mass conservation and "rough" bed topography
+--------------------------------------------
 
-.. [#] We keep track of :math:`W_{\text{till}} + W`, i.e. the sum of the effective
-       thickness of subglacial water stored in till *and* the effective thickness of
-       subglacial water in the transport layer (if applicable).
+Jarosch and others :cite:`JaroschSchoofAnslow2013` show that Mahaffy's :cite:`Mahaffy` SIA
+discretization used by PISM suffers from mass conservation errors near sufficiently abrupt
+changes in bed elevation. (It may overestimate ice fluxes through the boundary of a grid
+cell and remove more ice than available, producing a negative ice thickness.)
 
-.. [#f1] While PISM's mass transport scheme is not proven to be mass-conserving *in every
-   case* (see :cite:`JaroschSchoofAnslow2013`), in most simulations the field is uniformly
-   zero.
+PISM uses a "projection step" to ensure non-negativity of ice thickness :math:`H`:
+
+.. math::
+   :label: eq-H-projection-step
+
+   H^{n+1}_{i,j} = \max(\widetilde H^{n+1}_{i,j}, 0),
+
+where :math:`\widetilde H^{n+1}_{i,j}` is the "tentative" ice thickness at a grid point
+:math:`(i,j)` and the time step :math:`n+1` computed using an explicit-in-time
+finite-volume discretization of the mass continuity equation.
+
+This step is performed *after* computing the change in ice thickness due to flow and
+*before* applying top surface and basal mass balance fluxes (i.e. PISM uses operator
+splitting in its approximation of the mass continuity equation).
+
+Prior to version `2.0.6` PISM fully relied on :eq:`eq-H-projection-step` to maintain
+non-negativity of ice thickness and `tendency_of_ice_mass_due_to_conservation_error`
+reported the rate at which mass is created by the projection step.
+
+The current mass transport scheme includes a flux limiter (see section 3 and the appendix
+of :cite:`Smolarkiewicz1989`) that ensures non-negativity of :math:`\widetilde
+H^{n+1}_{i,j}`, making the projection step :eq:`eq-H-projection-step` unnecessary.
+
+.. note::
+
+   - PISM still performs the projections step to guarantee that :math:`H \ge 0` is true
+     even if the flux limiter fails.
+
+   - See `examples/bedrock_step` for PISM's implementation of the "cliff benchmark"
+     described in :cite:`JaroschSchoofAnslow2013`.
+
+.. [#f1] See :ref:`sec-diagnostics-list` for the full list of diagnostics.
+
+.. [#f2] `ncap2` is a part of NCO_.
