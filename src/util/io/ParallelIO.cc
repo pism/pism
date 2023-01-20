@@ -249,6 +249,7 @@ void ParallelIO::write_darray_impl(const std::string &variable_name,
                                    bool time_dependent,
                                    unsigned int record,
                                    const double *input) {
+  (void) time_dependent;
 
   int stat = 0, varid;
 
