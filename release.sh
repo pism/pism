@@ -32,6 +32,8 @@ make -C doc/sphinx
 
 # update funding sources
 make -C doc
+git add ACKNOWLEDGE.rst
+git add doc/sphinx/funding.txt
 
 # set Pism_BRANCH to "stable"
 sed -Ei 's/(Pism_BRANCH)[^)]+/\1 "stable"/' CMakeLists.txt
