@@ -744,9 +744,7 @@ void GeometryEvolution::update_in_place(double dt,
           &m_impl->surface_elevation, &bed_topography, &m_impl->cell_type});
   }
 
-#if (Pism_DEBUG==1)
   const double Lz = m_grid->Lz();
-#endif
 
   ParallelSection loop(m_grid->com);
   try {
@@ -786,13 +784,11 @@ void GeometryEvolution::update_in_place(double dt,
 
       ice_thickness(i, j) += - dt * divQ;
 
-#if (Pism_DEBUG==1)
       if (ice_thickness(i, j) > Lz) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
+                                      "ice thickness would exceed Lz at i=%d, j=%d (H=%f, Lz=%f)",
                                       i, j, ice_thickness(i, j), Lz);
       }
-#endif
     }
   } catch (...) {
     loop.failed();
@@ -836,6 +832,12 @@ void GeometryEvolution::update_in_place(double dt,
       // better than losing mass.)
       ice_thickness.add(1.0, m_impl->residual);
       m_impl->residual.set(0.0);
+    }
+
+    if (max(ice_thickness) > m_grid->Lz()) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "ice thickness would exceed Lz "
+                                    "after part_grid residual redistribution");
     }
   }
 }

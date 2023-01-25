@@ -228,7 +228,8 @@ protected:
   virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
 
-  std::string save_state_on_error(const std::string &suffix);
+  std::string save_state_on_error(const std::string &suffix,
+                                  const std::set<std::string> &additional_variables);
 
   //! Computational grid
   const IceGrid::Ptr m_grid;

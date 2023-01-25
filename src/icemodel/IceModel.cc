@@ -401,7 +401,8 @@ YieldStressInputs IceModel::yield_stress_inputs() {
   return result;
 }
 
-std::string IceModel::save_state_on_error(const std::string &suffix) {
+std::string IceModel::save_state_on_error(const std::string &suffix,
+                                          const std::set<std::string> &additional_variables) {
   std::string output_file = m_config->get_string("output.file");
 
   if (output_file.empty()) {
@@ -421,8 +422,12 @@ std::string IceModel::save_state_on_error(const std::string &suffix) {
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-  save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"),
-                 m_time->current());
+  auto variables = output_variables("small");
+  for (const auto &v : additional_variables) {
+    variables.insert(v);
+  }
+
+  save_variables(file, INCLUDE_MODEL_STATE, variables, m_time->current());
 
   return output_file;
 }
@@ -469,7 +474,7 @@ void IceModel::step(bool do_mass_continuity,
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
-    std::string output_file = save_state_on_error("_stressbalance_failed");
+    std::string output_file = save_state_on_error("_stressbalance_failed", {});
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   output_file.c_str());
@@ -560,11 +565,20 @@ void IceModel::step(bool do_mass_continuity,
         m_skip_countdown--;
       }
 
-      m_geometry_evolution->flow_step(m_geometry,
-                                      m_dt,
-                                      m_stress_balance->advective_velocity(),
-                                      m_stress_balance->diffusive_flux(),
-                                      m_ice_thickness_bc_mask);
+      try {
+        m_geometry_evolution->flow_step(m_geometry,
+                                        m_dt,
+                                        m_stress_balance->advective_velocity(),
+                                        m_stress_balance->diffusive_flux(),
+                                        m_ice_thickness_bc_mask);
+      } catch (RuntimeError &e) {
+        std::string output_file = save_state_on_error("_mass_transport_failed",
+                                                      {"flux_staggered", "flux_divergence"});
+
+        e.add_context("performing a mass transport time step (dt=%f s). (Note: Model state was saved to '%s'.)",
+                      m_dt, output_file.c_str());
+        throw;
+      }
 
       m_geometry_evolution->apply_flux_divergence(m_geometry);
 
@@ -677,7 +691,7 @@ void IceModel::step(bool do_mass_continuity,
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
   if (max(m_geometry.ice_thickness) > m_grid->Lz()) {
-    auto o_file = save_state_on_error("_max_thickness");
+    auto o_file = save_state_on_error("_max_thickness", {});
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
