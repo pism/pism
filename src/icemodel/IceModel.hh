@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -227,6 +227,8 @@ protected:
                                   IO_Type default_type);
   virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
+
+  std::string save_state_on_error(const std::string &suffix);
 
   //! Computational grid
   const IceGrid::Ptr m_grid;

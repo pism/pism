@@ -401,6 +401,32 @@ YieldStressInputs IceModel::yield_stress_inputs() {
   return result;
 }
 
+std::string IceModel::save_state_on_error(const std::string &suffix) {
+  std::string output_file = m_config->get_string("output.file");
+
+  if (output_file.empty()) {
+    m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
+    output_file = "unnamed.nc";
+  }
+
+  output_file = filename_add_suffix(output_file, suffix, "");
+
+  File file(m_grid->com,
+            output_file,
+            string_to_backend(m_config->get_string("output.format")),
+            PISM_READWRITE_MOVE,
+            m_ctx->pio_iosys_id());
+
+  update_run_stats();
+
+  write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
+
+  save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"),
+                 m_time->current());
+
+  return output_file;
+}
+
 //! The contents of the main PISM time-step.
 /*!
 During the time-step we perform the following actions:
@@ -443,28 +469,10 @@ void IceModel::step(bool do_mass_continuity,
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
-    std::string output_file = m_config->get_string("output.file");
-
-    if (output_file.empty()) {
-      m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.\n");
-      output_file = "unnamed.nc";
-    }
-
-    std::string o_file = filename_add_suffix(output_file,
-                                             "_stressbalance_failed", "");
-    File file(m_grid->com, o_file,
-              string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
-
-    update_run_stats();
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
-    save_variables(file, INCLUDE_MODEL_STATE, output_variables("medium"),
-                   m_time->current());
+    std::string output_file = save_state_on_error("_stressbalance_failed");
 
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
-                  o_file.c_str());
+                  output_file.c_str());
     throw;
   }
 
@@ -669,26 +677,7 @@ void IceModel::step(bool do_mass_continuity,
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
   if (max(m_geometry.ice_thickness) > m_grid->Lz()) {
-    std::string output_file = m_config->get_string("output.file");
-
-    if (output_file.empty()) {
-      m_log->message(2, "WARNING: output.file is empty. Using unnamed.nc instead.");
-      output_file = "unnamed.nc";
-    }
-
-    std::string o_file = filename_add_suffix(output_file,
-                                             "_max_thickness", "");
-    File file(m_grid->com,
-              o_file,
-              string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
-              m_ctx->pio_iosys_id());
-
-    update_run_stats();
-    write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-
-    save_variables(file, INCLUDE_MODEL_STATE, output_variables("small"),
-                   m_time->current());
+    auto o_file = save_state_on_error("_max_thickness");
 
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
