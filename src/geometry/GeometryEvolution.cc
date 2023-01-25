@@ -788,7 +788,8 @@ void GeometryEvolution::update_in_place(double dt,
 
 #if (Pism_DEBUG==1)
       if (ice_thickness(i, j) > Lz) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                      "ice thickness exceeds Lz at i=%d, j=%d (H=%f, Lz=%f)",
                                       i, j, ice_thickness(i, j), Lz);
       }
 #endif
