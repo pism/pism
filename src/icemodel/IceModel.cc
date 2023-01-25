@@ -668,9 +668,7 @@ void IceModel::step(bool do_mass_continuity,
   }
 
   // Check if the ice thickness exceeded the height of the computational box and stop if it did.
-  const bool thickness_too_high = check_maximum_ice_thickness(m_geometry.ice_thickness);
-
-  if (thickness_too_high) {
+  if (max(m_geometry.ice_thickness) > m_grid->Lz()) {
     std::string output_file = m_config->get_string("output.file");
 
     if (output_file.empty()) {

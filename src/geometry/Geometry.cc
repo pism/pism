@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -95,33 +95,9 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
   ensure_consistency(0.0);
 }
 
-void check_minimum_ice_thickness(const array::Scalar &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
-
-  array::AccessScope list(ice_thickness);
-
-  ParallelSection loop(grid->com);
-  try {
-    for (Points p(*grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      if (ice_thickness(i, j) < 0.0) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "H = %e (negative) at point i=%d, j=%d",
-                                      ice_thickness(i, j), i, j);
-      }
-    }
-  } catch (...) {
-    loop.failed();
-  }
-  loop.check();
-}
-
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   IceGrid::ConstPtr grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
-
-  check_minimum_ice_thickness(ice_thickness);
 
   array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,
@@ -133,6 +109,12 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
     try {
       for (Points p(*grid); p; p.next()) {
         const int i = p.i(), j = p.j();
+
+        if (ice_thickness(i, j) < 0.0) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                        "H = %e (negative) at point i=%d, j=%d",
+                                        ice_thickness(i, j), i, j);
+        }
 
         if (ice_thickness(i, j) > 0.0 and ice_area_specific_volume(i, j) > 0.0) {
           ice_thickness(i, j) += ice_area_specific_volume(i, j);

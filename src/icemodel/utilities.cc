@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -110,32 +110,6 @@ void  IceModel::prepend_history(const std::string &str) {
   m_output_global_attributes.set_string("history",
                                         username_prefix(m_grid->com) + (str + "\n") +
                                         m_output_global_attributes.get_string("history"));
-}
-
-//! Check if the thickness of the ice is too large.
-/*! Return true if the ice thickness exceeds the height of the computational domain.
- */
-bool check_maximum_ice_thickness(const array::Scalar &ice_thickness) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
-
-  const double Lz = grid->Lz();
-
-  array::AccessScope list(ice_thickness);
-
-  unsigned int counter = 0;
-  for (Points p(*grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    if (ice_thickness(i, j) > Lz) {
-      counter += 1;
-    }
-  }
-
-  if (GlobalSum(grid->com, counter) > 0) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 //! Return the grid used by this model.
