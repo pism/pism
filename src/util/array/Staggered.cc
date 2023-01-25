@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -65,8 +65,6 @@ Staggered1::Staggered1(IceGrid::ConstPtr grid, const std::string &name)
     : Staggered(grid, name, 1) {
   // empty
 }
-
-} // end of namespace array
 
 std::array<double,2> absmax(const array::Staggered &input) {
 
@@ -177,5 +175,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
     }
   }
 }
+
+} // end of namespace array
 
 } // end of namespace pism

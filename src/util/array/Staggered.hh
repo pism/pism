@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -86,8 +86,6 @@ inline stencils::Star<double> Staggered1::star(int i, int j) const {
   return result;
 }
 
-} // end of namespace array
-
 /*!
  * Computes maximums of absolute values of both components.
  */
@@ -116,6 +114,8 @@ void staggered_to_regular(const array::CellType1 &cell_type,
                           const array::Staggered1 &input,
                           bool include_floating_ice,
                           array::Vector &result);
+
+} // end of namespace array
 
 } // end of namespace pism
 

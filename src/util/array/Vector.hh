@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -65,9 +65,9 @@ public:
   typedef std::shared_ptr<const Vector2> ConstPtr;
 };
 
-} // end of namespace array
-
 void compute_magnitude(const array::Vector &input, array::Scalar &result);
+
+} // end of namespace array
 } // end of namespace pism
 
 #endif /* PISM_ARRAY_VECTOR_HH */

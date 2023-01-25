@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -404,16 +404,6 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
                                   m_config->get_number("bootstrapping.defaults.ice_thickness"));
-  // check the range of the ice thickness
-  {
-    auto thk_range = m_geometry.ice_thickness.range();
-
-    if (thk_range[1] >= m_grid->Lz() + 1e-6) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Maximum ice thickness (%f meters)\n"
-                                    "exceeds the height of the computational domain (%f meters).",
-                                    thk_range[1], m_grid->Lz());
-    }
-  }
 
   if (m_config->get_flag("geometry.part_grid.enabled")) {
     // Read the Href field from an input file. This field is
@@ -441,12 +431,12 @@ void IceModel::bootstrap_2d(const File &input_file) {
   m_ice_thickness_bc_mask.regrid(input_file, OPTIONAL, 0.0);
 
   // check if Lz is valid
-  auto thk_range = m_geometry.ice_thickness.range();
+  auto max_thickness = array::max(m_geometry.ice_thickness);
 
-  if (thk_range[1] > m_grid->Lz()) {
+  if (max_thickness > m_grid->Lz()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Max. ice thickness (%3.3f m)\n"
                                   "exceeds the height of the computational domain (%3.3f m).",
-                                  thk_range[1], m_grid->Lz());
+                                  max_thickness, m_grid->Lz());
   }
 }
 
@@ -480,7 +470,7 @@ void IceModel::regrid() {
     // Check the range of the ice thickness.
     {
       double
-        max_thickness = m_geometry.ice_thickness.range()[1],
+        max_thickness = array::max(m_geometry.ice_thickness),
         Lz            = m_grid->Lz();
 
       if (max_thickness >= Lz + 1e-6) {

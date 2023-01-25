@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,8 +62,6 @@ Scalar2::Scalar2(IceGrid::ConstPtr grid, const std::string &name)
   : Scalar1(grid, name, 2) {
   // empty
 }
-
-} // end of namespace array
 
 /*! Sets the result to the magnitude of a 2D vector field with components `v_x` and `v_y`.
 
@@ -225,5 +223,7 @@ double min(const array::Scalar &input) {
 
   return GlobalMin(grid->com, result);
 }
+
+} // end of namespace array
 
 } // end of namespace pism

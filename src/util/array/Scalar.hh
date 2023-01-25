@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -100,7 +100,6 @@ inline stencils::Box<int> Scalar::box_int(int i, int j) const {
   return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
           as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
 }
-} // end of namespace array
 
 // Finite-difference shortcuts. They may be slower than hard-coding FD approximations of x
 // and y derivatives. Use with care.
@@ -121,6 +120,8 @@ void apply_mask(const array::Scalar &M, double fill, array::Scalar &result);
 void compute_magnitude(const array::Scalar &v_x,
                        const array::Scalar &v_y,
                        array::Scalar &result);
+
+} // end of namespace array
 
 } // end of namespace pism
 

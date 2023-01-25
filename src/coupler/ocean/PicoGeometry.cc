@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -189,7 +189,7 @@ static void relabel(RelabelingType type,
 
   IceGrid::ConstPtr grid = mask.grid();
 
-  int max_index = static_cast<int>(mask.range()[1]);
+  int max_index = static_cast<int>(array::max(mask));
 
   if (max_index < 1) {
     // No components labeled. Fill the mask with zeros and quit.
@@ -928,7 +928,7 @@ void PicoGeometry::compute_box_mask(const array::Scalar &D_gl, const array::Scal
 
   array::AccessScope list{ &D_gl, &D_cf, &shelf_mask, &result };
 
-  int n_shelves = static_cast<int>(shelf_mask.range()[1]) + 1;
+  int n_shelves = static_cast<int>(array::max(shelf_mask)) + 1;
 
   std::vector<double> GL_distance_max(n_shelves, 0.0);
   std::vector<double> GL_distance_max1(n_shelves, 0.0);
