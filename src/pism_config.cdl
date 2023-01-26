@@ -2278,11 +2278,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.albedo_snow_type = "number";
     pism_config:surface.debm_simple.albedo_snow_units = "1";
 
-    pism_config:surface.debm_simple.background_melting_temp = 266.65;
-    pism_config:surface.debm_simple.background_melting_temp_doc = "Threshold temperature below which no melting occurs";
-    pism_config:surface.debm_simple.background_melting_temp_type = "number";
-    pism_config:surface.debm_simple.background_melting_temp_units = "Kelvin";
-
     pism_config:surface.debm_simple.c1 = 29.0;
     pism_config:surface.debm_simple.c1_doc = "Tuning parameter controlling temperature-driven melt";
     pism_config:surface.debm_simple.c1_type = "number";
@@ -2301,6 +2296,11 @@ netcdf pism_config {
     pism_config:surface.debm_simple.max_evals_per_year_doc = "Maximum number of air temperature and precipitation samples per year used to build location-dependent time series for computing melt and snow accumulation; the default means use weekly samples of the annual cycle";
     pism_config:surface.debm_simple.max_evals_per_year_type = "integer";
     pism_config:surface.debm_simple.max_evals_per_year_units = "count";
+
+    pism_config:surface.debm_simple.melting_threshold_temp = 266.65;
+    pism_config:surface.debm_simple.melting_threshold_temp_doc = "Threshold temperature below which no melting occurs";
+    pism_config:surface.debm_simple.melting_threshold_temp_type = "number";
+    pism_config:surface.debm_simple.melting_threshold_temp_units = "Kelvin";
 
     pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
     pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";

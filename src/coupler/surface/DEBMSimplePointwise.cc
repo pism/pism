@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 PISM Authors
+// Copyright (C) 2009--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -306,9 +306,9 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   m_albedo_ocean                   = config.get_number("surface.debm_simple.albedo_ocean");
   m_albedo_slope                   = config.get_number("surface.debm_simple.albedo_slope");
   m_albedo_snow                    = config.get_number("surface.debm_simple.albedo_snow");
-  m_bm_temp                        = config.get_number("surface.debm_simple.background_melting_temp");
-  m_c1                             = config.get_number("surface.debm_simple.c1");
-  m_c2                             = config.get_number("surface.debm_simple.c2");
+  m_melt_threshold_temp            = config.get_number("surface.debm_simple.melting_threshold_temp");
+  m_melt_c1                        = config.get_number("surface.debm_simple.c1");
+  m_melt_c2                        = config.get_number("surface.debm_simple.c2");
   m_constant_eccentricity          = config.get_number("surface.debm_simple.paleo.eccentricity");
   m_constant_obliquity             = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
   m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.perihelion_longitude", "radian");
@@ -449,15 +449,15 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
 
   result.insolation       = insolation;
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
-  result.temperature_melt = A * m_c1 * Teff;
-  result.background_melt  = A * m_c2;
+  result.temperature_melt = A * m_melt_c1 * Teff;
+  result.background_melt  = A * m_melt_c2;
 
   double total_melt = (result.insolation_melt + result.temperature_melt +
                        result.background_melt);
   // this model should not produce negative melt rates
   result.total_melt = std::max(total_melt, 0.0);
 
-  if (T < m_bm_temp) {
+  if (T < m_melt_threshold_temp) {
     result.total_melt = 0.0;
   }
 

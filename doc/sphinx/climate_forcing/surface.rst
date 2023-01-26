@@ -402,7 +402,7 @@ re-freeze. By default only snow melt is allowed to refreeze; set
      and *does not* contribute to reported modeled runoff.
 
    - Melt is prohibited if the air temperature is below a threshold set by
-     :config:`surface.debm_simple.background_melting_temp`. This is to avoid melt rates from
+     :config:`surface.debm_simple.melting_threshold_temp`. This is to avoid melt rates from
      high insolation values and low albedo values when it is too cold to actually melt.
 
    - When used with periodic climate data (air temperature and precipitation) that is read

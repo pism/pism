@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 PISM Authors
+// Copyright (C) 2009--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -109,10 +109,11 @@ private:
   double m_transmissivity_intercept;
 
   // tuning parameters of the melt equation
-  double m_c1;
-  double m_c2;
+  double m_melt_c1;
+  double m_melt_c2;
 
-  double m_bm_temp;
+  // threshold air temperature (no melt at temperatures below this)
+  double m_melt_threshold_temp;
 
   //! latent heat of fusion
   double m_L;
