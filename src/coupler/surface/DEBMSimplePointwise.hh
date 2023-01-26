@@ -20,6 +20,7 @@
 #define PISM_DEBM_SIMPLE_POINTWISE_H
 
 #include <memory>
+#include <array>
 
 #include "pism/util/Mask.hh"
 #include "pism/util/ScalarForcing.hh"
@@ -82,10 +83,14 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
+  double insolation_diagnostic(double time, double latitude_degrees) const;
+
 private:
   double eccentricity(double time) const;
   double obliquity(double time) const;
   double perihelion_longitude(double time) const;
+
+  std::array<double,2> declination_and_distance(double time) const;
 
   //! refreeze melted ice
   bool m_refreeze_ice_melt;

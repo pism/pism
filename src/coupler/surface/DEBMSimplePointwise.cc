@@ -373,6 +373,59 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
   return m_transmissivity_intercept + m_transmissivity_slope * elevation;
 }
 
+std::array<double,2> DEBMSimplePointwise::declination_and_distance(double time) const {
+  // FIXME: avoid re-computing declination and distance_factor (they depend on time, but
+  // not on the map-plane location)
+  double declination     = 0.0;
+  double distance_factor = 0.0;
+
+  double year_fraction = m_time->year_fraction(time);
+  if (m_paleo) {
+    // eccentricity and perihelion longitude are needed by both declination and distance_factor
+    double eccentricity         = this->eccentricity(time);
+    double perihelion_longitude = this->perihelion_longitude(time);
+
+    double solar_longitude = details::solar_longitude(year_fraction,
+                                                      eccentricity,
+                                                      perihelion_longitude);
+
+    declination = details::solar_declination_paleo(obliquity(time), solar_longitude);
+
+    distance_factor = details::distance_factor_paleo(eccentricity,
+                                                     perihelion_longitude,
+                                                     solar_longitude);
+  } else {
+    declination     = details::solar_declination_present_day(year_fraction);
+    distance_factor = details::distance_factor_present_day(year_fraction);
+  }
+
+  return {declination, distance_factor};
+}
+
+
+/*!
+ * Compute top of atmosphere insolation to report as a diagnostic quantity.
+ *
+ * Do not use this in the model itself: doing so will make it slower because that way we'd
+ * end up computing some quantities more than once.
+ */
+double DEBMSimplePointwise::insolation_diagnostic(double time, double latitude_degrees) const {
+  const double degrees_to_radians = M_PI / 180.0;
+  double latitude_rad = latitude_degrees * degrees_to_radians;
+
+  auto tmp = declination_and_distance(time);
+  const auto &declination     = tmp[0];
+  const auto &distance_factor = tmp[1];
+
+  double h_phi = details::hour_angle(m_phi, latitude_rad, declination);
+
+  return details::insolation(m_solar_constant,
+                             distance_factor,
+                             h_phi,
+                             latitude_rad,
+                             declination);
+}
+
 /* Melt amount (in m water equivalent) and its components over the time step `dt`
  *
  * Implements equation (1) in Zeitz et al.
@@ -399,32 +452,9 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  // FIXME: avoid re-computing declination and distance_factor (they depend on time, but
-  // not on the map-plane location)
-  double declination     = 0.0;
-  double distance_factor = 0.0;
-
-  double year_fraction = m_time->year_fraction(time);
-  if (m_paleo) {
-    // eccentricity and perihelion longitude are needed by both declination and distance_factor
-    double eccentricity         = this->eccentricity(time);
-    double perihelion_longitude = this->perihelion_longitude(time);
-
-    double solar_longitude = details::solar_longitude(year_fraction,
-                                                      eccentricity,
-                                                      perihelion_longitude);
-    {
-      double obliquity = this->obliquity(time);
-      declination = details::solar_declination_paleo(obliquity, solar_longitude);
-    }
-
-    distance_factor = details::distance_factor_paleo(eccentricity,
-                                                     perihelion_longitude,
-                                                     solar_longitude);
-  } else {
-    declination          = details::solar_declination_present_day(year_fraction);
-    distance_factor      = details::distance_factor_present_day(year_fraction);
-  }
+  auto        tmp             = declination_and_distance(time);
+  const auto &declination     = tmp[0];
+  const auto &distance_factor = tmp[1];
 
   double transmissivity = atmosphere_transmissivity(surface_elevation);
   double h_phi          = details::hour_angle(m_phi, latitude_rad, declination);
