@@ -40,7 +40,6 @@ public:
   double insolation_melt;
   double background_melt;
   double total_melt;
-  double insolation;
 };
 
 //! A dEBM-simple implementation

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -59,8 +59,8 @@ public:
   // diagnostics
   const array::Scalar &surface_albedo() const;
   const array::Scalar &atmosphere_transmissivity() const;
-  const array::Scalar &insolation() const;
 
+  const DEBMSimplePointwise& pointwise_model() const;
 private:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -121,9 +121,6 @@ private:
 
   //! transmissivity field
   array::Scalar m_transmissivity;
-
-  //! insolation at the top of the atmosphere
-  array::Scalar m_insolation;
 
   //! year length used to compute the time series length required to get m_n_per_year
   //! evaluations

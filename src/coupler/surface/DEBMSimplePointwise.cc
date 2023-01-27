@@ -292,7 +292,6 @@ DEBMSimpleMelt::DEBMSimpleMelt() {
   insolation_melt  = 0.0;
   background_melt  = 0.0;
   total_melt       = 0.0;
-  insolation       = 0.0;
 }
 
 DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
@@ -477,7 +476,6 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
 
   DEBMSimpleMelt result;
 
-  result.insolation       = insolation;
   result.insolation_melt  = A * (transmissivity * (1.0 - albedo) * insolation);
   result.temperature_melt = A * m_melt_c1 * Teff;
   result.background_melt  = A * m_melt_c2;

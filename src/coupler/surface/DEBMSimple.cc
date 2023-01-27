@@ -32,6 +32,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace surface {
@@ -47,8 +48,7 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
       m_insolation_driven_melt(m_grid, "debms_insolation_driven_melt_flux"),
       m_background_melt(m_grid, "debms_background_melt_flux"),
       m_surface_albedo(m_grid, "surface_albedo"),
-      m_transmissivity(m_grid, "atmosphere_transmissivity"),
-      m_insolation(m_grid, "insolation") {
+      m_transmissivity(m_grid, "atmosphere_transmissivity") {
 
   m_sd_use_param = m_config->get_flag("surface.debm_simple.std_dev_param.enabled");
   m_sd_param_a   = m_config->get_number("surface.debm_simple.std_dev_param.a");
@@ -150,15 +150,6 @@ DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::Atmosphe
 
   m_transmissivity.set_attrs("diagnostic", "atmosphere_transmissivity", "", "", "", 0);
   m_transmissivity.set(0.0);
-
-  m_insolation.set_attrs("diagnostic",
-                         "average topf of the atmosphere insolation "
-                         "during the period when the sun is above the critical angle Phi",
-                         "W m-2",
-                         "W m-2",
-                         "",
-                         0);
-  m_insolation.set(0.0);
 }
 
 void DEBMSimple::init_impl(const Geometry &geometry) {
@@ -303,7 +294,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &m_background_melt,
       &m_surface_albedo,
       &m_transmissivity,
-      &m_insolation,
       &geometry.latitude,
       &surface_altitude
     };
@@ -399,7 +389,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           Mi  = 0.0,            // insolation melt contribution
           Mt  = 0.0,            // temperature melt contribution
           Mc  = 0.0,            // background melt contribution
-          Qi  = 0.0,            // insolation averaged over \Delta t_Phi
           Al  = 0.0;            // albedo
 
         // beginning of the loop over small time steps:
@@ -451,7 +440,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             Mc  += melt_info.background_melt;
             R   += changes.runoff;
             SMB += changes.smb;
-            Qi  += melt_info.insolation;
             Al  += albedo;
           }
         } // end of the time-stepping loop
@@ -460,7 +448,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         m_snow_depth(i, j)     = snow;
         m_surface_albedo(i, j) = Al / N;
         m_transmissivity(i, j) = m_model.atmosphere_transmissivity(surfelev);
-        m_insolation(i, j)     = Qi / N;
 
         // set melt terms at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
@@ -544,10 +531,6 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
   return m_transmissivity;
 }
 
-const array::Scalar &DEBMSimple::insolation() const {
-  return m_insolation;
-}
-
 void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
   m_snow_depth.define(output, PISM_DOUBLE);
@@ -560,7 +543,49 @@ void DEBMSimple::write_model_state_impl(const File &output) const {
   m_surface_albedo.write(output);
 }
 
+const DEBMSimplePointwise& DEBMSimple::pointwise_model() const {
+  return m_model;
+}
+
 namespace diagnostics {
+
+/*! @brief Report mean top of atmosphere insolation */
+class DEBMSInsolation : public Diag<DEBMSimple>
+{
+public:
+  DEBMSInsolation(const DEBMSimple *m)
+    : Diag<DEBMSimple>(m) {
+
+    m_vars = {{m_sys, "insolation"}};
+
+    set_attrs("mean top of atmosphere insolation "
+              "during the period when the sun is above the critical angle Phi", "",
+              "W m-2", "W m-2", 0);
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl() const {
+
+    auto result = std::make_shared<array::Scalar>(m_grid, "insolation");
+    result->metadata(0) = m_vars[0];
+
+    auto latitude = m_grid->variables().get_2d_scalar("latitude");
+    auto ctx = m_grid->ctx();
+
+    {
+      const auto& M = model->pointwise_model();
+
+      array::AccessScope list{latitude, result.get()};
+
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        (*result)(i, j) = M.insolation_diagnostic(ctx->time()->current(), (*latitude)(i, j));
+      }
+    }
+
+    return result;
+  }
+};
 
 enum AmountKind { AMOUNT, MASS };
 
@@ -748,7 +773,7 @@ DiagnosticList DEBMSimple::diagnostics_impl() const {
     { "snow_depth", Diagnostic::wrap(m_snow_depth) },
     { "surface_albedo", Diagnostic::wrap(m_surface_albedo) },
     { "atmosphere_transmissivity", Diagnostic::wrap(m_transmissivity) },
-    { "insolation", Diagnostic::wrap(m_insolation) }
+    { "insolation", Diagnostic::Ptr(new DEBMSInsolation(this)) }
   };
 
   result = pism::combine(result, SurfaceModel::diagnostics_impl());
