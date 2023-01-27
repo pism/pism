@@ -267,9 +267,14 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
+  std::vector<DEBMSimplePointwise::OrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
+
+    // pre-compute orbital parameters which depend on time and *not* on the map-plane
+    // location
+    orbital[k] = m_model.orbital_parameters(ts[k]);
   }
 
   // update standard deviation time series
@@ -405,7 +410,9 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           DEBMSimpleMelt melt_info{};
           if (not mask::ice_free_ocean(cell_type)) {
-            melt_info = m_model.melt(ts[k],
+
+            melt_info = m_model.melt(orbital[k].declination,
+                                     orbital[k].distance_factor,
                                      dtseries,
                                      S[k],
                                      T[k],
@@ -575,11 +582,16 @@ protected:
     {
       const auto& M = model->pointwise_model();
 
+      auto orbital = M.orbital_parameters(ctx->time()->current());
+
       array::AccessScope list{latitude, result.get()};
 
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        (*result)(i, j) = M.insolation_diagnostic(ctx->time()->current(), (*latitude)(i, j));
+
+        (*result)(i, j) = M.insolation(orbital.declination,
+                                       orbital.distance_factor,
+                                       (*latitude)(i, j));
       }
     }
 

@@ -372,9 +372,7 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
   return m_transmissivity_intercept + m_transmissivity_slope * elevation;
 }
 
-std::array<double,2> DEBMSimplePointwise::declination_and_distance(double time) const {
-  // FIXME: avoid re-computing declination and distance_factor (they depend on time, but
-  // not on the map-plane location)
+DEBMSimplePointwise::OrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
   double declination     = 0.0;
   double distance_factor = 0.0;
 
@@ -406,15 +404,13 @@ std::array<double,2> DEBMSimplePointwise::declination_and_distance(double time) 
  * Compute top of atmosphere insolation to report as a diagnostic quantity.
  *
  * Do not use this in the model itself: doing so will make it slower because that way we'd
- * end up computing some quantities more than once.
+ * end up computing hour_angle more than once.
  */
-double DEBMSimplePointwise::insolation_diagnostic(double time, double latitude_degrees) const {
+double DEBMSimplePointwise::insolation(double declination,
+                                       double distance_factor,
+                                       double latitude_degrees) const {
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
-
-  auto tmp = declination_and_distance(time);
-  const auto &declination     = tmp[0];
-  const auto &distance_factor = tmp[1];
 
   double h_phi = details::hour_angle(m_phi, latitude_rad, declination);
 
@@ -439,7 +435,8 @@ double DEBMSimplePointwise::insolation_diagnostic(double time, double latitude_d
  * @param[in] latitude latitude (degrees north)
  * @param[in] albedo current albedo (fraction)
  */
-DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
+DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
+                                         double distance_factor,
                                          double dt,
                                          double T_std_deviation,
                                          double T,
@@ -450,10 +447,6 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double time,
 
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
-
-  auto        tmp             = declination_and_distance(time);
-  const auto &declination     = tmp[0];
-  const auto &distance_factor = tmp[1];
 
   double transmissivity = atmosphere_transmissivity(surface_elevation);
   double h_phi          = details::hour_angle(m_phi, latitude_rad, declination);

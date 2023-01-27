@@ -56,7 +56,15 @@ public:
 
   double albedo(double melt_rate, MaskValue cell_type) const;
 
-  DEBMSimpleMelt melt(double time,
+  struct OrbitalParameters {
+    double declination;
+    double distance_factor;
+  };
+
+  OrbitalParameters orbital_parameters(double time) const;
+
+  DEBMSimpleMelt melt(double declination,
+                      double distance_factor,
                       double dt,
                       double T_std_deviation,
                       double T,
@@ -82,14 +90,14 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
-  double insolation_diagnostic(double time, double latitude_degrees) const;
+  double insolation(double declination,
+                    double distance_factor,
+                    double latitude_degrees) const;
 
 private:
   double eccentricity(double time) const;
   double obliquity(double time) const;
   double perihelion_longitude(double time) const;
-
-  std::array<double,2> declination_and_distance(double time) const;
 
   //! refreeze melted ice
   bool m_refreeze_ice_melt;
