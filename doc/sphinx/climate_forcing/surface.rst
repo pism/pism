@@ -312,11 +312,11 @@ Simple diurnal Energy Balance Model "dEBM-simple"
 
 This PISM module implements the "simple" version of the diurnal energy balance model
 developed by :cite:`Zeitzetal2021`. It follows :cite:`KrebsKanzow2018` and includes
-parameterizations of the surface albedo and atmospheric transmissivity that make it
+parameterizations of the surface albedo and the atmospheric transmissivity that make it
 possible to run it model in a standalone, prognostic mode.
 
-It is designed to use monthly forcing by near-surface air temperature and precipitation
-from one of PISM's atmosphere models.
+It is designed to use time-dependent (usually monthly) forcing by near-surface air
+temperature and precipitation provided by one of PISM's atmosphere models.
 
 As for other surface models, its outputs are
 
@@ -423,7 +423,7 @@ Insolation-driven melt
 
    M_i = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} \right),
 
-This part of the melt is driven by the mean insolation during the melt period `\bar
+This part of the melt is driven by the *mean insolation during the melt period* `\bar
 S_{\Phi}` and includes influences of the atmosphere transmissivity `\tau_{A}` and the
 surface albedo `\alpha_S`.
 
@@ -452,8 +452,8 @@ where
 
 In short, `\bar S_{\Phi}` is a function of latitude, the factor `\bar d / d`, and the
 solar declination angle `\delta`. In the "present day" case both `\bar d / d` and `\delta`
-are periodic (with the period of one year) and approximated using trigonometric expansions
-(see :cite:`Liou2002`).
+have the period of one year and are approximated using trigonometric expansions (see
+:cite:`Liou2002`).
 
 .. rubric:: Paleo simulation
 
@@ -477,7 +477,19 @@ The values of these are set using the following configuration parameters (prefix
    :exclude: .+(enabled|file|periodic)$
 
 Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
-:var:`obliquity`, and :var:`perihelion_longitude` from the file specified using :config:`surface.debm_simple.paleo.file`.
+:var:`obliquity`, and :var:`perihelion_longitude` from the file specified using
+:config:`surface.debm_simple.paleo.file`.
+
+.. note::
+
+   We provide a script (``examples/debm_simple/orbital_parameters.py``) that can be used
+   to generate time series of these parameters using trigonometric expansions due to
+   :cite:`Berger1978` with corrections made by the authors of the GISS GCM ModelE
+   (expansion coefficients used in ``orbital_parameters.py`` come from the GISS ModelE
+   version 2.1.2). See https://data.giss.nasa.gov/modelE/ar5plots/srorbpar.html details.
+
+   These expansions are considered to be valid for about 1 million years.
+
 
 .. _sec-debm-simple-albedo:
 
