@@ -35,7 +35,7 @@ Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
 
     m_temperature = std::make_shared<array::Forcing>(m_grid,
                                                 file,

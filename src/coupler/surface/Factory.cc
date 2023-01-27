@@ -30,6 +30,7 @@
 #include "GivenClimate.hh"
 #include "ISMIP6Climate.hh"
 #include "NoGLRetreat.hh"
+#include "DEBMSimple.hh"
 #include "Simple.hh"
 #include "TemperatureIndex.hh"
 
@@ -46,6 +47,7 @@ Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereMode
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
+  add_surface_model<DEBMSimple>("debm_simple");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");

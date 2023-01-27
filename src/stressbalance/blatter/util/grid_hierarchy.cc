@@ -137,7 +137,8 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
       Mz = info.mz;
     ierr = PetscPrintf(comm,
                        "Blatter grid level %d: %3d x %3d x %3d (%8d) nodes\n",
-                       (mg_levels - 1) - (int)level, Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
+                       (mg_levels - 1) - static_cast<int>(level),
+                       Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
   }
   return 0;
 }
