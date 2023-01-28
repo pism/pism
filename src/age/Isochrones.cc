@@ -47,7 +47,8 @@ Isochrones::Isochrones(IceGrid::ConstPtr grid)
   int n_max = m_config->get_number("isochrones.max_n_layers");
 
   if (m_deposition_times.empty()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot process isochrones.deposition_times = '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot process isochrones.deposition_times = '%s'",
                                   requested_times.c_str());
   }
 
@@ -85,15 +86,19 @@ void Isochrones::init(const Geometry &geometry) {
   m_depths->set(0.0);
 
   // use ice thickness to create one layer
-  array::AccessScope list{&geometry.ice_thickness, m_depths.get()};
+  //
+  // FIXME: add several layers of equal thickness when bootstrapping (instead of just one)
+  {
+    array::AccessScope scope{&geometry.ice_thickness, m_depths.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
 
-    m_depths->get_column(i, j)[0] = geometry.ice_thickness(i, j);
+      m_depths->get_column(i, j)[0] = geometry.ice_thickness(i, j);
+    }
+
+    m_top_layer = 0;
   }
-
-  m_top_layer = 0;
 
   auto t = m_grid->ctx()->time()->current();
 
@@ -108,7 +113,9 @@ void Isochrones::init(const Geometry &geometry) {
     m_time_index = gsl_interp_bsearch(m_deposition_times.data(), t, 0, N - 1);
   }
 
-  // - read from an input file when restarting
+  // read from an input file when restarting
+  //
+  // FIXME: implement restarting
 }
 
 void Isochrones::update(double t, double dt,
@@ -121,7 +128,7 @@ void Isochrones::update(double t, double dt,
   auto ice_density = m_config->get_number("constants.ice.density");
 
   {
-    array::AccessScope list{&climatic_mass_balance, &basal_melt_rate, m_depths.get()};
+    array::AccessScope scope{&climatic_mass_balance, &basal_melt_rate, m_depths.get()};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -168,7 +175,7 @@ void Isochrones::update(double t, double dt,
   // note: this updates ghosts of m_tmp
   m_tmp->copy_from(*m_depths);
 
-  array::AccessScope list{&u, &v, m_depths.get(), m_tmp.get(), &ice_thickness};
+  array::AccessScope scope{&u, &v, m_depths.get(), m_tmp.get(), &ice_thickness};
 
   double
     dx = m_grid->dx(),
@@ -328,7 +335,7 @@ public:
 
     const auto& time = m_grid->ctx()->time();
 
-    m_vars = {SpatialVariableMetadata(m_sys, "isochrone_depth", model->layer_depths().levels())};
+    m_vars = {{m_sys, "isochrone_depth", model->layer_depths().levels()}};
 
     set_attrs("isochrone depth", "", "m", "m", 0);
     m_vars[0].z().clear_all_strings();
@@ -349,7 +356,7 @@ protected:
 
     int N = result->levels().size();
 
-    array::AccessScope list{&layer_depths, result.get()};
+    array::AccessScope scope{&layer_depths, result.get()};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
