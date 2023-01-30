@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -19,14 +19,11 @@
 
 #include "ISMIP6_NL.hh"
 
-#include "pism/util/pism_options.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 
 #include "pism/util/Time.hh"
 #include "pism/geometry/Geometry.hh"
@@ -100,7 +97,7 @@ void ISMIP6nl::init_impl(const Geometry &geometry) {
   m_salinity_ocean->init(opt.filename, opt.periodic);
 
   m_basin_mask.regrid(opt.filename, CRITICAL);
-  m_n_basins = static_cast<int>(pism::max(m_basin_mask)) + 1; // Basins id starts at 0 in the input file
+  m_n_basins = static_cast<int>(array::max(m_basin_mask)) + 1; // Basins id starts at 0 in the input file
 
   // read time-independent data right away:
   if (m_shelfbtemp->buffer_size() == 1 and m_salinity_ocean->buffer_size() == 1) {
@@ -145,8 +142,7 @@ void ISMIP6nl::update_impl(const Geometry &geometry, double t, double dt) {
 
 MaxTimestep ISMIP6nl::max_timestep_impl(double t) const {
   (void) t;
-
-  return MaxTimestep("ocean ismip6nl");
+  return {"ocean ismip6nl"};
 }
 
 const array::Scalar& ISMIP6nl::shelf_base_temperature_impl() const {
