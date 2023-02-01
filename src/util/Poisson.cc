@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -187,6 +187,14 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
+
+
+      /* Order of grid points in the stencil:
+       *
+       *   0
+       * 1 2 3
+       *   4
+       */
 
       /* i indices */
       const int I[] = {i, i - 1,  i,  i + 1, i};
