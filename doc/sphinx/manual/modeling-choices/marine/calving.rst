@@ -12,7 +12,7 @@ All mechanisms described below fall into two categories:
 
 - mechanisms computing a *retreat rate* due to calving and using it to update ice geometry
   (:ref:`sec-calving-eigen-calving`, :ref:`sec-calving-vonmises`,
-  :ref:`sec-calving-hayhurst`), and
+  :ref:`sec-calving-hayhurst`, :ref:`sec-calving-given`), and
 - mechanisms removing ice at a grid point according to a certain criterion
   (:ref:`sec-calving-thickness-threshold`, :ref:`sec-calving-floating-ice`,
   :ref:`sec-prescribed-retreat`).
@@ -164,6 +164,31 @@ Prefix: ``calving.hayhurst_calving.``
 
 .. pism-parameters::
    :prefix: calving.hayhurst_calving.
+
+
+.. _sec-calving-given:
+
+Given calving
+^^^^^^^^^^^^^
+
+The option :opt:`-calving given_calving` either defines a constant calving rate or
+reads a given calving rate field from file. This option allows for running CavlvingMIP
+experiments as suggested in:
+
+    https://github.com/JRowanJordan/CalvingMIP/wiki
+
+
+.. note::
+
+   FIXME: not documented.
+
+.. rubric:: Parameters
+
+Prefix: ``calving.given_calving.``
+
+.. pism-parameters::
+   :prefix: calving.given_calving.
+
 
 .. _sec-calving-thickness-threshold:
 

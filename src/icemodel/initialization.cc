@@ -28,6 +28,7 @@
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/GivenRate.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
@@ -902,6 +903,19 @@ void IceModel::init_calving() {
     methods.erase("thickness_calving");
 
     m_submodels["thickness threshold calving"] = m_thickness_threshold_calving.get();
+  }
+
+  if (member("given_calving", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_given_calving) {
+      m_given_calving.reset(new calving::GivenRate(m_grid));
+    }
+
+    m_given_calving->init();
+    methods.erase("given_calving");
+
+    m_submodels["given calving"] = m_given_calving.get();
   }
 
 
