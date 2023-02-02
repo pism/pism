@@ -1777,7 +1777,11 @@ array::Array::Ptr SSAFD_nuH::compute_impl() const {
 }
 
 DiagnosticList SSAFD::diagnostics_impl() const {
-  return {{"nuH", Diagnostic::Ptr(new SSAFD_nuH(this))}};
+  DiagnosticList result = SSA::diagnostics_impl();
+
+  result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+
+  return result;
 }
 
 const array::Staggered & SSAFD::integrated_viscosity() const {
