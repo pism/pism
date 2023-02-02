@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2021 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2021, 2023 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -151,12 +151,13 @@ void IceBasalResistancePseudoPlasticLaw::print_info(const Logger &log,
 double IceBasalResistancePseudoPlasticLaw::drag(double tauc, double vx, double vy) const {
   const double magreg2 = square(m_plastic_regularize) + square(vx) + square(vy);
 
+  double Aq = 1.0;
+
   if (m_sliding_scale_factor_reduces_tauc > 0.0) {
-    double Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
-    return (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
-  } else {
-    return tauc * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
+    Aq = pow(m_sliding_scale_factor_reduces_tauc, m_pseudo_q);
   }
+
+  return (tauc / Aq) * pow(magreg2, 0.5*(m_pseudo_q - 1)) * pow(m_pseudo_u_threshold, -m_pseudo_q);
 }
 
 
