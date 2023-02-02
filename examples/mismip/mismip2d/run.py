@@ -193,6 +193,7 @@ class Experiment:
                    "-extra_vars thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
+                   "-output.sizes.medium sftgif",
                    "-o %s" % output_file,
                    ]
 
@@ -219,6 +220,7 @@ class Experiment:
         out, opts = self.options(step, input_file)
         print('echo "# Step %s-%s"' % (self.experiment, step))
         print("%s %s" % (self.executable, ' '.join(opts)))
+        print("ncrename -O -v sftgif,land_ice_area_fraction_retreat {} {}".format(out, out))
         print('echo "Done."\n')
 
         return out
