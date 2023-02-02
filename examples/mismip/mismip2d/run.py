@@ -116,6 +116,7 @@ class Experiment:
                    "-front_retreat_file %s" % input_file, # prescribe the maximum ice extent
                    "-config_override %s" % config_filename,
                    "-ssa_method fd",
+                   "-stress_balance.ssa.fd.flow_line_mode on",
                    "-cfbc",                # calving front boundary conditions
                    "-part_grid",           # sub-grid front motion parameterization
                    "-ssafd_ksp_rtol 1e-7",
