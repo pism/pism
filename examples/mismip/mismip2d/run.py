@@ -102,72 +102,47 @@ class Experiment:
 
     def physics_options(self, input_file, step):
         "Options corresponding to modeling choices."
-        config_filename = self.config(step)
-
-        options = ["-periodicity y", # flowline setup
-                   "-energy none",  # isothermal setup; allows selecting cold-mode flow laws
-                   "-ssa_flow_law isothermal_glen",  # isothermal setup
-                   "-yield_stress constant",
-                   "-tauc %e" % MISMIP.C(self.experiment),
-                   "-pseudo_plastic",
-                   "-gradient eta", # or haseloff
-                   "-pseudo_plastic_q %e" % MISMIP.m(self.experiment),
-                   "-pseudo_plastic_uthreshold %e" % MISMIP.secpera(),
-                   "-front_retreat_file %s" % input_file, # prescribe the maximum ice extent
-                   "-config_override %s" % config_filename,
-                   "-ssa_method fd",
-                   "-stress_balance.ssa.fd.flow_line_mode on",
-                   "-cfbc",                # calving front boundary conditions
-                   "-part_grid",           # sub-grid front motion parameterization
-                   "-ssafd_ksp_rtol 1e-7",
-                   "-ys 0",
-                   "-ye %d" % MISMIP.run_length(self.experiment, step),
-                   "-options_left",
-                   ]
 
         if self.model == 1:
-            options.extend(["-stress_balance ssa"])
+            stress_balance = "ssa"
         else:
-            options.extend(["-stress_balance ssa+sia",
-                            "-sia_flow_law isothermal_glen",  # isothermal setup
-                            ])
+            stress_balance = "ssa+sia"
+
+        options = [
+            "-basal_resistance.pseudo_plastic.enabled",
+            "-basal_resistance.pseudo_plastic.q %e" % MISMIP.m(self.experiment),
+            "-basal_resistance.pseudo_plastic.u_threshold %e" % MISMIP.secpera(),
+            "-basal_yield_stress.constant.value %e" % MISMIP.C(self.experiment),
+            "-basal_yield_stress.model constant",
+            "-bootstrapping.defaults.geothermal_flux 0.0",
+            "-constants.ice.density {}".format(MISMIP.rho_i()),
+            "-constants.sea_water.density {}".format(MISMIP.rho_w()),
+            "-constants.standard_gravity {}".format(MISMIP.g()),
+            "-energy.enabled no",       # isothermal setup
+            "-energy.temperature_based", # use the temperature-based relaxed check for temperate ice
+            "-flow_law.isothermal_Glen.ice_softness {}".format(MISMIP.A(self.experiment, step)),
+            "-geometry.front_retreat.prescribed.file {}".format(input_file), # prescribe the maximum ice extent
+            "-geometry.part_grid.enabled", # sub-grid front motion parameterization
+            "-geometry.update.use_basal_melt_rate no",
+            "-grid.periodicity y", # flowline setup
+            "-ocean.sub_shelf_heat_flux_into_ice 0.0",
+            "-options_left",
+            "-ssafd_ksp_rtol 1e-7",
+            "-stress_balance {}".format(stress_balance),
+            "-stress_balance.calving_front_stress_bc",
+            "-stress_balance.sia.bed_smoother.range 0.0",
+            "-stress_balance.sia.flow_law isothermal_glen",  # isothermal setup
+            "-stress_balance.sia.surface_gradient_method eta", # or haseloff
+            "-stress_balance.ssa.Glen_exponent {}".format(MISMIP.n()),
+            "-stress_balance.ssa.compute_surface_gradient_inward no",
+            "-stress_balance.ssa.fd.flow_line_mode on",
+            "-stress_balance.ssa.flow_law isothermal_glen",  # isothermal setup
+            "-stress_balance.ssa.method fd",
+            "-time.end %d" % MISMIP.run_length(self.experiment, step),
+            "-time.start 0",
+        ]
 
         return options
-
-    def config(self, step):
-        '''Generates a config file containing flags and parameters
-        for a particular experiment and step.
-
-        This takes care of flags and parameters that *cannot* be set using
-        command-line options. (We try to use command-line options whenever we can.)
-        '''
-
-        filename = "MISMIP_conf_%s_A%s.nc" % (self.experiment, step)
-
-        nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
-
-        var = nc.createVariable("pism_overrides", 'i')
-
-        attrs = {"geometry.update.use_basal_melt_rate": "no",
-                 "stress_balance.ssa.compute_surface_gradient_inward": "no",
-                 "flow_law.isothermal_Glen.ice_softness": MISMIP.A(self.experiment, step),
-                 "constants.ice.density": MISMIP.rho_i(),
-                 "constants.sea_water.density": MISMIP.rho_w(),
-                 "bootstrapping.defaults.geothermal_flux": 0.0,
-                 "stress_balance.ssa.Glen_exponent": MISMIP.n(),
-                 "constants.standard_gravity": MISMIP.g(),
-                 "ocean.sub_shelf_heat_flux_into_ice": 0.0,
-                 }
-
-        if self.model != 1:
-            attrs["stress_balance.sia.bed_smoother.range"] = 0.0
-
-        for name, value in attrs.items():
-            var.setncattr(name, value)
-
-        nc.close()
-
-        return filename
 
     def bootstrap_options(self, step):
         boot_filename = "MISMIP_boot_%s_M%s_A%s.nc" % (self.experiment, self.mode, step)
@@ -176,7 +151,8 @@ class Experiment:
         prepare.pism_bootstrap_file(boot_filename, self.experiment, step, self.mode, N=self.Mx,
                                     semianalytical_profile=self.semianalytic)
 
-        options = ["-i %s -bootstrap" % boot_filename,
+        options = ["-i %s" % boot_filename,
+                   "-bootstrap",
                    "-Mx %d" % self.Mx,
                    "-My %d" % self.My,
                    "-Mz %d" % self.Mz,
@@ -220,7 +196,7 @@ class Experiment:
     def run_step(self, step, input_file=None):
         out, opts = self.options(step, input_file)
         print('echo "# Step %s-%s"' % (self.experiment, step))
-        print("%s %s" % (self.executable, ' '.join(opts)))
+        print("%s \\\n  %s \\\n  ;" % (self.executable, ' \\\n  '.join(sorted(opts))))
         print("ncrename -O -v sftgif,land_ice_area_fraction_retreat {} {}".format(out, out))
         print('echo "Done."\n')
 
