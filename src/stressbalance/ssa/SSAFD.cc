@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 Constantine Khroulev, Ed Bueler and Jed Brown
+// Copyright (C) 2004--2023 Constantine Khroulev, Ed Bueler and Jed Brown
 //
 // This file is part of PISM.
 //
@@ -794,19 +794,31 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
       double beta_u = 0.0, beta_v = 0.0;
       if (include_basal_shear) {
         double beta = 0.0;
-        if (grounded_ice(M_ij)) {
-          beta = m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
-        } else if (ice_free_land(M_ij)) {
-          // apply drag even in this case, to help with margins; note ice free
-          // areas already have a strength extension
-          beta = beta_ice_free_bedrock;
-        }
-        if (sub_gl) {
-          // reduce the basal drag at grid cells that are partially grounded:
-          if (icy(M_ij)) {
-            beta = grounded_fraction(i,j) * m_basal_sliding_law->drag(tauc(i,j), vel(i,j).u, vel(i,j).v);
+        switch (M_ij) {
+        case MASK_ICE_FREE_BEDROCK:
+          {
+            // apply drag even in this case, to help with margins; note ice free areas may
+            // already have a strength extension
+            beta = beta_ice_free_bedrock;
+            break;
           }
+        case MASK_FLOATING:
+          {
+            double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
+            beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+            break;
+          }
+        case MASK_GROUNDED:
+          {
+            double scaling = sub_gl ?  grounded_fraction(i, j) : 1.0;
+            beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+            break;
+          }
+        case MASK_ICE_FREE_OCEAN:
+        default:
+          beta = 0.0;
         }
+
         beta_u = beta;
         beta_v = beta;
       }
