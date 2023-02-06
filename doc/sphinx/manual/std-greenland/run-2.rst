@@ -78,8 +78,8 @@ because of relatively-recent advances in radar and image technology and processi
 
 So, how good is our model result ``velsurf_mag``? :numref:`fig-csurfvsobserved` compares
 the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file
-``Greenland_5km_v1.1.nc`` with the just-computed PISM result. The reader might agree with
-these broad qualitative judgements:
+``Greenland_5km_v1.1.nc`` with the just-computed PISM result (20 km) and results from the next step in the tutorial (10 km). 
+The reader might agree with these broad qualitative judgements:
 
 - the model results and the observed surface velocity look similar, and
 - slow near-divide flow is generally in the right areas and of generally the right
@@ -95,8 +95,8 @@ these broad qualitative judgements:
 
    :Left: :var:`surfvelmag`, the observed values from SeaRISE data file
           ``Greenland_5km_v1.1.nc``.
-   :Middle: :var:`velsurf_mag` from ``g20km_10ka_hy.nc``.
-   :Right: :var:`velsurf_mag` from ``g10km_10ka_hy.nc``.
+   :Middle: :var:`velsurf_mag` from ``g10km_10ka_hy.nc`` (will be run in next step of tutorial).
+   :Right: :var:`velsurf_mag` from ``g20km_10ka_hy.nc``.
 
 We can compare these PISM results to other observed-vs-model comparisons of surface
 velocity maps, for example Figure 1 in :cite:`Priceetal2011` and Figure 8 in
