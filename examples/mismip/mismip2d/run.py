@@ -61,6 +61,8 @@ else
   PISM_BIN=""    # just a guess
   echo "$SCRIPTNAME     PISM_BIN = $PISM_BIN"
 fi
+
+extra_vars=thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction
 '''
 
 
@@ -167,7 +169,7 @@ class Experiment:
 
         options = ["-extra_file %s" % extra_file,
                    "-extra_times 0:50:3e4",
-                   "-extra_vars thk,topg,velbar_mag,flux_mag,mask,dHdt,usurf,hardav,velbase_mag,nuH,tauc,taud,taub,flux_divergence,cell_grounded_fraction",
+                   "-extra_vars $extra_vars",
                    "-ts_file %s" % ts_file,
                    "-ts_times 0:50:3e4",
                    "-output.sizes.medium sftgif",
