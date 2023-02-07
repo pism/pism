@@ -1009,6 +1009,10 @@ void SSAFD::solve(const Inputs &inputs) {
     }
   }
 
+  if (m_config->get_flag("stress_balance.ssa.fd.extrapolate_at_margins")) {
+    extrapolate_velocity(inputs.geometry->cell_type, m_velocity);
+  }
+
   // Post-process velocities if the user asked for it:
   if (m_config->get_flag("stress_balance.ssa.fd.brutal_sliding")) {
     const double brutal_sliding_scaleFactor = m_config->get_number("stress_balance.ssa.fd.brutal_sliding_scale");

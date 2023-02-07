@@ -341,6 +341,46 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
   }
 }
 
+
+/*!
+ * Estimate velocity at ice-free cells near the ice margin using interpolation from
+ * immediate neighbors that are icy.
+ *
+ * This is used to improve the initial guess of ice viscosity at marginal locations when
+ * ice advances: otherwise we would use the *zero* velocity (if CFBC is "on"), and that is
+ * a poor estimate at best.
+ *
+ * Note: icy cells of `velocity` are treated as read-only, and ice-free marginal cells are
+ * write-only. This means that it's okay for `velocity` to be a input-output argument: we
+ * don't use of the values modified by this method.
+ */
+void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
+                               array::Vector1 &velocity) const {
+  array::AccessScope list{&cell_type, &velocity};
+
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
+
+      auto M = cell_type.star(i, j);
+      auto vel = velocity.star(i, j);
+
+      Vector2d sum{0.0, 0.0};
+      int N = 0;
+      for (auto d : {North, East, South, West}) {
+        if (mask::icy(M[d])) {
+          sum += vel[d];
+          ++N;
+        }
+      }
+      velocity(i, j) = sum / std::max(N, 1);
+    }
+  }
+  velocity.update_ghosts();
+}
+
+
 std::string SSA::stdout_report() const {
   return m_stdout_ssa;
 }

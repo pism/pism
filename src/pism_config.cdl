@@ -2146,6 +2146,10 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_type = "number";
     pism_config:stress_balance.ssa.fd.brutal_sliding_scale_units = "1";
 
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins = "true";
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins_doc = "Extrapolate SSA velocity to ice-free cells near the margin to improve SSA velocities at advancing ice fronts";
+    pism_config:stress_balance.ssa.fd.extrapolate_at_margins_type = "flag";
+
     pism_config:stress_balance.ssa.fd.flow_line_mode = "false";
     pism_config:stress_balance.ssa.fd.flow_line_mode_doc = "Set `v` (the `y` component of the ice velocity) to zero when assembling the system";
     pism_config:stress_balance.ssa.fd.flow_line_mode_type = "flag";

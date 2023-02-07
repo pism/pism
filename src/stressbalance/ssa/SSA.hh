@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -136,6 +136,9 @@ protected:
                                       array::Vector &result) const;
 
   virtual void solve(const Inputs &inputs) = 0;
+
+  void extrapolate_velocity(const array::CellType1 &cell_type,
+                            array::Vector1 &velocity) const;
 
   array::CellType2 m_mask;
   array::Vector m_taud;
