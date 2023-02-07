@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021, 2023 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -76,6 +76,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
         config.set_flag("stress_balance.ssa.compute_surface_gradient_inward", False)
         config.set_flag("stress_balance.calving_front_stress_bc", True)
         config.set_flag("stress_balance.ssa.fd.flow_line_mode", True)
+        config.set_flag("stress_balance.ssa.fd.extrapolate_at_margins", False)
         config.set_string("stress_balance.ssa.flow_law", "isothermal_glen")
 
         enthalpyconverter = PISM.EnthalpyConverter(config)

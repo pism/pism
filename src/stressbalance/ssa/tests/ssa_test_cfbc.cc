@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -65,6 +65,7 @@ public:
     m_config->set_flag("stress_balance.ssa.compute_surface_gradient_inward", false);
     m_config->set_flag("stress_balance.calving_front_stress_bc", true);
     m_config->set_flag("stress_balance.ssa.fd.flow_line_mode", true);
+    m_config->set_flag("stress_balance.ssa.fd.extrapolate_at_margins", false);
     m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
 
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
