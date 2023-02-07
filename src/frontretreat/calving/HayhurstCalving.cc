@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -125,8 +125,6 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
   m_calving_rate.update_ghosts();
 
-  const Direction dirs[] = {North, East, South, West};
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -137,10 +135,9 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
       int N = 0;
       double R_sum = 0.0;
-      for (int n = 0; n < 4; ++n) {
-        Direction direction = dirs[n];
-        if (mask::icy(M[direction])) {
-          R_sum += R[direction];
+      for (auto d : {North, East, South, West}) {
+        if (mask::icy(M[d])) {
+          R_sum += R[d];
           N++;
         }
       }

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -144,8 +144,6 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   m_frontal_melt_rate.update_ghosts();
 
-  const Direction dirs[] = {North, East, South, West};
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
@@ -156,11 +154,10 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
       int N = 0;
       double R_sum = 0.0;
-      for (int n = 0; n < 4; ++n) {
-        Direction direction = dirs[n];
-        if (mask::grounded_ice(M[direction]) or
-            (m_include_floating_ice and mask::icy(M[direction]))) {
-          R_sum += R[direction];
+      for (auto d : {North, East, South, West}) {
+        if (mask::grounded_ice(M[d]) or
+            (m_include_floating_ice and mask::icy(M[d]))) {
+          R_sum += R[d];
           N++;
         }
       }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -169,9 +169,6 @@ void FrontRetreat::update_geometry(double dt,
       &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
       &surface_elevation};
 
-  // Prepare to loop over neighbors: directions
-  const Direction dirs[] = {North, East, South, West};
-
   // Step 1: Apply the computed horizontal retreat rate:
   for (Points pt(*m_grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
@@ -216,16 +213,15 @@ void FrontRetreat::update_geometry(double dt,
             b  = bed.star(i, j),
             sl = sea_level.star(i, j);
 
-          for (int n = 0; n < 4; ++n) {
-            Direction direction = dirs[n];
-            int m = M[direction];
-            int bc = BC[direction];
+          for (auto d : {North, East, South, West}) {
+            int m = M[d];
+            int bc = BC[d];
 
             // note: this is where the modified cell type mask is used to prevent
             // wrap-around
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
                 (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and b[direction] < sl[direction]))) {
+                 (mask::grounded_ice(m) and b[d] < sl[d]))) {
               N += 1;
             }
           }

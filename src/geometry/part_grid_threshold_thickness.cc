@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -40,12 +40,10 @@ double part_grid_threshold_thickness(stencils::Star<int> cell_type,
     H_threshold = 0.0;
   int N = 0;
 
-  const Direction dirs[] = {North, East, South, West};
-  for (int n = 0; n < 4; ++n) {
-    Direction direction = dirs[n];
-    if (mask::icy(cell_type[direction])) {
-      H_average += ice_thickness[direction];
-      h_average += surface_elevation[direction];
+  for (auto d : {North, East, South, West}) {
+    if (mask::icy(cell_type[d])) {
+      H_average += ice_thickness[d];
+      h_average += surface_elevation[d];
       N++;
     }
   }

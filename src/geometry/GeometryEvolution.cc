@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2022 PISM Authors
+/* Copyright (C) 2016--2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -864,8 +864,6 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar  &
 
   m_impl->gc.compute_mask(sea_level, bed_topography, ice_thickness, cell_type);
 
-  const Direction directions[4] = {North, East, South, West};
-
   // First step: distribute residual mass
   {
     // will be destroyed at the end of the block
@@ -881,11 +879,8 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar  &
       auto m = cell_type.star(i, j);
 
       int N = 0; // number of empty or partially filled neighbors
-      for (unsigned int n = 0; n < 4; ++n) {
-        const Direction direction = directions[n];
-        if (ice_free_ocean(m[direction])) {
-          N++;
-        }
+      for (auto d : {North, East, South, West}) {
+        N += ice_free_ocean(m[d]) ? 1 : 0;
       }
 
       if (N > 0)  {
