@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2020 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -89,7 +89,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
 
     auto M = no_model_mask->star(i, j);
 
-    if (M.ij == 0) {
+    if (M.c == 0) {
       // this grid point is in the modeled area so we don't need to modify the driving
       // stress
       continue;
@@ -112,11 +112,11 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
         east = M.e == 1 and i < Mx - 1;
 
       // don't use differences spanning "cliffs"
-      west *= weight(CT.ij, CT.w, h.ij, h.w);
-      east *= weight(CT.ij, CT.e, h.ij, h.e);
+      west *= weight(CT.c, CT.w, h.c, h.w);
+      east *= weight(CT.c, CT.e, h.c, h.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
       } else {
         h_x = 0.0;
       }
@@ -130,11 +130,11 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
         north = M.n == 1 and j < My - 1;
 
       // don't use differences spanning "cliffs"
-      south *= weight(CT.ij, CT.s, h.ij, h.s);
-      north *= weight(CT.ij, CT.n, h.ij, h.n);
+      south *= weight(CT.c, CT.s, h.c, h.s);
+      north *= weight(CT.c, CT.n, h.c, h.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
       } else {
         h_y = 0.0;
       }

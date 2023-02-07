@@ -319,7 +319,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
       // bedrock to zero. This means that we need to set boundary conditions
       // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
       // to be consistent.
-      if (ice_free(M.ij)) {
+      if (ice_free(M.c)) {
         m_b(i, j) = m_scaling * ice_free_velocity;
         continue;
       }
@@ -364,7 +364,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         double delta_p = H_ij * (P_ice - P_water);
 
         if (grid_edge(*m_grid, i, j) and
-            not (flow_line_mode or mask::grounded(M.ij))) {
+            not (flow_line_mode or mask::grounded(M.c))) {
           // In regional setups grounded ice may extend to the edge of the domain. This
           // condition ensures that at a domain edge the ice behaves as if it extends past
           // the edge without a change in geometry.
@@ -609,18 +609,18 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         auto b = bed.star(i, j);
         double h = surface(i, j);
 
-        if (H.ij > HminFrozen) {
+        if (H.c > HminFrozen) {
           if (b.w > h and ice_free_land(M.w)) {
-            c_w = lateral_drag_viscosity * 0.5 * (H.ij + H.w);
+            c_w = lateral_drag_viscosity * 0.5 * (H.c + H.w);
           }
           if (b.e > h and ice_free_land(M.e)) {
-            c_e = lateral_drag_viscosity * 0.5 * (H.ij + H.e);
+            c_e = lateral_drag_viscosity * 0.5 * (H.c + H.e);
           }
           if (b.n > h and ice_free_land(M.n)) {
-            c_n = lateral_drag_viscosity * 0.5 * (H.ij + H.n);
+            c_n = lateral_drag_viscosity * 0.5 * (H.c + H.n);
           }
           if (b.s > h and ice_free_land(M.s)) {
-            c_s = lateral_drag_viscosity * 0.5 * (H.ij + H.s);
+            c_s = lateral_drag_viscosity * 0.5 * (H.c + H.s);
           }
         }
       }
@@ -660,7 +660,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
         // bedrock to zero. This means that we need to set boundary conditions
         // at both ice/ice-free-ocean and ice/ice-free-bedrock interfaces below
         // to be consistent.
-        if (ice_free(M.ij)) {
+        if (ice_free(M.c)) {
           set_diagonal_matrix_entry(A, i, j, 0, m_scaling);
           set_diagonal_matrix_entry(A, i, j, 1, m_scaling);
           continue;
@@ -1731,12 +1731,12 @@ bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
   using mask::icy;
 
   if (ssa_dirichlet_bc) {
-    return icy(M.ij) &&
+    return icy(M.c) &&
       (ice_free(M.e) || ice_free(M.w) || ice_free(M.n) || ice_free(M.s) ||
        ice_free(M.ne) || ice_free(M.se) || ice_free(M.nw) || ice_free(M.sw));
   }
 
-  return icy(M.ij) &&
+  return icy(M.c) &&
     (ice_free_ocean(M.e) || ice_free_ocean(M.w) ||
      ice_free_ocean(M.n) || ice_free_ocean(M.s) ||
      ice_free_ocean(M.ne) || ice_free_ocean(M.se) ||

@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023 Jed Brown, Craig Lingle, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -264,34 +264,34 @@ void SIAFD::surface_gradient_eta(const array::Scalar2 &ice_thickness,
 
     // i-offset
     {
-      double mean_eta = 0.5 * (e.e + e.ij);
+      double mean_eta = 0.5 * (e.e + e.c);
       if (mean_eta > 0.0) {
         double factor = invpow * pow(mean_eta, dinvpow);
-        h_x(i, j, 0) = factor * (e.e - e.ij) / dx;
+        h_x(i, j, 0) = factor * (e.e - e.c) / dx;
         h_y(i, j, 0) = factor * (e.ne + e.n - e.se - e.s) / (4.0 * dy);
       } else {
         h_x(i, j, 0) = 0.0;
         h_y(i, j, 0) = 0.0;
       }
       // now add bed slope to get actual h_x, h_y
-      h_x(i, j, 0) += (b.e - b.ij) / dx;
+      h_x(i, j, 0) += (b.e - b.c) / dx;
       h_y(i, j, 0) += (b.ne + b.n - b.se - b.s) / (4.0 * dy);
     }
 
     // j-offset
     {
-      double mean_eta = 0.5 * (e.n + e.ij);
+      double mean_eta = 0.5 * (e.n + e.c);
       if (mean_eta > 0.0) {
         double factor = invpow * pow(mean_eta, dinvpow);
         h_x(i, j, 1) = factor * (e.ne + e.e - e.nw - e.w) / (4.0 * dx);
-        h_y(i, j, 1) = factor * (e.n - e.ij) / dy;
+        h_y(i, j, 1) = factor * (e.n - e.c) / dy;
       } else {
         h_x(i, j, 1) = 0.0;
         h_y(i, j, 1) = 0.0;
       }
       // now add bed slope to get actual h_x, h_y
       h_x(i, j, 1) += (b.ne + b.e - b.nw - b.w) / (4.0 * dx);
-      h_y(i, j, 1) += (b.n - b.ij) / dy;
+      h_y(i, j, 1) += (b.n - b.c) / dy;
     }
   } // end of the loop over grid points
 }

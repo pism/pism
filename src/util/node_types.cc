@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -79,7 +79,7 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
       // flags indicating whether the current node and its neighbors are "icy"
       stencils::Box<int> icy;
 
-      icy.ij = static_cast<int>(H.ij >= H_min);
+      icy.c  = static_cast<int>(H.c >= H_min);
       icy.nw = static_cast<int>(H.nw >= H_min);
       icy.n  = static_cast<int>(H.n  >= H_min);
       icy.ne = static_cast<int>(H.ne >= H_min);
@@ -92,16 +92,16 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
       // flags indicating whether neighboring elements are "icy" (an element is icy if at
       // least three of its nodes are icy)
       const bool
-        ne_element_is_icy = (icy.ij + icy.e + icy.ne + icy.n) >= 3,
-        nw_element_is_icy = (icy.ij + icy.n + icy.nw + icy.w) >= 3,
-        sw_element_is_icy = (icy.ij + icy.w + icy.sw + icy.s) >= 3,
-        se_element_is_icy = (icy.ij + icy.s + icy.se + icy.e) >= 3;
+        ne_element_is_icy = (icy.c + icy.e + icy.ne + icy.n) >= 3,
+        nw_element_is_icy = (icy.c + icy.n + icy.nw + icy.w) >= 3,
+        sw_element_is_icy = (icy.c + icy.w + icy.sw + icy.s) >= 3,
+        se_element_is_icy = (icy.c + icy.s + icy.se + icy.e) >= 3;
 
       if (ne_element_is_icy and nw_element_is_icy and
           sw_element_is_icy and se_element_is_icy) {
         // all four elements are icy: we are at an interior node
         result(i, j) = NODE_INTERIOR;
-      } else if (icy.ij != 0) {
+      } else if (icy.c != 0) {
         // the current node is icy: we are at a boundary
         result(i, j) = NODE_BOUNDARY;
       } else {

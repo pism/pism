@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2022 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -194,9 +194,9 @@ void NullTransport::diffuse_till_water(double dt) {
 
     auto W = m_Wtill_old.star(i, j);
 
-    double dWtill = (Rx * (W.w - 2.0 * W.ij + W.e) + Ry * (W.s - 2.0 * W.ij + W.n));
+    double dWtill = (Rx * (W.w - 2.0 * W.c + W.e) + Ry * (W.s - 2.0 * W.c + W.n));
 
-    m_Wtill(i, j) = W.ij + dWtill;
+    m_Wtill(i, j) = W.c + dWtill;
 
     m_flow_change(i, j) = dWtill;
   }

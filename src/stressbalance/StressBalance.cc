@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -742,13 +742,13 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
     }
 
     if (west + east > 0) {
-      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.c.u - U[West].u) + east * (U[East].u - U.c.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.c.v - U[West].v) + east * (U[East].v - U.c.v));
     }
 
     if (south + north > 0) {
-      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.c.u - U[South].u) + north * (U[North].u - U.c.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.c.v - U[South].v) + north * (U[North].v - U.c.v));
     }
 
     const double A = 0.5 * (u_x + v_y),  // A = (1/2) trace(D)
@@ -827,13 +827,13 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     }
 
     if (west + east > 0) {
-      u_x = 1.0 / (dx * (west + east)) * (west * (U.ij.u - U[West].u) + east * (U[East].u - U.ij.u));
-      v_x = 1.0 / (dx * (west + east)) * (west * (U.ij.v - U[West].v) + east * (U[East].v - U.ij.v));
+      u_x = 1.0 / (dx * (west + east)) * (west * (U.c.u - U[West].u) + east * (U[East].u - U.c.u));
+      v_x = 1.0 / (dx * (west + east)) * (west * (U.c.v - U[West].v) + east * (U[East].v - U.c.v));
     }
 
     if (south + north > 0) {
-      u_y = 1.0 / (dy * (south + north)) * (south * (U.ij.u - U[South].u) + north * (U[North].u - U.ij.u));
-      v_y = 1.0 / (dy * (south + north)) * (south * (U.ij.v - U[South].v) + north * (U[North].v - U.ij.v));
+      u_y = 1.0 / (dy * (south + north)) * (south * (U.c.u - U[South].u) + north * (U[North].u - U.c.u));
+      v_y = 1.0 / (dy * (south + north)) * (south * (U.c.v - U[South].v) + north * (U[North].v - U.c.v));
     }
 
     double nu = 0.0;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -83,11 +83,11 @@ protected:
 
     stencils::Star<T> result;
 
-    result.ij = self(i,j);
-    result.e =  self(i+1,j);
-    result.w =  self(i-1,j);
-    result.n =  self(i,j+1);
-    result.s =  self(i,j-1);
+    result.c = self(i,j);
+    result.e = self(i+1,j);
+    result.w = self(i-1,j);
+    result.n = self(i,j+1);
+    result.s = self(i,j-1);
 
     return result;
   }

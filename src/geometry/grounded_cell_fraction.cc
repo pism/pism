@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2018, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -235,7 +235,7 @@ static double F(double SL, double B, double H, double alpha) {
  */
 typedef stencils::Box<double> Box;
 static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
-  return {F(SL.ij, B.ij, H.ij, alpha),
+  return {F(SL.c, B.c, H.c, alpha),
           F(SL.n,  B.n,  H.n,  alpha),
           F(SL.nw, B.nw, H.nw, alpha),
           F(SL.w,  B.w,  H.w,  alpha),
@@ -295,28 +295,28 @@ void compute_grounded_cell_fraction(double ice_density,
 
         auto x = F(S, B, H, alpha);
 
-        f.ij = x.ij;
-        f.sw = 0.25 * (x.sw + x.s + x.ij + x.w);
-        f.se = 0.25 * (x.s + x.se + x.e + x.ij);
-        f.ne = 0.25 * (x.ij + x.e + x.ne + x.n);
-        f.nw = 0.25 * (x.w + x.ij + x.n + x.nw);
+        f.c = x.c;
+        f.sw = 0.25 * (x.sw + x.s + x.c + x.w);
+        f.se = 0.25 * (x.s + x.se + x.e + x.c);
+        f.ne = 0.25 * (x.c + x.e + x.ne + x.n);
+        f.nw = 0.25 * (x.w + x.c + x.n + x.nw);
 
-        f.s = 0.5 * (x.ij + x.s);
-        f.e = 0.5 * (x.ij + x.e);
-        f.n = 0.5 * (x.ij + x.n);
-        f.w = 0.5 * (x.ij + x.w);
+        f.s = 0.5 * (x.c + x.s);
+        f.e = 0.5 * (x.c + x.e);
+        f.n = 0.5 * (x.c + x.n);
+        f.w = 0.5 * (x.c + x.w);
       }
 
       // compute the grounding fraction for the current cell by breaking it into 8
       // triangles
-      double fraction = 0.125 * (grounded_area_fraction(f.ij, f.ne, f.n) +
-                                 grounded_area_fraction(f.ij, f.n,  f.nw) +
-                                 grounded_area_fraction(f.ij, f.nw, f.w) +
-                                 grounded_area_fraction(f.ij, f.w,  f.sw) +
-                                 grounded_area_fraction(f.ij, f.sw, f.s) +
-                                 grounded_area_fraction(f.ij, f.s,  f.se) +
-                                 grounded_area_fraction(f.ij, f.se, f.e) +
-                                 grounded_area_fraction(f.ij, f.e,  f.ne));
+      double fraction = 0.125 * (grounded_area_fraction(f.c, f.ne, f.n) +
+                                 grounded_area_fraction(f.c, f.n,  f.nw) +
+                                 grounded_area_fraction(f.c, f.nw, f.w) +
+                                 grounded_area_fraction(f.c, f.w,  f.sw) +
+                                 grounded_area_fraction(f.c, f.sw, f.s) +
+                                 grounded_area_fraction(f.c, f.s,  f.se) +
+                                 grounded_area_fraction(f.c, f.se, f.e) +
+                                 grounded_area_fraction(f.c, f.e,  f.ne));
 
       result(i, j) = clip(fraction, 0.0, 1.0);
 

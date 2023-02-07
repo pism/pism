@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021, 2022 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
+// Copyright (C) 2012-2019, 2021, 2022, 2023 Constantine Khrulev, Ricarda Winkelmann, Ronja Reese, Torsten
 // Albrecht, and Matthias Mengel
 //
 // This file is part of PISM.
@@ -218,7 +218,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
     auto M = cell_type.box(i, j);
 
     bool potential_partially_filled_cell =
-      ((M.ij == MASK_GROUNDED or M.ij == MASK_ICE_FREE_OCEAN) and
+      ((M.c  == MASK_GROUNDED or M.c  == MASK_ICE_FREE_OCEAN) and
        (M.w  == MASK_FLOATING or M.e  == MASK_FLOATING or
         M.s  == MASK_FLOATING or M.n  == MASK_FLOATING or
         M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or

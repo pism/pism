@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022, 2023 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -303,12 +303,12 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     double h_x = 0.0;
     {
       double
-        west = weight(cfbc, M.ij, M.w, h.ij, h.w, N.ij, N.w),
-        east = weight(cfbc, M.ij, M.e, h.ij, h.e, N.ij, N.e);
+        west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
+        east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
 
       if (east + west > 0) {
-        h_x = 1.0 / ((west + east) * dx) * (west * (h.ij - h.w) + east * (h.e - h.ij));
-        if (floating_ice(M.ij) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
+        h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent (see the notes in the manual)
           h_x /= 2.0;
@@ -322,12 +322,12 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     double h_y = 0.0;
     {
       double
-        south = weight(cfbc, M.ij, M.s, h.ij, h.s, N.ij, N.s),
-        north = weight(cfbc, M.ij, M.n, h.ij, h.n, N.ij, N.n);
+        south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
+        north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
 
       if (north + south > 0) {
-        h_y = 1.0 / ((south + north) * dy) * (south * (h.ij - h.s) + north * (h.n - h.ij));
-        if (floating_ice(M.ij) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
+        h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
+        if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent
           h_y /= 2.0;

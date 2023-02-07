@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2022 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -666,11 +666,11 @@ void Routing::compute_velocity(const array::Staggered &W,
 
       auto M = no_model_mask->star(i, j);
 
-      if (M.ij or M.e) {
+      if (M.c or M.e) {
         result(i, j, 0) = 0.0;
       }
 
-      if (M.ij or M.n) {
+      if (M.c or M.n) {
         result(i, j, 1) = 0.0;
       }
     }
@@ -801,8 +801,8 @@ void Routing::W_change_due_to_flow(double dt,
       Ds = m_rg * k.s * ws.s;
 
     auto w = W.star(i, j);
-    const double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
-                          wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
+    const double diffW = (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) +
+                          wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
 
     result(i, j) = dt * (- divQ + diffW);
   }

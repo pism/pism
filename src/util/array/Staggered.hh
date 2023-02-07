@@ -77,11 +77,11 @@ inline stencils::Star<double> Staggered1::star(int i, int j) const {
 
   stencils::Star<double> result;
 
-  result.ij = 0.0;             // has no meaning in this context
-  result.e =  self(i, j, 0);
-  result.w =  self(i-1, j, 0);
-  result.n =  self(i, j, 1);
-  result.s =  self(i, j-1, 1);
+  result.c = 0.0;               // has no meaning in this context
+  result.e = self(i, j, 0);
+  result.w = self(i-1, j, 0);
+  result.n = self(i, j, 1);
+  result.s = self(i, j-1, 1);
 
   return result;
 }

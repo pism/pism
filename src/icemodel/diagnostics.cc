@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2022 Constantine Khroulev
+// Copyright (C) 2010--2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -2445,7 +2445,7 @@ array::Array::Ptr IceViscosity::compute_impl() const {
 
       double *viscosity = result->get_column(i, j);
 
-      if (ice_free(m.ij)) {
+      if (ice_free(m.c)) {
         result->set_column(i, j, m_fill_value);
         continue;
       }

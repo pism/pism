@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,10 +48,10 @@ static void compute_sinks(const array::Scalar &domain_mask,
     auto P = psi.star(i, j);
 
     double
-      v_n = - (P.n - P.ij),
-      v_e = - (P.e - P.ij),
-      v_s = - (P.ij - P.s),
-      v_w = - (P.ij - P.w);
+      v_n = - (P.n - P.c),
+      v_e = - (P.e - P.c),
+      v_s = - (P.c - P.s),
+      v_w = - (P.c - P.w);
 
     if (domain_mask(i, j) > 0.5 and v_e <= 0.0 and v_w >= 0.0 and v_n <= 0.0 and v_s >= 0.0) {
       result(i, j) = 1.0;
@@ -257,15 +257,15 @@ void EmptyingProblem::update(const Geometry &geometry,
       auto w = m_W.star(i, j);
 
       double
-        q_n = v.n * (v.n >= 0.0 ? w.ij : w.n),
-        q_e = v.e * (v.e >= 0.0 ? w.ij : w.e),
-        q_s = v.s * (v.s >= 0.0 ? w.s  : w.ij),
-        q_w = v.w * (v.w >= 0.0 ? w.w  : w.ij),
+        q_n = v.n * (v.n >= 0.0 ? w.c : w.n),
+        q_e = v.e * (v.e >= 0.0 ? w.c : w.e),
+        q_s = v.s * (v.s >= 0.0 ? w.s  : w.c),
+        q_w = v.w * (v.w >= 0.0 ? w.w  : w.c),
         divQ = (q_e - q_w) / m_dx + (q_n - q_s) / m_dy;
 
       // update water thickness
       if (m_domain_mask(i, j) > 0.5) {
-        m_tmp(i, j) = w.ij + dt * (- divQ);
+        m_tmp(i, j) = w.c + dt * (- divQ);
       } else {
         m_tmp(i, j) = 0.0;
       }
@@ -360,10 +360,10 @@ void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
         auto P = result.star(i, j);
 
         double
-          v_n = - (P.n - P.ij),
-          v_e = - (P.e - P.ij),
-          v_s = - (P.ij - P.s),
-          v_w = - (P.ij - P.w);
+          v_n = - (P.n - P.c),
+          v_e = - (P.e - P.c),
+          v_s = - (P.c - P.s),
+          v_w = - (P.c - P.w);
 
         if (v_e <= 0.0 and v_w >= 0.0 and v_n <= 0.0 and v_s >= 0.0) {
           ++n_sinks_remaining;
@@ -429,11 +429,11 @@ void EmptyingProblem::compute_velocity(const array::Scalar &psi,
 
       auto M = domain_mask.star(i, j);
 
-      if (M.ij == 0 and M.e == 0) {
+      if (M.c == 0 and M.e == 0) {
         result(i, j, 0) = 0.0;
       }
 
-      if (M.ij == 0 and M.n == 0) {
+      if (M.c == 0 and M.n == 0) {
         result(i, j, 1) = 0.0;
       }
     }

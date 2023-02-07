@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,7 @@ namespace stencils {
 //! \brief Star stencil points (in the map-plane).
 template <typename T>
 struct Star {
-  T ij, e, w, n, s;
+  T c, e, w, n, s;
 
   Star() = default;
 
@@ -37,11 +37,11 @@ struct Star {
   }
 
   void set(T input) {
-    ij = e = w = n = s = input;
+    c = e = w = n = s = input;
   }
 
   //! Get the element corresponding to a given direction.
-  //! Use foo.ij to get the value at i,j (center of the star).
+  //! Use foo.c to get the value at i,j (center of the star).
   inline T& operator[](Direction direction) {
     switch (direction) {
     default:                    // just to silence the warning
@@ -71,11 +71,11 @@ struct Star {
   }
 };
 
-// NB: Do not change the order of elements in this struct. array::Scalar::box() and
-// array::Scalar::box() depend on it.
+// NB: Do not change the order of elements in this struct. array::Array2D::box() depends
+// on it.
 template <typename T>
 struct Box {
-  T ij, n, nw, w, sw, s, se, e, ne;
+  T c, n, nw, w, sw, s, se, e, ne;
 };
 
 } // end of namespace stencils

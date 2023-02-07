@@ -418,8 +418,8 @@ void FractureDensity::update(double dt,
       // fracture age since fracturing occurred
       {
         auto a = A.star(i, j);
-        A_new(i, j) -= dt * u * (u < 0 ? a.e - a.ij : a.ij - a.w) / dx;
-        A_new(i, j) -= dt * v * (v < 0 ? a.n - a.ij : a.ij - a.s) / dy;
+        A_new(i, j) -= dt * u * (u < 0 ? a.e - a.c : a.c - a.w) / dx;
+        A_new(i, j) -= dt * v * (v < 0 ? a.n - a.c : a.c - a.s) / dy;
         A_new(i, j) += dt;
         if (sigmat > initThreshold) {
           A_new(i, j) = 0.0;

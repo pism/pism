@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -80,7 +80,7 @@ void remove_narrow_tongues(const Geometry &geometry,
 
     // Note: i,j cannot be ice-free (see the if-block above), so it is either grounded ice
     // or floating ice
-    if (mask::grounded_ice(M.ij)) {
+    if (mask::grounded_ice(M.c)) {
       using mask::ice_free_ocean;
       // if (i,j) is grounded ice then we will remove it if it has
       // exclusively ice-free ocean neighbors

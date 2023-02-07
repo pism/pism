@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021, 2022 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -261,7 +261,7 @@ void Distributed::update_P(double dt,
       P_new(i, j) = 0.0;
     } else if (cell_type.ocean(i, j)) {
       P_new(i, j) = P_o;
-    } else if (w.ij <= 0.0) {
+    } else if (w.c <= 0.0) {
       P_new(i, j) = P_o;
     } else {
       auto q = Q.star(i, j);
@@ -269,8 +269,8 @@ void Distributed::update_P(double dt,
       auto ws = Ws.star(i, j);
 
       double
-        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.ij),
-        Close = c2 * A * pow(P_o - P(i, j), n) * w.ij;
+        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.c),
+        Close = c2 * A * pow(P_o - P(i, j), n) * w.c;
 
       // compute the flux divergence the same way as in update_W()
       const double divadflux = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
@@ -280,8 +280,8 @@ void Distributed::update_P(double dt,
         Dn = m_rg * k.n * ws.n,
         Ds = m_rg * k.s * ws.s;
 
-      double diffW = (wux * (De * (w.e - w.ij) - Dw * (w.ij - w.w)) +
-                      wuy * (Dn * (w.n - w.ij) - Ds * (w.ij - w.s)));
+      double diffW = (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) +
+                      wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
 
       double divflux = -divadflux + diffW;
 

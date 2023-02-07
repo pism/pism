@@ -81,11 +81,11 @@ public:
 inline stencils::Star<int> Scalar::star_int(int i, int j) const {
   stencils::Star<int> result;
 
-  result.ij = as_int(i,j);
-  result.e =  as_int(i+1,j);
-  result.w =  as_int(i-1,j);
-  result.n =  as_int(i,j+1);
-  result.s =  as_int(i,j-1);
+  result.c = as_int(i,j);
+  result.e = as_int(i+1,j);
+  result.w = as_int(i-1,j);
+  result.n = as_int(i,j+1);
+  result.s = as_int(i,j-1);
 
   return result;
 }

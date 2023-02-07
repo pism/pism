@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,7 +62,7 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
     auto M = no_model.box(i, j);
 
     // x-component, i-offset
-    if (M.ij > 0.5 or M.e > 0.5) {
+    if (M.c > 0.5 or M.e > 0.5) {
 
       if (i < 0 or i + 1 > Mx - 1) {
         h_x(i, j, 0) = 0.0;
@@ -94,7 +94,7 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
     }
 
     // y-component, j-offset
-    if (M.ij > 0.5 or M.n > 0.5) {
+    if (M.c > 0.5 or M.n > 0.5) {
 
       if (j < 0 or j + 1 > My - 1) {
         h_y(i, j, 1) = 0.0;

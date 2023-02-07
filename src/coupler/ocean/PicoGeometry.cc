@@ -570,7 +570,7 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const array::CellType
     bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i,j));
 
     // skip the "dummy" basin and cells that are not at the ice front
-    if (B.ij == 0 or not next_to_icefront) {
+    if (B.c == 0 or not next_to_icefront) {
       continue;
     }
 
@@ -587,19 +587,19 @@ std::map<int,std::set<int> > PicoGeometry::basin_neighbors(const array::CellType
     auto M = cell_type.star_int(i, j);
 
     if (ice_free_ocean(M.n)) {
-      mark_as_neighbors(B.ij, B.n);
+      mark_as_neighbors(B.c, B.n);
     }
 
     if (ice_free_ocean(M.s)) {
-      mark_as_neighbors(B.ij, B.s);
+      mark_as_neighbors(B.c, B.s);
     }
 
     if (ice_free_ocean(M.e)) {
-      mark_as_neighbors(B.ij, B.e);
+      mark_as_neighbors(B.c, B.e);
     }
 
     if (ice_free_ocean(M.w)) {
-      mark_as_neighbors(B.ij, B.w);
+      mark_as_neighbors(B.c, B.w);
     }
   }
 
@@ -900,7 +900,7 @@ void eikonal_equation(array::Scalar1 &mask) {
 
         auto R = mask.star(i, j);
 
-        if (R.ij == 0 and
+        if (R.c == 0 and
             (R.n == current_label or R.s == current_label or
              R.e == current_label or R.w == current_label)) {
           // i.e. this is an shelf cell with no distance assigned yet and with a neighbor

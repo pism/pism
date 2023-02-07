@@ -212,7 +212,7 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
 
       auto M = mask.star(i, j);
 
-      if (M.ij == 1) {
+      if (M.c == 1) {
         // Regular location: use coefficients of the discretization of the Laplacian
 
         // Use zero Neumann BC if a neighbor is marked as a Neumann boundary
