@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -61,11 +61,16 @@ protected:
 
   virtual void compute_hardav_staggered(const Inputs &inputs);
 
-  virtual void compute_nuH_staggered(const Geometry &geometry,
+  virtual void compute_nuH_staggered(const array::Scalar1 &ice_thickness,
+                                     const array::Vector1 &velocity,
+                                     const array::Staggered &hardness,
                                      double nuH_regularization,
                                      array::Staggered &result);
 
-  virtual void compute_nuH_staggered_cfbc(const Geometry &geometry,
+  virtual void compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
+                                          const array::CellType2 &mask,
+                                          const array::Vector1 &velocity,
+                                          const array::Staggered &hardness,
                                           double nuH_regularization,
                                           array::Staggered &result);
 

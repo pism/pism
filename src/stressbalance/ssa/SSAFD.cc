@@ -1082,9 +1082,17 @@ void SSAFD::picard_manager(const Inputs &inputs,
   bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
   if (use_cfbc) {
-    compute_nuH_staggered_cfbc(*inputs.geometry, nuH_regularization, m_nuH);
+    compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness,
+                               m_mask,
+                               m_velocity,
+                               m_hardness,
+                               nuH_regularization,
+                               m_nuH);
   } else {
-    compute_nuH_staggered(*inputs.geometry, nuH_regularization, m_nuH);
+    compute_nuH_staggered(inputs.geometry->ice_thickness,
+                          m_velocity,
+                          m_hardness,
+                          nuH_regularization, m_nuH);
   }
   update_nuH_viewers();
 
@@ -1172,9 +1180,18 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
     // update viscosity and check for viscosity convergence
     if (use_cfbc) {
-      compute_nuH_staggered_cfbc(*inputs.geometry, nuH_regularization, m_nuH);
+      compute_nuH_staggered_cfbc(inputs.geometry->ice_thickness,
+                                 m_mask,
+                                 m_velocity,
+                                 m_hardness,
+                                 nuH_regularization,
+                                 m_nuH);
     } else {
-      compute_nuH_staggered(*inputs.geometry, nuH_regularization, m_nuH);
+      compute_nuH_staggered(inputs.geometry->ice_thickness,
+                            m_velocity,
+                            m_hardness,
+                            nuH_regularization,
+                            m_nuH);
     }
 
     if (nuH_iter_failure_underrelax != 1.0) {
@@ -1468,13 +1485,15 @@ In this implementation we set \f$\nu H\f$ to a constant anywhere the ice is
 thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
-void SSAFD::compute_nuH_staggered(const Geometry &geometry,
+void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
+                                  const array::Vector1 &velocity,
+                                  const array::Staggered &hardness,
                                   double nuH_regularization,
                                   array::Staggered &result) {
 
-  const array::Vector &uv = m_velocity; // shortcut
+  const array::Vector &uv = velocity; // shortcut
 
-  array::AccessScope list{&result, &uv, &m_hardness, &geometry.ice_thickness};
+  array::AccessScope list{&result, &uv, &hardness, &ice_thickness};
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1487,7 +1506,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double H = 0.5 * (geometry.ice_thickness(i,j) + geometry.ice_thickness(i+oi,j+oj));
+      const double H = 0.5 * (ice_thickness(i,j) + ice_thickness(i+oi,j+oj));
 
       if (H < strength_extension->get_min_thickness()) {
         result(i,j,o) = strength_extension->get_notional_strength();
@@ -1509,7 +1528,7 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
       }
 
       double nu = 0.0;
-      m_flow_law->effective_viscosity(m_hardness(i,j,o),
+      m_flow_law->effective_viscosity(hardness(i,j,o),
                                       secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                       &nu, NULL);
 
@@ -1538,13 +1557,16 @@ void SSAFD::compute_nuH_staggered(const Geometry &geometry,
  *
  * @return 0 on success
  */
-void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
+void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
+                                       const array::CellType2 &mask,
+                                       const array::Vector1 &velocity,
+                                       const array::Staggered &hardness,
                                        double nuH_regularization,
                                        array::Staggered &result) {
 
-  const array::Scalar &thickness = geometry.ice_thickness;
+  const auto &thickness = ice_thickness;
 
-  const array::Vector &uv = m_velocity; // shortcut
+  const array::Vector &uv = velocity; // shortcut
 
   double
     n_glen                 = m_flow_law->exponent(),
@@ -1552,18 +1574,18 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
   const double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{&m_mask, &m_work, &m_velocity};
+  array::AccessScope list{&mask, &m_work, &uv};
 
-  assert(m_velocity.stencil_width() >= 2);
-  assert(m_mask.stencil_width()     >= 2);
-  assert(m_work.stencil_width()     >= 1);
+  assert(uv.stencil_width()     >= 2);
+  assert(mask.stencil_width()   >= 2);
+  assert(m_work.stencil_width() >= 1);
 
   for (PointsWithGhosts p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
     {
-      if (m_mask.icy(i,j) && m_mask.icy(i+1,j)) {
+      if (mask.icy(i,j) && mask.icy(i+1,j)) {
         m_work(i,j).u_x = (uv(i+1,j).u - uv(i,j).u) / dx; // u_x
         m_work(i,j).v_x = (uv(i+1,j).v - uv(i,j).v) / dx; // v_x
         m_work(i,j).w_i = 1.0;
@@ -1576,7 +1598,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
     // y-derivative, j-offset
     {
-      if (m_mask.icy(i,j) && m_mask.icy(i,j+1)) {
+      if (mask.icy(i,j) && mask.icy(i,j+1)) {
         m_work(i,j).u_y = (uv(i,j+1).u - uv(i,j).u) / dy; // u_y
         m_work(i,j).v_y = (uv(i,j+1).v - uv(i,j).v) / dy; // v_y
         m_work(i,j).w_j = 1.0;
@@ -1588,7 +1610,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
     }
   }
 
-  list.add({&result, &m_hardness, &thickness});
+  list.add({&result, &hardness, &thickness});
 
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -1596,10 +1618,10 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
     double u_x, u_y, v_x, v_y, H, nu, W;
     // i-offset
     {
-      if (m_mask.icy(i,j) && m_mask.icy(i+1,j)) {
+      if (mask.icy(i,j) && mask.icy(i+1,j)) {
         H = 0.5 * (thickness(i,j) + thickness(i+1,j));
       }
-      else if (m_mask.icy(i,j)) {
+      else if (mask.icy(i,j)) {
         H = thickness(i,j);
       } else {
         H = thickness(i+1,j);
@@ -1620,9 +1642,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
           v_y = 0.0;
         }
 
-        m_flow_law->effective_viscosity(m_hardness(i,j,0),
-                                        secondInvariant_2D(Vector2d(u_x, v_x),
-                                                           Vector2d(u_y, v_y)),
+        m_flow_law->effective_viscosity(hardness(i,j,0),
+                                        secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                         &nu, NULL);
         result(i,j,0) = nu * H;
       } else {
@@ -1632,9 +1653,9 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
 
     // j-offset
     {
-      if (m_mask.icy(i,j) && m_mask.icy(i,j+1)) {
+      if (mask.icy(i,j) && mask.icy(i,j+1)) {
         H = 0.5 * (thickness(i,j) + thickness(i,j+1));
-      } else if (m_mask.icy(i,j)) {
+      } else if (mask.icy(i,j)) {
         H = thickness(i,j);
       } else {
         H = thickness(i,j+1);
@@ -1655,9 +1676,8 @@ void SSAFD::compute_nuH_staggered_cfbc(const Geometry &geometry,
           v_x = 0.0;
         }
 
-        m_flow_law->effective_viscosity(m_hardness(i,j,1),
-                                        secondInvariant_2D(Vector2d(u_x, v_x),
-                                                           Vector2d(u_y, v_y)),
+        m_flow_law->effective_viscosity(hardness(i,j,1),
+                                        secondInvariant_2D({u_x, v_x}, {u_y, v_y}),
                                         &nu, NULL);
         result(i,j,1) = nu * H;
       } else {
