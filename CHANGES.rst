@@ -32,6 +32,9 @@ Changes since the last release
 - Support piecewise-constant temporal interpolation of near-surface air temperatures in
   `-atmosphere given`: set `atmosphere.given.air_temperature_interpolation` to
   `piecewise_constant`.
+- Extrapolate sliding velocities computed by the SSAFD solver to improve the initial guess
+  used when the ice front advances (set
+  :config:`stress_balance.ssa.fd.extrapolate_at_margins` to `false` to disable).
 
 Changes since v1.2
 ==================
