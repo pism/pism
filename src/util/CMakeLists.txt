@@ -1,5 +1,4 @@
-# Create a list of files making up libpismutil so that we can add to it later:
-set(PISMUTIL_SRC
+add_library (util OBJECT
   fem/DirichletData.cc
   fem/Element.cc
   fem/ElementIterator.cc
@@ -54,29 +53,30 @@ set(PISMUTIL_SRC
   pism_utilities.cc
   projection.cc
   fftw_utilities.cc
-  Poisson.cc
   label_components.cc
   connected_components.cc
   ScalarForcing.cc
-  )
+)
+
+if(Pism_DEBUG)
+  target_sources(util PRIVATE Poisson.cc)
+endif()
 
 if(Pism_USE_JANSSON)
-  list(APPEND PISMUTIL_SRC ConfigJSON.cc)
+  target_sources(util PRIVATE ConfigJSON.cc)
 endif()
 
 # Check if NetCDF-4 parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PARALLEL_NETCDF4)
-  list(APPEND PISMUTIL_SRC io/NC4_Par.cc)
+  target_sources(util PRIVATE io/NC4_Par.cc)
 endif()
 
 # Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PNETCDF)
-  list(APPEND PISMUTIL_SRC io/PNCFile.cc)
+  target_sources(util PRIVATE io/PNCFile.cc)
 endif()
 
 # Check if PnetCDF parallel I/O is enabled and add a source code file if necessary.
 if (Pism_USE_PIO)
-  list(APPEND PISMUTIL_SRC io/ParallelIO.cc)
+  target_sources(util PRIVATE io/ParallelIO.cc)
 endif()
-
-add_library (util OBJECT ${PISMUTIL_SRC})

@@ -15,6 +15,7 @@
 %shared_ptr(pism::RegionalGeometryEvolution)
 %include "geometry/GeometryEvolution.hh"
 
+#if (Pism_DEBUG==1)
 pism_class(pism::MPDATA2, "pism/geometry/MPDATA2.hh")
-
 pism_class(pism::UNO, "pism/geometry/UNO.hh")
+#endif

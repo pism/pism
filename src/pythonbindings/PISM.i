@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2022 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011--2023 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,6 @@
 #include "geometry/grounded_cell_fraction.hh"
 #include "util/Mask.hh"
 #include "basalstrength/basal_resistance.hh"
-#include "util/EnthalpyConverter.hh"
 #include "basalstrength/MohrCoulombYieldStress.hh"
 #include "util/error_handling.hh"
 #include "util/Diagnostic.hh"
@@ -56,17 +55,13 @@
 #include "util/MaxTimestep.hh"
 #include "stressbalance/timestepping.hh"
 #include "util/Context.hh"
-#include "util/Logger.hh"
 #include "util/Profiling.hh"
 
 #include "util/projection.hh"
 #include "energy/bootstrapping.hh"
 #include "util/node_types.hh"
 
-#include "util/Time.hh"
-#include "util/Poisson.hh"
 #include "util/label_components.hh"
-#include "icemodel/IceModel.hh"
 %}
 
 // Tell SWIG that the following variables are truly constant
@@ -197,9 +192,8 @@
 %include "util/pism_utilities.hh"
 %include "util/interpolation.hh"
 
-%shared_ptr(pism::Logger);
 %shared_ptr(pism::StringLogger);
-%include "util/Logger.hh"
+pism_class(pism::Logger, "pism/util/Logger.hh");
 
 %include pism_options.i
 
@@ -233,12 +227,10 @@
 #endif
 
 /* EnthalpyConverter uses Config, so we need to wrap Config first (see above). */
-%shared_ptr(pism::EnthalpyConverter);
 %shared_ptr(pism::ColdEnthalpyConverter);
-%include "util/EnthalpyConverter.hh"
+pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 
-%shared_ptr(pism::Time);
-%include "util/Time.hh"
+pism_class(pism::Time, "pism/util/Time.hh")
 
 %include "util/Profiling.hh"
 %shared_ptr(pism::Context);
@@ -379,11 +371,11 @@ pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %include "energy/bootstrapping.hh"
 
-%shared_ptr(pism::Poisson)
-%include "util/Poisson.hh"
+#if (Pism_DEBUG==1)
+pism_class(pism::Poisson, "pism/util/Poisson.hh")
+#endif
 
 pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
 %include "util/label_components.hh"
 
-%shared_ptr(pism::IceModel)
-%include "icemodel/IceModel.hh"
+pism_class(pism::IceModel, "pism/icemodel/IceModel.hh")

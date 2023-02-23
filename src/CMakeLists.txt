@@ -55,8 +55,6 @@ add_library (pism
   energy/utilities.cc
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
-  geometry/MPDATA2.cc
-  geometry/UNO.cc
   geometry/grounded_cell_fraction.cc
   geometry/flux_limiter.cc
   geometry/part_grid_threshold_thickness.cc
@@ -98,6 +96,15 @@ add_library (pism
 )
 target_link_libraries (pism ${Pism_EXTERNAL_LIBS})
 add_dependencies (pism pism_config)
+
+if (Pism_DEBUG)
+  target_sources(pism
+    PRIVATE
+    geometry/MPDATA2.cc
+    geometry/UNO.cc
+  )
+endif()
+
 
 if (Pism_USE_JANSSON)
   if (Pism_BUILD_JANSSON)
