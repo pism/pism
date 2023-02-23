@@ -55,19 +55,22 @@ You will see an impressively-long command, which you can compare to the :ref:`fi
 <firstcommand>`. There are several key changes. First, we do not start from scratch but
 instead from a previously computed near-equilibrium result:
 
-.. code-block:: none
+.. code-block:: bash
 
-     -regrid_file g20km_10ka_hy.nc -regrid_vars litho_temp,thk,enthalpy,tillwat,bmelt
+     -regrid_file g20km_10ka_hy.nc \
+     -regrid_vars litho_temp,thk,enthalpy,tillwat,basal_melt_rate_grounded
 
 For more on regridding see section :ref:`sec-regridding`. Then we turn on the earth
 deformation model with option ``-bed_def lc``; see section :ref:`sec-beddef`. After
 that the atmosphere and surface (PDD) models are turned on and the files they need are
 identified:
 
-.. code-block:: none
+.. code-block:: bash
 
-     -atmosphere searise_greenland,delta_T,precip_scaling -surface pdd \
-     -atmosphere_precip_scaling_file pism_dT.nc -atmosphere_delta_T_file pism_dT.nc
+     -atmosphere searise_greenland,delta_T,precip_scaling \
+     -atmosphere_precip_scaling_file pism_dT.nc \
+     -atmosphere_delta_T_file pism_dT.nc \
+     -surface pdd
 
 Then the sea level forcing module providing both a time-dependent sea level to the ice
 dynamics core, is turned on with ``-sea_level constant,delta_sl`` and the file it needs is
