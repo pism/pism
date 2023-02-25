@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020 The PISM Authors
+# Copyright (C) 2009-2014, 2016, 2017, 2018, 2019, 2020, 2023 The PISM Authors
 
 # Downloads SeaRISE "Present Day Greenland" master dataset NetCDF file, adjusts
 # metadata, and saves under new name ready for PISM.  See README.md.
@@ -63,6 +63,18 @@ ncatted -a standard_name,land_ice_area_fraction_retreat,d,, $PISMVERSION
 echo "done."
 echo
 
+# create a NCAP2 script that will add time bounds:
+script=$(mktemp add_time_bounds_XXXX.txt)
+
+cat > ${script} <<"EOF"
+time@bounds="time_bnds";
+defdim("nv",2);
+time_bnds=array(0.0f,0.0f,/$time,$nv/);
+time_bnds(:,1)=time;
+time_bnds(1:,0)=time(:-2);
+time_bnds(0,0)=2*time(0)-time(1);
+EOF
+
 # extract paleo-climate time series into files suitable for option
 # -atmosphere ...,delta_T
 TEMPSERIES=pism_dT.nc
@@ -78,7 +90,7 @@ ncap2 -O -s "time=-time" $TEMPSERIES $TEMPSERIES
 ncatted -O -a units,time,m,c,"365 days since 1-1-1" $TEMPSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $TEMPSERIES
 ncatted -O -a units,delta_T,m,c,"Kelvin" $TEMPSERIES
-ncap2 -O -S add_time_bounds.txt $TEMPSERIES  $TEMPSERIES
+ncap2 -O -S ${script} $TEMPSERIES  $TEMPSERIES
 echo "done."
 echo
 
@@ -96,7 +108,8 @@ ncpdq -O --rdr=-time $SLSERIES $SLSERIES
 ncap2 -O -s "time=-time" $SLSERIES $SLSERIES
 ncatted -O -a units,time,m,c,"365 days since 1-1-1" $SLSERIES
 ncatted -O -a calendar,time,c,c,"365_day" $SLSERIES
-ncap2 -O -S add_time_bounds.txt $SLSERIES  $SLSERIES
+ncap2 -O -S ${script} $SLSERIES  $SLSERIES
 echo "done."
 echo
 
+rm ${script}

@@ -1,6 +1,0 @@
-time@bounds="time_bnds";
-defdim("nv",2);
-time_bnds=array(0,0,/$time,$nv/);
-time_bnds(:,1)=time;
-time_bnds(1:,0)=time(:-2);
-time_bnds(0,0)=2*time(0)-time(1);
