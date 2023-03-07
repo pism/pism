@@ -19,7 +19,6 @@
 
 #include <mpi.h>
 #include <cmath>
-#include <climits>              // PATH_MAX
 #include <cstdlib>              // realpath()
 
 
@@ -141,10 +140,11 @@ void Config::resolve_filenames() {
     auto last_token = pism::split(parameter, '.').back();
 
     if (last_token == "file") {
-      char resolved_path[PATH_MAX];
+      char *resolved_path = realpath(value.c_str(), NULL);
 
-      if (realpath(value.c_str(), resolved_path) != NULL) {
+      if (resolved_path != NULL) {
         set_string(parameter, resolved_path, CONFIG_USER);
+        free(resolved_path);
       }
       // Note: we keep the old value if `realpath()` failed
     }
@@ -777,12 +777,18 @@ void set_config_from_options(units::System::Ptr unit_system, Config &config) {
 //! Create a configuration database using command-line options.
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
 
-  DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
-      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
+  using T         = DefaultConfig;
+  auto  config    = std::make_shared<T>(com, "pism_config", "-config", unit_system);
+  auto  overrides = std::make_shared<T>(com, "pism_overrides", "-config_override", unit_system);
+
   overrides->init(log);
+
   config->init_with_default(log);
+
   config->import_from(*overrides);
+
   set_config_from_options(unit_system, *config);
+
   config->resolve_filenames();
 
   return config;
