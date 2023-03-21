@@ -76,7 +76,7 @@ basal sliding velocity is essentially unobservable in real ice sheets. On the ot
 because of relatively-recent advances in radar and image technology and processing
 :cite:`Joughin2002`, the surface velocity of an ice sheet can be measured.
 
-So, how good is our model result ``velsurf_mag``? :numref:`fig-csurfvsobserved` compares
+So, how good is our model result ``velsurf_mag``? :numref:`fig-csurf-vs-observed` compares
 the radar-observed ``surfvelmag`` field in the downloaded SeaRISE-Greenland data file
 ``Greenland_5km_v1.1.nc`` with the just-computed PISM result (20 km) and results from the next step in the tutorial (10 km). 
 The reader might agree with these broad qualitative judgements:
@@ -87,7 +87,7 @@ The reader might agree with these broad qualitative judgements:
 - the observed Northeast Greenland ice stream is more distinct than in the model.
 
 .. figure:: figures/g-insar-20km-10km-comparison.png
-   :name: fig-csurfvsobserved
+   :name: fig-csurf-vs-observed
 
    Comparing observed and modeled surface speed.
 
