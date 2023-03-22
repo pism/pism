@@ -6,10 +6,10 @@ PISM_PATH=$1
 MPIEXEC=$2
 PISM_SOURCE_DIR=$3
 
-# List of files to remove when done:
-files="foo.nc"
-
-rm -f $files
+# create a temporary directory and set up automatic cleanup
+temp_dir=$(mktemp -d --tmpdir pism-test-XXXX)
+trap 'rm -rf "$temp_dir"' EXIT
+cd $temp_dir
 
 set -e
 
@@ -18,11 +18,6 @@ $MPIEXEC -n 2 $PISM_PATH/pismr ...
 
 set +e
 
-# Check results:
+# Check results (this command should stop with a zero exit code on success and a non-zero
+# on failure):
 $PISM_PATH/nccmp.py ...
-if [ $? != 0 ];
-then
-    exit 1
-fi
-
-rm -f $files; exit 0
