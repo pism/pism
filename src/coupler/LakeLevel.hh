@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef LAKELEVEL_H
-#define LAKELEVEL_H
+#ifndef PISM_LAKE_LEVEL_H
+#define PISM_LAKE_LEVEL_H
 
 #include "pism/util/Component.hh"
 
@@ -71,4 +71,4 @@ protected:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* SEALEVEL_H */
+#endif /* PISM_LAKE_LEVEL_H */
