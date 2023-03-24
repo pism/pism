@@ -3,8 +3,12 @@
 
 #include "pism/util/connected_components_lakecc.hh"
 
-namespace pism{
+namespace pism {
 
+/*!
+ * This class identifies basins in the topography that are below the global sea level but
+ * are not connected to either of the domain margins.
+ */
 class SeaLevelCC : public FillingAlgCC<SinkCC> {
 public:
   SeaLevelCC(IceGrid::ConstPtr g,
@@ -32,6 +36,6 @@ protected:
   virtual bool ForegroundCond(const int i, const int j) const;
 };
 
-}
+} // end of the namespace pism
 
 #endif

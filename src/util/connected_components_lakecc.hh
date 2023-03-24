@@ -282,6 +282,15 @@ bool FillingAlgCC<CC>::ForegroundCond(const double bed, const double thk, const 
 }
 
 
+/*!
+ * The class FilterExpansionCC (Fig. B1e) is used to compare the new lake basins with the
+ * state of the previous time step. This method returns a mask that marks cells that were
+ * newly added or have vanished, but it also dis- tinguishes the basin shape, similarly to
+ * FilterLakesCC. Furthermore, for each new lake basin, the minimum bed ele- vation and,
+ * if it was an ocean basin in the previous time step, sea level are returned. This
+ * information is needed to capture different scenarios when initializing the lake level
+ * and treat them accordingly.
+ */
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
   FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);

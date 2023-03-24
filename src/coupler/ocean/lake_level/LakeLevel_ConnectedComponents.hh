@@ -6,6 +6,11 @@
 
 namespace pism {
 
+/*!
+ * This class determines the maximum fill height of the lake basins by iteratively
+ * checking the entire domain for a set of increasing water levels, as described in Hinck
+ * et al. (2020)
+ */
 class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
   LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
@@ -30,6 +35,12 @@ private:
 };
 
 
+/*!
+ * This class marks cells as invalid that are either ice-covered or not connected by an
+ * ice-free corridor within the domain margin. It is used to restrict the formation of
+ * lakes in the ice sheet interior and of subglacial lakes where thin ice covers a deep
+ * basin.
+ */
 class IsolationCC : public SinkCC {
 public:
   IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
@@ -51,6 +62,12 @@ private:
 };
 
 
+/*!
+ * To remove narrow lakes, which are often related to under-resolved topography, the
+ * FilterLakesCC class checks the lakes’ geometry. Only lakes containing one (or more)
+ * cells that have at least a certain amount of neighbors that also are part of that lake
+ * are retained
+ */
 class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
   FilterLakesCC(IceGrid::ConstPtr g, const double fill_value);
@@ -77,6 +94,10 @@ private:
 };
 
 
+/*!
+ * LakePropertiesCC collects the minimum and maximum current water level of each lake
+ * basin.
+ */
 class LakePropertiesCC : public ConnectedComponents {
 public:
   LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
