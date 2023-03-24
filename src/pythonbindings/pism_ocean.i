@@ -16,6 +16,7 @@
 #include "coupler/ocean/sea_level/Delta_SL_2D.hh"
 #include "coupler/ocean/Factory.hh"
 #include "coupler/ocean/sea_level/Factory.hh"
+#include "coupler/LakeLevel.hh"
 %}
 
 %shared_ptr(pism::ocean::OceanModel)
