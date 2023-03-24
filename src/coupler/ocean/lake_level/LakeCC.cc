@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -385,6 +385,9 @@ bool LakeCC::iterativelyPatchTargetLevel(const IceModelVec2S &bed,
       return true;
     }
   }
+
+  // FIXME: we don't know if this is correct
+  return false;
 }
 
 unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
