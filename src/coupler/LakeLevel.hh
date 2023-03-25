@@ -61,7 +61,6 @@ protected:
   virtual DiagnosticList diagnostics_impl() const;
   virtual TSDiagnosticList ts_diagnostics_impl() const;
 
-protected:
   std::shared_ptr<LakeLevel> m_input_model;
   IceModelVec2S m_lake_level;
   double m_fill_value;

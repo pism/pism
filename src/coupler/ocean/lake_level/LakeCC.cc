@@ -312,13 +312,9 @@ MaxTimestep LakeCC::max_timestep_impl(double t) const {
       assert(dt > 0.0);
     }
 
-    MaxTimestep lakecc_dt(dt, "lake level forcing");
-    return lakecc_dt;
-  } else {
-    MaxTimestep lakecc_dt("lake level forcing");
-    return lakecc_dt;
+    return {dt, "lake level forcing"};
   }
-
+  return {"lake level forcing"};
 }
 
 bool LakeCC::expandMargins_impl() const {

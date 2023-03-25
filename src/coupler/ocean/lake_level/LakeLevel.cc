@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -225,17 +225,17 @@ DiagnosticList LakeLevel::diagnostics_impl() const {
 
   if (m_input_model) {
     return combine(result, m_input_model->diagnostics());
-  } else {
-    return result;
   }
+
+  return result;
 }
 
 TSDiagnosticList LakeLevel::ts_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->ts_diagnostics();
-  } else {
-    return {};
   }
+
+  return {};
 }
 
 } // end of namespace lake_level

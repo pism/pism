@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _LAKE_LEVEL_INITIALIZATION_H_
-#define _LAKE_LEVEL_INITIALIZATION_H_
+#ifndef PISM_LAKE_LEVEL_INITIALIZATION_H
+#define PISM_LAKE_LEVEL_INITIALIZATION_H
 
 #include "pism/coupler/LakeLevel.hh"
 
@@ -50,4 +50,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _LAKE_LEVEL_INITIALIZATION_H_ */
+#endif /* PISM_LAKE_LEVEL_INITIALIZATION_H */
