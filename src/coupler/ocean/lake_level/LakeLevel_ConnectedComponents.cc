@@ -55,11 +55,12 @@ void LakeLevelCC::fill2Level(const double level, IceModelVec2S &result) {
 void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
   IceModelVec::AccessList list{&result};
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second,
-               &valid_list = lists.find("valid")->second;
+  const auto
+    &i_vec      = lists.find("i")->second,
+    &j_vec      = lists.find("j")->second,
+    &len_vec    = lists.find("lengths")->second,
+    &parents    = lists.find("parents")->second,
+    &valid_list = lists.find("valid")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -136,10 +137,11 @@ void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceMo
   IceModelVec::AccessList list{&result};
   result.set(0);
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -200,11 +202,12 @@ bool FilterLakesCC::ForegroundCond(int i, int j) const {
 void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
   IceModelVec::AccessList list{&result};
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second,
-               &valid_list = lists.find("valid")->second;
+  const auto
+    &i_vec      = lists.find("i")->second,
+    &j_vec      = lists.find("j")->second,
+    &len_vec    = lists.find("lengths")->second,
+    &parents    = lists.find("parents")->second,
+    &valid_list = lists.find("valid")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -303,7 +306,7 @@ void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S
 void LakePropertiesCC::init_VecList(VecList &lists, const unsigned int length) {
   ConnectedComponents::init_VecList(lists, length);
 
-  RunVec min_ll_list(length), max_ll_list(length);
+  std::vector<double> min_ll_list(length), max_ll_list(length);
   lists["min_ll"]  = min_ll_list;
   lists["max_ll"]  = max_ll_list;
 
@@ -352,12 +355,13 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second,
-               &min_ll  = lists.find("min_ll")->second,
-               &max_ll  = lists.find("max_ll")->second;
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second,
+    &min_ll  = lists.find("min_ll")->second,
+    &max_ll  = lists.find("max_ll")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -489,12 +493,13 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
       petsc::VecArray2D in_p0(*in_vec_p0, m_grid->Mx(), m_grid->My()),
                         result_p0(*result_vec_p0, m_grid->Mx(), m_grid->My());
       //Init allocator
-      RunVec accumulator(m_run_number + 1, 0.0);
+      std::vector<double> accumulator(m_run_number + 1, 0.0);
 
-      const RunVec &i_vec   = m_lists.find("i")->second,
-                   &j_vec   = m_lists.find("j")->second,
-                   &len_vec = m_lists.find("lengths")->second,
-                   &parents = m_lists.find("parents")->second;
+      const auto
+        &i_vec   = m_lists.find("i")->second,
+        &j_vec   = m_lists.find("j")->second,
+        &len_vec = m_lists.find("lengths")->second,
+        &parents = m_lists.find("parents")->second;
 
       //accumulate values
       for (int k = 0; k <= m_run_number; ++k) {

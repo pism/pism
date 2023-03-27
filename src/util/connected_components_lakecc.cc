@@ -21,7 +21,7 @@ inline void ConnectedComponentsBase::resizeLists(VecList &lists, int new_length)
   }
 }
 
-inline void ConnectedComponentsBase::run_union(RunVec &parents, int run1, int run2) {
+inline void ConnectedComponentsBase::run_union(std::vector<double> &parents, int run1, int run2) {
   if ((parents[run1] == run2) or (parents[run2] == run1)) {
     return;
   }
@@ -64,7 +64,7 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest,
   }
 }
 
-int ConnectedComponentsBase::trackParentRun(int run, const RunVec &parents) {
+int ConnectedComponentsBase::trackParentRun(int run, const std::vector<double> &parents) {
   while (parents[run] != 0) {
     run = parents[run];
   }
@@ -72,7 +72,7 @@ int ConnectedComponentsBase::trackParentRun(int run, const RunVec &parents) {
 }
 
 void ConnectedComponentsBase::init_VecList(VecList &lists, const unsigned int size) {
-  RunVec parents(size), lengths(size), j_vec(size), i_vec(size);
+  std::vector<double> parents(size), lengths(size), j_vec(size), i_vec(size);
   lists["parents"] = parents;
   lists["lengths"] = lengths;
   lists["j"] = j_vec;
@@ -156,10 +156,11 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec &i_vec   = lists.find("i")->second,
-               &j_vec   = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -262,7 +263,7 @@ SinkCC::~SinkCC() {
   //empty
 }
 
-void SinkCC::setRunSink(int run, RunVec &parents) {
+void SinkCC::setRunSink(int run, std::vector<double> &parents) {
   if ((run == 0) or (run == 1)) {
     return;
   }
@@ -346,10 +347,11 @@ void MaskCC::labelOutMask(int run_number, const VecList &lists, IceModelVec2Int 
   IceModelVec::AccessList list{&result};
   result.set(0);
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second;
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -432,8 +434,8 @@ void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const Ic
 void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) {
   ValidCC<ConnectedComponents>::init_VecList(lists, length);
 
-  RunVec min_bed_list(length);
-  RunVec max_wl_list(length);
+  std::vector<double> min_bed_list(length);
+  std::vector<double> max_wl_list(length);
   lists["min_bed"] = min_bed_list;
   lists["max_wl"]  = max_wl_list;
 
@@ -481,13 +483,14 @@ void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   addFieldVecAccessList(m_masks, list);
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec   = lists.find("lengths")->second,
-               &parents   = lists.find("parents")->second,
-               &valid_vec = lists.find("valid")->second,
-               &min_bed   = lists.find("min_bed")->second,
-               &max_wl    = lists.find("max_wl")->second;
+  const auto
+    &i_vec     = lists.find("i")->second,
+    &j_vec     = lists.find("j")->second,
+    &len_vec   = lists.find("lengths")->second,
+    &parents   = lists.find("parents")->second,
+    &valid_vec = lists.find("valid")->second,
+    &min_bed   = lists.find("min_bed")->second,
+    &max_wl    = lists.find("max_wl")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
@@ -582,7 +585,7 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
   min_bed.set(m_fill_value);
   max_wl.set(m_fill_value);
 
-  const RunVec &i_vec = lists.find("i")->second,
+  const auto &i_vec = lists.find("i")->second,
                &j_vec = lists.find("j")->second,
                &len_vec = lists.find("lengths")->second,
                &parents = lists.find("parents")->second,
@@ -610,13 +613,14 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
 void FilterExpansionCC::labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
   IceModelVec::AccessList list{ &mask, &min_bed, &max_wl};
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec = lists.find("lengths")->second,
-               &parents = lists.find("parents")->second,
-               &valid_list   = lists.find("valid")->second,
-               &min_bed_list = lists.find("min_bed")->second,
-               &max_wl_list  = lists.find("max_wl")->second;
+  const auto
+    &i_vec        = lists.find("i")->second,
+    &j_vec        = lists.find("j")->second,
+    &len_vec      = lists.find("lengths")->second,
+    &parents      = lists.find("parents")->second,
+    &valid_list   = lists.find("valid")->second,
+    &min_bed_list = lists.find("min_bed")->second,
+    &max_wl_list  = lists.find("max_wl")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);

@@ -10,8 +10,7 @@
 
 namespace pism {
 
-typedef std::vector<double> RunVec;
-typedef std::map<std::string, RunVec > VecList;
+typedef std::map<std::string, std::vector<double> > VecList;
 typedef std::vector<IceModelVec*> FieldVec;
 typedef std::vector<const IceModelVec*> ConstFieldVec;
 
@@ -22,7 +21,7 @@ public:
 
 private:
   void resizeLists(VecList &lists, int new_length);
-  void run_union(RunVec &parents, int run1, int run2);
+  void run_union(std::vector<double> &parents, int run1, int run2);
 
 protected:
   const IceGrid::ConstPtr m_grid;
@@ -30,7 +29,7 @@ protected:
   void check_cell(int i, int j,
                   bool isWest, bool isSouth, int mask_w, int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
-  int trackParentRun(int run, const RunVec &parents);
+  int trackParentRun(int run, const std::vector<double> &parents);
   virtual void init_VecList(VecList &lists, const unsigned int length);
   virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
   virtual void continueRun(int i, int j, int &run_number, VecList &lists);
@@ -89,7 +88,7 @@ public:
   ~SinkCC();
 
 private:
-  void setRunSink(int run, RunVec &parents);
+  void setRunSink(int run, std::vector<double> &parents);
 
 protected:
   virtual bool SinkCond(int i, int j);
@@ -151,7 +150,7 @@ template <class CC>
 void ValidCC<CC>::init_VecList(VecList &lists, const unsigned int size) {
   CC::init_VecList(lists, size);
 
-  RunVec valid_list(size);
+  std::vector<double> valid_list(size);
   lists["valid"] = valid_list;
 
   for (unsigned int k = 0; k < 2; ++k) {
@@ -229,11 +228,12 @@ void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
   CC::addFieldVecAccessList(CC::m_masks, list);
 
-  const RunVec &i_vec = lists.find("i")->second,
-               &j_vec = lists.find("j")->second,
-               &len_vec   = lists.find("lengths")->second,
-               &parents   = lists.find("parents")->second,
-               &valid_vec = lists.find("valid")->second;
+  const auto
+    &i_vec     = lists.find("i")->second,
+    &j_vec     = lists.find("j")->second,
+    &len_vec   = lists.find("lengths")->second,
+    &parents   = lists.find("parents")->second,
+    &valid_vec = lists.find("valid")->second;
 
   for (int k = 0; k <= run_number; ++k) {
     const int label = CC::trackParentRun(k, parents);
