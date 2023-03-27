@@ -1,5 +1,5 @@
-#ifndef _LAKELEVEL_CONNECTEDCOMPONENTS_H_
-#define _LAKELEVEL_CONNECTEDCOMPONENTS_H_
+#ifndef PISM_LAKE_LEVEL_CONNECTED_COMPONENTS_H
+#define PISM_LAKE_LEVEL_CONNECTED_COMPONENTS_H
 
 #include "pism/util/IceModelVec2CellType.hh"
 #include "pism/util/connected_components_lakecc.hh"
@@ -13,22 +13,22 @@ namespace pism {
  */
 class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value);
-  LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value,
+  LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value);
+  LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value,
               const IceModelVec2Int &valid_mask);
   ~LakeLevelCC();
-  void computeLakeLevel(const double zMin, const double zMax, const double dz, const double offset, IceModelVec2S &result);
-  inline void computeLakeLevel(const double zMin, const double zMax, const double dz, IceModelVec2S &result) {
+  void computeLakeLevel(double zMin, double zMax, double dz, double offset, IceModelVec2S &result);
+  inline void computeLakeLevel(double zMin, double zMax, double dz, IceModelVec2S &result) {
     computeLakeLevel(zMin, zMax, dz, m_fill_value, result);
   }
 
 protected:
   void prepare_mask(const IceModelVec2CellType &pism_mask);
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2S &result);
-  void fill2Level(const double level, IceModelVec2S &result);
-  virtual bool ForegroundCond(const int i, const int j) const;
+  void labelMap(int run_number, const VecList &lists, IceModelVec2S &result);
+  void fill2Level(double level, IceModelVec2S &result);
+  virtual bool ForegroundCond(int i, int j) const;
 
 private:
   double m_offset, m_level;
@@ -44,19 +44,19 @@ private:
 class IsolationCC : public SinkCC {
 public:
   IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
-              const double thk_theshold);
+              double thk_theshold);
   ~IsolationCC();
   void find_isolated_spots(IceModelVec2Int &result);
 
 protected:
-  virtual bool ForegroundCond(const int i, const int j) const;
-  void labelIsolatedSpots(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  virtual bool ForegroundCond(int i, int j) const;
+  void labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result);
   void prepare_mask();
 
 private:
   const double m_thk_threshold;
   const IceModelVec2S *m_thk;
-  inline bool ForegroundCond(const double thk, const int mask) const {
+  inline bool ForegroundCond(double thk, int mask) const {
     return ((thk < m_thk_threshold) or (mask > 0));
   }
 };
@@ -70,25 +70,25 @@ private:
  */
 class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterLakesCC(IceGrid::ConstPtr g, const double fill_value);
+  FilterLakesCC(IceGrid::ConstPtr g, double fill_value);
   ~FilterLakesCC();
-  void filter_map(const int n_filter, IceModelVec2S &lake_level);
+  void filter_map(int n_filter, IceModelVec2S &lake_level);
 
 protected:
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual bool ForegroundCond(int i, int j) const;
 
 private:
   double m_fill_value;
 
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2S &result);
+  void labelMap(int run_number, const VecList &lists, IceModelVec2S &result);
   void prepare_mask(const IceModelVec2S &lake_level);
-  void set_mask_validity(const int n_filter, const IceModelVec2S &lake_level);
+  void set_mask_validity(int n_filter, const IceModelVec2S &lake_level);
 
-  inline bool ForegroundCond(const int mask) const {
+  static inline bool ForegroundCond(int mask) {
     return (mask > 1);
   }
 
-  inline bool isLake(const double level) {
+  inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 };
@@ -100,7 +100,7 @@ private:
  */
 class LakePropertiesCC : public ConnectedComponents {
 public:
-  LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
+  LakePropertiesCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &target_level,
                    const IceModelVec2S &lake_level);
   ~LakePropertiesCC();
   void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level);
@@ -112,34 +112,34 @@ private:
 
   void setRunMinLevel(double level, int run, VecList &lists);
   void setRunMaxLevel(double level, int run, VecList &lists);
-  inline bool isLake(const double level) const {
+  inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 
-  inline bool ForegroundCond(const double target, const double current) const {
+  inline bool ForegroundCond(double target, double current) const {
     return (isLake(target));
   }
 
 protected:
-  virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual void init_VecList(VecList &lists, unsigned int length);
+  virtual bool ForegroundCond(int i, int j) const;
   virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+  virtual void treatInnerMargin(int i, int j,
+                                bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
 };
 
 class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
 public:
-  LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value);
+  LakeAccumulatorCCSerial(IceGrid::ConstPtr g, double fill_value);
   ~LakeAccumulatorCCSerial();
   void init(const IceModelVec2S &lake_level);
   void accumulate(const IceModelVec2S &in, IceModelVec2S &result);
 
 protected:
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual bool ForegroundCond(int i, int j) const;
 
 private:
   bool m_initialized;
@@ -149,15 +149,15 @@ private:
 
   void prepare_mask(const IceModelVec2S &lake_level);
 
-  inline bool ForegroundCond(const int mask) const {
+  static inline bool ForegroundCond(int mask) {
     return (mask > 0);
   }
 
-  inline bool isLake(const double level) {
+  inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 };
 
 } // namespace pism
 
-#endif
+#endif /* PISM_LAKE_LEVEL_CONNECTED_COMPONENTS_H */

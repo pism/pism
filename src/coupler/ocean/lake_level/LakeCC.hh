@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _POLAKECC_H_
-#define _POLAKECC_H_
+#ifndef PISM_OCEAN_LAKE_CC_H
+#define PISM_OCEAN_LAKE_CC_H
 
 #include "pism/geometry/Geometry.hh"
 
@@ -82,7 +82,7 @@ private:
                     const IceModelVec2S &sea_level,
                     const IceModelVec2S &eff_lake_level,
                     IceModelVec2S &lake_level);
-  void compute_fill_rate(const double dt,
+  void compute_fill_rate(double dt,
                          const IceModelVec2S &lake_level,
                          const IceModelVec2S &bmb,
                          const IceModelVec2S &tc_calving,
@@ -101,8 +101,8 @@ private:
                         const IceModelVec2S &old_sl,
                         IceModelVec2S &min_basin,
                         IceModelVec2S &lake_level);
-  void gradually_fill(const double dt,
-                      const double max_fill_rate,
+  void gradually_fill(double dt,
+                      double max_fill_rate,
                       const IceModelVec2S &target_level,
                       const IceModelVec2S &bed,
                       const IceModelVec2S &thk,
@@ -118,4 +118,4 @@ private:
 } // end of namespace lake_level
 } // end of namespace ocean
 } // end of namespace pism
-#endif /* _POLAKECC_H_ */
+#endif /* PISM_OCEAN_LAKE_CC_H */
