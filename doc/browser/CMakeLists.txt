@@ -1,9 +1,8 @@
 # Find latex and create doc targets:
-find_package(LATEX)
 find_package(Doxygen)
 
 # PISM Source Code Browsers
-if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
+if (DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
 
   option(Pism_DOXYGEN_DOCUMENT_ALL "Extract all (even undocumented) entities." ON)
 
@@ -31,15 +30,10 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   # copy doxyfile, changing some things along the way:
   configure_file(doxyfile doxyfile)
 
-  # Generate the list of references
-  add_custom_command (OUTPUT references.md
-    COMMAND ./doxybib.py
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
   # Generate the browser
   add_custom_target (browser
     COMMAND ${DOXYGEN_EXECUTABLE} doxyfile
-    DEPENDS references.md doxyfile
+    DEPENDS doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Create the compressed browser
@@ -50,10 +44,6 @@ if (LATEX_COMPILER AND DOXYGEN_EXECUTABLE AND DOXYGEN_DOT_EXECUTABLE)
   add_dependencies(browser.tgz browser)
 
 else ()
-  if (NOT LATEX_COMPILER)
-    message (STATUS "LaTeX was not found. Please install it if you want to re-build PISM documentation.")
-  endif()
-
   if (NOT DOXYGEN_EXECUTABLE)
     message (STATUS "Doxygen was not found. Please install it if you want to re-build source code browsers.")
   endif()

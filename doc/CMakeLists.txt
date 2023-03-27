@@ -19,7 +19,7 @@ endif()
 # User's Manual, Climate Forcing, Installation:
 add_subdirectory(sphinx)
 
-if (PDFLATEX_COMPILER)
+if (DOXYGEN_EXECUTABLE)
   # Source code browser:
   add_subdirectory (browser EXCLUDE_FROM_ALL)
 endif ()                        # if PDFLATEX_COMPILER
