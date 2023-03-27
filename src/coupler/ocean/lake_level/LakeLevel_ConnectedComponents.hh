@@ -56,6 +56,7 @@ protected:
 private:
   const double m_thk_threshold;
   const IceModelVec2S *m_thk;
+
   inline bool ForegroundCond(double thk, int mask) const {
     return ((thk < m_thk_threshold) or (mask > 0));
   }
@@ -84,7 +85,7 @@ private:
   void prepare_mask(const IceModelVec2S &lake_level);
   void set_mask_validity(int n_filter, const IceModelVec2S &lake_level);
 
-  static inline bool ForegroundCond(int mask) {
+  inline bool ForegroundCond(int mask) const {
     return (mask > 1);
   }
 
@@ -116,10 +117,6 @@ private:
     return (level != m_fill_value);
   }
 
-  inline bool ForegroundCond(double target, double current) const {
-    return (isLake(target));
-  }
-
 protected:
   virtual void init_VecList(VecList &lists, unsigned int length);
   virtual bool ForegroundCond(int i, int j) const;
@@ -149,7 +146,7 @@ private:
 
   void prepare_mask(const IceModelVec2S &lake_level);
 
-  static inline bool ForegroundCond(int mask) {
+  inline bool ForegroundCond(int mask) const {
     return (mask > 0);
   }
 

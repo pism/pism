@@ -21,22 +21,22 @@ public:
   ~ConnectedComponentsBase();
 
 private:
-  void resizeLists(VecList &lists, const int new_length);
+  void resizeLists(VecList &lists, int new_length);
   void run_union(RunVec &parents, int run1, int run2);
 
 protected:
   const IceGrid::ConstPtr m_grid;
   IceModelVec2Int m_mask_run;
-  void check_cell(const int i, const int j,
-                  const bool isWest, const bool isSouth, const int mask_w, const int mask_s,
+  void check_cell(int i, int j,
+                  bool isWest, bool isSouth, int mask_w, int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
   int trackParentRun(int run, const RunVec &parents);
   virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
+  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+  virtual void mergeRuns(int run_number, int run_south, VecList &lists);
   virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
-  virtual bool ForegroundCond(const int i, const int j) const = 0;
+  virtual bool ForegroundCond(int i, int j) const = 0;
 };
 
 class ConnectedComponents : public ConnectedComponentsBase {
@@ -56,9 +56,18 @@ protected:
   void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
   void addFieldVecAccessList(ConstFieldVec &field, IceModelVec::AccessList &list);
   virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                                VecList &lists, bool &changed) {};
+  virtual void treatInnerMargin(int i, int j,
+                                bool isNorth, bool isEast, bool isSouth, bool isWest,
+                                VecList &lists, bool &changed) {
+    (void) i;
+    (void) j;
+    (void) isNorth;
+    (void) isEast;
+    (void) isSouth;
+    (void) isWest;
+    (void) lists;
+    (void) changed;
+  };
 };
 
 class ConnectedComponentsSerial : public ConnectedComponentsBase {
@@ -83,12 +92,12 @@ private:
   void setRunSink(int run, RunVec &parents);
 
 protected:
-  virtual bool SinkCond(const int i, const int j);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+  virtual bool SinkCond(int i, int j);
+  virtual void treatInnerMargin(int i, int j,
+                                bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
+  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
 };
 
 class MaskCC : public SinkCC {
@@ -98,10 +107,10 @@ public:
   void compute_mask(IceModelVec2Int &mask);
 
 protected:
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual bool ForegroundCond(int i, int j) const;
 
 private:
-  void labelOutMask(const int run_number, const VecList &lists, IceModelVec2Int &result);
+  void labelOutMask(int run_number, const VecList &lists, IceModelVec2Int &result);
 };
 
 
@@ -117,12 +126,12 @@ private:
 protected:
   IceModelVec2Int m_mask_validity;
   virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+  virtual void treatInnerMargin(int i, int j,
+                                bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual void mergeRuns(const int run_number, const int run_south, VecList &lists);
+  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+  virtual void mergeRuns(int run_number, int run_south, VecList &lists);
   virtual void labelMask(int run_number, const VecList &lists);
 };
 
@@ -163,12 +172,12 @@ void ValidCC<CC>::setRunValid(int run, VecList &lists) {
 }
 
 template <class CC>
-void ValidCC<CC>::treatInnerMargin(const int i, const int j,
-                                       const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+void ValidCC<CC>::treatInnerMargin(int i, int j,
+                                       bool isNorth, bool isEast, bool isSouth, bool isWest,
                                        VecList &lists, bool &changed) {
   CC::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
-  const int run = CC::m_mask_run.as_int(i, j);
+  int run = CC::m_mask_run.as_int(i, j);
   if (run > 1) {
     //Lake at inner boundary
     const bool isValid = (lists["valid"][run] > 0);
@@ -191,14 +200,14 @@ void ValidCC<CC>::treatInnerMargin(const int i, const int j,
 }
 
 template <class CC>
-void ValidCC<CC>::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+void ValidCC<CC>::startNewRun(int i, int j, int &run_number, int &parent, VecList &lists) {
   CC::startNewRun(i, j, run_number, parent, lists);
   const bool isValid = (m_mask_validity(i, j) > 0);
   lists["valid"][run_number] = isValid ? 1 : 0;
 }
 
 template <class CC>
-void ValidCC<CC>::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+void ValidCC<CC>::continueRun(int i, int j, int &run_number, VecList &lists) {
   CC::continueRun(i, j, run_number, lists);
   const bool isValid = (m_mask_validity(i, j) > 0);
   if (isValid) {
@@ -207,7 +216,7 @@ void ValidCC<CC>::continueRun(const int i, const int j, int &run_number, VecList
 }
 
 template <class CC>
-void ValidCC<CC>::mergeRuns(const int run_number, const int run_south, VecList &lists) {
+void ValidCC<CC>::mergeRuns(int run_number, int run_south, VecList &lists) {
   CC::mergeRuns(run_number, run_south, lists);
   const bool isValid = (lists["valid"][run_number] > 0);
   if (isValid) {
@@ -243,16 +252,16 @@ void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
 template<class CC>
 class FillingAlgCC : public CC {
 public:
-  FillingAlgCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, const double fill_value);
+  FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value);
   ~FillingAlgCC();
 protected:
   double m_drho, m_fill_value;
   const IceModelVec2S *m_bed, *m_thk;
-  virtual bool ForegroundCond(const double bed, const double thk, const int mask, const double Level, const double Offset) const;
+  virtual bool ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const;
 };
 
 template<class CC>
-FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, const double fill_value)
+FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value)
   : CC(g), m_drho(drho), m_bed(&bed), m_thk(&thk), m_fill_value(fill_value) {
   CC::m_fields.push_back(m_bed);
   CC::m_fields.push_back(m_thk);
@@ -264,7 +273,7 @@ FillingAlgCC<CC>::~FillingAlgCC() {
 }
 
 template<class CC>
-bool FillingAlgCC<CC>::ForegroundCond(const double bed, const double thk, const int mask, const double Level, const double Offset) const {
+bool FillingAlgCC<CC>::ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const {
   if (mask > 0) {
     return true;
   }
@@ -293,7 +302,7 @@ bool FillingAlgCC<CC>::ForegroundCond(const double bed, const double thk, const 
  */
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
+  FilterExpansionCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
   ~FilterExpansionCC();
   void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
   void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
@@ -301,12 +310,12 @@ public:
 protected:
   virtual void init_VecList(VecList &lists, const unsigned int length);
   virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(const int i, const int j,
-                                const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+  virtual void treatInnerMargin(int i, int j,
+                                bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(const int i, const int j, int &run_number, VecList &lists);
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+  virtual bool ForegroundCond(int i, int j) const;
 
 private:
   const double m_fill_value;
@@ -315,16 +324,16 @@ private:
 
   void setRunMinBed(double level, int run, VecList &lists);
   void setRunMaxWl(double level, int run, VecList &lists);
-  void labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
-  void labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
+  void labelMap(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
+  void labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
-  void set_mask_validity(const int n_filter);
+  void set_mask_validity(int n_filter);
 
-  inline bool ForegroundCond(const int mask) const {
+  inline bool ForegroundCond(int mask) const {
     return (mask > 1);
   }
 
-  inline bool isLake(const double level) {
+  inline bool isLake(double level) {
     return (level != m_fill_value);
   }
 };

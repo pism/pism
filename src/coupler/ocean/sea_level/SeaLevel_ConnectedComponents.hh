@@ -30,10 +30,10 @@ public:
 protected:
   const IceModelVec2S *m_sea_level;
   double m_offset;
-  void labelSLMap(const int run_number, const VecList lists, IceModelVec2S &result);
-  void labelSLMask(const int run_number, const VecList lists, IceModelVec2Int &result);
+  void labelSLMap(int run_number, const VecList lists, IceModelVec2S &result);
+  void labelSLMask(int run_number, const VecList lists, IceModelVec2Int &result);
   void prepare_mask();
-  virtual bool ForegroundCond(const int i, const int j) const;
+  virtual bool ForegroundCond(int i, int j) const;
 };
 
 } // end of the namespace pism

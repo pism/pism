@@ -15,7 +15,7 @@ ConnectedComponentsBase::~ConnectedComponentsBase() {
   //empty
 }
 
-inline void ConnectedComponentsBase::resizeLists(VecList &lists, const int new_length) {
+inline void ConnectedComponentsBase::resizeLists(VecList &lists, int new_length) {
   for (VecList::iterator it = lists.begin(); it != lists.end(); it++) {
     it->second.resize(new_length);
   }
@@ -36,7 +36,7 @@ inline void ConnectedComponentsBase::run_union(RunVec &parents, int run1, int ru
   }
 }
 
-inline void ConnectedComponentsBase::check_cell(const int i, const int j, const bool isWest, const bool isSouth, const int mask_w, const int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
+inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest, const bool isSouth, int mask_w, int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
   //Check Foreground Pixel
   if (not isWest and (mask_w > 0)) {
     // west neighbor is also foreground: continue the run
@@ -86,7 +86,7 @@ void ConnectedComponentsBase::init_VecList(VecList &lists, const unsigned int si
   }
 }
 
-void ConnectedComponentsBase::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+void ConnectedComponentsBase::startNewRun(int i, int j, int &run_number, int &parent, VecList &lists) {
   run_number += 1;
   lists["i"][run_number] = i;
   lists["j"][run_number] = j;
@@ -94,11 +94,13 @@ void ConnectedComponentsBase::startNewRun(const int i, const int j, int &run_num
   lists["parents"][run_number] = parent;
 }
 
-void ConnectedComponentsBase::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+void ConnectedComponentsBase::continueRun(int i, int j, int &run_number, VecList &lists) {
+  (void) i;
+  (void) j;
   lists["lengths"][run_number] += 1;
 }
 
-void ConnectedComponentsBase::mergeRuns(const int run_number, const int run_south, VecList &lists) {
+void ConnectedComponentsBase::mergeRuns(int run_number, int run_south, VecList &lists) {
   run_union(lists["parents"], run_south, run_number);
 }
 
@@ -271,12 +273,12 @@ void SinkCC::setRunSink(int run, RunVec &parents) {
   }
 }
 
-bool SinkCC::SinkCond(const int i, const int j) {
+bool SinkCC::SinkCond(int i, int j) {
   const int mask = m_mask_run(i, j);
   return (mask == 1);
 }
 
-void SinkCC::treatInnerMargin(const int i, const int j,
+void SinkCC::treatInnerMargin(int i, int j,
                               const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                               VecList &lists, bool &changed) {
   ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
@@ -296,14 +298,14 @@ void SinkCC::treatInnerMargin(const int i, const int j,
   }
 }
 
-void SinkCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+void SinkCC::startNewRun(int i, int j, int &run_number, int &parent, VecList &lists) {
   if (SinkCond(i, j)) {
     parent = 1;
   }
   ConnectedComponents::startNewRun(i, j, run_number, parent, lists);
 }
 
-void SinkCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+void SinkCC::continueRun(int i, int j, int &run_number, VecList &lists) {
   ConnectedComponents::continueRun(i, j, run_number, lists);
   if (SinkCond(i, j)) {
     setRunSink(run_number, lists["parents"]);
@@ -335,12 +337,12 @@ void MaskCC::compute_mask(IceModelVec2Int &mask) {
   labelOutMask(run_number, lists, mask);
 }
 
-bool MaskCC::ForegroundCond(const int i, const int j) const {
+bool MaskCC::ForegroundCond(int i, int j) const {
   const int mask = m_mask_run.as_int(i, j);
   return (mask > 0);
 }
 
-void MaskCC::labelOutMask(const int run_number, const VecList &lists, IceModelVec2Int &result) {
+void MaskCC::labelOutMask(int run_number, const VecList &lists, IceModelVec2Int &result) {
   IceModelVec::AccessList list{&result};
   result.set(0);
 
@@ -441,7 +443,7 @@ void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) 
   }
 }
 
-bool FilterExpansionCC::ForegroundCond(const int i, const int j) const {
+bool FilterExpansionCC::ForegroundCond(int i, int j) const {
   const int mask = m_mask_run(i, j);
 
   return ForegroundCond(mask);
@@ -503,7 +505,7 @@ void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
   }
 }
 
-void FilterExpansionCC::treatInnerMargin(const int i, const int j,
+void FilterExpansionCC::treatInnerMargin(int i, int j,
                                         const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                         VecList &lists, bool &changed) {
   ValidCC<ConnectedComponents>::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
@@ -559,21 +561,21 @@ void FilterExpansionCC::treatInnerMargin(const int i, const int j,
   }
 }
 
-void FilterExpansionCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+void FilterExpansionCC::startNewRun(int i, int j, int &run_number, int &parent, VecList &lists) {
   ValidCC<ConnectedComponents>::startNewRun(i, j, run_number, parent, lists);
 
   lists["min_bed"][run_number] = (*m_bed)(i, j);
   lists["max_wl"][run_number]  = (*m_water_level)(i, j);
 }
 
-void FilterExpansionCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+void FilterExpansionCC::continueRun(int i, int j, int &run_number, VecList &lists) {
   ValidCC<ConnectedComponents>::continueRun(i, j, run_number, lists);
 
   setRunMinBed((*m_bed)(i, j), run_number, lists);
   setRunMaxWl((*m_water_level)(i, j), run_number, lists);
 }
 
-void FilterExpansionCC::labelMap(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
+void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
   IceModelVec::AccessList list{ &mask, &min_bed, &max_wl};
 
   mask.set(0);
@@ -605,7 +607,7 @@ void FilterExpansionCC::labelMap(const int run_number, const VecList &lists, Ice
   }
 }
 
-void FilterExpansionCC::labelMap2(const int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
+void FilterExpansionCC::labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl) {
   IceModelVec::AccessList list{ &mask, &min_bed, &max_wl};
 
   const RunVec &i_vec = lists.find("i")->second,
@@ -648,7 +650,7 @@ void FilterExpansionCC::prepare_mask(const IceModelVec2S &current_level, const I
   m_mask_run.update_ghosts();
 }
 
-void FilterExpansionCC::set_mask_validity(const int n_filter) {
+void FilterExpansionCC::set_mask_validity(int n_filter) {
   const Direction dirs[] = { North, East, South, West };
 
   IceModelVec::AccessList list{ &m_mask_run, &m_mask_validity };

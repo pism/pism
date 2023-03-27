@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -122,6 +122,8 @@ IndexForcing::IndexForcing(IceGrid::ConstPtr grid)
 }
 
 void IndexForcing::init_impl(const Geometry &geometry) {
+  (void) geometry;
+
   auto filename = m_config->get_string(m_option + "_climate" + "_file");
 
   if (filename.empty()) {
@@ -220,7 +222,7 @@ void IndexForcing::init_timeseries_impl(const std::vector<double> &ts) const {
   m_ts_index.resize(N);
   m_ts_times.resize(N);
 
-  for(unsigned int k = 0; k < N; k++){
+  for(int k = 0; k < N; k++){
     const double t = ts[k];
     m_ts_times[k] = t;
     m_ts_index[k] = m_index->value(t);

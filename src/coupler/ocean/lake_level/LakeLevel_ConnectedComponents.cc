@@ -52,7 +52,7 @@ void LakeLevelCC::fill2Level(const double level, IceModelVec2S &result) {
   labelMap(run_number, lists, result);
 }
 
-void LakeLevelCC::labelMap(const int run_number, const VecList &lists, IceModelVec2S &result) {
+void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
   IceModelVec::AccessList list{&result};
 
   const RunVec &i_vec = lists.find("i")->second,
@@ -91,7 +91,7 @@ void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
   m_mask_run.update_ghosts();
 }
 
-bool LakeLevelCC::ForegroundCond(const int i, const int j) const {
+bool LakeLevelCC::ForegroundCond(int i, int j) const {
   double bed = (*m_bed)(i, j),
          thk = (*m_thk)(i, j);
   int mask = m_mask_run(i, j);
@@ -125,14 +125,14 @@ void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
   labelIsolatedSpots(run_number, lists, result);
 }
 
-bool IsolationCC::ForegroundCond(const int i, const int j) const {
+bool IsolationCC::ForegroundCond(int i, int j) const {
   const double thk = (*m_thk)(i, j);
   const int mask = m_mask_run(i, j);
 
   return ForegroundCond(thk, mask);
 }
 
-void IsolationCC::labelIsolatedSpots(const int run_number, const VecList &lists, IceModelVec2Int &result) {
+void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result) {
   IceModelVec::AccessList list{&result};
   result.set(0);
 
@@ -176,7 +176,7 @@ FilterLakesCC::~FilterLakesCC() {
 
 }
 
-void FilterLakesCC::filter_map(const int n_filter, IceModelVec2S &lake_level) {
+void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
   prepare_mask(lake_level);
   set_mask_validity(n_filter, lake_level);
 
@@ -191,13 +191,13 @@ void FilterLakesCC::filter_map(const int n_filter, IceModelVec2S &lake_level) {
   labelMap(run_number, lists, lake_level);
 }
 
-bool FilterLakesCC::ForegroundCond(const int i, const int j) const {
+bool FilterLakesCC::ForegroundCond(int i, int j) const {
   const int mask = m_mask_run(i, j);
 
   return ForegroundCond(mask);
 }
 
-void FilterLakesCC::labelMap(const int run_number, const VecList &lists, IceModelVec2S &result) {
+void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
   IceModelVec::AccessList list{&result};
 
   const RunVec &i_vec = lists.find("i")->second,
@@ -234,7 +234,7 @@ void FilterLakesCC::prepare_mask(const IceModelVec2S &lake_level) {
   m_mask_run.update_ghosts();
 }
 
-void FilterLakesCC::set_mask_validity(const int n_filter, const IceModelVec2S &lake_level) {
+void FilterLakesCC::set_mask_validity(int n_filter, const IceModelVec2S &lake_level) {
   const Direction dirs[] = { North, East, South, West };
 
   IceModelVec2S ll_tmp(m_grid, "temp_lake_level", WITH_GHOSTS, 1);
@@ -342,11 +342,10 @@ void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
 }
 
 
-bool LakePropertiesCC::ForegroundCond(const int i, const int j) const {
-  const double target  = (*m_target_level)(i, j),
-               current = (*m_current_level)(i, j);
+bool LakePropertiesCC::ForegroundCond(int i, int j) const {
+  const double target  = (*m_target_level)(i, j);
 
-  return (ForegroundCond(target, current));
+  return isLake(target);
 }
 
 void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
@@ -375,7 +374,7 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
   }
 }
 
-void LakePropertiesCC::treatInnerMargin(const int i, const int j,
+void LakePropertiesCC::treatInnerMargin(int i, int j,
                                         const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
                                         VecList &lists, bool &changed) {
   ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
@@ -431,14 +430,14 @@ void LakePropertiesCC::treatInnerMargin(const int i, const int j,
   }
 }
 
-void LakePropertiesCC::startNewRun(const int i, const int j, int &run_number, int &parent, VecList &lists) {
+void LakePropertiesCC::startNewRun(int i, int j, int &run_number, int &parent, VecList &lists) {
   ConnectedComponents::startNewRun(i, j, run_number, parent, lists);
 
   lists["min_ll"][run_number]  = (*m_current_level)(i, j);
   lists["max_ll"][run_number]  = (*m_current_level)(i, j);
 }
 
-void LakePropertiesCC::continueRun(const int i, const int j, int &run_number, VecList &lists) {
+void LakePropertiesCC::continueRun(int i, int j, int &run_number, VecList &lists) {
   ConnectedComponents::continueRun(i, j, run_number, lists);
 
   setRunMinLevel((*m_current_level)(i, j), run_number, lists);
@@ -526,7 +525,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
   result.get_from_proc0(*result_vec_p0);
 }
 
-bool LakeAccumulatorCCSerial::ForegroundCond(const int i, const int j) const {
+bool LakeAccumulatorCCSerial::ForegroundCond(int i, int j) const {
   const int mask = (*m_mask_run_p0_ptr)(i, j);
   return ForegroundCond(mask);
 }

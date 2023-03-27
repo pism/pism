@@ -61,7 +61,7 @@ void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset,
   labelSLMask(run_number, lists, result);
 }
 
-void SeaLevelCC::labelSLMap(const int run_number, const VecList lists, IceModelVec2S &result) {
+void SeaLevelCC::labelSLMap(int run_number, const VecList lists, IceModelVec2S &result) {
   IceModelVec::AccessList list{&result};
 
   const RunVec &i_vec   = lists.find("i")->second,
@@ -81,7 +81,7 @@ void SeaLevelCC::labelSLMap(const int run_number, const VecList lists, IceModelV
   }
 }
 
-void SeaLevelCC::labelSLMask(const int run_number, const VecList lists, IceModelVec2Int &result) {
+void SeaLevelCC::labelSLMask(int run_number, const VecList lists, IceModelVec2Int &result) {
   //Init mask to 0
   result.set(0);
 
@@ -121,7 +121,7 @@ void SeaLevelCC::prepare_mask() {
   m_mask_run.update_ghosts();
 }
 
-bool SeaLevelCC::ForegroundCond(const int i, const int j) const {
+bool SeaLevelCC::ForegroundCond(int i, int j) const {
   double bed = (*m_bed)(i, j),
          thk = (*m_thk)(i, j),
          sea_level = (*m_sea_level)(i, j);
