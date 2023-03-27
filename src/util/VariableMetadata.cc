@@ -174,11 +174,6 @@ void SpatialVariableMetadata::init_internal(const std::string &name,
   }
 }
 
-SpatialVariableMetadata::SpatialVariableMetadata(const SpatialVariableMetadata &other)
-  : VariableMetadata(other), m_x(other.m_x), m_y(other.m_y), m_z(other.m_z) {
-  m_zlevels             = other.m_zlevels;
-}
-
 SpatialVariableMetadata::~SpatialVariableMetadata() {
   // empty
 }
