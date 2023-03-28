@@ -59,11 +59,13 @@ private:
 };
 
 
-/*!
- * To remove narrow lakes, which are often related to under-resolved topography, the
- * FilterLakesCC class checks the lakes’ geometry. Only lakes containing one (or more)
- * cells that have at least a certain amount of neighbors that also are part of that lake
- * are retained
+/*! Removes narrow lakes
+ *
+ * The FilterLakesCC class checks the lakes’ geometry. Only lakes containing one (or more)
+ * cells that have at least a given number of neighbors that also are part of that lake
+ * are retained.
+ *
+ * We do this to remove narrow lakes which are often related to under-resolved topography.
  */
 class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
