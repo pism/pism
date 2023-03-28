@@ -79,11 +79,8 @@ void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
   IceModelVec::AccessList list{ &m_mask_run, &pism_mask };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    bool isWest = (i == m_i_global_first), isEast = (i == m_i_global_last), isSouth = (j == m_j_global_first),
-         isNorth = (j == m_j_global_last), isMargin = (isWest or isEast or isSouth or isNorth);
-
-    //Set sink, where pism_mask is ocean or at margin of computational domain
-    if (isMargin or pism_mask.ocean(i, j)) {
+    // Set "sink" if pism_mask is ocean or at a margin of the computational domain
+    if (grid_edge(*m_grid, i, j) or pism_mask.ocean(i, j)) {
       m_mask_run(i, j) = 1;
     } else {
       m_mask_run(i, j) = 0;
@@ -158,11 +155,9 @@ void IsolationCC::prepare_mask() {
   IceModelVec::AccessList list{ &m_mask_run };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    bool isWest = (i == m_i_global_first), isEast = (i == m_i_global_last), isSouth = (j == m_j_global_first),
-         isNorth = (j == m_j_global_last), isMargin = (isWest or isEast or isSouth or isNorth);
 
     //Set not isolated at margin
-    m_mask_run(i, j) = isMargin ? 1 : 0;
+    m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
   }
   m_mask_run.update_ghosts();
 }

@@ -110,15 +110,9 @@ void SeaLevelCC::prepare_mask() {
   IceModelVec::AccessList list{&m_mask_run};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
-    bool isWest   = (i == m_i_global_first),
-         isEast   = (i == m_i_global_last),
-         isSouth  = (j == m_j_global_first),
-         isNorth  = (j == m_j_global_last),
-         isMargin = (isWest or isEast or isSouth or isNorth);
 
-    //Set sink at margin of computational domain
-    m_mask_run(i, j) = isMargin ? 1 : 0;
-
+    // Set "sink" at a margin of the computational domain
+    m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
   }
   m_mask_run.update_ghosts();
 }
