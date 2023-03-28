@@ -17,10 +17,9 @@ typedef std::vector<const IceModelVec*> ConstFieldVec;
 class ConnectedComponentsBase {
 public:
   ConnectedComponentsBase(IceGrid::ConstPtr g);
-  ~ConnectedComponentsBase();
+  virtual ~ConnectedComponentsBase() = default;
 
 private:
-  void resizeLists(VecList &lists, int new_length);
   void run_union(std::vector<double> &parents, int run1, int run2);
 
 protected:

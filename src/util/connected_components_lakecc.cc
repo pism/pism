@@ -11,16 +11,6 @@ ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
   m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
 }
 
-ConnectedComponentsBase::~ConnectedComponentsBase() {
-  //empty
-}
-
-inline void ConnectedComponentsBase::resizeLists(VecList &lists, int new_length) {
-  for (VecList::iterator it = lists.begin(); it != lists.end(); it++) {
-    it->second.resize(new_length);
-  }
-}
-
 inline void ConnectedComponentsBase::run_union(std::vector<double> &parents, int run1, int run2) {
   if ((parents[run1] == run2) or (parents[run2] == run1)) {
     return;
@@ -60,7 +50,10 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest,
   //resize vectors if 'max_items' are exceeded
   if ((run_number + 1) >= (int)max_items) {
     max_items += m_grid->ym();
-    resizeLists(lists, max_items);
+
+    for (auto &pair : lists) {
+      pair.second.resize(max_items);
+    }
   }
 }
 
@@ -104,8 +97,6 @@ void ConnectedComponentsBase::mergeRuns(int run_number, int run_south, VecList &
   run_union(lists["parents"], run_south, run_number);
 }
 
-
-
 ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
     : ConnectedComponentsBase(g),
       m_i_local_first(m_grid->xs()),
@@ -125,7 +116,7 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
   list.add(m_masks.begin(), m_masks.end());
   list.add(m_fields.begin(), m_fields.end());
 
-  //Assign Pixels to runs
+  // Assign Pixels to runs
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
