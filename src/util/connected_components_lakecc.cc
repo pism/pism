@@ -305,7 +305,7 @@ void MaskCC::compute_mask(IceModelVec2Int &mask) {
 
 bool MaskCC::ForegroundCond(int i, int j) const {
   int mask = m_mask_run.as_int(i, j);
-  return (mask > 0);
+  return mask > 0;
 }
 
 void MaskCC::labelOutMask(int run_number, const VecList &lists, IceModelVec2Int &result) {
