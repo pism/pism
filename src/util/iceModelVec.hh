@@ -1,4 +1,4 @@
-// Copyright (C) 2008--2019 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2008--2019, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -71,7 +71,15 @@ public:
   AccessList(const PetscAccessible &v);
   ~AccessList();
   void add(const PetscAccessible &v);
+  void add(const PetscAccessible *v);
   void add(const std::vector<const PetscAccessible*> vecs);
+
+  template <typename Iterator>
+  void add(Iterator first, Iterator last) {
+    for (auto it = first; it != last; it = std::next(it)) {
+      add(*it);
+    }
+  }
 private:
   std::vector<const PetscAccessible*> m_vecs;
 };

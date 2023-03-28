@@ -962,6 +962,11 @@ void AccessList::add(const PetscAccessible &vec) {
   m_vecs.push_back(&vec);
 }
 
+void AccessList::add(const PetscAccessible *vec) {
+  vec->begin_access();
+  m_vecs.push_back(vec);
+}
+
 void AccessList::add(const std::vector<const PetscAccessible*> vecs) {
   for (auto v : vecs) {
     assert(v != nullptr);

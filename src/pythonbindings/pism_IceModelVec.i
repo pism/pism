@@ -21,6 +21,7 @@ using namespace pism;
 %shared_ptr(pism::IceModelVec3Custom)
 
 %ignore pism::AccessList::AccessList(std::initializer_list<const PetscAccessible *>);
+%ignore pism::AccessList::add(const PetscAccessible *);
 
 %ignore pism::IceModelVec2S::get_array;
 %ignore pism::IceModelVec2V::get_array;
