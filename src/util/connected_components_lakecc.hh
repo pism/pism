@@ -66,7 +66,7 @@ protected:
 class ConnectedComponentsSerial : public ConnectedComponentsBase {
 public:
   ConnectedComponentsSerial(IceGrid::ConstPtr g);
-  ~ConnectedComponentsSerial();
+  virtual ~ConnectedComponentsSerial() = default;
 
 protected:
   petsc::Vec::Ptr m_mask_run_vec_p0;

@@ -190,10 +190,6 @@ ConnectedComponentsSerial::ConnectedComponentsSerial(IceGrid::ConstPtr g)
   m_mask_run_vec_p0 = m_mask_run.allocate_proc0_copy();
 }
 
-ConnectedComponentsSerial::~ConnectedComponentsSerial() {
-  //empty
-}
-
 void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
 
   m_mask_run.put_on_proc0(*m_mask_run_vec_p0);
