@@ -11,21 +11,6 @@ ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
   m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
 }
 
-inline void ConnectedComponentsBase::run_union(std::vector<double> &parents, int run1, int run2) {
-  if ((parents[run1] == run2) or (parents[run2] == run1)) {
-    return;
-  }
-
-  run1 = trackParentRun(run1, parents);
-  run2 = trackParentRun(run2, parents);
-
-  if (run1 > run2) {
-    parents[run1] = run2;
-  } else if (run1 < run2) {
-    parents[run2] = run1;
-  }
-}
-
 inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest, const bool isSouth, int mask_w, int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
   //Check Foreground Pixel
   if (not isWest and (mask_w > 0)) {
@@ -94,7 +79,23 @@ void ConnectedComponentsBase::continueRun(int i, int j, int &run_number, VecList
 }
 
 void ConnectedComponentsBase::mergeRuns(int run_number, int run_south, VecList &lists) {
-  run_union(lists["parents"], run_south, run_number);
+  auto &parents = lists["parents"];
+  int run1 = run_south;
+  int run2 = run_number;
+  {
+    if ((parents[run1] == run2) or (parents[run2] == run1)) {
+      return;
+    }
+
+    run1 = trackParentRun(run1, parents);
+    run2 = trackParentRun(run2, parents);
+
+    if (run1 > run2) {
+      parents[run1] = run2;
+    } else if (run1 < run2) {
+      parents[run2] = run1;
+    }
+  }
 }
 
 ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)

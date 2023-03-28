@@ -19,9 +19,6 @@ public:
   ConnectedComponentsBase(IceGrid::ConstPtr g);
   virtual ~ConnectedComponentsBase() = default;
 
-private:
-  void run_union(std::vector<double> &parents, int run1, int run2);
-
 protected:
   const IceGrid::ConstPtr m_grid;
   IceModelVec2Int m_mask_run;
