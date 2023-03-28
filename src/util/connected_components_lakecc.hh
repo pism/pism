@@ -41,7 +41,7 @@ protected:
 class ConnectedComponents : public ConnectedComponentsBase {
 public:
   ConnectedComponents(IceGrid::ConstPtr g);
-  ~ConnectedComponents();
+  virtual ~ConnectedComponents() = default;
 
 protected:
   FieldVec m_masks;
@@ -253,43 +253,39 @@ template<class CC>
 class FillingAlgCC : public CC {
 public:
   FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value);
-  ~FillingAlgCC();
+  virtual ~FillingAlgCC() = default;
 protected:
   double m_drho, m_fill_value;
   const IceModelVec2S *m_bed, *m_thk;
-  virtual bool ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const;
+
+  virtual bool is_foreground(double bed, double thk, int mask, double Level, double Offset) const {
+    if (mask > 0) {
+      return true;
+    }
+
+    if (Level == m_fill_value) {
+      return true;
+    }
+
+    double level = Level;
+    if (Offset != m_fill_value) {
+      level += Offset;
+    }
+
+    return ((bed + (m_drho * thk)) < level);
+  }
 };
 
 template<class CC>
 FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value)
-  : CC(g), m_drho(drho), m_bed(&bed), m_thk(&thk), m_fill_value(fill_value) {
+  : CC(g),
+    m_drho(drho),
+    m_fill_value(fill_value),
+    m_bed(&bed),
+    m_thk(&thk) {
   CC::m_fields.push_back(m_bed);
   CC::m_fields.push_back(m_thk);
 }
-
-template<class CC>
-FillingAlgCC<CC>::~FillingAlgCC() {
-  //empty
-}
-
-template<class CC>
-bool FillingAlgCC<CC>::ForegroundCond(double bed, double thk, int mask, double Level, double Offset) const {
-  if (mask > 0) {
-    return true;
-  }
-
-  if (Level == m_fill_value) {
-    return true;
-  }
-
-  double level = Level;
-  if (Offset != m_fill_value) {
-    level += Offset;
-  }
-
-  return ((bed + (m_drho * thk)) < level);
-}
-
 
 /*!
  * The class FilterExpansionCC (Fig. B1e) is used to compare the new lake basins with the
@@ -328,10 +324,6 @@ private:
   void labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
   void set_mask_validity(int n_filter);
-
-  inline bool ForegroundCond(int mask) const {
-    return (mask > 1);
-  }
 
   inline bool isLake(double level) {
     return (level != m_fill_value);

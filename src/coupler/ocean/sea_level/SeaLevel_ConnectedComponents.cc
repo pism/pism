@@ -129,7 +129,7 @@ bool SeaLevelCC::ForegroundCond(int i, int j) const {
          sea_level = (*m_sea_level)(i, j);
   int mask = m_mask_run(i, j);
 
-  return FillingAlgCC::ForegroundCond(bed, thk, mask, sea_level, m_offset);
+  return is_foreground(bed, thk, mask, sea_level, m_offset);
 }
 
 }

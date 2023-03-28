@@ -97,7 +97,7 @@ bool LakeLevelCC::ForegroundCond(int i, int j) const {
          thk = (*m_thk)(i, j);
   int mask = m_mask_run(i, j);
 
-  return FillingAlgCC::ForegroundCond(bed, thk, mask, m_level, m_offset);
+  return is_foreground(bed, thk, mask, m_level, m_offset);
 }
 
 
@@ -127,10 +127,9 @@ void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
 }
 
 bool IsolationCC::ForegroundCond(int i, int j) const {
-  const double thk = (*m_thk)(i, j);
-  const int mask = m_mask_run(i, j);
-
-  return ForegroundCond(thk, mask);
+  double thk = (*m_thk)(i, j);
+  int mask = m_mask_run(i, j);
+  return ((thk < m_thk_threshold) or (mask > 0));
 }
 
 void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result) {
@@ -196,7 +195,7 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
 bool FilterLakesCC::ForegroundCond(int i, int j) const {
   const int mask = m_mask_run(i, j);
 
-  return ForegroundCond(mask);
+  return (mask > 1);
 }
 
 void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
@@ -451,12 +450,9 @@ void LakePropertiesCC::continueRun(int i, int j, int &run_number, VecList &lists
 
 LakeAccumulatorCCSerial::LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value)
   : ConnectedComponentsSerial(g),
-    m_fill_value(fill_value),
-    m_initialized(false) {
-  //empty
-}
-
-LakeAccumulatorCCSerial::~LakeAccumulatorCCSerial() {
+    m_initialized(false),
+    m_fill_value(fill_value)
+{
   //empty
 }
 
@@ -532,7 +528,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
 
 bool LakeAccumulatorCCSerial::ForegroundCond(int i, int j) const {
   const int mask = (*m_mask_run_p0_ptr)(i, j);
-  return ForegroundCond(mask);
+  return (mask > 0);
 }
 
 void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {

@@ -32,9 +32,9 @@ namespace lake_level {
 
 LakeCC::LakeCC(IceGrid::ConstPtr g)
   : LakeLevel(g),
-    m_gc(*m_config),
     m_target_level(m_grid, "target_lake_level", WITHOUT_GHOSTS),
     m_fill_rate(m_grid, "lake_fill_rate", WITHOUT_GHOSTS),
+    m_gc(*m_config),
     m_topg_overlay(m_grid, "topg_overlay", WITHOUT_GHOSTS) {
 
   m_log->message(2, "  - Setting up LakeCC Model...\n");
@@ -369,14 +369,14 @@ bool LakeCC::iterativelyPatchTargetLevel(const IceModelVec2S &bed,
                                          const IceModelVec2S &sl,
                                          IceModelVec2S &target_level) {
 
-  for (unsigned int n = 0; n < m_patch_iter; ++n) {
+  for (int n = 0; n < m_patch_iter; ++n) {
     const int unsigned local_patch_result = patch_lake_levels(bed, thk, sl, target_level),
                        patch_result = GlobalMax(m_grid->com, local_patch_result);
     if (patch_result == 0) {
       //No further iteration needed
       return false;
     }
-    if ((patch_result == 2) or (n >= (m_patch_iter -1))) {
+    if ((patch_result == 2) or (n >= (m_patch_iter - 1))) {
       //update needed
       return true;
     }

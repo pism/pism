@@ -56,10 +56,6 @@ protected:
 private:
   const double m_thk_threshold;
   const IceModelVec2S *m_thk;
-
-  inline bool ForegroundCond(double thk, int mask) const {
-    return ((thk < m_thk_threshold) or (mask > 0));
-  }
 };
 
 
@@ -84,10 +80,6 @@ private:
   void labelMap(int run_number, const VecList &lists, IceModelVec2S &result);
   void prepare_mask(const IceModelVec2S &lake_level);
   void set_mask_validity(int n_filter, const IceModelVec2S &lake_level);
-
-  inline bool ForegroundCond(int mask) const {
-    return (mask > 1);
-  }
 
   inline bool isLake(double level) const {
     return (level != m_fill_value);
@@ -131,7 +123,7 @@ protected:
 class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
 public:
   LakeAccumulatorCCSerial(IceGrid::ConstPtr g, double fill_value);
-  ~LakeAccumulatorCCSerial();
+  virtual ~LakeAccumulatorCCSerial() = default;
   void init(const IceModelVec2S &lake_level);
   void accumulate(const IceModelVec2S &in, IceModelVec2S &result);
 
@@ -145,10 +137,6 @@ private:
   int m_run_number;
 
   void prepare_mask(const IceModelVec2S &lake_level);
-
-  inline bool ForegroundCond(int mask) const {
-    return (mask > 0);
-  }
 
   inline bool isLake(double level) const {
     return (level != m_fill_value);

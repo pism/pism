@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,8 +31,8 @@ namespace sea_level {
 
 SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
   : SeaLevel(g, in),
-    m_gc(*m_config),
     m_target_level(m_grid, "target_sea_level", WITHOUT_GHOSTS),
+    m_gc(*m_config),
     m_topg_overlay(m_grid, "topg_overlay", WITHOUT_GHOSTS),
     m_mask(m_grid, "sl_mask", WITHOUT_GHOSTS) {
 

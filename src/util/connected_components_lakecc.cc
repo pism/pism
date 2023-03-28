@@ -58,7 +58,7 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest,
   }
 
   //resize vectors if 'max_items' are exceeded
-  if ((run_number + 1) >= max_items) {
+  if ((run_number + 1) >= (int)max_items) {
     max_items += m_grid->ym();
     resizeLists(lists, max_items);
   }
@@ -118,10 +118,6 @@ ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
       m_j_global_last(m_grid->My() - 1) {
 
   m_masks.push_back(&m_mask_run);
-}
-
-ConnectedComponents::~ConnectedComponents() {
-  //empty
 }
 
 void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
@@ -235,8 +231,8 @@ void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, un
       petsc::VecArray2D mask_run(*m_mask_run_vec_p0, m_grid->Mx(), m_grid->My());
       //We need a global pointer to the array to be able to access it from ForegroundCond(i, j)
       m_mask_run_p0_ptr = &mask_run;
-      for (int j = 0; j < m_grid->My(); j++) {
-        for (int i = 0; i < m_grid->Mx(); i++) {
+      for (int j = 0; j < (int)m_grid->My(); j++) {
+        for (int i = 0; i < (int)m_grid->Mx(); i++) {
           if (ForegroundCond(i, j)) {
             bool isWest = (i <= 0), isSouth = (j <= 0);
             const int mask_w = isWest  ? 0 : mask_run(i-1, j),
@@ -339,7 +335,7 @@ void MaskCC::compute_mask(IceModelVec2Int &mask) {
 }
 
 bool MaskCC::ForegroundCond(int i, int j) const {
-  const int mask = m_mask_run.as_int(i, j);
+  int mask = m_mask_run.as_int(i, j);
   return (mask > 0);
 }
 
@@ -446,9 +442,8 @@ void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) 
 }
 
 bool FilterExpansionCC::ForegroundCond(int i, int j) const {
-  const int mask = m_mask_run(i, j);
-
-  return ForegroundCond(mask);
+  int mask = m_mask_run(i, j);
+  return mask > 1;
 }
 
 void FilterExpansionCC::setRunMinBed(double level, int run, VecList &lists) {
