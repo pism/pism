@@ -51,9 +51,7 @@ protected:
 
   void compute_runs(int &run_number, VecList &lists, unsigned int &max_items);
   bool updateRunsAtBoundaries(VecList &lists);
-  void updateGhosts(FieldVec &in);
-  void addFieldVecAccessList(FieldVec &field, IceModelVec::AccessList &list);
-  void addFieldVecAccessList(ConstFieldVec &field, IceModelVec::AccessList &list);
+
   virtual void labelMask(int run_number, const VecList &lists);
   virtual void treatInnerMargin(int i, int j,
                                 bool isNorth, bool isEast, bool isSouth, bool isWest,
@@ -226,7 +224,7 @@ void ValidCC<CC>::mergeRuns(int run_number, int run_south, VecList &lists) {
 template <class CC>
 void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
-  CC::addFieldVecAccessList(CC::m_masks, list);
+  list.add(CC::m_masks.begin(), CC::m_masks.end());
 
   const auto
     &i_vec     = lists.find("i")->second,

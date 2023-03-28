@@ -122,8 +122,8 @@ ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
 
 void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned int &max_items) {
   IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-  addFieldVecAccessList(m_fields, list);
+  list.add(m_masks.begin(), m_masks.end());
+  list.add(m_fields.begin(), m_fields.end());
 
   //Assign Pixels to runs
   for (Points p(*m_grid); p; p.next()) {
@@ -150,7 +150,7 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
 
 void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
+  list.add(m_masks.begin(), m_masks.end());
 
   const auto
     &i_vec   = lists.find("i")->second,
@@ -169,8 +169,11 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
 
 bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
   IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
-  updateGhosts(m_masks);
+  list.add(m_masks.begin(), m_masks.end());
+
+  for (auto *mask : m_masks) {
+    mask->update_ghosts();
+  }
 
   bool changed = false;
 
@@ -189,28 +192,6 @@ bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
 
   return (GlobalOr(m_grid->com, changed));
 }
-
-void ConnectedComponents::addFieldVecAccessList(FieldVec &fields, IceModelVec::AccessList &list) {
-  for (FieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
-    IceModelVec *field = *it;
-    list.add(*field);
-  }
-}
-
-void ConnectedComponents::addFieldVecAccessList(ConstFieldVec &fields, IceModelVec::AccessList &list) {
-  for (ConstFieldVec::iterator it = fields.begin(); it != fields.end(); it++) {
-    const IceModelVec *field = *it;
-    list.add(*field);
-  }
-}
-
-void ConnectedComponents::updateGhosts(FieldVec &in) {
-  for (FieldVec::iterator it = in.begin(); it != in.end(); it++) {
-    IceModelVec *field = *it;
-    field->update_ghosts();
-  }
-}
-
 
 ConnectedComponentsSerial::ConnectedComponentsSerial(IceGrid::ConstPtr g)
   : ConnectedComponentsBase(g) {
@@ -476,7 +457,7 @@ void FilterExpansionCC::setRunMaxWl(double level, int run, VecList &lists) {
 
 void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
+  list.add(m_masks.begin(), m_masks.end());
 
   const auto
     &i_vec     = lists.find("i")->second,

@@ -352,7 +352,7 @@ bool LakePropertiesCC::ForegroundCond(int i, int j) const {
 
 void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
   IceModelVec::AccessList list;
-  addFieldVecAccessList(m_masks, list);
+  list.add(m_masks.begin(), m_masks.end());
 
   const auto
     &i_vec   = lists.find("i")->second,
