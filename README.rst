@@ -16,7 +16,7 @@ The development presented here is supported by the
 
 Thanks to various collaborators 
 
-** Below the original information from the PISM source
+** Below the original information from the PISM source **
 
 
 
