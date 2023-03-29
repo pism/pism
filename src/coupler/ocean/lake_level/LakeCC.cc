@@ -18,6 +18,7 @@
  */
 #include <cassert>
 
+#include "LakeAccumulator.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
