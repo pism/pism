@@ -26,6 +26,7 @@
 #include "LakeCC.hh"
 #include "LakeLevel_ConnectedComponents.hh"
 #include "IsolationCC.hh"
+#include "FilterLakesCC.hh"
 
 namespace pism {
 namespace ocean {

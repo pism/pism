@@ -50,6 +50,7 @@ add_library (boundary OBJECT
   ./ocean/lake_level/LakeLevel_ConnectedComponents.cc
   ./ocean/lake_level/ExpandLakeMargins.cc
   ./ocean/lake_level/IsolationCC.cc
+  ./ocean/lake_level/FilterLakesCC.cc
   ./ocean/Pico.cc
   ./ocean/PicoPhysics.cc
   ./ocean/PicoGeometry.cc

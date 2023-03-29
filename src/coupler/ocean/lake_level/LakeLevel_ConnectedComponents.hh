@@ -36,35 +36,6 @@ private:
 
 
 
-/*! Removes narrow lakes
- *
- * The FilterLakesCC class checks the lakes’ geometry. Only lakes containing one (or more)
- * cells that have at least a given number of neighbors that also are part of that lake
- * are retained.
- *
- * We do this to remove narrow lakes which are often related to under-resolved topography.
- */
-class FilterLakesCC : public ValidCC<ConnectedComponents> {
-public:
-  FilterLakesCC(IceGrid::ConstPtr g, double fill_value);
-  virtual ~FilterLakesCC() = default;
-  void filter_map(int n_filter, IceModelVec2S &lake_level);
-
-protected:
-  virtual bool ForegroundCond(int i, int j) const;
-
-private:
-  double m_fill_value;
-
-  void labelMap(int run_number, const VecList &lists, IceModelVec2S &result);
-  void prepare_mask(const IceModelVec2S &lake_level);
-  void set_mask_validity(int n_filter, const IceModelVec2S &lake_level);
-
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
-};
-
 
 /*!
  * LakePropertiesCC collects the minimum and maximum current water level of each lake
