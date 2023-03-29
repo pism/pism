@@ -37,39 +37,6 @@ private:
 
 
 
-/*!
- * LakePropertiesCC collects the minimum and maximum current water level of each lake
- * basin.
- */
-class LakePropertiesCC : public ConnectedComponents {
-public:
-  LakePropertiesCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &target_level,
-                   const IceModelVec2S &lake_level);
-  ~LakePropertiesCC();
-  void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level);
-
-private:
-  const double m_fill_value;
-  const IceModelVec2S *m_target_level, *m_current_level;
-  IceModelVec2S m_min_lakelevel, m_max_lakelevel;
-
-  void setRunMinLevel(double level, int run, VecList &lists);
-  void setRunMaxLevel(double level, int run, VecList &lists);
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
-
-protected:
-  virtual void init_VecList(VecList &lists, unsigned int length);
-  virtual bool ForegroundCond(int i, int j) const;
-  virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(int i, int j,
-                                bool isNorth, bool isEast, bool isSouth, bool isWest,
-                                VecList &lists, bool &changed);
-  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
-};
-
 class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
 public:
   LakeAccumulatorCCSerial(IceGrid::ConstPtr g, double fill_value);
