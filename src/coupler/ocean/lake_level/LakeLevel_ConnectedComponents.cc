@@ -92,84 +92,14 @@ void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
 bool LakeLevelCC::ForegroundCond(int i, int j) const {
   double bed = (*m_bed)(i, j),
          thk = (*m_thk)(i, j);
-  int mask = m_mask_run(i, j);
+  int mask = m_mask_run.as_int(i, j);
 
   return is_foreground(bed, thk, mask, m_level, m_offset);
 }
 
-
-IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
-                         const double thk_theshold)
-  : SinkCC(g), m_thk_threshold(thk_theshold), m_thk(&thk) {
-  prepare_mask();
-  m_fields.push_back(m_thk);
-}
-
-IsolationCC::~IsolationCC() {
-  //empty
-}
-
-void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
-  VecList lists;
-  unsigned int max_items = 2 * m_grid->ym();
-  init_VecList(lists, max_items);
-
-  int run_number = 1;
-
-  compute_runs(run_number, lists, max_items);
-
-  result.set(0);
-
-  labelIsolatedSpots(run_number, lists, result);
-}
-
-bool IsolationCC::ForegroundCond(int i, int j) const {
-  double thk = (*m_thk)(i, j);
-  int mask = m_mask_run(i, j);
-  return ((thk < m_thk_threshold) or (mask > 0));
-}
-
-void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result) {
-  IceModelVec::AccessList list{&result};
-  result.set(0);
-
-  const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second;
-
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    if (label == 1) {
-      const int j = j_vec[k];
-      for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
-        result(i, j) = 1;
-      }
-    }
-  }
-}
-
-void IsolationCC::prepare_mask() {
-  IceModelVec::AccessList list{ &m_mask_run };
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    //Set not isolated at margin
-    m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
-  }
-  m_mask_run.update_ghosts();
-}
-
-
-FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, const double fill_value)
+FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, double fill_value)
   : ValidCC<ConnectedComponents>(g), m_fill_value(fill_value) {
   //empty
-}
-
-FilterLakesCC::~FilterLakesCC() {
-
 }
 
 void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
@@ -188,7 +118,7 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
 }
 
 bool FilterLakesCC::ForegroundCond(int i, int j) const {
-  const int mask = m_mask_run(i, j);
+  int mask = m_mask_run.as_int(i, j);
 
   return (mask > 1);
 }

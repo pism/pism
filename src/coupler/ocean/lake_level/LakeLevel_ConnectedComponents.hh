@@ -35,29 +35,6 @@ private:
 };
 
 
-/*!
- * This class marks cells as invalid that are either ice-covered or not connected by an
- * ice-free corridor within the domain margin. It is used to restrict the formation of
- * lakes in the ice sheet interior and of subglacial lakes where thin ice covers a deep
- * basin.
- */
-class IsolationCC : public SinkCC {
-public:
-  IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
-              double thk_theshold);
-  ~IsolationCC();
-  void find_isolated_spots(IceModelVec2Int &result);
-
-protected:
-  virtual bool ForegroundCond(int i, int j) const;
-  void labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result);
-  void prepare_mask();
-
-private:
-  const double m_thk_threshold;
-  const IceModelVec2S *m_thk;
-};
-
 
 /*! Removes narrow lakes
  *
@@ -70,7 +47,7 @@ private:
 class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
   FilterLakesCC(IceGrid::ConstPtr g, double fill_value);
-  ~FilterLakesCC();
+  virtual ~FilterLakesCC() = default;
   void filter_map(int n_filter, IceModelVec2S &lake_level);
 
 protected:
