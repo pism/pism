@@ -35,12 +35,15 @@ public:
   IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
               double thk_theshold);
   virtual ~IsolationCC() = default;
+
   void find_isolated_spots(IceModelVec2Int &result);
 
 protected:
   virtual bool ForegroundCond(int i, int j) const;
-  void labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result);
-  void prepare_mask();
+
+  static void labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result);
+
+  void prepare_mask(IceModelVec2Int &result);
 
 private:
   const double m_thk_threshold;

@@ -25,13 +25,15 @@ protected:
   void check_cell(int i, int j,
                   bool isWest, bool isSouth, int mask_w, int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
-  int trackParentRun(int run, const std::vector<double> &parents);
-  virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void init_VecList(VecList &lists, unsigned int size);
   virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
   virtual void continueRun(int i, int j, int &run_number, VecList &lists);
   virtual void mergeRuns(int run_number, int run_south, VecList &lists);
+
   virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
   virtual bool ForegroundCond(int i, int j) const = 0;
+
+  static int trackParentRun(int run, const std::vector<double> &parents);
 };
 
 class ConnectedComponents : public ConnectedComponentsBase {
@@ -79,10 +81,7 @@ protected:
 class SinkCC : public ConnectedComponents {
 public:
   SinkCC(IceGrid::ConstPtr g);
-  ~SinkCC();
-
-private:
-  void setRunSink(int run, std::vector<double> &parents);
+  virtual ~SinkCC() = default;
 
 protected:
   virtual bool SinkCond(int i, int j);
@@ -91,20 +90,23 @@ protected:
                                 VecList &lists, bool &changed);
   virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
   virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+
+private:
+  static void setRunSink(int run, std::vector<double> &parents);
 };
 
 template <class CC>
 class ValidCC : public CC {
 public:
   ValidCC(IceGrid::ConstPtr g);
-  ~ValidCC();
+  virtual ~ValidCC() = default;
 
 private:
   void setRunValid(int run, VecList &lists);
 
 protected:
   IceModelVec2Int m_mask_validity;
-  virtual void init_VecList(VecList &lists, const unsigned int length);
+  virtual void init_VecList(VecList &lists, unsigned int size);
   virtual void treatInnerMargin(int i, int j,
                                 bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
@@ -115,19 +117,14 @@ protected:
 };
 
 template <class CC>
-ValidCC<CC>::ValidCC(IceGrid::ConstPtr g)
-  :CC(g) {
-  m_mask_validity.create(CC::m_grid, "mask_validity", WITH_GHOSTS, 1);
+ValidCC<CC>::ValidCC(IceGrid::ConstPtr grid)
+  :CC(grid) {
+  m_mask_validity.create(grid, "mask_validity", WITH_GHOSTS, 1);
   CC::m_masks.push_back(&m_mask_validity);
 }
 
 template <class CC>
-ValidCC<CC>::~ValidCC() {
-  //empty
-}
-
-template <class CC>
-void ValidCC<CC>::init_VecList(VecList &lists, const unsigned int size) {
+void ValidCC<CC>::init_VecList(VecList &lists, unsigned int size) {
   CC::init_VecList(lists, size);
 
   std::vector<double> valid_list(size);
@@ -309,7 +306,7 @@ private:
 
   void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
 
-  inline bool isLake(double level) {
+  inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 };

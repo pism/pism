@@ -9,7 +9,7 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelV
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);
-  prepare_mask(pism_mask_type);
+  prepare_mask(pism_mask_type, m_mask_run);
   m_mask_validity.set(1);
 }
 
@@ -20,7 +20,7 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelV
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);
-  this->prepare_mask(pism_mask_type);
+  this->prepare_mask(pism_mask_type, m_mask_run);
   m_mask_validity.copy_from(valid_mask);
 }
 
@@ -72,18 +72,19 @@ void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &
   }
 }
 
-void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
-  IceModelVec::AccessList list{ &m_mask_run, &pism_mask };
+void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask, IceModelVec2Int &result) {
+  IceModelVec::AccessList list{ &result, &pism_mask };
   for (Points p(*m_grid); p; p.next()) {
+
     const int i = p.i(), j = p.j();
     // Set "sink" if pism_mask is ocean or at a margin of the computational domain
     if (grid_edge(*m_grid, i, j) or pism_mask.ocean(i, j)) {
-      m_mask_run(i, j) = 1;
+      result(i, j) = 1;
     } else {
-      m_mask_run(i, j) = 0;
+      result(i, j) = 0;
     }
   }
-  m_mask_run.update_ghosts();
+  result.update_ghosts();
 }
 
 bool LakeLevelCC::ForegroundCond(int i, int j) const {

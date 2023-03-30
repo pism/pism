@@ -16,17 +16,21 @@ class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
   LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
               const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value);
+
   LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
               const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value,
               const IceModelVec2Int &valid_mask);
+
   virtual ~LakeLevelCC() = default;
+
   void computeLakeLevel(double zMin, double zMax, double dz, double offset, IceModelVec2S &result);
+
   inline void computeLakeLevel(double zMin, double zMax, double dz, IceModelVec2S &result) {
     computeLakeLevel(zMin, zMax, dz, m_fill_value, result);
   }
 
 protected:
-  void prepare_mask(const IceModelVec2CellType &pism_mask);
+  void prepare_mask(const IceModelVec2CellType &pism_mask, IceModelVec2Int &result);
   void labelMap(int run_number, const VecList &lists, IceModelVec2S &result);
   void fill2Level(double level, IceModelVec2S &result);
   virtual bool ForegroundCond(int i, int j) const;

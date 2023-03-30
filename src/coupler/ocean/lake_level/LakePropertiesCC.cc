@@ -39,10 +39,6 @@ LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value,
   m_fields.push_back(m_current_level);
 }
 
-LakePropertiesCC::~LakePropertiesCC() {
-  //empty
-}
-
 void LakePropertiesCC::getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level) {
   VecList lists;
   unsigned int max_items = 2 * m_grid->ym();

@@ -26,7 +26,7 @@ IsolationCC::IsolationCC(IceGrid::ConstPtr g, const IceModelVec2S &thk,
   : SinkCC(g),
     m_thk_threshold(thk_theshold),
     m_thk(&thk) {
-  prepare_mask();
+  prepare_mask(m_mask_run);
   m_fields.push_back(m_thk);
 }
 
@@ -72,15 +72,15 @@ void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceMo
   }
 }
 
-void IsolationCC::prepare_mask() {
-  IceModelVec::AccessList list{ &m_mask_run };
+void IsolationCC::prepare_mask(IceModelVec2Int &result) {
+  IceModelVec::AccessList list{ &result };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     //Set not isolated at margin
-    m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
+    result(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
   }
-  m_mask_run.update_ghosts();
+  result.update_ghosts();
 }
 
 } // end of namespace pism

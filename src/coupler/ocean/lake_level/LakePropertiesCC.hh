@@ -32,7 +32,8 @@ class LakePropertiesCC : public ConnectedComponents {
 public:
   LakePropertiesCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &target_level,
                    const IceModelVec2S &lake_level);
-  ~LakePropertiesCC();
+  virtual ~LakePropertiesCC() = default;
+
   void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level);
 
 private:

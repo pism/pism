@@ -11,7 +11,7 @@ ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
   m_mask_run.create(m_grid, "mask_run", WITH_GHOSTS, 1);
 }
 
-inline void ConnectedComponentsBase::check_cell(int i, int j, const bool isWest, const bool isSouth, int mask_w, int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
+inline void ConnectedComponentsBase::check_cell(int i, int j, bool isWest, bool isSouth, int mask_w, int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
   //Check Foreground Pixel
   if (not isWest and (mask_w > 0)) {
     // west neighbor is also foreground: continue the run
@@ -49,7 +49,7 @@ int ConnectedComponentsBase::trackParentRun(int run, const std::vector<double> &
   return run;
 }
 
-void ConnectedComponentsBase::init_VecList(VecList &lists, const unsigned int size) {
+void ConnectedComponentsBase::init_VecList(VecList &lists, unsigned int size) {
   std::vector<double> parents(size), lengths(size), j_vec(size), i_vec(size);
   lists["parents"] = parents;
   lists["lengths"] = lengths;
@@ -221,10 +221,6 @@ void ConnectedComponentsSerial::compute_runs(int &run_number, VecList &lists, un
 
 SinkCC::SinkCC(IceGrid::ConstPtr g)
   :ConnectedComponents(g) {
-  //empty
-}
-
-SinkCC::~SinkCC() {
   //empty
 }
 

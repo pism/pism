@@ -47,7 +47,7 @@ bool FilterLakesCC::ForegroundCond(int i, int j) const {
   return (mask > 1);
 }
 
-void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
+void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) const {
   IceModelVec::AccessList list{&result};
 
   const auto
