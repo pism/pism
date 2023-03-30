@@ -11,7 +11,6 @@
 namespace pism {
 
 typedef std::map<std::string, std::vector<double> > VecList;
-typedef std::vector<IceModelVec*> FieldVec;
 typedef std::vector<const IceModelVec*> ConstFieldVec;
 
 class ConnectedComponentsBase {
@@ -42,7 +41,7 @@ public:
   virtual ~ConnectedComponents() = default;
 
 protected:
-  FieldVec m_masks;
+  std::vector<IceModelVec*> m_masks;
   ConstFieldVec m_fields;
   const int m_i_local_first, m_i_local_last, m_j_local_first, m_j_local_last,
             m_i_global_first, m_i_global_last, m_j_global_first, m_j_global_last;
