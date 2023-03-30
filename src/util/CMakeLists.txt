@@ -21,6 +21,7 @@ set(PISMUTIL_SRC
   Timeseries.cc
   VariableMetadata.cc
   connected_components_lakecc.cc
+  MaskCC.cc
   error_handling.cc
   iceModelVec.cc
   iceModelVec2.cc

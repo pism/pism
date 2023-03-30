@@ -22,7 +22,6 @@
 #include "pism/util/Vars.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_options.hh"
 
 #include "LakeCC.hh"
 #include "LakeLevel_ConnectedComponents.hh"

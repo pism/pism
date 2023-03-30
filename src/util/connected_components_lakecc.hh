@@ -93,20 +93,6 @@ protected:
   virtual void continueRun(int i, int j, int &run_number, VecList &lists);
 };
 
-class MaskCC : public SinkCC {
-public:
-  MaskCC(IceGrid::ConstPtr g);
-  ~MaskCC();
-  void compute_mask(IceModelVec2Int &mask);
-
-protected:
-  virtual bool ForegroundCond(int i, int j) const;
-
-private:
-  void labelOutMask(int run_number, const VecList &lists, IceModelVec2Int &result);
-};
-
-
 template <class CC>
 class ValidCC : public CC {
 public:
@@ -293,8 +279,10 @@ FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelV
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
   FilterExpansionCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
-  ~FilterExpansionCC();
+  virtual ~FilterExpansionCC() = default;
+
   void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
+
   void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
 
 protected:
@@ -316,8 +304,10 @@ private:
   void setRunMaxWl(double level, int run, VecList &lists);
   void labelMap(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
   void labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
-  void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level);
-  void set_mask_validity(int n_filter);
+
+  void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
+
+  void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
 
   inline bool isLake(double level) {
     return (level != m_fill_value);
