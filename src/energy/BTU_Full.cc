@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -111,11 +111,7 @@ void BTU_Full::init_impl(const InputOptions &opts) {
 
     regrid("bedrock thermal layer", *m_temp, REGRID_WITHOUT_REGRID_VARS);
 
-    if (m_temp->state_counter() == temp_revision) {
-      m_bootstrapping_needed = true;
-    } else {
-      m_bootstrapping_needed = false;
-    }
+    m_bootstrapping_needed = (m_temp->state_counter() == temp_revision);
   }
 
   update_flux_through_top_surface();

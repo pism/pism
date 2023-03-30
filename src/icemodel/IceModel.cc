@@ -139,7 +139,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
                                                                 "", // no standard name
                                                                 buffer_size,
                                                                 evaluations_per_year,
-                                                                surface_input.period);
+                                                                surface_input.period != 0U);
     m_surface_input_for_hydrology->set_attrs("diagnostic",
                                              "water input rate for the subglacial hydrology model",
                                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
@@ -624,7 +624,7 @@ void IceModel::step(bool do_mass_continuity,
 
   //! \li compute the bed deformation, which depends on current thickness, bed elevation,
   //! and sea level
-  if (m_beddef) {
+  if (m_beddef != nullptr) {
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
     profiling.begin("bed_deformation");
@@ -633,11 +633,7 @@ void IceModel::step(bool do_mass_continuity,
                      current_time, m_dt);
     profiling.end("bed_deformation");
 
-    if (m_beddef->bed_elevation().state_counter() != topg_state_counter) {
-      m_new_bed_elevation = true;
-    } else {
-      m_new_bed_elevation = false;
-    }
+    m_new_bed_elevation = (m_beddef->bed_elevation().state_counter() != topg_state_counter);
   } else {
     m_new_bed_elevation = false;
   }
@@ -786,7 +782,7 @@ void IceModel::run() {
   // This is needed to compute rates of change of the ice mass, volume, etc.
   {
     const double time = m_time->current();
-    for (auto d : m_ts_diagnostics) {
+    for (const auto& d : m_ts_diagnostics) {
       d.second->update(time, time);
     }
   }
@@ -948,7 +944,7 @@ void warn_about_missing(const Logger &log,
                         const std::set<std::string> &available,
                         bool stop) {
   std::vector<std::string> missing;
-  for (auto v : vars) {
+  for (const auto& v : vars) {
     if (available.find(v) == available.end()) {
       missing.push_back(v);
     }
@@ -968,14 +964,9 @@ void warn_about_missing(const Logger &log,
                                     join(missing, ",").c_str(),
                                     verb,
                                     set_join(available, ",\n- ").c_str());
-    } else {
-      log.message(2,
-                  "\nWARNING: %s variable%s %s %s not available!\n\n",
-                  type.c_str(),
-                  ending,
-                  join(missing, ",").c_str(),
-                  verb);
     }
+    log.message(2, "\nWARNING: %s variable%s %s %s not available!\n\n", type.c_str(), ending,
+                join(missing, ",").c_str(), verb);
   }
 }
 
@@ -991,7 +982,7 @@ void IceModel::prune_diagnostics() {
 
   // get the list of available diagnostics
   std::set<std::string> available;
-  for (auto d : m_diagnostics) {
+  for (const auto& d : m_diagnostics) {
     available.insert(d.first);
   }
 
@@ -1009,7 +1000,7 @@ void IceModel::prune_diagnostics() {
   requested = combine(requested, m_backup_vars);
 
   // de-allocate diagnostics that were not requested
-  for (auto v : available) {
+  for (const auto& v : available) {
     if (requested.find(v) == requested.end()) {
       m_diagnostics.erase(v);
     }
@@ -1021,7 +1012,7 @@ void IceModel::prune_diagnostics() {
     // use all diagnostics
   } else {
     TSDiagnosticList diagnostics;
-    for (auto v : m_ts_vars) {
+    for (const auto& v : m_ts_vars) {
       if (m_ts_diagnostics.find(v) != m_ts_diagnostics.end()) {
         diagnostics[v] = m_ts_diagnostics[v];
       } else {

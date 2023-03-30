@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2019 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2019, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,8 @@
 
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
+
+#include <cstddef>
 
 #include "IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
@@ -214,7 +216,7 @@ void IceModel::model_state_setup() {
   m_grid->variables().add(m_sea_level->elevation());
 
   // Initialize a bed deformation model.
-  if (m_beddef) {
+  if (m_beddef != nullptr) {
     m_beddef->init(input, m_geometry.ice_thickness, m_sea_level->elevation());
     m_grid->variables().add(m_beddef->bed_elevation());
     m_grid->variables().add(m_beddef->uplift());
@@ -310,7 +312,7 @@ void IceModel::model_state_setup() {
   // BOTTOM surface of the bedrock layer.
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
-  if (m_btu) {
+  if (m_btu != nullptr) {
     m_btu->init(input);
   }
 
@@ -378,7 +380,7 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  for (auto variable : m_model_state) {
+  for (auto *variable : m_model_state) {
     variable->read(input_file, last_record);
   }
 }
@@ -493,7 +495,7 @@ void IceModel::regrid() {
 
   {
     File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
-    for (auto v : m_model_state) {
+    for (auto *v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
       }
@@ -798,6 +800,7 @@ void IceModel::misc_setup() {
     // Here we use "long int" to avoid integer overflow.
     const long int two_to_thirty_two = 4294967296L;
     const long int
+      Kb = 1024,
       Mx = m_grid->Mx(),
       My = m_grid->My(),
       Mz = m_grid->Mz();
@@ -808,7 +811,7 @@ void IceModel::misc_setup() {
                                     "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
                                     "Please use '-o_format pnetcdf or -o_format netcdf4_parallel to proceed.",
-                                    Mx * My * Mz * sizeof(double) / (1024 * 1024));
+                                    Mx * My * Mz * sizeof(double) / (Kb * Kb));
     }
   }
 
@@ -854,14 +857,14 @@ void IceModel::misc_setup() {
   {
     // reset: this gives diagnostics a chance to capture the current state of the model at the
     // beginning of the run
-    for (auto d : m_diagnostics) {
+    for (const auto& d : m_diagnostics) {
       d.second->reset();
     }
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
       File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-      for (auto d : m_diagnostics) {
+      for (const auto& d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
     }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -102,11 +102,11 @@ void RuntimeError::print(MPI_Comm com) {
   padding = std::string(while_str.size() + 1, ' '); // 1 extra space
 
   // loop over "context" messages
-  for (auto j : m_context) {
+  for (const auto& j : m_context) {
     message = j;
 
     // replace newlines with newlines plus padding
-    k = message.find("\n", 0);
+    k = message.find('\n', 0);
     while (k != std::string::npos) {
       message.insert(k+1, padding);
       k = message.find("\n", k+1);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -105,7 +105,7 @@ protected:
 
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;
-protected:
+
   //! bedrock thermal layer temperature, in degrees Kelvin; part of state; uses equally-spaced
   //! layers.
   IceModelVec3Custom::Ptr m_temp;
