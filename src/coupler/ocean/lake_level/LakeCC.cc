@@ -445,13 +445,12 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
       if (mask::ocean(m_gc.mask(sl_ij, bed_ij, thk_ij))) {
         // Was lake and is now Ocean -> full Update
         return 2;
-      } else {
-        if (not mask::ocean(m_gc.mask(m_fill_value, bed_ij, thk_ij, lake_level_old(i, j)))) {
-          // If cell that was previously lake is not lake anymore -> remove
-          // label
-          lake_level(i, j) = m_fill_value;
-          return_value = 1;
-        }
+      }
+      if (not mask::ocean(m_gc.mask(m_fill_value, bed_ij, thk_ij, lake_level_old(i, j)))) {
+        // If cell that was previously lake is not lake anymore -> remove
+        // label
+        lake_level(i, j) = m_fill_value;
+        return_value     = 1;
       }
     }
   }
@@ -697,21 +696,21 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
                               const IceModelVec2S &thk,
                               const IceModelVec2S &min_level,
                               const IceModelVec2S &old_ll,
-                              const IceModelVec2S &sea_level,
+                              const IceModelVec2S &old_sl,
                               IceModelVec2S &min_basin,
                               IceModelVec2S &lake_level) {
 
   //Calculate basins that were filled by the ocean
   IceModelVec2S old_sl_basins(m_grid, "sl_basins", WITHOUT_GHOSTS);
   {
-    IceModelVec::AccessList list({ &old_sl_basins, &sea_level, &bed, &thk });
+    IceModelVec::AccessList list({ &old_sl_basins, &old_sl, &bed, &thk });
 
     ParallelSection ParSec(m_grid->com);
     try {
       for (Points p(*m_grid); p; p.next()) {
         const int i = p.i(), j = p.j();
-        if (mask::ocean(m_gc.mask(sea_level(i, j), bed(i, j), thk(i, j)))) {
-          old_sl_basins(i, j) = sea_level(i, j);
+        if (mask::ocean(m_gc.mask(old_sl(i, j), bed(i, j), thk(i, j)))) {
+          old_sl_basins(i, j) = old_sl(i, j);
         } else {
           old_sl_basins(i, j) = m_fill_value;
         }
