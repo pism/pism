@@ -28,10 +28,10 @@ void LakeLevelCC::computeLakeLevel(const double zMin, const double zMax, const d
   m_offset = offset;
   result.set(m_fill_value);
 
-  double lakeLevel = zMin;
-  while (lakeLevel <= zMax) {
-    fill2Level(lakeLevel, result);
-    lakeLevel += dz;
+  double z = zMin;
+  while (z <= zMax) {
+    fill2Level(z, result);
+    z += dz;
   }
 }
 
@@ -87,11 +87,7 @@ void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask) {
 }
 
 bool LakeLevelCC::ForegroundCond(int i, int j) const {
-  double bed = (*m_bed)(i, j),
-         thk = (*m_thk)(i, j);
-  int mask = m_mask_run.as_int(i, j);
-
-  return is_foreground(bed, thk, mask, m_level, m_offset);
+  return is_foreground((*m_bed)(i, j), (*m_thk)(i, j), m_mask_run.as_int(i, j), m_level, m_offset);
 }
 
 

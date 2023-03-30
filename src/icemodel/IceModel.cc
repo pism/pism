@@ -1047,12 +1047,12 @@ void IceModel::prune_diagnostics() {
  * Call this after prune_diagnostics() to avoid unnecessary work.
  */
 void IceModel::update_diagnostics(double dt) {
-  for (auto d : m_diagnostics) {
+  for (const auto &d : m_diagnostics) {
     d.second->update(dt);
   }
 
   const double time = m_time->current();
-  for (auto d : m_ts_diagnostics) {
+  for (const auto &d : m_ts_diagnostics) {
     d.second->update(time - dt, time);
   }
 }
@@ -1061,7 +1061,7 @@ void IceModel::update_diagnostics(double dt) {
  * Reset accumulators in diagnostics that compute time-averaged quantities.
  */
 void IceModel::reset_diagnostics() {
-  for (auto d : m_diagnostics) {
+  for (const auto &d : m_diagnostics) {
     d.second->reset();
   }
 }
