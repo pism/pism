@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,6 @@
 #include <cstring>              // memset
 
 #include "Blatter.hh"
-#include "pism/util/fem/FEM.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vector2d.hh"
 

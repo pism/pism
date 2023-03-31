@@ -21,6 +21,7 @@
 #define PISM_STAGGERED_H
 
 #include "pism/util/array/Array3D.hh"
+#include "pism/util/stencils.hh"
 
 namespace pism {
 

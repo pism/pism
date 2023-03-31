@@ -360,11 +360,11 @@ inline bool grid_edge(const IceGrid &grid, int i, int j) {
  */
 class PointsWithGhosts {
 public:
-  PointsWithGhosts(const IceGrid &g, unsigned int stencil_width = 1) {
-    m_i_first = g.xs() - stencil_width;
-    m_i_last  = g.xs() + g.xm() + stencil_width - 1;
-    m_j_first = g.ys() - stencil_width;
-    m_j_last  = g.ys() + g.ym() + stencil_width - 1;
+  PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width = 1) {
+    m_i_first = grid.xs() - stencil_width;
+    m_i_last  = grid.xs() + grid.xm() + stencil_width - 1;
+    m_j_first = grid.ys() - stencil_width;
+    m_j_last  = grid.ys() + grid.ym() + stencil_width - 1;
 
     m_i = m_i_first;
     m_j = m_j_first;

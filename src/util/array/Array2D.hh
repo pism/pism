@@ -21,6 +21,7 @@
 
 #include "Array.hh"
 #include "Array_helpers.hh"
+#include "pism/util/stencils.hh"
 
 namespace pism {
 

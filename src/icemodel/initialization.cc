@@ -23,7 +23,6 @@
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/OptTillphiYieldStress.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
@@ -37,15 +36,10 @@
 #include "pism/hydrology/SteadyState.hh"
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/sia/SIAFD.hh"
-#include "pism/stressbalance/ssa/SSAFD.hh"
-#include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/atmosphere/Factory.hh"
@@ -58,9 +52,7 @@
 #include "pism/earth/LingleClark.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/earth/Given.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
@@ -72,6 +64,7 @@
 #include "pism/coupler/frontalmelt/Factory.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 
@@ -272,7 +265,7 @@ void IceModel::model_state_setup() {
   // BOTTOM surface of the bedrock layer.
   //
   // The code then delays bootstrapping of the thickness field until the first time step.
-  if (m_btu) {
+  if (m_btu != nullptr) {
     m_btu->init(input);
   }
 
@@ -328,7 +321,7 @@ void IceModel::model_state_setup() {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_velocity_bc_mask.as_int(i, j)) {
+      if (m_velocity_bc_mask.as_int(i, j) != 0) {
         m_ice_thickness_bc_mask(i, j) = 1.0;
       }
     }
@@ -354,7 +347,7 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
-  for (auto variable : m_model_state) {
+  for (auto *variable : m_model_state) {
     variable->read(input_file, last_record);
   }
 }
@@ -461,7 +454,7 @@ void IceModel::regrid() {
 
   {
     File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
-    for (auto v : m_model_state) {
+    for (auto *v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, CRITICAL);
       }
@@ -817,14 +810,14 @@ void IceModel::misc_setup() {
   {
     // reset: this gives diagnostics a chance to capture the current state of the model at the
     // beginning of the run
-    for (auto d : m_diagnostics) {
+    for (const auto& d : m_diagnostics) {
       d.second->reset();
     }
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
       File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
-      for (auto d : m_diagnostics) {
+      for (const auto& d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
     }

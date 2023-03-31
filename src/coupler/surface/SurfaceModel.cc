@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -23,10 +23,7 @@
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
@@ -231,65 +228,65 @@ const array::Scalar& SurfaceModel::layer_thickness() const {
 const array::Scalar& SurfaceModel::accumulation_impl() const {
   if (m_input_model) {
     return m_input_model->accumulation();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& SurfaceModel::melt_impl() const {
   if (m_input_model) {
     return m_input_model->melt();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& SurfaceModel::runoff_impl() const {
   if (m_input_model) {
     return m_input_model->runoff();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& SurfaceModel::mass_flux_impl() const {
   if (m_input_model) {
     return m_input_model->mass_flux();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& SurfaceModel::temperature_impl() const {
   if (m_input_model) {
     return m_input_model->temperature();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& SurfaceModel::liquid_water_fraction_impl() const {
   if (m_input_model) {
     return m_input_model->liquid_water_fraction();
-  } else {
-    return *m_liquid_water_fraction;
   }
+
+  return *m_liquid_water_fraction;
 }
 
 const array::Scalar& SurfaceModel::layer_mass_impl() const {
   if (m_input_model) {
     return m_input_model->layer_mass();
-  } else {
-    return *m_layer_mass;
   }
+
+  return *m_layer_mass;
 }
 
 const array::Scalar& SurfaceModel::layer_thickness_impl() const {
   if (m_input_model) {
     return m_input_model->layer_thickness();
-  } else {
-    return *m_layer_thickness;
   }
+
+  return *m_layer_thickness;
 }
 
 void SurfaceModel::init(const Geometry &geometry) {
@@ -614,9 +611,9 @@ protected:
         m_melt_mass(i, j) = melt_amount(i, j) * cell_area;
       }
       return m_melt_mass;
-    } else {
-      return melt_amount;
     }
+
+    return melt_amount;
   }
 private:
   array::Scalar m_melt_mass;
@@ -674,9 +671,9 @@ protected:
         m_runoff_mass(i, j) = runoff_amount(i, j) * cell_area;
       }
       return m_runoff_mass;
-    } else {
-      return runoff_amount;
     }
+
+    return runoff_amount;
   }
 private:
   AmountKind m_kind;
@@ -734,9 +731,9 @@ protected:
         m_accumulation_mass(i, j) = accumulation_amount(i, j) * cell_area;
       }
       return m_accumulation_mass;
-    } else {
-      return accumulation_amount;
     }
+
+    return accumulation_amount;
   }
 private:
   AmountKind m_kind;

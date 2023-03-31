@@ -52,6 +52,7 @@
 #include "pism/geometry/GeometryEvolution.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/basalstrength/YieldStress.hh"
+#include "pism/util/ScalarForcing.hh" // for use with std::unique_ptr
 
 namespace pism {
 

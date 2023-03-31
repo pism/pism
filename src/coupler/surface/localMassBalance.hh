@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,7 @@
 #include <gsl/gsl_rng.h>
 
 #include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
+#include "pism/util/ConfigInterface.hh" // needed to get Config::ConstPtr
 
 namespace pism {
 namespace surface {
@@ -153,8 +154,6 @@ public:
                double accumulation);
 
 protected:
-  double CalovGreveIntegrand(double sigma, double TacC);
-
   //! interpret all the precipitation as snow (no rain)
   bool precip_as_snow;
   //! refreeze melted ice
@@ -187,7 +186,7 @@ public:
 
   PDDrandMassBalance(Config::ConstPtr config,
                      units::System::Ptr system,
-                     Kind repeatable);
+                     Kind kind);
   virtual ~PDDrandMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt);

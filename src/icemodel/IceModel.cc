@@ -26,27 +26,18 @@
 #include "IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/frontretreat/calving/CalvingAtThickness.hh"
-#include "pism/frontretreat/calving/EigenCalving.hh"
-#include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/HayhurstCalving.hh"
-#include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_signal.h"
 #include "pism/util/Vars.hh"
 #include "pism/util/Profiling.hh"
@@ -57,7 +48,6 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
-#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -96,7 +96,7 @@ protected:
   static array::Scalar::Ptr allocate_melt(IceGrid::ConstPtr grid);
   static array::Scalar::Ptr allocate_runoff(IceGrid::ConstPtr grid);
 
-protected:
+
   array::Scalar::Ptr m_liquid_water_fraction;
   array::Scalar::Ptr m_layer_mass;
   array::Scalar::Ptr m_layer_thickness;

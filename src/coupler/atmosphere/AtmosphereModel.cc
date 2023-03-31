@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -204,9 +204,8 @@ void AtmosphereModel::update_impl(const Geometry &geometry, double t, double dt)
 MaxTimestep AtmosphereModel::max_timestep_impl(double my_t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(my_t);
-  } else {
-    return MaxTimestep("atmosphere model");
   }
+  return MaxTimestep("atmosphere model");
 }
 
 DiagnosticList AtmosphereModel::diagnostics_impl() const {
@@ -248,17 +247,15 @@ void AtmosphereModel::write_model_state_impl(const File &output) const {
 const array::Scalar& AtmosphereModel::precipitation_impl() const {
   if (m_input_model) {
     return m_input_model->precipitation();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 const array::Scalar& AtmosphereModel::air_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->air_temperature();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 void AtmosphereModel::begin_pointwise_access_impl() const {

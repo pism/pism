@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,10 +23,8 @@
 
 #include "Cache.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Context.hh"
 
@@ -123,9 +121,9 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
   if (input_max_timestep.finite()) {
     return std::min(input_max_timestep, cache_dt);
-  } else {
-    return cache_dt;
   }
+
+  return cache_dt;
 }
 
 const array::Scalar &Cache::layer_thickness_impl() const {

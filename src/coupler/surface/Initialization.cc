@@ -19,7 +19,6 @@
 
 #include "Initialization.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Context.hh"
@@ -103,7 +102,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
     const unsigned int last_record = file.nrecords() - 1;
-    for (auto v : m_variables) {
+    for (auto *v : m_variables) {
       v->read(file, last_record);
     }
   } else {
@@ -114,7 +113,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
   // "-i ... -bootstrap -regrid_file ..."
-  for (auto v : m_variables) {
+  for (auto *v : m_variables) {
     regrid("surface model initialization helper", *v, REGRID_WITHOUT_REGRID_VARS);
   }
 }
@@ -166,14 +165,14 @@ const array::Scalar &InitializationHelper::runoff_impl() const {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  for (auto v : m_variables) {
+  for (auto *v : m_variables) {
     v->define(output);
   }
   m_input_model->define_model_state(output);
 }
 
 void InitializationHelper::write_model_state_impl(const File &output) const {
-  for (auto v : m_variables) {
+  for (auto *v : m_variables) {
     v->write(output);
   }
   m_input_model->write_model_state(output);

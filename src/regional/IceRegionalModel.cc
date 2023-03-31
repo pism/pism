@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,17 +18,9 @@
  */
 
 #include "IceRegionalModel.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "SSAFD_Regional.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "SIAFD_Regional.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/basalstrength/ConstantYieldStress.hh"
 #include "RegionalYieldStress.hh"
 #include "pism/util/io/File.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "EnthalpyModel_Regional.hh"
 #include "pism/energy/CHSystem.hh"
@@ -177,9 +169,9 @@ void IceRegionalModel::allocate_energy_model() {
     if (m_config->get_flag("energy.temperature_based")) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "pismr -regional does not support the '-energy cold' mode.");
-    } else {
-      m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
     }
+
+    m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
   } else {
     m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
   }

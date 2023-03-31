@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,7 +30,6 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Vars.hh"
 
@@ -576,7 +575,7 @@ protected:
     auto result = std::make_shared<array::Scalar>(m_grid, "insolation");
     result->metadata(0) = m_vars[0];
 
-    auto latitude = m_grid->variables().get_2d_scalar("latitude");
+    const auto *latitude = m_grid->variables().get_2d_scalar("latitude");
     auto ctx = m_grid->ctx();
 
     {
@@ -608,7 +607,7 @@ public:
     : DiagAverageRate<DEBMSimple>(m,
                                   kind == AMOUNT
                                   ? "debms_insolation_driven_melt_flux"
-                                  : "debms_insolation_driven_melt_flux",
+                                  : "debms_insolation_driven_melt_rate",
                                   TOTAL_CHANGE),
         m_kind(kind),
         m_melt_mass(m_grid, "debm_insolation_driven_melt_mass") {
@@ -616,7 +615,7 @@ public:
     std::string
       name          = "debms_insolation_driven_melt_flux",
       long_name     = "surface insolation melt, averaged over the reporting interval",
-      standard_name = "",
+      standard_name,
       accumulator_units = "kg m-2",
       internal_units = "kg m-2 second-1",
       external_units = "kg m-2 year-1";
@@ -671,7 +670,7 @@ public:
     std::string
       name          = "debms_temperature_driven_melt_flux",
       long_name     = "temperature-driven melt, averaged over the reporting interval",
-      standard_name = "",
+      standard_name,
       accumulator_units = "kg m-2",
       internal_units = "kg m-2 second-1",
       external_units = "kg m-2 year-1";

@@ -33,8 +33,6 @@
 #include "pism/util/Profiling.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
@@ -659,7 +657,7 @@ void  Array::end_access() const {
 
   if (m_array == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "Array::end_access(): a == NULL (looks like begin_acces() was not called)");
+                       "Array::end_access(): a == NULL (looks like begin_access() was not called)");
   }
 
   if (m_impl->access_counter < 0) {

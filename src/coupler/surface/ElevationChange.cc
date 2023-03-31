@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,6 @@
 #include "ElevationChange.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

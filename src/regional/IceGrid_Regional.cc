@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -60,13 +60,13 @@ static void subset_extent(const std::string& axis,
 
   validate_range(axis, x, x_min, x_max);
 
-  size_t x_start = gsl_interp_bsearch(&x[0], x_min, 0, x.size() - 1);
+  size_t x_start = gsl_interp_bsearch(x.data(), x_min, 0, x.size() - 1);
   // include one more point if we can
   if (x_start > 0) {
     x_start -= 1;
   }
 
-  size_t x_end = gsl_interp_bsearch(&x[0], x_max, 0, x.size() - 1);
+  size_t x_end = gsl_interp_bsearch(x.data(), x_max, 0, x.size() - 1);
   // include one more point if we can
   x_end = std::min(x.size() - 1, x_end + 1);
 
@@ -113,7 +113,7 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
     bool grid_info_found = false;
 
     File file(ctx->com(), options.filename, PISM_NETCDF3, PISM_READONLY);
-    for (auto name : names) {
+    for (const auto& name : names) {
 
       grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
@@ -160,11 +160,13 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
     input_grid.ownership_ranges_from_options(ctx->size());
 
     return IceGrid::Ptr(new IceGrid(ctx, input_grid));
-  } else if (x_range.is_set() ^ y_range.is_set()) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Please set both -x_range and -y_range.");
-  } else {
-    return IceGrid::FromOptions(ctx);
   }
+
+  if (x_range.is_set() ^ y_range.is_set()) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "Please set both -x_range and -y_range.");
+  }
+
+  return IceGrid::FromOptions(ctx);
 }
 
 

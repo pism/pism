@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2022 PISM Authors
+// Copyright (C) 2010--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -229,7 +229,7 @@ protected:
 
   virtual void update_impl(double dt) {
     // Here the "factor" is used to convert units (from m to kg m-2, for example) and (possibly)
-    // integrate over the time integral using the rectangle method.
+    // integrate over the time interval using the rectangle method.
 
     double factor = m_factor * (m_input_kind == TOTAL_CHANGE ? 1.0 : dt);
 

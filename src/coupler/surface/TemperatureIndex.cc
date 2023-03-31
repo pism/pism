@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,15 +21,11 @@
 #include "TemperatureIndex.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/Time.hh"
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/io/File.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
@@ -57,7 +53,7 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
 
   bool use_fausto_params     = m_config->get_flag("surface.pdd.fausto.enabled");
 
-  std::string method = m_config->get_string("surface.pdd.method");
+  auto method = m_config->get_string("surface.pdd.method");
 
   if (method == "repeatable_random_process") {
     m_mbscheme.reset(new PDDrandMassBalance(m_config, m_sys, PDDrandMassBalance::REPEATABLE));
@@ -72,11 +68,11 @@ TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
     m_base_pddStdDev = 2.53;
   }
 
-  std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
+  auto sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
     bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
-    int max_buffer_size = (unsigned int) m_config->get_number("input.forcing.buffer_size");
+    int max_buffer_size = (int) m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
     m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file,
@@ -147,12 +143,12 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
 
   // initialize the spatially-variable air temperature standard deviation
   {
-    std::string sd_file = m_config->get_string("surface.pdd.std_dev.file");
+    auto sd_file = m_config->get_string("surface.pdd.std_dev.file");
     if (sd_file.empty()) {
       m_log->message(2,
                      "  Using constant standard deviation of near-surface temperature.\n");
 
-      SpatialVariableMetadata attributes = m_air_temp_sd->metadata();
+      auto attributes = m_air_temp_sd->metadata();
       // replace with a constant array::Forcing:
       m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", m_base_pddStdDev);
       // restore metadata:
@@ -168,9 +164,9 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
   }
 
   // initializing the model state
-  InputOptions input = process_input_options(m_grid->com, m_config);
+  auto input = process_input_options(m_grid->com, m_config);
 
-  std::string firn_file = m_config->get_string("surface.pdd.firn_depth_file");
+  auto firn_file = m_config->get_string("surface.pdd.firn_depth_file");
 
   if (input.type == INIT_RESTART) {
     if (not firn_file.empty()) {
@@ -246,7 +242,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
   // set up air temperature and precipitation time series
-  int N = m_mbscheme->get_timeseries_length(dt);
+  auto N = static_cast<int>(m_mbscheme->get_timeseries_length(dt));
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), PDDs(N);
@@ -272,13 +268,13 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   const array::Scalar *latitude = nullptr;
-  if (fausto_greve or sigmalapserate != 0.0) {
+  if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
     latitude = &geometry.latitude;
 
     list.add(*latitude);
   }
 
-  if (fausto_greve) {
+  if (fausto_greve != nullptr) {
     const array::Scalar
       *longitude        = &geometry.latitude,
       *surface_altitude = &geometry.ice_surface_elevation;
@@ -329,7 +325,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         }
       }
 
-      if (fausto_greve) {
+      if (fausto_greve != nullptr) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
