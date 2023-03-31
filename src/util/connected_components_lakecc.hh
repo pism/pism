@@ -19,16 +19,23 @@ public:
 
 protected:
   const IceGrid::ConstPtr m_grid;
+
   IceModelVec2Int m_mask_run;
+
   void check_cell(int i, int j,
                   bool isWest, bool isSouth, int mask_w, int mask_s,
                   int &run_number, VecList &lists, unsigned int &max_items);
+
   virtual void init_VecList(VecList &lists, unsigned int size);
+
   virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+
   virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+
   virtual void mergeRuns(int run_number, int run_south, VecList &lists);
 
   virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
+
   virtual bool ForegroundCond(int i, int j) const = 0;
 
   static int trackParentRun(int run, const std::vector<double> &parents);
@@ -41,7 +48,9 @@ public:
 
 protected:
   std::vector<IceModelVec*> m_masks;
+
   std::vector<const IceModelVec*> m_fields;
+
   const int m_i_local_first, m_i_local_last, m_j_local_first, m_j_local_last,
             m_i_global_first, m_i_global_last, m_j_global_first, m_j_global_last;
 
@@ -276,29 +285,36 @@ public:
   FilterExpansionCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
   virtual ~FilterExpansionCC() = default;
 
-  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
+  void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask,
+                  IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
 
-  void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
+  void filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask,
+                   IceModelVec2S &min_basin, IceModelVec2S &max_water_level);
 
 protected:
-  virtual void init_VecList(VecList &lists, const unsigned int length);
-  virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(int i, int j,
-                                bool isNorth, bool isEast, bool isSouth, bool isWest,
-                                VecList &lists, bool &changed);
-  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
-  virtual bool ForegroundCond(int i, int j) const;
+  void init_VecList(VecList &lists, unsigned int length);
+  void labelMask(int run_number, const VecList &lists);
+  void treatInnerMargin(int i, int j, bool isNorth, bool isEast, bool isSouth, bool isWest, VecList &lists,
+                        bool &changed);
+  void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  void continueRun(int i, int j, int &run_number, VecList &lists);
+  bool ForegroundCond(int i, int j) const;
 
 private:
   const double m_fill_value;
+
   const IceModelVec2S *m_bed, *m_water_level;
+
   IceModelVec2S m_min_bed, m_max_wl;
 
   void setRunMinBed(double level, int run, VecList &lists);
-  void setRunMaxWl(double level, int run, VecList &lists);
-  void labelMap(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
-  void labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed, IceModelVec2S &max_wl);
+  void setRunMaxWl(double level, int run, VecList &lists) const;
+
+  void labelMap(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed,
+                IceModelVec2S &max_wl) const;
+
+  static void labelMap2(int run_number, const VecList &lists, IceModelVec2Int &mask, IceModelVec2S &min_bed,
+                        IceModelVec2S &max_wl);
 
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
 

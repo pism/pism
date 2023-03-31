@@ -221,7 +221,7 @@ void LakeCC::update_impl(const Geometry &geometry, double t, double dt) {
 
   //By default this is skipped
   if (!full_update) {
-    //Full update when patch iteration does not finish.
+    // Full update when patch iteration does not finish.
     full_update = iterativelyPatchTargetLevel(bed,
                                               thk,
                                               new_sl,
@@ -393,7 +393,6 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
                                        const IceModelVec2S &thk,
                                        const IceModelVec2S &sea_level,
                                        IceModelVec2S &lake_level) {
-  const Direction dirs[] = { North, East, South, West };
 
   IceModelVec2S lake_level_old(m_grid, "ll", WITH_GHOSTS, 1);
   lake_level_old.copy_from(lake_level);
@@ -414,8 +413,7 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
       unsigned int nLevel = 0;
       bool becomesLake    = false;
 
-      for (int n = 0; n < 4; ++n) {
-        const Direction direction = dirs[n];
+      for (auto direction : { North, East, South, West }) {
         if (m_gc.islake(ll_star[direction])) {
           if (Level != ll_star[direction]) {
             nLevel++;
@@ -431,10 +429,12 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
           }
         }
       }
+
       if ((nLevel > 0) and mask::ocean(m_gc.mask(sl_ij, bed_ij, thk_ij))) {
         // Cell is now ocean and is next to lakes -> recalculate
         return 2;
       }
+
       if (becomesLake) {
         // Set cell to become a lake
         lake_level(i, j) = Level;
@@ -445,6 +445,7 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
         // Was lake and is now Ocean -> full Update
         return 2;
       }
+
       if (not mask::ocean(m_gc.mask(m_fill_value, bed_ij, thk_ij, lake_level_old(i, j)))) {
         // If cell that was previously lake is not lake anymore -> remove
         // label
@@ -452,7 +453,8 @@ unsigned int LakeCC::patch_lake_levels(const IceModelVec2S &bed,
         return_value     = 1;
       }
     }
-  }
+
+  } // end of the loop over grid points
   // If function gets here all cells have been checked and patched
   return return_value;
 }
@@ -471,15 +473,11 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
     lakecc_bed.copy_from(bed);
   }
 
-
-
-  //do lake update
+  // do lake update
   {
     //Create PISM's mask
     IceModelVec2Int pism_mask(m_grid, "pism_mask", WITHOUT_GHOSTS);
     m_gc.compute_mask(sea_level, lakecc_bed, thk, pism_mask);
-
-
 
     if (m_check_sl_diagonal) {
       IceModelVec2Int mask_wide(m_grid, "mask_wide", WITH_GHOSTS);
@@ -500,7 +498,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
           for (int k = 0; k < 4; k++) {
             int i_diag = i + i_diagonals[k],
                 j_diag = j + j_diagonals[k];
-            if (mask::ocean(mask_wide(i_diag, j_diag))) {
+            if (mask::ocean(mask_wide.as_int(i_diag, j_diag))) {
               pism_mask(i, j) = m_gc.mask(sl_wide(i_diag, j_diag), lakecc_bed(i, j), thk(i, j));
               break;
             }
@@ -508,11 +506,10 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
         }
       }
       pism_mask.update_ghosts();
-    }
+    } // end of the "check_sl_diagonals" block
 
 
-
-    //Prepare validity mask. It marks areas invalid that are completely surrounded by ice.
+    // Prepare validity mask. It marks areas invalid that are completely surrounded by ice.
     IceModelVec2Int validity_mask(m_grid, "pism_mask", WITHOUT_GHOSTS);
     {
       IsolationCC IsoCC(m_grid, thk, m_icefree_thickness);
@@ -535,8 +532,6 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
       validity_mask.update_ghosts();
     }
 
-
-
     m_log->message(3, "->LakeCC: Update of Lake Levels! \n");
 
     ParallelSection ParSec(m_grid->com);
@@ -552,9 +547,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
     m_log->message(3, "          Done!\n");
   }
 
-
-
-  //Transfer back onto PISM topography
+  // Transfer back onto PISM topography
   if (m_use_topg_overlay) {
     IceModelVec::AccessList list({ &lake_level, &bed, &thk });
 
@@ -570,7 +563,6 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
       }
     }
   }
-
 
 
   //Filter lakes

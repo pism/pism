@@ -116,7 +116,7 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
     const int label = trackParentRun(k, parents);
     const double min_ll_label = min_ll[label],
                  max_ll_label = max_ll[label];
-    unsigned int j = j_vec[k];
+    int j = j_vec[k];
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n;
 

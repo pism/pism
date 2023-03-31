@@ -22,13 +22,16 @@
 namespace pism {
 
 FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, double fill_value)
-  : ValidCC<ConnectedComponents>(g), m_fill_value(fill_value) {
+  : ValidCC<ConnectedComponents>(g),
+    m_fill_value(fill_value) {
   //empty
 }
 
 void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
-  prepare_mask(lake_level);
-  set_mask_validity(n_filter, lake_level);
+  // m_mask_run will be used in compute_runs() via ForegroundCond()
+  prepare_mask(lake_level, m_mask_run);
+
+  set_mask_validity(n_filter, lake_level, m_mask_validity);
 
   VecList lists;
   unsigned int max_items = 2 * m_grid->ym();
@@ -70,49 +73,50 @@ void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S
   }
 }
 
-void FilterLakesCC::prepare_mask(const IceModelVec2S &lake_level) {
-  IceModelVec::AccessList list{ &m_mask_run, &lake_level};
+void FilterLakesCC::prepare_mask(const IceModelVec2S &lake_level, IceModelVec2Int &result) {
+  IceModelVec::AccessList list{ &result, &lake_level};
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     //Set sink, where pism_mask is ocean or at margin of computational domain
     if (isLake(lake_level(i, j))) {
-      m_mask_run(i, j) = 2;
+      result(i, j) = 2;
     } else {
-      m_mask_run(i, j) = 0;
+      result(i, j) = 0;
     }
   }
-  m_mask_run.update_ghosts();
+  result.update_ghosts();
 }
 
-void FilterLakesCC::set_mask_validity(int n_filter, const IceModelVec2S &lake_level) {
-  const Direction dirs[] = { North, East, South, West };
+void FilterLakesCC::set_mask_validity(int threshold, const IceModelVec2S &lake_level,
+                                      IceModelVec2Int &result) {
 
   IceModelVec2S ll_tmp(m_grid, "temp_lake_level", WITH_GHOSTS, 1);
   ll_tmp.copy_from(lake_level);
 
-  IceModelVec::AccessList list{ &m_mask_validity, &ll_tmp };
+  IceModelVec::AccessList list{ &result, &ll_tmp };
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int n_neighbors = 0;
     if (ll_tmp(i, j) != m_fill_value) {
-      StarStencil<double> lake_star = ll_tmp.star(i, j);
-      for (int n = 0; n < 4; ++n) {
-        const Direction direction = dirs[n];
-        if (lake_star[direction] != m_fill_value) {
+      auto level = ll_tmp.star(i, j);
+      for (auto direction : { North, East, South, West }) {
+        if (level[direction] != m_fill_value) {
           ++n_neighbors;
         }
       }
     }
-    //Set cell valid if number of neighbors exceeds threshold
-    if (n_neighbors >= n_filter) {
-      m_mask_validity(i, j) = 1;
+
+    // Set cell valid if the number of neighbors exceeds threshold
+    if (n_neighbors >= threshold) {
+      result(i, j) = 1;
     } else {
-      m_mask_validity(i, j) = 0;
+      result(i, j) = 0;
     }
-  }
-  m_mask_validity.update_ghosts();
+  } // end of the loop over grid points
+
+  result.update_ghosts();
 }
 
 } // end of namespace pism

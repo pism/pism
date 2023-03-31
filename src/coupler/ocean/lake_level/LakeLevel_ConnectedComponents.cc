@@ -3,8 +3,8 @@
 
 namespace pism {
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value)
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value)
   : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
@@ -13,9 +13,9 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelV
   m_mask_validity.set(1);
 }
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelVec2S &bed,
-                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, const double fill_value,
-                         const IceModelVec2Int &valid_mask)
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+                         const IceModelVec2S &thk, const IceModelVec2Int &pism_mask,
+                         double fill_value, const IceModelVec2Int &valid_mask)
   : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
@@ -24,7 +24,7 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, const double drho, const IceModelV
   m_mask_validity.copy_from(valid_mask);
 }
 
-void LakeLevelCC::computeLakeLevel(const double zMin, const double zMax, const double dz, const double offset, IceModelVec2S &result) {
+void LakeLevelCC::computeLakeLevel(double zMin, double zMax, double dz, double offset, IceModelVec2S &result) {
   m_offset = offset;
   result.set(m_fill_value);
 
@@ -49,7 +49,7 @@ void LakeLevelCC::fill2Level(const double level, IceModelVec2S &result) {
   labelMap(run_number, lists, result);
 }
 
-void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) {
+void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) const {
   IceModelVec::AccessList list{&result};
 
   const auto
@@ -59,13 +59,13 @@ void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &
     &parents    = lists.find("parents")->second,
     &valid_list = lists.find("valid")->second;
 
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    const bool validLake = ((label > 1) and (valid_list[label] > 0));
+  for (int k = 0; k <= run_number; ++k) {
+    int label      = trackParentRun(k, parents);
+    bool validLake = ((label > 1) and (valid_list[label] > 0));
     if (validLake) {
       const int j = j_vec[k];
-      for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
+      for (int n = 0; n < len_vec[k]; ++n) {
+        const int i  = i_vec[k] + n;
         result(i, j) = m_level;
       }
     }

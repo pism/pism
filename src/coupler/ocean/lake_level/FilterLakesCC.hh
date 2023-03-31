@@ -20,7 +20,7 @@
 #ifndef PISM_FILTERLAKESCC_H
 #define PISM_FILTERLAKESCC_H
 
-#include "LakeLevel_ConnectedComponents.hh"
+#include "pism/util/connected_components_lakecc.hh"
 
 namespace pism {
 
@@ -45,8 +45,9 @@ private:
   double m_fill_value;
 
   void labelMap(int run_number, const VecList &lists, IceModelVec2S &result) const;
-  void prepare_mask(const IceModelVec2S &lake_level);
-  void set_mask_validity(int n_filter, const IceModelVec2S &lake_level);
+  void prepare_mask(const IceModelVec2S &lake_level, IceModelVec2Int &result);
+  void set_mask_validity(int threshold, const IceModelVec2S &lake_level,
+                         IceModelVec2Int &result);
 
   inline bool isLake(double level) const {
     return (level != m_fill_value);
