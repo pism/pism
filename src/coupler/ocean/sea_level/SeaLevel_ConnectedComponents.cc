@@ -8,7 +8,18 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
                        const IceModelVec2S &thk,
                        const double fill_value)
   :FillingAlgCC<SinkCC>(g, drho, bed, thk, fill_value) {
-  prepare_mask();
+
+  // prepare the mask
+  {
+    IceModelVec::AccessList list{ &m_mask_run };
+    for (Points p(*m_grid); p; p.next()) {
+      const int i = p.i(), j = p.j();
+
+      // Set "sink" at a margin of the computational domain
+      m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
+    }
+    m_mask_run.update_ghosts();
+  }
 }
 
 SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
@@ -81,22 +92,11 @@ void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset,
   label(run_number, lists, result, 1);
 }
 
-void SeaLevelCC::prepare_mask() {
-  IceModelVec::AccessList list{&m_mask_run};
-  for (Points p(*m_grid); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    // Set "sink" at a margin of the computational domain
-    m_mask_run(i, j) = grid_edge(*m_grid, i, j) ? 1 : 0;
-  }
-  m_mask_run.update_ghosts();
-}
-
 bool SeaLevelCC::ForegroundCond(int i, int j) const {
   double bed = (*m_bed)(i, j),
          thk = (*m_thk)(i, j),
          sea_level = (*m_sea_level)(i, j);
-  int mask = m_mask_run(i, j);
+  int mask = m_mask_run.as_int(i, j);
 
   return is_foreground(bed, thk, mask, sea_level, m_offset);
 }

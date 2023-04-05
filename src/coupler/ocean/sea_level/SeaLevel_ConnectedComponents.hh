@@ -31,8 +31,6 @@ protected:
   const IceModelVec2S *m_sea_level;
   double m_offset;
 
-  void prepare_mask();
-
   virtual bool ForegroundCond(int i, int j) const;
 };
 
