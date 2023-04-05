@@ -22,10 +22,10 @@ public:
              const IceModelVec2S &bed,
              const IceModelVec2S &thk,
              const double fill_value);
-  ~SeaLevelCC();
+  virtual ~SeaLevelCC() = default;
   void computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset);
-  void computeSeaLevel(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2S &result);
-  void computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result);
+  void computeSeaLevel(const IceModelVec2S &SeaLevel, double Offset, IceModelVec2S &result);
+  void computeMask(const IceModelVec2S &SeaLevel, double Offset, IceModelVec2Int &result);
 
 protected:
   const IceModelVec2S *m_sea_level;

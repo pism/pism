@@ -21,10 +21,6 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
   m_mask_run.copy_from(run_mask);
 }
 
-SeaLevelCC::~SeaLevelCC() {
-  //empty
-}
-
 void SeaLevelCC::computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset) {
   computeSeaLevel(SeaLevel, Offset, SeaLevel);
 }
