@@ -42,7 +42,7 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, bool isWest, bool 
   }
 }
 
-int ConnectedComponentsBase::trackParentRun(int run, const std::vector<double> &parents) {
+int trackParentRun(int run, const std::vector<double> &parents) {
   while (parents[run] != 0) {
     run = static_cast<int>(parents[run]);
   }

@@ -12,6 +12,8 @@ namespace pism {
 
 typedef std::map<std::string, std::vector<double> > VecList;
 
+int trackParentRun(int run, const std::vector<double> &parents);
+
 class ConnectedComponentsBase {
 public:
   ConnectedComponentsBase(IceGrid::ConstPtr g);
@@ -37,8 +39,6 @@ protected:
   virtual void compute_runs(int &run_number, VecList &lists, unsigned int &max_items) = 0;
 
   virtual bool ForegroundCond(int i, int j) const = 0;
-
-  static int trackParentRun(int run, const std::vector<double> &parents);
 };
 
 class ConnectedComponents : public ConnectedComponentsBase {
@@ -148,7 +148,7 @@ void ValidCC<CC>::setRunValid(int run, VecList &lists) {
     return;
   }
 
-  run = CC::trackParentRun(run, lists["parents"]);
+  run = trackParentRun(run, lists["parents"]);
   if (run != 1) {
     lists["valid"][run] = 1;
   }
@@ -220,7 +220,7 @@ void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
     &valid_vec = lists.find("valid")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    const int label = CC::trackParentRun(k, parents);
+    const int label = trackParentRun(k, parents);
     const int label_valid = valid_vec[label];
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
