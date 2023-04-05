@@ -25,6 +25,28 @@ void SeaLevelCC::computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset) {
   computeSeaLevel(SeaLevel, Offset, SeaLevel);
 }
 
+static void label(int run_number, const VecList lists, IceModelVec2S &result, double value) {
+
+  IceModelVec::AccessList list{&result};
+
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if(label > 1) {
+      auto j = static_cast<int>(j_vec[k]);
+      for(int n = 0; n < len_vec[k]; ++n) {
+        auto i = static_cast<int>(i_vec[k]) + n;
+        result(i, j) = value;
+      }
+    }
+  }
+}
+
 void SeaLevelCC::computeSeaLevel(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2S &result) {
   m_sea_level = &SeaLevel;
   m_offset = Offset;
@@ -38,7 +60,7 @@ void SeaLevelCC::computeSeaLevel(const IceModelVec2S &SeaLevel, const double Off
   IceModelVec::AccessList list{ m_sea_level };
   compute_runs(run_number, lists, max_items);
 
-  labelSLMap(run_number, lists, result);
+  label(run_number, lists, result, m_fill_value);
 }
 
 void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result) {
@@ -54,52 +76,9 @@ void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset,
   IceModelVec::AccessList list{ m_sea_level };
   compute_runs(run_number, lists, max_items);
 
-  labelSLMask(run_number, lists, result);
-}
-
-void SeaLevelCC::labelSLMap(int run_number, const VecList lists, IceModelVec2S &result) {
-  IceModelVec::AccessList list{&result};
-
-  const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second;
-
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    if(label > 1) {
-      const int j = j_vec[k];
-      for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
-        result(i, j) = m_fill_value;
-      }
-    }
-  }
-}
-
-void SeaLevelCC::labelSLMask(int run_number, const VecList lists, IceModelVec2Int &result) {
-  //Init mask to 0
-  result.set(0);
-
-  IceModelVec::AccessList list{&result};
-
-  const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second;
-
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    if(label > 1) {
-      const int j = j_vec[k];
-      for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
-        result(i, j) = 1;
-      }
-    }
-  }
+  // Initialize the mask:
+  result.set(0.0);
+  label(run_number, lists, result, 1);
 }
 
 void SeaLevelCC::prepare_mask() {
