@@ -24,7 +24,6 @@
 #include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
 #include "pism/util/IceGrid.hh"
@@ -94,14 +93,14 @@ This integral is used for the expected number of positive degree days. The user 
 length `dt` instead of a whole year as stated in \ref CalovGreve05 . If `sigma` is zero,
 return the positive part of `TacC`.
  */
-double PDDMassBalance::CalovGreveIntegrand(double sigma, double TacC) {
+static double CalovGreveIntegrand(double sigma, double TacC) {
 
   if (sigma == 0) {
     return std::max(TacC, 0.0);
-  } else {
-    const double Z = TacC / (sqrt(2.0) * sigma);
-    return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
   }
+
+  const double Z = TacC / (sqrt(2.0) * sigma);
+  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 

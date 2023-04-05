@@ -125,7 +125,7 @@ public:
   virtual void run();
 
   /** Advance the current PISM run to a specific time */
-  virtual void run_to(double time);
+  virtual void run_to(double run_end);
 
   virtual void save_results();
 

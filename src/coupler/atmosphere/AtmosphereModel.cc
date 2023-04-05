@@ -207,9 +207,8 @@ void AtmosphereModel::update_impl(const Geometry &geometry, double t, double dt)
 MaxTimestep AtmosphereModel::max_timestep_impl(double my_t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(my_t);
-  } else {
-    return MaxTimestep("atmosphere model");
   }
+  return MaxTimestep("atmosphere model");
 }
 
 DiagnosticList AtmosphereModel::diagnostics_impl() const {

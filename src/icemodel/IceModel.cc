@@ -26,28 +26,19 @@
 #include "IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/frontretreat/calving/CalvingAtThickness.hh"
-#include "pism/frontretreat/calving/EigenCalving.hh"
-#include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/HayhurstCalving.hh"
-#include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/LakeLevel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_signal.h"
 #include "pism/util/Vars.hh"
 #include "pism/util/Profiling.hh"
@@ -114,7 +105,7 @@ IceModel::IceModel(IceGrid::Ptr g, Context::Ptr context)
 
   // allocate temporary storage
   {
-    const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+    auto WIDE_STENCIL = static_cast<int>(m_config->get_number("grid.max_stencil_width"));
 
     // various internal quantities
     // 2d work vectors
@@ -180,7 +171,7 @@ IceModel::~IceModel() {
 */
 void IceModel::allocate_storage() {
 
-  const unsigned int WIDE_STENCIL = m_config->get_number("grid.max_stencil_width");
+  auto WIDE_STENCIL = static_cast<int>(m_config->get_number("grid.max_stencil_width"));
 
   // FIXME: this should do for now, but we should pass a const reference to Geometry to sub-models
   // as a function argument.

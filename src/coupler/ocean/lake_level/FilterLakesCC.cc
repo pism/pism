@@ -64,9 +64,9 @@ void FilterLakesCC::labelMap(int run_number, const VecList &lists, IceModelVec2S
     const int label = trackParentRun(k, parents);
     const bool valid = (valid_list[label] > 0);
     if (not valid) {
-      const int j = j_vec[k];
+      auto j = static_cast<int>(j_vec[k]);
       for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
+        auto i = static_cast<int>(i_vec[k]) + n;
         result(i, j) = m_fill_value;
       }
     }

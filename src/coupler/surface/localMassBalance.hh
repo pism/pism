@@ -153,8 +153,6 @@ public:
                double accumulation);
 
 protected:
-  double CalovGreveIntegrand(double sigma, double TacC);
-
   bool precip_as_snow,          //!< interpret all the precipitation as snow (no rain)
     refreeze_ice_melt;          //!< refreeze melted ice
   double Tmin,             //!< the temperature below which all precipitation is snow
@@ -182,7 +180,7 @@ public:
 
   PDDrandMassBalance(Config::ConstPtr config,
                      units::System::Ptr system,
-                     Kind repeatable);
+                     Kind kind);
   virtual ~PDDrandMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt);

@@ -63,9 +63,9 @@ void IsolationCC::labelIsolatedSpots(int run_number, const VecList &lists, IceMo
   for(int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
     if (label == 1) {
-      const int j = j_vec[k];
+      auto j = static_cast<int>(j_vec[k]);
       for(int n = 0; n < len_vec[k]; ++n) {
-        const int i = i_vec[k] + n;
+        auto i = static_cast<int>(i_vec[k]) + n;
         result(i, j) = 1;
       }
     }

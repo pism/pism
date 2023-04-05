@@ -34,7 +34,6 @@ public:
 private:
   void update_impl(const Geometry &geometry, double t, double dt);
   void init_impl(const Geometry &geometry);
-
 };
 
 } // end of namespace lake_level

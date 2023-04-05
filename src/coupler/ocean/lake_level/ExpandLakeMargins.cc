@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 PISM Authors
+/* Copyright (C) 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,6 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
 
 #include "ExpandLakeMargins.hh"
