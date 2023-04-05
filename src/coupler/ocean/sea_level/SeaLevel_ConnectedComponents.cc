@@ -32,9 +32,6 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
   m_mask_run.copy_from(run_mask);
 }
 
-void SeaLevelCC::computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset) {
-  computeSeaLevel(SeaLevel, Offset, SeaLevel);
-}
 
 static void label(int run_number, const VecList lists, IceModelVec2S &result, double value) {
 
@@ -56,22 +53,6 @@ static void label(int run_number, const VecList lists, IceModelVec2S &result, do
       }
     }
   }
-}
-
-void SeaLevelCC::computeSeaLevel(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2S &result) {
-  m_sea_level = &SeaLevel;
-  m_offset = Offset;
-
-  VecList lists;
-  unsigned int max_items = 2 * m_grid->ym();
-  init_VecList(lists, max_items);
-
-  int run_number = 1;
-
-  IceModelVec::AccessList list{ m_sea_level };
-  compute_runs(run_number, lists, max_items);
-
-  label(run_number, lists, result, m_fill_value);
 }
 
 void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result) {
