@@ -294,7 +294,7 @@ FilterExpansionCC::FilterExpansionCC(IceGrid::ConstPtr g, const double fill_valu
 
 void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
   prepare_mask(current_level, target_level, m_mask_run);
-  set_mask_validity(4, m_mask_run, m_mask_validity);
+  connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
 
   VecList lists;
   unsigned int max_items = 2 * m_grid->ym();
@@ -310,7 +310,7 @@ void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const Ice
 void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
   {
     prepare_mask(current_level, target_level, m_mask_run);
-    set_mask_validity(4, m_mask_run, m_mask_validity);
+    connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
 
     VecList lists;
     unsigned int max_items = 2 * m_grid->ym();
@@ -325,7 +325,7 @@ void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const Ic
 
   {
     prepare_mask(target_level, current_level, m_mask_run);
-    set_mask_validity(4, m_mask_run, m_mask_validity);
+    connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
 
     VecList lists;
     unsigned int max_items = 2 * m_grid->ym();
@@ -566,21 +566,25 @@ void FilterExpansionCC::prepare_mask(const IceModelVec2S &current_level, const I
   result.update_ghosts();
 }
 
+
+namespace connected_components {
+
 /*!
  *
  * Set `result(i, j)` to 1 if `input(i, j) > 1` and at least `threshold` of its neighbors
  * have values greater than 1. Otherwise set `result(i, j)` to 0.
  */
-void FilterExpansionCC::set_mask_validity(int threshold, const IceModelVec2Int &input,
-                                          IceModelVec2Int &result) {
+void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result) {
+  auto grid = result.grid();
+
   IceModelVec::AccessList list{ &input, &result };
-  for (Points p(*m_grid); p; p.next()) {
+  for (Points p(*grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int n_neighbors = 0;
     if (input.as_int(i, j) > 1) {
       auto mask = input.int_star(i, j);
-      for (auto d : {North, East, South, West}) {
+      for (auto d : { North, East, South, West }) {
         if (mask[d] > 1) {
           ++n_neighbors;
         }
@@ -595,5 +599,29 @@ void FilterExpansionCC::set_mask_validity(int threshold, const IceModelVec2Int &
   }
   result.update_ghosts();
 }
+
+void label(int run_number, const VecList lists, IceModelVec2S &result, double value) {
+
+  IceModelVec::AccessList list{&result};
+
+  const auto
+    &i_vec   = lists.find("i")->second,
+    &j_vec   = lists.find("j")->second,
+    &len_vec = lists.find("lengths")->second,
+    &parents = lists.find("parents")->second;
+
+  for(int k = 0; k <= run_number; ++k) {
+    const int label = trackParentRun(k, parents);
+    if(label > 1) {
+      auto j = static_cast<int>(j_vec[k]);
+      for(int n = 0; n < len_vec[k]; ++n) {
+        auto i = static_cast<int>(i_vec[k]) + n;
+        result(i, j) = value;
+      }
+    }
+  }
+}
+
+} // end of namespace connected_components
 
 } //namespace pism

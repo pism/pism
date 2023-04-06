@@ -318,12 +318,15 @@ private:
 
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
 
-  void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
-
   inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 };
+
+namespace connected_components {
+void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
+void label(int run_number, VecList lists, IceModelVec2S &result, double value);
+} // end of namespace connected_components
 
 } //namespace pism
 
