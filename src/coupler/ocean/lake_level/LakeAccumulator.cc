@@ -74,7 +74,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
       //accumulate values
       for (int k = 0; k <= m_run_number; ++k) {
         const int j = j_vec[k];
-        const int label = trackParentRun(k, parents);
+        const int label = connected_components::trackParentRun(k, parents);
         for (unsigned int n = 0; n < len_vec[k]; ++n) {
           const int i = i_vec[k] + n;
           accumulator[label] += in_p0(i, j);
@@ -84,7 +84,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
       //label result
       for (int k = 0; k <= m_run_number; ++k) {
         const int j = j_vec[k];
-        const int label = trackParentRun(k, parents);
+        const int label = connected_components::trackParentRun(k, parents);
         for (unsigned int n = 0; n < len_vec[k]; ++n) {
           const int i = i_vec[k] + n;
           result_p0(i, j) = accumulator[label];

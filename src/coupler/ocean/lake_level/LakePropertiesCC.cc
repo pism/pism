@@ -70,7 +70,7 @@ void LakePropertiesCC::setRunMinLevel(double level, int run, VecList &lists) {
     return;
   }
 
-  run = trackParentRun(run, lists["parents"]);
+  run = connected_components::trackParentRun(run, lists["parents"]);
   if (isLake(level)) {
     if (isLake(lists["min_ll"][run])) {
       level = std::min(level, lists["min_ll"][run]);
@@ -84,7 +84,7 @@ void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
     return;
   }
 
-  run = trackParentRun(run, lists["parents"]);
+  run = connected_components::trackParentRun(run, lists["parents"]);
   if (isLake(level)) {
     if (isLake(lists["max_ll"][run])) {
       level = std::max(level, lists["max_ll"][run]);
@@ -113,7 +113,7 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
     &max_ll  = lists.find("max_ll")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
+    const int label = connected_components::trackParentRun(k, parents);
     const double min_ll_label = min_ll[label],
                  max_ll_label = max_ll[label];
     int j = j_vec[k];

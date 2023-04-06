@@ -1,8 +1,9 @@
-#ifndef _CONNECTEDCOMPONENTS_H_
-#define _CONNECTEDCOMPONENTS_H_
+#ifndef PISM_CONNECTED_COMPONENTS_LAKES_H
+#define PISM_CONNECTED_COMPONENTS_LAKES_H
 
 #include <vector>
 #include <map>
+#include <functional>           // std::function
 
 #include "pism/util/IceGrid.hh"
 #include "pism/util/iceModelVec.hh"
@@ -12,7 +13,18 @@ namespace pism {
 
 typedef std::map<std::string, std::vector<double> > VecList;
 
+namespace connected_components {
 int trackParentRun(int run, const std::vector<double> &parents);
+
+void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
+
+void set_labels(int run_number, VecList lists, IceModelVec2S &result);
+
+void replace_labels(IceModelVec2S &result,
+                    const std::function<bool(double)> &condition,
+                    double value);
+
+} // end of namespace connected_components
 
 class ConnectedComponentsBase {
 public:
@@ -148,7 +160,7 @@ void ValidCC<CC>::setRunValid(int run, VecList &lists) {
     return;
   }
 
-  run = trackParentRun(run, lists["parents"]);
+  run = connected_components::trackParentRun(run, lists["parents"]);
   if (run != 1) {
     lists["valid"][run] = 1;
   }
@@ -209,29 +221,20 @@ void ValidCC<CC>::mergeRuns(int run_number, int run_south, VecList &lists) {
 
 template <class CC>
 void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  list.add(CC::m_masks.begin(), CC::m_masks.end());
 
-  const auto
-    &i_vec     = lists.find("i")->second,
-    &j_vec     = lists.find("j")->second,
-    &len_vec   = lists.find("lengths")->second,
-    &parents   = lists.find("parents")->second,
-    &valid_vec = lists.find("valid")->second;
+  connected_components::set_labels(run_number, lists, CC::m_mask_run);
 
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    const int label_valid = valid_vec[label];
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      CC::m_mask_run(i, j) = label;
-      m_mask_validity(i, j) = label_valid;
-    }
+  IceModelVec::AccessList list{&(CC::m_mask_run), &m_mask_validity};
+
+  const auto &validity = lists.find("valid")->second;
+
+  for (Points p(*m_mask_validity.grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto label = static_cast<int>(CC::m_mask_run(i,j));
+    m_mask_validity(i, j) = validity[label];
   }
 }
-
-
-
 
 template<class CC>
 class FillingAlgCC : public CC {
@@ -323,11 +326,6 @@ private:
   }
 };
 
-namespace connected_components {
-void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
-void label(int run_number, VecList lists, IceModelVec2S &result, double value);
-} // end of namespace connected_components
-
 } //namespace pism
 
-#endif
+#endif  /* PISM_CONNECTED_COMPONENTS_LAKES_H */

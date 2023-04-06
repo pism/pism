@@ -38,14 +38,9 @@ public:
 
   void find_isolated_spots(IceModelVec2Int &result);
 
-protected:
-  virtual bool ForegroundCond(int i, int j) const;
-
-  static void labelIsolatedSpots(int run_number, const VecList &lists, IceModelVec2Int &result);
-
-  void prepare_mask(IceModelVec2Int &result);
-
 private:
+  bool ForegroundCond(int i, int j) const;
+
   const double m_thk_threshold;
   const IceModelVec2S *m_thk;
 };

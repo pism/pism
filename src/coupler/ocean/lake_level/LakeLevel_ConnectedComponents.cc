@@ -60,7 +60,7 @@ void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &
     &valid_list = lists.find("valid")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    int label      = trackParentRun(k, parents);
+    int label      = connected_components::trackParentRun(k, parents);
     bool validLake = ((label > 1) and (valid_list[label] > 0));
     if (validLake) {
       const int j = j_vec[k];

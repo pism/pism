@@ -1,3 +1,4 @@
+
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/error_handling.hh"
@@ -42,13 +43,6 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, bool isWest, bool 
   }
 }
 
-int trackParentRun(int run, const std::vector<double> &parents) {
-  while (parents[run] != 0) {
-    run = static_cast<int>(parents[run]);
-  }
-  return run;
-}
-
 void ConnectedComponentsBase::init_VecList(VecList &lists, unsigned int size) {
   std::vector<double> parents(size), lengths(size), j_vec(size), i_vec(size);
   lists["parents"] = parents;
@@ -87,8 +81,8 @@ void ConnectedComponentsBase::mergeRuns(int run_number, int run_south, VecList &
       return;
     }
 
-    run1 = trackParentRun(run1, parents);
-    run2 = trackParentRun(run2, parents);
+    run1 = connected_components::trackParentRun(run1, parents);
+    run2 = connected_components::trackParentRun(run2, parents);
 
     if (run1 > run2) {
       parents[run1] = run2;
@@ -152,7 +146,7 @@ void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
     &parents = lists.find("parents")->second;
 
   for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
+    const int label = connected_components::trackParentRun(k, parents);
     for (unsigned int n = 0; n < len_vec[k]; ++n) {
       const int i = i_vec[k] + n, j = j_vec[k];
       m_mask_run(i, j) = label;
@@ -230,7 +224,7 @@ void SinkCC::setRunSink(int run, std::vector<double> &parents) {
     return;
   }
 
-  run = trackParentRun(run, parents);
+  run = connected_components::trackParentRun(run, parents);
   if (run != 1) {
     parents[run] = 1;
   }
@@ -363,7 +357,7 @@ void FilterExpansionCC::setRunMinBed(double level, int run, VecList &lists) {
     return;
   }
 
-  run = trackParentRun(run, lists["parents"]);
+  run = connected_components::trackParentRun(run, lists["parents"]);
   if (isLake(level)) {
     if (isLake(lists["min_bed"][run])) {
       level = std::min(level, lists["min_bed"][run]);
@@ -378,7 +372,7 @@ void FilterExpansionCC::setRunMaxWl(double level, int run, VecList &lists) const
   }
 
   if (level != m_fill_value) {
-    run = trackParentRun(run, lists["parents"]);
+    run = connected_components::trackParentRun(run, lists["parents"]);
     if (lists["max_wl"][run] != m_fill_value) {
       level = std::max(level, lists["max_wl"][run]);
     }
@@ -387,31 +381,25 @@ void FilterExpansionCC::setRunMaxWl(double level, int run, VecList &lists) const
 }
 
 void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  list.add(m_masks.begin(), m_masks.end());
+  // set m_mask_run to labels in `lists`:
+  connected_components::set_labels(run_number, lists, m_mask_run);
+
+  // use labels in m_mask_run to set other fields:
+  IceModelVec::AccessList list{&m_mask_run, &m_mask_validity, &m_min_bed, &m_max_wl};
 
   const auto
-    &i_vec     = lists.find("i")->second,
-    &j_vec     = lists.find("j")->second,
-    &len_vec   = lists.find("lengths")->second,
-    &parents   = lists.find("parents")->second,
-    &valid_vec = lists.find("valid")->second,
+    &validity = lists.find("valid")->second,
     &min_bed   = lists.find("min_bed")->second,
     &max_wl    = lists.find("max_wl")->second;
 
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    const int label_valid = valid_vec[label];
-    const double min_bed_label = min_bed[label],
-                 max_wl_label  = max_wl[label];
-    const int j = j_vec[k];
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n;
-      m_mask_run(i, j) = label;
-      m_mask_validity(i, j) = label_valid;
-      m_min_bed(i, j) = min_bed_label;
-      m_max_wl(i, j)  = max_wl_label;
-    }
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto label = static_cast<int>(m_mask_run(i, j));
+
+    m_mask_validity(i, j) = validity[label];
+    m_min_bed(i, j)       = min_bed[label];
+    m_max_wl(i, j)        = max_wl[label];
   }
 }
 
@@ -498,7 +486,7 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
              &max_wl_list = lists.find("max_wl")->second;
 
   for(int k = 0; k <= run_number; ++k) {
-    int label = trackParentRun(k, parents);
+    int label = connected_components::trackParentRun(k, parents);
     if (label > 1) {
      int j = j_vec[k];
      bool valid = (valid_list[label] > 0);
@@ -530,7 +518,7 @@ void FilterExpansionCC::labelMap2(int run_number, const VecList &lists,
     &max_wl_list  = lists.find("max_wl")->second;
 
   for(int k = 0; k <= run_number; ++k) {
-    int label = trackParentRun(k, parents);
+    int label = connected_components::trackParentRun(k, parents);
     if (label > 1) {
       int j                = j_vec[k];
       bool valid           = (valid_list[label] > 0);
@@ -600,7 +588,29 @@ void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2
   result.update_ghosts();
 }
 
-void label(int run_number, const VecList lists, IceModelVec2S &result, double value) {
+/*!
+ * Replace values in result that satisfy `condition` with `value.`
+ */
+void replace_labels(IceModelVec2S &result,
+                    const std::function<bool(double)> &condition, double value) {
+
+  IceModelVec::AccessList list{&result};
+
+  for (Points p(*result.grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (condition(result(i, j))) {
+      result(i, j) = value;
+    }
+  }
+}
+
+/*!
+ * Set the mask in `result` to labels recorded in `lists`, assuming that `lists` has info
+ * about `run_number` runs.
+ */
+void set_labels(int run_number, VecList lists, IceModelVec2S &result) {
+  result.set(0.0);
 
   IceModelVec::AccessList list{&result};
 
@@ -610,16 +620,21 @@ void label(int run_number, const VecList lists, IceModelVec2S &result, double va
     &len_vec = lists.find("lengths")->second,
     &parents = lists.find("parents")->second;
 
-  for(int k = 0; k <= run_number; ++k) {
+  for (int k = 0; k <= run_number; ++k) {
     const int label = trackParentRun(k, parents);
-    if(label > 1) {
-      auto j = static_cast<int>(j_vec[k]);
-      for(int n = 0; n < len_vec[k]; ++n) {
-        auto i = static_cast<int>(i_vec[k]) + n;
-        result(i, j) = value;
-      }
+    auto j = static_cast<int>(j_vec[k]);
+    for (int n = 0; n < len_vec[k]; ++n) {
+      auto i = static_cast<int>(i_vec[k]) + n;
+      result(i, j) = label;
     }
   }
+}
+
+int trackParentRun(int run, const std::vector<double> &parents) {
+  while (parents[run] != 0) {
+    run = static_cast<int>(parents[run]);
+  }
+  return run;
 }
 
 } // end of namespace connected_components

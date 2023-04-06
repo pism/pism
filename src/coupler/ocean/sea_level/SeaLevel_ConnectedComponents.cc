@@ -37,7 +37,10 @@ void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset,
 
   // Initialize the mask:
   result.set(0.0);
-  connected_components::label(run_number, lists, result, 1);
+  connected_components::set_labels(run_number, lists, result);
+  connected_components::replace_labels(result,
+                                       [](double label) { return label > 1; },
+                                       1);
 }
 
 bool SeaLevelCC::ForegroundCond(int i, int j) const {
