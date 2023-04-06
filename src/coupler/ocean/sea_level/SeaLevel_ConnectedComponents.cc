@@ -22,39 +22,6 @@ SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
   }
 }
 
-SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
-                       const double drho,
-                       const IceModelVec2S &bed,
-                       const IceModelVec2S &thk,
-                       const IceModelVec2Int &run_mask,
-                       const double fill_value)
-  :FillingAlgCC<SinkCC>(g, drho, bed, thk, fill_value) {
-  m_mask_run.copy_from(run_mask);
-}
-
-
-static void label(int run_number, const VecList lists, IceModelVec2S &result, double value) {
-
-  IceModelVec::AccessList list{&result};
-
-  const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second;
-
-  for(int k = 0; k <= run_number; ++k) {
-    const int label = trackParentRun(k, parents);
-    if(label > 1) {
-      auto j = static_cast<int>(j_vec[k]);
-      for(int n = 0; n < len_vec[k]; ++n) {
-        auto i = static_cast<int>(i_vec[k]) + n;
-        result(i, j) = value;
-      }
-    }
-  }
-}
-
 void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset, IceModelVec2Int &result) {
   m_sea_level = &SeaLevel;
   m_offset = Offset;
@@ -70,7 +37,7 @@ void SeaLevelCC::computeMask(const IceModelVec2S &SeaLevel, const double Offset,
 
   // Initialize the mask:
   result.set(0.0);
-  label(run_number, lists, result, 1);
+  connected_components::label(run_number, lists, result, 1);
 }
 
 bool SeaLevelCC::ForegroundCond(int i, int j) const {

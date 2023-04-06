@@ -12,19 +12,12 @@ namespace pism {
 class SeaLevelCC : public FillingAlgCC<SinkCC> {
 public:
   SeaLevelCC(IceGrid::ConstPtr g,
-             const double drho,
+             double drho,
              const IceModelVec2S &bed,
              const IceModelVec2S &thk,
-             const IceModelVec2Int &run_mask,
-             const double fill_value);
-  SeaLevelCC(IceGrid::ConstPtr g,
-             const double drho,
-             const IceModelVec2S &bed,
-             const IceModelVec2S &thk,
-             const double fill_value);
+             double fill_value);
   virtual ~SeaLevelCC() = default;
-  void computeSeaLevel(IceModelVec2S &SeaLevel, const double Offset);
-  void computeSeaLevel(const IceModelVec2S &SeaLevel, double Offset, IceModelVec2S &result);
+
   void computeMask(const IceModelVec2S &SeaLevel, double Offset, IceModelVec2Int &result);
 
 protected:
