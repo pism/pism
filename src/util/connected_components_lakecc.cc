@@ -4,6 +4,7 @@
 #include "pism/util/error_handling.hh"
 
 #include "connected_components_lakecc.hh"
+#include <functional>
 
 namespace pism {
 
@@ -288,7 +289,10 @@ FilterExpansionCC::FilterExpansionCC(IceGrid::ConstPtr g, const double fill_valu
 
 void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
   prepare_mask(current_level, target_level, m_mask_run);
-  connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
+  connected_components::set_validity_mask(4,
+                                          m_mask_run,
+                                          [](double value) { return value > 1; },
+                                          m_mask_validity);
 
   VecList lists;
   unsigned int max_items = 2 * m_grid->ym();
@@ -304,7 +308,10 @@ void FilterExpansionCC::filter_ext(const IceModelVec2S &current_level, const Ice
 void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask, IceModelVec2S &min_basin, IceModelVec2S &max_water_level) {
   {
     prepare_mask(current_level, target_level, m_mask_run);
-    connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
+    connected_components::set_validity_mask(4,
+                                            m_mask_run,
+                                            [](double value) { return value > 1; },
+                                            m_mask_validity);
 
     VecList lists;
     unsigned int max_items = 2 * m_grid->ym();
@@ -319,7 +326,10 @@ void FilterExpansionCC::filter_ext2(const IceModelVec2S &current_level, const Ic
 
   {
     prepare_mask(target_level, current_level, m_mask_run);
-    connected_components::set_mask_validity(4, m_mask_run, m_mask_validity);
+    connected_components::set_validity_mask(4,
+                                            m_mask_run,
+                                            [](double value) { return value > 1; },
+                                            m_mask_validity);
 
     VecList lists;
     unsigned int max_items = 2 * m_grid->ym();
@@ -562,29 +572,32 @@ namespace connected_components {
  * Set `result(i, j)` to 1 if `input(i, j) > 1` and at least `threshold` of its neighbors
  * have values greater than 1. Otherwise set `result(i, j)` to 0.
  */
-void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result) {
-  auto grid = result.grid();
+void set_validity_mask(int threshold, const IceModelVec2S &input,
+                       const std::function<bool(double)> &condition,
+                       IceModelVec2S &result) {
 
   IceModelVec::AccessList list{ &input, &result };
-  for (Points p(*grid); p; p.next()) {
+  for (Points p(*result.grid()); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     int n_neighbors = 0;
-    if (input.as_int(i, j) > 1) {
-      auto mask = input.int_star(i, j);
-      for (auto d : { North, East, South, West }) {
-        if (mask[d] > 1) {
+    if (condition(input(i, j))) {
+      auto S = input.star(i, j);
+      for (auto direction : { North, East, South, West }) {
+        if (condition(S[direction])) {
           ++n_neighbors;
         }
       }
     }
+
     // Consider a cell to be "valid" if its number of neighbors exceeds the `threshold`.
     if (n_neighbors >= threshold) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;
     }
-  }
+  } // end of the loop over grid points
+
   result.update_ghosts();
 }
 

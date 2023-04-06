@@ -38,20 +38,10 @@ public:
   virtual ~FilterLakesCC() = default;
   void filter_map(int n_filter, IceModelVec2S &lake_level);
 
-protected:
-  virtual bool ForegroundCond(int i, int j) const;
-
 private:
+  bool ForegroundCond(int i, int j) const;
+
   double m_fill_value;
-
-  void labelMap(int run_number, const VecList &lists, IceModelVec2S &result) const;
-  void prepare_mask(const IceModelVec2S &lake_level, IceModelVec2Int &result);
-  void set_mask_validity(int threshold, const IceModelVec2S &lake_level,
-                         IceModelVec2Int &result);
-
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
 };
 
 } // end of namespace pism

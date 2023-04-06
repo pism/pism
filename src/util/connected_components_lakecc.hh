@@ -14,9 +14,13 @@ namespace pism {
 typedef std::map<std::string, std::vector<double> > VecList;
 
 namespace connected_components {
+
 int trackParentRun(int run, const std::vector<double> &parents);
 
-void set_mask_validity(int threshold, const IceModelVec2Int &input, IceModelVec2Int &result);
+void set_validity_mask(int threshold,
+                       const IceModelVec2S &input,
+                       const std::function<bool(double)> &condition,
+                       IceModelVec2S &result);
 
 void set_labels(int run_number, VecList lists, IceModelVec2S &result);
 
