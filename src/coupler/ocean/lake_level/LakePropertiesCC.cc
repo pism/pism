@@ -125,50 +125,41 @@ void LakePropertiesCC::treatInnerMargin(int i, int j,
   ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
   int run = m_mask_run.as_int(i, j);
+
+  auto min = [this](double a, double b) {
+    return (isLake(a) and ((a < b) or not isLake(b))) ? a : b;
+  };
+
+  auto max = [this](double a, double b) {
+    return (isLake(a) and ((a > b) or not isLake(b))) ? a : b;
+  };
+
+  StarStencil<bool> flags;
+  flags.e = isEast;
+  flags.w = isWest;
+  flags.n = isNorth;
+  flags.s = isSouth;
+
   if (run > 0) {
-    StarStencil<double> min_ll_star  = m_min_lakelevel.star(i, j),
-                        max_ll_star  = m_max_lakelevel.star(i, j);
+    StarStencil<double> min_ll  = m_min_lakelevel.star(i, j),
+                        max_ll  = m_max_lakelevel.star(i, j);
 
-    double min_level = min_ll_star.ij,
-           max_level = max_ll_star.ij;
+    double min_level = min_ll.ij,
+           max_level = max_ll.ij;
 
-    if (isWest) {
-      if (isLake(min_ll_star.w) and ((min_ll_star.w < min_level) or not isLake(min_level))) {
-        min_level = min_ll_star.w;
-      }
-      if (isLake(max_ll_star.w) and ((max_ll_star.w > max_level) or not isLake(max_level))) {
-        max_level = max_ll_star.w;
+    for (auto d : {North, East, South, West}) {
+      if (flags[d]) {
+        min_level = min(min_ll[d], min_level);
+        max_level = max(min_ll[d], min_level);
       }
     }
-    if (isNorth) {
-      if (isLake(min_ll_star.n) and ((min_ll_star.n < min_level) or not isLake(min_level))) {
-        min_level = min_ll_star.n;
-      }
-      if (isLake(max_ll_star.n) and ((max_ll_star.n > max_level) or not isLake(max_level))) {
-        max_level = max_ll_star.n;
-      }
-    }
-    if (isEast) {
-      if (isLake(min_ll_star.e) and ((min_ll_star.e < min_level) or not isLake(min_level))) {
-        min_level = min_ll_star.e;
-      }
-      if (isLake(max_ll_star.e) and ((max_ll_star.e > max_level) or not isLake(max_level))) {
-        max_level = max_ll_star.e;
-      }
-    }
-    if (isSouth) {
-      if (isLake(min_ll_star.s) and ((min_ll_star.s < min_level) or not isLake(min_level))) {
-        min_level = min_ll_star.s;
-      }
-      if (isLake(max_ll_star.s) and ((max_ll_star.s > max_level) or not isLake(max_level))) {
-        max_level = max_ll_star.s;
-      }
-    }
-    if (min_level != min_ll_star.ij) {
+
+    if (min_level != min_ll.ij) {
       setRunMinLevel(min_level, run, lists);
       changed = true;
     }
-    if (max_level != max_ll_star.ij) {
+
+    if (max_level != max_ll.ij) {
       setRunMaxLevel(max_level, run, lists);
       changed = true;
     }
