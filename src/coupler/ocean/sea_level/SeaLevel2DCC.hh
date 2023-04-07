@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -58,7 +58,7 @@ private:
   double m_max_fill_rate,
          m_next_update_time,
          m_sl_offset,
-         m_drho;
+         m_density_ratio;
 
   void update_mask(const IceModelVec2S &bed,
                    const IceModelVec2S &thk,

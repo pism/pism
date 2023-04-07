@@ -67,7 +67,7 @@ LakeCC::LakeCC(IceGrid::ConstPtr g)
 
   const double ice_density        = m_config->get_number("constants.ice.density"),
                freshwater_density = m_config->get_number("constants.fresh_water.density");
-  m_drho = ice_density / freshwater_density;
+  m_density_ratio = ice_density / freshwater_density;
 
   m_lake_level_min = m_config->get_number(m_option + ".zmin");
   m_lake_level_max = m_config->get_number(m_option + ".zmax");
@@ -537,7 +537,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
     ParallelSection ParSec(m_grid->com);
     try {
       // Initialze LakeCC Model
-      LakeLevelCC LM(m_grid, m_drho, bed, thk, pism_mask, m_fill_value, validity_mask);
+      LakeLevelCC LM(m_grid, m_density_ratio, bed, thk, pism_mask, m_fill_value, validity_mask);
       LM.computeLakeLevel(m_lake_level_min, m_lake_level_max, m_lake_level_dh, lake_level);
     } catch (...) {
       ParSec.failed();
@@ -823,7 +823,7 @@ void LakeCC::gradually_fill(const double dt,
           } else {
             if (mask::ocean(m_gc.mask(sea_level(i, j), bed(i, j), thk(i, j), current_ij))) {
               // if "real" lake, gradually empty it to floatation level
-              target_ij = bed(i, j) + m_drho * thk(i, j);
+              target_ij = bed(i, j) + m_density_ratio * thk(i, j);
             } else {
               //else (if it is below floatation level) immediately get rid of it.
               target_ij = current_ij;

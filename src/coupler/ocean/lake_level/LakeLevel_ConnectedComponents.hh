@@ -14,10 +14,10 @@ class IceModelVec2CellType;
  */
 class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
-  LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+  LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
               const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value);
 
-  LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+  LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
               const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value,
               const IceModelVec2Int &valid_mask);
 

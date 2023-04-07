@@ -3,9 +3,9 @@
 
 namespace pism {
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
                          const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value)
-  : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
+  : FillingAlgCC<ValidCC<SinkCC> >(g, density_ratio, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);
@@ -13,10 +13,10 @@ LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &
   m_mask_validity.set(1);
 }
 
-LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed,
+LakeLevelCC::LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
                          const IceModelVec2S &thk, const IceModelVec2Int &pism_mask,
                          double fill_value, const IceModelVec2Int &valid_mask)
-  : FillingAlgCC<ValidCC<SinkCC> >(g, drho, bed, thk, fill_value) {
+  : FillingAlgCC<ValidCC<SinkCC> >(g, density_ratio, bed, thk, fill_value) {
   IceModelVec2CellType pism_mask_type;
   pism_mask_type.create(m_grid, "pism_mask", WITHOUT_GHOSTS);
   pism_mask_type.copy_from(pism_mask);

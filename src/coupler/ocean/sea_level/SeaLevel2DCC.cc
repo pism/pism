@@ -47,7 +47,7 @@ SeaLevel2DCC::SeaLevel2DCC(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> in)
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
-  m_drho = ice_density/ocean_density;
+  m_density_ratio = ice_density/ocean_density;
 
   m_topg_overlay.set_attrs("internal",
                            "topography overlay",
@@ -204,7 +204,7 @@ void SeaLevel2DCC::update_mask(const IceModelVec2S &bed,
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeCC Model
-    SeaLevelCC SLM(m_grid, m_drho, sl2dcc_bed, thk, m_fill_value);
+    SeaLevelCC SLM(m_grid, m_density_ratio, sl2dcc_bed, thk, m_fill_value);
     SLM.computeMask(sea_level, m_sl_offset, mask);
   } catch (...) {
     ParSec.failed();
@@ -307,7 +307,7 @@ void SeaLevel2DCC::gradually_fill(const double dt,
           const double dh_ij = m_gc.islake(target_ij) ? (current_ij - target_ij) : dh_max,
                        new_level = current_ij - std::min(dh_max, dh_ij);
 
-          if ( (new_level < (bed(i, j) + m_drho * thk(i, j))) and not m_gc.islake(target_ij) ) {
+          if ( (new_level < (bed(i, j) + m_density_ratio * thk(i, j))) and not m_gc.islake(target_ij) ) {
             //Ocean basin vanishes
             sea_level(i, j) = m_fill_value;
           } else {

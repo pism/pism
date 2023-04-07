@@ -12,7 +12,7 @@ namespace pism {
 class SeaLevelCC : public FillingAlgCC<SinkCC> {
 public:
   SeaLevelCC(IceGrid::ConstPtr g,
-             double drho,
+             double density_ratio,
              const IceModelVec2S &bed,
              const IceModelVec2S &thk,
              double fill_value);

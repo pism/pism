@@ -244,10 +244,10 @@ void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
 template<class CC>
 class FillingAlgCC : public CC {
 public:
-  FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value);
+  FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value);
   virtual ~FillingAlgCC() = default;
 protected:
-  double m_drho, m_fill_value;
+  double m_density_ratio, m_fill_value;
   const IceModelVec2S *m_bed, *m_thk;
 
   virtual bool is_foreground(double bed, double thk, int mask, double Level, double Offset) const {
@@ -264,14 +264,14 @@ protected:
       level += Offset;
     }
 
-    return ((bed + (m_drho * thk)) < level);
+    return ((bed + (m_density_ratio * thk)) < level);
   }
 };
 
 template<class CC>
-FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double drho, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value)
+FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value)
   : CC(g),
-    m_drho(drho),
+    m_density_ratio(density_ratio),
     m_fill_value(fill_value),
     m_bed(&bed),
     m_thk(&thk) {

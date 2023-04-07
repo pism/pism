@@ -51,7 +51,7 @@ private:
 
   double m_next_update_time,
          m_icefree_thickness,
-         m_drho,
+         m_density_ratio,
          m_lake_level_min,
          m_lake_level_max,
          m_lake_level_dh,

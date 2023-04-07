@@ -3,11 +3,11 @@
 namespace pism{
 
 SeaLevelCC::SeaLevelCC(IceGrid::ConstPtr g,
-                       const double drho,
+                       const double density_ratio,
                        const IceModelVec2S &bed,
                        const IceModelVec2S &thk,
                        const double fill_value)
-  :FillingAlgCC<SinkCC>(g, drho, bed, thk, fill_value) {
+  :FillingAlgCC<SinkCC>(g, density_ratio, bed, thk, fill_value) {
 
   // prepare the mask
   {
