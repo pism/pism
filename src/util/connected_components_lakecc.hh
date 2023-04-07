@@ -28,6 +28,13 @@ void replace_values(IceModelVec2S &result,
                     const std::function<bool(double)> &condition,
                     double value);
 
+//! value used to mark locations where a field has no meaning
+const double invalid = -2e9;
+
+inline bool is_valid(double value) {
+  return value != invalid;
+}
+
 } // end of namespace connected_components
 
 class ConnectedComponentsBase {
