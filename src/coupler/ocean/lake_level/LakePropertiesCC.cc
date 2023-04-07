@@ -101,29 +101,21 @@ bool LakePropertiesCC::ForegroundCond(int i, int j) const {
 }
 
 void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  list.add(m_masks.begin(), m_masks.end());
+
+  connected_components::set_labels(run_number, lists, m_mask_run);
+
+  IceModelVec::AccessList list{&m_mask_run, &m_min_lakelevel, &m_max_lakelevel};
 
   const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second,
     &min_ll  = lists.find("min_ll")->second,
     &max_ll  = lists.find("max_ll")->second;
 
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = connected_components::trackParentRun(k, parents);
-    const double min_ll_label = min_ll[label],
-                 max_ll_label = max_ll[label];
-    int j = j_vec[k];
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n;
+  for (Points p(*m_grid); p; p.next()) {
+    const int i = p.i(), j = p.j();
 
-      m_mask_run(i, j) = label;
-      m_min_lakelevel(i, j) = min_ll_label;
-      m_max_lakelevel(i, j) = max_ll_label;
-    }
+    auto label = static_cast<int>(m_mask_run(i, j));
+    m_min_lakelevel(i, j) = min_ll[label];
+    m_max_lakelevel(i, j) = max_ll[label];
   }
 }
 

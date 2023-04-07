@@ -43,15 +43,15 @@ void LakeAccumulatorCCSerial::init(const IceModelVec2S &lake_level) {
   m_initialized = true;
 }
 
-void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S &result) {
+void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &input, IceModelVec2S &result) {
 
   if (not m_initialized) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "LakeAccumulatorCCSerial is not initialized.");
   }
 
-  petsc::Vec::Ptr in_vec_p0 = in.allocate_proc0_copy(),
+  petsc::Vec::Ptr in_vec_p0 = input.allocate_proc0_copy(),
                   result_vec_p0 = result.allocate_proc0_copy();
-  in.put_on_proc0(*in_vec_p0);
+  input.put_on_proc0(*in_vec_p0);
 
   //Init result and put it on proc0
   result.set(m_fill_value);
@@ -62,20 +62,20 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
     if (m_grid->rank() == 0) {
       petsc::VecArray2D in_p0(*in_vec_p0, m_grid->Mx(), m_grid->My()),
                         result_p0(*result_vec_p0, m_grid->Mx(), m_grid->My());
-      //Init allocator
+
       std::vector<double> accumulator(m_run_number + 1, 0.0);
 
       const auto
         &i_vec   = m_lists.find("i")->second,
         &j_vec   = m_lists.find("j")->second,
-        &len_vec = m_lists.find("lengths")->second,
+        &lengths = m_lists.find("lengths")->second,
         &parents = m_lists.find("parents")->second;
 
       //accumulate values
       for (int k = 0; k <= m_run_number; ++k) {
         const int j = j_vec[k];
         const int label = connected_components::trackParentRun(k, parents);
-        for (unsigned int n = 0; n < len_vec[k]; ++n) {
+        for (unsigned int n = 0; n < lengths[k]; ++n) {
           const int i = i_vec[k] + n;
           accumulator[label] += in_p0(i, j);
         }
@@ -85,7 +85,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &in, IceModelVec2S 
       for (int k = 0; k <= m_run_number; ++k) {
         const int j = j_vec[k];
         const int label = connected_components::trackParentRun(k, parents);
-        for (unsigned int n = 0; n < len_vec[k]; ++n) {
+        for (unsigned int n = 0; n < lengths[k]; ++n) {
           const int i = i_vec[k] + n;
           result_p0(i, j) = accumulator[label];
         }
@@ -111,11 +111,7 @@ void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (isLake(lake_level(i, j))) {
-      m_mask_run(i, j) = 1;
-    } else {
-      m_mask_run(i, j) = 0;
-    }
+    m_mask_run(i, j) = isLake(lake_level(i, j)) ? 1 : 0;
   }
 }
 

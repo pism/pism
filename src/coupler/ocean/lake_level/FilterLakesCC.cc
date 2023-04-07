@@ -61,10 +61,8 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
     connected_components::set_labels(run_number, lists, lake_level);
 
     const auto &valid = lists.find("valid")->second;
-
-    connected_components::replace_labels(lake_level,
-                                         [valid](double label) { return (not(valid[(int)label] > 0)); },
-                                         m_fill_value);
+    auto condition    = [valid](double label) { return not (valid[(int)label] > 0); };
+    connected_components::replace_values(lake_level, condition, m_fill_value);
   }
 }
 

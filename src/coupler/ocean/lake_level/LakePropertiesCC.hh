@@ -43,19 +43,19 @@ private:
 
   void setRunMinLevel(double level, int run, VecList &lists);
   void setRunMaxLevel(double level, int run, VecList &lists);
+
   inline bool isLake(double level) const {
     return (level != m_fill_value);
   }
 
-protected:
-  virtual void init_VecList(VecList &lists, unsigned int length);
-  virtual bool ForegroundCond(int i, int j) const;
-  virtual void labelMask(int run_number, const VecList &lists);
-  virtual void treatInnerMargin(int i, int j,
+  void init_VecList(VecList &lists, unsigned int length);
+  bool ForegroundCond(int i, int j) const;
+  void labelMask(int run_number, const VecList &lists);
+  void treatInnerMargin(int i, int j,
                                 bool isNorth, bool isEast, bool isSouth, bool isWest,
                                 VecList &lists, bool &changed);
-  virtual void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
-  virtual void continueRun(int i, int j, int &run_number, VecList &lists);
+  void startNewRun(int i, int j, int &run_number, int &parent, VecList &lists);
+  void continueRun(int i, int j, int &run_number, VecList &lists);
 };
 
 } // end of namespace pism

@@ -50,7 +50,7 @@ void IsolationCC::find_isolated_spots(IceModelVec2Int &result) {
   compute_runs(run_number, lists, max_items);
 
   connected_components::set_labels(run_number, lists, result);
-  connected_components::replace_labels(result,
+  connected_components::replace_values(result,
                                        [](double label) { return label == 1; },
                                        1);
 }

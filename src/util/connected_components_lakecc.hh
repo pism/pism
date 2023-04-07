@@ -24,7 +24,7 @@ void set_validity_mask(int threshold,
 
 void set_labels(int run_number, VecList lists, IceModelVec2S &result);
 
-void replace_labels(IceModelVec2S &result,
+void replace_values(IceModelVec2S &result,
                     const std::function<bool(double)> &condition,
                     double value);
 
@@ -172,25 +172,26 @@ void ValidCC<CC>::setRunValid(int run, VecList &lists) {
 
 template <class CC>
 void ValidCC<CC>::treatInnerMargin(int i, int j,
-                                       bool isNorth, bool isEast, bool isSouth, bool isWest,
-                                       VecList &lists, bool &changed) {
+                                   bool isNorth, bool isEast, bool isSouth, bool isWest,
+                                   VecList &lists,
+                                   bool &changed) {
   CC::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
   int run = CC::m_mask_run.as_int(i, j);
   if (run > 1) {
-    //Lake at inner boundary
-    const bool isValid = (lists["valid"][run] > 0);
+    // Lake at inner boundary
+    bool isValid = (lists["valid"][run] > 0);
     if (not isValid) {
       //Lake at this side is not labeled as valid
-      StarStencil<int> mask_isValid_star = m_mask_validity.int_star(i, j);
+      auto valid = m_mask_validity.int_star(i, j);
 
-      bool WestValid  = (isWest  and (mask_isValid_star.w == 1)),
-           EastValid  = (isEast  and (mask_isValid_star.e == 1)),
-           SouthValid = (isSouth and (mask_isValid_star.s == 1)),
-           NorthValid = (isNorth and (mask_isValid_star.n == 1));
+      bool WestValid  = (isWest  and (valid.w == 1)),
+           EastValid  = (isEast  and (valid.e == 1)),
+           SouthValid = (isSouth and (valid.s == 1)),
+           NorthValid = (isNorth and (valid.n == 1));
 
       if (WestValid or EastValid or SouthValid or NorthValid) {
-        //Lake at other side is not completely covered with ice
+        // Lake at other side is not completely covered with ice
         lists["valid"][run] = 1;
         changed = true;
       }

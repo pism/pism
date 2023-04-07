@@ -117,7 +117,9 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
     const int i = p.i(), j = p.j();
 
     if (ForegroundCond(i, j)) {
-      bool isWest = (i <= m_i_local_first), isSouth = (j <= m_j_local_first);
+      bool
+        isWest = (i <= m_i_local_first),
+        isSouth = (j <= m_j_local_first);
       int
         mask_w = isWest  ? 0 : m_mask_run.as_int(i-1, j),
         mask_s = isSouth ? 0 : m_mask_run.as_int(i, j-1);
@@ -137,22 +139,7 @@ void ConnectedComponents::compute_runs(int &run_number, VecList &lists, unsigned
 }
 
 void ConnectedComponents::labelMask(int run_number, const VecList &lists) {
-  IceModelVec::AccessList list;
-  list.add(m_masks.begin(), m_masks.end());
-
-  const auto
-    &i_vec   = lists.find("i")->second,
-    &j_vec   = lists.find("j")->second,
-    &len_vec = lists.find("lengths")->second,
-    &parents = lists.find("parents")->second;
-
-  for (int k = 0; k <= run_number; ++k) {
-    const int label = connected_components::trackParentRun(k, parents);
-    for (unsigned int n = 0; n < len_vec[k]; ++n) {
-      const int i = i_vec[k] + n, j = j_vec[k];
-      m_mask_run(i, j) = label;
-    }
-  }
+  connected_components::set_labels(run_number, lists, m_mask_run);
 }
 
 bool ConnectedComponents::updateRunsAtBoundaries(VecList &lists) {
@@ -490,10 +477,14 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
   min_bed.set(m_fill_value);
   max_wl.set(m_fill_value);
 
-  const auto &i_vec = lists.find("i")->second, &j_vec = lists.find("j")->second,
-             &len_vec = lists.find("lengths")->second, &parents = lists.find("parents")->second,
-             &valid_list = lists.find("valid")->second, &min_bed_list = lists.find("min_bed")->second,
-             &max_wl_list = lists.find("max_wl")->second;
+  const auto
+    &i_vec        = lists.find("i")->second,
+    &j_vec        = lists.find("j")->second,
+    &lengths      = lists.find("lengths")->second,
+    &parents      = lists.find("parents")->second,
+    &valid_list   = lists.find("valid")->second,
+    &min_bed_list = lists.find("min_bed")->second,
+    &max_wl_list  = lists.find("max_wl")->second;
 
   for(int k = 0; k <= run_number; ++k) {
     int label = connected_components::trackParentRun(k, parents);
@@ -503,7 +494,7 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
      double
        min_bed_label = min_bed_list[label],
        max_wl_label  = max_wl_list[label];
-      for(int n = 0; n < len_vec[k]; ++n) {
+      for(int n = 0; n < lengths[k]; ++n) {
         int i = i_vec[k] + n;
         mask(i, j) = valid ? 1 : 2;
         min_bed(i, j) = min_bed_label;
@@ -516,30 +507,28 @@ void FilterExpansionCC::labelMap(int run_number, const VecList &lists, IceModelV
 void FilterExpansionCC::labelMap2(int run_number, const VecList &lists,
                                   IceModelVec2Int &mask, IceModelVec2S &min_bed,
                                   IceModelVec2S &max_wl) {
-  IceModelVec::AccessList list{ &mask, &min_bed, &max_wl };
+
+  connected_components::set_labels(run_number, lists, mask);
 
   const auto
-    &i_vec        = lists.find("i")->second,
-    &j_vec        = lists.find("j")->second,
-    &len_vec      = lists.find("lengths")->second,
-    &parents      = lists.find("parents")->second,
-    &valid_list   = lists.find("valid")->second,
+    &validity   = lists.find("valid")->second,
     &min_bed_list = lists.find("min_bed")->second,
     &max_wl_list  = lists.find("max_wl")->second;
 
-  for(int k = 0; k <= run_number; ++k) {
-    int label = connected_components::trackParentRun(k, parents);
+  IceModelVec::AccessList list{ &mask, &min_bed, &max_wl };
+
+  for (Points p(*mask.grid()); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    auto   label         = static_cast<int>(mask(i, j));
     if (label > 1) {
-      int j                = j_vec[k];
-      bool valid           = (valid_list[label] > 0);
+      bool valid           = (validity[label] > 0);
       double min_bed_label = min_bed_list[label];
       double max_wl_label  = max_wl_list[label];
-      for (int n = 0; n < len_vec[k]; ++n) {
-        int i = i_vec[k] + n;
-        mask(i, j) = valid ? -1 : -2;
-        min_bed(i, j) = min_bed_label;
-        max_wl(i, j)  = max_wl_label;
-      }
+
+      mask(i, j)    = valid ? -1 : -2;
+      min_bed(i, j) = min_bed_label;
+      max_wl(i, j)  = max_wl_label;
     }
   }
 }
@@ -552,13 +541,13 @@ void FilterExpansionCC::prepare_mask(const IceModelVec2S &current_level, const I
                                      IceModelVec2Int &result) {
   IceModelVec::AccessList list{ &result, &current_level, &target_level};
 
-  result.set(0);
-
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (isLake(target_level(i, j)) and not isLake(current_level(i, j))) {
       result(i, j) = 2;
+    } else {
+      result(i, j) = 0;
     }
   }
   result.update_ghosts();
@@ -604,7 +593,7 @@ void set_validity_mask(int threshold, const IceModelVec2S &input,
 /*!
  * Replace values in result that satisfy `condition` with `value.`
  */
-void replace_labels(IceModelVec2S &result,
+void replace_values(IceModelVec2S &result,
                     const std::function<bool(double)> &condition, double value) {
 
   IceModelVec::AccessList list{&result};

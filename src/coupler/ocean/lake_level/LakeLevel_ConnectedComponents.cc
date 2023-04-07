@@ -52,24 +52,12 @@ void LakeLevelCC::fill2Level(const double level, IceModelVec2S &result) {
 void LakeLevelCC::labelMap(int run_number, const VecList &lists, IceModelVec2S &result) const {
   IceModelVec::AccessList list{&result};
 
-  const auto
-    &i_vec      = lists.find("i")->second,
-    &j_vec      = lists.find("j")->second,
-    &len_vec    = lists.find("lengths")->second,
-    &parents    = lists.find("parents")->second,
-    &valid_list = lists.find("valid")->second;
+  connected_components::set_labels(run_number, lists, result);
 
-  for (int k = 0; k <= run_number; ++k) {
-    int label      = connected_components::trackParentRun(k, parents);
-    bool validLake = ((label > 1) and (valid_list[label] > 0));
-    if (validLake) {
-      const int j = j_vec[k];
-      for (int n = 0; n < len_vec[k]; ++n) {
-        const int i  = i_vec[k] + n;
-        result(i, j) = m_level;
-      }
-    }
-  }
+  const auto &validity = lists.find("valid")->second;
+  auto condition = [validity](double label) { return ((label > 1) and (validity[(int)label] > 0)); };
+
+  connected_components::replace_values(result, condition, m_level);
 }
 
 void LakeLevelCC::prepare_mask(const IceModelVec2CellType &pism_mask, IceModelVec2Int &result) {
