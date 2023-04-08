@@ -336,12 +336,10 @@ MaxTimestep SeaLevel2DCC::max_timestep_impl(double t) const {
       assert(dt > 0.0);
     }
 
-    MaxTimestep sl2dcc_dt(dt, "sea level forcing");
-    return sl2dcc_dt;
-  } else {
-    MaxTimestep sl2dcc_dt("sea level forcing");
-    return sl2dcc_dt;
+    return {dt, "sea level forcing"};
   }
+
+  return {"sea level forcing"};
 }
 
 bool SeaLevel2DCC::expandMargins_impl() const {
