@@ -1,5 +1,6 @@
 
 #include "Logger.hh"
+#include "StarStencil.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/iceModelVec.hh"
 #include "pism/util/error_handling.hh"
@@ -8,6 +9,8 @@
 #include <functional>
 
 namespace pism {
+
+using connected_components::is_valid;
 
 ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
   m_grid(g) {
@@ -357,8 +360,8 @@ void FilterExpansionCC::setRunMinBed(double level, int run, VecList &lists) {
   }
 
   run = connected_components::trackParentRun(run, lists["parents"]);
-  if (isLake(level)) {
-    if (isLake(lists["min_bed"][run])) {
+  if (is_valid(level)) {
+    if (is_valid(lists["min_bed"][run])) {
       level = std::min(level, lists["min_bed"][run]);
     }
     lists["min_bed"][run] = level;
@@ -402,59 +405,50 @@ void FilterExpansionCC::labelMask(int run_number, const VecList &lists) {
   }
 }
 
-void FilterExpansionCC::treatInnerMargin(int i, int j,
-                                        const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
-                                        VecList &lists, bool &changed) {
+static double min(double a, double b) {
+  return (is_valid(a) and ((a < b) or not is_valid(b))) ? a : b;
+}
+
+static double max(double a, double b) {
+  return (is_valid(a) and ((a > b) or not is_valid(b))) ? a : b;
+}
+
+void FilterExpansionCC::treatInnerMargin(int i, int j, bool isNorth, bool isEast, bool isSouth,
+                                         bool isWest, VecList &lists, bool &changed) {
   ValidCC<ConnectedComponents>::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
   int run = m_mask_run.as_int(i, j);
-  if (run > 0) {
-    StarStencil<double> min_bed_star = m_min_bed.star(i, j),
-                        max_wl_star  = m_max_wl.star(i, j);
+  if (run <= 0) {
+    return;
+  }
 
-    double min_bed = min_bed_star.ij,
-           max_wl  = max_wl_star.ij;
+  auto min_bed = m_min_bed.star(i, j);
+  auto max_wl  = m_max_wl.star(i, j);
 
-    if (isWest) {
-      if (isLake(min_bed_star.w) and ((min_bed_star.w < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.w;
-      }
-      if (isLake(max_wl_star.w) and ((max_wl_star.w > max_wl) or not isLake(max_wl))) {
-        max_wl = max_wl_star.w;
-      }
+  double bed_min = min_bed.ij;
+  double wl_max  = max_wl.ij;
+
+  StarStencil<bool> flags;
+  flags.e = isEast;
+  flags.w = isWest;
+  flags.n = isNorth;
+  flags.s = isSouth;
+
+  for (auto d : { North, East, South, West }) {
+    if (flags[d]) {
+      bed_min = min(min_bed[d], bed_min);
+      wl_max  = max(max_wl[d], wl_max);
     }
-    if (isNorth) {
-      if (isLake(min_bed_star.n) and ((min_bed_star.n < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.n;
-      }
-      if (isLake(max_wl_star.n) and ((max_wl_star.n > max_wl) or not isLake(max_wl))) {
-        max_wl = max_wl_star.n;
-      }
-    }
-    if (isEast) {
-      if (isLake(min_bed_star.e) and ((min_bed_star.e < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.e;
-      }
-      if (isLake(max_wl_star.e) and ((max_wl_star.e > max_wl) or not isLake(max_wl))) {
-        max_wl = max_wl_star.e;
-      }
-    }
-    if (isSouth) {
-      if (isLake(min_bed_star.s) and ((min_bed_star.s < min_bed) or not isLake(min_bed))) {
-        min_bed = min_bed_star.s;
-      }
-      if (isLake(max_wl_star.s) and ((max_wl_star.s > max_wl) or not isLake(max_wl))) {
-        max_wl = max_wl_star.s;
-      }
-    }
-    if (min_bed != min_bed_star.ij) {
-      setRunMinBed(min_bed, run, lists);
-      changed = true;
-    }
-    if (max_wl != max_wl_star.ij) {
-      setRunMaxWl(max_wl, run, lists);
-      changed = true;
-    }
+  }
+
+  if (bed_min != min_bed.ij) {
+    setRunMinBed(bed_min, run, lists);
+    changed = true;
+  }
+
+  if (wl_max != max_wl.ij) {
+    setRunMaxWl(wl_max, run, lists);
+    changed = true;
   }
 }
 
@@ -541,7 +535,7 @@ void FilterExpansionCC::prepare_mask(const IceModelVec2S &current_level, const I
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (isLake(target_level(i, j)) and not isLake(current_level(i, j))) {
+    if (is_valid(target_level(i, j)) and not is_valid(current_level(i, j))) {
       result(i, j) = 2;
     } else {
       result(i, j) = 0;

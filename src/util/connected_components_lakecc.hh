@@ -332,10 +332,6 @@ private:
                         IceModelVec2S &max_wl);
 
   void prepare_mask(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &result);
-
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
 };
 
 } //namespace pism

@@ -119,20 +119,23 @@ void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
   }
 }
 
+static double min(double a, double b) {
+  return (is_valid(a) and ((a < b) or not is_valid(b))) ? a : b;
+}
+
+static double max(double a, double b) {
+  return (is_valid(a) and ((a > b) or not is_valid(b))) ? a : b;
+}
+
 void LakePropertiesCC::treatInnerMargin(int i, int j,
-                                        const bool isNorth, const bool isEast, const bool isSouth, const bool isWest,
+                                        bool isNorth, bool isEast, bool isSouth, bool isWest,
                                         VecList &lists, bool &changed) {
   ConnectedComponents::treatInnerMargin(i, j, isNorth, isEast, isSouth, isWest, lists, changed);
 
   int run = m_mask_run.as_int(i, j);
-
-  auto min = [this](double a, double b) {
-    return (is_valid(a) and ((a < b) or not is_valid(b))) ? a : b;
-  };
-
-  auto max = [this](double a, double b) {
-    return (is_valid(a) and ((a > b) or not is_valid(b))) ? a : b;
-  };
+  if (run <= 0) {
+    return;
+  }
 
   StarStencil<bool> flags;
   flags.e = isEast;
@@ -140,29 +143,26 @@ void LakePropertiesCC::treatInnerMargin(int i, int j,
   flags.n = isNorth;
   flags.s = isSouth;
 
-  if (run > 0) {
-    StarStencil<double> min_ll  = m_min_lakelevel.star(i, j),
-                        max_ll  = m_max_lakelevel.star(i, j);
+  auto min_ll = m_min_lakelevel.star(i, j);
+  auto max_ll = m_max_lakelevel.star(i, j);
 
-    double min_level = min_ll.ij,
-           max_level = max_ll.ij;
+  double min_level = min_ll.ij, max_level = max_ll.ij;
 
-    for (auto d : {North, East, South, West}) {
-      if (flags[d]) {
-        min_level = min(min_ll[d], min_level);
-        max_level = max(min_ll[d], min_level);
-      }
+  for (auto d : { North, East, South, West }) {
+    if (flags[d]) {
+      min_level = min(min_ll[d], min_level);
+      max_level = max(min_ll[d], min_level);
     }
+  }
 
-    if (min_level != min_ll.ij) {
-      setRunMinLevel(min_level, run, lists);
-      changed = true;
-    }
+  if (min_level != min_ll.ij) {
+    setRunMinLevel(min_level, run, lists);
+    changed = true;
+  }
 
-    if (max_level != max_ll.ij) {
-      setRunMaxLevel(max_level, run, lists);
-      changed = true;
-    }
+  if (max_level != max_ll.ij) {
+    setRunMaxLevel(max_level, run, lists);
+    changed = true;
   }
 }
 
