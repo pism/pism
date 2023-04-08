@@ -18,15 +18,15 @@ ConnectedComponentsBase::ConnectedComponentsBase(IceGrid::ConstPtr g):
 }
 
 inline void ConnectedComponentsBase::check_cell(int i, int j, bool isWest, bool isSouth, int mask_w, int mask_s, int &run_number, VecList &lists, unsigned int &max_items) {
-  //Check Foreground Pixel
+  // Check Foreground Pixel
   if (not isWest and (mask_w > 0)) {
     // west neighbor is also foreground: continue the run
     continueRun(i, j, run_number, lists);
   } else {
-    //west neighbor is a background pixel (or this is westmost column): start a new run
+    // west neighbor is a background pixel (or this is westmost column): start a new run
     int parent;
     if (not isSouth and (mask_s > 0)) {
-      //check the pixel south and set the parent
+      // check the pixel south and set the parent
       parent = mask_s;
     } else {
       parent = 0;
@@ -38,7 +38,7 @@ inline void ConnectedComponentsBase::check_cell(int i, int j, bool isWest, bool 
     mergeRuns(run_number, mask_s, lists);
   }
 
-  //resize vectors if 'max_items' are exceeded
+  // resize vectors if 'max_items' are exceeded
   if ((run_number + 1) >= (int)max_items) {
     max_items += m_grid->ym();
 
@@ -104,9 +104,9 @@ ConnectedComponents::ConnectedComponents(IceGrid::ConstPtr g)
       m_j_local_first(m_grid->ys()),
       m_j_local_last(m_j_local_first + m_grid->ym() - 1),
       m_i_global_first(0),
-      m_i_global_last(m_grid->Mx() - 1),
+      m_i_global_last((int)m_grid->Mx() - 1),
       m_j_global_first(0),
-      m_j_global_last(m_grid->My() - 1) {
+      m_j_global_last((int)m_grid->My() - 1) {
 
   m_masks.push_back(&m_mask_run);
 }
