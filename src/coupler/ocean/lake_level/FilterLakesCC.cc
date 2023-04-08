@@ -21,7 +21,7 @@
 
 namespace pism {
 
-FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr grid, double fill_value)
+FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr grid)
   : ValidCC<ConnectedComponents>(grid) {
   // empty
 }

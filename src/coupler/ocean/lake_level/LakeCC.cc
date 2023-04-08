@@ -569,7 +569,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
   if (m_filter_size > 0) {
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterLakesCC FL(m_grid, m_fill_value);
+      FilterLakesCC FL(m_grid);
       FL.filter_map(m_filter_size, lake_level);
     } catch (...) {
       ParSec.failed();

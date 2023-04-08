@@ -34,7 +34,7 @@ namespace pism {
  */
 class FilterLakesCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterLakesCC(IceGrid::ConstPtr g, double fill_value);
+  FilterLakesCC(IceGrid::ConstPtr grid);
   virtual ~FilterLakesCC() = default;
   void filter_map(int n_filter, IceModelVec2S &lake_level);
 
