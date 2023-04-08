@@ -41,10 +41,6 @@ private:
   int m_run_number;
 
   void prepare_mask(const IceModelVec2S &lake_level);
-
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
 };
 
 } // end of namespace pism

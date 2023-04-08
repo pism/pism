@@ -108,10 +108,12 @@ bool LakeAccumulatorCCSerial::ForegroundCond(int i, int j) const {
 void LakeAccumulatorCCSerial::prepare_mask(const IceModelVec2S &lake_level) {
   IceModelVec::AccessList list{ &m_mask_run, &lake_level};
 
+  using connected_components::is_valid;
+
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    m_mask_run(i, j) = isLake(lake_level(i, j)) ? 1 : 0;
+    m_mask_run(i, j) = is_valid(lake_level(i, j)) ? 1 : 0;
   }
 }
 
