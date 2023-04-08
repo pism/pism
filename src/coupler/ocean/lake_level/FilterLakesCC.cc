@@ -21,10 +21,9 @@
 
 namespace pism {
 
-FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr g, double fill_value)
-  : ValidCC<ConnectedComponents>(g),
-    m_fill_value(fill_value) {
-  //empty
+FilterLakesCC::FilterLakesCC(IceGrid::ConstPtr grid, double fill_value)
+  : ValidCC<ConnectedComponents>(grid) {
+  // empty
 }
 
 void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
@@ -35,7 +34,7 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
       const int i = p.i(), j = p.j();
 
       //Set sink, where pism_mask is ocean or at margin of computational domain
-      if (lake_level(i, j) != m_fill_value) {
+      if (connected_components::is_valid(lake_level(i, j))) {
         m_mask_run(i, j) = 2;
       } else {
         m_mask_run(i, j) = 0;
@@ -46,7 +45,7 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
 
   connected_components::set_validity_mask(n_filter,
                                           lake_level,
-                                          [this](double value) { return value != m_fill_value; },
+                                          connected_components::is_valid,
                                           m_mask_validity);
 
   VecList lists;
@@ -62,7 +61,7 @@ void FilterLakesCC::filter_map(int n_filter, IceModelVec2S &lake_level) {
 
     const auto &valid = lists.find("valid")->second;
     auto condition    = [valid](double label) { return not (valid[(int)label] > 0); };
-    connected_components::replace_values(lake_level, condition, m_fill_value);
+    connected_components::replace_values(lake_level, condition, connected_components::invalid);
   }
 }
 

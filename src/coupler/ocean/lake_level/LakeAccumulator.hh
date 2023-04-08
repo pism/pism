@@ -26,7 +26,7 @@ namespace pism {
 
 class LakeAccumulatorCCSerial : public ConnectedComponentsSerial {
 public:
-  LakeAccumulatorCCSerial(IceGrid::ConstPtr g, double fill_value);
+  LakeAccumulatorCCSerial(IceGrid::ConstPtr g);
   virtual ~LakeAccumulatorCCSerial() = default;
   void init(const IceModelVec2S &lake_level);
   void accumulate(const IceModelVec2S &in, IceModelVec2S &result);
@@ -36,7 +36,6 @@ protected:
 
 private:
   bool m_initialized;
-  double m_fill_value;
   VecList m_lists;
   int m_run_number;
 

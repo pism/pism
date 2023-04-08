@@ -204,7 +204,7 @@ void SeaLevel2DCC::update_mask(const IceModelVec2S &bed,
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeCC Model
-    SeaLevelCC SLM(m_grid, m_density_ratio, sl2dcc_bed, thk, m_fill_value);
+    SeaLevelCC SLM(m_grid, m_density_ratio, sl2dcc_bed, thk);
     SLM.computeMask(sea_level, m_sl_offset, mask);
   } catch (...) {
     ParSec.failed();
@@ -243,7 +243,7 @@ void SeaLevel2DCC::prepareSeaLevel(const IceModelVec2S &bed,
     try {
       //max_sl_basin will not contain any information, as sea_level was "m_fill_value" in the new basin
       //It should not be calculated in the future...
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, sea_level);
+      FilterExpansionCC FExCC(m_grid, bed, sea_level);
       FExCC.filter_ext(sea_level, target_level, exp_mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();

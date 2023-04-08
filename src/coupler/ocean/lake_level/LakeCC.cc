@@ -345,7 +345,7 @@ bool LakeCC::checkOceanBasinsVanished(const IceModelVec2S &bed,
   { //Check which ocean cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl);
+      FilterExpansionCC FExCC(m_grid, bed, old_sl);
       FExCC.filter_ext2(old_sl, new_sl, mask, min_basin, max_wl);
     } catch (...) {
       ParSec.failed();
@@ -537,7 +537,7 @@ void LakeCC::updateLakeCC(const IceModelVec2S& bed,
     ParallelSection ParSec(m_grid->com);
     try {
       // Initialze LakeCC Model
-      LakeLevelCC LM(m_grid, m_density_ratio, bed, thk, pism_mask, m_fill_value, validity_mask);
+      LakeLevelCC LM(m_grid, m_density_ratio, bed, thk, pism_mask, validity_mask);
       LM.computeLakeLevel(m_lake_level_min, m_lake_level_max, m_lake_level_dh, lake_level);
     } catch (...) {
       ParSec.failed();
@@ -594,7 +594,7 @@ void LakeCC::compute_fill_rate(const double dt,
 
   {
     //Initialize Lake accumulator
-    LakeAccumulatorCCSerial Lacc(m_grid, m_fill_value);
+    LakeAccumulatorCCSerial Lacc(m_grid);
     Lacc.init(lake_level);
 
     IceModelVec2S mass_discharge(m_grid, "mass_discharge", WITHOUT_GHOSTS),
@@ -674,7 +674,7 @@ void LakeCC::updateLakeLevelMinMax(const IceModelVec2S &lake_level,
   ParallelSection ParSec(m_grid->com);
   try {
     // Initialze LakeProperties Model
-    LakePropertiesCC LpCC(m_grid, m_fill_value, target_level, lake_level);
+    LakePropertiesCC LpCC(m_grid, target_level, lake_level);
     LpCC.getLakeProperties(min_level, max_level);
   } catch (...) {
     ParSec.failed();
@@ -720,7 +720,7 @@ bool LakeCC::prepareLakeLevel(const IceModelVec2S &target_level,
   { //Check which lake cells are newly added
     ParallelSection ParSec(m_grid->com);
     try {
-      FilterExpansionCC FExCC(m_grid, m_fill_value, bed, old_sl_basins);
+      FilterExpansionCC FExCC(m_grid, bed, old_sl_basins);
       FExCC.filter_ext(lake_level, target_level, exp_mask, min_basin, max_sl_basin);
     } catch (...) {
       ParSec.failed();

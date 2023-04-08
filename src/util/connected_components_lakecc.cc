@@ -264,13 +264,13 @@ void SinkCC::continueRun(int i, int j, int &run_number, VecList &lists) {
 
 
 
-FilterExpansionCC::FilterExpansionCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level)
-  : ValidCC<ConnectedComponents>(g), m_fill_value(fill_value), m_bed(&bed), m_water_level(&water_level) {
+FilterExpansionCC::FilterExpansionCC(IceGrid::ConstPtr g, const IceModelVec2S &bed, const IceModelVec2S &water_level)
+  : ValidCC<ConnectedComponents>(g), m_bed(&bed), m_water_level(&water_level) {
 
   m_min_bed.create(m_grid, "min_bed_mask", WITH_GHOSTS, 1);
-  m_min_bed.set(m_fill_value);
+  m_min_bed.set(connected_components::invalid);
   m_max_wl.create(m_grid, "max_water_level", WITH_GHOSTS, 1);
-  m_max_wl.set(m_fill_value);
+  m_max_wl.set(connected_components::invalid);
 
   m_masks.push_back(&m_min_bed);
   m_masks.push_back(&m_max_wl);
@@ -344,8 +344,8 @@ void FilterExpansionCC::init_VecList(VecList &lists, const unsigned int length) 
   lists["max_wl"]  = max_wl_list;
 
   for (unsigned int k = 0; k < 2; ++k) {
-    lists["min_bed"][k] = m_fill_value;
-    lists["max_wl"][k]  = m_fill_value;
+    lists["min_bed"][k] = connected_components::invalid;
+    lists["max_wl"][k]  = connected_components::invalid;
   }
 }
 
@@ -373,9 +373,9 @@ void FilterExpansionCC::setRunMaxWl(double level, int run, VecList &lists) const
     return;
   }
 
-  if (level != m_fill_value) {
+  if (is_valid(level)) {
     run = connected_components::trackParentRun(run, lists["parents"]);
-    if (lists["max_wl"][run] != m_fill_value) {
+    if (is_valid(lists["max_wl"][run])) {
       level = std::max(level, lists["max_wl"][run]);
     }
     lists["max_wl"][run] = level;
@@ -492,8 +492,8 @@ void FilterExpansionCC::labelMap(int run_number,
       max_wl(i, j)  = wl_max[label];
     } else {
       mask(i, j)    = 0;
-      min_bed(i, j) = m_fill_value;
-      max_wl(i, j)  = m_fill_value;
+      min_bed(i, j) = connected_components::invalid;
+      max_wl(i, j)  = connected_components::invalid;
     }
   }
 }

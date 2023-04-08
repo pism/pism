@@ -251,10 +251,10 @@ void ValidCC<CC>::labelMask(int run_number, const VecList &lists) {
 template<class CC>
 class FillingAlgCC : public CC {
 public:
-  FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value);
+  FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk);
   virtual ~FillingAlgCC() = default;
 protected:
-  double m_density_ratio, m_fill_value;
+  double m_density_ratio;
   const IceModelVec2S *m_bed, *m_thk;
 
   virtual bool is_foreground(double bed, double thk, int mask, double Level, double Offset) const {
@@ -262,12 +262,12 @@ protected:
       return true;
     }
 
-    if (Level == m_fill_value) {
+    if (Level == connected_components::invalid) {
       return true;
     }
 
     double level = Level;
-    if (Offset != m_fill_value) {
+    if (Offset != connected_components::invalid) {
       level += Offset;
     }
 
@@ -276,10 +276,9 @@ protected:
 };
 
 template<class CC>
-FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk, double fill_value)
+FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed, const IceModelVec2S &thk)
   : CC(g),
     m_density_ratio(density_ratio),
-    m_fill_value(fill_value),
     m_bed(&bed),
     m_thk(&thk) {
   CC::m_fields.push_back(m_bed);
@@ -297,7 +296,7 @@ FillingAlgCC<CC>::FillingAlgCC(IceGrid::ConstPtr g, double density_ratio, const 
  */
 class FilterExpansionCC : public ValidCC<ConnectedComponents> {
 public:
-  FilterExpansionCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &bed, const IceModelVec2S &water_level);
+  FilterExpansionCC(IceGrid::ConstPtr g, const IceModelVec2S &bed, const IceModelVec2S &water_level);
   virtual ~FilterExpansionCC() = default;
 
   void filter_ext(const IceModelVec2S &current_level, const IceModelVec2S &target_level, IceModelVec2Int &mask,
@@ -316,8 +315,6 @@ protected:
   bool ForegroundCond(int i, int j) const;
 
 private:
-  const double m_fill_value;
-
   const IceModelVec2S *m_bed, *m_water_level;
 
   IceModelVec2S m_min_bed, m_max_wl;

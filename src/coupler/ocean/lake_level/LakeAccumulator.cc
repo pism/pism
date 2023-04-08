@@ -22,10 +22,9 @@
 
 namespace pism {
 
-LakeAccumulatorCCSerial::LakeAccumulatorCCSerial(IceGrid::ConstPtr g, const double fill_value)
+LakeAccumulatorCCSerial::LakeAccumulatorCCSerial(IceGrid::ConstPtr g)
   : ConnectedComponentsSerial(g),
-    m_initialized(false),
-    m_fill_value(fill_value)
+    m_initialized(false)
 {
   //empty
 }
@@ -54,7 +53,7 @@ void LakeAccumulatorCCSerial::accumulate(const IceModelVec2S &input, IceModelVec
   input.put_on_proc0(*in_vec_p0);
 
   //Init result and put it on proc0
-  result.set(m_fill_value);
+  result.set(connected_components::invalid);
   result.put_on_proc0(*result_vec_p0);
 
   ParallelSection rank0(m_grid->com);

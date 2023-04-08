@@ -23,16 +23,16 @@ namespace pism {
 
 using connected_components::is_valid;
 
-LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
+LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const IceModelVec2S &target_level,
                                    const IceModelVec2S &lake_level)
-  : ConnectedComponents(g), m_fill_value(fill_value), m_target_level(&target_level),
+  : ConnectedComponents(g), m_target_level(&target_level),
     m_current_level(&lake_level) {
 
   m_min_lakelevel.create(m_grid, "min_ll_mask", WITH_GHOSTS, 1);
-  m_min_lakelevel.set(m_fill_value);
+  m_min_lakelevel.set(connected_components::invalid);
 
   m_max_lakelevel.create(m_grid, "max_ll_mask", WITH_GHOSTS, 1);
-  m_max_lakelevel.set(m_fill_value);
+  m_max_lakelevel.set(connected_components::invalid);
 
   m_masks.push_back(&m_min_lakelevel);
   m_masks.push_back(&m_max_lakelevel);
@@ -62,8 +62,8 @@ void LakePropertiesCC::init_VecList(VecList &lists, const unsigned int length) {
   lists["max_ll"]  = max_ll_list;
 
   for (unsigned int k = 0; k < 2; ++k) {
-    lists["min_ll"][k]  = m_fill_value;
-    lists["max_ll"][k]  = m_fill_value;
+    lists["min_ll"][k]  = connected_components::invalid;
+    lists["max_ll"][k]  = connected_components::invalid;
   }
 }
 

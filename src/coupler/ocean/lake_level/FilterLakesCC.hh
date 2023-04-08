@@ -40,8 +40,6 @@ public:
 
 private:
   bool ForegroundCond(int i, int j) const;
-
-  double m_fill_value;
 };
 
 } // end of namespace pism

@@ -14,8 +14,7 @@ public:
   SeaLevelCC(IceGrid::ConstPtr g,
              double density_ratio,
              const IceModelVec2S &bed,
-             const IceModelVec2S &thk,
-             double fill_value);
+             const IceModelVec2S &thk);
   virtual ~SeaLevelCC() = default;
 
   void computeMask(const IceModelVec2S &SeaLevel, double Offset, IceModelVec2Int &result);

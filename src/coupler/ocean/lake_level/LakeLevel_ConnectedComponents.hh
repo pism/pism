@@ -15,16 +15,16 @@ class IceModelVec2CellType;
 class LakeLevelCC : public FillingAlgCC<ValidCC<SinkCC> > {
 public:
   LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value);
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask);
 
   LakeLevelCC(IceGrid::ConstPtr g, double density_ratio, const IceModelVec2S &bed,
-              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask, double fill_value,
+              const IceModelVec2S &thk, const IceModelVec2Int &pism_mask,
               const IceModelVec2Int &valid_mask);
 
   virtual ~LakeLevelCC() = default;
 
   inline void computeLakeLevel(double zMin, double zMax, double dz, IceModelVec2S &result) {
-    computeLakeLevel(zMin, zMax, dz, m_fill_value, result);
+    computeLakeLevel(zMin, zMax, dz, connected_components::invalid, result);
   }
 
 private:

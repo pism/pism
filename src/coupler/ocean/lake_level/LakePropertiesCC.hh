@@ -30,14 +30,13 @@ namespace pism {
  */
 class LakePropertiesCC : public ConnectedComponents {
 public:
-  LakePropertiesCC(IceGrid::ConstPtr g, double fill_value, const IceModelVec2S &target_level,
+  LakePropertiesCC(IceGrid::ConstPtr g, const IceModelVec2S &target_level,
                    const IceModelVec2S &lake_level);
   virtual ~LakePropertiesCC() = default;
 
   void getLakeProperties(IceModelVec2S &min_level, IceModelVec2S &max_level);
 
 private:
-  const double m_fill_value;
   const IceModelVec2S *m_target_level, *m_current_level;
   IceModelVec2S m_min_lakelevel, m_max_lakelevel;
 
