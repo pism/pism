@@ -21,6 +21,8 @@
 
 namespace pism {
 
+using connected_components::is_valid;
+
 LakePropertiesCC::LakePropertiesCC(IceGrid::ConstPtr g, const double fill_value, const IceModelVec2S &target_level,
                                    const IceModelVec2S &lake_level)
   : ConnectedComponents(g), m_fill_value(fill_value), m_target_level(&target_level),
@@ -71,8 +73,8 @@ void LakePropertiesCC::setRunMinLevel(double level, int run, VecList &lists) {
   }
 
   run = connected_components::trackParentRun(run, lists["parents"]);
-  if (isLake(level)) {
-    if (isLake(lists["min_ll"][run])) {
+  if (is_valid(level)) {
+    if (is_valid(lists["min_ll"][run])) {
       level = std::min(level, lists["min_ll"][run]);
     }
     lists["min_ll"][run] = level;
@@ -85,8 +87,8 @@ void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
   }
 
   run = connected_components::trackParentRun(run, lists["parents"]);
-  if (isLake(level)) {
-    if (isLake(lists["max_ll"][run])) {
+  if (is_valid(level)) {
+    if (is_valid(lists["max_ll"][run])) {
       level = std::max(level, lists["max_ll"][run]);
     }
     lists["max_ll"][run] = level;
@@ -95,9 +97,7 @@ void LakePropertiesCC::setRunMaxLevel(double level, int run, VecList &lists) {
 
 
 bool LakePropertiesCC::ForegroundCond(int i, int j) const {
-  const double target  = (*m_target_level)(i, j);
-
-  return isLake(target);
+  return is_valid((*m_target_level)(i, j));
 }
 
 void LakePropertiesCC::labelMask(int run_number, const VecList &lists) {
@@ -127,11 +127,11 @@ void LakePropertiesCC::treatInnerMargin(int i, int j,
   int run = m_mask_run.as_int(i, j);
 
   auto min = [this](double a, double b) {
-    return (isLake(a) and ((a < b) or not isLake(b))) ? a : b;
+    return (is_valid(a) and ((a < b) or not is_valid(b))) ? a : b;
   };
 
   auto max = [this](double a, double b) {
-    return (isLake(a) and ((a > b) or not isLake(b))) ? a : b;
+    return (is_valid(a) and ((a > b) or not is_valid(b))) ? a : b;
   };
 
   StarStencil<bool> flags;

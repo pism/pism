@@ -44,10 +44,6 @@ private:
   void setRunMinLevel(double level, int run, VecList &lists);
   void setRunMaxLevel(double level, int run, VecList &lists);
 
-  inline bool isLake(double level) const {
-    return (level != m_fill_value);
-  }
-
   void init_VecList(VecList &lists, unsigned int length);
   bool ForegroundCond(int i, int j) const;
   void labelMask(int run_number, const VecList &lists);
