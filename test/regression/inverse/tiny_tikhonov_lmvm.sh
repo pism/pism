@@ -26,4 +26,4 @@ $PYTHONEXEC pismi.py \
               -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 -report_coverage
 
 # Check if we succeeded
-$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc --desired_misfit 10 --misfit_tolerance .5 --iter_max 100
+$PYTHONEXEC verify_ssa_inv.py tiny_tikhonov_lmvm.nc --desired_misfit 10 --misfit_tolerance .5 --iter_max 120

@@ -14,7 +14,7 @@ $MPIEXEC -n 2 $PISM_PATH/pisms -y 10e3 -Lz 5000 -Mx 12 -My 12 -o_size big -energ
 
 ncpdq -a z,y,x -O simp_exper-13.nc simp_exper-13.nc
 
-/usr/bin/env python <<EOF
+/usr/bin/env python3 <<EOF
 from netCDF4 import Dataset as NC
 from numpy import abs, arange
 from sys import exit

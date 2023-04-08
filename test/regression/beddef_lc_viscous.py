@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Solves equation (16) of BuelerLingleBrown to obtain the steady
 state viscous plate deflection corresponding to a given disc load.

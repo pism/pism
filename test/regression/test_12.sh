@@ -22,7 +22,7 @@ $MPIEXEC -n 2 $PISM_PATH/pismv -test B $GRID $OPTS $TS_OPTS
 
 set +x
 
-/usr/bin/env python <<EOF
+/usr/bin/env python3 <<EOF
 from numpy import diff, log10, floor
 from sys import exit
 try:
