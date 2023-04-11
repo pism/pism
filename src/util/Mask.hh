@@ -27,11 +27,14 @@
 namespace pism {
 
 enum MaskValue {
+//todo:needed??:  MASK_UNKNOWN          = -10,
+//todo:needed??:  MASK_ICE_FREE_ENCLOSED_BEDROCK = -1,
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
   MASK_GROUNDED         = 2,
   MASK_FLOATING         = 3,
-  MASK_ICE_FREE_OCEAN   = 4
+  MASK_ICE_FREE_OCEAN   = 4,
+  MASK_ICE_FREE_ENCLOSED_OCEAN = 5
 };
 
 namespace mask {
@@ -62,6 +65,16 @@ namespace mask {
   }
   inline bool ice_free_land(int M) {
     return grounded(M) && ice_free(M);
+  }
+  //! \brief ice-free enclosed ocean (ocean surrounded by floating or
+  //!        grounded ice, or ice-free land, such as holes in ice shelves).
+  inline bool ice_free_enclosed_ocean(int M) {
+    return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
+  }
+  //! \brief open ocean (ocean NOT entirely surrounded by ice and land,
+  //!        such as holes in ice shelves).
+  inline bool ice_free_open_ocean(int M) {
+    return not ice_free_open_ocean(M);
   }
 }
 
