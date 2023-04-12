@@ -540,9 +540,7 @@ void IceModel::allocate_label_hole() {
   if (m_config->get_flag("geometry.label_holes")) {
 
     // this will throw an exception on failure
-    //todo:cr1: m_label_hole.reset(new pism::LabelHoleIce(m_grid));
     m_label_hole.reset(new calving::LabelHoleIce(m_grid));
-    //todo:cr3: m_label_hole.reset(new LabelHoleIce(m_grid));
 
     // Ice shelf hole does not have a state, so it is OK to
     // initialize here.
@@ -676,6 +674,7 @@ void IceModel::allocate_submodels() {
   allocate_geometry_evolution();
 
   allocate_iceberg_remover();
+  allocate_label_hole();
 
   allocate_stressbalance();
 
