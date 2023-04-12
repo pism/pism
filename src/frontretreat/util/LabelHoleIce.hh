@@ -29,7 +29,7 @@ class IceModelVec2CellType;
 
 namespace calving {
 
-/*! \brief PISM ice shelf hole labelling */
+/*! \brief PISM ice shelf hole labeling */
 /*!
  * Identifies and labels holes in floating ice shelves, which could
  * cause unrealistic mass loss if calving and the iceberg remover

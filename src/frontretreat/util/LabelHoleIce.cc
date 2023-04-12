@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "LabelHoleIce.hh"
+#include "pism/frontretreat/util/LabelHoleIce.hh"
 
 #include "pism/util/connected_components.hh"
 #include "pism/util/Mask.hh"
@@ -26,15 +26,21 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/IceModelVec2CellType.hh"
 
+//ccr:todo??%% include "pism/frontretreat/PrescribedRetreat.hh" //ccr:todo??;
+
 namespace pism {
 namespace calving {
 
 LabelHoleIce::LabelHoleIce(IceGrid::ConstPtr g)
-  : Component(g),
-    m_forced_open_ocean_mask(m_grid, "forced_open_ocean", WITHOUT_GHOSTS),
+  : Component(g) {
+  {
+    m_forced_open_ocean_mask(m_grid, "forced_open_ocean", WITHOUT_GHOSTS);
+  }
+  {
     m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS){
-
-  m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
+      m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
+    }
+  }
 }
 
 LabelHoleIce::~LabelHoleIce() {
