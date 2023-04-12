@@ -77,6 +77,7 @@ class FloatKill;
 class HayhurstCalving;
 class CalvingAtThickness;
 class IcebergRemover;
+class LabelHoleIce;
 }
 
 class FractureDensity;
@@ -164,6 +165,7 @@ protected:
   virtual void allocate_couplers();
   virtual void allocate_geometry_evolution();
   virtual void allocate_iceberg_remover();
+  virtual void allocate_label_hole();
 
   virtual stressbalance::Inputs stress_balance_inputs();
 
@@ -259,6 +261,9 @@ protected:
   std::shared_ptr<AgeModel> m_age_model;
 
   std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
+  std::shared_ptr<LabelHoleIce>                m_label_hole; //todo:cr3:
+  //todo:cr2: std::shared_ptr<calving::LabelHoleIce>      m_label_hole; //todo:cr2:
+  //todo:cr1: std::shared_ptr<pism::LabelHoleIce>         m_label_hole; //todo:cr1:
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
