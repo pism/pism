@@ -74,7 +74,7 @@ namespace mask {
   //! \brief open ocean (ocean NOT entirely surrounded by ice and land,
   //!        such as holes in ice shelves).
   inline bool ice_free_open_ocean(int M) {
-    return not ice_free_open_ocean(M);
+    return not ice_free_enclosed_ocean(M);
   }
 }
 
@@ -123,6 +123,8 @@ public:
 
       if (ice_free) {
         mask_result = MASK_ICE_FREE_OCEAN;
+	//todo: call check whether we have an enclosed ocean??
+
       } else {
         mask_result = MASK_FLOATING;
       }

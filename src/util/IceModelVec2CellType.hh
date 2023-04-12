@@ -41,7 +41,7 @@ public:
     : IceModelVec2Int(grid, name, ghostedp, width) {
     // empty
   }
-  
+
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
   }
@@ -74,6 +74,14 @@ public:
     return mask::ice_free_land(as_int(i, j));
   }
 
+  inline bool ice_free_enclosed_ocean(int i, int j) const {
+    return mask::ice_free_enclosed_ocean(as_int(i, j));
+  }
+
+  inline bool ice_free_open_ocean(int i, int j) const {
+    return mask::ice_free_open_ocean(as_int(i, j));
+  }
+
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j) const {
     return icy(i, j) and (ice_free(i + 1, j) or ice_free(i - 1, j) or
@@ -103,6 +111,11 @@ public:
   inline bool next_to_ice_free_ocean(int i, int j) const {
     return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
+  }
+
+  inline bool next_to_ice_free_open_ocean(int i, int j) const {
+    return (ice_free_open_ocean(i + 1, j) or ice_free_open_ocean(i - 1, j) or
+            ice_free_open_ocean(i, j + 1) or ice_free_open_ocean(i, j - 1));
   }
 };
 
