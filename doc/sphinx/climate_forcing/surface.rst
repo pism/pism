@@ -307,13 +307,13 @@ Simple diurnal Energy Balance Model "dEBM-simple"
 +++++++++++++++++++++++++++++++++++++++++++++++++
 
 :|options|: ``-surface debm_simple``
-:|variables|: :var:`albedo`
+:|variables|: :var:`surface_albedo`
 :|implementation|: ``pism::surface::DEBMSimple``
 
 This PISM module implements the "simple" version of the diurnal energy balance model
 developed by :cite:`Zeitzetal2021`. It follows :cite:`KrebsKanzow2018` and includes
 parameterizations of the surface albedo and the atmospheric transmissivity that make it
-possible to run it model in a standalone, prognostic mode.
+possible to run the model in a standalone, prognostic mode.
 
 It is designed to use time-dependent (usually monthly) forcing by near-surface air
 temperature and precipitation provided by one of PISM's atmosphere models.
@@ -341,13 +341,17 @@ rain" when the air temperature is above
 Alternatively, all precipitation is interpreted as snow if
 :config:`surface.debm_simple.interpret_precip_as_snow` is set.
 
-The melt rate is approximated by
+The melt rate is assumed to be zero if the near-surface air temperature `T` is below the
+threshold temperature `T_{\text{min}}` and is approximated by
 
 .. math::
    :label: eq-debm-melt
 
-   M = \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A} \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2\right),
+   M =
+   \frac{\Delta t_{\Phi}}{\Delta t \rho_{\text{w}} L_{\text{m}}} \left( \tau_\text{A}
+   \left( 1 - \alpha_\text{S} \right) \bar{S_\Phi} + c_1 T_\text{eff} + c_2\right)
 
+otherwise.
 
 .. list-table:: Notation used in :eq:`eq-debm-melt`
    :header-rows: 1
@@ -358,7 +362,8 @@ The melt rate is approximated by
 
    * - `\Phi`
      - Threshold for the solar elevation angle (:config:`surface.debm_simple.phi`). It is
-       assumed that melt can occur only when the sun is above this angle.
+       assumed that melt can occur only when the sun is above this angle. `Phi` should be
+       treated as a tuning parameter since its value is not well constrained.
 
    * - `\Delta t_{\Phi} / \Delta t`
      - Fraction of the day during which the sun is above the elevation angle `\Phi`
@@ -392,6 +397,12 @@ The melt rate is approximated by
    * - `L_m`
      - Latent heat of fusion (:config:`constants.fresh_water.latent_heat_of_fusion`)
 
+   * - `T_{\text{min}}`
+     - Threshold temperature (:config:`surface.debm_simple.melting_threshold_temp`). Melt
+       is prohibited if the air temperature is below `T_{\text{min}}` to avoid melt rates
+       from high insolation values and low albedo values when it is too cold to actually
+       melt.
+
 A fraction (:config:`surface.debm_simple.refreeze`) of computed melt amount is assumed to
 re-freeze. By default only snow melt is allowed to refreeze; set
 :config:`surface.debm_simple.refreeze_ice_melt` to refreeze both snow and ice melt.
@@ -400,10 +411,6 @@ re-freeze. By default only snow melt is allowed to refreeze; set
 
    - Part of the precipitation interpreted as rain is assumed to run off instantaneously
      and *does not* contribute to reported modeled runoff.
-
-   - Melt is prohibited if the air temperature is below a threshold set by
-     :config:`surface.debm_simple.melting_threshold_temp`. This is to avoid melt rates from
-     high insolation values and low albedo values when it is too cold to actually melt.
 
    - When used with periodic climate data (air temperature and precipitation) that is read
      from a file (see section :ref:`sec-atmosphere-given`), use of
@@ -486,7 +493,7 @@ Alternatively, PISM can read in scalar time series of variables :var:`eccentrici
    to generate time series of these parameters using trigonometric expansions due to
    :cite:`Berger1978` with corrections made by the authors of the GISS GCM ModelE
    (expansion coefficients used in ``orbital_parameters.py`` come from the GISS ModelE
-   version 2.1.2). See https://data.giss.nasa.gov/modelE/ar5plots/srorbpar.html details.
+   version 2.1.2). See https://data.giss.nasa.gov/modelE/ar5plots/srorbpar.html for details.
 
    These expansions are considered to be valid for about 1 million years.
 
@@ -504,9 +511,8 @@ assumes that the surface albedo is a linear function of the modeled melt rate.
 
    \alpha_S = \max\left( \alpha_{\text{max}} + C\cdot M, \alpha_{\text{min}}\right).
 
-Here `M` is the melt rate and `C` is the tuning parameter
-(:config:`surface.debm_simple.albedo_slope`) obtained by fitting this approximation to the
-output of the regional climate model MARv3.11.
+Here `M` is the melt rate (meters liquid water equivalent per second) and `C` is the
+tuning parameter (:config:`surface.debm_simple.albedo_slope`).
 
 In this approach, the albedo decreases linearly with increasing melt from the maximum
 value (the fresh-snow albedo :config:`surface.debm_simple.albedo_snow`) for regions with
@@ -517,19 +523,23 @@ specified using :config:`surface.debm_simple.albedo_input.file`.
 
 .. note::
 
-   It is recommended to use a monthly records of albedo in
-   :config:`surface.debm_simple.albedo_input.file`.
+   - It is recommended to use monthly records of albedo in
+     :config:`surface.debm_simple.albedo_input.file`.
+
+   - The fresh snow albedo is also treated as a tuning parameter. Default values of
+     `\alpha_{\text{max}}` and `C` were obtained by fitting this approximation to the
+     output of the regional climate model MARv3.11.
 
 .. _sec-debm-simple-transmissivity:
 
 Transmissivity of the atmosphere
 ################################
 
-dEBM-simple assumes that the transmissivity of the atmosphere is a linear function of the
-local surface altitude. Similarly to the albedo parameterization, the coefficients of this
-function are obtained using a linear regression of MAR v3.11 data. This parameterization
-also relies on the assumption that the mean transmissivity does not change in a changing
-climate.
+dEBM-simple assumes that the transmissivity of the atmosphere `\tau_A` is a linear
+function of the local surface altitude `z`. Similarly to the albedo parameterization, the
+default values of coefficients `a` and `b` below were obtained using a linear regression
+of MAR v3.11 data. This parameterization also relies on the assumption that no other
+processes (e.g. changing mean cloud cover in a changing climate) affect `\tau_A`.
 
 .. math::
 
