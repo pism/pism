@@ -172,15 +172,11 @@ Given calving
 ^^^^^^^^^^^^^
 
 The option :opt:`-calving given_calving` either defines a constant calving rate or
-reads a given calving rate field from file. This option allows for running CavlvingMIP
+reads a given calving rate field from file. This option allows for running CalvingMIP
 experiments as suggested in:
 
     https://github.com/JRowanJordan/CalvingMIP/wiki
 
-
-.. note::
-
-   FIXME: not documented.
 
 .. rubric:: Parameters
 
