@@ -1131,6 +1131,11 @@ netcdf pism_config {
     pism_config:geometry.remove_icebergs_option = "kill_icebergs";
     pism_config:geometry.remove_icebergs_type = "flag";
 
+    pism_config:geometry.label_holes = "no";
+    pism_config:geometry.label_holes_doc = "label enclosed ocean points in ice shelf areas";
+    pism_config:geometry.label_holes_option = "label_floating_holes";
+    pism_config:geometry.label_holes_type = "flag";
+
     pism_config:geometry.update.enabled = "yes";
     pism_config:geometry.update.enabled_doc = "Solve the mass conservation equation";
     pism_config:geometry.update.enabled_option = "mass";

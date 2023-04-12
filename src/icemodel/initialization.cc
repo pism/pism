@@ -24,6 +24,7 @@
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/frontretreat/util/LabelHoleIce.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"
@@ -524,6 +525,30 @@ void IceModel::allocate_iceberg_remover() {
     m_iceberg_remover->init();
 
     m_submodels["iceberg remover"] = m_iceberg_remover.get();
+  }
+}
+
+void IceModel::allocate_label_hole() {
+
+  if (m_label_hole != NULL) {
+    return;
+  }
+
+  m_log->message(2,
+             "# Allocating hole labeling in floating ice (related to calving)...\n");
+
+  if (m_config->get_flag("geometry.label_holes")) {
+
+    // this will throw an exception on failure
+    //todo:cr1: m_label_hole.reset(new pism::LabelHoleIce(m_grid));
+    m_label_hole.reset(new calving::LabelHoleIce(m_grid));
+    //todo:cr3: m_label_hole.reset(new LabelHoleIce(m_grid));
+
+    // Ice shelf hole does not have a state, so it is OK to
+    // initialize here.
+    m_label_hole->init();
+
+    m_submodels["label holes in floating ice"] = m_label_hole.get();
   }
 }
 
