@@ -32,15 +32,10 @@ namespace pism {
 namespace calving {
 
 LabelHoleIce::LabelHoleIce(IceGrid::ConstPtr g)
-  : Component(g) {
-  {
-    m_forced_open_ocean_mask(m_grid, "forced_open_ocean", WITHOUT_GHOSTS);
-  }
-  {
-    m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS){
+  : Component(g),
+    m_forced_open_ocean_mask(m_grid, "forced_open_ocean", WITHOUT_GHOSTS),
+  m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS){
       m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
-    }
-  }
 }
 
 LabelHoleIce::~LabelHoleIce() {
@@ -56,7 +51,8 @@ void LabelHoleIce::init() {
  *
  * @param[in,out] forced open ocean masked
  */
-void LabelHoleIce::open_ocean_mask1(const IceModelVec2T &retreat_mask,
+//todo:rm?;void LabelHoleIce::open_ocean_mask1(const IceModelVec2T &retreat_mask,
+void LabelHoleIce::open_ocean_mask1(const IceModelVec2S &retreat_mask,
 				    const IceModelVec2S &bed,
 				    const IceModelVec2S &sea_level,
 				    IceModelVec2Int &open_ocean_mask) {
@@ -68,7 +64,7 @@ void LabelHoleIce::open_ocean_mask1(const IceModelVec2T &retreat_mask,
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      double depth_ocean = bed(i, j)+sea_level(i, j) //todo:??:;(*bed)(i, j)+(*sea_level)(i, j)???
+      double depth_ocean = bed(i, j)+sea_level(i, j); //todo:??:;(*bed)(i, j)+(*sea_level)(i, j);???
 
 	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
@@ -99,7 +95,7 @@ void LabelHoleIce::open_ocean_mask2(const IceModelVec2S &bed,
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      double depth_ocean = bed(i, j)+sea_level(i, j)
+      double depth_ocean = bed(i, j)+sea_level(i, j);
 
 	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
@@ -129,7 +125,7 @@ void LabelHoleIce::update(const IceModelVec2Int &open_ocean_mask,
   {
     m_enclosed_ocean_mask.set(0.0);
 
-    IceModelVec::AccessList list{&open_ocean_maskm, &mask, &m_enclosed_ocean_mask};
+    IceModelVec::AccessList list{&open_ocean_mask, &mask, &m_enclosed_ocean_mask};
 
     // Ocean points are potentially enclosed ocean points
     for (Points p(*m_grid); p; p.next()) {
