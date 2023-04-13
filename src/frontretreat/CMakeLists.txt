@@ -8,5 +8,6 @@ add_library(frontretreat OBJECT
   calving/StressCalving.cc
   calving/vonMisesCalving.cc
   util/IcebergRemover.cc
+  util/LabelHoleIce.cc
   util/remove_narrow_tongues.cc
   )
