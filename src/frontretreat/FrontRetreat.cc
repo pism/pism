@@ -85,6 +85,7 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
 
   // About 9 hours which corresponds to 10000 km year-1 on a 10 km grid
   double dt_min = convert(sys, 0.001, "years", "seconds");
+  const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
   double
     retreat_rate_max  = 0.0,
@@ -96,7 +97,8 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
   for (Points pt(*grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    if (cell_type.ice_free_ocean(i, j) and
+    //todo:org:rm;if (cell_type.ice_free_ocean(i, j) and
+    if (cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
         cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in update_geometry()
@@ -166,6 +168,7 @@ void FrontRetreat::update_geometry(double dt,
   }
 
   const double dx = m_grid->dx();
+  const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
   m_tmp.set(0.0);
 
@@ -181,7 +184,8 @@ void FrontRetreat::update_geometry(double dt,
     const int i = pt.i(), j = pt.j();
 
     // apply retreat rate at the margin (i.e. to partially-filled cells) only
-    if (m_cell_type.ice_free_ocean(i, j) and
+    //todo:org:rm;if (m_cell_type.ice_free_ocean(i, j) and
+    if (m_cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
         m_cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in max_timestep()
