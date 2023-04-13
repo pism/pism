@@ -41,6 +41,30 @@
 namespace pism {
 
 void IceModel::front_retreat_step() {
+// Before computing frontal retreat due to calving processes and frontal melt,
+// we detect and label enclosed ocean points if requsted
+  {
+    const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
+
+//TODO:Correct_field_names_...;    if (m_label_hole && do_consider_holes) {
+//TODO:Correct_field_names_...;      // Depending on providing a retreat_mask, we determine predefined open ocean points
+//TODO:Correct_field_names_...;      if (m_prescribed_retreat) {
+//TODO:Correct_field_names_...;	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.retreat_mask,
+//TODO:Correct_field_names_...;						     m_geometry.bed_elevation,
+//TODO:Correct_field_names_...;						     m_geometry.sea_level_elevation,
+//TODO:Correct_field_names_...;						     m_forced_open_ocean_mask);
+//TODO:Correct_field_names_...;      } else {
+//TODO:Correct_field_names_...;	m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
+//TODO:Correct_field_names_...;					     m_geometry.sea_level_elevation,
+//TODO:Correct_field_names_...;					     m_forced_open_ocean_mask);
+//TODO:Correct_field_names_...;      }
+//TODO:Correct_field_names_...;      // Final determination of the the open and enclosed ocean points and update
+//TODO:Correct_field_names_...;      // of the corresponding PISM mask.
+//TODO:Correct_field_names_...;      m_label_hole->update(m_forced_open_ocean_mask, mask);
+//TODO:Correct_field_names_...;    }
+  }
+
+
   // compute retreat rates due to eigencalving, von Mises calving, Hayhurst calving,
   // and frontal melt.
   // We do this first to make sure that all three mechanisms use the same ice geometry.
