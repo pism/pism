@@ -63,6 +63,7 @@ void EigenCalving::init() {
 */
 void EigenCalving::update(const IceModelVec2CellType &cell_type,
                           const IceModelVec2V &ice_velocity) {
+  const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
@@ -86,7 +87,9 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    //todo:org:rm;if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
+	m_cell_type.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:

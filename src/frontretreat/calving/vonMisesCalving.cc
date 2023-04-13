@@ -102,6 +102,7 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
                              const IceModelVec3 &ice_enthalpy) {
 
   using std::max;
+  const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -125,7 +126,9 @@ void vonMisesCalving::update(const IceModelVec2CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    //todo:org:rm;if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
+	m_cell_type.next_to_floating_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,

@@ -80,6 +80,7 @@ void CalvingAtThickness::init() {
 void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
                                 IceModelVec2S &ice_thickness) {
 
+  const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(pism_mask);
 
@@ -87,8 +88,10 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
+    //todo:org:rm;if (m_old_mask.floating_ice(i, j)           &&
+    //todo:org:rm;    m_old_mask.next_to_ice_free_ocean(i, j) &&
     if (m_old_mask.floating_ice(i, j)           &&
-        m_old_mask.next_to_ice_free_ocean(i, j) &&
+        m_old_mask.next_to_ice_free_open_ocean(i, j, do_consider_holes) &&
         ice_thickness(i, j) < m_calving_threshold(i, j)) {
       ice_thickness(i, j) = 0.0;
       pism_mask(i, j)     = MASK_ICE_FREE_OCEAN;
