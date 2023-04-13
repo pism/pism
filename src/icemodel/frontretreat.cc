@@ -46,22 +46,22 @@ void IceModel::front_retreat_step() {
   {
     const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
-//TODO:Correct_field_names_...;    if (m_label_hole && do_consider_holes) {
-//TODO:Correct_field_names_...;      // Depending on providing a retreat_mask, we determine predefined open ocean points
-//TODO:Correct_field_names_...;      if (m_prescribed_retreat) {
-//TODO:Correct_field_names_...;	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.retreat_mask,
-//TODO:Correct_field_names_...;						     m_geometry.bed_elevation,
-//TODO:Correct_field_names_...;						     m_geometry.sea_level_elevation,
-//TODO:Correct_field_names_...;						     m_forced_open_ocean_mask);
-//TODO:Correct_field_names_...;      } else {
-//TODO:Correct_field_names_...;	m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
-//TODO:Correct_field_names_...;					     m_geometry.sea_level_elevation,
-//TODO:Correct_field_names_...;					     m_forced_open_ocean_mask);
-//TODO:Correct_field_names_...;      }
-//TODO:Correct_field_names_...;      // Final determination of the the open and enclosed ocean points and update
-//TODO:Correct_field_names_...;      // of the corresponding PISM mask.
-//TODO:Correct_field_names_...;      m_label_hole->update(m_forced_open_ocean_mask, mask);
-//TODO:Correct_field_names_...;    }
+//    if (m_label_hole && do_consider_holes) {
+////todo!      // Depending on providing a retreat_mask, we determine predefined open ocean points
+////todo!      if (m_prescribed_retreat) {
+////todo!	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.retreat_mask,
+////todo!						     m_geometry.bed_elevation,
+////todo!						     m_geometry.sea_level_elevation,
+////todo!						     m_label_hole->m_forced_open_ocean_mask);
+////todo!      } else {
+//      m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
+//					   m_geometry.sea_level_elevation,
+//					   m_label_hole->m_forced_open_ocean_mask);
+//    }
+//      // Final determination of the the open and enclosed ocean points and update
+//      // of the corresponding PISM mask.
+////todo!      m_label_hole->update(m_label_hole->m_forced_open_ocean_mask, //??
+////todo!			   m_geometry.cell_type);
   }
 
 
