@@ -51,20 +51,20 @@ void LabelHoleIce::init() {
  *
  * @param[in,out] forced open ocean masked
  */
-//todo:rm?;void LabelHoleIce::open_ocean_mask1(const IceModelVec2T &retreat_mask,
-void LabelHoleIce::open_ocean_mask1(const IceModelVec2S &retreat_mask,
-				    const IceModelVec2S &bed,
-				    const IceModelVec2S &sea_level,
-				    IceModelVec2Int &open_ocean_mask) {
-  const double depth_abyssal = 2000.0;
-  const double depth_coast = 0.1;
+//todo:rm?;void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2T &retreat_mask,
+void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_mask,
+						  const IceModelVec2S &bed,
+						  const IceModelVec2S &sea_level,
+						  IceModelVec2Int &open_ocean_mask) {
+  const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin
+  const double depth_coast = 0.1;      //FIXME:changeable parameter
 
   {
     IceModelVec::AccessList list{&retreat_mask, &bed, &sea_level, &open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
-      double depth_ocean = bed(i, j)+sea_level(i, j); //todo:??:;(*bed)(i, j)+(*sea_level)(i, j);???
+      double depth_ocean = bed(i, j)+sea_level(i, j);
 
 	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
@@ -85,10 +85,10 @@ void LabelHoleIce::open_ocean_mask1(const IceModelVec2S &retreat_mask,
  *
  * @param[in,out] forced open ocean masked
  */
-void LabelHoleIce::open_ocean_mask2(const IceModelVec2S &bed,
-				    const IceModelVec2S &sea_level,
-				    IceModelVec2Int &open_ocean_mask) {
-  const double depth_abyssal = 2000.0;
+void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
+					  const IceModelVec2S &sea_level,
+					  IceModelVec2Int &open_ocean_mask) {
+  const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin_retreat
 
   {
     IceModelVec::AccessList list{&bed, &sea_level, &open_ocean_mask};
