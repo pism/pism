@@ -74,10 +74,12 @@ public:
     return mask::ice_free_land(as_int(i, j));
   }
 
+  //! \brief ocean point (area) is entirely surrounded by ice (e.g., hole in ice shelf)
   inline bool ice_free_enclosed_ocean(int i, int j) const {
     return mask::ice_free_enclosed_ocean(as_int(i, j));
   }
 
+  //! \brief ocean point belongs to the open ocean (e.g., not enclosed by ice)
   inline bool ice_free_open_ocean(int i, int j) const {
     return mask::ice_free_open_ocean(as_int(i, j));
   }
@@ -113,6 +115,7 @@ public:
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
 
+  //! \brief At least one of four neigbors is an open ocean (not by ice enclosed ocean)
   inline bool next_to_ice_free_open_ocean(int i, int j) const {
     return (ice_free_open_ocean(i + 1, j) or ice_free_open_ocean(i - 1, j) or
             ice_free_open_ocean(i, j + 1) or ice_free_open_ocean(i, j - 1));
