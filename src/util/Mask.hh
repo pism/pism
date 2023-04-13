@@ -68,14 +68,30 @@ namespace mask {
   }
   //! \brief ice-free enclosed ocean (ocean surrounded by floating or
   //!        grounded ice, or ice-free land, such as holes in ice shelves).
+  //! \brief ice-free enclosed ocean (ocean surrounded by floating or
+  //!        grounded ice, or ice-free land, such as holes in ice shelves).
   inline bool ice_free_enclosed_ocean(int M) {
     return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
   }
+  //todo:alt:rm?;inline bool ice_free_enclosed_ocean(int M, bool do_consider_holes = false) {
+  //todo:alt:rm?;  if (do_consider_holes) {
+  //todo:alt:rm?;    return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
+  //todo:alt:rm?;  } else {
+  //todo:alt:rm?;    return ice_free_ocean(M);
+  //todo:alt:rm?;  }
+  //todo:alt:rm?;}
   //! \brief open ocean (ocean NOT entirely surrounded by ice and land,
   //!        such as holes in ice shelves).
   inline bool ice_free_open_ocean(int M) {
     return not ice_free_enclosed_ocean(M);
   }
+  //todo:alt:rm?;inline bool ice_free_open_ocean(int M, bool do_consider_holes = false) {
+  //todo:alt:rm?;  if (do_consider_holes) {
+  //todo:alt:rm?;    return not ice_free_enclosed_ocean(M);
+  //todo:alt:rm?;  } else {
+  //todo:alt:rm?;    return ice_free_ocean(M);
+  //todo:alt:rm?;  }
+  //todo:alt:rm?;}
 }
 
 class GeometryCalculator {
