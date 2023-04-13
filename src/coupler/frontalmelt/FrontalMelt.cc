@@ -73,6 +73,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
   const double
     ice_density = m_config->get_number("constants.ice.density"),
     alpha       = ice_density / m_config->get_number("constants.sea_water.density");
+  //todo,FIXME:Shall:we_use_it?;const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
   IceModelVec::AccessList list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
                                &bed_elevation, &surface_elevation, &ice_thickness, &result};
@@ -82,6 +83,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
+      //todo,FIXME:Shall:we_use_it?;if (cell_type.ice_free_open_ocean(i, j, do_consider_holes) and cell_type.next_to_ice(i, j)) {
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
         const double
           bed       = bed_elevation(i, j),
