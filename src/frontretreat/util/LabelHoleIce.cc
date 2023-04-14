@@ -65,12 +65,6 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
       double depth_ocean = bed(i, j)+sea_level(i, j);
       double retreat_factor;
 
-      //todo:rm!;if ( ice_thickness(i, j) > 0.001 ) {
-      //todo:rm!;	retreat_factor = ice_area_specific_volume(i, j)/ice_thickness(i, j);
-      //todo:rm!;} else {
-      //todo:rm!;	retreat_factor = std::min(ice_area_specific_volume(i, j), 1.0);
-      //todo:rm!;}
-
       retreat_factor = ice_area_specific_volume(i, j)/std::max(0.0001, ice_thickness(i, j));
       //todo:alternative; retreat_factor = retreat_mask(i, j)
 
@@ -146,7 +140,7 @@ void LabelHoleIce::update(IceModelVec2CellType &mask) {
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_bc_open_ocean_mask(i, j) > 0.5 and mask.ocean(i, j)) { //todo:rm;if (m_bc_open_ocean_mask(i, j) ==  1) {
+      if (m_bc_open_ocean_mask(i, j) > 0.5 and mask.ocean(i, j)) {
         m_enclosed_ocean_mask(i, j) = mask_not_enclosed_ocean;
       }
     }
