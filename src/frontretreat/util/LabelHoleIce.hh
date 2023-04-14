@@ -64,21 +64,21 @@ public:
   virtual ~LabelHoleIce();
 
   virtual void init();
-  void update(const IceModelVec2Int &open_ocean_mask,
+  void update(const IceModelVec2Int &bc_open_ocean_mask,
               IceModelVec2CellType &pism_mask);
 
-  //todo:rm?;void open_ocean_mask1(const IceModelVec2T &retreat_mask,
+  //todo:rm?;void open_ocean_margin_retreat(const IceModelVec2T &retreat_mask,
   void open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_mask,
 				      const IceModelVec2S &bed,
 				      const IceModelVec2S &sea_level,
-				      IceModelVec2Int &forced_open_ocean_mask);
+				      IceModelVec2Int &bc_open_ocean_mask);
 
   void open_ocean_mask_margin(const IceModelVec2S &bed,
 			      const IceModelVec2S &sea_level,
-			      IceModelVec2Int &forced_open_ocean_mask);
+			      IceModelVec2Int &bc_open_ocean_mask);
 
 protected:
-  IceModelVec2Int m_forced_open_ocean_mask;
+  IceModelVec2Int m_bc_open_ocean_mask;
   IceModelVec2S m_enclosed_ocean_mask;
   petsc::Vec::Ptr m_mask_enclose_ocean_p0;
 };
