@@ -55,7 +55,7 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_m
   const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin
   const double depth_coast = 0.1;      //FIXME:changeable parameter
 
-  m_bc_open_ocean_mask.set(0) //todo:erase?
+  m_bc_open_ocean_mask.set(0); //todo:erase?
   {
     IceModelVec::AccessList list{&retreat_mask, &bed, &sea_level, &m_bc_open_ocean_mask};
 
@@ -86,7 +86,7 @@ void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
 					  const IceModelVec2S &sea_level) {
   const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin_retreat
 
-  m_bc_open_ocean_mask.set(0) //todo:erase?
+  m_bc_open_ocean_mask.set(0); //todo:erase?
   {
     IceModelVec::AccessList list{&bed, &sea_level, &m_bc_open_ocean_mask};
 
