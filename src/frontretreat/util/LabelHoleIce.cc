@@ -46,27 +46,38 @@ void LabelHoleIce::init() {
 /**
  * Define points that are considered as open ocean in contrast to an enclosed ocean, which are holes in ice shelves.
  *
- * @param[in,out] forced open ocean masked
  */
-//todo:rm?;void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2T &retreat_mask,
-void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_mask,
-						  const IceModelVec2S &bed,
-						  const IceModelVec2S &sea_level) {
+void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
+						  const IceModelVec2S &sea_level,
+						  const IceModelVec2S &ice_area_specific_volume,
+						  const IceModelVec2S &ice_thickness) {
+                                                  //todo:alternative;const IceModelVec2S &retreat_mask) {
   const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin
   const double depth_coast = 0.1;      //FIXME:changeable parameter
 
   m_bc_open_ocean_mask.set(0); //todo:erase?
   {
-    IceModelVec::AccessList list{&retreat_mask, &bed, &sea_level, &m_bc_open_ocean_mask};
+    //todo:alternative;IceModelVec::AccessList list{&bed, &sea_level, &retreat_mask, &m_bc_open_ocean_mask};
+    IceModelVec::AccessList list{&bed, &sea_level, &ice_area_specific_volume, &ice_thickness, &m_bc_open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
       double depth_ocean = bed(i, j)+sea_level(i, j);
+      double retreat_factor;
 
-	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
+      //todo:rm!;if ( ice_thickness(i, j) > 0.001 ) {
+      //todo:rm!;	retreat_factor = ice_area_specific_volume(i, j)/ice_thickness(i, j);
+      //todo:rm!;} else {
+      //todo:rm!;	retreat_factor = std::min(ice_area_specific_volume(i, j), 1.0);
+      //todo:rm!;}
+
+      retreat_factor = ice_area_specific_volume(i, j)/std::max(0.0001, ice_thickness(i, j));
+      //todo:alternative; retreat_factor = retreat_mask(i, j)
+
+      if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
 	   m_bc_open_ocean_mask(i, j) = 1;
-	} else if (retreat_mask(i, j) > 0.5 && depth_ocean < depth_coast) {
+	} else if (retreat_factor > 0.5 && depth_ocean < depth_coast) {
 	   // Forced retreat
 	   m_bc_open_ocean_mask(i, j) = 1;
 	} else {
@@ -80,7 +91,6 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_m
 /**
  * Define points that are considered as open ocean in contrast to an enclosed ocean, which are holes in ice shelves.
  *
- * @param[in,out] forced open ocean masked
  */
 void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
 					  const IceModelVec2S &sea_level) {

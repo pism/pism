@@ -48,16 +48,18 @@ void IceModel::front_retreat_step() {
     const bool do_consider_holes = m_config->get_flag("geometry.label_holes");
 
     if (m_label_hole && do_consider_holes) {
-////todo!      // Depending on providing a retreat_mask, we determine predefined open ocean points
-////todo!      if (m_prescribed_retreat) {
-////todo!	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.retreat_mask,
-////todo!						     m_geometry.bed_elevation,
-////todo!						     m_geometry.sea_level_elevation);
-////todo!      } else {
-      m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
-					   m_geometry.sea_level_elevation);
-////todo!    }
-   // Final determination of the the open and enclosed ocean points and update
+      // Depending on providing a retreat_mask, we determine predefined open ocean points
+      if (m_prescribed_retreat) {
+	// Retreat mass of PresribedRetreat
+	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.bed_elevation,
+						     m_geometry.sea_level_elevation,
+						     m_geometry.ice_area_specific_volume,
+						     m_geometry.m_retreat_mask);
+      } else {
+	m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
+					     m_geometry.sea_level_elevation);
+      }
+      // Final determination of the the open and enclosed ocean points and update
       // of the corresponding PISM mask.
       m_label_hole->update(m_geometry.cell_type);
     }

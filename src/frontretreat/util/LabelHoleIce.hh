@@ -67,9 +67,11 @@ public:
   void update(IceModelVec2CellType &pism_mask);
 
   //todo:rm?;void open_ocean_margin_retreat(const IceModelVec2T &retreat_mask,
-  void open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_mask,
-				      const IceModelVec2S &bed,
-				      const IceModelVec2S &sea_level);
+  void open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
+				      const IceModelVec2S &sea_level,
+				      const IceModelVec2S &ice_area_specific_volume,
+				      const IceModelVec2S &ice_thickness);
+				      //todo:alternative;const IceModelVec2S &retreat_mask);
 
   void open_ocean_mask_margin(const IceModelVec2S &bed,
 			      const IceModelVec2S &sea_level);
