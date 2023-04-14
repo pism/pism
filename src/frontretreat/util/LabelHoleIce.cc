@@ -51,13 +51,13 @@ void LabelHoleIce::init() {
 //todo:rm?;void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2T &retreat_mask,
 void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_mask,
 						  const IceModelVec2S &bed,
-						  const IceModelVec2S &sea_level,
-						  IceModelVec2Int &bc_open_ocean_mask) {
+						  const IceModelVec2S &sea_level) {
   const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin
   const double depth_coast = 0.1;      //FIXME:changeable parameter
 
+  m_bc_open_ocean_mask.set(0) //todo:erase?
   {
-    IceModelVec::AccessList list{&retreat_mask, &bed, &sea_level, &bc_open_ocean_mask};
+    IceModelVec::AccessList list{&retreat_mask, &bed, &sea_level, &m_bc_open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -65,13 +65,13 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_m
 
 	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
-	   bc_open_ocean_mask(i, j) = 1;
+	   m_bc_open_ocean_mask(i, j) = 1;
 	} else if (retreat_mask(i, j) > 0.5 && depth_ocean < depth_coast) {
 	   // Forced retreat
-	   bc_open_ocean_mask(i, j) = 1;
+	   m_bc_open_ocean_mask(i, j) = 1;
 	} else {
 	   // Otherwise
-	   bc_open_ocean_mask(i, j) = 0;
+	   m_bc_open_ocean_mask(i, j) = 0;
 	}
     }
   }
@@ -83,12 +83,12 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &retreat_m
  * @param[in,out] forced open ocean masked
  */
 void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
-					  const IceModelVec2S &sea_level,
-					  IceModelVec2Int &bc_open_ocean_mask) {
+					  const IceModelVec2S &sea_level) {
   const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin_retreat
 
+  m_bc_open_ocean_mask.set(0) //todo:erase?
   {
-    IceModelVec::AccessList list{&bed, &sea_level, &bc_open_ocean_mask};
+    IceModelVec::AccessList list{&bed, &sea_level, &m_bc_open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
@@ -96,10 +96,10 @@ void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
 
 	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
 	   // Abyssal ocean at the domain margin
-	   bc_open_ocean_mask(i, j) = 1;
+	   m_bc_open_ocean_mask(i, j) = 1;
 	} else {
 	   // Otherwise
-	   bc_open_ocean_mask(i, j) = 0;
+	   m_bc_open_ocean_mask(i, j) = 0;
 	}
     }
   }
@@ -110,8 +110,7 @@ void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
  *
  * @param[in,out] pism_mask PISM's ice cover mask
  */
-void LabelHoleIce::update(const IceModelVec2Int &bc_open_ocean_mask,
-			  IceModelVec2CellType &mask) {
+void LabelHoleIce::update(IceModelVec2CellType &mask) {
   const int
     mask_not_enclosed_ocean = 1,
     mask_enclosed_ocean = 2;
@@ -121,7 +120,7 @@ void LabelHoleIce::update(const IceModelVec2Int &bc_open_ocean_mask,
   {
     m_enclosed_ocean_mask.set(0.0);
 
-    IceModelVec::AccessList list{&bc_open_ocean_mask, &mask, &m_enclosed_ocean_mask};
+    IceModelVec::AccessList list{&m_bc_open_ocean_mask, &mask, &m_enclosed_ocean_mask};
 
     // Ocean points are potentially enclosed ocean points
     for (Points p(*m_grid); p; p.next()) {
@@ -132,11 +131,11 @@ void LabelHoleIce::update(const IceModelVec2Int &bc_open_ocean_mask,
       }
     }
 
-    // Open ocean points are not enclosed and defined by bc_open_ocean_mask=1.
+    // Open ocean points are not enclosed and defined by m_bc_open_ocean_mask=1.
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (bc_open_ocean_mask(i, j) > 0.5 and mask.ocean(i, j)) { //todo:rm;if (bc_open_ocean_mask(i, j) ==  1) {
+      if (m_bc_open_ocean_mask(i, j) > 0.5 and mask.ocean(i, j)) { //todo:rm;if (m_bc_open_ocean_mask(i, j) ==  1) {
         m_enclosed_ocean_mask(i, j) = mask_not_enclosed_ocean;
       }
     }
@@ -163,12 +162,12 @@ void LabelHoleIce::update(const IceModelVec2Int &bc_open_ocean_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "ice shelf hole" mask:
   {
-    IceModelVec::AccessList list{&mask, &m_enclosed_ocean_mask, &bc_open_ocean_mask};
+    IceModelVec::AccessList list{&mask, &m_enclosed_ocean_mask, &m_bc_open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_enclosed_ocean_mask(i, j) > 0.5 && bc_open_ocean_mask(i, j) < 0.5) {
+      if (m_enclosed_ocean_mask(i, j) > 0.5 && m_bc_open_ocean_mask(i, j) < 0.5) {
         mask(i, j) = MASK_ICE_FREE_ENCLOSED_OCEAN;
       }
     }

@@ -51,18 +51,14 @@ void IceModel::front_retreat_step() {
 ////todo!      if (m_prescribed_retreat) {
 ////todo!	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.retreat_mask,
 ////todo!						     m_geometry.bed_elevation,
-////todo!						     m_geometry.sea_level_elevation,
-////todo!						     m_label_hole->m_bc_open_ocean_mask);
+////todo!						     m_geometry.sea_level_elevation);
 ////todo!      } else {
 //      m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
-//					   m_geometry.sea_level_elevation,
-//					   m_label_hole->m_bc_open_ocean_mask);
+//					   m_geometry.sea_level_elevation);
 //    }
 //      // Final determination of the the open and enclosed ocean points and update
 //      // of the corresponding PISM mask.
-////todo!      m_label_hole->update(m_label_hole->m_bc_open_ocean_mask,   //??
-////todo!      m_label_hole->update(m_label_hole->m_bc_open_ocean_mask(), //??
-////todo!			   m_geometry.cell_type);
+////todo!      m_label_hole->update(m_geometry.cell_type);
   }
 
 
