@@ -33,8 +33,6 @@ LabelHoleIce::LabelHoleIce(IceGrid::ConstPtr g)
     m_bc_open_ocean_mask(m_grid, "bc_open_ocean_mask", WITHOUT_GHOSTS),
     m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS)
 {
-  const double depth_abyssal = 2000.0; //FIXME:changeable parameter
-  const double depth_coast = 0.1;      //FIXME:changeable parameter
   m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
 }
 
@@ -55,6 +53,8 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
 						  const IceModelVec2S &ice_area_specific_volume,
 						  const IceModelVec2S &ice_thickness) {
   //todo:alternative;const IceModelVec2S &retreat_mask instead of "ice_area_specific_volume/ice_thickness"
+  const double depth_abyssal = 2000.0; //FIXME:changeable parameter
+  const double depth_coast = 0.1;      //FIXME:changeable parameter
 
   m_bc_open_ocean_mask.set(0); //todo:erase?
   {
@@ -94,6 +94,8 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
  */
 void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
 					  const IceModelVec2S &sea_level) {
+
+  const double depth_abyssal = 2000.0; //FIXME:changeable parameter
 
   m_bc_open_ocean_mask.set(0); //todo:erase?
   {
