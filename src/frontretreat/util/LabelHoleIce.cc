@@ -31,8 +31,11 @@ namespace calving {
 LabelHoleIce::LabelHoleIce(IceGrid::ConstPtr g)
   : Component(g),
     m_bc_open_ocean_mask(m_grid, "bc_open_ocean_mask", WITHOUT_GHOSTS),
-    m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS){
-      m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
+    m_enclosed_ocean_mask(m_grid, "enclosed_ocean_mask", WITHOUT_GHOSTS)
+{
+  const double depth_abyssal = 2000.0; //FIXME:changeable parameter
+  const double depth_coast = 0.1;      //FIXME:changeable parameter
+  m_mask_enclose_ocean_p0 = m_enclosed_ocean_mask.allocate_proc0_copy();
 }
 
 LabelHoleIce::~LabelHoleIce() {
@@ -51,13 +54,10 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
 						  const IceModelVec2S &sea_level,
 						  const IceModelVec2S &ice_area_specific_volume,
 						  const IceModelVec2S &ice_thickness) {
-                                                  //todo:alternative;const IceModelVec2S &retreat_mask) {
-  const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin
-  const double depth_coast = 0.1;      //FIXME:changeable parameter
+  //todo:alternative;const IceModelVec2S &retreat_mask instead of "ice_area_specific_volume/ice_thickness"
 
   m_bc_open_ocean_mask.set(0); //todo:erase?
   {
-    //todo:alternative;IceModelVec::AccessList list{&bed, &sea_level, &retreat_mask, &m_bc_open_ocean_mask};
     IceModelVec::AccessList list{&bed, &sea_level, &ice_area_specific_volume, &ice_thickness, &m_bc_open_ocean_mask};
 
     for (Points p(*m_grid); p; p.next()) {
@@ -74,10 +74,10 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
       retreat_factor = ice_area_specific_volume(i, j)/std::max(0.0001, ice_thickness(i, j));
       //todo:alternative; retreat_factor = retreat_mask(i, j)
 
-      if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
-	   // Abyssal ocean at the domain margin
+      if (grid_edge(*m_grid, i, j) && depth_ocean > depth_abyssal) {
+	   // Abyssal ocean at the domain edge
 	   m_bc_open_ocean_mask(i, j) = 1;
-	} else if (retreat_factor > 0.5 && depth_ocean < depth_coast) {
+	} else if (retreat_factor > 0.5 && depth_ocean > depth_coast) {
 	   // Forced retreat
 	   m_bc_open_ocean_mask(i, j) = 1;
 	} else {
@@ -94,7 +94,6 @@ void LabelHoleIce::open_ocean_mask_margin_retreat(const IceModelVec2S &bed,
  */
 void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
 					  const IceModelVec2S &sea_level) {
-  const double depth_abyssal = 2000.0; //FIXME:changeable parameter, see also open_ocean_mask_margin_retreat
 
   m_bc_open_ocean_mask.set(0); //todo:erase?
   {
@@ -104,7 +103,7 @@ void LabelHoleIce::open_ocean_mask_margin(const IceModelVec2S &bed,
       const int i = p.i(), j = p.j();
       double depth_ocean = bed(i, j)+sea_level(i, j);
 
-	if (grid_edge(*m_grid, i, j) && depth_ocean < depth_abyssal) {
+	if (grid_edge(*m_grid, i, j) && depth_ocean > depth_abyssal) {
 	   // Abyssal ocean at the domain margin
 	   m_bc_open_ocean_mask(i, j) = 1;
 	} else {

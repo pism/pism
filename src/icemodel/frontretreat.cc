@@ -50,11 +50,11 @@ void IceModel::front_retreat_step() {
     if (m_label_hole && do_consider_holes) {
       // Depending on providing a retreat_mask, we determine predefined open ocean points
       if (m_prescribed_retreat) {
-	// Retreat mass of PresribedRetreat
+	// Retreat; see PresribedRetreat
 	m_label_hole->open_ocean_mask_margin_retreat(m_geometry.bed_elevation,
 						     m_geometry.sea_level_elevation,
 						     m_geometry.ice_area_specific_volume,
-						     m_geometry.m_retreat_mask);
+						     m_geometry.ice_thickness);
       } else {
 	m_label_hole->open_ocean_mask_margin(m_geometry.bed_elevation,
 					     m_geometry.sea_level_elevation);
