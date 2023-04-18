@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -89,6 +89,8 @@ struct IceGrid::Impl {
   unsigned int Mx;
   //! number of grid points in the y-direction
   unsigned int My;
+
+  int max_patch_size;
 
   //! x-coordinate of the grid center
   double x0;
@@ -295,6 +297,10 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const GridParameters &p
       m_impl->ym = info.ym;
 
     }
+
+    int patch_size = m_impl->xm * m_impl->ym;
+    GlobalMax(com, &patch_size, &m_impl->max_patch_size, 1);
+    
   } catch (RuntimeError &e) {
     e.add_context("allocating IceGrid");
     throw;
@@ -1044,6 +1050,13 @@ double IceGrid::x0() const {
 //! Y-coordinate of the center of the domain.
 double IceGrid::y0() const {
   return m_impl->y0;
+}
+
+/*!
+ * Return the size of the biggest sub-domain (part owned by a MPI process)
+ */
+int IceGrid::max_patch_size() const {
+  return m_impl->max_patch_size;
 }
 
 //! @brief Returns the distance from the point (i,j) to the origin.

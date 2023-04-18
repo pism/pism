@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -265,6 +265,8 @@ public:
   std::vector<double> compute_interp_weights(double x, double y) const;
 
   unsigned int kBelowHeight(double height) const;
+
+  int max_patch_size() const;
 
   std::shared_ptr<const Context> ctx() const;
 
