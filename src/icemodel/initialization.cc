@@ -535,7 +535,7 @@ void IceModel::allocate_label_hole() {
   }
 
   m_log->message(2,
-             "# Allocating hole labeling in floating ice (related to calving)...\n");
+             "# Allocating hole labeling in ice-free and floating ice (related to calving)...\n");
 
   if (m_config->get_flag("geometry.label_holes")) {
 
@@ -674,7 +674,13 @@ void IceModel::allocate_submodels() {
   allocate_geometry_evolution();
 
   allocate_iceberg_remover();
-  allocate_label_hole();
+  if (m_config->get_flag("geometry.label_holes")) {
+    allocate_label_hole();
+  } else if (m_config->get_flag("geometry.remove_icebergs") {
+    m_log->message(2,
+		   "# Skip allocating hole labeling in ice-free and floating ice ...\n");
+  }
+
 
   allocate_stressbalance();
 
