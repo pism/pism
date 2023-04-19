@@ -87,7 +87,6 @@ void EigenCalving::update(const IceModelVec2CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    //todo:org:rm;if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
     if (m_cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
 	m_cell_type.next_to_floating_ice(i, j)) {
 

@@ -88,8 +88,6 @@ void CalvingAtThickness::update(IceModelVec2CellType &pism_mask,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    //todo:org:rm;if (m_old_mask.floating_ice(i, j)           &&
-    //todo:org:rm;    m_old_mask.next_to_ice_free_ocean(i, j) &&
     if (m_old_mask.floating_ice(i, j)           &&
         m_old_mask.next_to_ice_free_open_ocean(i, j, do_consider_holes) &&
         ice_thickness(i, j) < m_calving_threshold(i, j)) {

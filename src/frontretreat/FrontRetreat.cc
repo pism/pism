@@ -97,7 +97,6 @@ MaxTimestep FrontRetreat::max_timestep(const IceModelVec2CellType &cell_type,
   for (Points pt(*grid); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    //todo:org:rm;if (cell_type.ice_free_ocean(i, j) and
     if (cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
         cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
@@ -184,7 +183,6 @@ void FrontRetreat::update_geometry(double dt,
     const int i = pt.i(), j = pt.j();
 
     // apply retreat rate at the margin (i.e. to partially-filled cells) only
-    //todo:org:rm;if (m_cell_type.ice_free_ocean(i, j) and
     if (m_cell_type.ice_free_open_ocean(i, j, do_consider_holes) and
         m_cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
