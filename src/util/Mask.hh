@@ -27,8 +27,6 @@
 namespace pism {
 
 enum MaskValue {
-//todo:needed??:  MASK_UNKNOWN          = -10,
-//todo:needed??:  MASK_ICE_FREE_ENCLOSED_BEDROCK = -1,
   MASK_UNKNOWN          = -1,
   MASK_ICE_FREE_BEDROCK = 0,
   MASK_GROUNDED         = 2,
@@ -68,30 +66,22 @@ namespace mask {
   }
   //! \brief ice-free enclosed ocean (ocean surrounded by floating or
   //!        grounded ice, or ice-free land, such as holes in ice shelves).
-  //! \brief ice-free enclosed ocean (ocean surrounded by floating or
-  //!        grounded ice, or ice-free land, such as holes in ice shelves).
-  inline bool ice_free_enclosed_ocean(int M) {
-    return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
+  inline bool ice_free_enclosed_ocean(int M, bool do_consider_holes = false) {
+    if (do_consider_holes) {
+      return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
+    } else {
+      return ice_free_ocean(M);
+    }
   }
-  //todo:alt:rm?;inline bool ice_free_enclosed_ocean(int M, bool do_consider_holes = false) {
-  //todo:alt:rm?;  if (do_consider_holes) {
-  //todo:alt:rm?;    return (M == MASK_ICE_FREE_ENCLOSED_OCEAN);
-  //todo:alt:rm?;  } else {
-  //todo:alt:rm?;    return ice_free_ocean(M);
-  //todo:alt:rm?;  }
-  //todo:alt:rm?;}
   //! \brief open ocean (ocean NOT entirely surrounded by ice and land,
   //!        such as holes in ice shelves).
-  inline bool ice_free_open_ocean(int M) {
-    return not ice_free_enclosed_ocean(M);
+  inline bool ice_free_open_ocean(int M, bool do_consider_holes = false) {
+    if (do_consider_holes) {
+      return not ice_free_enclosed_ocean(M);
+    } else {
+      return ice_free_ocean(M);
+    }
   }
-  //todo:alt:rm?;inline bool ice_free_open_ocean(int M, bool do_consider_holes = false) {
-  //todo:alt:rm?;  if (do_consider_holes) {
-  //todo:alt:rm?;    return not ice_free_enclosed_ocean(M);
-  //todo:alt:rm?;  } else {
-  //todo:alt:rm?;    return ice_free_ocean(M);
-  //todo:alt:rm?;  }
-  //todo:alt:rm?;}
 }
 
 class GeometryCalculator {
