@@ -71,10 +71,18 @@ Geometry::Geometry(IceGrid::ConstPtr grid)
                                                  "the corresponding geometry, so thinking "
                                                  "about it as 'thickness' is not helpful");
 
+  //TODO;cell_type.set_attrs("diagnostic",
+  //TODO;		      "ice-type (ice-free/grounded/floating/ocean/enclosed) integer mask",
+  //TODO;                    "", "", "", 0);
+  //TODO;cell_type.metadata().set_numbers("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
+  //TODO;	                                           MASK_FLOATING, MASK_ICE_FREE_OCEAN,
+  //TODO;	                                           MASK_ICE_FREE_ENCLOSED_OCEAN});
+  //TODO;cell_type.metadata().set_string("flag_meanings",
+  //TODO;                                "ice_free_bedrock grounded_ice floating_ice ice_free_ocean mask_ice_free_enclosed_ocean");
   cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
                       "", "", "", 0);
   cell_type.metadata().set_numbers("flag_values", {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED,
-                                                   MASK_FLOATING, MASK_ICE_FREE_OCEAN});
+	                                           MASK_FLOATING, MASK_ICE_FREE_OCEAN});
   cell_type.metadata().set_string("flag_meanings",
                                   "ice_free_bedrock grounded_ice floating_ice ice_free_ocean");
   cell_type.metadata().set_output_type(PISM_INT);
