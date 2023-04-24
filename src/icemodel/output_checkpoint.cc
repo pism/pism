@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2019, 2022 PISM Authors
+/* Copyright (C) 2017, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -66,7 +66,7 @@ bool IceModel::write_checkpoint() {
                  "  [%s] Saving a checkpoint to '%s' (%1.3f hours after the beginning of the run)\n",
                  timestamp(m_grid->com).c_str(), m_checkpoint_filename.c_str(), wall_clock_hours);
 
-  double checkpoint_start_time = get_time();
+  double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
   {
     File file(m_grid->com,
@@ -81,7 +81,7 @@ bool IceModel::write_checkpoint() {
     save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }
   profiling.end("io.checkpoint");
-  double checkpoint_end_time = get_time();
+  double checkpoint_end_time = get_time(m_grid->com);
 
   // Also flush time-series:
   flush_timeseries();

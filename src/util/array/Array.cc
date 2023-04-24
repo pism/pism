@@ -842,7 +842,7 @@ void Array::regrid(const File &file, RegriddingFlag flag,
                          double default_value) {
   m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
                                 timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
-  double start_time = get_time();
+  double start_time = get_time(m_impl->grid->com);
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
     this->regrid_impl(file, flag, default_value);
@@ -854,7 +854,7 @@ void Array::regrid(const File &file, RegriddingFlag flag,
   }
   m_impl->grid->ctx()->profiling().end("io.regridding");
   double
-    end_time   = get_time(),
+    end_time   = get_time(m_impl->grid->com),
     time_spent = end_time - start_time;
 
   if (time_spent > 1.0) {
@@ -872,9 +872,10 @@ void Array::read(const File &file, const unsigned int time) {
 void Array::write(const File &file) const {
   define(file);
 
-  double start_time = get_time();
+  auto com = m_impl->grid->com;
+  double start_time = get_time(com);
   write_impl(file);
-  double end_time = get_time();
+  double end_time = get_time(com);
 
   const double
     minute     = 60.0,          // one minute in seconds

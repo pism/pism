@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -44,7 +44,7 @@ double average_water_column_pressure(double ice_thickness, double bed,
 #  define  __attribute__(x)  /* nothing */
 #endif
 
-double get_time();
+double get_time(MPI_Comm comm);
 std::string timestamp(MPI_Comm com);
 std::string username_prefix(MPI_Comm com);
 std::string args_string();

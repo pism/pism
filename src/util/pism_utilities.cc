@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -270,37 +270,26 @@ std::string version() {
 
 //! Return time since the beginning of the run, in hours.
 double wall_clock_hours(MPI_Comm com, double start_time) {
-  int rank = 0;
-  double result = 0.0;
+  const double seconds_per_hour = 3600.0;
 
-  MPI_Comm_rank(com, &rank);
-
-  ParallelSection rank0(com);
-  try {
-    if (rank == 0) {
-      const double seconds_per_hour = 3600.0;
-      result = (get_time() - start_time) / seconds_per_hour;
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  MPI_Bcast(&result, 1, MPI_DOUBLE, 0, com);
-
-  return result;
+  return (get_time(com) - start_time) / seconds_per_hour;
 }
 
 //! Creates a time-stamp used for the history NetCDF attribute.
 std::string timestamp(MPI_Comm com) {
-  time_t now;
-  tm tm_now;
+  int rank = 0;
+  MPI_Comm_rank(com, &rank);
+
   char date_str[50];
-  now = time(NULL);
-  localtime_r(&now, &tm_now);
-  // Format specifiers for strftime():
-  //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
-  strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+  if (rank == 0) {
+    time_t now;
+    tm tm_now;
+    now = time(NULL);
+    localtime_r(&now, &tm_now);
+    // Format specifiers for strftime():
+    //   %F = ISO date format,  %T = Full 24 hour time,  %Z = Time Zone name
+    strftime(date_str, sizeof(date_str), "%F %T %Z", &tm_now);
+  }
 
   MPI_Bcast(date_str, 50, MPI_CHAR, 0, com);
 
@@ -325,9 +314,10 @@ std::string username_prefix(MPI_Comm com) {
   }
 
   std::ostringstream message;
-  message << username << "@" << hostname << " " << timestamp(com) << ": ";
 
-  std::string result = message.str();
+  auto time          = timestamp(com);
+  std::string result = pism::printf("%s@%s %s: ", username, hostname, time.c_str());
+
   unsigned int length = result.size();
   MPI_Bcast(&length, 1, MPI_UNSIGNED, 0, com);
 
@@ -398,9 +388,26 @@ std::string filename_add_suffix(const std::string &filename,
   return result;
 }
 
-double get_time() {
-  PetscLogDouble result;
-  PetscErrorCode ierr = PetscTime(&result); PISM_CHK(ierr, "PetscTime");
+double get_time(MPI_Comm comm) {
+  int rank = 0;
+  double result = 0.0;
+
+  MPI_Comm_rank(comm, &rank);
+
+  ParallelSection rank0(comm);
+  try {
+    if (rank == 0) {
+      PetscLogDouble tmp;
+      PetscErrorCode ierr = PetscTime(&tmp); PISM_CHK(ierr, "PetscTime");
+      result = tmp;
+    }
+  } catch (...) {
+    rank0.failed();
+  }
+  rank0.check();
+
+  MPI_Bcast(&result, 1, MPI_DOUBLE, 0, comm);
+
   return result;
 }
 
