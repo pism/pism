@@ -512,6 +512,7 @@ void print_vector(MPI_Comm com,
   MPI_Comm_rank(com, &rank);
 
   std::vector<std::string> tmp;
+  tmp.reserve(data.size());
   for (const auto &f : data) {
     tmp.emplace_back(pism::printf("%f", f));
   }
@@ -529,6 +530,7 @@ void print_vector(MPI_Comm com,
   MPI_Comm_rank(com, &rank);
 
   std::vector<std::string> tmp;
+  tmp.reserve(data.size());
   for (const auto &f : data) {
     tmp.emplace_back(pism::printf("%d", f));
   }

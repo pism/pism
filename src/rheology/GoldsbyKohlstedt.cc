@@ -17,11 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>
-#include <stdexcept>
-#include <gsl/gsl_math.h>       // M_PI
-
 #include "GoldsbyKohlstedt.hh"
+#include <cmath>      // for pow, exp, fabs, M_PI
+#include <memory>     // for __shared_ptr_access
+#include <stdexcept>  // for runtime_error
 
 namespace pism {
 namespace rheology {

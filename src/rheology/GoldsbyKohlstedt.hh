@@ -20,7 +20,10 @@
 #ifndef _GOLDSBYKOHLSTEDT_H_
 #define _GOLDSBYKOHLSTEDT_H_
 
-#include "FlowLaw.hh"
+#include <string>                          // for string
+#include "FlowLaw.hh"                      // for FlowLaw
+#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
+namespace pism { class Config; }
 
 namespace pism {
 namespace rheology {

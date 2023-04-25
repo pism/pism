@@ -38,7 +38,6 @@
 #include "pism/util/IceGrid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 
 #include "Pico.hh"
 #include "PicoGeometry.hh"

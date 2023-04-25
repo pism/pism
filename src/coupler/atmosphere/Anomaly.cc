@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/coupler/util/options.hh"
 
 namespace pism {

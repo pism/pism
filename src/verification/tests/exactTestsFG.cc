@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2008, 2014, 2015, 2016 Ed Bueler and Jed Brown and Constantine Khroulev
+   Copyright (C) 2004-2008, 2014, 2015, 2016, 2023 Ed Bueler and Jed Brown and Constantine Khroulev
 
    This file is part of PISM.
 
@@ -18,13 +18,10 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <cstddef>              // size_t
-#include <stdexcept>            // runtime_error
-
-#include <cmath>
-#include <gsl/gsl_math.h>       // M_PI
-
 #include "exactTestsFG.hh"
+#include <cmath>      // for pow, exp, cos, sin, M_PI, fabs, sqrt
+#include <cstddef>    // for size_t
+#include <stdexcept>  // for runtime_error
 
 namespace pism {
 

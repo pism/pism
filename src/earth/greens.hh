@@ -19,7 +19,8 @@
 #ifndef __greens_hh
 #define __greens_hh
 
-#include <gsl/gsl_spline.h>
+#include <gsl/gsl_interp.h>  // for gsl_interp_accel
+#include <gsl/gsl_spline.h>  // for gsl_spline
 
 namespace pism {
 namespace bed {

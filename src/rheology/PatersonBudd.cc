@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>
-
 #include "PatersonBudd.hh"
+#include <cmath>   // for pow
+#include <memory>  // for __shared_ptr_access
 
 namespace pism {
 namespace rheology {

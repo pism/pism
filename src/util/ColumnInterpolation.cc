@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2021, 2022 PISM Authors
+/* Copyright (C) 2014, 2015, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,8 +18,8 @@
  */
 
 #include "ColumnInterpolation.hh"
-
-#include <cmath>
+#include <algorithm>  // for max, min
+#include <cmath>      // for fabs
 
 namespace pism {
 
@@ -32,7 +32,7 @@ ColumnInterpolation::ColumnInterpolation(const std::vector<double> &new_z_coarse
 std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double> &input,
                                                         unsigned int k_max_result) const {
   std::vector<double> result(Mz_fine());
-  coarse_to_fine(&input[0], k_max_result, &result[0]);
+  coarse_to_fine(input.data(), k_max_result, result.data());
   return result;
 }
 
@@ -124,7 +124,7 @@ void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned
 
 std::vector<double> ColumnInterpolation::fine_to_coarse(const std::vector<double> &input) const {
   std::vector<double> result(Mz_coarse());
-  fine_to_coarse(&input[0], &result[0]);
+  fine_to_coarse(input.data(), result.data());
   return result;
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,6 @@
 #include "error_handling.hh"
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/pism_config.hh"  // pism::config_file
 
 namespace pism {
@@ -44,27 +43,27 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 // doubles
 
 double NetCDFConfig::get_number_impl(const std::string &name) const {
-  const VariableMetadata::DoubleAttrs& doubles = m_data.all_doubles();
+  const VariableMetadata::DoubleAttrs &doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_number(name);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
-                                  name.c_str(), m_config_filename.c_str());
   }
 
-  return 0;                     // can't happen
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                name.c_str(), m_config_filename.c_str());
+
+  return 0; // can't happen
 }
 
 std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
   const VariableMetadata::DoubleAttrs& doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_numbers(name);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "parameter '%s' is unset. (Parameters read from '%s'.)",
-                                  name.c_str(), m_config_filename.c_str());
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "parameter '%s' is unset. (Parameters read from '%s'.)",
+                                name.c_str(), m_config_filename.c_str());
 
   return {};                    // can't happen
 }
@@ -72,7 +71,7 @@ std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) cons
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
   Doubles result;
 
-  for (auto d : m_data.all_doubles()) {
+  for (const auto& d : m_data.all_doubles()) {
     result[d.first] = d.second;
   }
   return result;
@@ -94,10 +93,11 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
   const VariableMetadata::StringAttrs& strings = m_data.all_strings();
   if (strings.find(name) != strings.end()) {
     return m_data.get_string(name);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' was not set. (Read from '%s'.)\n",
-                                  name.c_str(), m_config_filename.c_str());
   }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "Parameter '%s' was not set. (Read from '%s'.)\n", name.c_str(),
+                                m_config_filename.c_str());
 
   return std::string();         // will never happen
 }
@@ -106,7 +106,7 @@ Config::Strings NetCDFConfig::all_strings_impl() const {
   VariableMetadata::StringAttrs strings = m_data.all_strings();
   Strings result;
 
-  for (auto s : strings) {
+  for (const auto& s : strings) {
     std::string name = s.first;
     std::string value = s.second;
 
@@ -164,7 +164,7 @@ bool NetCDFConfig::get_flag_impl(const std::string &name) const {
 Config::Flags NetCDFConfig::all_flags_impl() const {
   Flags result;
 
-  for (auto b : m_data.all_strings()) {
+  for (const auto& b : m_data.all_strings()) {
     std::string name = b.first;
     std::string value = b.second;
 

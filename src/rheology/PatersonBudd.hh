@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2021 PISM Authors
+/* Copyright (C) 2015, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,6 +21,9 @@
 #define _PATERSONBUDD_H_
 
 #include "FlowLaw.hh"
+#include <string>                          // for string
+#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
+namespace pism { class Config; }
 
 namespace pism {
 namespace rheology {

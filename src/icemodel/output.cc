@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,17 +27,13 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 
-#include "pism/util/Vars.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/Component.hh"
-#include "pism/energy/utilities.hh"
 
 
 namespace pism {
@@ -56,7 +52,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   if (t < times[0]) {
     j = -1;
   } else {
-    j = gsl_interp_bsearch(&times[0], t, 0, N - 1);
+    j = gsl_interp_bsearch(times.data(), t, 0, N - 1);
   }
 
   dt = times[j + 1] - t;
@@ -66,12 +62,10 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
   if (dt < resolution) {
     if (j + 2 < N) {
       return MaxTimestep(times[j + 2] - t, description);
-    } else {
-      return MaxTimestep(description);
     }
-  } else {
-    return MaxTimestep(dt, description);
+    return MaxTimestep(description);
   }
+  return MaxTimestep(dt, description);
 }
 
 //! Write time-independent metadata to a file.
@@ -221,9 +215,9 @@ void IceModel::save_variables(const File &file,
     if (member("lat", var_names) and member("lon", var_names)) {
 
       // add the coordinates attribute to all variables that use x and y dimensions
-      for (auto v : var_names) {
+      for (const auto& v : var_names) {
         std::set<std::string> dims;
-        for (auto d : file.dimensions(v)) {
+        for (const auto& d : file.dimensions(v)) {
           dims.insert(d);
         }
 
@@ -258,7 +252,7 @@ void IceModel::save_variables(const File &file,
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
                                   IO_Type default_type) {
-  for (auto variable : variables) {
+  for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
     if (diag != m_diagnostics.end()) {
@@ -270,7 +264,7 @@ void IceModel::define_diagnostics(const File &file, const std::set<std::string> 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated Arrays.
 void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) {
-  for (auto variable : variables) {
+  for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
     if (diag != m_diagnostics.end()) {
@@ -280,29 +274,29 @@ void IceModel::write_diagnostics(const File &file, const std::set<std::string> &
 }
 
 void IceModel::define_model_state(const File &file) {
-  for (auto v : m_model_state) {
+  for (auto *v : m_model_state) {
     v->define(file);
   }
 
-  for (auto m : m_submodels) {
+  for (const auto& m : m_submodels) {
     m.second->define_model_state(file);
   }
 
-  for (auto d : m_diagnostics) {
+  for (const auto& d : m_diagnostics) {
     d.second->define_state(file);
   }
 }
 
 void IceModel::write_model_state(const File &file) {
-  for (auto v : m_model_state) {
+  for (auto *v : m_model_state) {
     v->write(file);
   }
 
-  for (auto m : m_submodels) {
+  for (const auto& m : m_submodels) {
     m.second->write_model_state(file);
   }
 
-  for (auto d : m_diagnostics) {
+  for (const auto& d : m_diagnostics) {
     d.second->write_state(file);
   }
 }

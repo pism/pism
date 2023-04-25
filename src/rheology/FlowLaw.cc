@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler, and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler, and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,7 @@
 
 #include <petsc.h>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"
 

@@ -26,7 +26,6 @@
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/pism_signal.h"
 
 namespace pism {

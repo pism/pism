@@ -92,11 +92,7 @@ bool IceModel::write_checkpoint() {
                  checkpoint_end_time - checkpoint_start_time,
                  (checkpoint_end_time - checkpoint_start_time) / 60.0);
 
-  if (m_config->get_flag("output.checkpoint.exit")) {
-    return true;
-  }
-
-  return false;
+  return m_config->get_flag("output.checkpoint.exit");
 }
 
 } // end of namespace pism
