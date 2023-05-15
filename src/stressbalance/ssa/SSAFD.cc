@@ -1330,7 +1330,8 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
     *E_ij     = NULL,
     *E_offset = NULL;
 
-  std::vector<double> E(m_grid->Mz());
+  auto Mz = m_grid->Mz();
+  std::vector<double> E(Mz);
 
   array::AccessScope list{&thickness, &enthalpy, &m_hardness, &m_mask};
 
@@ -1359,7 +1360,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
 
         E_offset = enthalpy.get_column(i+oi,j+oj);
         // build a column of enthalpy values a the current location:
-        for (unsigned int k = 0; k < m_grid->Mz(); ++k) {
+        for (unsigned int k = 0; k < Mz; ++k) {
           E[k] = 0.5 * (E_ij[k] + E_offset[k]);
         }
 
