@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -202,11 +202,13 @@ void ParallelSection::check() {
   int success_flag = m_failed ? 0 : 1;
   int success_flag_global = 0;
 
+#if (Pism_DEBUG==1)
   MPI_Allreduce(&success_flag, &success_flag_global, 1, MPI_INT, MPI_LAND, m_com);
 
   if (success_flag_global == 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Failure in a parallel section. See error messages above for more.");
   }
+#endif
 }
 
 } // end of namespace pism
