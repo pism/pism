@@ -592,6 +592,8 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
   array::AccessScope list{ &cell_type, &basin_mask, &shelf_mask };
 
   {
+    using mask::ice_free_ocean;
+
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
@@ -599,12 +601,10 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
       int sb = s * m_n_basins + b;
       n_shelf_cells_per_basin[sb]++;
 
-      if (cell_type.as_int(i, j) == MASK_FLOATING) {
+      if (cell_type.floating_ice(i, j)) {
         auto M = cell_type.star(i, j);
-        if (M.n == MASK_ICE_FREE_OCEAN or
-            M.e == MASK_ICE_FREE_OCEAN or
-            M.s == MASK_ICE_FREE_OCEAN or
-            M.w == MASK_ICE_FREE_OCEAN) {
+        if (ice_free_ocean(M.n) or ice_free_ocean(M.e) or ice_free_ocean(M.s) or
+            ice_free_ocean(M.w)) {
           if (cfs_in_basins_per_shelf[sb] != b) {
             cfs_in_basins_per_shelf[sb] = b;
           }
@@ -655,7 +655,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (cell_type.as_int(i, j) == MASK_FLOATING) {
+    if (cell_type.floating_ice(i, j)) {
       int basin = basin_mask.as_int(i, j);
       int shelf = shelf_mask.as_int(i, j);
       int b0    = most_shelf_cells_in_basin[shelf];
@@ -696,7 +696,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
-    if (cell_type.as_int(i, j) == MASK_FLOATING) {
+    if (cell_type.floating_ice(i, j)) {
       int b = basin_mask.as_int(i, j);
       int s = shelf_mask.as_int(i, j);
       if (add_shelf_instance[s * m_n_basins + b] > 0) {

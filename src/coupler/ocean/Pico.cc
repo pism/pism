@@ -207,33 +207,35 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
 
   array::AccessScope list{&cell_type, &basal_melt_rate};
 
+  using mask::floating_ice;
+  using mask::grounded_ice;
+  using mask::ice_free_ocean;
+
   for (auto p = grid->points(); p; p.next()) {
 
     const int i = p.i(), j = p.j();
 
-    auto M = cell_type.box(i, j);
+    auto M = cell_type.box_int(i, j);
 
     bool potential_partially_filled_cell =
-      ((M.c  == MASK_GROUNDED or M.c  == MASK_ICE_FREE_OCEAN) and
-       (M.w  == MASK_FLOATING or M.e  == MASK_FLOATING or
-        M.s  == MASK_FLOATING or M.n  == MASK_FLOATING or
-        M.sw == MASK_FLOATING or M.nw == MASK_FLOATING or
-        M.se == MASK_FLOATING or M.ne == MASK_FLOATING));
+        ((grounded_ice(M.c) or ice_free_ocean(M.c)) and
+         (floating_ice(M.w) or floating_ice(M.e) or floating_ice(M.s) or floating_ice(M.n) or
+          floating_ice(M.sw) or floating_ice(M.nw) or floating_ice(M.se) or floating_ice(M.ne)));
 
     if (potential_partially_filled_cell) {
       auto BMR = basal_melt_rate.box(i, j);
 
-      int N = 0;
+      int N           = 0;
       double melt_sum = 0.0;
 
-      melt_sum += M.nw == MASK_FLOATING ? (++N, BMR.nw) : 0.0;
-      melt_sum += M.n  == MASK_FLOATING ? (++N, BMR.n)  : 0.0;
-      melt_sum += M.ne == MASK_FLOATING ? (++N, BMR.ne) : 0.0;
-      melt_sum += M.e  == MASK_FLOATING ? (++N, BMR.e)  : 0.0;
-      melt_sum += M.se == MASK_FLOATING ? (++N, BMR.se) : 0.0;
-      melt_sum += M.s  == MASK_FLOATING ? (++N, BMR.s)  : 0.0;
-      melt_sum += M.sw == MASK_FLOATING ? (++N, BMR.sw) : 0.0;
-      melt_sum += M.w  == MASK_FLOATING ? (++N, BMR.w)  : 0.0;
+      melt_sum += floating_ice(M.nw) ? (++N, BMR.nw) : 0.0;
+      melt_sum += floating_ice(M.n) ? (++N, BMR.n) : 0.0;
+      melt_sum += floating_ice(M.ne) ? (++N, BMR.ne) : 0.0;
+      melt_sum += floating_ice(M.e) ? (++N, BMR.e) : 0.0;
+      melt_sum += floating_ice(M.se) ? (++N, BMR.se) : 0.0;
+      melt_sum += floating_ice(M.s) ? (++N, BMR.s) : 0.0;
+      melt_sum += floating_ice(M.sw) ? (++N, BMR.sw) : 0.0;
+      melt_sum += floating_ice(M.w) ? (++N, BMR.w) : 0.0;
 
       if (N != 0) { // If there are floating neigbors, return average melt rates
         basal_melt_rate(i, j) = melt_sum / N;
@@ -460,15 +462,15 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
 void Pico::set_ocean_input_fields(const PicoPhysics &physics,
                                   const array::Scalar &ice_thickness,
-                                  const array::CellType1 &mask,
+                                  const array::CellType1 &cell_type,
                                   const array::Scalar &basin_mask,
                                   const array::Scalar &shelf_mask,
                                   const std::vector<double> &basin_temperature,
                                   const std::vector<double> &basin_salinity,
                                   array::Scalar &Toc_box0,
                                   array::Scalar &Soc_box0) const {
-  
-  array::AccessScope list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &mask, &shelf_mask };
+
+  array::AccessScope list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &cell_type, &shelf_mask };
 
   std::vector<int> n_shelf_cells_per_basin(m_n_shelves * m_n_basins, 0);
   std::vector<int> n_shelf_cells(m_n_shelves, 0);
@@ -481,6 +483,8 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
   {
+    using mask::ice_free_ocean;
+
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
@@ -489,19 +493,17 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
       n_shelf_cells[s]++;
 
       // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
-      if (mask.as_int(i, j) == MASK_FLOATING) {
-        auto M = mask.star(i, j);
-        if (M.n == MASK_ICE_FREE_OCEAN or
-            M.e == MASK_ICE_FREE_OCEAN or
-            M.s == MASK_ICE_FREE_OCEAN or
-            M.w == MASK_ICE_FREE_OCEAN) {
+      if (cell_type.floating_ice(i, j)) {
+        auto M = cell_type.star_int(i, j);
+        if (ice_free_ocean(M.n) or ice_free_ocean(M.e) or ice_free_ocean(M.s) or
+            ice_free_ocean(M.w)) {
           if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
             cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
           }
         }
       }
     }
-    
+
     GlobalSum(m_grid->com, n_shelf_cells.data(),
               n_shelf_cellsr.data(), m_n_shelves);
     GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(),
@@ -537,7 +539,7 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 
     int s = shelf_mask.as_int(i, j);
 
-    if (mask.as_int(i, j) == MASK_FLOATING and s > 0) {
+    if (cell_type.floating_ice(i, j) and s > 0) {
       // note: shelf_mask = 0 in lakes
 
       assert(n_shelf_cells[s] > 0);
@@ -879,7 +881,7 @@ void Pico::compute_box_area(int box_id,
       result[shelf_id] += cell_area;
     }
   }
-  
+
   // compute GlobalSum from index 1 to index m_n_shelves-1
   std::vector<double> result1(m_n_shelves);
   GlobalSum(m_grid->com, &result[1], &result1[1], m_n_shelves-1);
