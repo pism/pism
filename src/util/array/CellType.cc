@@ -18,7 +18,7 @@
  */
 
 #include "pism/util/array/CellType.hh"
-#include "pism/util/interpolation.hh"
+#include "pism/util/interpolation.hh" // the definition of "NEAREST"
 
 namespace pism {
 namespace array {

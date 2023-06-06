@@ -169,8 +169,6 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 
-  using mask::ocean;
-
   Logger log(MPI_COMM_SELF, m_log->get_threshold());
 
   const double
@@ -298,7 +296,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const double Tpmp = melting_point_temp - beta_CC_grad * H; // FIXME issue #15
           double Texcess = x[0] - Tpmp; // positive or negative
-          if (ocean(mask)) {
+          if (mask::ocean(mask)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
             column_drainage(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
@@ -334,7 +332,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       system.fine_to_coarse(Tnew, i, j, m_work);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-      if (ocean(mask)) {
+      if (mask::ocean(mask)) {
         m_basal_melt_rate(i,j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative

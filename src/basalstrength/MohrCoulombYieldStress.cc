@@ -419,22 +419,20 @@ void MohrCoulombYieldStress::till_friction_angle(const array::Scalar &basal_yiel
   double
     delta = m_config->get_number("basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden");
 
-  const array::Scalar
-    &W_till = till_water_thickness;
+  const auto &W_till = till_water_thickness;
 
-  array::AccessScope list{&cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result};
+  array::AccessScope list{ &cell_type, &basal_yield_stress, &W_till, &ice_thickness, &result };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
-      // no change
-    } else if (cell_type.ice_free(i, j)) {
+    if (cell_type.ocean(i, j) or cell_type.ice_free(i, j)) {
       // no change
     } else { // grounded and there is some ice
       double P_overburden = ice_density * standard_gravity * ice_thickness(i, j);
 
-      result(i, j) = mc.till_friction_angle(delta, P_overburden, W_till(i, j), basal_yield_stress(i, j));
+      result(i, j) =
+          mc.till_friction_angle(delta, P_overburden, W_till(i, j), basal_yield_stress(i, j));
     }
   }
 
