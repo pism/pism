@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021, 2023 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -64,7 +64,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         vecs.vel_bc_mask.set(0)
         vecs.thk.set(H0_schoof)
-        vecs.mask.set(PISM.MASK_GROUNDED)
+        vecs.mask.set(PISM.MASK_GROUNDED_ICE)
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.

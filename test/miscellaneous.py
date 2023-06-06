@@ -254,7 +254,7 @@ def modelvecs_test():
     grid = create_dummy_grid()
 
     mask = PISM.model.createIceMaskVec(grid)
-    mask.set(PISM.MASK_GROUNDED)
+    mask.set(PISM.MASK_GROUNDED_ICE)
 
     modeldata = PISM.model.ModelData(grid)
     vecs = modeldata.vecs
@@ -334,7 +334,7 @@ def sia_test():
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
 
     mask = PISM.model.createIceMaskVec(grid)
-    mask.set(PISM.MASK_GROUNDED)
+    mask.set(PISM.MASK_GROUNDED_ICE)
 
     thk = PISM.model.createIceThicknessVec(grid)
     thk.set(1000.0)
@@ -958,7 +958,7 @@ class PrincipalStrainRates(TestCase):
 
     def create_cell_type(self, grid):
         cell_type = PISM.CellType1(grid, "cell_type")
-        cell_type.set(PISM.MASK_GROUNDED)
+        cell_type.set(PISM.MASK_GROUNDED_ICE)
         cell_type.update_ghosts()
 
         return cell_type

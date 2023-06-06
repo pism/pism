@@ -80,9 +80,8 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   strength_extension = new SSAStrengthExtension(*m_config);
 
   // grounded_dragging_floating integer mask
-  m_mask.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+  m_mask.metadata().long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_LAND, MASK_GROUNDED_ICE, MASK_FLOATING,
                                          MASK_ICE_FREE_OCEAN };
   m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 

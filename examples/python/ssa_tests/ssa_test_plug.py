@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 #
-# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 Ed Bueler and Constantine Khroulev and David Maxwell
+# Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021, 2023 Ed Bueler and Constantine Khroulev and David Maxwell
 #
 # This file is part of PISM.
 #
@@ -59,7 +59,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         # Set constant coefficients.
         vecs.land_ice_thickness.set(H0)
         vecs.tauc.set(tauc0)
-        vecs.mask.set(PISM.MASK_GROUNDED)
+        vecs.mask.set(PISM.MASK_GROUNDED_ICE)
 
         vel_bc_mask = vecs.vel_bc_mask
         vel_bc = vecs.vel_bc

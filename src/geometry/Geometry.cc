@@ -83,11 +83,8 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       "this variable represents the amount of ice in a partially-filled cell and not "
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
-  cell_type.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask")
-      .set_output_type(io::PISM_INT);
-  cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
-                                          MASK_ICE_FREE_OCEAN };
+  cell_type.metadata().long_name("ice-type (ice-free/grounded/floating/ocean) integer mask").set_output_type(io::PISM_INT);
+  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_LAND, MASK_GROUNDED_ICE, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
   cell_type.metadata()["flag_meanings"] =
       "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 

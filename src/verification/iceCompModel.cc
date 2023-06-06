@@ -309,7 +309,7 @@ void IceCompModel::initTestABCDH() {
 
   const double time = m_time->current();
 
-  m_geometry.cell_type.set(MASK_GROUNDED);
+  m_geometry.cell_type.set(MASK_GROUNDED_ICE);
 
   array::AccessScope list(m_geometry.ice_thickness);
 

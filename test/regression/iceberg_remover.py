@@ -11,7 +11,7 @@ def create_mask(shape):
 
     mask = np.zeros(shape, dtype=int)
     mask[:] = PISM.MASK_ICE_FREE_OCEAN
-    mask[6:,:4] = PISM.MASK_GROUNDED
+    mask[6:,:4] = PISM.MASK_GROUNDED_ICE
     # not an iceberg
     mask[2:6,:2] = PISM.MASK_FLOATING
     mask_no_icebergs_fem = mask.copy()

@@ -28,11 +28,11 @@ namespace array {
 class Scalar;
 }
 enum MaskValue {
-  MASK_UNKNOWN          = -1,
-  MASK_ICE_FREE_BEDROCK = 0,
-  MASK_GROUNDED         = 2,
-  MASK_FLOATING         = 3,
-  MASK_ICE_FREE_OCEAN   = 4
+  MASK_UNKNOWN        = -1,
+  MASK_ICE_FREE_LAND  = 0,
+  MASK_GROUNDED_ICE   = 2,
+  MASK_FLOATING       = 3,
+  MASK_ICE_FREE_OCEAN = 4
 };
 
 namespace mask {
@@ -46,7 +46,7 @@ inline bool grounded(int M) {
 }
 //! \brief Ice-filled cell (grounded or floating).
 inline bool icy(int M) {
-  return (M == MASK_GROUNDED) || (M == MASK_FLOATING);
+  return (M == MASK_GROUNDED_ICE) || (M == MASK_FLOATING);
 }
 inline bool grounded_ice(int M) {
   return icy(M) && grounded(M);
@@ -120,9 +120,9 @@ public:
       surface_result = hgrounded;
 
       if (ice_free) {
-        mask_result = MASK_ICE_FREE_BEDROCK;
+        mask_result = MASK_ICE_FREE_LAND;
       } else {
-        mask_result = MASK_GROUNDED;
+        mask_result = MASK_GROUNDED_ICE;
       }
     }
 

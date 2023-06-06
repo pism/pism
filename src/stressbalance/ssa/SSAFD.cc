@@ -768,23 +768,25 @@ void SSAFD::assemble_matrix(const Inputs &inputs, bool include_basal_shear, Mat 
       if (include_basal_shear) {
         double beta = 0.0;
         switch (M_ij) {
-        case MASK_ICE_FREE_BEDROCK: {
-          // apply drag even in this case, to help with margins; note ice free areas may
-          // already have a strength extension
-          beta = beta_ice_free_bedrock;
-          break;
-        }
-        case MASK_FLOATING: {
-          double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
-          break;
-        }
-        case MASK_GROUNDED: {
-          double scaling = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
-          break;
-        }
-        case MASK_ICE_FREE_OCEAN:
+        case MASK_ICE_FREE_LAND:
+          {
+            // apply drag even in this case, to help with margins; note ice free areas may
+            // already have a strength extension
+            beta = beta_ice_free_bedrock;
+            break;
+          }
+        case MASK_FLOATING:
+          {
+            double scaling = sub_gl ? grounded_fraction(i, j) : 0.0;
+            beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+            break;
+          }
+        case MASK_GROUNDED_ICE:
+          {
+            double scaling = sub_gl ?  grounded_fraction(i, j) : 1.0;
+            beta = scaling * m_basal_sliding_law->drag(tauc(i, j), vel(i, j).u, vel(i, j).v);
+            break;
+          }
         default:
           beta = 0.0;
         }

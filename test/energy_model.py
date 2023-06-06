@@ -29,7 +29,7 @@ def setup():
     zero.set(0.0)
 
     cell_type = PISM.CellType(grid, "mask")
-    cell_type.set(PISM.MASK_GROUNDED)
+    cell_type.set(PISM.MASK_GROUNDED_ICE)
 
     basal_heat_flux = PISM.Scalar(grid, "bheatflx")
     basal_heat_flux.set(convert(10, "mW m-2", "W m-2"))

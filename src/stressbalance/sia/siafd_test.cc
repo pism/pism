@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010--2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -188,7 +188,7 @@ static void setInitStateF(Grid &grid,
     LforFG = 750000;            // m
 
   bed.set(0.0);
-  mask.set(MASK_GROUNDED);
+  mask.set(MASK_GROUNDED_ICE);
 
   array::AccessScope list{&thickness, &enthalpy};
 
