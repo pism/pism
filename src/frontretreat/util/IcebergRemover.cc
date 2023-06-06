@@ -19,7 +19,7 @@
 
 #include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/util/connected_components.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
@@ -109,7 +109,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
 
       if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
         ice_thickness(i,j) = 0.0;
-        cell_type(i,j)     = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)     = cell_type::ICE_FREE_OCEAN;
       }
     }
   }

@@ -19,10 +19,8 @@
 #include "pism/inverse/IP_SSATaucForwardProblem.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/petscwrappers/DM.hh"
@@ -326,7 +324,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
 
           // Determine "dbeta / dzeta" at the quadrature point
           double dbeta = 0;
-          if (mask::grounded_ice(mask[q])) {
+          if (cell_type::grounded_ice(mask[q])) {
             dbeta = m_basal_sliding_law->drag(dtauc_q[q], u_qq.u, u_qq.v);
           }
 
@@ -477,7 +475,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
-          if (mask::grounded_ice(mask[q])) {
+          if (cell_type::grounded_ice(mask[q])) {
             dbeta_dtauc = m_basal_sliding_law->drag(1., u_qq.u, u_qq.v);
           }
 

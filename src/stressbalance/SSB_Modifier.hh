@@ -25,7 +25,9 @@
 
 namespace pism {
 
-class Vars;
+namespace array {
+class Vector;
+}
 
 namespace rheology {
 class FlowLaw;

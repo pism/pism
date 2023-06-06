@@ -64,7 +64,7 @@ class testi(PISM.ssa.SSAExactTestCase):
 
         vecs.vel_bc_mask.set(0)
         vecs.thk.set(H0_schoof)
-        vecs.mask.set(PISM.MASK_GROUNDED_ICE)
+        vecs.mask.set(PISM.ICY_LAND)
 
         # The finite difference code uses the following flag to treat
         # the non-periodic grid correctly.

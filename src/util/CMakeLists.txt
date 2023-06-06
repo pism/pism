@@ -1,42 +1,46 @@
 add_library (util OBJECT
+  ColumnInterpolation.cc
+  Component.cc
+  Config.cc
+  ConfigInterface.cc
+  Context.cc
+  Diagnostic.cc
+  EnthalpyConverter.cc
+  Grid.cc
+  Logger.cc
+  MaxTimestep.cc
+  Profiling.cc
+  ScalarForcing.cc
+  TerminationReason.cc
+  Time.cc
+  Units.cc
+  VariableMetadata.cc
+  Vars.cc
+  array/Array.cc
+  array/Array3D.cc
+  array/CellType.cc
+  array/Forcing.cc
+  array/Scalar.cc
+  array/Staggered.cc
+  array/Vector.cc
+  cell_type.cc
+  connected_components.cc
+  error_handling.cc
   fem/DirichletData.cc
   fem/Element.cc
   fem/ElementIterator.cc
   fem/FEM.cc
   fem/Quadrature.cc
-  ColumnInterpolation.cc
-  Context.cc
-  EnthalpyConverter.cc
-  Grid.cc
-  Logger.cc
-  Mask.cc
-  MaxTimestep.cc
-  Component.cc
-  Config.cc
-  ConfigInterface.cc
-  Diagnostic.cc
-  Time.cc
-  Units.cc
-  Vars.cc
-  Profiling.cc
-  TerminationReason.cc
-  VariableMetadata.cc
-  error_handling.cc
-  array/CellType.cc
-  array/Array.cc
-  array/Forcing.cc
-  array/Vector.cc
-  array/Array3D.cc
-  array/Scalar.cc
-  array/Staggered.cc
+  fftw_utilities.cc
   interpolation.cc
-  io/LocalInterpCtx.cc
   io/File.cc
-  io/NC_Serial.cc
-  io/NC4_Serial.cc
+  io/LocalInterpCtx.cc
   io/NC4File.cc
+  io/NC4_Serial.cc
   io/NCFile.cc
+  io/NC_Serial.cc
   io/io_helpers.cc
+  label_components.cc
   node_types.cc
   options.cc
   petscwrappers/DM.cc
@@ -52,10 +56,6 @@ add_library (util OBJECT
   pism_options.cc
   pism_utilities.cc
   projection.cc
-  fftw_utilities.cc
-  label_components.cc
-  connected_components.cc
-  ScalarForcing.cc
 )
 
 if(Pism_DEBUG)

@@ -18,7 +18,6 @@
  */
 
 #include "pism/regional/SSAFD_Regional.hh"
-#include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
@@ -58,8 +57,8 @@ void SSAFD_Regional::update(const Inputs &inputs, bool full_update) {
 
 static int weight(int M_ij, int M_n, double h_ij, double h_n) {
   // fjord walls, nunataks, headwalls
-  if ((mask::icy(M_ij) and mask::ice_free(M_n) and h_n > h_ij) or
-      (mask::ice_free(M_ij) and mask::icy(M_n) and h_ij > h_n)) {
+  if ((cell_type::icy(M_ij) and cell_type::ice_free(M_n) and h_n > h_ij) or
+      (cell_type::ice_free(M_ij) and cell_type::icy(M_n) and h_ij > h_n)) {
     return 0;
   }
 

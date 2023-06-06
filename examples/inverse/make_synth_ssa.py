@@ -33,7 +33,7 @@ def groundedIceMisfitWeight(modeldata):
     mask = modeldata.vecs.mask
     with PISM.vec.Access(comm=weight, nocomm=mask):
         weight.set(0.)
-        grounded = PISM.MASK_GROUNDED_ICE
+        grounded = PISM.ICY_LAND
         for (i, j) in grid.points():
             if mask[i, j] == grounded:
                 weight[i, j] = 1
@@ -47,7 +47,7 @@ def fastIceMisfitWeight(modeldata, vel_ssa, threshold):
     threshold = threshold * threshold
     with PISM.vec.Access(comm=weight, nocomm=[vel_ssa, mask]):
         weight.set(0.)
-        grounded = PISM.MASK_GROUNDED_ICE
+        grounded = PISM.ICY_LAND
         for (i, j) in grid.points():
             u = vel_ssa[i, j].u
             v = vel_ssa[i, j].v

@@ -19,7 +19,7 @@
 #include <cmath>
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 
 namespace pism {
 
@@ -41,7 +41,7 @@ double part_grid_threshold_thickness(stencils::Star<int> cell_type,
   int N = 0;
 
   for (auto d : {North, East, South, West}) {
-    if (mask::icy(cell_type[d])) {
+    if (cell_type::icy(cell_type[d])) {
       H_average += ice_thickness[d];
       h_average += surface_elevation[d];
       N++;

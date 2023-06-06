@@ -41,7 +41,7 @@
 #include "pism_python.hh"
 
 #include "geometry/grounded_cell_fraction.hh"
-#include "util/Mask.hh"
+#include "util/cell_type.hh"
 #include "basalstrength/basal_resistance.hh"
 #include "basalstrength/MohrCoulombYieldStress.hh"
 #include "util/error_handling.hh"
@@ -275,7 +275,8 @@ pism_class(pism::Time, "pism/util/Time.hh")
 %include pism_Hydrology.i
 
 %include "geometry/grounded_cell_fraction.hh"
-%include "util/Mask.hh"
+%ignore pism::cell_type::UNKNOWN;
+%include "util/cell_type.hh"
 %include "pism_python.hh"
 
 pism_class(pism::MohrCoulombPointwise, "pism/basalstrength/MohrCoulombPointwise.hh")

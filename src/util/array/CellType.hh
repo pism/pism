@@ -21,7 +21,7 @@
 #define PISM_ARRAY_CELLTYPE_H
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 
 namespace pism {
 namespace array {
@@ -32,35 +32,35 @@ public:
   CellType(std::shared_ptr<const Grid> grid, const std::string &name);
 
   inline bool ocean(int i, int j) const {
-    return mask::ocean(as_int(i, j));
+    return cell_type::wet(as_int(i, j));
   }
 
   inline bool grounded(int i, int j) const {
-    return mask::grounded(as_int(i, j));
+    return cell_type::grounded(as_int(i, j));
   }
 
   inline bool icy(int i, int j) const {
-    return mask::icy(as_int(i, j));
+    return cell_type::icy(as_int(i, j));
   }
 
   inline bool grounded_ice(int i, int j) const {
-    return mask::grounded_ice(as_int(i, j));
+    return cell_type::grounded_ice(as_int(i, j));
   }
 
   inline bool floating_ice(int i, int j) const {
-    return mask::floating_ice(as_int(i, j));
+    return cell_type::floating_ice(as_int(i, j));
   }
 
   inline bool ice_free(int i, int j) const {
-    return mask::ice_free(as_int(i, j));
+    return cell_type::ice_free(as_int(i, j));
   }
 
   inline bool ice_free_ocean(int i, int j) const {
-    return mask::ice_free_ocean(as_int(i, j));
+    return cell_type::ice_free_ocean(as_int(i, j));
   }
 
   inline bool ice_free_land(int i, int j) const {
-    return mask::ice_free_land(as_int(i, j));
+    return cell_type::ice_free_land(as_int(i, j));
   }
 protected:
   CellType(std::shared_ptr<const Grid> grid, const std::string &name, int w);

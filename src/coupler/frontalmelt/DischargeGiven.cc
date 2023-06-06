@@ -152,8 +152,9 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
       int N        = 0;
       double R_sum = 0.0;
-      for (auto d : { North, East, South, West }) {
-        if (mask::grounded_ice(M[d]) or (m_include_floating_ice and mask::icy(M[d]))) {
+      for (auto d : {North, East, South, West}) {
+        if (cell_type::grounded_ice(M[d]) or
+            (m_include_floating_ice and cell_type::icy(M[d]))) {
           R_sum += R[d];
           N++;
         }

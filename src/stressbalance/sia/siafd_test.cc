@@ -28,7 +28,7 @@ static char help[] =
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
@@ -188,7 +188,7 @@ static void setInitStateF(Grid &grid,
     LforFG = 750000;            // m
 
   bed.set(0.0);
-  mask.set(MASK_GROUNDED_ICE);
+  mask.set(cell_type::ICY_LAND);
 
   array::AccessScope list{&thickness, &enthalpy};
 

@@ -3,7 +3,7 @@
 #include "energy/TemperatureModel.hh"
 #include "regional/EnthalpyModel_Regional.hh"
 #include "energy/enthSystem.hh"
-using pism::MaskValue;
+
 #include "energy/tempSystem.hh"
 #include "energy/BedrockColumn.hh"
 #include "energy/utilities.hh"

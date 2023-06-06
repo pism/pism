@@ -19,7 +19,7 @@
 #include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/array/CellType.hh"
@@ -81,9 +81,11 @@ SSA::SSA(std::shared_ptr<const Grid> g)
 
   // grounded_dragging_floating integer mask
   m_mask.metadata().long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_LAND, MASK_GROUNDED_ICE, MASK_FLOATING,
-                                         MASK_ICE_FREE_OCEAN };
-  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+  m_mask.metadata()["flag_values"] = { cell_type::ICE_FREE_LAND,  cell_type::ICY_LAND,
+                                       cell_type::ICE_FREE_LAKE,  cell_type::ICY_LAKE,
+                                       cell_type::ICE_FREE_OCEAN, cell_type::ICY_OCEAN };
+  m_mask.metadata()["flag_meanings"] =
+      "ice_free_land icy_land ice_free_lake icy_lake ice_free_ocean icy_ocean";
 
   m_taud.metadata(0)
       .long_name("X-component of the driving shear stress at the base of ice")
@@ -122,8 +124,7 @@ void SSA::init_impl() {
   ShallowStressBalance::init_impl();
 
   m_log->message(2, "* Initializing the SSA stress balance...\n");
-  m_log->message(2,
-             "  [using the %s flow law]\n", m_flow_law->name().c_str());
+  m_log->message(2, "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
@@ -157,17 +158,13 @@ void SSA::update(const Inputs &inputs, bool full_update) {
     GeometryCalculator gc(*m_config);
     gc.set_icefree_thickness(H_threshold);
 
-    gc.compute_mask(inputs.geometry->sea_level_elevation,
-                    inputs.geometry->bed_elevation,
-                    inputs.geometry->ice_thickness,
-                    m_mask);
+    gc.compute_mask(inputs.geometry->sea_level_elevation, inputs.geometry->bed_elevation,
+                    inputs.geometry->ice_thickness, m_mask);
   }
 
   if (full_update) {
     solve(inputs);
-    compute_basal_frictional_heating(m_velocity,
-                                     *inputs.basal_yield_stress,
-                                     m_mask,
+    compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress, m_mask,
                                      m_basal_frictional_heating);
   }
 }
@@ -184,34 +181,25 @@ void SSA::update(const Inputs &inputs, bool full_update) {
  * - ice margins next to ice free locations above the surface elevation of the ice (fjord
  *   walls, nunataks, headwalls)
  */
-static int weight(bool margin_bc,
-                  int M_ij, int M_n,
-                  double h_ij, double h_n,
-                  int N_ij, int N_n) {
-  using mask::grounded;
-  using mask::icy;
-  using mask::floating_ice;
-  using mask::ice_free;
-  using mask::ice_free_ocean;
+static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, int N_ij, int N_n) {
 
   // grounding lines and calving fronts
-  if ((grounded(M_ij) and floating_ice(M_n)) or
-      (floating_ice(M_ij) and grounded(M_n)) or
-      (floating_ice(M_ij) and ice_free_ocean(M_n))) {
+  if ((cell_type::grounded(M_ij) and cell_type::floating_ice(M_n)) or
+      (cell_type::floating_ice(M_ij) and cell_type::grounded(M_n)) or
+      (cell_type::floating_ice(M_ij) and cell_type::ice_free_ocean(M_n))) {
     return 0;
   }
 
   // fjord walls, nunataks, headwalls
-  if ((icy(M_ij) and ice_free(M_n) and h_n > h_ij) or
-      (ice_free(M_ij) and icy(M_n) and h_ij > h_n)) {
+  if ((cell_type::icy(M_ij) and cell_type::ice_free(M_n) and h_n > h_ij) or
+      (cell_type::ice_free(M_ij) and cell_type::icy(M_n) and h_ij > h_n)) {
     return 0;
   }
 
   // This condition has to match the one used to implement the calving front stress
   // boundary condition in SSAFD::assemble_rhs().
-  if (margin_bc and
-      ((icy(M_ij) and ice_free(M_n)) or
-       (ice_free(M_ij) and icy(M_n)))) {
+  if (margin_bc and ((cell_type::icy(M_ij) and cell_type::ice_free(M_n)) or
+                     (cell_type::ice_free(M_ij) and cell_type::icy(M_n)))) {
     return 0;
   }
 
@@ -231,22 +219,17 @@ Computes the gravitational driving stress at the base of the ice:
 void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
                                  const array::Scalar1 &surface_elevation,
                                  const array::CellType1 &cell_type,
-                                 const array::Scalar1 *no_model_mask,
-                                 array::Vector &result) const {
-
-  using mask::ice_free_ocean;
-  using mask::floating_ice;
+                                 const array::Scalar1 *no_model_mask, array::Vector &result) const {
 
   bool cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
-  bool surface_gradient_inward = m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
+  bool surface_gradient_inward =
+      m_config->get_flag("stress_balance.ssa.compute_surface_gradient_inward");
 
-  double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+  double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{&surface_elevation, &cell_type, &ice_thickness, &result};
+  array::AccessScope list{ &surface_elevation, &cell_type, &ice_thickness, &result };
 
-  if (no_model_mask) {
+  if (no_model_mask != nullptr) {
     list.add(*no_model_mask);
   }
 
@@ -261,10 +244,8 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
 
     // Special case for verification tests.
     if (surface_gradient_inward) {
-      double
-        h_x = diff_x_p(surface_elevation, i, j),
-        h_y = diff_y_p(surface_elevation, i, j);
-      result(i, j) = - pressure * Vector2d(h_x, h_y);
+      double h_x = diff_x_p(surface_elevation, i, j), h_y = diff_y_p(surface_elevation, i, j);
+      result(i, j) = -pressure * Vector2d(h_x, h_y);
       continue;
     }
 
@@ -285,24 +266,24 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     //
     // The y derivative is handled the same way.
 
-    auto M = cell_type.star(i, j);
+    auto M = cell_type.star_int(i, j);
     auto h = surface_elevation.star(i, j);
     stencils::Star<int> N(0);
 
-    if (no_model_mask) {
+    if (no_model_mask != nullptr) {
       N = no_model_mask->star_int(i, j);
     }
 
     // x-derivative
     double h_x = 0.0;
     {
-      double
-        west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
-        east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
+      double west = weight(cfbc, M.c, M.w, h.c, h.w, N.c, N.w),
+             east = weight(cfbc, M.c, M.e, h.c, h.e, N.c, N.e);
 
       if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
-        if (floating_ice(M.c) and (ice_free_ocean(M.e) or ice_free_ocean(M.w)))  {
+        if (cell_type::floating_ice(M.c) and
+            (cell_type::ice_free_ocean(M.e) or cell_type::ice_free_ocean(M.w))) {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent (see the notes in the manual)
           h_x /= 2.0;
@@ -315,13 +296,13 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     // y-derivative
     double h_y = 0.0;
     {
-      double
-        south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
-        north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
+      double south = weight(cfbc, M.c, M.s, h.c, h.s, N.c, N.s),
+             north = weight(cfbc, M.c, M.n, h.c, h.n, N.c, N.n);
 
       if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
-        if (floating_ice(M.c) and (ice_free_ocean(M.s) or ice_free_ocean(M.n)))  {
+        if (cell_type::floating_ice(M.c) and
+            (cell_type::ice_free_ocean(M.s) or cell_type::ice_free_ocean(M.n))) {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent
           h_y /= 2.0;
@@ -331,7 +312,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
       }
     }
 
-    result(i, j) = - pressure * Vector2d(h_x, h_y);
+    result(i, j) = -pressure * Vector2d(h_x, h_y);
   }
 }
 
@@ -348,22 +329,21 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
  * write-only. This means that it's okay for `velocity` to be a input-output argument: we
  * don't use of the values modified by this method.
  */
-void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
-                               array::Vector1 &velocity) const {
-  array::AccessScope list{&cell_type, &velocity};
+void SSA::extrapolate_velocity(const array::CellType1 &cell_type, array::Vector1 &velocity) const {
+  array::AccessScope list{ &cell_type, &velocity };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
 
-      auto M = cell_type.star(i, j);
+      auto M   = cell_type.star_int(i, j);
       auto vel = velocity.star(i, j);
 
-      Vector2d sum{0.0, 0.0};
+      Vector2d sum{ 0.0, 0.0 };
       int N = 0;
-      for (auto d : {North, East, South, West}) {
-        if (mask::icy(M[d])) {
+      for (auto d : { North, East, South, West }) {
+        if (cell_type::icy(M[d])) {
           sum += vel[d];
           ++N;
         }

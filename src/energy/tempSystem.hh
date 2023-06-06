@@ -20,9 +20,14 @@
 #define __tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
-#include "pism/util/Mask.hh"
 
 namespace pism {
+
+class Config;
+
+namespace cell_type {
+enum Value : int;
+}
 
 namespace energy {
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
@@ -38,11 +43,11 @@ namespace energy {
   ks = ...
   foo.setIndicesThisColumn(i,j,ks);
   [COMPUTE OTHER PARAMS]
-  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
+  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);
   foo.setSurfaceBoundaryValuesThisColumn(Ts);
   foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
   foo.solveThisColumn(x);
-  }  
+  }
   }
   \endcode
 */
@@ -58,7 +63,7 @@ public:
                 const array::Array3D &w3,
                 const array::Array3D &strain_heating3);
 
-  void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
+  void initThisColumn(int i, int j, bool is_marginal, cell_type::Value new_mask, double ice_thickness);
 
   void setSurfaceBoundaryValuesThisColumn(double my_Ts);
   void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
@@ -70,7 +75,7 @@ public:
     return m_lambda;
   }
 
-  double w(int k) {
+  double w(int k) const {
     return m_w[k];
   }
 protected:
@@ -81,7 +86,7 @@ protected:
   std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;
 
   double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
-  MaskValue    m_mask;
+  cell_type::Value    m_mask;
   bool        m_is_marginal;
   double m_nu,
     m_rho_c_I,
@@ -99,4 +104,3 @@ private:
 } // end of namespace pism
 
 #endif  /* __tempSystem_hh */
-

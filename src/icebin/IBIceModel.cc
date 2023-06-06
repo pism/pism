@@ -296,21 +296,15 @@ void IBIceModel::prepare_outputs(double time_s) {
       ice_top_senth(i, j) = senth;
 
       // elevmask_ice and elevmask_land: Used by IceBin for elevation and masking
-      switch ((int)cell_type(i, j)) {
-      case MASK_GROUNDED:
-      case MASK_FLOATING:
+      if (cell_type.icy(i, j)) {
         elevmask_ice(i, j)  = ice_surface_elevation(i, j);
         elevmask_land(i, j) = ice_surface_elevation(i, j);
-        break;
-      case MASK_ICE_FREE_BEDROCK:
+      } else if (cell_type.ice_free_land(i, j)) {
         elevmask_ice(i, j)  = NaN;
         elevmask_land(i, j) = ice_surface_elevation(i, j);
-        break;
-      case MASK_ICE_FREE_OCEAN:
-      case MASK_UNKNOWN:
+      } else {
         elevmask_ice(i, j)  = NaN;
         elevmask_land(i, j) = NaN;
-        break;
       }
     }
   }

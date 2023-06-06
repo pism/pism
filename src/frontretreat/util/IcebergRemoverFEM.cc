@@ -27,7 +27,7 @@
 
 #include "pism/util/fem/Element.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/interpolation.hh"
 
 namespace pism {
@@ -96,7 +96,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
       // check if all nodes are icy
       bool icy = true;
       for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-        icy &= mask::icy(cell_type_nodal[n]);
+        icy &= cell_type::icy(cell_type_nodal[n]);
       }
 
       if (icy) {
@@ -104,7 +104,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
         // set of Dirichlet nodes
         bool grounded = true;
         for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-          grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
+          grounded &= (cell_type::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
         }
 
         m_iceberg_mask(i, j) = grounded ? mask_grounded_ice : mask_floating_ice;
@@ -165,14 +165,14 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
         // check if all nodes are icy
         bool icy = true;
         for (int n = 0; icy and n < fem::q1::n_chi; ++n) {
-          icy &= mask::icy(cell_type_nodal[n]);
+          icy &= cell_type::icy(cell_type_nodal[n]);
         }
 
         if (icy) {
           // check if all nodes are grounded or are a part of the set of Dirichlet nodes
           bool grounded = true;
           for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-            grounded &= (mask::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
+            grounded &= (cell_type::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
           }
 
           if (m_iceberg_mask(i, j) == 1) {
@@ -195,7 +195,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
 
       if (m_mask(i, j) > 0) {
         ice_thickness(i,j) = 0.0;
-        cell_type(i,j)          = MASK_ICE_FREE_OCEAN;
+        cell_type(i,j)          = cell_type::ICE_FREE_OCEAN;
       }
     }
   }

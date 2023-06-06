@@ -21,17 +21,16 @@
 #include "pism/coupler/surface/DEBMSimple.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/io/File.hh"
-
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Vars.hh"
+#include "pism/util/interpolation.hh"
 #include "pism/util/array/Forcing.hh"
 
 namespace pism {
@@ -392,7 +391,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           surfelev      = surface_altitude(i, j),
           albedo        = m_surface_albedo(i, j);
 
-        auto cell_type = static_cast<MaskValue>(mask.as_int(i, j));
+        auto cell_type = static_cast<cell_type::Value>(mask.as_int(i, j));
 
         double
           A   = 0.0,            // accumulation
@@ -417,7 +416,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           auto accumulation = P[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
-          if (not mask::ice_free_ocean(cell_type)) {
+          if (not cell_type::ice_free_ocean(cell_type)) {
 
             melt_info = m_model.melt(orbital[k].declination,
                                      orbital[k].distance_factor,

@@ -135,7 +135,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       int N = 0;
       double R_sum = 0.0;
       for (auto d : {North, East, South, West}) {
-        if (mask::icy(M[d])) {
+        if (cell_type::icy(M[d])) {
           R_sum += R[d];
           N++;
         }

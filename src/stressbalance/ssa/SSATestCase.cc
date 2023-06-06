@@ -17,6 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
+#include "pism/util/cell_type.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/interpolation.hh"

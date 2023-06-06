@@ -488,7 +488,6 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
  */
 std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1 &cell_type,
                                                            const array::Scalar1 &basin_mask) {
-  using mask::ice_free_ocean;
 
   // Allocate the adjacency matrix. This uses twice the amount of storage necessary (the
   // matrix is symmetric), but in known cases (i.e. with around 20 basins) we're wasting
@@ -532,19 +531,19 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
 
     auto M = cell_type.star_int(i, j);
 
-    if (ice_free_ocean(M.n)) {
+    if (cell_type::ice_free_ocean(M.n)) {
       mark_as_neighbors(B.c, B.n);
     }
 
-    if (ice_free_ocean(M.s)) {
+    if (cell_type::ice_free_ocean(M.s)) {
       mark_as_neighbors(B.c, B.s);
     }
 
-    if (ice_free_ocean(M.e)) {
+    if (cell_type::ice_free_ocean(M.e)) {
       mark_as_neighbors(B.c, B.e);
     }
 
-    if (ice_free_ocean(M.w)) {
+    if (cell_type::ice_free_ocean(M.w)) {
       mark_as_neighbors(B.c, B.w);
     }
   }
@@ -592,8 +591,6 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
   array::AccessScope list{ &cell_type, &basin_mask, &shelf_mask };
 
   {
-    using mask::ice_free_ocean;
-
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
@@ -602,9 +599,9 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
       n_shelf_cells_per_basin[sb]++;
 
       if (cell_type.floating_ice(i, j)) {
-        auto M = cell_type.star(i, j);
-        if (ice_free_ocean(M.n) or ice_free_ocean(M.e) or ice_free_ocean(M.s) or
-            ice_free_ocean(M.w)) {
+        auto M = cell_type.star_int(i, j);
+        if (cell_type::ice_free_ocean(M.n) or cell_type::ice_free_ocean(M.e) or cell_type::ice_free_ocean(M.s) or
+            cell_type::ice_free_ocean(M.w)) {
           if (cfs_in_basins_per_shelf[sb] != b) {
             cfs_in_basins_per_shelf[sb] = b;
           }

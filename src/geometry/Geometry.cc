@@ -20,7 +20,7 @@
 #include "pism/geometry/Geometry.hh"
 
 #include "pism/util/array/CellType.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
 #include "pism/util/Context.hh"
@@ -84,9 +84,11 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
   cell_type.metadata().long_name("ice-type (ice-free/grounded/floating/ocean) integer mask").set_output_type(io::PISM_INT);
-  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_LAND, MASK_GROUNDED_ICE, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  cell_type.metadata()["flag_values"] = { cell_type::ICE_FREE_LAND,  cell_type::ICY_LAND,
+                                          cell_type::ICE_FREE_LAKE,  cell_type::ICY_LAKE,
+                                          cell_type::ICE_FREE_OCEAN, cell_type::ICY_OCEAN };
   cell_type.metadata()["flag_meanings"] =
-      "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+      "ice_free_land icy_land ice_free_lake icy_lake ice_free_ocean icy_ocean";
 
   cell_grounded_fraction.metadata(0).long_name(
       "fractional grounded/floating mask (floating=0, grounded=1)");

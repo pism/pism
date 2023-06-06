@@ -22,7 +22,7 @@
 #include "pism/util/pism_utilities.hh" // combine()
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
-#include "pism/util/Mask.hh"         // GeometryCalculator
+#include "pism/util/cell_type.hh"         // GeometryCalculator
 
 namespace pism {
 
@@ -79,7 +79,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         int m = gc.mask(sea_level, bed, H_threshold);
 
-        double H_submerged = (mask::grounded(m) ?
+        double H_submerged = (cell_type::grounded(m) ?
                               std::max(sea_level - bed, 0.0) :
                               alpha * H_threshold);
 

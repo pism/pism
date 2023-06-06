@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2019, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SIAFD_H_
-#define _SIAFD_H_
+#ifndef PISM_SIAFD_H
+#define PISM_SIAFD_H
 
 #include "pism/stressbalance/SSB_Modifier.hh"      // derives from SSB_Modifier
 
@@ -140,4 +140,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SIAFD_H_ */
+#endif /* PISM_SIAFD_H */

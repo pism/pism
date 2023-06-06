@@ -45,7 +45,6 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
@@ -309,7 +308,7 @@ void IceCompModel::initTestABCDH() {
 
   const double time = m_time->current();
 
-  m_geometry.cell_type.set(MASK_GROUNDED_ICE);
+  m_geometry.cell_type.set(cell_type::ICY_LAND);
 
   array::AccessScope list(m_geometry.ice_thickness);
 

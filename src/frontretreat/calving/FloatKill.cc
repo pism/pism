@@ -19,7 +19,7 @@
 
 #include "pism/frontretreat/calving/FloatKill.hh"
 
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
 
@@ -79,7 +79,7 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
       }
 
       ice_thickness(i, j) = 0.0;
-      cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
+      cell_type(i, j)     = cell_type::ICE_FREE_OCEAN;
     }
   }
 

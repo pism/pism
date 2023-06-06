@@ -22,10 +22,13 @@
 #include <memory>
 #include <array>
 
-#include "pism/util/Mask.hh"
 #include "pism/util/ScalarForcing.hh"
 
 namespace pism {
+
+namespace cell_type {
+enum Value : int;
+}
 
 class Context;
 class Time;
@@ -54,7 +57,7 @@ class DEBMSimplePointwise {
 public:
   DEBMSimplePointwise(const Context &ctx);
 
-  double albedo(double melt_rate, MaskValue cell_type) const;
+  double albedo(double melt_rate, cell_type::Value cell_type) const;
 
   struct OrbitalParameters {
     double declination;

@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace frontalmelt {
-  
+
 DischargeRouting::DischargeRouting(std::shared_ptr<const Grid> grid)
   : FrontalMelt(grid, nullptr),
     m_frontal_melt_rate(grid, "frontal_melt_rate") {
@@ -137,8 +137,9 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
       int N        = 0;
       double R_sum = 0.0;
-      for (auto d : { North, East, South, West }) {
-        if (mask::grounded_ice(M[d]) or (m_include_floating_ice and mask::icy(M[d]))) {
+      for (auto d : {North, East, South, West}) {
+        if (cell_type::grounded_ice(M[d]) or
+            (m_include_floating_ice and cell_type::icy(M[d]))) {
           R_sum += R[d];
           N++;
         }

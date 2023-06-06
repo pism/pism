@@ -54,7 +54,7 @@ void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
       const int i = p.i(), j = p.j();
 
       if (i < 0 or i >= Mx or j < 0 or j >= My) {
-        output(i, j) = MASK_ICE_FREE_OCEAN;
+        output(i, j) = cell_type::ICE_FREE_OCEAN;
       } else {
         output(i, j) = input(i, j);
       }
@@ -218,8 +218,8 @@ void FrontRetreat::update_geometry(double dt,
             // note: this is where the modified cell type mask is used to prevent
             // wrap-around
             if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
-                (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and b[d] < sl[d]))) {
+                (cell_type::floating_ice(m) or
+                 (cell_type::grounded_ice(m) and b[d] < sl[d]))) {
               N += 1;
             }
           }

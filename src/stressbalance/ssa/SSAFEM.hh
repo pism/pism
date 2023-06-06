@@ -23,7 +23,6 @@
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/TerminationReason.hh"
-#include "pism/util/Mask.hh"
 
 namespace pism {
 

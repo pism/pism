@@ -36,8 +36,8 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/cell_type.hh"
 
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/PicoGeometry.hh"
@@ -46,6 +46,8 @@
 
 namespace pism {
 namespace ocean {
+using cell_type::grounded_ice;
+
 
 Pico::Pico(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
@@ -68,21 +70,13 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                file,
-                                                "theta_ocean",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic,
-                                                LINEAR);
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid, file, "theta_ocean",
+                                                     "", // no standard name
+                                                     buffer_size, opt.periodic, LINEAR);
 
-    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                   file,
-                                                   "salinity_ocean",
-                                                   "", // no standard name
-                                                   buffer_size,
-                                                   opt.periodic,
-                                                   LINEAR);
+    m_salinity_ocean = std::make_shared<array::Forcing>(m_grid, file, "salinity_ocean",
+                                                        "", // no standard name
+                                                        buffer_size, opt.periodic, LINEAR);
   }
 
   m_theta_ocean->metadata(0)
@@ -121,13 +115,13 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
       .output_units("m year-1");
   m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
 
-  m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
+  m_shelf_base_temperature->metadata()["_FillValue"] = { 0.0 };
 
-  m_n_boxes  = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
+  m_n_boxes = static_cast<int>(m_config->get_number("ocean.pico.number_of_boxes"));
 }
 
 void Pico::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   m_log->message(2, "* Initializing the Potsdam Ice-shelf Cavity mOdel for the ocean ...\n");
 
@@ -142,8 +136,7 @@ void Pico::init_impl(const Geometry &geometry) {
   // FIXME: m_n_basins is a misnomer
   m_n_basins = static_cast<int>(max(m_geometry.basin_mask())) + 1;
 
-  m_log->message(4, "PICO basin min=%f, max=%f\n",
-                 min(m_geometry.basin_mask()),
+  m_log->message(4, "PICO basin min=%f, max=%f\n", min(m_geometry.basin_mask()),
                  max(m_geometry.basin_mask()));
 
   PicoPhysics physics(*m_config);
@@ -152,8 +145,9 @@ void Pico::init_impl(const Geometry &geometry) {
                     "   gamma_T= %.2e, overturning_coeff = %.2e... \n",
                  m_n_basins - 1, physics.gamma_T(), physics.overturning_coeff());
 
-  m_log->message(2, "  -Depth of continental shelf for computation of temperature and salinity input\n"
-                    "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
+  m_log->message(2,
+                 "  -Depth of continental shelf for computation of temperature and salinity input\n"
+                 "   is set for whole domain to continental_shelf_depth=%.0f meter\n",
                  physics.continental_shelf_depth());
 
   // read time-independent data right away:
@@ -162,10 +156,9 @@ void Pico::init_impl(const Geometry &geometry) {
     m_salinity_ocean->update(time().current(), 0.0);
   }
 
-  double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  double ice_density   = m_config->get_number("constants.ice.density"),
+         water_density = m_config->get_number("constants.sea_water.density"),
+         g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
@@ -205,11 +198,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
   // below
   basal_melt_rate.update_ghosts();
 
-  array::AccessScope list{&cell_type, &basal_melt_rate};
-
-  using mask::floating_ice;
-  using mask::grounded_ice;
-  using mask::ice_free_ocean;
+  array::AccessScope list{ &cell_type, &basal_melt_rate };
 
   for (auto p = grid->points(); p; p.next()) {
 
@@ -218,9 +207,11 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
     auto M = cell_type.box_int(i, j);
 
     bool potential_partially_filled_cell =
-        ((grounded_ice(M.c) or ice_free_ocean(M.c)) and
-         (floating_ice(M.w) or floating_ice(M.e) or floating_ice(M.s) or floating_ice(M.n) or
-          floating_ice(M.sw) or floating_ice(M.nw) or floating_ice(M.se) or floating_ice(M.ne)));
+        ((grounded_ice(M.c) or cell_type::ice_free_ocean(M.c)) and
+         (cell_type::floating_ice(M.w) or cell_type::floating_ice(M.e) or
+          cell_type::floating_ice(M.s) or cell_type::floating_ice(M.n) or
+          cell_type::floating_ice(M.sw) or cell_type::floating_ice(M.nw) or
+          cell_type::floating_ice(M.se) or cell_type::floating_ice(M.ne)));
 
     if (potential_partially_filled_cell) {
       auto BMR = basal_melt_rate.box(i, j);
@@ -228,14 +219,14 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
       int N           = 0;
       double melt_sum = 0.0;
 
-      melt_sum += floating_ice(M.nw) ? (++N, BMR.nw) : 0.0;
-      melt_sum += floating_ice(M.n) ? (++N, BMR.n) : 0.0;
-      melt_sum += floating_ice(M.ne) ? (++N, BMR.ne) : 0.0;
-      melt_sum += floating_ice(M.e) ? (++N, BMR.e) : 0.0;
-      melt_sum += floating_ice(M.se) ? (++N, BMR.se) : 0.0;
-      melt_sum += floating_ice(M.s) ? (++N, BMR.s) : 0.0;
-      melt_sum += floating_ice(M.sw) ? (++N, BMR.sw) : 0.0;
-      melt_sum += floating_ice(M.w) ? (++N, BMR.w) : 0.0;
+      melt_sum += cell_type::floating_ice(M.nw) ? (++N, BMR.nw) : 0.0;
+      melt_sum += cell_type::floating_ice(M.n) ? (++N, BMR.n) : 0.0;
+      melt_sum += cell_type::floating_ice(M.ne) ? (++N, BMR.ne) : 0.0;
+      melt_sum += cell_type::floating_ice(M.e) ? (++N, BMR.e) : 0.0;
+      melt_sum += cell_type::floating_ice(M.se) ? (++N, BMR.se) : 0.0;
+      melt_sum += cell_type::floating_ice(M.s) ? (++N, BMR.s) : 0.0;
+      melt_sum += cell_type::floating_ice(M.sw) ? (++N, BMR.sw) : 0.0;
+      melt_sum += cell_type::floating_ice(M.w) ? (++N, BMR.w) : 0.0;
 
       if (N != 0) { // If there are floating neigbors, return average melt rates
         basal_melt_rate(i, j) = melt_sum / N;
@@ -270,9 +261,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
   PicoPhysics physics(*m_config);
 
-  const array::Scalar &ice_thickness    = geometry.ice_thickness;
-  const auto &cell_type = geometry.cell_type;
-  const array::Scalar &bed_elevation    = geometry.bed_elevation;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
+  const auto &cell_type              = geometry.cell_type;
+  const array::Scalar &bed_elevation = geometry.bed_elevation;
 
   // Geometric part of PICO
   m_geometry.update(bed_elevation, cell_type);
@@ -288,21 +279,13 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
       std::vector<double> basin_temperature(m_n_basins);
       std::vector<double> basin_salinity(m_n_basins);
 
-      compute_ocean_input_per_basin(physics,
-                                    m_geometry.basin_mask(),
-                                    m_geometry.continental_shelf_mask(),
-                                    *m_salinity_ocean,
-                                    *m_theta_ocean,
-                                    basin_temperature,
+      compute_ocean_input_per_basin(physics, m_geometry.basin_mask(),
+                                    m_geometry.continental_shelf_mask(), *m_salinity_ocean,
+                                    *m_theta_ocean, basin_temperature,
                                     basin_salinity); // per basin
 
-      set_ocean_input_fields(physics,
-                             ice_thickness,
-                             cell_type,
-                             m_geometry.basin_mask(),
-                             m_geometry.ice_shelf_mask(),
-                             basin_temperature,
-                             basin_salinity,
+      set_ocean_input_fields(physics, ice_thickness, cell_type, m_geometry.basin_mask(),
+                             m_geometry.ice_shelf_mask(), basin_temperature, basin_salinity,
                              m_Toc_box0,
                              m_Soc_box0); // per shelf
     }
@@ -310,39 +293,28 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
     // Use the Beckmann-Goosse parameterization to set reasonable values throughout the
     // domain.
     beckmann_goosse(physics,
-                    ice_thickness,                // input
+                    ice_thickness,               // input
                     m_geometry.ice_shelf_mask(), // input
-                    cell_type,                    // input
-                    m_Toc_box0,                   // input
-                    m_Soc_box0,                   // input
-                    m_basal_melt_rate,
-                    *m_shelf_base_temperature,
-                    m_Toc,
-                    m_Soc);
+                    cell_type,                   // input
+                    m_Toc_box0,                  // input
+                    m_Soc_box0,                  // input
+                    m_basal_melt_rate, *m_shelf_base_temperature, m_Toc, m_Soc);
 
     // In ice shelves, replace Beckmann-Goosse values using the Olbers and Hellmer model.
     process_box1(physics,
-                 ice_thickness,                             // input
-                 m_geometry.ice_shelf_mask(),               // input
-                 m_geometry.box_mask(),                     // input
-                 m_Toc_box0,                                // input
-                 m_Soc_box0,                                // input
-                 m_basal_melt_rate,
-                 *m_shelf_base_temperature,
-                 m_T_star,
-                 m_Toc,
-                 m_Soc,
+                 ice_thickness,               // input
+                 m_geometry.ice_shelf_mask(), // input
+                 m_geometry.box_mask(),       // input
+                 m_Toc_box0,                  // input
+                 m_Soc_box0,                  // input
+                 m_basal_melt_rate, *m_shelf_base_temperature, m_T_star, m_Toc, m_Soc,
                  m_overturning);
 
     process_other_boxes(physics,
                         ice_thickness,               // input
                         m_geometry.ice_shelf_mask(), // input
                         m_geometry.box_mask(),       // input
-                        m_basal_melt_rate,
-                        *m_shelf_base_temperature,
-                        m_T_star,
-                        m_Toc,
-                        m_Soc);
+                        m_basal_melt_rate, *m_shelf_base_temperature, m_T_star, m_Toc, m_Soc);
   }
 
   extend_basal_melt_rates(cell_type, m_basal_melt_rate);
@@ -350,10 +322,9 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(physics.ice_density());
 
-  double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  double ice_density   = m_config->get_number("constants.ice.density"),
+         water_density = m_config->get_number("constants.sea_water.density"),
+         g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
@@ -361,7 +332,7 @@ void Pico::update_impl(const Geometry &geometry, double t, double dt) {
 
 
 MaxTimestep Pico::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
 
   return MaxTimestep("ocean pico");
 }
@@ -435,7 +406,8 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
       salinity[basin_id] /= count[basin_id];
       temperature[basin_id] /= count[basin_id];
 
-      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id], salinity[basin_id]);
+      m_log->message(5, "  %d: temp =%.3f, salinity=%.3f\n", basin_id, temperature[basin_id],
+                     salinity[basin_id]);
     } else {
       m_log->message(
           2,
@@ -460,15 +432,12 @@ void Pico::compute_ocean_input_per_basin(const PicoPhysics &physics,
 //! box 1, which is the ocean box adjacent to the grounding line.
 //!
 //! We enforce that Toc_box0 is always at least the local pressure melting point.
-void Pico::set_ocean_input_fields(const PicoPhysics &physics,
-                                  const array::Scalar &ice_thickness,
+void Pico::set_ocean_input_fields(const PicoPhysics &physics, const array::Scalar &ice_thickness,
                                   const array::CellType1 &cell_type,
-                                  const array::Scalar &basin_mask,
-                                  const array::Scalar &shelf_mask,
+                                  const array::Scalar &basin_mask, const array::Scalar &shelf_mask,
                                   const std::vector<double> &basin_temperature,
                                   const std::vector<double> &basin_salinity,
-                                  array::Scalar &Toc_box0,
-                                  array::Scalar &Soc_box0) const {
+                                  array::Scalar &Toc_box0, array::Scalar &Soc_box0) const {
 
   array::AccessScope list{ &ice_thickness, &basin_mask, &Soc_box0, &Toc_box0, &cell_type, &shelf_mask };
 
@@ -483,20 +452,18 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
   // 1) count the number of cells in each shelf
   // 2) count the number of cells in the intersection of each shelf with all the basins
   {
-    using mask::ice_free_ocean;
-
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       int s = shelf_mask.as_int(i, j);
       int b = basin_mask.as_int(i, j);
-      n_shelf_cells_per_basin[s*m_n_basins+b]++;
+      n_shelf_cells_per_basin[s * m_n_basins + b]++;
       n_shelf_cells[s]++;
 
       // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
       if (cell_type.floating_ice(i, j)) {
         auto M = cell_type.star_int(i, j);
-        if (ice_free_ocean(M.n) or ice_free_ocean(M.e) or ice_free_ocean(M.s) or
-            ice_free_ocean(M.w)) {
+        if (cell_type::ice_free_ocean(M.n) or cell_type::ice_free_ocean(M.e) or
+            cell_type::ice_free_ocean(M.s) or cell_type::ice_free_ocean(M.w)) {
           if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
             cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
           }

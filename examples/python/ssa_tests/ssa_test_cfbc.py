@@ -112,10 +112,10 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
                 x = grid.x(i)
                 if i != grid.Mx() - 1:
                     thickness[i, j] = H_exact(x - x_min)
-                    ice_mask[i, j] = PISM.MASK_FLOATING
+                    ice_mask[i, j] = PISM.ICY_OCEAN
                 else:
                     thickness[i, j] = 0
-                    ice_mask[i, j] = PISM.MASK_ICE_FREE_OCEAN
+                    ice_mask[i, j] = PISM.ICE_FREE_OCEAN
 
                 surface[i, j] = (1.0 - ice_rho / ocean_rho) * thickness[i, j]
 

@@ -16,17 +16,16 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/Grid.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/fem/FEM.hh"
-#include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/cell_type.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_options.hh"
 
 #include "pism/util/node_types.hh"
 #include "pism/util/pism_utilities.hh" // average_water_column_pressure()
@@ -459,7 +458,7 @@ void SSAFEM::driving_stress(const fem::Element &E,
     }
 
     const int M = m_gc.mask(sea_level, b, H);
-    const bool grounded = mask::grounded(M);
+    const bool grounded = cell_type::grounded(M);
 
     const double
       pressure = m_rho_g * H,
@@ -517,12 +516,12 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
     }
   }
 
-  if (mask::grounded_ice(mask)) {
+  if (cell_type::grounded_ice(mask)) {
     m_basal_sliding_law->drag_with_derivative(tauc, U.u, U.v, beta, dbeta);
   } else {
     *beta = 0;
 
-    if (mask::ice_free_land(mask)) {
+    if (cell_type::ice_free_land(mask)) {
       *beta = m_beta_ice_free_bedrock;
     }
 
@@ -567,8 +566,6 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
                                P1Element2(*m_grid, Q_p1, 1),
                                P1Element2(*m_grid, Q_p1, 2),
                                P1Element2(*m_grid, Q_p1, 3)};
-
-  using mask::ocean;
 
   const bool
     use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");

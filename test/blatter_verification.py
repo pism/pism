@@ -532,7 +532,7 @@ class TestCFBC(TestCase):
         geometry.bed_elevation.set(-self.H)
         geometry.ice_thickness.set(self.H)
         geometry.ice_surface_elevation.set(0.0)
-        geometry.cell_type.set(PISM.MASK_FLOATING)
+        geometry.cell_type.set(PISM.ICY_OCEAN)
         geometry.sea_level_elevation.set(0.0)
 
         # do *not* call geometry.ensure_consistency(): we want to keep surface elevation

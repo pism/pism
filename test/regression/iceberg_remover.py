@@ -10,18 +10,18 @@ def create_mask(shape):
     assert shape[0] >= 11 and shape[1] >= 11
 
     mask = np.zeros(shape, dtype=int)
-    mask[:] = PISM.MASK_ICE_FREE_OCEAN
-    mask[6:,:4] = PISM.MASK_GROUNDED_ICE
+    mask[:] = PISM.ICE_FREE_OCEAN
+    mask[6:,:4] = PISM.ICY_LAND
     # not an iceberg
-    mask[2:6,:2] = PISM.MASK_FLOATING
+    mask[2:6,:2] = PISM.ICY_OCEAN
     mask_no_icebergs_fem = mask.copy()
     # add a patch that is not an iceberg int the FD context and *is* an iceberg in the FEM
     # context
-    mask[:6,3:7] = PISM.MASK_FLOATING
+    mask[:6,3:7] = PISM.ICY_OCEAN
     mask_no_icebergs_fd = mask.copy()
     # add a couple of icebergs (in both meanings)
-    mask[6:,7:] = PISM.MASK_FLOATING
-    mask[:3, 8:] = PISM.MASK_FLOATING
+    mask[6:,7:] = PISM.ICY_OCEAN
+    mask[:3, 8:] = PISM.ICY_OCEAN
 
     return mask, mask_no_icebergs_fd, mask_no_icebergs_fem
 

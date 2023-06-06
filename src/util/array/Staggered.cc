@@ -19,7 +19,7 @@
 
 #include "pism/util/array/Staggered.hh"
 
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
@@ -89,32 +89,28 @@ void staggered_to_regular(const array::CellType1 &cell_type,
                           bool include_floating_ice,
                           array::Scalar &result) {
 
-  using mask::grounded_ice;
-  using mask::icy;
-
   auto grid = result.grid();
 
-  array::AccessScope list{&cell_type, &input, &result};
+  array::AccessScope list{ &cell_type, &input, &result };
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.grounded_ice(i, j) or
-        (include_floating_ice and cell_type.icy(i, j))) {
-      auto M = cell_type.star(i, j);
+    if (cell_type.grounded_ice(i, j) or (include_floating_ice and cell_type.icy(i, j))) {
+      auto M = cell_type.star_int(i, j);
       auto F = input.star(i, j);
 
       int n = 0, e = 0, s = 0, w = 0;
       if (include_floating_ice) {
-        n = static_cast<int>(icy(M.n));
-        e = static_cast<int>(icy(M.e));
-        s = static_cast<int>(icy(M.s));
-        w = static_cast<int>(icy(M.w));
+        n = static_cast<int>(cell_type::icy(M.n));
+        e = static_cast<int>(cell_type::icy(M.e));
+        s = static_cast<int>(cell_type::icy(M.s));
+        w = static_cast<int>(cell_type::icy(M.w));
       } else {
-        n = static_cast<int>(grounded_ice(M.n));
-        e = static_cast<int>(grounded_ice(M.e));
-        s = static_cast<int>(grounded_ice(M.s));
-        w = static_cast<int>(grounded_ice(M.w));
+        n = static_cast<int>(cell_type::grounded_ice(M.n));
+        e = static_cast<int>(cell_type::grounded_ice(M.e));
+        s = static_cast<int>(cell_type::grounded_ice(M.s));
+        w = static_cast<int>(cell_type::grounded_ice(M.w));
       }
 
       if (n + e + s + w > 0) {
@@ -128,38 +124,33 @@ void staggered_to_regular(const array::CellType1 &cell_type,
   }
 }
 
-void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered1 &input,
-                          bool include_floating_ice,
-                          array::Vector &result) {
-
-  using mask::grounded_ice;
-  using mask::icy;
+void staggered_to_regular(const array::CellType1 &cell_type, const array::Staggered1 &input,
+                          bool include_floating_ice, array::Vector &result) {
 
   assert(cell_type.stencil_width() > 0);
   assert(input.stencil_width() > 0);
 
   auto grid = result.grid();
 
-  array::AccessScope list{&cell_type, &input, &result};
+  array::AccessScope list{ &cell_type, &input, &result };
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    auto M = cell_type.star(i, j);
+    auto M = cell_type.star_int(i, j);
     auto F = input.star(i, j);
 
     int n = 0, e = 0, s = 0, w = 0;
     if (include_floating_ice) {
-      n = static_cast<int>(icy(M.n));
-      e = static_cast<int>(icy(M.e));
-      s = static_cast<int>(icy(M.s));
-      w = static_cast<int>(icy(M.w));
+      n = static_cast<int>(cell_type::icy(M.n));
+      e = static_cast<int>(cell_type::icy(M.e));
+      s = static_cast<int>(cell_type::icy(M.s));
+      w = static_cast<int>(cell_type::icy(M.w));
     } else {
-      n = static_cast<int>(grounded_ice(M.n));
-      e = static_cast<int>(grounded_ice(M.e));
-      s = static_cast<int>(grounded_ice(M.s));
-      w = static_cast<int>(grounded_ice(M.w));
+      n = static_cast<int>(cell_type::grounded_ice(M.n));
+      e = static_cast<int>(cell_type::grounded_ice(M.e));
+      s = static_cast<int>(cell_type::grounded_ice(M.s));
+      w = static_cast<int>(cell_type::grounded_ice(M.w));
     }
 
     if (e + w > 0) {

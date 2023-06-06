@@ -23,7 +23,6 @@
 #include "pism/stressbalance/StressBalance_diagnostics.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"

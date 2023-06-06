@@ -80,29 +80,28 @@ void remove_narrow_tongues(const Geometry &geometry,
 
     // Note: i,j cannot be ice-free (see the if-block above), so it is either grounded ice
     // or floating ice
-    if (mask::grounded_ice(M.c)) {
-      using mask::ice_free_ocean;
+    if (cell_type::grounded_ice(M.c)) {
       // if (i,j) is grounded ice then we will remove it if it has
       // exclusively ice-free ocean neighbors
-      ice_free.n  = ice_free_ocean(M.n);
-      ice_free.e  = ice_free_ocean(M.e);
-      ice_free.s  = ice_free_ocean(M.s);
-      ice_free.w  = ice_free_ocean(M.w);
-      ice_free.ne = ice_free_ocean(M.ne);
-      ice_free.nw = ice_free_ocean(M.nw);
-      ice_free.se = ice_free_ocean(M.se);
-      ice_free.sw = ice_free_ocean(M.sw);
+      ice_free.n  = cell_type::ice_free_ocean(M.n);
+      ice_free.e  = cell_type::ice_free_ocean(M.e);
+      ice_free.s  = cell_type::ice_free_ocean(M.s);
+      ice_free.w  = cell_type::ice_free_ocean(M.w);
+      ice_free.ne = cell_type::ice_free_ocean(M.ne);
+      ice_free.nw = cell_type::ice_free_ocean(M.nw);
+      ice_free.se = cell_type::ice_free_ocean(M.se);
+      ice_free.sw = cell_type::ice_free_ocean(M.sw);
     } else {
       // if (i,j) is floating then we will remove it if its neighbors are
       // ice-free, whether ice-free ocean or ice-free ground
-      ice_free.n  = mask::ice_free(M.n);
-      ice_free.e  = mask::ice_free(M.e);
-      ice_free.s  = mask::ice_free(M.s);
-      ice_free.w  = mask::ice_free(M.w);
-      ice_free.ne = mask::ice_free(M.ne);
-      ice_free.nw = mask::ice_free(M.nw);
-      ice_free.se = mask::ice_free(M.se);
-      ice_free.sw = mask::ice_free(M.sw);
+      ice_free.n  = cell_type::ice_free(M.n);
+      ice_free.e  = cell_type::ice_free(M.e);
+      ice_free.s  = cell_type::ice_free(M.s);
+      ice_free.w  = cell_type::ice_free(M.w);
+      ice_free.ne = cell_type::ice_free(M.ne);
+      ice_free.nw = cell_type::ice_free(M.nw);
+      ice_free.se = cell_type::ice_free(M.se);
+      ice_free.sw = cell_type::ice_free(M.sw);
     }
 
     if ((not ice_free.w and

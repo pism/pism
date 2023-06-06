@@ -59,7 +59,7 @@ class test_plug(PISM.ssa.SSAExactTestCase):
         # Set constant coefficients.
         vecs.land_ice_thickness.set(H0)
         vecs.tauc.set(tauc0)
-        vecs.mask.set(PISM.MASK_GROUNDED_ICE)
+        vecs.mask.set(PISM.ICY_LAND)
 
         vel_bc_mask = vecs.vel_bc_mask
         vel_bc = vecs.vel_bc

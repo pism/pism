@@ -18,9 +18,9 @@
 
 #include <cassert>
 
-#include "pism/util/Mask.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/cell_type.hh"
 
 namespace pism {
 

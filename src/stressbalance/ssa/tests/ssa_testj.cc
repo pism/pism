@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -23,17 +23,12 @@ static char help[] =
   "  class thereof. Uses verification test J. Also may be used in a PISM\n"
   "  software (regression) test.\n\n";
 
-#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/stressbalance/ssa/SSATestCase.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/verification/tests/exactTestsIJ.h"
 
@@ -63,7 +58,7 @@ protected:
 void SSATestCaseJ::initializeSSACoefficients() {
   m_tauc.set(0.0);    // irrelevant for test J
   m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating (maximum ice thickness is 770 m)
-  m_geometry.cell_type.set(MASK_FLOATING);
+  m_geometry.cell_type.set(cell_type::ICY_OCEAN);
 
   double enth0  = m_enthalpyconverter->enthalpy(273.15, 0.01, 0.0); // 0.01 water fraction
   m_ice_enthalpy.set(enth0);

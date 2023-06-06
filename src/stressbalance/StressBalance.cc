@@ -22,7 +22,7 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
+#include "pism/util/cell_type.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
@@ -683,7 +683,7 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
                                        const array::CellType1 &mask,
                                        array::Array2D<PrincipalStrainRates> &result) {
 
-  using mask::ice_free;
+  using cell_type::ice_free;
 
   auto grid = result.grid();
   double dx = grid->dx();
@@ -765,7 +765,7 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result) {
 
-  using mask::ice_free;
+  using cell_type::ice_free;
 
   auto grid = result.grid();
 

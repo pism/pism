@@ -23,18 +23,13 @@ static char help[] =
   "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
   "  used in a PISM software (regression) test.\n\n";
 
-#include "pism/basalstrength/basal_resistance.hh" // IceBasalResistancePlasticLaw
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFD_diagnostics.hh"
 #include "pism/stressbalance/ssa/SSATestCase.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
 
 namespace pism {

@@ -16,55 +16,65 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _MASK_H_
-#define _MASK_H_
+#ifndef PISM_MASK_H
+#define PISM_MASK_H
 
 // the following three includes are needed here because of inlined code
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
+
 namespace array {
 class Scalar;
 }
-enum MaskValue {
-  MASK_UNKNOWN        = -1,
-  MASK_ICE_FREE_LAND  = 0,
-  MASK_GROUNDED_ICE   = 2,
-  MASK_FLOATING       = 3,
-  MASK_ICE_FREE_OCEAN = 4
+
+namespace cell_type {
+
+const int CELL_TYPE_ICY   = 1;
+const int CELL_TYPE_LAND  = (1 << 1);
+const int CELL_TYPE_LAKE  = (1 << 2);
+const int CELL_TYPE_OCEAN = (1 << 3);
+
+enum Value : int {
+  UNKNOWN        = 0,
+  ICE_FREE_LAND  = CELL_TYPE_LAND,
+  ICY_LAND       = CELL_TYPE_LAND | CELL_TYPE_ICY,
+  ICE_FREE_LAKE  = CELL_TYPE_LAKE,
+  ICY_LAKE       = CELL_TYPE_LAKE | CELL_TYPE_ICY,
+  ICE_FREE_OCEAN = CELL_TYPE_OCEAN,
+  ICY_OCEAN      = CELL_TYPE_OCEAN | CELL_TYPE_ICY
 };
 
-namespace mask {
-//! \brief An ocean cell (floating ice or ice-free).
-inline bool ocean(int M) {
-  return M >= MASK_FLOATING;
+//! \brief An wet cell (floating ice or ice-free).
+  inline bool wet(int M) {
+    return ((M & CELL_TYPE_LAKE) != 0) or ((M & CELL_TYPE_OCEAN) != 0);
+  }
+  //! \brief Grounded cell (grounded ice or ice-free).
+  inline bool grounded(int M) {
+    return (M & CELL_TYPE_LAND) != 0;
+  }
+  //! \brief Ice-filled cell (grounded or floating).
+  inline bool icy(int M) {
+    return (M & CELL_TYPE_ICY) != 0;
+  }
+  inline bool grounded_ice(int M) {
+    return M == ICY_LAND;
+  }
+  inline bool floating_ice(int M) {
+    return (M == ICY_LAKE) or (M == ICY_OCEAN);
+  }
+  //! \brief Ice-free cell (grounded or ocean).
+  inline bool ice_free(int M) {
+    return not icy(M);
+  }
+  inline bool ice_free_ocean(int M) {
+    return M == ICE_FREE_OCEAN;
+  }
+  inline bool ice_free_land(int M) {
+    return M == ICE_FREE_LAND;
+  }
 }
-//! \brief Grounded cell (grounded ice or ice-free).
-inline bool grounded(int M) {
-  return not ocean(M);
-}
-//! \brief Ice-filled cell (grounded or floating).
-inline bool icy(int M) {
-  return (M == MASK_GROUNDED_ICE) || (M == MASK_FLOATING);
-}
-inline bool grounded_ice(int M) {
-  return icy(M) && grounded(M);
-}
-inline bool floating_ice(int M) {
-  return icy(M) && ocean(M);
-}
-//! \brief Ice-free cell (grounded or ocean).
-inline bool ice_free(int M) {
-  return not icy(M);
-}
-inline bool ice_free_ocean(int M) {
-  return ocean(M) && ice_free(M);
-}
-inline bool ice_free_land(int M) {
-  return grounded(M) && ice_free(M);
-}
-} // namespace mask
 
 class GeometryCalculator {
 public:
@@ -112,17 +122,17 @@ public:
       surface_result = hfloating;
 
       if (ice_free) {
-        mask_result = MASK_ICE_FREE_OCEAN;
+        mask_result = cell_type::ICE_FREE_OCEAN;
       } else {
-        mask_result = MASK_FLOATING;
+        mask_result = cell_type::ICY_OCEAN;
       }
     } else {  // Grounded
       surface_result = hgrounded;
 
       if (ice_free) {
-        mask_result = MASK_ICE_FREE_LAND;
+        mask_result = cell_type::ICE_FREE_LAND;
       } else {
-        mask_result = MASK_GROUNDED_ICE;
+        mask_result = cell_type::ICY_LAND;
       }
     }
 
@@ -154,4 +164,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _MASK_H_ */
+#endif /* PISM_MASK_H */

@@ -2850,8 +2850,6 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   array::Array3D W(m_grid, "wvel", array::WITH_GHOSTS, m_grid->z());
 
-  using mask::ice_free;
-
   EnthalpyConverter::Ptr EC = m_grid->ctx()->enthalpy_converter();
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
@@ -2893,13 +2891,16 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
                    *w_e = W.get_column(i + 1, j), *w_s = W.get_column(i, j - 1),
                    *w_w = W.get_column(i - 1, j);
 
-      auto m                  = mask.star_int(i, j);
-      const unsigned int east = ice_free(m.e) ? 0 : 1, west = ice_free(m.w) ? 0 : 1,
-                         south = ice_free(m.s) ? 0 : 1, north = ice_free(m.n) ? 0 : 1;
+      auto m = mask.star_int(i, j);
+      const unsigned int
+        east  = cell_type::ice_free(m.e) ? 0 : 1,
+        west  = cell_type::ice_free(m.w) ? 0 : 1,
+        south = cell_type::ice_free(m.s) ? 0 : 1,
+        north = cell_type::ice_free(m.n) ? 0 : 1;
 
       double *viscosity = result->get_column(i, j);
 
-      if (ice_free(m.c)) {
+      if (cell_type::ice_free(m.c)) {
         result->set_column(i, j, m_fill_value);
         continue;
       }
@@ -3271,7 +3272,7 @@ void IceModel::init_diagnostics() {
   }
 
   // get diagnostics from submodels
-  for (auto m : m_submodels) {
+  for (const auto& m : m_submodels) {
     m_diagnostics = pism::combine(m_diagnostics, m.second->diagnostics());
     m_ts_diagnostics = pism::combine(m_ts_diagnostics, m.second->ts_diagnostics());
   }

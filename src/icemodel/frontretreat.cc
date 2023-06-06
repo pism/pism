@@ -255,7 +255,7 @@ void IceModel::front_retreat_step() {
             // This modification will ensure that cells next to *these* ice free ocean
             // cells will not be considered "marginal" and so thickness threshold and
             // float-kill parameterizations will not apply.
-            modified_cell_type(i, j) = MASK_UNKNOWN;
+            modified_cell_type(i, j) = cell_type::UNKNOWN;
           } else {
             modified_cell_type(i, j) = cell_type(i, j);
           }

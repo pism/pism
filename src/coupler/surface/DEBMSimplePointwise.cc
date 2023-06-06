@@ -24,6 +24,8 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/cell_type.hh"
 
 /*!
  * This class implements dEBM-simple, the simple diurnal energy balance model described in
@@ -352,8 +354,8 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
  * @param[in] melt_rate melt rate (meters (liquid water equivalent) per second)
  * @param[in] cell_type cell type mask (used to exclude ice free areas)
  */
-double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const {
-  if (cell_type == MASK_ICE_FREE_OCEAN) {
+double DEBMSimplePointwise::albedo(double melt_rate, cell_type::Value cell_type) const {
+  if (cell_type == cell_type::ICE_FREE_OCEAN) {
     return m_albedo_ocean;
   }
 
