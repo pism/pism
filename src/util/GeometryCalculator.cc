@@ -19,8 +19,8 @@
 #include <cassert>
 
 #include "pism/util/Grid.hh"
+#include "pism/util/GeometryCalculator.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/cell_type.hh"
 
 namespace pism {
 
@@ -39,14 +39,14 @@ void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
                                       array::Scalar &result) const {
   array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
-  const Grid &grid = *bed.grid();
+  auto grid = bed.grid();
 
   const unsigned int stencil = result.stencil_width();
   assert(sea_level.stencil_width() >= stencil);
   assert(bed.stencil_width()       >= stencil);
   assert(thickness.stencil_width() >= stencil);
 
-  for (auto p = grid.points(stencil); p; p.next()) {
+  for (auto p = grid->points(stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));

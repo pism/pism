@@ -16,10 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <algorithm>
 #include <cmath>
+#include <initializer_list>
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/util/cell_type.hh"
+#include "pism/util/stencils.hh"
 
 namespace pism {
 

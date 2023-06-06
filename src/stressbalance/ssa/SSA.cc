@@ -17,23 +17,23 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/SSA.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLawFactory.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ssa/SSA_diagnostics.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/GeometryCalculator.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/cell_type.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/geometry/Geometry.hh"
-
-#include "pism/stressbalance/ssa/SSA_diagnostics.hh"
 
 namespace pism {
 namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
   m_min_thickness = config.get_number("stress_balance.ssa.strength_extension.min_thickness");
-  m_constant_nu = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
+  m_constant_nu   = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -52,9 +52,9 @@ void SSAStrengthExtension::set_min_thickness(double my_min_thickness) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "min_thickness must be positive, got %f",
                                   my_min_thickness);
   }
-  double nuH = m_constant_nu * m_min_thickness;
+  double nuH      = m_constant_nu * m_min_thickness;
   m_min_thickness = my_min_thickness;
-  m_constant_nu = nuH / m_min_thickness;
+  m_constant_nu   = nuH / m_min_thickness;
 }
 
 //! Returns strength = (viscosity times thickness).

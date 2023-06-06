@@ -23,7 +23,7 @@ add_library (util OBJECT
   array/Scalar.cc
   array/Staggered.cc
   array/Vector.cc
-  cell_type.cc
+  GeometryCalculator.cc
   connected_components.cc
   error_handling.cc
   fem/DirichletData.cc

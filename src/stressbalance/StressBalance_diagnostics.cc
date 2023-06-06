@@ -208,8 +208,8 @@ std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
 
       // an icy cell:
       {
-        auto u = u3.get_column(i, j);
-        auto v = v3.get_column(i, j);
+        const auto *u = u3.get_column(i, j);
+        const auto *v = v3.get_column(i, j);
 
         Vector2d Q(0.0, 0.0);
 

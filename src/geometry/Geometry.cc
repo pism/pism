@@ -21,6 +21,7 @@
 
 #include "pism/util/array/CellType.hh"
 #include "pism/util/cell_type.hh"
+#include "pism/util/GeometryCalculator.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
 #include "pism/util/Context.hh"
@@ -110,7 +111,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   auto grid = ice_thickness.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   array::AccessScope list{&sea_level_elevation, &bed_elevation,
       &ice_thickness, &ice_area_specific_volume,

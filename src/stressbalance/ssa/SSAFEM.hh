@@ -20,9 +20,10 @@
 #define _SSAFEM_H_
 
 #include "pism/stressbalance/ssa/SSA.hh"
+#include "pism/util/GeometryCalculator.hh"
+#include "pism/util/TerminationReason.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/petscwrappers/SNES.hh"
-#include "pism/util/TerminationReason.hh"
 
 namespace pism {
 

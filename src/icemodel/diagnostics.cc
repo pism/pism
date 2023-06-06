@@ -31,10 +31,10 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Diagnostic.hh"
-#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
+#include "pism/util/GeometryCalculator.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"

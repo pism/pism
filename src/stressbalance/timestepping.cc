@@ -18,13 +18,14 @@
  */
 
 #include "pism/stressbalance/timestepping.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Array3D.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 
@@ -48,7 +49,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::Array3D &w3) {
 
   auto grid = ice_thickness.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 

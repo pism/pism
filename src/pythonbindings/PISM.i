@@ -277,6 +277,9 @@ pism_class(pism::Time, "pism/util/Time.hh")
 %include "geometry/grounded_cell_fraction.hh"
 %ignore pism::cell_type::UNKNOWN;
 %include "util/cell_type.hh"
+
+pism_class(pism::GeometryCalculator, "pism/util/GeometryCalculator.hh");
+
 %include "pism_python.hh"
 
 pism_class(pism::MohrCoulombPointwise, "pism/basalstrength/MohrCoulombPointwise.hh")

@@ -22,7 +22,7 @@
 #include "pism/util/pism_utilities.hh" // combine()
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
-#include "pism/util/cell_type.hh"         // GeometryCalculator
+#include "pism/util/GeometryCalculator.hh"         // GeometryCalculator
 
 namespace pism {
 

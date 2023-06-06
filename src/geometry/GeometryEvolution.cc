@@ -34,6 +34,7 @@
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/geometry/flux_limiter.hh"
+#include "pism/util/GeometryCalculator.hh"
 
 namespace pism {
 

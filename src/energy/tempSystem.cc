@@ -20,8 +20,8 @@
 #include <cmath>
 
 #include "pism/energy/tempSystem.hh"
+#include "pism/util/ConfigInterface.hh"
 #include "pism/util/cell_type.hh"
-
 #include "pism/util/error_handling.hh"
 
 namespace pism {
