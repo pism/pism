@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,13 +29,13 @@ namespace cell_type {
 
 enum Value : int {
   UNKNOWN        = -2,          // FIXME: this will be interpreted as "ice free land" by the code below
-  ICE_FREE_LAND  = 0,
-  ICY_LAND       = 1,           // odd means icy
+  ICE_FREE_LAND = 0, // even means "ice free"
+  ICY_LAND      = 1, // odd means "icy"
   // values associated with "land" are less than ones for "water"
-  ICE_FREE_LAKE  = 2,
-  ICY_LAKE       = 3,           // odd means icy
-  ICE_FREE_OCEAN = 4,
-  ICY_OCEAN      = 5            // odd means icy
+  ICE_FREE_LAKE  = 2, // even means "ice free"
+  ICY_LAKE       = 3, // odd means "icy"
+  ICE_FREE_OCEAN = 4, // even means "ice free"
+  ICY_OCEAN      = 5  // odd means "icy"
 };
 
 //! \brief An wet cell (floating ice or ice-free).
