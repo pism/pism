@@ -110,7 +110,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
     // rate near the grounding line:
     if (sub_gl) {
       lambda = geometry.cell_grounded_fraction(i,j);
-    } else if (geometry.cell_type.ocean(i,j)) {
+    } else if (geometry.cell_type.water(i,j)) {
       lambda = 0.0;
     }
     result(i,j) = lambda * grounded_basal_melt_rate(i, j) + (1.0 - lambda) * M_shelf_base;
@@ -144,7 +144,7 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
     for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.grounded(i,j)) {
+      if (cell_type.land(i,j)) {
         if (cell_type.ice_free(i,j)) { // no ice: sees air temp
           result(i,j) = ice_surface_temperature(i,j);
         } else { // ice: sees temp of base of ice

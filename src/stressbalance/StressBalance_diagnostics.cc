@@ -444,10 +444,12 @@ std::shared_ptr<array::Array> PSB_wvel::compute(bool zero_above_ice) const {
       int ks = m_grid->kBelowHeight(thickness(i, j));
 
       // in the ice:
-      if (mask.grounded(i, j)) {
-        const double bed_dx = diff_x_p(*bed, i, j), bed_dy = diff_y_p(*bed, i, j),
-                     uplift_ij = (*uplift)(i, j);
-        for (int k = 0; k <= ks; k++) {
+      if (mask.land(i,j)) {
+        const double
+          bed_dx = diff_x_p(*bed, i, j),
+          bed_dy = diff_y_p(*bed, i, j),
+          uplift_ij = (*uplift)(i,j);
+        for (int k = 0; k <= ks ; k++) {
           result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
         }
 

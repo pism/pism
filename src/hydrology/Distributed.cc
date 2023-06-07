@@ -251,7 +251,7 @@ void Distributed::update_P(double dt,
 
     if (cell_type.ice_free_land(i, j)) {
       P_new(i, j) = 0.0;
-    } else if (cell_type.ocean(i, j)) {
+    } else if (cell_type.water(i, j)) {
       P_new(i, j) = P_o;
     } else if (w.c <= 0.0) {
       P_new(i, j) = P_o;

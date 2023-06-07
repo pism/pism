@@ -236,7 +236,7 @@ void ForceThickness::adjust_mass_flux(double time,
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ftt_mask(i,j) > 0.5 and cell_type.grounded(i, j)) {
+    if (m_ftt_mask(i,j) > 0.5 and cell_type.land(i, j)) {
       if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
         result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - ice_thickness(i,j));
       } else {

@@ -190,7 +190,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       }
 
       const bool
-        is_floating        = cell_type.ocean(i, j),
+        is_floating        = cell_type.water(i, j),
         base_is_warm       = system.Enth(0) >= system.Enth_s(0),
         above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 

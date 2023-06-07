@@ -263,7 +263,7 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
         m_till_phi(i, j) += dphi;
         m_till_phi(i, j) = pism::clip(m_till_phi(i, j), phi0, m_phi_max);
       }
-    } else if (cell_type.ocean(i, j)) {
+    } else if (cell_type.water(i, j)) {
       // Floating and ice free ocean: use the bed-elevation-dependent lower bound of
       // tillphi:
       m_till_phi(i, j) = phi0;

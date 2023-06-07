@@ -437,7 +437,7 @@ void FractureDensity::update(double dt,
     }
 
     // boundary condition
-    if (geometry.cell_type.grounded(i, j) and not do_fracground) {
+    if (geometry.cell_type.land(i, j) and not do_fracground) {
 
       if (bc_mask(i, j) > 0.5) {
         D_new(i, j) = fdBoundaryValue;

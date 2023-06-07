@@ -458,12 +458,12 @@ void SSAFEM::driving_stress(const fem::Element &E,
     }
 
     const int M = m_gc.mask(sea_level, b, H);
-    const bool grounded = cell_type::grounded(M);
+    const bool land = cell_type::land(M);
 
     const double
       pressure = m_rho_g * H,
-      h_x = grounded ? b_x + H_x : m_alpha * H_x,
-      h_y = grounded ? b_y + H_y : m_alpha * H_y;
+      h_x = land ? b_x + H_x : m_alpha * H_x,
+      h_y = land ? b_y + H_y : m_alpha * H_y;
 
     result[q].u = - pressure * h_x;
     result[q].v = - pressure * h_y;

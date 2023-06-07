@@ -760,9 +760,9 @@ protected:
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
+      if (m_kind == GROUNDED and cell_type.land(i, j)) {
         m_accumulator(i, j) += input(i, j) * ice_density;
-      } else if (m_kind == SHELF and cell_type.ocean(i, j)) {
+      } else if (m_kind == SHELF and cell_type.water(i, j)) {
         m_accumulator(i, j) += input(i, j) * ice_density;
       } else {
         m_accumulator(i, j) = 0.0;
@@ -1913,7 +1913,7 @@ public:
 
       const double H = ice_thickness(i, j);
 
-      if (cell_type.grounded(i, j) and H >= thickness_threshold) {
+      if (cell_type.land(i, j) and H >= thickness_threshold) {
         volume += cell_area * H;
       }
     }
@@ -1949,7 +1949,7 @@ public:
 
       const double H = ice_thickness(i, j);
 
-      if (cell_type.ocean(i, j) and H >= thickness_threshold) {
+      if (cell_type.water(i, j) and H >= thickness_threshold) {
         volume += cell_area * H;
       }
     }
@@ -2117,8 +2117,9 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
   for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if ((area == BOTH) or (area == GROUNDED and cell_type.grounded(i, j)) or
-        (area == SHELF and cell_type.ocean(i, j))) {
+    if ((area == BOTH) or
+        (area == GROUNDED and cell_type.land(i, j)) or
+        (area == SHELF and cell_type.water(i, j))) {
 
       double dV = term == FLOW ? dV_flow(i, j) : 0.0;
 

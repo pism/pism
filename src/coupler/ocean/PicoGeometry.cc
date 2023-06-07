@@ -293,7 +293,7 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j)) {
+    if (cell_type.water(i, j)) {
       m_tmp(i, j) = 1.0;
 
       if (grid::domain_edge(*grid, i, j)) {
@@ -329,7 +329,7 @@ void PicoGeometry::compute_ice_rises(const array::CellType &cell_type, bool excl
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.grounded(i, j)) {
+    if (cell_type.land(i, j)) {
       m_tmp(i, j) = 2.0;
     } else {
       m_tmp(i, j) = 0.0;

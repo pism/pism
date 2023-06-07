@@ -156,7 +156,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i,j)) {
+    if (mask.water(i,j)) {
       result(i,j) = 0.0;
     } else {
       const double

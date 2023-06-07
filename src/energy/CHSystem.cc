@@ -210,7 +210,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
       {
         system.set_surface_dirichlet_bc(Enth_ks);
 
-        if (cell_type.ocean(i, j)) {
+        if (cell_type.water(i, j)) {
           // floating base: Dirichlet application of known temperature from ocean coupler;
           //   assumes base of ice shelf has zero liquid fraction
           double Enth0 = EC->enthalpy_permissive(shelf_base_temp(i, j), 0.0, EC->pressure(H));

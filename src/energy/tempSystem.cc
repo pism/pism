@@ -135,7 +135,7 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     S.D(0) = 1.0;
     S.U(0) = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (cell_type::wet(m_mask)) {
+    if (cell_type::water(m_mask)) {
       // essentially no ice but floating ... ask OceanCoupler
       S.RHS(0) = m_Tshelfbase;
     } else { // top of bedrock sees atmosphere
@@ -143,7 +143,7 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     }
   } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (cell_type::wet(m_mask)) {
+    if (cell_type::water(m_mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note that L[0] is not used
       S.D(0) = 1.0;

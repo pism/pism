@@ -1259,23 +1259,23 @@ void grounding_line_flux(const array::CellType1 &cell_type,
 
       double result = 0.0;
 
-      if (cell_type.ocean(i ,j)) {
+      if (cell_type.water(i ,j)) {
         auto M = cell_type.star_int(i, j);
         auto Q = flux.star(i, j);
 
-        if (cell_type::grounded(M.n)) {
+        if (cell_type::land(M.n)) {
           result += Q.n * dx;
         }
 
-        if (cell_type::grounded(M.e)) {
+        if (cell_type::land(M.e)) {
           result += Q.e * dy;
         }
 
-        if (cell_type::grounded(M.s)) {
+        if (cell_type::land(M.s)) {
           result -= Q.s * dx;
         }
 
-        if (cell_type::grounded(M.w)) {
+        if (cell_type::land(M.w)) {
           result -= Q.w * dy;
         }
 
@@ -1320,23 +1320,23 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
 
       double volume_flux = 0.0;
 
-      if (cell_type.ocean(i ,j)) {
+      if (cell_type.water(i ,j)) {
         auto M = cell_type.star_int(i, j);
         auto Q = flux.star(i, j); // m^2 / s
 
-        if (cell_type::grounded(M.n)) {
+        if (cell_type::land(M.n)) {
           volume_flux += Q.n * dx;
         }
 
-        if (cell_type::grounded(M.e)) {
+        if (cell_type::land(M.e)) {
           volume_flux += Q.e * dy;
         }
 
-        if (cell_type::grounded(M.s)) {
+        if (cell_type::land(M.s)) {
           volume_flux -= Q.s * dx;
         }
 
-        if (cell_type::grounded(M.w)) {
+        if (cell_type::land(M.w)) {
           volume_flux -= Q.w * dy;
         }
       }

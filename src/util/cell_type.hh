@@ -39,11 +39,11 @@ enum Value : int {
 };
 
 //! \brief An wet cell (floating ice or ice-free).
-  inline bool wet(int M) {
+  inline bool water(int M) {
     return M > ICY_LAND;
   }
   //! \brief Grounded cell (grounded ice or ice-free).
-  inline bool grounded(int M) {
+  inline bool land(int M) {
     return M <= ICY_LAND;
   }
   //! \brief Ice-filled cell (grounded or floating).

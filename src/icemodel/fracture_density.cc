@@ -47,7 +47,7 @@ void IceModel::update_fracture_density() {
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (m_geometry.cell_type.grounded(i, j) and not do_fracground) {
+      if (m_geometry.cell_type.land(i, j) and not do_fracground) {
         bc_mask(i, j) = 1.0;
       }
 

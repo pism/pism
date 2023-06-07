@@ -308,7 +308,7 @@ void BedSmoother::smoothed_thk(const array::Scalar &usurf,
       } else if (m_maxtl(i, j) >= thk(i, j)) {
         result(i, j) = thk(i, j);
       } else {
-        if (mask.grounded(i, j)) {
+        if (mask.land(i, j)) {
           // if grounded, compute smoothed thickness as the difference of ice surface
           // elevation and smoothed bed elevation, making sure the result is non-negative
           result(i, j) = std::max(usurf(i, j) - m_topgsmooth(i, j), 0.0);

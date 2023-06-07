@@ -104,7 +104,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
         // set of Dirichlet nodes
         bool grounded = true;
         for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-          grounded &= (cell_type::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
+          grounded &= (cell_type::land(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
         }
 
         m_iceberg_mask(i, j) = grounded ? mask_grounded_ice : mask_floating_ice;
@@ -172,7 +172,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
           // check if all nodes are grounded or are a part of the set of Dirichlet nodes
           bool grounded = true;
           for (int n = 0; grounded and n < fem::q1::n_chi; ++n) {
-            grounded &= (cell_type::grounded(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
+            grounded &= (cell_type::land(cell_type_nodal[n]) or bc_mask_nodal[n] == 1);
           }
 
           if (m_iceberg_mask(i, j) == 1) {

@@ -31,12 +31,12 @@ class CellType : public Scalar {
 public:
   CellType(std::shared_ptr<const Grid> grid, const std::string &name);
 
-  inline bool ocean(int i, int j) const {
-    return cell_type::wet(as_int(i, j));
+  inline bool water(int i, int j) const {
+    return cell_type::water(as_int(i, j));
   }
 
-  inline bool grounded(int i, int j) const {
-    return cell_type::grounded(as_int(i, j));
+  inline bool land(int i, int j) const {
+    return cell_type::land(as_int(i, j));
   }
 
   inline bool icy(int i, int j) const {

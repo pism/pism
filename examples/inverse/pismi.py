@@ -224,19 +224,19 @@ class InvSSALinPlotListener(PISM.invert.listener.PlotListener):
             pp.show()
 
 
-def adjustTauc(mask, tauc):
+def adjustTauc(cell_type, tauc):
     """Where ice is floating or land is ice-free, tauc should be adjusted to have some preset default values."""
 
     logMessage("  Adjusting initial estimate of 'tauc' to match PISM model for floating ice and ice-free bedrock.\n")
 
-    grid = mask.grid()
+    grid = cell_type.grid()
     high_tauc = grid.ctx().config().get_number("basal_yield_stress.ice_free_bedrock")
 
-    with PISM.vec.Access(comm=tauc, nocomm=mask):
+    with PISM.vec.Access(comm=tauc, nocomm=cell_type):
         for (i, j) in grid.points():
-            if mask.ocean(i, j):
+            if cell_type.water(i, j):
                 tauc[i, j] = 0
-            elif mask.ice_free(i, j):
+            elif cell_type.ice_free(i, j):
                 tauc[i, j] = high_tauc
 
 

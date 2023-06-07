@@ -79,7 +79,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         int m = gc.mask(sea_level, bed, H_threshold);
 
-        double H_submerged = (cell_type::grounded(m) ?
+        double H_submerged = (cell_type::land(m) ?
                               std::max(sea_level - bed, 0.0) :
                               alpha * H_threshold);
 

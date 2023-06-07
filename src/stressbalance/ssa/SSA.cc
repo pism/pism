@@ -184,8 +184,8 @@ void SSA::update(const Inputs &inputs, bool full_update) {
 static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, int N_ij, int N_n) {
 
   // grounding lines and calving fronts
-  if ((cell_type::grounded(M_ij) and cell_type::floating_ice(M_n)) or
-      (cell_type::floating_ice(M_ij) and cell_type::grounded(M_n)) or
+  if ((cell_type::land(M_ij) and cell_type::floating_ice(M_n)) or
+      (cell_type::floating_ice(M_ij) and cell_type::land(M_n)) or
       (cell_type::floating_ice(M_ij) and cell_type::ice_free_water(M_n))) {
     return 0;
   }

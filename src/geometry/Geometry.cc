@@ -306,7 +306,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
       thickness = geometry.ice_thickness(i, j),
       sea_level = geometry.sea_level_elevation(i, j);
 
-    if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
+    if (geometry.cell_type.land(i, j) and thickness > thickness_threshold) {
       const double cell_ice_volume = thickness * cell_area;
       if (bed > sea_level) {
         volume += cell_ice_volume;
@@ -352,7 +352,7 @@ double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (geometry.cell_type.grounded(i, j) and
+    if (geometry.cell_type.land(i, j) and
         geometry.ice_thickness(i, j) >= thickness_threshold) {
       area += cell_area;
     }
@@ -373,7 +373,7 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (geometry.cell_type.ocean(i, j) and
+    if (geometry.cell_type.water(i, j) and
         geometry.ice_thickness(i, j) >= thickness_threshold) {
       area += cell_area;
     }

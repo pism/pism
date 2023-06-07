@@ -95,7 +95,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
         P_o    = m_EC->pressure(H(i, j)),
         E_base = enthalpy.get_column(i, j)[0];
 
-      if (not m_EC->is_temperate(E_base, P_o) or cell_type.ocean(i, j)) {
+      if (not m_EC->is_temperate(E_base, P_o) or cell_type.water(i, j)) {
         m_velocity(i, j) = 0.0;
         continue;
       }
