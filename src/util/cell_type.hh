@@ -58,7 +58,7 @@ enum Value : int {
   }
   //! \brief Ice-free cell (grounded or ocean).
   inline bool ice_free(int M) {
-    return M % 2 == 0;
+    return M % 2 == 0;          // even means "ice free"
   }
   // inline bool ice_free_ocean(int M) {
   //   return M == ICE_FREE_OCEAN;
@@ -69,7 +69,13 @@ enum Value : int {
   inline bool ice_free_land(int M) {
     return M == ICE_FREE_LAND;
   }
-  } // namespace cell_type
+  inline bool lake(int M) {
+    return (M == ICE_FREE_LAKE) or (M == ICY_LAKE);
+  }
+  inline bool ocean(int M) {
+    return (M == ICE_FREE_OCEAN) or (M == ICY_OCEAN);
+  }
+} // namespace cell_type
 
 } // end of namespace pism
 
