@@ -337,7 +337,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       // Get the temperature time series from an atmosphere model and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (mask.ice_free_water(i, j)) {
         // ignore precipitation over ice-free ocean
         for (int k = 0; k < N; ++k) {
           P[k] = 0.0;
@@ -416,7 +416,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           auto accumulation = P[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
-          if (not cell_type::ice_free_ocean(cell_type)) {
+          if (not cell_type::ice_free_water(cell_type)) {
 
             melt_info = m_model.melt(orbital[k].declination,
                                      orbital[k].distance_factor,
@@ -481,7 +481,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         }
       }
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (mask.ice_free_water(i, j)) {
         m_snow_depth(i, j) = 0.0; // snow over the ocean does not stick
       }
     }

@@ -408,9 +408,9 @@ void GeometryEvolution::apply_mass_fluxes(Geometry &geometry) const {
  */
 static double limit_advective_flux(int current, int neighbor, double input) {
 
-  // No flow from ice-free ocean:
-  if ((cell_type::ice_free_ocean(current) and input > 0.0) or
-      (cell_type::ice_free_ocean(neighbor) and input < 0.0)) {
+  // No flow from ice_free_water:
+  if ((cell_type::ice_free_water(current) and input > 0.0) or
+      (cell_type::ice_free_water(neighbor) and input < 0.0)) {
     return 0.0;
   }
 
@@ -437,9 +437,9 @@ static double limit_advective_flux(int current, int neighbor, double input) {
     return input;
   }
 
-  // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
-  if ((cell_type::grounded_ice(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::grounded_ice(neighbor))) {
+  // Cases 6 and 7: Flow between grounded_ice and ice_free_water.
+  if ((cell_type::grounded_ice(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::grounded_ice(neighbor))) {
     return input;
   }
 
@@ -455,9 +455,9 @@ static double limit_advective_flux(int current, int neighbor, double input) {
     return 0.0;
   }
 
-  // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
-  if ((cell_type::floating_ice(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::floating_ice(neighbor))) {
+  // Cases 11 and 12: Flow between floating_ice and ice_free_water.
+  if ((cell_type::floating_ice(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::floating_ice(neighbor))) {
     return input;
   }
 
@@ -466,14 +466,14 @@ static double limit_advective_flux(int current, int neighbor, double input) {
     return 0.0;
   }
 
-  // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
-  if ((cell_type::ice_free_land(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::ice_free_land(neighbor))) {
+  // Cases 14 and 15: Flow between ice_free_land and ice_free_water.
+  if ((cell_type::ice_free_land(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::ice_free_land(neighbor))) {
     return 0.0;
   }
 
-  // Case 16: Flow between ice_free_ocean and ice_free_ocean.
-  if (cell_type::ice_free_ocean(current) and cell_type::ice_free_ocean(neighbor)) {
+  // Case 16: Flow between ice_free_water and ice_free_water.
+  if (cell_type::ice_free_water(current) and cell_type::ice_free_water(neighbor)) {
     return 0.0;
   }
 
@@ -488,9 +488,9 @@ static double limit_advective_flux(int current, int neighbor, double input) {
  */
 static double limit_diffusive_flux(int current, int neighbor, double flux) {
 
-  // No flow from ice-free ocean:
-  if ((cell_type::ice_free_ocean(current) and flux > 0.0) or
-      (cell_type::ice_free_ocean(neighbor) and flux < 0.0)) {
+  // No flow from ice_free_water:
+  if ((cell_type::ice_free_water(current) and flux > 0.0) or
+      (cell_type::ice_free_water(neighbor) and flux < 0.0)) {
     return 0.0;
   }
 
@@ -517,9 +517,9 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
     return flux;
   }
 
-  // Cases 6 and 7: Flow between grounded_ice and ice_free_ocean.
-  if ((cell_type::grounded_ice(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::grounded_ice(neighbor))) {
+  // Cases 6 and 7: Flow between grounded_ice and ice_free_water.
+  if ((cell_type::grounded_ice(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::grounded_ice(neighbor))) {
     return flux;
   }
 
@@ -536,9 +536,9 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
     return 0.0;
   }
 
-  // Cases 11 and 12: Flow between floating_ice and ice_free_ocean.
-  if ((cell_type::floating_ice(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::floating_ice(neighbor))) {
+  // Cases 11 and 12: Flow between floating_ice and ice_free_water.
+  if ((cell_type::floating_ice(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::floating_ice(neighbor))) {
     return 0.0;
   }
 
@@ -547,14 +547,14 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
     return 0.0;
   }
 
-  // Cases 14 and 15: Flow between ice_free_land and ice_free_ocean.
-  if ((cell_type::ice_free_land(current) and cell_type::ice_free_ocean(neighbor)) or
-      (cell_type::ice_free_ocean(current) and cell_type::ice_free_land(neighbor))) {
+  // Cases 14 and 15: Flow between ice_free_land and ice_free_water.
+  if ((cell_type::ice_free_land(current) and cell_type::ice_free_water(neighbor)) or
+      (cell_type::ice_free_water(current) and cell_type::ice_free_land(neighbor))) {
     return 0.0;
   }
 
-  // Case 16: Flow between ice_free_ocean and ice_free_ocean.
-  if (cell_type::ice_free_ocean(current) and cell_type::ice_free_ocean(neighbor)) {
+  // Case 16: Flow between ice_free_water and ice_free_water.
+  if (cell_type::ice_free_water(current) and cell_type::ice_free_water(neighbor)) {
     return 0.0;
   }
 
@@ -568,7 +568,8 @@ static double limit_diffusive_flux(int current, int neighbor, double flux) {
  *
  * Uses first-order upwinding to compute the advective flux.
  *
- * Limits the diffusive flux to prevent SIA-driven flow in the ocean and ice-free areas.
+ * Limits the diffusive flux to prevent SIA-driven flow in ice-free, ice shelf, and ocean
+ * (or lake) areas.
  */
 void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
                                                  const array::Scalar &ice_thickness,
@@ -732,7 +733,7 @@ void GeometryEvolution::update_in_place(double dt, const array::Scalar &bed_topo
       double divQ = flux_divergence(i, j);
 
       if (m_impl->use_part_grid) {
-        if (m_impl->cell_type.ice_free_ocean(i, j) and m_impl->cell_type.next_to_ice(i, j)) {
+        if (m_impl->cell_type.ice_free_water(i, j) and m_impl->cell_type.next_to_ice(i, j)) {
           assert(divQ <= 0.0);
           // Add the flow contribution to this partially filled cell.
           area_specific_volume(i, j) += -divQ * dt;
@@ -851,7 +852,7 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
 
       int N = 0; // number of empty or partially filled neighbors
       for (auto d : {North, East, South, West}) {
-        N += cell_type::ice_free_ocean(m[d]) ? 1 : 0;
+        N += cell_type::ice_free_water(m[d]) ? 1 : 0;
       }
 
       if (N > 0) {
@@ -872,9 +873,11 @@ void GeometryEvolution::residual_redistribution_iteration(const array::Scalar &b
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.ice_free_ocean(i, j)) {
-        area_specific_volume(i, j) +=
-            (residual(i + 1, j) + residual(i - 1, j) + residual(i, j + 1) + residual(i, j - 1));
+      if (cell_type.ice_free_water(i, j)) {
+        area_specific_volume(i, j) += (residual(i + 1, j) +
+                                       residual(i - 1, j) +
+                                       residual(i, j + 1) +
+                                       residual(i, j - 1));
       }
     }
 
@@ -1033,7 +1036,7 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(
       const int i = p.i(), j = p.j();
 
       // Don't modify ice thickness at Dirichlet B.C. locations and in the ice-free ocean.
-      if (thickness_bc_mask.as_int(i, j) == 1 or cell_type.ice_free_ocean(i, j)) {
+      if (thickness_bc_mask.as_int(i, j) == 1 or cell_type.ice_free_water(i, j)) {
         effective_SMB(i, j) = 0.0;
         effective_BMB(i, j) = 0.0;
         continue;

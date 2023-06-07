@@ -55,8 +55,12 @@ public:
     return cell_type::ice_free(as_int(i, j));
   }
 
-  inline bool ice_free_ocean(int i, int j) const {
-    return cell_type::ice_free_ocean(as_int(i, j));
+  // inline bool ice_free_ocean(int i, int j) const {
+  //   return cell_type::ice_free_ocean(as_int(i, j));
+  // }
+
+  inline bool ice_free_water(int i, int j) const {
+    return cell_type::ice_free_water(as_int(i, j));
   }
 
   inline bool ice_free_land(int i, int j) const {
@@ -103,9 +107,14 @@ public:
             ice_free_land(i, j + 1) or ice_free_land(i, j - 1));
   }
 
-  inline bool next_to_ice_free_ocean(int i, int j) const {
-    return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
-            ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
+  // inline bool next_to_ice_free_ocean(int i, int j) const {
+  //   return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
+  //           ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
+  // }
+
+  inline bool next_to_ice_free_water(int i, int j) const {
+    return (ice_free_water(i + 1, j) or ice_free_water(i - 1, j) or
+            ice_free_water(i, j + 1) or ice_free_water(i, j - 1));
   }
 protected:
   CellType1(std::shared_ptr<const Grid> grid, const std::string &name, int width);

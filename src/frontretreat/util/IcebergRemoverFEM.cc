@@ -195,7 +195,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
 
       if (m_mask(i, j) > 0) {
         ice_thickness(i,j) = 0.0;
-        cell_type(i,j)          = cell_type::ICE_FREE_OCEAN;
+        cell_type(i,j)          = cell_type::ICE_FREE_OCEAN; // FIXME: CELL_TYPE
       }
     }
   }

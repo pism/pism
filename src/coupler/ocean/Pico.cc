@@ -207,7 +207,7 @@ static void extend_basal_melt_rates(const array::CellType1 &cell_type,
     auto M = cell_type.box_int(i, j);
 
     bool potential_partially_filled_cell =
-        ((grounded_ice(M.c) or cell_type::ice_free_ocean(M.c)) and
+        ((grounded_ice(M.c) or cell_type::ice_free_water(M.c)) and
          (cell_type::floating_ice(M.w) or cell_type::floating_ice(M.e) or
           cell_type::floating_ice(M.s) or cell_type::floating_ice(M.n) or
           cell_type::floating_ice(M.sw) or cell_type::floating_ice(M.nw) or
@@ -462,8 +462,8 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics, const array::Scala
       // find all basins b, in which the ice shelf s has a calving front with potential ocean water intrusion
       if (cell_type.floating_ice(i, j)) {
         auto M = cell_type.star_int(i, j);
-        if (cell_type::ice_free_ocean(M.n) or cell_type::ice_free_ocean(M.e) or
-            cell_type::ice_free_ocean(M.s) or cell_type::ice_free_ocean(M.w)) {
+        if (cell_type::ice_free_water(M.n) or cell_type::ice_free_water(M.e) or
+            cell_type::ice_free_water(M.s) or cell_type::ice_free_water(M.w)) {
           if (cfs_in_basins_per_shelf[s * m_n_basins + b] != b) {
             cfs_in_basins_per_shelf[s * m_n_basins + b] = b;
           }

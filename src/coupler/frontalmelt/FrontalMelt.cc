@@ -66,7 +66,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
+      if (cell_type.ice_free_water(i, j) and cell_type.next_to_ice(i, j)) {
         const double
           bed       = bed_elevation(i, j),
           sea_level = sea_level_elevation(i, j);
@@ -247,10 +247,10 @@ bool FrontalMelt::apply(const array::CellType1 &M, int i, int j) const {
   // icy and grounded_ice cells are included for visualization only (values at these
   // locations have no effect)
   if (m_include_floating_ice) {
-    return (M.ice_free_ocean(i, j) and M.next_to_ice(i, j)) or M.icy(i, j);
+    return (M.ice_free_water(i, j) and M.next_to_ice(i, j)) or M.icy(i, j);
   }
 
-  return (M.ice_free_ocean(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
+  return (M.ice_free_water(i, j) and M.next_to_grounded_ice(i, j)) or M.grounded_ice(i, j);
 }
 
 

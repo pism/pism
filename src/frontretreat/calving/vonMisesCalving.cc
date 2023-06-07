@@ -129,7 +129,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_ice(i, j)) {
+    if (m_cell_type.ice_free_water(i, j) and m_cell_type.next_to_ice(i, j)) {
 
       double
         velocity_magnitude = 0.0,
@@ -188,7 +188,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
       // Calving law [\ref Morlighem2016] equation 4
       m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / m_calving_threshold(i, j);
 
-    } else { // end of "if (ice_free_ocean and next_to_floating)"
+    } else { // end of "if (ice_free_water and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points

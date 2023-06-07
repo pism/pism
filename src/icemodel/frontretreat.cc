@@ -52,7 +52,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j)) {
+    if (cell_type.ice_free_water(i, j)) {
       result(i, j) = 1.0;
 
       if (grid::domain_edge(*grid, i, j)) {
@@ -73,7 +73,7 @@ void IceModel::identify_open_ocean(const array::CellType &cell_type, array::Scal
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j) and result(i, j) < 0.5) {
+    if (cell_type.ice_free_water(i, j) and result(i, j) < 0.5) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;
@@ -251,7 +251,7 @@ void IceModel::front_retreat_step() {
         for (Points p(*m_grid); p; p.next()) {
           const int i = p.i(), j = p.j();
 
-          if (cell_type.ice_free_ocean(i, j) and open_ocean_mask(i, j) < 0.5) {
+          if (cell_type.ice_free_water(i, j) and open_ocean_mask(i, j) < 0.5) {
             // This modification will ensure that cells next to *these* ice free ocean
             // cells will not be considered "marginal" and so thickness threshold and
             // float-kill parameterizations will not apply.

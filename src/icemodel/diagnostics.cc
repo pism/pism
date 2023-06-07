@@ -684,10 +684,11 @@ std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const 
       double delta_p = 0.0;
       if (mask.grounded_ice(i, j) and grid::domain_edge(*m_grid, i, j)) {
         delta_p = 0.0;
-      } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
-        double P_ice   = 0.5 * rho_ice * g * H(i, j),
-               P_water = average_water_column_pressure(H(i, j), bed(i, j), sea_level(i, j), rho_ice,
-                                                       rho_ocean, g);
+      } else if (mask.icy(i, j) and mask.next_to_ice_free_water(i, j)) {
+        double
+          P_ice = 0.5 * rho_ice * g * H(i, j),
+          P_water = average_water_column_pressure(H(i, j), bed(i, j), sea_level(i, j),
+                                                  rho_ice, rho_ocean, g);
 
         delta_p = P_ice - P_water;
       } else {
@@ -2489,7 +2490,7 @@ std::shared_ptr<array::Array> IceAreaFraction::compute_impl() const {
       if (cell_type.icy(i, j)) {
         // an "icy" cell: the area fraction is one
         (*result)(i, j) = 1.0;
-      } else if (cell_type.ice_free_ocean(i, j)) {
+      } else if (cell_type.ice_free_water(i, j)) {
         // an ice-free ocean cell may be "partially-filled", in which case we need to compute its
         // ice area fraction by dividing Href by the threshold thickness.
 

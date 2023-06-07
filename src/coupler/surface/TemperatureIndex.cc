@@ -256,16 +256,17 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     m_air_temp_sd->init_interpolation(ts);
   }
 
-  const auto &mask = geometry.cell_type;
-  const auto &H    = geometry.ice_thickness;
+  const auto &cell_type = geometry.cell_type;
+  const auto &H         = geometry.ice_thickness;
 
-  array::AccessScope list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
-                               &m_firn_depth, &m_snow_depth,
-                               m_accumulation.get(), m_melt.get(), m_runoff.get()};
+  array::AccessScope list{ &cell_type,           &H,
+                           m_air_temp_sd.get(),  &m_mass_flux,
+                           &m_firn_depth,        &m_snow_depth,
+                           m_accumulation.get(), m_melt.get(),
+                           m_runoff.get() };
 
-  const double
-    sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
+  const double sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
+               sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   const array::Scalar *latitude = nullptr;
   if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
@@ -275,9 +276,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   }
 
   if (fausto_greve != nullptr) {
-    const array::Scalar
-      *longitude        = &geometry.latitude,
-      *surface_altitude = &geometry.ice_surface_elevation;
+    const array::Scalar *longitude        = &geometry.latitude,
+                        *surface_altitude = &geometry.ice_surface_elevation;
 
     fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
@@ -298,7 +298,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       // the temperature time series from the AtmosphereModel and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (cell_type.ice_free_water(i, j)) {
         // ignore precipitation over ice-free ocean
         for (int k = 0; k < N; ++k) {
           P[k] = 0.0;
@@ -341,11 +341,11 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       }
 
       // apply standard deviation param over ice if in use
-      if (m_sd_use_param and mask.icy(i, j)) {
+      if (m_sd_use_param and cell_type.icy(i, j)) {
         for (int k = 0; k < N; ++k) {
           S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
           if (S[k] < 0.0) {
-            S[k] = 0.0 ;
+            S[k] = 0.0;
           }
         }
         (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
@@ -354,7 +354,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       // Use temperature time series, the "positive" threshhold, and
       // the standard deviation of the daily variability to get the
       // number of positive degree days (PDDs)
-      if (mask.ice_free_ocean(i, j)) {
+      if (cell_type.ice_free_water(i, j)) {
         for (int k = 0; k < N; ++k) {
           PDDs[k] = 0.0;
         }
@@ -374,17 +374,10 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
-        double
-          ice  = H(i, j),
-          firn = m_firn_depth(i, j),
-          snow = m_snow_depth(i, j);
+        double ice = H(i, j), firn = m_firn_depth(i, j), snow = m_snow_depth(i, j);
 
         // accumulation, melt, runoff over this time-step
-        double
-          A   = 0.0,
-          M   = 0.0,
-          R   = 0.0,
-          SMB = 0.0;
+        double A = 0.0, M = 0.0, R = 0.0, SMB = 0.0;
 
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
@@ -397,8 +390,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k],
-                                     ice, firn, snow, accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k], ice, firn, snow, accumulation);
 
           // update ice thickness
           ice += changes.smb;
@@ -414,9 +406,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
           // update total accumulation, melt, and runoff
           {
-            A   += accumulation;
-            M   += changes.melt;
-            R   += changes.runoff;
+            A += accumulation;
+            M += changes.melt;
+            R += changes.runoff;
             SMB += changes.smb;
           }
         } // end of the time-stepping loop
@@ -428,16 +420,16 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
         {
-          (*m_accumulation)(i, j)          = A * ice_density;
-          (*m_melt)(i, j)                  = M * ice_density;
-          (*m_runoff)(i, j)                = R * ice_density;
+          (*m_accumulation)(i, j) = A * ice_density;
+          (*m_melt)(i, j)         = M * ice_density;
+          (*m_runoff)(i, j)       = R * ice_density;
           // m_mass_flux (unlike m_accumulation, m_melt, and m_runoff), is a
           // rate. m * (kg / m^3) / second = kg / m^2 / second
           m_mass_flux(i, j) = SMB * ice_density / dt;
         }
       }
 
-      if (mask.ice_free_ocean(i, j)) {
+      if (cell_type.ice_free_water(i, j)) {
         m_firn_depth(i, j) = 0.0;  // no firn in the ocean
         m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
       }

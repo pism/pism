@@ -84,11 +84,11 @@ protected:
 
   void explicit_driving_stress(const fem::Element &E,
                                const Coefficients *x,
-                               Vector2d *driving_stress) const;
+                               Vector2d *result) const;
 
   void driving_stress(const fem::Element &E,
                       const Coefficients *x,
-                      Vector2d *driving_stress) const;
+                      Vector2d *result) const;
 
   void PointwiseNuHAndBeta(double thickness,
                            double hardness,

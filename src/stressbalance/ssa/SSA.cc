@@ -186,7 +186,7 @@ static int weight(bool margin_bc, int M_ij, int M_n, double h_ij, double h_n, in
   // grounding lines and calving fronts
   if ((cell_type::grounded(M_ij) and cell_type::floating_ice(M_n)) or
       (cell_type::floating_ice(M_ij) and cell_type::grounded(M_n)) or
-      (cell_type::floating_ice(M_ij) and cell_type::ice_free_ocean(M_n))) {
+      (cell_type::floating_ice(M_ij) and cell_type::ice_free_water(M_n))) {
     return 0;
   }
 
@@ -283,7 +283,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
       if (east + west > 0) {
         h_x = 1.0 / ((west + east) * dx) * (west * (h.c - h.w) + east * (h.e - h.c));
         if (cell_type::floating_ice(M.c) and
-            (cell_type::ice_free_ocean(M.e) or cell_type::ice_free_ocean(M.w))) {
+            (cell_type::ice_free_water(M.e) or cell_type::ice_free_water(M.w))) {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent (see the notes in the manual)
           h_x /= 2.0;
@@ -302,7 +302,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
       if (north + south > 0) {
         h_y = 1.0 / ((south + north) * dy) * (south * (h.c - h.s) + north * (h.n - h.c));
         if (cell_type::floating_ice(M.c) and
-            (cell_type::ice_free_ocean(M.s) or cell_type::ice_free_ocean(M.n))) {
+            (cell_type::ice_free_water(M.s) or cell_type::ice_free_water(M.n))) {
           // at the ice front: use constant extrapolation to approximate the value outside
           // the ice extent
           h_y /= 2.0;

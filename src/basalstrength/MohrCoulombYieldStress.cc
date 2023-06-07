@@ -315,7 +315,7 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
 
       if (slippery_grounding_lines and
           bed_topography(i, j) <= sea_level(i, j) and
-          (cell_type.next_to_floating_ice(i, j) or cell_type.next_to_ice_free_ocean(i, j))) {
+          (cell_type.next_to_floating_ice(i, j) or cell_type.next_to_ice_free_water(i, j))) {
         water = W_till_max;
       } else if (add_transportable_water) {
         water = W_till(i, j) + tlftw * log(1.0 + W_subglacial(i, j) / tlftw);

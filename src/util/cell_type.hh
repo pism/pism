@@ -27,32 +27,28 @@ class Scalar;
 
 namespace cell_type {
 
-const int CELL_TYPE_ICY   = 1;
-const int CELL_TYPE_LAND  = (1 << 1);
-const int CELL_TYPE_LAKE  = (1 << 2);
-const int CELL_TYPE_OCEAN = (1 << 3);
-
 enum Value : int {
-  UNKNOWN        = 0,
-  ICE_FREE_LAND  = CELL_TYPE_LAND,
-  ICY_LAND       = CELL_TYPE_LAND | CELL_TYPE_ICY,
-  ICE_FREE_LAKE  = CELL_TYPE_LAKE,
-  ICY_LAKE       = CELL_TYPE_LAKE | CELL_TYPE_ICY,
-  ICE_FREE_OCEAN = CELL_TYPE_OCEAN,
-  ICY_OCEAN      = CELL_TYPE_OCEAN | CELL_TYPE_ICY
+  UNKNOWN        = -2,          // FIXME: this will be interpreted as "ice free land" by the code below
+  ICE_FREE_LAND  = 0,
+  ICY_LAND       = 1,           // odd means icy
+  // values associated with "land" are less than ones for "water"
+  ICE_FREE_LAKE  = 2,
+  ICY_LAKE       = 3,           // odd means icy
+  ICE_FREE_OCEAN = 4,
+  ICY_OCEAN      = 5            // odd means icy
 };
 
 //! \brief An wet cell (floating ice or ice-free).
   inline bool wet(int M) {
-    return ((M & CELL_TYPE_LAKE) != 0) or ((M & CELL_TYPE_OCEAN) != 0);
+    return M > ICY_LAND;
   }
   //! \brief Grounded cell (grounded ice or ice-free).
   inline bool grounded(int M) {
-    return (M & CELL_TYPE_LAND) != 0;
+    return M <= ICY_LAND;
   }
   //! \brief Ice-filled cell (grounded or floating).
   inline bool icy(int M) {
-    return (M & CELL_TYPE_ICY) != 0;
+    return M % 2 == 1;          // odd means "icy"
   }
   inline bool grounded_ice(int M) {
     return M == ICY_LAND;
@@ -62,15 +58,18 @@ enum Value : int {
   }
   //! \brief Ice-free cell (grounded or ocean).
   inline bool ice_free(int M) {
-    return not icy(M);
+    return M % 2 == 0;
   }
-  inline bool ice_free_ocean(int M) {
-    return M == ICE_FREE_OCEAN;
+  // inline bool ice_free_ocean(int M) {
+  //   return M == ICE_FREE_OCEAN;
+  // }
+  inline bool ice_free_water(int M) {
+    return (M == ICE_FREE_LAKE) or (M == ICE_FREE_OCEAN);
   }
   inline bool ice_free_land(int M) {
     return M == ICE_FREE_LAND;
   }
-}
+  } // namespace cell_type
 
 } // end of namespace pism
 

@@ -104,7 +104,7 @@ class SteadyHydrology(TestCase):
         cell_type = self.geometry.cell_type
         with PISM.vec.Access(nocomm=[cell_type, flux_magnitude]):
             for (i, j) in grid.points():
-                if cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j):
+                if cell_type.ice_free_water(i, j) and cell_type.next_to_grounded_ice(i, j):
                    total_flux += flux_magnitude[i, j] * grid.dx()
 
         total_flux = PISM.GlobalSum(ctx.com, total_flux)

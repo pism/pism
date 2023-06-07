@@ -382,8 +382,8 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
 
     // x-derivative, i-offset
     {
-      if ((mask.floating_ice(i, j) && mask.ice_free_ocean(i + 1, j)) ||
-          (mask.ice_free_ocean(i, j) && mask.floating_ice(i + 1, j))) {
+      if ((mask.floating_ice(i,j) && mask.ice_free_water(i+1,j)) ||
+          (mask.ice_free_water(i,j) && mask.floating_ice(i+1,j))) {
         // marine margin
         h_x(i, j, 0) = 0;
         w_i(i, j)    = 0;
@@ -401,8 +401,8 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
 
     // y-derivative, j-offset
     {
-      if ((mask.floating_ice(i, j) && mask.ice_free_ocean(i, j + 1)) ||
-          (mask.ice_free_ocean(i, j) && mask.floating_ice(i, j + 1))) {
+      if ((mask.floating_ice(i,j) && mask.ice_free_water(i,j+1)) ||
+          (mask.ice_free_water(i,j) && mask.floating_ice(i,j+1))) {
         // marine margin
         h_y(i, j, 1) = 0.0;
         w_j(i, j)    = 0.0;

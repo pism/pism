@@ -109,10 +109,10 @@ void CalvingAtThickness::update(double t,
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (m_old_mask.floating_ice(i, j) and m_old_mask.next_to_ice_free_ocean(i, j) and
+    if (m_old_mask.floating_ice(i, j) and m_old_mask.next_to_ice_free_water(i, j) and
         ice_thickness(i, j) < threshold(i, j)) {
       ice_thickness(i, j) = 0.0;
-      cell_type(i, j)     = cell_type::ICE_FREE_OCEAN;
+      cell_type(i, j)     = cell_type::ICE_FREE_OCEAN; // FIXME: CELL_TYPE
     }
   }
 

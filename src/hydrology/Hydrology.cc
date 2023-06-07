@@ -720,7 +720,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
     //
     // When the sea level recedes, the till water at that location will be set to zero by
     // the if block above. All these changes will be accounted for.
-    if ((include_floating and cell_type.ice_free_ocean(i, j)) or
+    if ((include_floating and cell_type.ice_free_water(i, j)) or
         (not include_floating and cell_type.ocean(i, j))) {
 
       double mismatch = water_thickness(i, j) - ocean_water_thickness;

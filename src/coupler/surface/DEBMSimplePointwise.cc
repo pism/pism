@@ -355,7 +355,7 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
  * @param[in] cell_type cell type mask (used to exclude ice free areas)
  */
 double DEBMSimplePointwise::albedo(double melt_rate, cell_type::Value cell_type) const {
-  if (cell_type == cell_type::ICE_FREE_OCEAN) {
+  if (cell_type::ice_free_water(cell_type)) {
     return m_albedo_ocean;
   }
 

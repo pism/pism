@@ -465,7 +465,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free_ocean(i, j)) {
+    if (cell_type.ice_free_water(i, j)) {
       m_tmp(i, j) = 1.0;
     } else {
       m_tmp(i, j) = 0.0;
@@ -512,7 +512,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
 
     auto B = basin_mask.star(i, j);
 
-    bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i,j));
+    bool next_to_icefront = (cell_type.ice_free_water(i, j) and cell_type.next_to_ice(i,j));
 
     // skip the "dummy" basin and cells that are not at the ice front
     if (B.c == 0 or not next_to_icefront) {
@@ -531,19 +531,19 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
 
     auto M = cell_type.star_int(i, j);
 
-    if (cell_type::ice_free_ocean(M.n)) {
+    if (cell_type::ice_free_water(M.n)) {
       mark_as_neighbors(B.c, B.n);
     }
 
-    if (cell_type::ice_free_ocean(M.s)) {
+    if (cell_type::ice_free_water(M.s)) {
       mark_as_neighbors(B.c, B.s);
     }
 
-    if (cell_type::ice_free_ocean(M.e)) {
+    if (cell_type::ice_free_water(M.e)) {
       mark_as_neighbors(B.c, B.e);
     }
 
-    if (cell_type::ice_free_ocean(M.w)) {
+    if (cell_type::ice_free_water(M.w)) {
       mark_as_neighbors(B.c, B.w);
     }
   }
@@ -600,8 +600,8 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
 
       if (cell_type.floating_ice(i, j)) {
         auto M = cell_type.star_int(i, j);
-        if (cell_type::ice_free_ocean(M.n) or cell_type::ice_free_ocean(M.e) or cell_type::ice_free_ocean(M.s) or
-            cell_type::ice_free_ocean(M.w)) {
+        if (cell_type::ice_free_water(M.n) or cell_type::ice_free_water(M.e) or cell_type::ice_free_water(M.s) or
+            cell_type::ice_free_water(M.w)) {
           if (cfs_in_basins_per_shelf[sb] != b) {
             cfs_in_basins_per_shelf[sb] = b;
           }

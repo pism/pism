@@ -44,7 +44,7 @@ namespace pism {
    @endcode
  * where one or two of the "#" cells are ice-filled, are not removed.
  *
- * See the code for the precise rule, which uses `ice_free_ocean()` for the "O"
+ * See the code for the precise rule, which uses `ice_free_water()` for the "O"
  * cells if the center cell has grounded ice, and uses `ice_free()` if the
  * center cell has floating ice.
  *
@@ -83,14 +83,14 @@ void remove_narrow_tongues(const Geometry &geometry,
     if (cell_type::grounded_ice(M.c)) {
       // if (i,j) is grounded ice then we will remove it if it has
       // exclusively ice-free ocean neighbors
-      ice_free.n  = cell_type::ice_free_ocean(M.n);
-      ice_free.e  = cell_type::ice_free_ocean(M.e);
-      ice_free.s  = cell_type::ice_free_ocean(M.s);
-      ice_free.w  = cell_type::ice_free_ocean(M.w);
-      ice_free.ne = cell_type::ice_free_ocean(M.ne);
-      ice_free.nw = cell_type::ice_free_ocean(M.nw);
-      ice_free.se = cell_type::ice_free_ocean(M.se);
-      ice_free.sw = cell_type::ice_free_ocean(M.sw);
+      ice_free.n  = cell_type::ice_free_water(M.n);
+      ice_free.e  = cell_type::ice_free_water(M.e);
+      ice_free.s  = cell_type::ice_free_water(M.s);
+      ice_free.w  = cell_type::ice_free_water(M.w);
+      ice_free.ne = cell_type::ice_free_water(M.ne);
+      ice_free.nw = cell_type::ice_free_water(M.nw);
+      ice_free.se = cell_type::ice_free_water(M.se);
+      ice_free.sw = cell_type::ice_free_water(M.sw);
     } else {
       // if (i,j) is floating then we will remove it if its neighbors are
       // ice-free, whether ice-free ocean or ice-free ground

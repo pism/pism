@@ -90,7 +90,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
   for (auto pt = grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
-    if (cell_type.ice_free_ocean(i, j) and
+    if (cell_type.ice_free_water(i, j) and
         cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in update_geometry()
@@ -172,7 +172,7 @@ void FrontRetreat::update_geometry(double dt,
     const int i = pt.i(), j = pt.j();
 
     // apply retreat rate at the margin (i.e. to partially-filled cells) only
-    if (m_cell_type.ice_free_ocean(i, j) and
+    if (m_cell_type.ice_free_water(i, j) and
         m_cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in max_timestep()

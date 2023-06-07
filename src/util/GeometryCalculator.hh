@@ -74,9 +74,9 @@ public:
       surface_result = hfloating;
 
       if (ice_free) {
-        mask_result = cell_type::ICE_FREE_OCEAN;
+        mask_result = cell_type::ICE_FREE_OCEAN; // FIXME: CELL_TYPE
       } else {
-        mask_result = cell_type::ICY_OCEAN;
+        mask_result = cell_type::ICY_OCEAN; // FIXME: CELL_TYPE
       }
     } else { // Grounded
       surface_result = hgrounded;

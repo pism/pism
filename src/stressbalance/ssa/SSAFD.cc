@@ -308,13 +308,13 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
         // direct neighbors
         // NOLINTBEGIN(readability-braces-around-statements)
         if (bedrock_boundary) {
-          if (cell_type::ice_free_ocean(M.e))
+          if (cell_type::ice_free_water(M.e))
             E = 1;
-          if (cell_type::ice_free_ocean(M.w))
+          if (cell_type::ice_free_water(M.w))
             W = 1;
-          if (cell_type::ice_free_ocean(M.n))
+          if (cell_type::ice_free_water(M.n))
             N = 1;
-          if (cell_type::ice_free_ocean(M.s))
+          if (cell_type::ice_free_water(M.s))
             S = 1;
         } else {
           if (cell_type::ice_free(M.e))
@@ -639,31 +639,31 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
           // NOLINTBEGIN(readability-braces-around-statements)
           if (bedrock_boundary) {
 
-            if (cell_type::ice_free_ocean(M.e))
+            if (cell_type::ice_free_water(M.e))
               E = 0;
-            if (cell_type::ice_free_ocean(M.w))
+            if (cell_type::ice_free_water(M.w))
               W = 0;
-            if (cell_type::ice_free_ocean(M.n))
+            if (cell_type::ice_free_water(M.n))
               N = 0;
-            if (cell_type::ice_free_ocean(M.s))
+            if (cell_type::ice_free_water(M.s))
               S = 0;
 
             // decide whether to use centered or one-sided differences
-            if (cell_type::ice_free_ocean(M.n) || cell_type::ice_free_ocean(M.ne))
+            if (cell_type::ice_free_water(M.n) || cell_type::ice_free_water(M.ne))
               NNE = 0;
-            if (cell_type::ice_free_ocean(M.e) || cell_type::ice_free_ocean(M.ne))
+            if (cell_type::ice_free_water(M.e) || cell_type::ice_free_water(M.ne))
               ENE = 0;
-            if (cell_type::ice_free_ocean(M.e) || cell_type::ice_free_ocean(M.se))
+            if (cell_type::ice_free_water(M.e) || cell_type::ice_free_water(M.se))
               ESE = 0;
-            if (cell_type::ice_free_ocean(M.s) || cell_type::ice_free_ocean(M.se))
+            if (cell_type::ice_free_water(M.s) || cell_type::ice_free_water(M.se))
               SSE = 0;
-            if (cell_type::ice_free_ocean(M.s) || cell_type::ice_free_ocean(M.sw))
+            if (cell_type::ice_free_water(M.s) || cell_type::ice_free_water(M.sw))
               SSW = 0;
-            if (cell_type::ice_free_ocean(M.w) || cell_type::ice_free_ocean(M.sw))
+            if (cell_type::ice_free_water(M.w) || cell_type::ice_free_water(M.sw))
               WSW = 0;
-            if (cell_type::ice_free_ocean(M.w) || cell_type::ice_free_ocean(M.nw))
+            if (cell_type::ice_free_water(M.w) || cell_type::ice_free_water(M.nw))
               WNW = 0;
-            if (cell_type::ice_free_ocean(M.n) || cell_type::ice_free_ocean(M.nw))
+            if (cell_type::ice_free_water(M.n) || cell_type::ice_free_water(M.nw))
               NNW = 0;
 
           } else { // if (not bedrock_boundary)
@@ -1702,10 +1702,10 @@ bool SSAFD::is_marginal(int i, int j, bool ssa_dirichlet_bc) {
   }
 
   return cell_type::icy(M.c) &&
-         (cell_type::ice_free_ocean(M.e) || cell_type::ice_free_ocean(M.w) ||
-          cell_type::ice_free_ocean(M.n) || cell_type::ice_free_ocean(M.s) ||
-          cell_type::ice_free_ocean(M.ne) || cell_type::ice_free_ocean(M.se) ||
-          cell_type::ice_free_ocean(M.nw) || cell_type::ice_free_ocean(M.sw));
+         (cell_type::ice_free_water(M.e) || cell_type::ice_free_water(M.w) ||
+          cell_type::ice_free_water(M.n) || cell_type::ice_free_water(M.s) ||
+          cell_type::ice_free_water(M.ne) || cell_type::ice_free_water(M.se) ||
+          cell_type::ice_free_water(M.nw) || cell_type::ice_free_water(M.sw));
 }
 
 void SSAFD::write_system_petsc(const std::string &namepart) {

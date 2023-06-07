@@ -34,13 +34,12 @@ namespace diagnostics {
  * filling dips to eliminate sinks (and get a better estimate of the steady state flow
  * direction).
  */
-static void compute_sinks(const array::Scalar &domain_mask,
-                          const array::Scalar1 &psi,
+static void compute_sinks(const array::Scalar &domain_mask, const array::Scalar1 &psi,
                           array::Scalar &result) {
 
   auto grid = result.grid();
 
-  array::AccessScope list{&psi, &domain_mask, &result};
+  array::AccessScope list{ &psi, &domain_mask, &result };
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -61,8 +60,7 @@ static void compute_sinks(const array::Scalar &domain_mask,
   }
 }
 
-static void effective_water_velocity(const Geometry &geometry,
-                                     const array::Vector &water_flux,
+static void effective_water_velocity(const Geometry &geometry, const array::Vector &water_flux,
                                      array::Vector &result) {
 
   auto grid = result.grid();
@@ -72,13 +70,11 @@ static void effective_water_velocity(const Geometry &geometry,
   const auto &ice_thickness       = geometry.ice_thickness;
   const auto &sea_level_elevation = geometry.sea_level_elevation;
 
-  array::AccessScope list
-    {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
-     &water_flux, &result};
+  array::AccessScope list{ &ice_thickness,       &bed_elevation, &cell_type,
+                           &sea_level_elevation, &water_flux,    &result };
 
-  double
-    grid_spacing = 0.5 * (grid->dx() + grid->dy()),
-    eps          = 1.0;         // q_sg regularization
+  double grid_spacing = 0.5 * (grid->dx() + grid->dy()),
+         eps          = 1.0; // q_sg regularization
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -93,8 +89,8 @@ static void effective_water_velocity(const Geometry &geometry,
       // [flux * grid_spacing / submerged_front_area] = m / s, and
       // [flux * grid_spacing  * (s / day) / submerged_front_area] = m / day
 
-      double water_depth = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
-        submerged_front_area = water_depth * grid_spacing;
+      double water_depth          = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
+             submerged_front_area = water_depth * grid_spacing;
 
       if (submerged_front_area > 0.0) {
         auto Q_sg = water_flux(i, j) * grid_spacing;
@@ -463,7 +459,7 @@ void EmptyingProblem::compute_mask(const array::CellType &cell_type,
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (not cell_type.ice_free_ocean(i, j)) {
+    if (not cell_type.ice_free_water(i, j)) {
       result(i, j) = 1.0;
     } else {
       result(i, j) = 0.0;

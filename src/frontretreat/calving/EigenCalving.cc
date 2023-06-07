@@ -83,7 +83,7 @@ void EigenCalving::update(const array::CellType &cell_type,
 
     // Find partially filled or empty grid boxes on the icefree ocean, which
     // have floating ice neighbors after the mass continuity step
-    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
+    if (m_cell_type.ice_free_water(i, j) and m_cell_type.next_to_floating_ice(i, j)) {
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
@@ -127,7 +127,7 @@ void EigenCalving::update(const array::CellType &cell_type,
         m_calving_rate(i, j) = 0.0;
       }
 
-    } else { // end of "if (ice_free_ocean and next_to_floating)"
+    } else { // end of "if (ice_free_water and next_to_floating_ice)"
       m_calving_rate(i, j) = 0.0;
     }
   } // end of the loop over grid points

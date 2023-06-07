@@ -113,7 +113,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       m_calving_rate(i, j) = (m_B_tilde * unit_scaling *
                               (1.0 - pow(omega, 2.8)) *
                               pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
-    } else { // end of "if (ice_free_ocean and next_to_floating)"
+    } else { // end of "if (cell_type.icy(i, j) and water_depth > 0.0)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points

@@ -70,7 +70,7 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
     const int i = p.i(), j = p.j();
 
     if (m_old_mask.floating_ice(i, j)) {
-      if (m_margin_only and not m_old_mask.next_to_ice_free_ocean(i, j)) {
+      if (m_margin_only and not m_old_mask.next_to_ice_free_water(i, j)) {
         continue;
       }
 
@@ -79,7 +79,7 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
       }
 
       ice_thickness(i, j) = 0.0;
-      cell_type(i, j)     = cell_type::ICE_FREE_OCEAN;
+      cell_type(i, j)     = cell_type::ICE_FREE_OCEAN; // FIXME: CELL_TYPE
     }
   }
 
