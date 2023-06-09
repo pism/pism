@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef GEOMETRY_H
-#define GEOMETRY_H
+#ifndef PISM_GEOMETRY_H
+#define PISM_GEOMETRY_H
 
 #include "pism/util/array/CellType.hh"
 
@@ -73,4 +73,4 @@ void set_no_model_strip(const Grid &grid, double width, array::Scalar &result);
 
 } // end of namespace pism
 
-#endif /* GEOMETRY_H */
+#endif /* PISM_GEOMETRY_H */
