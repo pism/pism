@@ -38,43 +38,53 @@ enum Value : int {
   ICY_OCEAN      = 5  // odd means "icy"
 };
 
-//! \brief An wet cell (floating ice or ice-free).
-  inline bool water(int M) {
-    return M > ICY_LAND;
-  }
-  //! \brief Grounded cell (grounded ice or ice-free).
-  inline bool land(int M) {
-    return M <= ICY_LAND;
-  }
-  //! \brief Ice-filled cell (grounded or floating).
-  inline bool icy(int M) {
-    return M % 2 == 1;          // odd means "icy"
-  }
-  inline bool grounded_ice(int M) {
-    return M == ICY_LAND;
-  }
-  inline bool floating_ice(int M) {
-    return (M == ICY_LAKE) or (M == ICY_OCEAN);
-  }
-  //! \brief Ice-free cell (grounded or ocean).
-  inline bool ice_free(int M) {
-    return M % 2 == 0;          // even means "ice free"
-  }
-  // inline bool ice_free_ocean(int M) {
-  //   return M == ICE_FREE_OCEAN;
-  // }
-  inline bool ice_free_water(int M) {
-    return (M == ICE_FREE_LAKE) or (M == ICE_FREE_OCEAN);
-  }
-  inline bool ice_free_land(int M) {
-    return M == ICE_FREE_LAND;
-  }
-  inline bool lake(int M) {
-    return (M == ICE_FREE_LAKE) or (M == ICY_LAKE);
-  }
-  inline bool ocean(int M) {
-    return (M == ICE_FREE_OCEAN) or (M == ICY_OCEAN);
-  }
+//! An wet cell (floating ice or ice-free).
+inline bool water(int M) {
+  return M > ICY_LAND;
+}
+
+//! Grounded cell (grounded ice or ice-free).
+inline bool land(int M) {
+  return M <= ICY_LAND;
+}
+
+//! Ice-filled cell (grounded or floating).
+inline bool icy(int M) {
+  return M % 2 == 1; // odd means "icy"
+}
+
+inline bool grounded_ice(int M) {
+  return M == ICY_LAND;
+}
+
+inline bool floating_ice(int M) {
+  return (M == ICY_LAKE) or (M == ICY_OCEAN);
+}
+
+//! Ice-free cell (grounded or ocean).
+inline bool ice_free(int M) {
+  return M % 2 == 0; // even means "ice free"
+}
+
+// inline bool ice_free_ocean(int M) {
+//   return M == ICE_FREE_OCEAN;
+// }
+
+inline bool ice_free_water(int M) {
+  return (M == ICE_FREE_LAKE) or (M == ICE_FREE_OCEAN);
+}
+
+inline bool ice_free_land(int M) {
+  return M == ICE_FREE_LAND;
+}
+
+inline bool lake(int M) {
+  return (M == ICE_FREE_LAKE) or (M == ICY_LAKE);
+}
+
+inline bool ocean(int M) {
+  return (M == ICE_FREE_OCEAN) or (M == ICY_OCEAN);
+}
 } // namespace cell_type
 
 } // end of namespace pism
