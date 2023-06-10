@@ -55,8 +55,9 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
   const array::CellType1 &cell_type = geometry.cell_type;
 
   const double
-    ice_density = m_config->get_number("constants.ice.density"),
-    alpha       = ice_density / m_config->get_number("constants.sea_water.density");
+    ice_density       = m_config->get_number("constants.ice.density"),
+    sea_water_density = m_config->get_number("constants.sea_water.density"),
+    alpha             = ice_density / sea_water_density;
 
   array::AccessScope list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
                                &bed_elevation, &surface_elevation, &ice_thickness, &result};
@@ -71,11 +72,8 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
           bed       = bed_elevation(i, j),
           sea_level = sea_level_elevation(i, j);
 
-        auto H = ice_thickness.star(i, j);
-        auto h = surface_elevation.star(i, j);
-        auto M = cell_type.star_int(i, j);
-
-        double H_threshold = part_grid_threshold_thickness(M, H, h, bed);
+        double H_threshold = part_grid_threshold_thickness(
+            cell_type.star_int(i, j), ice_thickness.star(i, j), surface_elevation.star(i, j), bed);
 
         int m = gc.mask(sea_level, bed, H_threshold);
 
