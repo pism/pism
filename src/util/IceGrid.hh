@@ -406,7 +406,7 @@ private:
  *
  * Usage:
  *
- * `for (Points p(grid); p; p.next()) { double foo = p.i(); ... }`
+ * `for (Points p(grid); p; p.next()) { int i = p.i(), j = p.j(); ... }`
  */
 class Points : public PointsWithGhosts {
 public:
