@@ -137,7 +137,7 @@ static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, ar
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = huybrechts_dewolde_mean_annual(h(i, j), lat(i, j));
@@ -157,7 +157,7 @@ static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Sc
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = 273.15 + 29.2 - 0.0082 * h(i, j) - 0.576 * lat(i, j) * (-1.0);
@@ -177,7 +177,7 @@ static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = 273.15 - 2.0 - 0.0082 * h(i, j) + 18.4 * (sin(3.1415 * lat(i, j) / 180.0) + 0.8910) / (1 - 0.8910);
@@ -198,7 +198,7 @@ static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array
 
   array::AccessScope list{&h, &lat, &lon, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double hmod = std::max(1000.0, h(i, j));
@@ -229,7 +229,7 @@ static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Sca
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     T_ma(i, j) = martin2011_mean_annual(h(i, j), lat(i, j));
@@ -250,7 +250,7 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // mean annual surface temperature as in Martin et al. 2011, equation (1)

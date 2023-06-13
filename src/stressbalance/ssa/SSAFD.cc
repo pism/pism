@@ -294,7 +294,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
   m_b.set(0.0);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d taud = m_taud(i, j);
@@ -575,7 +575,7 @@ void SSAFD::assemble_matrix(const Inputs &inputs,
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // Handle the easy case: provided Dirichlet boundary conditions
@@ -1155,7 +1155,7 @@ void SSAFD::picard_manager(const Inputs &inputs,
 
       array::AccessScope list{&m_velocity_global};
 
-      for (Points p(*m_grid); p; p.next()) {
+      for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         auto speed = m_velocity_global(i, j).magnitude();
@@ -1337,7 +1337,7 @@ void SSAFD::compute_hardav_staggered(const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       E_ij = enthalpy.get_column(i,j);
@@ -1422,7 +1422,7 @@ void SSAFD::fracture_induced_softening(const array::Scalar *fracture_density) {
 
   array::AccessScope list{&m_hardness, fracture_density};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o=0; o<2; o++) {
@@ -1504,7 +1504,7 @@ void SSAFD::compute_nuH_staggered(const array::Scalar1 &ice_thickness,
 
   for (int o=0; o<2; ++o) {
     const int oi = 1 - o, oj=o;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = 0.5 * (ice_thickness(i,j) + ice_thickness(i+oi,j+oj));
@@ -1581,7 +1581,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
   assert(mask.stencil_width()   >= 2);
   assert(m_work.stencil_width() >= 1);
 
-  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(1); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // x-derivative, i-offset
@@ -1613,7 +1613,7 @@ void SSAFD::compute_nuH_staggered_cfbc(const array::Scalar1 &ice_thickness,
 
   list.add({&result, &hardness, &thickness});
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double u_x, u_y, v_x, v_y, H, nu, W;
@@ -1714,7 +1714,7 @@ void SSAFD::update_nuH_viewers() {
 
   array::AccessScope list{&m_nuH, &tmp};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double avg_nuH = 0.5 * (m_nuH(i,j,0) + m_nuH(i,j,1));

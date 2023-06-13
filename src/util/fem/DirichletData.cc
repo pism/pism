@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2022 PISM Authors
+/* Copyright (C) 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -125,7 +125,7 @@ void DirichletData_Scalar::fix_residual(double const *const *const x_global, dou
   const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -139,7 +139,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
   const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -161,7 +161,7 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
   const double identity = m_weight;
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*m_indices)(i, j) > 0.5) {
@@ -221,7 +221,7 @@ void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global, V
   const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -235,7 +235,7 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2d **r_global) {
   const IceGrid &grid = *m_indices->grid();
 
   // For each node that we own:
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((*m_indices)(i, j) > 0.5) {
@@ -259,7 +259,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
                               0, m_weight};
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if ((*m_indices)(i, j) > 0.5) {

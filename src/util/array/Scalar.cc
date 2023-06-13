@@ -75,7 +75,7 @@ void compute_magnitude(const array::Scalar &v_x,
                        array::Scalar &result) {
   array::AccessScope list{&result, &v_x, &v_y};
 
-  for (Points p(*result.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = Vector2d(v_x(i, j), v_y(i, j)).magnitude();
@@ -87,7 +87,7 @@ void compute_magnitude(const array::Scalar &v_x,
 void compute_magnitude(const array::Vector &input, array::Scalar &result) {
   array::AccessScope list{&result, &input};
 
-  for (Points p(*result.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = input(i, j).magnitude();
@@ -100,7 +100,7 @@ void compute_magnitude(const array::Vector &input, array::Scalar &result) {
 void apply_mask(const array::Scalar &M, double fill, array::Scalar &result) {
   array::AccessScope list{&result, &M};
 
-  for (Points p(*result.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (M(i, j) <= 0.0) {
@@ -174,7 +174,7 @@ double sum(const array::Scalar &input) {
   array::AccessScope list(input);
 
   // sum up the local part:
-  for (Points p(*input.grid()); p; p.next()) {
+  for (auto p = input.grid()->points(); p; p.next()) {
     result += input(p.i(), p.j());
   }
 
@@ -189,7 +189,7 @@ double max(const array::Scalar &input) {
   auto grid = input.grid();
 
   double result = input(grid->xs(), grid->ys());
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     result = std::max(result, input(p.i(), p.j()));
   }
 
@@ -202,7 +202,7 @@ double absmax(const array::Scalar &input) {
   double result = 0.0;
 
   array::AccessScope list(input);
-  for (Points p(*input.grid()); p; p.next()) {
+  for (auto p = input.grid()->points(); p; p.next()) {
     result = std::max(result, std::abs(input(p.i(), p.j())));
   }
 
@@ -217,7 +217,7 @@ double min(const array::Scalar &input) {
   auto grid = input.grid();
 
   double result = input(grid->xs(), grid->ys());
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     result = std::min(result, input(p.i(), p.j()));
   }
 

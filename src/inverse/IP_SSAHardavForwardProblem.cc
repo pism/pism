@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -130,7 +130,7 @@ void IP_SSAHardavForwardProblem::set_design(array::Scalar &new_zeta) {
   // Cache hardav at the quadrature points.
   array::AccessScope list{&m_coefficients, &m_hardav};
 
-  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(1); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_coefficients(i, j).hardness = m_hardav(i, j);
   }
@@ -247,7 +247,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[j][i].u = 0.0;
@@ -446,7 +446,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
                                         dirichletWeight);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[j][i] = 0;
@@ -528,7 +528,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
   }
   loop.check();
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dB_dzeta;

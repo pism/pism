@@ -235,7 +235,7 @@ void ForceThickness::adjust_mass_flux(double time,
   array::AccessScope list{&cell_type, &ice_thickness,
       &m_target_thickness, &m_ftt_mask, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_ftt_mask(i,j) > 0.5 and cell_type.grounded(i, j)) {

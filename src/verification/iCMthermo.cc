@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,7 +104,7 @@ void IceCompModel::initTestFG() {
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
@@ -164,7 +164,7 @@ void IceCompModel::getCompSourcesTestFG() {
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double r = std::max(radius(*m_grid, i, j), 1.0); // avoid singularity at origin
@@ -200,7 +200,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double r = radius(*m_grid, i, j);
@@ -285,7 +285,7 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
 
   array::AccessScope list{&ice_temperature, &bedrock_temp};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Tb = bedrock_temp.get_column(i, j);
@@ -340,7 +340,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double r = std::max(radius(*m_grid, i, j), 1.0);
@@ -398,7 +398,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double r = radius(*m_grid, i, j);
@@ -455,7 +455,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = m_geometry.ice_thickness(i, j);
@@ -517,7 +517,7 @@ void IceCompModel::computeBasalMeltRateErrors(double &gmaxbmelterr, double &gmin
 
   array::AccessScope list(basal_melt_rate);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double err = fabs(basal_melt_rate(i, j) - bmelt);

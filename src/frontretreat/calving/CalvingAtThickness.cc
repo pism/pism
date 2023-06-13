@@ -113,7 +113,7 @@ void CalvingAtThickness::update(double t,
   const auto &threshold = *m_calving_threshold;
 
   array::AccessScope list{&pism_mask, &ice_thickness, &m_old_mask, &threshold};
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_old_mask.floating_ice(i, j)           &&

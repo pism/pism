@@ -71,7 +71,7 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       auto H = ice_thickness.box(i, j);

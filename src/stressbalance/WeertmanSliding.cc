@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2022 PISM Authors
+/* Copyright (C) 2018, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -88,7 +88,7 @@ void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double

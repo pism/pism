@@ -45,7 +45,7 @@ void Staggered::copy_from(const Staggered &input) {
 
   ParallelSection loop(grid()->com);
   try {
-    for (Points p(*grid()); p; p.next()) {
+    for (auto p = grid()->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       (*this)(i, j, 0) = input(i, j, 0);
@@ -71,7 +71,7 @@ std::array<double,2> absmax(const array::Staggered &input) {
   double z[2] = {0.0, 0.0};
 
   array::AccessScope list(input);
-  for (Points p(*input.grid()); p; p.next()) {
+  for (auto p = input.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     z[0] = std::max(z[0], std::abs(input(i, j, 0)));
@@ -96,7 +96,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
   array::AccessScope list{&cell_type, &input, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.grounded_ice(i, j) or
@@ -143,7 +143,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
   array::AccessScope list{&cell_type, &input, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto M = cell_type.star(i, j);

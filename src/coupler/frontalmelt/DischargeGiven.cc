@@ -111,7 +111,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
     water_density   = m_config->get_number("constants.fresh_water.density"),
     seconds_per_day = 86400;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -144,7 +144,7 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   m_frontal_melt_rate.update_ghosts();
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (apply(cell_type, i, j) and cell_type.ice_free(i, j)) {

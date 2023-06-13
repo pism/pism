@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -287,7 +287,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double thickness = inputs.geometry->ice_thickness(i, j);
@@ -750,7 +750,7 @@ void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using Element::add_contribution() because that would lead to
   // double-counting. Also note that without CFBC m_boundary_integral is exactly zero.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     residual_global[j][i] = m_boundary_integral(i, j);
@@ -920,7 +920,7 @@ void SSAFEM::monitor_function(Vector2d const *const *const velocity_global,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       ierr = PetscSynchronizedPrintf(m_grid->com,

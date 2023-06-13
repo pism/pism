@@ -56,7 +56,7 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
 
   array::AccessScope list{&h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model};
 
-  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(1); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto M = no_model.box(i, j);

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -149,11 +149,11 @@ SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
 }
 
 static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
-  IceGrid::ConstPtr grid = output.grid();
+  auto grid = output.grid();
 
   array::AccessScope list{ &input, &output };
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     output(i, j, 0) = input(i, j, 0);

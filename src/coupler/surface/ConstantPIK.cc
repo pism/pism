@@ -80,7 +80,7 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
   array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j   = p.j();
     (*m_temperature)(i, j) = 273.15 + 30 - 0.0075 * surface_elevation(i, j) - 0.68775 * latitude(i, j) * (-1.0);
   }

@@ -139,7 +139,7 @@ void Distributed::check_P_bounds(array::Scalar &P,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (P(i,j) < 0.0) {
@@ -191,7 +191,7 @@ void Distributed::P_from_W_steady(const array::Scalar &W,
 
   array::AccessScope list{&W, &P_overburden, &sliding_speed, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double sb = pow(CC * sliding_speed(i, j), 1.0 / Glen_exponent);
@@ -251,7 +251,7 @@ void Distributed::update_P(double dt,
                                &K, &Q, &surface_input_rate, &basal_melt_rate,
                                &cell_type, &P_overburden, &P_new};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto w = W.star(i, j);

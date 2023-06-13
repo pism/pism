@@ -84,7 +84,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&result, &cell_type, no_model_mask, m_h_stored, m_H_stored};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto M = no_model_mask->star(i, j);

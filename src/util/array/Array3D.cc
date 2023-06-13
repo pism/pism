@@ -136,7 +136,7 @@ void extract_surface(const Array3D &data, double z, Scalar &output) {
 
   ParallelSection loop(output.grid()->com);
   try {
-    for (Points p(*output.grid()); p; p.next()) {
+    for (auto p = output.grid()->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       output(i, j) = data.interpolate(i, j, z);
     }
@@ -153,7 +153,7 @@ void extract_surface(const Array3D &data, const Scalar &z, Scalar &output) {
 
   ParallelSection loop(output.grid()->com);
   try {
-    for (Points p(*output.grid()); p; p.next()) {
+    for (auto p = output.grid()->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       output(i, j) = data.interpolate(i, j, z(i, j));
     }
@@ -190,7 +190,7 @@ void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
 
   AccessScope access{&data, &output};
 
-  for (Points p(*data.grid()); p; p.next()) {
+  for (auto p = data.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *column = data.get_column(i,j);
@@ -215,7 +215,7 @@ void Array3D::copy_from(const Array3D &input) {
 
   ParallelSection loop(m_impl->grid->com);
   try {
-    for (Points p(*m_impl->grid); p; p.next()) {
+    for (auto p = m_impl->grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
 #if PETSC_VERSION_LT(3, 12, 0)

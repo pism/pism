@@ -258,7 +258,7 @@ void OceanModel::compute_average_water_column_pressure(const Geometry &geometry,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       result(i, j) = pism::average_water_column_pressure(H(i, j), bed(i, j), z_s(i, j),

@@ -103,7 +103,7 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double lambda = 1.0;      // 1.0 corresponds to the grounded case
@@ -146,7 +146,7 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
       &ice_surface_temperature, &basal_enthalpy, &result};
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.grounded(i,j)) {

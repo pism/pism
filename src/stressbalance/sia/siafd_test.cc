@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -63,7 +63,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
 
   ParallelSection loop(grid.com);
   try {
-    for (Points p(grid); p; p.next()) {
+    for (auto p = grid.points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -116,7 +116,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3};
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double xx = grid.x(i), yy = grid.y(j),
@@ -158,7 +158,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
   array::AccessScope list{&temperature, &enthalpy, &thickness};
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *T_ij = temperature.get_column(i,j);
@@ -195,7 +195,7 @@ static void setInitStateF(IceGrid &grid,
 
   array::AccessScope list{&thickness, &enthalpy};
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double

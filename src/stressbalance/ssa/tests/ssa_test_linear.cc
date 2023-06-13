@@ -100,7 +100,7 @@ void SSATestCaseExp::initializeSSACoefficients() {
 
   array::AccessScope list{&m_bc_values, &m_bc_mask};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double myu, myv;

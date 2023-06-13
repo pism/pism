@@ -57,7 +57,7 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
   array::AccessScope list{&sea_level, &bed, &ice_thickness,
                                &m_min_ice_thickness};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double H_min = 0.0;
@@ -92,7 +92,7 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
                                &m_smb_adjustment,
                                &m_min_ice_thickness};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double SMB_old = mass_flux(i, j);

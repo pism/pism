@@ -57,7 +57,7 @@ void compute_enthalpy_cold(const array::Array3D &temperature,
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *Tij = temperature.get_column(i,j);
@@ -86,7 +86,7 @@ void compute_temperature(const array::Array3D &enthalpy,
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -119,7 +119,7 @@ void compute_enthalpy(const array::Array3D &temperature,
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double *T     = temperature.get_column(i,j);
@@ -156,7 +156,7 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Enthij = enthalpy.get_column(i,j);
@@ -200,7 +200,7 @@ void compute_cts(const array::Array3D &ice_enthalpy,
   const unsigned int Mz = grid->Mz();
   const std::vector<double> &z = grid->z();
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *CTS  = result.get_column(i,j);
@@ -237,7 +237,7 @@ double total_ice_enthalpy(double thickness_threshold,
   array::AccessScope list{&ice_enthalpy, &ice_thickness};
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -370,7 +370,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double

@@ -118,7 +118,7 @@ void SeaRISEGreenland::update_impl(const Geometry &geometry, double t, double dt
 
   array::AccessScope list{&h, &lat_degN, &lon_degE, &m_air_temp_mean_annual, &m_air_temp_mean_summer};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_air_temp_mean_annual(i,j) = d_ma + gamma_ma * h(i,j) + c_ma * lat_degN(i,j) + kappa_ma * (-lon_degE(i,j));
     m_air_temp_mean_summer(i,j)   = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));

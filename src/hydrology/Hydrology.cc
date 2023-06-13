@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2022 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -418,7 +418,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   array::AccessScope list{&m_W, &m_Wtill, &m_total_change};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_total_change(i, j) = m_W(i, j) + m_Wtill(i, j);
@@ -427,7 +427,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   this->update_impl(t, dt, inputs);
 
   // compute total change in meters
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) = (m_W(i, j) + m_Wtill(i, j)) - m_total_change(i, j);
   }
@@ -440,7 +440,7 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
     kg_per_m      = water_density * m_grid->cell_area();
 
   list.add({&m_flow_change, &m_input_change});
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
@@ -490,7 +490,7 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&ice_thickness, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = ice_density * standard_gravity * ice_thickness(i, j);
@@ -563,7 +563,7 @@ void check_bounds(const array::Scalar& W, double W_max) {
   array::AccessScope list(W);
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (W(i,j) < 0.0) {
@@ -608,7 +608,7 @@ void Hydrology::compute_surface_input_rate(const array::CellType &mask,
   const double
     water_density = m_config->get_number("constants.fresh_water.density");
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -639,7 +639,7 @@ void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
     water_density = m_config->get_number("constants.fresh_water.density"),
     C             = ice_density / water_density;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
@@ -690,7 +690,7 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
     fresh_water_density = m_config->get_number("constants.fresh_water.density"),
     kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (water_thickness(i, j) < 0.0) {
@@ -734,15 +734,15 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
     }
   }
 
-  if (no_model_mask) {
+  if (no_model_mask != nullptr) {
     const array::Scalar &M = *no_model_mask;
 
     list.add(M);
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      if (M(i, j)) {
+      if (M(i, j) > 0.0) {
         no_model_mask_change(i, j) += -water_thickness(i, j) * kg_per_m;
 
         water_thickness(i, j) = 0.0;

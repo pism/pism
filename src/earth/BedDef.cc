@@ -209,7 +209,7 @@ void compute_load(const array::Scalar &bed_elevation,
 
   array::AccessScope list{&bed_elevation, &ice_thickness, &sea_level_elevation, &result};
 
-  for (Points p(*result.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = compute_load(bed_elevation(i, j),

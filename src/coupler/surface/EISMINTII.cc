@@ -124,7 +124,7 @@ void EISMINTII::initialize_using_formulas() {
 
   array::AccessScope list{m_temperature.get(), m_mass_flux.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double r = sqrt(pow(m_grid->x(i) - cx, 2) + pow(m_grid->y(j) - cy, 2));

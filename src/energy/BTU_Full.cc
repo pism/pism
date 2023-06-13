@@ -174,7 +174,7 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *T = m_temp->get_column(i, j);
@@ -225,7 +225,7 @@ void BTU_Full::update_flux_through_top_surface() {
 
   if (m_Mbz >= 3) {
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp->get_column(i, j);
@@ -234,7 +234,7 @@ void BTU_Full::update_flux_through_top_surface() {
 
   } else {
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Tb = m_temp->get_column(i, j);
@@ -263,7 +263,7 @@ void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
   array::AccessScope list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp->get_column(i, j); // Tb points into temp memory

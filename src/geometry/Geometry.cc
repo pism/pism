@@ -107,7 +107,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   {
     ParallelSection loop(grid->com);
     try {
-      for (Points p(*grid); p; p.next()) {
+      for (auto p = grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         if (ice_thickness(i, j) < 0.0) {
@@ -134,7 +134,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 
     ParallelSection loop(grid->com);
     try {
-      for (Points p(*grid); p; p.next()) {
+      for (auto p = grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         int mask = 0;
@@ -218,7 +218,7 @@ void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -247,7 +247,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   auto cell_area = grid->cell_area();
 
   {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (geometry.ice_thickness(i,j) >= thickness_threshold) {
@@ -259,7 +259,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   // Add the volume of the ice in Href:
   if (config->get_flag("geometry.part_grid.enabled")) {
     list.add(geometry.ice_area_specific_volume);
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       volume += geometry.ice_area_specific_volume(i,j) * cell_area;
@@ -284,7 +284,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
 
   double volume = 0.0;
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -315,7 +315,7 @@ double ice_area(const Geometry &geometry, double thickness_threshold) {
   auto cell_area = grid->cell_area();
 
   array::AccessScope list{&geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.ice_thickness(i, j) >= thickness_threshold) {
@@ -335,7 +335,7 @@ double ice_area_grounded(const Geometry &geometry, double thickness_threshold) {
   auto cell_area = grid->cell_area();
 
   array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.cell_type.grounded(i, j) and
@@ -356,7 +356,7 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
   auto cell_area = grid->cell_area();
 
   array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness};
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (geometry.cell_type.ocean(i, j) and
@@ -400,7 +400,7 @@ void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result
 
   array::AccessScope list(result);
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (in_null_strip(grid, i, j, width)) {

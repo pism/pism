@@ -89,7 +89,7 @@ void PIK::melting_point_temperature(const array::Scalar &depth,
 
   array::AccessScope list{&depth, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * depth(i,j); // FIXME task #7297
     // result is set to melting point at depth
@@ -116,7 +116,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
 
   array::AccessScope list{&ice_thickness, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // compute T_f(i, j) according to beckmann_goosse03, which has the

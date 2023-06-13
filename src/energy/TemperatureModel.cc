@@ -224,7 +224,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i,j));

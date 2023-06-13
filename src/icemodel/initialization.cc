@@ -318,7 +318,7 @@ void IceModel::model_state_setup() {
   {
     array::AccessScope list{&m_ice_thickness_bc_mask, &m_velocity_bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_velocity_bc_mask.as_int(i, j) != 0) {

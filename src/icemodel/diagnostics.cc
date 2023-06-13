@@ -106,7 +106,7 @@ array::Array::Ptr IceMarginPressureDifference::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double delta_p = 0.0;
@@ -184,7 +184,7 @@ protected:
 
     array::AccessScope list{&input, &cell_type, &m_accumulator};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_kind == GROUNDED and cell_type.grounded(i, j)) {
@@ -247,7 +247,7 @@ array::Array::Ptr HardnessAverage::compute_impl() const {
   array::AccessScope list{&cell_type, &ice_enthalpy, &ice_thickness, result.get()};
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *Eij = ice_enthalpy.get_column(i,j);
@@ -292,7 +292,7 @@ array::Array::Ptr Rank::compute_impl() const {
 
   array::AccessScope list{result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     (*result)(p.i(),p.j()) = m_grid->rank();
   }
 
@@ -365,7 +365,7 @@ array::Array::Ptr Temperature::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       Tij = result->get_column(i,j);
@@ -424,7 +424,7 @@ array::Array::Ptr TemperaturePA::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       Tij = result->get_column(i,j);
@@ -491,7 +491,7 @@ array::Array::Ptr TemperaturePABasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       Enthij = enthalpy.get_column(i,j);
@@ -549,7 +549,7 @@ array::Array::Ptr IceEnthalpySurface::compute_impl() const {
 
   array::AccessScope list{&ice_thickness, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) = std::max(ice_thickness(i,j) - 1.0, 0.0);
@@ -557,7 +557,7 @@ array::Array::Ptr IceEnthalpySurface::compute_impl() const {
 
   extract_surface(ice_enthalpy, *result, *result);  // slice at 1 m below the surface
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) <= 1.0) {
@@ -657,7 +657,7 @@ array::Array::Ptr TemperatureBasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double
@@ -720,7 +720,7 @@ array::Array::Ptr TemperatureSurface::compute_impl() const {
     pressure = EC->pressure(depth);
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (thickness(i,j) > 1) {
@@ -811,7 +811,7 @@ array::Array::Ptr TemperateIceThickness::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -885,7 +885,7 @@ array::Array::Ptr TemperateIceThicknessBasal::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double H = ice_thickness(i,j);
@@ -1179,7 +1179,7 @@ public:
     array::AccessScope list{&dH, &dV};
 
     double volume_change = 0.0;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m * m^2 = m^3
       volume_change += (dH(i, j) + dV(i, j)) * cell_area;
@@ -1418,7 +1418,7 @@ public:
     array::AccessScope list{&ice_thickness, &cell_type};
 
     double volume = 0.0;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -1456,7 +1456,7 @@ public:
     array::AccessScope list{&ice_thickness, &cell_type};
 
     double volume = 0.0;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = ice_thickness(i, j);
@@ -1597,7 +1597,7 @@ double mass_change(const IceModel *model, TermType term, AreaType area) {
   }
 
   double volume_change = 0.0;
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if ((area == BOTH) or
@@ -1748,7 +1748,7 @@ public:
 
     array::AccessScope list{&calving, &frontal_melt, &forced_retreat};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
       volume_change += cell_area * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
@@ -1787,7 +1787,7 @@ public:
 
     array::AccessScope list{&calving};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       // m^2 * m = m^3
       volume_change += cell_area * calving(i, j);
@@ -1984,7 +1984,7 @@ array::Array::Ptr IceAreaFraction::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -2065,7 +2065,7 @@ array::Array::Ptr IceAreaFractionGrounded::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       if (cell_type.ice_free(i, j)) {
         (*result)(i, j) = 0.0;
@@ -2149,7 +2149,7 @@ array::Array::Ptr HeightAboveFloatation::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double
@@ -2212,7 +2212,7 @@ array::Array::Ptr IceMass::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // count all ice, including cells which have so little they
@@ -2233,7 +2233,7 @@ array::Array::Ptr IceMass::compute_impl() const {
   if (m_config->get_flag("geometry.part_grid.enabled")) {
     const array::Scalar &Href = model->geometry().ice_area_specific_volume;
     list.add(Href);
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (ice_thickness(i, j) <= 0.0 and Href(i, j) > 0.0) {
@@ -2274,7 +2274,7 @@ array::Array::Ptr BedTopographySeaLevelAdjusted::compute_impl() const {
 
   array::AccessScope list{&bed, &sea_level, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i, j) = bed(i, j) - sea_level(i, j);
@@ -2324,7 +2324,7 @@ array::Array::Ptr IceHardness::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
       const double *E = ice_enthalpy.get_column(i, j);
       const double H = ice_thickness(i, j);
@@ -2409,7 +2409,7 @@ array::Array::Ptr IceViscosity::compute_impl() const {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double *E = ice_enthalpy.get_column(i, j);
@@ -2987,7 +2987,7 @@ double IceModel::compute_temperate_base_fraction(double total_ice_area) {
   array::AccessScope list{&enthalpy, &m_geometry.cell_type, &m_geometry.ice_thickness};
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.icy(i, j)) {
@@ -3045,7 +3045,7 @@ double IceModel::compute_original_ice_fraction(double total_ice_volume) {
   // compute local original volume
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.icy(i, j)) {
@@ -3121,7 +3121,7 @@ static double ice_volume(const array::Scalar &ice_thickness,
   array::AccessScope list{&ice_thickness, &ice_enthalpy};
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double H = ice_thickness(i, j);
@@ -3161,7 +3161,7 @@ static double base_area(const array::Scalar &ice_thickness,
   array::AccessScope list{&ice_thickness, &ice_enthalpy};
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double thickness = ice_thickness(i, j);

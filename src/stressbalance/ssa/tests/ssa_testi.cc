@@ -90,7 +90,7 @@ void SSATestCaseI::initializeSSACoefficients() {
 
   array::AccessScope list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // Evaluate the exact solution and yield stress. Exact u, v will only be used at the

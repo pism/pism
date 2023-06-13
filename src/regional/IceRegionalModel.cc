@@ -249,7 +249,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
     array::AccessScope list
       {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_no_model_mask(i, j) > 0.5) {

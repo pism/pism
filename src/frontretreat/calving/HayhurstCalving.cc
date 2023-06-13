@@ -79,7 +79,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
                                &bed_elevation};
 
-  for (Points pt(*m_grid); pt; pt.next()) {
+  for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     double water_depth = sea_level(i, j) - bed_elevation(i, j);
@@ -125,7 +125,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
   m_calving_rate.update_ghosts();
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {

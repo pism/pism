@@ -97,7 +97,7 @@ void make_nonnegative_preserving(double dt,
 
   int limiter_count = 0;
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto Q   = flux.star(i, j);

@@ -84,7 +84,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
   // lower left corner
   {
     // loop over all nodes in a local sub-domain
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       element.reset(i, j);
@@ -189,7 +189,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
   {
     list.add(ice_thickness);
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_mask(i, j) > 0) {

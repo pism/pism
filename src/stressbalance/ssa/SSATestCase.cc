@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2009--2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -155,7 +155,7 @@ void SSATestCase::report(const std::string &testname) {
   array::AccessScope list{&vel_ssa};
 
   double exactvelmax = 0, gexactvelmax = 0;
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double uexact, vexact;
@@ -349,7 +349,7 @@ void SSATestCase::write(const std::string &filename) {
                   "m s-1", "m s-1", "", 1);
 
   array::AccessScope list(exact);
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     exactSolution(i, j, m_grid->x(i), m_grid->y(j),

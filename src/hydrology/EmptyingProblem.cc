@@ -38,11 +38,11 @@ static void compute_sinks(const array::Scalar &domain_mask,
                           const array::Scalar1 &psi,
                           array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   array::AccessScope list{&psi, &domain_mask, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto P = psi.star(i, j);
@@ -65,7 +65,7 @@ static void effective_water_velocity(const Geometry &geometry,
                                      const array::Vector &water_flux,
                                      array::Vector &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   const auto &cell_type           = geometry.cell_type;
   const auto &bed_elevation       = geometry.bed_elevation;
@@ -80,7 +80,7 @@ static void effective_water_velocity(const Geometry &geometry,
     grid_spacing = 0.5 * (grid->dx() + grid->dy()),
     eps          = 1.0;         // q_sg regularization
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
@@ -215,7 +215,7 @@ void EmptyingProblem::update(const Geometry &geometry,
   {
     array::AccessScope list{&geometry.cell_type, &m_W, &water_input_rate};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (geometry.cell_type.icy(i, j)) {
@@ -250,7 +250,7 @@ void EmptyingProblem::update(const Geometry &geometry,
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
     volume = 0.0;
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       auto v = m_Vstag.star(i, j);
@@ -322,7 +322,7 @@ void EmptyingProblem::compute_raw_potential(const array::Scalar &H,
 
   array::AccessScope list({&H, &b, &result});
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = rho_i * g * H(i, j) + rho_w * g * b(i, j);
@@ -353,7 +353,7 @@ void EmptyingProblem::compute_potential(const array::Scalar &ice_thickness,
   for (step_counter = 0; step_counter < n_iterations; ++step_counter) {
 
     n_sinks_remaining = 0;
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (domain_mask(i, j) > 0.5) {
@@ -412,7 +412,7 @@ void EmptyingProblem::compute_velocity(const array::Scalar &psi,
 
   array::AccessScope list{&psi, &result, &domain_mask};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     for (int o = 0; o < 2; ++o) {
@@ -454,7 +454,7 @@ void EmptyingProblem::compute_mask(const array::CellType &cell_type,
     list.add(*no_model_mask);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (not cell_type.ice_free_ocean(i, j)) {

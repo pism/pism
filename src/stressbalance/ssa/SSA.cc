@@ -256,7 +256,7 @@ void SSA::compute_driving_stress(const array::Scalar &ice_thickness,
     list.add(*no_model_mask);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double pressure = m_EC->pressure(ice_thickness(i, j)); // FIXME issue #15
@@ -358,7 +358,7 @@ void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
                                array::Vector1 &velocity) const {
   array::AccessScope list{&cell_type, &velocity};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {

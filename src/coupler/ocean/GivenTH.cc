@@ -153,7 +153,7 @@ void GivenTH::update_impl(const Geometry &geometry, double t, double dt) {
   array::AccessScope list{ &ice_thickness, m_theta_ocean.get(), m_salinity_ocean.get(),
       &temperature, &mass_flux};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;

@@ -235,7 +235,7 @@ void IceModel::compute_geometry_change(const array::Scalar &thickness,
   array::AccessScope list{&thickness, &thickness_old,
       &Href, &Href_old, &output};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double

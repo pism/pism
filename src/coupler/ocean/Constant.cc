@@ -87,7 +87,7 @@ void Constant::melting_point_temperature(const array::Scalar& depth,
 
   array::AccessScope list{&depth, &result};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     const double pressure = ice_density * g * depth(i, j); // FIXME issue #15
 

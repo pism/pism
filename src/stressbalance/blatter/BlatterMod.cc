@@ -82,7 +82,7 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
 
   array::AccessScope list{&m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto *u = m_u.get_column(i, j);
@@ -121,7 +121,7 @@ void BlatterMod::compute_max_diffusivity(const array::Vector &velocity,
   array::AccessScope list{&velocity, &ice_thickness, &surface};
 
   m_D_max = 0.0;
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto h = surface.star(i, j);

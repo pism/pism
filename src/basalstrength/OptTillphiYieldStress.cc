@@ -232,7 +232,7 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
   double slope = (m_phi0_max - m_phi0_min) / (m_topg_max - m_topg_min);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // Compute the lower bound of the till friction angle (default value corresponds

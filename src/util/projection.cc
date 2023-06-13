@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -256,7 +256,7 @@ static double triangle_area(const double *A, const double *B, const double *C) {
 }
 
 void compute_cell_areas(const std::string &projection, array::Scalar &result) {
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
 
@@ -275,7 +275,7 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
 
   array::AccessScope list(result);
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -329,7 +329,7 @@ static void compute_lon_lat(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     PJ_COORD in, out;
@@ -351,7 +351,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
   Proj crs(projection, "EPSG:4326");
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
   double x_offsets[] = {-dx2, dx2, dx2, -dx2};
@@ -359,7 +359,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 
   array::AccessScope list{&result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double x0 = grid->x(i), y0 = grid->y(j);

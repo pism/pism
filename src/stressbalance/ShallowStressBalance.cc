@@ -156,7 +156,7 @@ void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector 
 
   array::AccessScope list{&V, &result, &tauc, &mask};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.ocean(i,j)) {
@@ -208,7 +208,7 @@ array::Array::Ptr SSB_taud::compute_impl() const {
 
   array::AccessScope list{surface, thickness, result.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double pressure = ice_density * standard_gravity * (*thickness)(i,j);
@@ -276,7 +276,7 @@ array::Array::Ptr SSB_taub::compute_impl() const {
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
   array::AccessScope list{tauc, &velocity, &mask, result.get()};
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.grounded_ice(i,j)) {
@@ -365,7 +365,7 @@ array::Array::Ptr SSB_beta::compute_impl() const {
   const array::Vector &velocity = model->velocity();
 
   array::AccessScope list{tauc, &velocity, result.get()};
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);

@@ -1,4 +1,4 @@
-// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell
+// Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2023  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -44,7 +44,7 @@ void IPLogRatioFunctional::normalize(double scale) {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
@@ -76,7 +76,7 @@ void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {
@@ -108,7 +108,7 @@ void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient)
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (m_weights) {

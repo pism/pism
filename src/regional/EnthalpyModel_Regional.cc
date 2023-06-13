@@ -82,7 +82,7 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
   array::AccessScope list{&no_model_mask, &m_work, &m_ice_enthalpy,
       &m_basal_melt_rate, &m_basal_melt_rate_stored};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (no_model_mask(i, j) > 0.5) {

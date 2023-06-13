@@ -70,7 +70,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
     x_count = lic->count[X],
     z_count = lic->count[Z];
 
-  for (Points p(grid); p; p.next()) {
+  for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
 
     const int i = i_global - grid.xs(), j = j_global - grid.ys();

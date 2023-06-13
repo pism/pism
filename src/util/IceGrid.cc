@@ -1515,4 +1515,15 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   return result;
 }
 
+PointsWithGhosts::PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width) {
+  m_i_first = grid.xs() - stencil_width;
+  m_i_last  = grid.xs() + grid.xm() + stencil_width - 1;
+  m_j_first = grid.ys() - stencil_width;
+  m_j_last  = grid.ys() + grid.ym() + stencil_width - 1;
+
+  m_i    = m_i_first;
+  m_j    = m_j_first;
+  m_done = false;
+}
+
 } // end of namespace pism

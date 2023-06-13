@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -79,7 +79,7 @@ void generate_trough_topography(array::Scalar &result) {
     dx61  = (2.0 * L) / 60; // = 25.0e3
 
   array::AccessScope list(result);
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();
@@ -102,7 +102,7 @@ void generate_mound_topography(array::Scalar &result) {
   const double w     = 150.0e3; // mound width
 
   array::AccessScope list(result);
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();

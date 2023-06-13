@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2018, 2022 Constantine Khroulev and David Maxwell
+// Copyright (C) 2011, 2014, 2015, 2016, 2017, 2018, 2022, 2023 Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
   assert(bed.stencil_width()       >= stencil);
   assert(thickness.stencil_width() >= stencil);
 
-  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+  for (auto p = grid.points(stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));
@@ -65,7 +65,7 @@ void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
   assert(bed.stencil_width()       >= stencil);
   assert(thickness.stencil_width() >= stencil);
 
-  for (PointsWithGhosts p(grid, stencil); p; p.next()) {
+  for (auto p = grid.points(stencil); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j));

@@ -267,7 +267,7 @@ void compute_grounded_cell_fraction(double ice_density,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       /*

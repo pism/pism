@@ -125,7 +125,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
 
   double glen_exponent = m_flow_law->exponent();
 
-  for (Points pt(*m_grid); pt; pt.next()) {
+  for (auto pt = m_grid->points(); pt; pt.next()) {
     const int i = pt.i(), j = pt.j();
 
     // Find partially filled or empty grid boxes on the icefree ocean, which

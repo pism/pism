@@ -157,7 +157,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       const double H = ice_thickness(i, j);

@@ -185,7 +185,7 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
       col[m].c = 0;
     }
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
 
@@ -270,7 +270,7 @@ void Poisson::assemble_rhs(double rhs,
                            array::Scalar &b) {
   array::AccessScope list{&mask, &bc, &b};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask.as_int(i, j) == 1) {

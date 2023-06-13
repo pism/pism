@@ -74,7 +74,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
 
   array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto R = (*m_frontal_melt_rate)(i, j);

@@ -287,7 +287,7 @@ void BedSmoother::smoothed_thk(const array::Scalar &usurf,
 
   array::AccessScope list{&mask, &m_maxtl, &result, &thk, &m_topgsmooth, &usurf};
 
-  unsigned int GHOSTS = result.stencil_width();
+  auto GHOSTS = result.stencil_width();
   assert(mask.stencil_width()         >= GHOSTS);
   assert(m_maxtl.stencil_width()      >= GHOSTS);
   assert(thk.stencil_width()          >= GHOSTS);
@@ -296,13 +296,15 @@ void BedSmoother::smoothed_thk(const array::Scalar &usurf,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (thk(i, j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "BedSmoother detects negative original thickness\n"
                                       "at location (i, j) = (%d, %d) ... ending", i, j);
-      } else if (thk(i, j) == 0.0) {
+      }
+
+      if (thk(i, j) == 0.0) {
         result(i, j) = 0.0;
       } else if (m_maxtl(i, j) >= thk(i, j)) {
         result(i, j) = thk(i, j);
@@ -369,7 +371,7 @@ void BedSmoother::theta(const array::Scalar &usurf, array::Scalar &result) const
 
   ParallelSection loop(m_grid->com);
   try {
-    for (PointsWithGhosts p(*m_grid, GHOSTS); p; p.next()) {
+    for (auto p = m_grid->points(GHOSTS); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double H = usurf(i, j) - m_topgsmooth(i, j);

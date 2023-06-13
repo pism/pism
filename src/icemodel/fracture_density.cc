@@ -44,7 +44,7 @@ void IceModel::update_fracture_density() {
       list.add(m_velocity_bc_values);
     }
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.cell_type.grounded(i, j) and not do_fracground) {

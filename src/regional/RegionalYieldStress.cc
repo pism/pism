@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ static void set_no_model_yield_stress(double tauc,
 
   array::AccessScope list{&mask, &basal_yield_stress};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (mask(i, j) > 0.5) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,7 +75,7 @@ void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       m_temp->set_column(p.i(), p.j(), &Tbcol[0]);
     }
   } catch (...) {

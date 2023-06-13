@@ -193,7 +193,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
                                &SMB, &SMB_ref, &aSMB, &dSMBdz,
                                &T, &T_ref, &aT, &dTdz};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     SMB(i, j) = SMB_ref(i, j) + aSMB(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));

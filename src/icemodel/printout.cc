@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2019, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2019, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -59,7 +59,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const int ks = grid->kBelowHeight(ice_thickness(i,j));

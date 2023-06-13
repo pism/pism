@@ -61,7 +61,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
 
     array::AccessScope list{&cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.grounded_ice(i,j)) {
@@ -72,7 +72,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
     }
 
     // Mark icy Dirichlet B.C. cells as "grounded" because we don't want them removed.
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (bc_mask(i, j) > 0.5 and cell_type.icy(i, j)) {
@@ -104,7 +104,7 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
   {
     array::AccessScope list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {

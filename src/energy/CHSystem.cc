@@ -163,7 +163,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points pt(*m_grid); pt; pt.next()) {
+    for (auto pt = m_grid->points(); pt; pt.next()) {
       const int i = pt.i(), j = pt.j();
 
       const double H = ice_thickness(i, j);
@@ -270,7 +270,7 @@ void cryo_hydrologic_warming_flux(double k,
 
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double

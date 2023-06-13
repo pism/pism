@@ -35,7 +35,7 @@ void lapse_rate_correction(const array::Scalar &surface,
 
   array::AccessScope list{&surface, &reference_surface, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));

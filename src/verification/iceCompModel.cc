@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -315,7 +315,7 @@ void IceCompModel::initTestABCDH() {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       const double r = radius(*m_grid, i, j);
@@ -386,7 +386,7 @@ void IceCompModel::initTestL() {
 
   std::vector<rgrid> rrv(MM);
   int k = 0;
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     rrv[k].i = i;
@@ -435,7 +435,7 @@ void IceCompModel::reset_thickness_test_A() {
 
   array::AccessScope list(m_geometry.ice_thickness);
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (radius(*m_grid, i, j) > LforAE) {
@@ -484,7 +484,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.ice_thickness(i,j) > 0) {
@@ -866,7 +866,7 @@ void IceCompModel::test_V_init() {
     {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
      &m_velocity_bc_mask, &m_velocity_bc_values};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {

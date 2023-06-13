@@ -105,7 +105,7 @@ static void limit(double dt,
 
   array::AccessScope list{&x_old, &x, &velocity, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double beta_u{0.0};
@@ -187,7 +187,7 @@ static void compute_interface_velocity(const array::CellType &cell_type,
 
   array::AccessScope scope{&cell_type, &velocity, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d
@@ -224,7 +224,7 @@ static void compute_corrective_velocity(double dt,
 
   array::AccessScope scope{&velocity, &x, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto X = x.box(i, j);
@@ -290,7 +290,7 @@ static void step(double dt,
 
   array::AccessScope scope{&velocity, &x_old, &x};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto u = velocity.star(i, j);

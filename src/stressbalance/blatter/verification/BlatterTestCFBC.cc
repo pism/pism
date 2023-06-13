@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -186,7 +186,7 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
   {
     array::AccessScope list{&b, &m_parameters};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       m_parameters(i, j).bed        = b(i, j);

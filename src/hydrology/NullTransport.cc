@@ -129,7 +129,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     list.add(m_surface_input_rate);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double
@@ -189,7 +189,7 @@ void NullTransport::diffuse_till_water(double dt) {
     Ry = K * dt / (dy * dy);
 
   array::AccessScope list{&m_Wtill, &m_Wtill_old, &m_flow_change};
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     auto W = m_Wtill_old.star(i, j);

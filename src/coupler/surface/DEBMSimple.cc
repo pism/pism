@@ -318,7 +318,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double latitude = geometry.latitude(i, j);
@@ -585,7 +585,7 @@ protected:
 
       array::AccessScope list{latitude, result.get()};
 
-      for (Points p(*m_grid); p; p.next()) {
+      for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.insolation(orbital.declination,

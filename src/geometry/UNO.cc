@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2022 PISM Authors
+/* Copyright (C) 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -222,7 +222,7 @@ void UNO::compute_interface_fluxes(const array::CellType1 &cell_type,
   double coords[4];
   double values[4];
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // velocities through east and north cell interfaces:
@@ -293,7 +293,7 @@ static void step(double dt,
 
   array::AccessScope scope{&flux, &x_old, &result};
 
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const auto Q = flux.star(i, j);

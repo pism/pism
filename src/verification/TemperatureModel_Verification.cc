@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -81,7 +81,7 @@ void TemperatureModel_Verification::initTestFG() {
   const double time = m_testname == 'F' ? 0.0 : this->time().current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
@@ -118,7 +118,7 @@ void TemperatureModel_Verification::initTestsKO() {
 
   ParallelSection loop(m_grid->com);
   try {
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       m_ice_temperature.set_column(p.i(), p.j(), &T_column[0]);
     }
   } catch (...) {

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,7 +134,7 @@ void IP_SSATaucForwardProblem::set_design(array::Scalar &new_zeta) {
   // Cache tauc at the quadrature points.
   array::AccessScope list{&tauc, &m_coefficients};
 
-  for (PointsWithGhosts p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(1); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_coefficients(i, j).tauc = tauc(i, j);
   }
@@ -236,7 +236,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
   list.add(*dzeta_local);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     du_a[j][i].u = 0.0;
@@ -420,7 +420,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
                                         dirichletWeight);
 
   // Zero out the portion of the function we are responsible for computing.
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     dzeta_a[j][i] = 0;
@@ -496,7 +496,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
   }
   loop.check();
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double dtauc_dzeta;

@@ -224,7 +224,7 @@ void FractureDensity::update(double dt,
 
   double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     double tempFD = 0.0;

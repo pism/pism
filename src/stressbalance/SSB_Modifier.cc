@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -111,7 +111,7 @@ void ConstantInColumn::update(const array::Vector &sliding_velocity,
   // horizontal velocity and its maximum:
   array::AccessScope list{&m_u, &m_v, &sliding_velocity};
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     m_u.set_column(i,j, sliding_velocity(i,j).u);

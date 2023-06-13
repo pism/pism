@@ -166,6 +166,59 @@ private:
                       GridRegistration r);
 };
 
+class IceGrid;
+
+/** Iterator class for traversing the grid, including ghost points.
+ *
+ * Usage:
+ *
+ * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
+ */
+class PointsWithGhosts {
+public:
+  PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width = 1);
+
+  int i() const {
+    return m_i;
+  }
+  int j() const {
+    return m_j;
+  }
+
+  void next() {
+    assert(not m_done);
+    m_i += 1;
+    if (m_i > m_i_last) {
+      m_i = m_i_first;        // wrap around
+      m_j += 1;
+    }
+    if (m_j > m_j_last) {
+      m_j = m_j_first;        // ensure that indexes are valid
+      m_done = true;
+    }
+  }
+
+  operator bool() const {
+    return not m_done;
+  }
+private:
+  int m_i, m_j;
+  int m_i_first, m_i_last, m_j_first, m_j_last;
+  bool m_done;
+};
+
+/** Iterator class for traversing the grid (without ghost points).
+ *
+ * Usage:
+ *
+ * `for (Points p(grid); p; p.next()) { int i = p.i(), j = p.j(); ... }`
+ */
+class Points : public PointsWithGhosts {
+public:
+  Points(const IceGrid &g) : PointsWithGhosts(g, 0) {}
+};
+
+
 //! Describes the PISM grid and the distribution of data across processors.
 /*!
   This class holds parameters describing the grid, including the vertical
@@ -317,6 +370,10 @@ public:
 
   int pio_io_decomposition(int dof, int output_datatype) const;
 
+  PointsWithGhosts points(unsigned int stencil_width = 0) const {
+    return PointsWithGhosts(*this, stencil_width);
+  }
+
   //! Maximum number of degrees of freedom supported by PISM.
   /*!
    * This is also the maximum number of records an array::Forcing can hold.
@@ -353,65 +410,6 @@ inline bool grid_edge(const IceGrid &grid, int i, int j) {
   return ((j == 0) or (j == (int)grid.My() - 1) or
           (i == 0) or (i == (int)grid.Mx() - 1));
 }
-
-/** Iterator class for traversing the grid, including ghost points.
- *
- * Usage:
- *
- * `for (PointsWithGhosts p(grid, stencil_width); p; p.next()) { ... }`
- */
-class PointsWithGhosts {
-public:
-  PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width = 1) {
-    m_i_first = grid.xs() - stencil_width;
-    m_i_last  = grid.xs() + grid.xm() + stencil_width - 1;
-    m_j_first = grid.ys() - stencil_width;
-    m_j_last  = grid.ys() + grid.ym() + stencil_width - 1;
-
-    m_i = m_i_first;
-    m_j = m_j_first;
-    m_done = false;
-  }
-
-  int i() const {
-    return m_i;
-  }
-  int j() const {
-    return m_j;
-  }
-
-  void next() {
-    assert(not m_done);
-    m_i += 1;
-    if (m_i > m_i_last) {
-      m_i = m_i_first;        // wrap around
-      m_j += 1;
-    }
-    if (m_j > m_j_last) {
-      m_j = m_j_first;        // ensure that indexes are valid
-      m_done = true;
-    }
-  }
-
-  operator bool() const {
-    return not m_done;
-  }
-private:
-  int m_i, m_j;
-  int m_i_first, m_i_last, m_j_first, m_j_last;
-  bool m_done;
-};
-
-/** Iterator class for traversing the grid (without ghost points).
- *
- * Usage:
- *
- * `for (Points p(grid); p; p.next()) { int i = p.i(), j = p.j(); ... }`
- */
-class Points : public PointsWithGhosts {
-public:
-  Points(const IceGrid &g) : PointsWithGhosts(g, 0) {}
-};
 
 } // end of namespace pism
 

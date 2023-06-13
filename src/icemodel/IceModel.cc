@@ -321,7 +321,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
     array::AccessScope list{&m_geometry.ice_area_specific_volume,
                                  &m_geometry.cell_type};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (m_geometry.ice_area_specific_volume(i, j) > 0.0 and

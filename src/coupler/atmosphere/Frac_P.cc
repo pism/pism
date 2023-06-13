@@ -127,7 +127,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
 
     array::AccessScope list{&P, &S};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       P(i, j) *= S(i, j);

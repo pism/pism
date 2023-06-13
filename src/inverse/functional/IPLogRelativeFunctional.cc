@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2020, 2022, 2023  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,7 @@ void IPLogRelativeFunctional::normalize(double scale) {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d &u_obs_ij = m_u_observed(i, j);
@@ -73,7 +73,7 @@ void IPLogRelativeFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d &x_ij = x(i, j);
@@ -100,7 +100,7 @@ void IPLogRelativeFunctional::gradientAt(array::Vector &x, array::Vector &gradie
     list.add(*m_weights);
   }
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     Vector2d &x_ij = x(i, j);

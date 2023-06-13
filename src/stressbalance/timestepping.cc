@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -62,7 +62,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   double u_max = 0.0, v_max = 0.0, w_max = 0.0;
   ParallelSection loop(grid->com);
   try {
-    for (Points p(*grid); p; p.next()) {
+    for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (cell_type.icy(i, j)) {
@@ -130,7 +130,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
   array::AccessScope list{&velocity, &cell_type};
 
   double u_max = 0.0, v_max = 0.0;
-  for (Points p(*grid); p; p.next()) {
+  for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.icy(i, j)) {
