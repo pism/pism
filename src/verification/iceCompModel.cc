@@ -318,7 +318,7 @@ void IceCompModel::initTestABCDH() {
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double r = radius(*m_grid, i, j);
+      const double r = grid::radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         m_geometry.ice_thickness(i, j) = exactA(r).H;
@@ -391,7 +391,7 @@ void IceCompModel::initTestL() {
 
     rrv[k].i = i;
     rrv[k].j = j;
-    rrv[k].r = radius(*m_grid, i,j);
+    rrv[k].r = grid::radius(*m_grid, i,j);
 
     k += 1;
   }
@@ -438,7 +438,7 @@ void IceCompModel::reset_thickness_test_A() {
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (radius(*m_grid, i, j) > LforAE) {
+    if (grid::radius(*m_grid, i, j) > LforAE) {
       m_geometry.ice_thickness(i, j) = 0;
     }
   }
@@ -491,7 +491,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         area += a;
         vol += a * m_geometry.ice_thickness(i,j) * 1e-3;
       }
-      double xx = m_grid->x(i), r = radius(*m_grid, i,j);
+      double xx = m_grid->x(i), r = grid::radius(*m_grid, i,j);
       switch (m_testname) {
       case 'A':
         Hexact = exactA(r).H;

@@ -320,7 +320,7 @@ void PicoGeometry::compute_lakes(const array::CellType &cell_type, array::Scalar
     if (cell_type.ocean(i, j)) {
       m_tmp(i, j) = 1.0;
 
-      if (grid_edge(*m_grid, i, j)) {
+      if (grid::domain_edge(*m_grid, i, j)) {
         m_tmp(i, j) = 2.0;
       }
     } else {

@@ -85,7 +85,7 @@ void TemperatureModel_Verification::initTestFG() {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
       m_ice_temperature.set_column(i, j, Tmin + ST * r);

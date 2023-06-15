@@ -110,7 +110,7 @@ array::Array::Ptr IceMarginPressureDifference::compute_impl() const {
       const int i = p.i(), j = p.j();
 
       double delta_p = 0.0;
-      if (mask.grounded_ice(i, j) and grid_edge(*m_grid, i, j)) {
+      if (mask.grounded_ice(i, j) and grid::domain_edge(*m_grid, i, j)) {
         delta_p = 0.0;
       } else if (mask.icy(i, j) and mask.next_to_ice_free_ocean(i, j)) {
         double

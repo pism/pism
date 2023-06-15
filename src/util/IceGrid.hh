@@ -94,6 +94,8 @@ private:
   void reset();
 };
 
+namespace grid {
+
 //! Grid parameters; used to collect defaults before an IceGrid is allocated.
 /* Make sure that all of
    - `horizontal_size_from_options()`
@@ -106,24 +108,20 @@ private:
 
    Call `validate()` to check current parameters.
 */
-class GridParameters {
+class Parameters {
 public:
   //! Create an uninitialized GridParameters instance.
-  GridParameters();
+  Parameters();
 
   //! Initialize grid defaults from a configuration database.
-  GridParameters(std::shared_ptr<const Config> config);
+  Parameters(std::shared_ptr<const Config> config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(std::shared_ptr<const Context> ctx,
-                 const std::string &filename,
-                 const std::string &variable_name,
-                 GridRegistration r);
+  Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
+             const std::string &variable_name, GridRegistration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  GridParameters(std::shared_ptr<const Context> ctx,
-                 const File &file,
-                 const std::string &variable_name,
-                 GridRegistration r);
+  Parameters(std::shared_ptr<const Context> ctx, const File &file, const std::string &variable_name,
+             GridRegistration r);
 
   //! Process -Mx and -My; set Mx and My.
   void horizontal_size_from_options();
@@ -165,6 +163,7 @@ private:
                       const std::string &variable_name,
                       GridRegistration r);
 };
+}
 
 class IceGrid;
 
@@ -285,7 +284,7 @@ public:
   typedef std::shared_ptr<IceGrid> Ptr;
   typedef std::shared_ptr<const IceGrid> ConstPtr;
 
-  IceGrid(std::shared_ptr<const Context> context, const GridParameters &p);
+  IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      SpacingType spacing, double Lambda = 0.0);
@@ -391,10 +390,13 @@ private:
   IceGrid & operator=(const IceGrid &);
 };
 
+namespace grid {
+
+//! Returns the distance from the point (i,j) to the origin.
 double radius(const IceGrid &grid, int i, int j);
 
-//! @brief Check if a point `(i,j)` is in the strip of `stripwidth`
-//! meters around the edge of the computational domain.
+//! @brief Check if a point `(i,j)` is in the strip of `stripwidth` meters around the edge
+//! of the computational domain.
 inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width) {
   return (strip_width >  0.0                               &&
           (grid.x(i)  <= grid.x(0) + strip_width           ||
@@ -406,10 +408,11 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
 /*!
  * Return `true` if a point `(i, j)` is at an edge of `grid`.
  */
-inline bool grid_edge(const IceGrid &grid, int i, int j) {
-  return ((j == 0) or (j == (int)grid.My() - 1) or
-          (i == 0) or (i == (int)grid.Mx() - 1));
+inline bool domain_edge(const IceGrid &grid, int i, int j) {
+  return ((j == 0) or (j == (int)grid.My() - 1) or (i == 0) or (i == (int)grid.Mx() - 1));
 }
+
+} // namespace grid
 
 } // end of namespace pism
 

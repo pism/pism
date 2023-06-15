@@ -108,7 +108,7 @@ void IceCompModel::initTestFG() {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     if (r > m_LforFG - 1.0) { // if (essentially) outside of sheet
       m_geometry.ice_thickness(i, j) = 0.0;
@@ -167,7 +167,7 @@ void IceCompModel::getCompSourcesTestFG() {
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = std::max(radius(*m_grid, i, j), 1.0); // avoid singularity at origin
+    double r = std::max(grid::radius(*m_grid, i, j), 1.0); // avoid singularity at origin
 
     if (r > m_LforFG - 1.0) {  // outside of sheet
       m_strain_heating3_comp.set_column(i, j, 0.0);
@@ -203,7 +203,7 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double r = radius(*m_grid, i, j);
+      const double r = grid::radius(*m_grid, i, j);
       const double *T = ice_temperature.get_column(i, j);
 
       // only evaluate error if inside sheet and not at central
@@ -343,7 +343,7 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = std::max(radius(*m_grid, i, j), 1.0);
+      double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
       if (r > m_LforFG - 1.0) { // outside of sheet
         Texact = m_Tmin + m_ST * r; // = Ts
@@ -401,7 +401,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double r = radius(*m_grid, i, j);
+      double r = grid::radius(*m_grid, i, j);
       if ((r >= 1.0) && (r <= m_LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central singularity
 
@@ -464,7 +464,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
       const double
         x = m_grid->x(i),
         y = m_grid->y(j),
-        r = radius(*m_grid, i, j);
+        r = grid::radius(*m_grid, i, j);
 
       if ((r >= 1.0) and (r <= m_LforFG - 1.0)) {
         // only evaluate error if inside sheet and not at central singularity

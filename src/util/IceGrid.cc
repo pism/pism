@@ -222,7 +222,7 @@ IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
                               GridRegistration registration,
                               Periodicity periodicity) {
   try {
-    GridParameters p(ctx->config());
+    grid::Parameters p(ctx->config());
     p.Lx = Lx;
     p.Ly = Ly;
     p.x0 = x0;
@@ -245,7 +245,7 @@ IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
 }
 
 //! @brief Create a PISM distributed computational grid.
-IceGrid::IceGrid(std::shared_ptr<const Context> context, const GridParameters &p)
+IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p)
   : com(context->com()), m_impl(new Impl(context)) {
 
   try {
@@ -337,7 +337,7 @@ IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    GridParameters p(ctx, file, var_name, r);
+    grid::Parameters p(ctx, file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -1059,11 +1059,6 @@ int IceGrid::max_patch_size() const {
   return m_impl->max_patch_size;
 }
 
-//! @brief Returns the distance from the point (i,j) to the origin.
-double radius(const IceGrid &grid, int i, int j) {
-  return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
-}
-
 // grid_info
 
 void grid_info::reset() {
@@ -1199,7 +1194,9 @@ grid_info::grid_info(const File &file, const std::string &variable,
   }
 }
 
-GridParameters::GridParameters() {
+namespace grid {
+
+Parameters::Parameters() {
 
   // set to something invalid
   Lx = -1.0;
@@ -1212,21 +1209,21 @@ GridParameters::GridParameters() {
   My = 0;
 
   registration = CELL_CENTER;
-  periodicity = NOT_PERIODIC;
+  periodicity  = NOT_PERIODIC;
 }
 
-GridParameters::GridParameters(Config::ConstPtr config) {
+Parameters::Parameters(Config::ConstPtr config) {
   init_from_config(config);
 }
 
-void GridParameters::ownership_ranges_from_options(unsigned int size) {
+void Parameters::ownership_ranges_from_options(unsigned int size) {
   OwnershipRanges procs = compute_ownership_ranges(Mx, My, size);
-  procs_x = procs.x;
-  procs_y = procs.y;
+  procs_x               = procs.x;
+  procs_y               = procs.y;
 }
 
 //! Initialize from a configuration database. Does not try to compute ownership ranges.
-void GridParameters::init_from_config(Config::ConstPtr config) {
+void Parameters::init_from_config(Config::ConstPtr config) {
   Lx = config->get_number("grid.Lx");
   Ly = config->get_number("grid.Ly");
 
@@ -1236,21 +1233,19 @@ void GridParameters::init_from_config(Config::ConstPtr config) {
   Mx = static_cast<unsigned int>(config->get_number("grid.Mx"));
   My = static_cast<unsigned int>(config->get_number("grid.My"));
 
-  periodicity = string_to_periodicity(config->get_string("grid.periodicity"));
+  periodicity  = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
 
-  double Lz = config->get_number("grid.Lz");
+  double Lz       = config->get_number("grid.Lz");
   unsigned int Mz = config->get_number("grid.Mz");
-  double lambda = config->get_number("grid.lambda");
-  SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
-  z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+  double lambda   = config->get_number("grid.lambda");
+  SpacingType s   = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
+  z               = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
-void GridParameters::init_from_file(std::shared_ptr<const Context> ctx,
-                                    const File &file,
-                                    const std::string &variable_name,
-                                    GridRegistration r) {
+void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &file,
+                                    const std::string &variable_name, GridRegistration r) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
@@ -1259,46 +1254,40 @@ void GridParameters::init_from_file(std::shared_ptr<const Context> ctx,
 
   grid_info input_grid(file, variable_name, ctx->unit_system(), r);
 
-  Lx = input_grid.Lx;
-  Ly = input_grid.Ly;
-  x0 = input_grid.x0;
-  y0 = input_grid.y0;
-  Mx = input_grid.x_len;
-  My = input_grid.y_len;
+  Lx           = input_grid.Lx;
+  Ly           = input_grid.Ly;
+  x0           = input_grid.x0;
+  y0           = input_grid.y0;
+  Mx           = input_grid.x_len;
+  My           = input_grid.y_len;
   registration = r;
-  z = input_grid.z;
+  z            = input_grid.z;
 }
 
-GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
-                               const File &file,
-                               const std::string &variable_name,
-                               GridRegistration r) {
+Parameters::Parameters(std::shared_ptr<const Context> ctx, const File &file,
+                               const std::string &variable_name, GridRegistration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
-GridParameters::GridParameters(std::shared_ptr<const Context> ctx,
-                               const std::string &filename,
-                               const std::string &variable_name,
-                               GridRegistration r) {
+Parameters::Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
+                               const std::string &variable_name, GridRegistration r) {
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   init_from_file(ctx, file, variable_name, r);
 }
 
 
-void GridParameters::horizontal_size_from_options() {
+void Parameters::horizontal_size_from_options() {
   Mx = options::Integer("-Mx", "grid size in X direction", Mx);
   My = options::Integer("-My", "grid size in Y direction", My);
 }
 
-void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
+void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> unit_system) {
   // Domain size
   {
     const double km = 1000.0;
-    Lx = km * options::Real(unit_system,
-                            "-Lx", "Half of the grid extent in the Y direction, in km",
+    Lx = km * options::Real(unit_system, "-Lx", "Half of the grid extent in the Y direction, in km",
                             "km", Lx / km);
-    Ly = km * options::Real(unit_system,
-                            "-Ly", "Half of the grid extent in the X direction, in km",
+    Ly = km * options::Real(unit_system, "-Ly", "Half of the grid extent in the X direction, in km",
                             "km", Ly / km);
   }
 
@@ -1319,22 +1308,24 @@ void GridParameters::horizontal_extent_from_options(std::shared_ptr<units::Syste
   }
 }
 
-void GridParameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
-  int Mz = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
+void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
+  double Lz     = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
+  int Mz        = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
   double lambda = config->get_number("grid.lambda");
   SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 }
 
-void GridParameters::validate() const {
+void Parameters::validate() const {
   if (Mx < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Mx = %d is invalid (has to be 3 or greater)", Mx);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Mx = %d is invalid (has to be 3 or greater)", Mx);
   }
 
   if (My < 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "My = %d is invalid (has to be 3 or greater)", My);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "My = %d is invalid (has to be 3 or greater)", My);
   }
 
   if (Lx <= 0.0) {
@@ -1366,6 +1357,8 @@ void GridParameters::validate() const {
   }
 }
 
+} // namespace grid
+
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
@@ -1388,7 +1381,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
-    GridParameters input_grid(config);
+    grid::Parameters input_grid(config);
 
     bool grid_info_found = false;
 
@@ -1404,7 +1397,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = GridParameters(ctx, file, name, r);
+        input_grid = grid::Parameters(ctx, file, name, r);
         break;
       }
     }
@@ -1445,7 +1438,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     // not set, -bootstrap is not set either".
 
     // Use defaults from the configuration database
-    GridParameters P(ctx->config());
+    grid::Parameters P(ctx->config());
     P.horizontal_size_from_options();
     P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
@@ -1525,5 +1518,13 @@ PointsWithGhosts::PointsWithGhosts(const IceGrid &grid, unsigned int stencil_wid
   m_j    = m_j_first;
   m_done = false;
 }
+
+namespace grid {
+
+double radius(const IceGrid &grid, int i, int j) {
+  return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
+}
+
+} // namespace grid
 
 } // end of namespace pism

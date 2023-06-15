@@ -403,7 +403,7 @@ void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result
   for (auto p = grid.points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (in_null_strip(grid, i, j, width)) {
+    if (grid::in_null_strip(grid, i, j, width)) {
       result(i, j) = 1;
     } else {
       result(i, j) = 0;

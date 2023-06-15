@@ -115,7 +115,7 @@ void Verification::update_L() {
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double r = radius(*m_grid, i, j);
+    double r = grid::radius(*m_grid, i, j);
     (*m_mass_flux)(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     (*m_mass_flux)(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -192,7 +192,7 @@ void Verification::update_ABCDH(double time) {
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double r = radius(*m_grid, i, j);
+      const double r = grid::radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         accum = exactA(r).M;
@@ -232,7 +232,7 @@ void Verification::update_FG(double time) {
     const int i = p.i(), j = p.j();
 
     // avoid singularity at origin
-    const double r = std::max(radius(*m_grid, i, j), 1.0);
+    const double r = std::max(grid::radius(*m_grid, i, j), 1.0);
 
     (*m_temperature)(i, j) = Tmin + ST * r;
 

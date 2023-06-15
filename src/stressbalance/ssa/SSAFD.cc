@@ -363,7 +363,7 @@ void SSAFD::assemble_rhs(const Inputs &inputs) {
 
         double delta_p = H_ij * (P_ice - P_water);
 
-        if (grid_edge(*m_grid, i, j) and
+        if (grid::domain_edge(*m_grid, i, j) and
             not (flow_line_mode or mask::grounded(M.c))) {
           // In regional setups grounded ice may extend to the edge of the domain. This
           // condition ensures that at a domain edge the ice behaves as if it extends past

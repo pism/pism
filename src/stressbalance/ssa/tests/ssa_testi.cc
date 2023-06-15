@@ -101,10 +101,9 @@ void SSATestCaseI::initializeSSACoefficients() {
 
     m_tauc(i,j) = I.tauc;
 
-    if (grid_edge(*m_grid, i, j)) {
-      m_bc_mask(i,j) = 1;
-      m_bc_values(i,j).u = I.u;
-      m_bc_values(i,j).v = I.v;
+    if (grid::domain_edge(*m_grid, i, j)) {
+      m_bc_mask(i, j)   = 1;
+      m_bc_values(i, j) = { I.u, I.v };
     }
   }
 

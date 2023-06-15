@@ -199,7 +199,7 @@ static void setInitStateF(IceGrid &grid,
     const int i = p.i(), j = p.j();
 
     const double
-      r  = std::max(radius(grid, i, j), 1.0), // avoid singularity at origin
+      r  = std::max(grid::radius(grid, i, j), 1.0), // avoid singularity at origin
       Ts = Tmin + ST * r;
 
     if (r > LforFG - 1.0) { // if (essentially) outside of sheet
@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 
     auto output_file = config->get_string("output.file");
 
-    GridParameters P(config);
+    grid::Parameters P(config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
     P.horizontal_size_from_options();

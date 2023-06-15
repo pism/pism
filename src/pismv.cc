@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,10 +43,10 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
   units::System::Ptr sys(new units::System);
 
   // logger
-  Logger::Ptr logger = logger_from_options(com);
+  auto logger = logger_from_options(com);
 
   // configuration parameters
-  Config::Ptr config = config_from_options(com, *logger, sys);
+  auto config = config_from_options(com, *logger, sys);
 
   config->set_string("grid.periodicity", "none");
   config->set_string("grid.registration", "corner");
@@ -60,14 +60,13 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
 
   EnthalpyConverter::Ptr EC = EnthalpyConverter::Ptr(new ColdEnthalpyConverter(*config));
 
-  return std::shared_ptr<Context>(new Context(com, sys, config, EC, time, logger, prefix));
+  return std::make_shared<Context>(com, sys, config, EC, time, logger, prefix);
 }
 
-GridParameters pismv_grid_defaults(Config::Ptr config,
-                                   char testname) {
+grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   // This sets the defaults for each test; command-line options can override this.
 
-  GridParameters P;
+  grid::Parameters P;
 
   // use the cell corner grid registration
   P.registration = CELL_CORNER;
@@ -81,8 +80,8 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
   P.My = config->get_number("grid.My");
 
   SpacingType spacing = EQUAL;
-  double Lz = config->get_number("grid.Lz");
-  unsigned int Mz = config->get_number("grid.Mz");
+  double Lz           = config->get_number("grid.Lz");
+  unsigned int Mz     = config->get_number("grid.Mz");
 
   switch (testname) {
   case 'A':
@@ -91,14 +90,14 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
     // use 2400km by 2400km by 4000m rectangular domain
     P.Lx = 1200e3;
     P.Ly = P.Lx;
-    Lz = 4000;
+    Lz   = 4000;
     break;
   case 'C':
   case 'D':
     // use 2000km by 2000km by 4000m rectangular domain
     P.Lx = 1000e3;
     P.Ly = P.Lx;
-    Lz = 4000;
+    Lz   = 4000;
     break;
   case 'F':
   case 'G':
@@ -106,30 +105,29 @@ GridParameters pismv_grid_defaults(Config::Ptr config,
     // use 1800km by 1800km by 4000m rectangular domain
     P.Lx = 900e3;
     P.Ly = P.Lx;
-    Lz = 4000;
+    Lz   = 4000;
     break;
   case 'K':
   case 'O':
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
     config->set_number("grid.Mbz", 2);
     config->set_number("grid.Lbz", 1000);
-    P.Lx = 1000e3;
-    P.Ly = P.Lx;
-    Lz = 4000;
+    P.Lx          = 1000e3;
+    P.Ly          = P.Lx;
+    Lz            = 4000;
     P.periodicity = XY_PERIODIC;
-    spacing = QUADRATIC;
+    spacing       = QUADRATIC;
     break;
   case 'V':
-    P.My = 3;             // it's a flow-line setup
-    P.Lx = 500e3;            // 500 km long
+    P.My          = 3;     // it's a flow-line setup
+    P.Lx          = 500e3; // 500 km long
     P.periodicity = Y_PERIODIC;
     break;
   default:
     throw RuntimeError(PISM_ERROR_LOCATION, "desired test not implemented\n");
   }
 
-  P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing,
-                                         config->get_number("grid.lambda"));
+  P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, config->get_number("grid.lambda"));
   return P;
 }
 
@@ -146,10 +144,10 @@ IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
     GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
+    return IceGrid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
   } else {
     // use defaults set by pismv_grid_defaults()
-    GridParameters P = pismv_grid_defaults(ctx->config(), testname);
+    grid::Parameters P = pismv_grid_defaults(ctx->config(), testname);
     P.horizontal_size_from_options();
     P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());
