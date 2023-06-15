@@ -26,7 +26,6 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/IceGrid.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -194,8 +193,8 @@ void IceCompModel::computeTemperatureErrors(double &gmaxTerr,
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const array::Array3D &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
   array::AccessScope list{&m_geometry.ice_thickness, &ice_temperature};
 
@@ -281,8 +280,8 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
       throw RuntimeError(PISM_ERROR_LOCATION, "ice and bedrock temperature errors only for tests K and O");
   }
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const array::Array3D &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
   array::AccessScope list{&ice_temperature, &bedrock_temp};
 
@@ -334,8 +333,8 @@ void IceCompModel::computeBasalTemperatureErrors(double &gmaxTerr, double &gavTe
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
   std::vector<double> z(1, 0.0);
 
-  energy::TemperatureModel *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model);
-  const array::Array3D &ice_temperature = m->temperature();
+  auto *m = dynamic_cast<energy::TemperatureModel*>(m_energy_model.get());
+  const auto &ice_temperature = m->temperature();
 
   array::AccessScope list(ice_temperature);
 
@@ -390,7 +389,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = m_config->get_number("constants.ice.density"),
     ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
-  const array::Array3D &strain_heating3 = m_stress_balance->volumetric_strain_heating();
+  const auto &strain_heating3 = m_stress_balance->volumetric_strain_heating();
 
   array::AccessScope list{&m_geometry.ice_thickness, &strain_heating3};
 

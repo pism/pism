@@ -212,7 +212,7 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
 
 void IceCompModel::allocate_energy_model() {
 
-  if (m_energy_model != NULL) {
+  if (m_energy_model != nullptr) {
     return;
   }
 
@@ -220,9 +220,11 @@ void IceCompModel::allocate_energy_model() {
 
   // this switch changes Test K to make material properties for bedrock the same as for ice
   bool bedrock_is_ice = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
-  m_energy_model = new energy::TemperatureModel_Verification(m_grid, m_stress_balance.get(), m_testname, bedrock_is_ice);
 
-  m_submodels["energy balance model"] = m_energy_model;
+  m_energy_model = std::make_shared<energy::TemperatureModel_Verification>(
+      m_grid, m_stress_balance.get(), m_testname, bedrock_is_ice);
+
+  m_submodels["energy balance model"] = m_energy_model.get();
 }
 
 

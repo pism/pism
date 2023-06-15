@@ -171,12 +171,13 @@ void IceRegionalModel::allocate_energy_model() {
                          "pismr -regional does not support the '-energy cold' mode.");
     }
 
-    m_energy_model = new energy::EnthalpyModel_Regional(m_grid, m_stress_balance.get());
+    m_energy_model =
+        std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance.get());
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance.get());
   }
 
-  m_submodels["energy balance model"] = m_energy_model;
+  m_submodels["energy balance model"] = m_energy_model.get();
 
   if (m_config->get_flag("energy.ch_warming.enabled") and
       not m_ch_system) {

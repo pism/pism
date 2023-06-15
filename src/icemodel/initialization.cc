@@ -558,15 +558,15 @@ void IceModel::allocate_energy_model() {
 
   if (m_config->get_flag("energy.enabled")) {
     if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = new energy::TemperatureModel(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance.get());
     } else {
-      m_energy_model = new energy::EnthalpyModel(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance.get());
     }
   } else {
-    m_energy_model = new energy::DummyEnergyModel(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance.get());
   }
 
-  m_submodels["energy balance model"] = m_energy_model;
+  m_submodels["energy balance model"] = m_energy_model.get();
 }
 
 

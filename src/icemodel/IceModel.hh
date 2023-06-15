@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceModel_hh
-#define __iceModel_hh
+#ifndef PISM_ICEMODEL_H
+#define PISM_ICEMODEL_H
 
 //! \file IceModel.hh Definition of class IceModel.
 /*! \file IceModel.hh
@@ -40,7 +40,6 @@
 #include <memory>
 
 // IceModel owns a bunch of fields, so we have to include this.
-#include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
@@ -99,6 +98,7 @@ class BedDef;
 
 namespace array {
 class Forcing;
+class CellType;
 }
 
 class IceGrid;
@@ -262,7 +262,7 @@ protected:
   std::shared_ptr<array::Forcing> m_surface_input_for_hydrology;
 
   std::shared_ptr<energy::BedThermalUnit> m_btu;
-  energy::EnergyModel *m_energy_model;
+  std::shared_ptr<energy::EnergyModel> m_energy_model;
 
   std::shared_ptr<AgeModel> m_age_model;
 
@@ -483,4 +483,4 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
 
 } // end of namespace pism
 
-#endif /* __iceModel_hh */
+#endif /* PISM_ICEMODEL_H */
