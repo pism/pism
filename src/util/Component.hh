@@ -16,14 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __Component_hh
-#define __Component_hh
+#ifndef PISM_COMPONENT_H
+#define PISM_COMPONENT_H
 
 #include <string>
 #include <set>
 #include <map>
 
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Logger.hh"
@@ -149,7 +148,7 @@ protected:
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
   virtual void regrid(const std::string &module_name, array::Array &variable,
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
-protected:
+
   //! grid used by this component
   const IceGrid::ConstPtr m_grid;
   //! configuration database used by this component
@@ -162,4 +161,4 @@ protected:
 
 } // end of namespace pism
 
-#endif // __Component_hh
+#endif // PISM_COMPONENT_H
