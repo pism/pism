@@ -272,16 +272,14 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   m_stdout_flags = "";
   m_stats = EnergyModelStats();
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
-
-  profiling.begin("ice_energy");
+  profiling().begin("ice_energy");
   {
     // this call should fill m_work with new values of enthalpy
     this->update_impl(t, dt, inputs);
 
     m_ice_enthalpy.copy_from(m_work);
   }
-  profiling.end("ice_energy");
+  profiling().end("ice_energy");
 
   // globalize m_stats and update m_stdout_flags
   {

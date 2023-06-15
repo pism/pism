@@ -884,28 +884,28 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
     double maxKW = 0.0;
     // updates ghosts of m_Kstag
-    m_grid->ctx()->profiling().begin("routing_conductivity");
+    profiling().begin("routing_conductivity");
     compute_conductivity(m_Wstag,
                          subglacial_water_pressure(),
                          m_bottom_surface,
                          m_Kstag, maxKW);
-    m_grid->ctx()->profiling().end("routing_conductivity");
+    profiling().end("routing_conductivity");
 
     // ghosts of m_Vstag are not updated
-    m_grid->ctx()->profiling().begin("routing_velocity");
+    profiling().begin("routing_velocity");
     compute_velocity(m_Wstag,
                      subglacial_water_pressure(),
                      m_bottom_surface,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);
-    m_grid->ctx()->profiling().end("routing_velocity");
+    profiling().end("routing_velocity");
 
     // to get Q, W needs valid ghosts (ghosts of m_Vstag are not used)
     // updates ghosts of m_Qstag
-    m_grid->ctx()->profiling().begin("routing_flux");
+    profiling().begin("routing_flux");
     advective_fluxes(m_Vstag, m_W, m_Qstag);
-    m_grid->ctx()->profiling().end("routing_flux");
+    profiling().end("routing_flux");
 
     m_Qstag_average.add(hdt, m_Qstag);
 
@@ -923,7 +923,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
     // update Wtillnew from Wtill and input_rate
     {
-      m_grid->ctx()->profiling().begin("routing_Wtill");
+      profiling().begin("routing_Wtill");
       update_Wtill(hdt,
                    m_Wtill,
                    m_surface_input_rate,
@@ -939,13 +939,13 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
                      m_grounding_line_change,
                      m_conservation_error_change,
                      m_no_model_mask_change);
-      m_grid->ctx()->profiling().end("routing_Wtill");
+      profiling().end("routing_Wtill");
     }
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
     // uses ghosts of m_W, m_Wstag, m_Qstag, m_Kstag
     {
-      m_grid->ctx()->profiling().begin("routing_W");
+      profiling().begin("routing_W");
       update_W(hdt,
                m_surface_input_rate,
                m_basal_melt_rate,
@@ -966,7 +966,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
 
       // transfer new into old (updates ghosts of m_W)
       m_W.copy_from(m_Wnew);
-      m_grid->ctx()->profiling().end("routing_W");
+      profiling().end("routing_W");
     }
 
     // m_Wtill has no ghosts

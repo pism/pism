@@ -20,8 +20,6 @@
 #define PISM_COMPONENT_H
 
 #include <string>
-#include <set>
-#include <map>
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Units.hh"
@@ -35,6 +33,7 @@ class MaxTimestep;
 class File;
 class Geometry;
 class Time;
+class Profiling;
 
 namespace array {
 template<typename T> class Array2D;
@@ -118,7 +117,6 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 */
 class Component {
 public:
-
   /** Create a Component instance given a grid. */
   Component(IceGrid::ConstPtr g);
   virtual ~Component() = default;
@@ -129,6 +127,8 @@ public:
   IceGrid::ConstPtr grid() const;
 
   const Time &time() const;
+
+  const Profiling &profiling() const;
 
   void define_model_state(const File &output) const;
   void write_model_state(const File &output) const;

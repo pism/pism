@@ -46,8 +46,6 @@ using mask::icy;
 struct GeometryEvolution::Impl {
   Impl(IceGrid::ConstPtr g);
 
-  const Profiling &profile;
-
   GeometryCalculator gc;
 
   double ice_density;
@@ -93,8 +91,7 @@ struct GeometryEvolution::Impl {
 };
 
 GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
-  : profile(grid->ctx()->profiling()),
-    gc(*grid->ctx()->config()),
+  : gc(*grid->ctx()->config()),
     flux_divergence(grid, "flux_divergence"),
     conservation_error(grid, "conservation_error"),
     effective_SMB(grid, "effective_SMB"),
@@ -250,7 +247,7 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                                   const array::Staggered &diffusive_flux,
                                   const array::Scalar  &thickness_bc_mask) {
 
-  m_impl->profile.begin("ge.update_ghosted_copies");
+  profiling().begin("ge.update_ghosted_copies");
   {
     // make ghosted copies of input fields
     m_impl->ice_thickness.copy_from(geometry.ice_thickness);
@@ -266,16 +263,16 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
                        m_impl->cell_type,          // out (ghosts are updated)
                        m_impl->surface_elevation); // out (ghosts are updated)
   }
-  m_impl->profile.end("ge.update_ghosted_copies");
+  profiling().end("ge.update_ghosted_copies");
 
   // Derived classes can include modifications for regional runs.
-  m_impl->profile.begin("ge.interface_fluxes");
+  profiling().begin("ge.interface_fluxes");
   compute_interface_fluxes(m_impl->cell_type,          // in (uses ghosts)
                            m_impl->ice_thickness,      // in (uses ghosts)
                            m_impl->input_velocity,     // in (uses ghosts)
                            diffusive_flux,             // in
                            m_impl->flux_staggered);    // out
-  m_impl->profile.end("ge.interface_fluxes");
+  profiling().end("ge.interface_fluxes");
 
   m_impl->flux_staggered.update_ghosts();
 
@@ -292,33 +289,33 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
     m_impl->flux_staggered.copy_from(flux_limited);
   }
 
-  m_impl->profile.begin("ge.flux_divergence");
+  profiling().begin("ge.flux_divergence");
   compute_flux_divergence(dt,                         // in
                           m_impl->flux_staggered,     // in (uses ghosts)
                           thickness_bc_mask,          // in
                           m_impl->conservation_error, // in/out
                           m_impl->flux_divergence);   // out
-  m_impl->profile.end("ge.flux_divergence");
+  profiling().end("ge.flux_divergence");
 
   // This is where part_grid is implemented.
-  m_impl->profile.begin("ge.update_in_place");
+  profiling().begin("ge.update_in_place");
   update_in_place(dt,                            // in
                   m_impl->bed_elevation,         // in
                   m_impl->sea_level,             // in
                   m_impl->flux_divergence,       // in
                   m_impl->ice_thickness,         // in/out
                   m_impl->area_specific_volume); // in/out
-  m_impl->profile.end("ge.update_in_place");
+  profiling().end("ge.update_in_place");
 
   // Compute ice thickness and area specific volume changes.
-  m_impl->profile.begin("ge.compute_changes");
+  profiling().begin("ge.compute_changes");
   {
     m_impl->ice_thickness.add(-1.0, geometry.ice_thickness,
                               m_impl->thickness_change);
     m_impl->area_specific_volume.add(-1.0, geometry.ice_area_specific_volume,
                                      m_impl->ice_area_specific_volume_change);
   }
-  m_impl->profile.end("ge.compute_changes");
+  profiling().end("ge.compute_changes");
 
   // Computes the numerical conservation error and corrects ice_thickness_change and
   // ice_area_specific_volume_change. We can do this here because
@@ -327,13 +324,13 @@ void GeometryEvolution::flow_step(const Geometry &geometry, double dt,
   // Note that here we use the "old" ice geometry.
   //
   // This computation is purely local.
-  m_impl->profile.begin("ge.ensure_nonnegativity");
+  profiling().begin("ge.ensure_nonnegativity");
   ensure_nonnegativity(geometry.ice_thickness,                  // in
                        geometry.ice_area_specific_volume,       // in
                        m_impl->thickness_change,                // in/out
                        m_impl->ice_area_specific_volume_change, // in/out
                        m_impl->conservation_error);             // in/out
-  m_impl->profile.end("ge.ensure_nonnegativity");
+  profiling().end("ge.ensure_nonnegativity");
 
   // Now the caller can compute
   //
@@ -348,7 +345,7 @@ void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
                                          const array::Scalar    &surface_mass_balance_rate,
                                          const array::Scalar    &basal_melt_rate) {
 
-  m_impl->profile.begin("ge.source_terms");
+  profiling().begin("ge.source_terms");
   compute_surface_and_basal_mass_balance(dt,                        // in
                                          thickness_bc_mask,         // in
                                          geometry.ice_thickness,    // in
@@ -357,7 +354,7 @@ void GeometryEvolution::source_term_step(const Geometry &geometry, double dt,
                                          basal_melt_rate,           // in
                                          m_impl->effective_SMB,     // out
                                          m_impl->effective_BMB);    // out
-  m_impl->profile.end("ge.source_terms");
+  profiling().end("ge.source_terms");
 
 }
 

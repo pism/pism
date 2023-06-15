@@ -19,6 +19,7 @@
 #include <cassert>
 
 #include "Component.hh"
+#include "Profiling.hh"
 #include "pism/util/io/File.hh"
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
@@ -40,8 +41,8 @@ InputOptions::InputOptions(InitializationType t, const std::string &file, unsign
  *
  */
 InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
-  InitializationType type   = INIT_OTHER;
-  unsigned int       record = 0;
+  InitializationType type = INIT_OTHER;
+  unsigned int record     = 0;
 
   std::string input_filename = config->get_string("input.file");
 
@@ -78,8 +79,10 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 }
 
 Component::Component(IceGrid::ConstPtr g)
-  : m_grid(g), m_config(g->ctx()->config()), m_sys(g->ctx()->unit_system()),
-    m_log(g->ctx()->log()) {
+    : m_grid(g),
+      m_config(g->ctx()->config()),
+      m_sys(g->ctx()->unit_system()),
+      m_log(g->ctx()->log()) {
   // empty
 }
 
@@ -107,6 +110,9 @@ const Time &Component::time() const {
   return *m_grid->ctx()->time();
 }
 
+const Profiling &Component::profiling() const {
+  return m_grid->ctx()->profiling();
+}
 
 /*! @brief Define model state variables in an output file. */
 /*!

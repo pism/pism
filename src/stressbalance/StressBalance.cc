@@ -167,30 +167,28 @@ void StressBalance::init() {
 //! \brief Performs the shallow stress balance computation.
 void StressBalance::update(const Inputs &inputs, bool full_update) {
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
-
   try {
-    profiling.begin("stress_balance.shallow");
+    profiling().begin("stress_balance.shallow");
     m_shallow_stress_balance->update(inputs, full_update);
-    profiling.end("stress_balance.shallow");
+    profiling().end("stress_balance.shallow");
 
-    profiling.begin("stress_balance.modifier");
+    profiling().begin("stress_balance.modifier");
     m_modifier->update(m_shallow_stress_balance->velocity(),
                        inputs, full_update);
-    profiling.end("stress_balance.modifier");
+    profiling().end("stress_balance.modifier");
 
     if (full_update) {
       const array::Array3D &u = m_modifier->velocity_u();
       const array::Array3D &v = m_modifier->velocity_v();
 
-      profiling.begin("stress_balance.strain_heat");
+      profiling().begin("stress_balance.strain_heat");
       this->compute_volumetric_strain_heating(inputs);
-      profiling.end("stress_balance.strain_heat");
+      profiling().end("stress_balance.strain_heat");
 
-      profiling.begin("stress_balance.vertical_velocity");
+      profiling().begin("stress_balance.vertical_velocity");
       this->compute_vertical_velocity(inputs.geometry->cell_type,
                                       u, v, inputs.basal_melt_rate, m_w);
-      profiling.end("stress_balance.vertical_velocity");
+      profiling().end("stress_balance.vertical_velocity");
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
                                              inputs.geometry->cell_type,

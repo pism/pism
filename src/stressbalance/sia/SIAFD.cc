@@ -126,34 +126,32 @@ void SIAFD::update(const array::Vector &sliding_velocity,
                    const Inputs &inputs,
                    bool full_update) {
 
-  const Profiling &profiling = m_grid->ctx()->profiling();
-
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.
   if (inputs.new_bed_elevation) {
-    profiling.begin("sia.bed_smoother");
+    profiling().begin("sia.bed_smoother");
     m_bed_smoother->preprocess_bed(inputs.geometry->bed_elevation);
-    profiling.end("sia.bed_smoother");
+    profiling().end("sia.bed_smoother");
   }
 
-  profiling.begin("sia.gradient");
+  profiling().begin("sia.gradient");
   compute_surface_gradient(inputs, m_h_x, m_h_y);
-  profiling.end("sia.gradient");
+  profiling().end("sia.gradient");
 
-  profiling.begin("sia.flux");
+  profiling().begin("sia.flux");
   compute_diffusivity(full_update,
                       *inputs.geometry,
                       inputs.enthalpy,
                       inputs.age,
                       m_h_x, m_h_y, m_D);
   compute_diffusive_flux(m_h_x, m_h_y, m_D, m_diffusive_flux);
-  profiling.end("sia.flux");
+  profiling().end("sia.flux");
 
   if (full_update) {
-    profiling.begin("sia.3d_velocity");
+    profiling().begin("sia.3d_velocity");
     compute_3d_horizontal_velocity(*inputs.geometry, m_h_x, m_h_y, sliding_velocity,
                                    m_u, m_v);
-    profiling.end("sia.3d_velocity");
+    profiling().end("sia.3d_velocity");
   }
 }
 

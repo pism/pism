@@ -86,13 +86,13 @@ void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
 
     m_log->message(3, " Updating the steady-state subglacial water flux...\n");
 
-    m_grid->ctx()->profiling().begin("steady_emptying");
+    profiling().begin("steady_emptying");
 
     m_emptying_problem->update(*inputs.geometry,
                                inputs.no_model_mask,
                                m_surface_input_rate);
 
-    m_grid->ctx()->profiling().end("steady_emptying");
+    profiling().end("steady_emptying");
     m_Q.copy_from(m_emptying_problem->flux());
 
     m_t_last = t;
