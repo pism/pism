@@ -116,8 +116,8 @@ protected:
     array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_snapshot"));
     result->metadata(0) = m_vars[0];
 
-    std::vector<double> current_time(1, m_grid->ctx()->time()->current());
-    std::vector<double> temperature(1, 0.0);
+    std::vector<double> current_time = { m_grid->ctx()->time()->current() };
+    std::vector<double> temperature  = { 0.0 };
 
     model->init_timeseries(current_time);
 
