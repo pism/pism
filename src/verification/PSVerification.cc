@@ -58,7 +58,7 @@ void Verification::init_impl(const Geometry &geometry) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(geometry, m_grid->ctx()->time()->current(), 0);
+  update(geometry, time().current(), 0);
 }
 
 void Verification::define_model_state_impl(const File &output) const {

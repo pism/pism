@@ -78,7 +78,7 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_air_temp->buffer_size() == 1 && m_precipitation->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 }
 

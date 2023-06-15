@@ -34,6 +34,7 @@ namespace pism {
 class MaxTimestep;
 class File;
 class Geometry;
+class Time;
 
 namespace array {
 template<typename T> class Array2D;
@@ -126,6 +127,8 @@ public:
   TSDiagnosticList ts_diagnostics() const;
 
   IceGrid::ConstPtr grid() const;
+
+  const Time &time() const;
 
   void define_model_state(const File &output) const;
   void write_model_state(const File &output) const;

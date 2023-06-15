@@ -200,7 +200,7 @@ void MohrCoulombYieldStress::finish_initialization(const YieldStressInputs &inpu
 
   // We use a short time step length because we can get away with it here, but we can
   // probably do better...
-  this->update(inputs, m_grid->ctx()->time()->current(), 1.0 /* one second time step */);
+  this->update(inputs, time().current(), 1.0 /* one second time step */);
 }
 
 MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {

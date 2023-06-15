@@ -107,14 +107,14 @@ const array::Scalar& YearlyCycle::mean_summer_temp() const {
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
   const double
-    summerday_fraction = m_grid->ctx()->time()->day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
+    summerday_fraction = time().day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
 
   size_t N = ts.size();
 
   m_ts_times.resize(N);
   m_cosine_cycle.resize(N);
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    double tk = m_grid->ctx()->time()->year_fraction(ts[k]) - summerday_fraction;
+    double tk = time().year_fraction(ts[k]) - summerday_fraction;
 
     m_ts_times[k] = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);

@@ -76,7 +76,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   } else {
     m_log->message(2, "* Performing a 'fake' ocean model time-step for bootstrapping...\n");
 
-    init_step(this, geometry, *m_grid->ctx()->time());
+    init_step(this, geometry, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to

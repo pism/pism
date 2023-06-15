@@ -124,7 +124,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_theta_ocean->buffer_size() == 1 && m_salinity_ocean->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 
   const double

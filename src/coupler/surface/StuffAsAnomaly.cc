@@ -91,7 +91,7 @@ void StuffAsAnomaly::update_impl(const Geometry &geometry, double t, double dt) 
     m_mass_flux.copy_from(m_input_model->mass_flux());
 
     // if we are at the beginning of the run...
-    if (t < m_grid->ctx()->time()->start() + 1) {
+    if (t < time().start() + 1) {
       // this is goofy, but time-steps are usually longer than 1 second, so it should work
       m_temp_0.copy_from(m_temp);
       m_mass_flux_0.copy_from(m_mass_flux);

@@ -94,7 +94,7 @@ OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
 
   {
     m_time_name = m_config->get_string("time.dimension_name") + "_tillphi_opt";
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
     m_update_interval = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt", "seconds");
     m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
   }
@@ -117,7 +117,7 @@ void OptTillphiYieldStress::init_t_last(const File &input_file) {
   if (input_file.find_variable(m_time_name)) {
     input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
   } else {
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
   }
 }
 
@@ -280,8 +280,8 @@ void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
 
     output.write_attribute(m_time_name, "long_name",
                            "time of the last update of the till friction angle");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 }
 

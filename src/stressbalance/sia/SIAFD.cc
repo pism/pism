@@ -562,7 +562,7 @@ void SIAFD::compute_diffusivity(bool full_update,
   result.set(0.0);
 
   const double
-    current_time                    = m_grid->ctx()->time()->current(),
+    current_time                    = time().current(),
     D_limit                         = m_config->get_number("stress_balance.sia.max_diffusivity");
 
   const bool

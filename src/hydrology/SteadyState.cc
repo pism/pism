@@ -23,7 +23,7 @@
 
 #include "EmptyingProblem.hh"
 
-#include "pism/util/Time.hh"    // m_grid->ctx()->time()->current()
+#include "pism/util/Time.hh"    // time().current()
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
 
@@ -58,7 +58,7 @@ SteadyState::SteadyState(IceGrid::ConstPtr grid)
   : NullTransport(grid) {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_hydrology_steady";
-  m_t_last = m_grid->ctx()->time()->current();
+  m_t_last = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
   m_t_eps = 1.0;
   m_bootstrap = false;
@@ -193,8 +193,8 @@ void SteadyState::define_model_state_impl(const File& output) const {
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 
   m_Q.define(output);
@@ -217,7 +217,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   }
 
@@ -237,7 +237,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   }
 
@@ -305,7 +305,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   // read time bounds data from a file
   VariableMetadata tb(bounds_name, m_grid->ctx()->unit_system());
-  tb["units"] = m_grid->ctx()->time()->units_string();
+  tb["units"] = time().units_string();
 
   io::read_time_bounds(file, tb, *m_log, m_time_bounds);
 

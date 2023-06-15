@@ -76,7 +76,7 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_shelfbtemp->buffer_size() == 1 && m_shelfbmassflux->buffer_size() == 1) {
-    update(geometry, m_grid->ctx()->time()->current(), 0); // dt is irrelevant
+    update(geometry, time().current(), 0); // dt is irrelevant
   }
 
   const double

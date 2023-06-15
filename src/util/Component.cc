@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2020, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,8 +23,6 @@
 #include "IceGrid.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
 #include "ConfigInterface.hh"
 #include "MaxTimestep.hh"
 #include "pism/util/Time.hh"
@@ -104,6 +102,11 @@ TSDiagnosticList Component::ts_diagnostics_impl() const {
 IceGrid::ConstPtr Component::grid() const {
   return m_grid;
 }
+
+const Time &Component::time() const {
+  return *m_grid->ctx()->time();
+}
+
 
 /*! @brief Define model state variables in an output file. */
 /*!

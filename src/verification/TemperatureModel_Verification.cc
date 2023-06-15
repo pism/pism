@@ -78,7 +78,7 @@ void TemperatureModel_Verification::initTestFG() {
 
   array::AccessScope list{&m_ice_temperature};
 
-  const double time = m_testname == 'F' ? 0.0 : m_grid->ctx()->time()->current();
+  const double time = m_testname == 'F' ? 0.0 : this->time().current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;
 
   for (Points p(*m_grid); p; p.next()) {
@@ -102,7 +102,7 @@ void TemperatureModel_Verification::initTestsKO() {
 
   std::vector<double> T_column(Mz);
 
-  const double time = m_grid->ctx()->time()->current();
+  const double time = this->time().current();
 
   // evaluate exact solution in a column; all columns are the same
   for (unsigned int k = 0; k < Mz; k++) {

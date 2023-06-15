@@ -41,7 +41,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
     m_elastic_displacement(grid, "elastic_bed_displacement") {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_lingle_clark";
-  m_t_last = m_grid->ctx()->time()->current();
+  m_t_last = time().current();
   m_update_interval = m_config->get_number("bed_deformation.lc.update_interval", "seconds");
   m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
 
@@ -136,7 +136,7 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
                                  const array::Scalar &bed_uplift,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &sea_level_elevation) {
-  m_t_last = m_grid->ctx()->time()->current();
+  m_t_last = time().current();
 
   m_topg_last.copy_from(bed_elevation);
 
@@ -236,10 +236,10 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
     } else {
-      m_t_last = m_grid->ctx()->time()->current();
+      m_t_last = time().current();
     }
   } else {
-    m_t_last = m_grid->ctx()->time()->current();
+    m_t_last = time().current();
   }
 
   // Initialize bed topography and uplift maps.
@@ -415,8 +415,8 @@ void LingleClark::define_model_state_impl(const File &output) const {
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the Lingle-Clark bed deformation model");
-    output.write_attribute(m_time_name, "calendar", m_grid->ctx()->time()->calendar());
-    output.write_attribute(m_time_name, "units", m_grid->ctx()->time()->units_string());
+    output.write_attribute(m_time_name, "calendar", time().calendar());
+    output.write_attribute(m_time_name, "units", time().units_string());
   }
 }
 

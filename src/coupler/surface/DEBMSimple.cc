@@ -191,7 +191,7 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
 
   // finish up
   {
-    m_next_balance_year_start = compute_next_balance_year_start(m_grid->ctx()->time()->current());
+    m_next_balance_year_start = compute_next_balance_year_start(time().current());
 
     m_accumulation->set(0.0);
     m_melt->set(0.0);
@@ -207,13 +207,13 @@ double DEBMSimple::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
   double balance_year_start_day = m_config->get_number("surface.pdd.balance_year_start_day"),
          one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
-         year_start             = m_grid->ctx()->time()->calendar_year_start(time),
+         year_start             = this->time().calendar_year_start(time),
          balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
   if (balance_year_start > time) {
     return balance_year_start;
   }
-  return m_grid->ctx()->time()->increment_date(balance_year_start, 1);
+  return this->time().increment_date(balance_year_start, 1);
 }
 
 /** @brief Extracts snow accumulation from mixed (snow and rain) precipitation using a
@@ -401,7 +401,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           if (ts[k] >= next_snow_depth_reset) {
             snow = 0.0;
             while (next_snow_depth_reset <= ts[k]) {
-              next_snow_depth_reset = m_grid->ctx()->time()->increment_date(next_snow_depth_reset, 1);
+              next_snow_depth_reset = time().increment_date(next_snow_depth_reset, 1);
             }
           }
 
@@ -485,7 +485,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   m_atmosphere->end_pointwise_access();
 
   m_next_balance_year_start =
-    compute_next_balance_year_start(m_grid->ctx()->time()->current());
+    compute_next_balance_year_start(time().current());
 }
 
 

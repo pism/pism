@@ -161,8 +161,8 @@ void Pico::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_theta_ocean->buffer_size() == 1 and m_salinity_ocean->buffer_size() == 1) {
-    m_theta_ocean->update(m_grid->ctx()->time()->current(), 0.0);
-    m_salinity_ocean->update(m_grid->ctx()->time()->current(), 0.0);
+    m_theta_ocean->update(time().current(), 0.0);
+    m_salinity_ocean->update(time().current(), 0.0);
   }
 
   double

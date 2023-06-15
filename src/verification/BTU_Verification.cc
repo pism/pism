@@ -47,7 +47,7 @@ void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   std::vector<double> Tbcol(m_Mbz),
     zlevels = m_temp->levels();
 
-  double time = m_grid->ctx()->time()->current();
+  double time = this->time().current();
 
   // evaluate exact solution in a column; all columns are the same
   switch (m_testname) {

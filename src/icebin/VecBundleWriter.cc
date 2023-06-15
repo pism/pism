@@ -19,16 +19,19 @@ VecBundleWriter::VecBundleWriter(pism::IceGrid::Ptr _grid, std::string const &_f
 }
 
 void VecBundleWriter::init() {
+  auto config = m_grid->ctx()->config();
+  auto time = m_grid->ctx()->time();
+
   pism::File file(m_grid->com,
                   fname,
-                  string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+                  string_to_backend(config->get_string("output.format")),
                   PISM_READWRITE_MOVE,
                   m_grid->ctx()->pio_iosys_id());
 
   io::define_time(file,
-                  m_grid->ctx()->config()->get_string("time.dimension_name"),
-                  m_grid->ctx()->time()->calendar(),
-                  m_grid->ctx()->time()->units_string(),
+                  config->get_string("time.dimension_name"),
+                  time->calendar(),
+                  time->units_string(),
                   m_grid->ctx()->unit_system());
 
   for (pism::array::Array const *vec : vecs) {
@@ -38,13 +41,15 @@ void VecBundleWriter::init() {
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
+  auto config = m_grid->ctx()->config();
+
   pism::File file(m_grid->com,
                   fname,
-                  string_to_backend(m_grid->ctx()->config()->get_string("output.format")),
+                  string_to_backend(config->get_string("output.format")),
                   PISM_READWRITE, // append to file
                   m_grid->ctx()->pio_iosys_id());
 
-  io::append_time(file, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);
+  io::append_time(file, config->get_string("time.dimension_name"), time_s);
 
   for (pism::array::Array const *vec : vecs) {
     vec->write(file);
