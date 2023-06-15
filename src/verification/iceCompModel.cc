@@ -19,50 +19,50 @@
 #include <cmath>
 #include <cstring>
 
-#include <vector>     // STL vector container; sortable; used in test L
-#include <algorithm>  // required by sort(...) in test L
+#include <algorithm> // required by sort(...) in test L
+#include <memory>
+#include <vector> // STL vector container; sortable; used in test L
 
-#include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.hh"
 #include "tests/exactTestH.h"
 #include "tests/exactTestL.hh"
+#include "tests/exactTestsABCD.h"
+#include "tests/exactTestsFG.hh"
 
-#include "iceCompModel.hh"
-#include "pism/stressbalance/sia/SIAFD.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/rheology/PatersonBuddCold.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/coupler/ocean/Constant.hh"
-#include "pism/coupler/SeaLevel.hh"
+#include "BTU_Verification.hh"
 #include "PSVerification.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/error_handling.hh"
+#include "TemperatureModel_Verification.hh"
+#include "iceCompModel.hh"
+#include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/ocean/Constant.hh"
 #include "pism/earth/BedDef.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/Time.hh"
+#include "pism/energy/BTU_Minimal.hh"
+#include "pism/rheology/PatersonBuddCold.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/io/io_helpers.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "BTU_Verification.hh"
-#include "pism/energy/BTU_Minimal.hh"
-#include "TemperatureModel_Verification.hh"
 
 namespace pism {
 
 using units::convert;
 
 IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
-  : IceModel(grid, context),
-    m_testname(test),
-    m_HexactL(m_grid, "HexactL"),
-    m_strain_heating3_comp(m_grid, "strain_heating_comp", array::WITHOUT_GHOSTS, m_grid->z()),
-    m_bedrock_is_ice_forK(false)
-{
+    : IceModel(grid, context),
+      m_testname(test),
+      m_HexactL(m_grid, "HexactL"),
+      m_strain_heating3_comp(m_grid, "strain_heating_comp", array::WITHOUT_GHOSTS, m_grid->z()),
+      m_bedrock_is_ice_forK(false) {
 
   m_log->message(2, "starting Test %c ...\n", m_testname);
 
@@ -82,32 +82,28 @@ IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, 
   case 'C':
   case 'D':
   case 'H':
-  case 'L':
-    {
-      m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
-      const double year = convert(m_sys, 1.0, "year", "seconds");
-      m_config->set_number("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / year);
-      break;
-    }
-  case 'V':
-    {
-      m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
-      const double
-        hardness = 1.9e8,
-        softness = pow(hardness,
-                       -m_config->get_number("stress_balance.ssa.Glen_exponent"));
-      m_config->set_number("flow_law.isothermal_Glen.ice_softness", softness);
-      break;
-    }
+  case 'L': {
+    m_config->set_string("stress_balance.sia.flow_law", "isothermal_glen");
+    const double year = convert(m_sys, 1.0, "year", "seconds");
+    m_config->set_number("flow_law.isothermal_Glen.ice_softness", 1.0e-16 / year);
+    break;
+  }
+  case 'V': {
+    m_config->set_string("stress_balance.ssa.flow_law", "isothermal_glen");
+    const double hardness = 1.9e8,
+                 softness =
+                     pow(hardness, -m_config->get_number("stress_balance.ssa.Glen_exponent"));
+    m_config->set_number("flow_law.isothermal_Glen.ice_softness", softness);
+    break;
+  }
   case 'F':
   case 'G':
   case 'K':
   case 'O':
-  default:
-    {
-      m_config->set_string("stress_balance.sia.flow_law", "arr");
-      break;
-    }
+  default: {
+    m_config->set_string("stress_balance.sia.flow_law", "arr");
+    break;
+  }
   }
 
   if (m_testname == 'H') {
@@ -161,7 +157,7 @@ void IceCompModel::allocate_storage() {
   IceModel::allocate_storage();
 
 
-  m_strain_heating3_comp.set_attrs("internal","rate of compensatory strain heating in ice",
+  m_strain_heating3_comp.set_attrs("internal", "rate of compensatory strain heating in ice",
                                    "W m-3", "W m-3", "", 0);
 }
 
@@ -175,15 +171,17 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   bool biiSet = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
   if (biiSet) {
     if (m_testname == 'K') {
-      m_log->message(1,
-                     "setting material properties of bedrock to those of ice in Test K\n");
-      m_config->set_number("energy.bedrock_thermal.density", m_config->get_number("constants.ice.density"));
-      m_config->set_number("energy.bedrock_thermal.conductivity", m_config->get_number("constants.ice.thermal_conductivity"));
-      m_config->set_number("energy.bedrock_thermal.specific_heat_capacity", m_config->get_number("constants.ice.specific_heat_capacity"));
+      m_log->message(1, "setting material properties of bedrock to those of ice in Test K\n");
+      m_config->set_number("energy.bedrock_thermal.density",
+                           m_config->get_number("constants.ice.density"));
+      m_config->set_number("energy.bedrock_thermal.conductivity",
+                           m_config->get_number("constants.ice.thermal_conductivity"));
+      m_config->set_number("energy.bedrock_thermal.specific_heat_capacity",
+                           m_config->get_number("constants.ice.specific_heat_capacity"));
       m_bedrock_is_ice_forK = true;
     } else {
-      m_log->message(1,
-                     "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
+      m_log->message(
+          1, "IceCompModel WARNING: option -bedrock_is_ice ignored; only applies to Test K\n");
     }
   }
 
@@ -192,21 +190,24 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
     // (note Mbz=1 also, by default, but want ice/rock interface to see
     // pure ice from the point of view of applying geothermal boundary
     // condition, especially in tests F and G)
-    m_config->set_number("energy.bedrock_thermal.density", m_config->get_number("constants.ice.density"));
-    m_config->set_number("energy.bedrock_thermal.conductivity", m_config->get_number("constants.ice.thermal_conductivity"));
-    m_config->set_number("energy.bedrock_thermal.specific_heat_capacity", m_config->get_number("constants.ice.specific_heat_capacity"));
+    m_config->set_number("energy.bedrock_thermal.density",
+                         m_config->get_number("constants.ice.density"));
+    m_config->set_number("energy.bedrock_thermal.conductivity",
+                         m_config->get_number("constants.ice.thermal_conductivity"));
+    m_config->set_number("energy.bedrock_thermal.specific_heat_capacity",
+                         m_config->get_number("constants.ice.specific_heat_capacity"));
   }
 
-  energy::BTUGrid bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
+  auto bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
 
   if (bed_vertical_grid.Mbz > 1) {
-    m_btu = new energy::BTU_Verification(m_grid, bed_vertical_grid,
-                                         m_testname, m_bedrock_is_ice_forK);
+    m_btu = std::make_shared<energy::BTU_Verification>(m_grid, bed_vertical_grid,
+                                                       m_testname, m_bedrock_is_ice_forK);
   } else {
-    m_btu = new energy::BTU_Minimal(m_grid);
+    m_btu = std::make_shared<energy::BTU_Minimal>(m_grid);
   }
 
-  m_submodels["bedrock thermal layer"] = m_btu;
+  m_submodels["bedrock thermal layer"] = m_btu.get();
 }
 
 void IceCompModel::allocate_energy_model() {

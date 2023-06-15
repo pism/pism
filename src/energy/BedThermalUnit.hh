@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -22,6 +22,7 @@
 #include "pism/util/Component.hh"
 
 #include "pism/util/Diagnostic.hh"
+#include <memory>
 
 namespace pism {
 
@@ -100,8 +101,8 @@ struct BTUGrid {
 class BedThermalUnit : public Component {
 public:
 
-  static BedThermalUnit* FromOptions(IceGrid::ConstPtr g,
-                                     std::shared_ptr<const Context> ctx);
+  static std::shared_ptr<BedThermalUnit> FromOptions(IceGrid::ConstPtr g,
+                                                     std::shared_ptr<const Context> ctx);
 
   BedThermalUnit(IceGrid::ConstPtr g);
 

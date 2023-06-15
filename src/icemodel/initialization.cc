@@ -573,7 +573,7 @@ void IceModel::allocate_energy_model() {
 //! \brief Decide which bedrock thermal unit to use.
 void IceModel::allocate_bedrock_thermal_unit() {
 
-  if (m_btu != NULL) {
+  if (m_btu != nullptr) {
     return;
   }
 
@@ -581,7 +581,7 @@ void IceModel::allocate_bedrock_thermal_unit() {
 
   m_btu = energy::BedThermalUnit::FromOptions(m_grid, m_ctx);
 
-  m_submodels["bedrock thermal model"] = m_btu;
+  m_submodels["bedrock thermal model"] = m_btu.get();
 }
 
 //! \brief Decide which subglacial hydrology model to use.

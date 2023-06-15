@@ -174,7 +174,6 @@ void IceModel::reset_counters() {
 
 
 IceModel::~IceModel() {
-  delete m_btu;
   delete m_energy_model;
 }
 
@@ -916,7 +915,7 @@ const ocean::OceanModel* IceModel::ocean_model() const {
 }
 
 const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
-  return m_btu;
+  return m_btu.get();
 }
 
 const energy::EnergyModel* IceModel::energy_balance_model() const {

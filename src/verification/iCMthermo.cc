@@ -247,14 +247,15 @@ void IceCompModel::computeIceBedrockTemperatureErrors(double &gmaxTerr, double &
   const double *Tb, *T;
   std::vector<double> Tex(m_grid->Mz());
 
-  energy::BTU_Verification *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu);
+  auto *my_btu = dynamic_cast<energy::BTU_Verification*>(m_btu.get());
   if (my_btu == NULL) {
     throw RuntimeError(PISM_ERROR_LOCATION, "BTU_Verification is required");
   }
-  auto &bedrock_temp = my_btu->temperature();
+
+  const auto &bedrock_temp = my_btu->temperature();
 
   auto zblevels = bedrock_temp.levels();
-  unsigned int Mbz = (unsigned int)zblevels.size();
+  auto Mbz = zblevels.size();
   std::vector<double> Tbex(Mbz);
 
   switch (m_testname) {

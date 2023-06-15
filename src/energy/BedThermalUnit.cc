@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <gsl/gsl_math.h>       // GSL_NAN
+#include <memory>
 
 #include "BedThermalUnit.hh"
 #include "pism/util/io/File.hh"
@@ -81,16 +82,16 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 /*! Allocate a complete or minimal bedrock thermal unit depending on the number of bedrock levels.
  *
  */
-BedThermalUnit* BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
-                                            std::shared_ptr<const Context> ctx) {
+std::shared_ptr<BedThermalUnit> BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
+                                                            std::shared_ptr<const Context> ctx) {
 
-  BTUGrid bedrock_grid = BTUGrid::FromOptions(ctx);
+  auto bedrock_grid = BTUGrid::FromOptions(ctx);
 
   if (bedrock_grid.Mbz > 1) {
-    return new energy::BTU_Full(grid, bedrock_grid);
-  } else {
-    return new energy::BTU_Minimal(grid);
+    return std::make_shared<energy::BTU_Full>(grid, bedrock_grid);
   }
+
+  return std::make_shared<energy::BTU_Minimal>(grid);
 }
 
 

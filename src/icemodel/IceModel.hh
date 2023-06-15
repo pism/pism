@@ -261,7 +261,7 @@ protected:
 
   std::shared_ptr<array::Forcing> m_surface_input_for_hydrology;
 
-  energy::BedThermalUnit *m_btu;
+  std::shared_ptr<energy::BedThermalUnit> m_btu;
   energy::EnergyModel *m_energy_model;
 
   std::shared_ptr<AgeModel> m_age_model;
