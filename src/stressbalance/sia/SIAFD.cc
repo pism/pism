@@ -718,11 +718,11 @@ void SIAFD::compute_diffusivity(bool full_update,
         // "discontinuities" at the boundary.)
         {
           if ((i < 0 or i >= (int)Mx - 1) and
-              not (m_grid->periodicity() & X_PERIODIC)) {
+              not (m_grid->periodicity() & grid::X_PERIODIC)) {
             D = 0.0;
           }
           if ((j < 0 or j >= (int)My - 1) and
-              not (m_grid->periodicity() & Y_PERIODIC)) {
+              not (m_grid->periodicity() & grid::Y_PERIODIC)) {
             D = 0.0;
           }
         }

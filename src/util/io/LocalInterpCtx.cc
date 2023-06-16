@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2020 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007-2020, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -80,7 +80,7 @@ static void subset_start_and_count(const std::vector<double> &x,
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid_info &input, const IceGrid &grid,
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const IceGrid &grid,
                                const std::vector<double> &z_output,
                                InterpolationType type) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity

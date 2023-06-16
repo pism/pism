@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
     double Lz = 4000.0;
     unsigned int Mz = config->get_number("grid.Mz");
 
-    P.z = IceGrid::compute_vertical_levels(Lz, Mz, EQUAL);
+    P.z = IceGrid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults

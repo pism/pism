@@ -451,7 +451,7 @@ static void regrid_vec_generic(const File &file, const IceGrid &grid,
   const Profiling& profiling = grid.ctx()->profiling();
 
   try {
-    grid_info gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
+    grid::InputGridInfo gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
     LocalInterpCtx lic(gi, grid, zlevels_out, interpolation_type);
 
     std::vector<double> &buffer = lic.buffer;
@@ -818,7 +818,7 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
 }
 
 /*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
-void check_input_grid(const grid_info &input) {
+void check_input_grid(const grid::InputGridInfo &input) {
   if (not is_increasing(input.x)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "input x coordinate has to be strictly increasing");
@@ -840,7 +840,7 @@ void check_input_grid(const grid_info &input) {
  *
  * Set `allow_extrapolation` to `true` to "extend" the vertical grid during "bootstrapping".
  */
-static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
+static void check_grid_overlap(const grid::InputGridInfo &input, const IceGrid &internal,
                                const std::vector<double> &z_internal) {
 
   // Grid spacing (assume that the grid is equally-spaced) and the
@@ -938,7 +938,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   if (var.exists) {                      // the variable was found successfully
 
     {
-      grid_info input_grid(file, var.name, sys, grid.registration());
+      grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
 
       check_input_grid(input_grid);
 

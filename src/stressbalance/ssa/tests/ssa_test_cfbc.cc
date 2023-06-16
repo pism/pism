@@ -55,7 +55,7 @@ static double u_exact(double V0, double H0, double C, double x) {
 class SSATestCaseCFBC: public SSATestCase {
 public:
   SSATestCaseCFBC(std::shared_ptr<Context> ctx, int Mx, int My, SSAFactory ssafactory)
-    : SSATestCase(ctx, Mx, My, 250e3, 250e3, CELL_CENTER, Y_PERIODIC) {
+    : SSATestCase(ctx, Mx, My, 250e3, 250e3, grid::CELL_CENTER, grid::Y_PERIODIC) {
     V0 = units::convert(ctx->unit_system(), 300.0, "m year-1", "m second-1");
     H0 = 600.0;                 // meters
     C  = 2.45e-18;

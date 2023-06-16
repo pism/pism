@@ -53,8 +53,8 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     File input_file(ctx->com(), opts.filename, PISM_NETCDF3, PISM_READONLY);
 
     if (input_file.find_variable("litho_temp")) {
-      grid_info info(input_file, "litho_temp", ctx->unit_system(),
-                     CELL_CENTER); // grid registration is irrelevant
+      grid::InputGridInfo info(input_file, "litho_temp", ctx->unit_system(),
+                               grid::CELL_CENTER); // grid registration is irrelevant
 
       result.Mbz = info.z_len;
       result.Lbz = -info.z_min;

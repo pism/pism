@@ -129,7 +129,7 @@ double diff_y(const array::Scalar &array, int i, int j) {
 double diff_x_p(const array::Scalar &array, int i, int j) {
   const auto &grid = *array.grid();
 
-  if ((grid.periodicity() & X_PERIODIC) != 0) {
+  if ((grid.periodicity() & grid::X_PERIODIC) != 0) {
     return diff_x(array, i,j);
   }
 
@@ -150,7 +150,7 @@ double diff_x_p(const array::Scalar &array, int i, int j) {
 double diff_y_p(const array::Scalar &array, int i, int j) {
   const auto &grid = *array.grid();
 
-  if ((grid.periodicity() & Y_PERIODIC) != 0) {
+  if ((grid.periodicity() & grid::Y_PERIODIC) != 0) {
     return diff_y(array, i,j);
   }
 

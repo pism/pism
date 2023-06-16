@@ -67,9 +67,9 @@ struct IceGrid::Impl {
   //! @brief array containing lenghts (in the y-direction) of processor sub-domains
   std::vector<PetscInt> procs_y;
 
-  Periodicity periodicity;
+  grid::Periodicity periodicity;
 
-  GridRegistration registration;
+  grid::Registration registration;
 
   //! x-coordinates of grid points
   std::vector<double> x;
@@ -126,92 +126,6 @@ IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
   // empty
 }
 
-//! Convert a string to Periodicity.
-Periodicity string_to_periodicity(const std::string &keyword) {
-  if (keyword == "none") {
-    return NOT_PERIODIC;
-  }
-
-  if (keyword == "x") {
-    return X_PERIODIC;
-  }
-
-  if (keyword == "y") {
-    return Y_PERIODIC;
-  }
-
-  if (keyword == "xy") {
-    return XY_PERIODIC;
-  }
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "grid periodicity type '%s' is invalid.",
-                                keyword.c_str());
-}
-
-//! Convert Periodicity to a STL string.
-std::string periodicity_to_string(Periodicity p) {
-  switch (p) {
-  case NOT_PERIODIC:
-    return "none";
-  case X_PERIODIC:
-    return "x";
-  case Y_PERIODIC:
-    return "y";
-  default:
-  case XY_PERIODIC:
-    return "xy";
-  }
-}
-
-//! Convert an STL string to SpacingType.
-SpacingType string_to_spacing(const std::string &keyword) {
-  if (keyword == "quadratic") {
-    return QUADRATIC;
-  }
-
-  if (keyword == "equal") {
-    return EQUAL;
-  }
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice vertical spacing type '%s' is invalid.",
-                                keyword.c_str());
-}
-
-//! Convert SpacingType to an STL string.
-std::string spacing_to_string(SpacingType s) {
-  switch (s) {
-  case EQUAL:
-    return "equal";
-  default:
-  case QUADRATIC:
-    return "quadratic";
-  }
-}
-
-GridRegistration string_to_registration(const std::string &keyword) {
-  if (keyword == "center") {
-    return CELL_CENTER;
-  }
-
-  if (keyword == "corner") {
-    return CELL_CORNER;
-  }
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid grid registration: %s",
-                                keyword.c_str());
-}
-
-std::string registration_to_string(GridRegistration registration) {
-  switch (registration) {
-  case CELL_CORNER:
-    return "corner";
-  default:
-  case CELL_CENTER:
-    return "center";
-  }
-}
-
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
@@ -219,8 +133,8 @@ IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
-                              GridRegistration registration,
-                              Periodicity periodicity) {
+                              grid::Registration registration,
+                              grid::Periodicity periodicity) {
   try {
     grid::Parameters p(ctx->config());
     p.Lx = Lx;
@@ -311,7 +225,7 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
 IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
-                               GridRegistration r) {
+                               grid::Registration r) {
 
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -331,7 +245,7 @@ IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &var_name,
-                               GridRegistration r) {
+                               grid::Registration r) {
   try {
     const Logger &log = *ctx->log();
 
@@ -393,7 +307,7 @@ IceGrid::~IceGrid() {
     at the base than equal spacing would be.
  */
 std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int new_Mz,
-                                                     SpacingType spacing, double lambda) {
+                                                     grid::VerticalSpacing spacing, double lambda) {
 
   if (new_Mz < 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
@@ -403,7 +317,7 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
     throw RuntimeError(PISM_ERROR_LOCATION, "Lz must be positive");
   }
 
-  if (spacing == QUADRATIC and lambda <= 0) {
+  if (spacing == grid::QUADRATIC and lambda <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "lambda must be positive");
   }
 
@@ -411,7 +325,7 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
 
   // Fill the levels in the ice:
   switch (spacing) {
-  case EQUAL: {
+  case grid::EQUAL: {
     double dz = new_Lz / ((double) new_Mz - 1);
 
     // Equal spacing
@@ -421,7 +335,7 @@ std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int
     result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
     break;
   }
-  case QUADRATIC: {
+  case grid::QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
     for (unsigned int k=0; k < new_Mz - 1; k++) {
       const double zeta = ((double) k) / ((double) new_Mz - 1);
@@ -650,7 +564,7 @@ Thus we compute  `dx = 2 * Lx / Mx`.
  */
 void IceGrid::Impl::compute_horizontal_coordinates() {
 
-  bool cell_centered = registration == CELL_CENTER;
+  bool cell_centered = registration == grid::CELL_CENTER;
 
   dx = compute_horizontal_spacing(Lx, Mx, cell_centered);
 
@@ -868,11 +782,11 @@ std::shared_ptr<petsc::DM> IceGrid::get_dm(unsigned int dm_dof,
 }
 
 //! Return grid periodicity.
-Periodicity IceGrid::periodicity() const {
+grid::Periodicity IceGrid::periodicity() const {
   return m_impl->periodicity;
 }
 
-GridRegistration IceGrid::registration() const {
+grid::Registration IceGrid::registration() const {
   return m_impl->registration;
 }
 
@@ -1059,9 +973,96 @@ int IceGrid::max_patch_size() const {
   return m_impl->max_patch_size;
 }
 
-// grid_info
 
-void grid_info::reset() {
+namespace grid {
+
+//! Convert a string to Periodicity.
+Periodicity string_to_periodicity(const std::string &keyword) {
+  if (keyword == "none") {
+    return NOT_PERIODIC;
+  }
+
+  if (keyword == "x") {
+    return X_PERIODIC;
+  }
+
+  if (keyword == "y") {
+    return Y_PERIODIC;
+  }
+
+  if (keyword == "xy") {
+    return XY_PERIODIC;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "grid periodicity type '%s' is invalid.",
+                                keyword.c_str());
+}
+
+//! Convert Periodicity to a STL string.
+std::string periodicity_to_string(Periodicity p) {
+  switch (p) {
+  case NOT_PERIODIC:
+    return "none";
+  case X_PERIODIC:
+    return "x";
+  case Y_PERIODIC:
+    return "y";
+  default:
+  case XY_PERIODIC:
+    return "xy";
+  }
+}
+
+//! Convert an STL string to SpacingType.
+VerticalSpacing string_to_spacing(const std::string &keyword) {
+  if (keyword == "quadratic") {
+    return QUADRATIC;
+  }
+
+  if (keyword == "equal") {
+    return EQUAL;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice vertical spacing type '%s' is invalid.",
+                                keyword.c_str());
+}
+
+//! Convert SpacingType to an STL string.
+std::string spacing_to_string(VerticalSpacing s) {
+  switch (s) {
+  case EQUAL:
+    return "equal";
+  default:
+  case QUADRATIC:
+    return "quadratic";
+  }
+}
+
+Registration string_to_registration(const std::string &keyword) {
+  if (keyword == "center") {
+    return CELL_CENTER;
+  }
+
+  if (keyword == "corner") {
+    return CELL_CORNER;
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid grid registration: %s",
+                                keyword.c_str());
+}
+
+std::string registration_to_string(Registration registration) {
+  switch (registration) {
+  case CELL_CORNER:
+    return "corner";
+  default:
+  case CELL_CENTER:
+    return "center";
+  }
+}
+
+void InputGridInfo::reset() {
 
   filename = "";
 
@@ -1081,11 +1082,11 @@ void grid_info::reset() {
   z_max = 0;
 }
 
-grid_info::grid_info() {
+InputGridInfo::InputGridInfo() {
   reset();
 }
 
-void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) const {
+void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
   units::Converter km(s, "m", "km");
 
   log.message(threshold,
@@ -1113,9 +1114,9 @@ void grid_info::report(const Logger &log, int threshold, units::System::Ptr s) c
               this->t_len, units::convert(s, this->time, "seconds", "years"));
 }
 
-grid_info::grid_info(const File &file, const std::string &variable,
+InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                      units::System::Ptr unit_system,
-                     GridRegistration r) {
+                     Registration r) {
   try {
     reset();
 
@@ -1194,8 +1195,6 @@ grid_info::grid_info(const File &file, const std::string &variable,
   }
 }
 
-namespace grid {
-
 Parameters::Parameters() {
 
   // set to something invalid
@@ -1239,20 +1238,20 @@ void Parameters::init_from_config(Config::ConstPtr config) {
   double Lz       = config->get_number("grid.Lz");
   unsigned int Mz = config->get_number("grid.Mz");
   double lambda   = config->get_number("grid.lambda");
-  SpacingType s   = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
+  VerticalSpacing s   = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
   z               = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
 void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &file,
-                                    const std::string &variable_name, GridRegistration r) {
+                                    const std::string &variable_name, Registration r) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
   // set defaults (except for ownership ranges) from configuration parameters
   init_from_config(ctx->config());
 
-  grid_info input_grid(file, variable_name, ctx->unit_system(), r);
+  InputGridInfo input_grid(file, variable_name, ctx->unit_system(), r);
 
   Lx           = input_grid.Lx;
   Ly           = input_grid.Ly;
@@ -1265,12 +1264,12 @@ void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &
 }
 
 Parameters::Parameters(std::shared_ptr<const Context> ctx, const File &file,
-                               const std::string &variable_name, GridRegistration r) {
+                               const std::string &variable_name, Registration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
 Parameters::Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
-                               const std::string &variable_name, GridRegistration r) {
+                               const std::string &variable_name, Registration r) {
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   init_from_file(ctx, file, variable_name, r);
 }
@@ -1312,7 +1311,7 @@ void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
   double Lz     = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
   int Mz        = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
   double lambda = config->get_number("grid.lambda");
-  SpacingType s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
+  VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
 }
@@ -1368,7 +1367,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto input_file = config->get_string("input.file");
   bool bootstrap = config->get_flag("input.bootstrap");
 
-  GridRegistration r = string_to_registration(config->get_string("grid.registration"));
+  auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
   Logger::ConstPtr log = ctx->log();
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2007--2011, 2013, 2014, 2015, 2017, 2018, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of Pism.
 //
@@ -22,13 +22,16 @@
 #include <vector>
 #include <memory>
 
-#include "pism/util/interpolation.hh"
-#include "pism/util/io/IO_Flags.hh"
-
 namespace pism {
 
+enum InterpolationType : int;
+class Interpolation;
+
 class IceGrid;
-class grid_info;
+
+namespace grid {
+class InputGridInfo;
+}
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF file (for regridding).
 /*!
@@ -49,7 +52,7 @@ class grid_info;
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid_info &input, const IceGrid &grid,
+  LocalInterpCtx(const grid::InputGridInfo &input, const IceGrid &grid,
                  const std::vector<double> &z_output, InterpolationType type);
   // Indices in netCDF file.
   unsigned int start[4], count[4];

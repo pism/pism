@@ -69,9 +69,9 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   grid::Parameters P;
 
   // use the cell corner grid registration
-  P.registration = CELL_CORNER;
+  P.registration = pism::grid::CELL_CORNER;
   // use the non-periodic grid:
-  P.periodicity = NOT_PERIODIC;
+  P.periodicity = pism::grid::NOT_PERIODIC;
   // equal spacing is the default for all the tests except K
   P.Lx = config->get_number("grid.Lx");
   P.Ly = config->get_number("grid.Ly");
@@ -79,9 +79,9 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   P.Mx = config->get_number("grid.Mx");
   P.My = config->get_number("grid.My");
 
-  SpacingType spacing = EQUAL;
-  double Lz           = config->get_number("grid.Lz");
-  unsigned int Mz     = config->get_number("grid.Mz");
+  auto spacing    = pism::grid::EQUAL;
+  double Lz       = config->get_number("grid.Lz");
+  unsigned int Mz = config->get_number("grid.Mz");
 
   switch (testname) {
   case 'A':
@@ -115,13 +115,13 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
     P.Lx          = 1000e3;
     P.Ly          = P.Lx;
     Lz            = 4000;
-    P.periodicity = XY_PERIODIC;
-    spacing       = QUADRATIC;
+    P.periodicity = pism::grid::XY_PERIODIC;
+    spacing       = pism::grid::QUADRATIC;
     break;
   case 'V':
     P.My          = 3;     // it's a flow-line setup
     P.Lx          = 500e3; // 500 km long
-    P.periodicity = Y_PERIODIC;
+    P.periodicity = pism::grid::Y_PERIODIC;
     break;
   default:
     throw RuntimeError(PISM_ERROR_LOCATION, "desired test not implemented\n");
@@ -141,20 +141,20 @@ IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   }
 
   if (not input_file.empty()) {
-    GridRegistration r = string_to_registration(ctx->config()->get_string("grid.registration"));
+    auto r = grid::string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
     return IceGrid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
-  } else {
-    // use defaults set by pismv_grid_defaults()
-    grid::Parameters P = pismv_grid_defaults(ctx->config(), testname);
-    P.horizontal_size_from_options();
-    P.horizontal_extent_from_options(ctx->unit_system());
-    P.vertical_grid_from_options(ctx->config());
-    P.ownership_ranges_from_options(ctx->size());
-
-    return IceGrid::Ptr(new IceGrid(ctx, P));
   }
+
+  // use defaults set by pismv_grid_defaults()
+  auto P = pismv_grid_defaults(ctx->config(), testname);
+  P.horizontal_size_from_options();
+  P.horizontal_extent_from_options(ctx->unit_system());
+  P.vertical_grid_from_options(ctx->config());
+  P.ownership_ranges_from_options(ctx->size());
+
+  return IceGrid::Ptr(new IceGrid(ctx, P));
 }
 
 int main(int argc, char *argv[]) {

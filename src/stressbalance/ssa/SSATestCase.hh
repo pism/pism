@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2021, 2022 Ed Bueler, Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -57,8 +57,8 @@ class SSATestCase
 public:
   SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
               double Lx, double Ly,
-              GridRegistration registration,
-              Periodicity periodicity);
+              grid::Registration registration,
+              grid::Periodicity periodicity);
 
   virtual ~SSATestCase();
 

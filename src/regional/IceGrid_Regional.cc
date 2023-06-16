@@ -123,20 +123,20 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = grid::Parameters(ctx, file, name, CELL_CORNER);
+        input_grid = grid::Parameters(ctx, file, name, grid::CELL_CORNER);
 
-        grid_info full = grid_info(file, name, ctx->unit_system(), CELL_CORNER);
+        auto full_grid = grid::InputGridInfo(file, name, ctx->unit_system(), grid::CELL_CORNER);
 
         // x direction
-        subset_extent("x", full.x, x_range[0], x_range[1],
+        subset_extent("x", full_grid.x, x_range[0], x_range[1],
                       input_grid.x0, input_grid.Lx, input_grid.Mx);
         // y direction
-        subset_extent("y", full.y, y_range[0], y_range[1],
+        subset_extent("y", full_grid.y, y_range[0], y_range[1],
                       input_grid.y0, input_grid.Ly, input_grid.My);
 
         // Set registration to "CELL_CORNER" so that IceGrid computes
         // coordinates correctly.
-        input_grid.registration = CELL_CORNER;
+        input_grid.registration = grid::CELL_CORNER;
 
         break;
       }

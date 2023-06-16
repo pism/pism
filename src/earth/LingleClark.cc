@@ -86,7 +86,7 @@ LingleClark::LingleClark(IceGrid::ConstPtr grid)
   m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
                                      Lx, Ly,
                                      m_grid->x0(), m_grid->y0(),
-                                     Nx, Ny, CELL_CORNER, NOT_PERIODIC);
+                                     Nx, Ny, grid::CELL_CORNER, grid::NOT_PERIODIC);
 
   m_viscous_displacement.reset(new array::Scalar(m_extended_grid,
                                                  "viscous_bed_displacement"));

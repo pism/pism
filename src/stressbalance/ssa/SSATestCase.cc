@@ -32,8 +32,8 @@ namespace stressbalance {
 
 SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My,
                          double Lx, double Ly,
-                         GridRegistration registration,
-                         Periodicity periodicity)
+                         grid::Registration registration,
+                         grid::Periodicity periodicity)
   : m_com(ctx->com()),
     m_ctx(ctx),
     m_config(ctx->config()),

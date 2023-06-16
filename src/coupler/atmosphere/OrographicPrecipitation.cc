@@ -40,8 +40,8 @@ OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
     Mx = m_grid->Mx(),
     My = m_grid->My(),
     Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
-    Nx = m_grid->periodicity() & X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
-    Ny = m_grid->periodicity() & Y_PERIODIC ? My : Z * (My - 1) + 1;
+    Nx = m_grid->periodicity() & grid::X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
+    Ny = m_grid->periodicity() & grid::Y_PERIODIC ? My : Z * (My - 1) + 1;
 
   ParallelSection rank0(m_grid->com);
   try {

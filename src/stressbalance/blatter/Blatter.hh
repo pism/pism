@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -209,7 +209,7 @@ protected:
   void init_ice_hardness(const Inputs &inputs, const petsc::DM &da);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
-  PetscErrorCode setup(DM pism_da, Periodicity p, int Mz, int coarsening_factor,
+  PetscErrorCode setup(DM pism_da, grid::Periodicity p, int Mz, int coarsening_factor,
                        const std::string &prefix);
 
   void set_initial_guess(const array::Array3D &u_sigma, const array::Array3D &v_sigma);

@@ -378,7 +378,7 @@ static PetscErrorCode blatter_coarsening_hook(DM dm_fine, DM dm_coarse, void *ct
 /*!
  * Allocates the 3D DM, the corresponding solution vector, and the SNES solver.
  */
-PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
+PetscErrorCode Blatter::setup(DM pism_da, grid::Periodicity periodicity, int Mz,
                               int coarsening_factor,
                               const std::string &prefix) {
   MPI_Comm comm;
@@ -448,8 +448,8 @@ PetscErrorCode Blatter::setup(DM pism_da, Periodicity periodicity, int Mz,
       stencil_width = 1;
 
     DMBoundaryType
-      bx = (periodicity & X_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
-      by = (periodicity & Y_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      bx = (periodicity & grid::X_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
+      by = (periodicity & grid::Y_PERIODIC) != 0 ? DM_BOUNDARY_PERIODIC : DM_BOUNDARY_NONE,
       bz = DM_BOUNDARY_NONE;
 
     ierr = DMDACreate3d(comm,

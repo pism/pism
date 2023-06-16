@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2018, 2021, 2022 Ed Bueler, Constantine Khroulev, and David Maxwell
+// Copyright (C) 2010--2018, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -54,8 +54,8 @@ public:
                   Mx, My,
                   std::max(60.0e3, ((Mx - 1) / 2) * (2.0 * (3.0 * L_schoof) / (My - 1))),
                   3.0 * L_schoof,
-                  CELL_CORNER,
-                  NOT_PERIODIC) {
+                  grid::CELL_CORNER,
+                  grid::NOT_PERIODIC) {
     m_enthalpyconverter = EnthalpyConverter::Ptr(new EnthalpyConverter(*m_config));
 
     m_config->set_flag("basal_resistance.pseudo_plastic.enabled", false);
