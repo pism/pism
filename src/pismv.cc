@@ -127,7 +127,7 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
     throw RuntimeError(PISM_ERROR_LOCATION, "desired test not implemented\n");
   }
 
-  P.z = IceGrid::compute_vertical_levels(Lz, Mz, spacing, config->get_number("grid.lambda"));
+  P.z = grid::compute_vertical_levels(Lz, Mz, spacing, config->get_number("grid.lambda"));
   return P;
 }
 

@@ -161,7 +161,7 @@ private:
                       const std::string &variable_name,
                       Registration r);
 };
-}
+} // namespace grid
 
 class IceGrid;
 
@@ -281,9 +281,6 @@ public:
 
   IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p);
 
-  static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
-                                                     grid::VerticalSpacing spacing, double Lambda = 0.0);
-
   static std::shared_ptr<IceGrid> Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
                                           double x0, double y0, unsigned int Mx, unsigned int My,
                                           grid::Registration r, grid::Periodicity p);
@@ -305,8 +302,8 @@ public:
   void compute_point_neighbors(double X, double Y,
                                int &i_left, int &i_right,
                                int &j_bottom, int &j_top) const;
-  std::vector<int> compute_point_neighbors(double X, double Y) const;
-  std::vector<double> compute_interp_weights(double x, double y) const;
+  std::vector<int> point_neighbors(double X, double Y) const;
+  std::vector<double> interpolation_weights(double x, double y) const;
 
   unsigned int kBelowHeight(double height) const;
 
@@ -362,7 +359,7 @@ public:
   int pio_io_decomposition(int dof, int output_datatype) const;
 
   PointsWithGhosts points(unsigned int stencil_width = 0) const {
-    return PointsWithGhosts(*this, stencil_width);
+    return {*this, stencil_width};
   }
 
   //! Maximum number of degrees of freedom supported by PISM.
@@ -383,6 +380,9 @@ private:
 };
 
 namespace grid {
+
+std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+                                            grid::VerticalSpacing spacing, double Lambda = 0.0);
 
 //! Returns the distance from the point (i,j) to the origin.
 double radius(const IceGrid &grid, int i, int j);

@@ -129,25 +129,23 @@ IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx,
-                              double Lx, double Ly,
-                              double x0, double y0,
-                              unsigned int Mx, unsigned int My,
-                              grid::Registration registration,
-                              grid::Periodicity periodicity) {
+std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
+                                          double x0, double y0, unsigned int Mx, unsigned int My,
+                                          grid::Registration registration,
+                                          grid::Periodicity periodicity) {
   try {
     grid::Parameters p(ctx->config());
-    p.Lx = Lx;
-    p.Ly = Ly;
-    p.x0 = x0;
-    p.y0 = y0;
-    p.Mx = Mx;
-    p.My = My;
+    p.Lx           = Lx;
+    p.Ly           = Ly;
+    p.x0           = x0;
+    p.y0           = y0;
+    p.Mx           = Mx;
+    p.My           = My;
     p.registration = registration;
-    p.periodicity = periodicity;
+    p.periodicity  = periodicity;
 
     double Lz = ctx->config()->get_number("grid.Lz");
-    p.z = {0.0, 0.5 * Lz, Lz};
+    p.z       = { 0.0, 0.5 * Lz, Lz };
 
     p.ownership_ranges_from_options(ctx->size());
 
@@ -160,7 +158,7 @@ std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx,
 
 //! @brief Create a PISM distributed computational grid.
 IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p)
-  : com(context->com()), m_impl(new Impl(context)) {
+    : com(context->com()), m_impl(new Impl(context)) {
 
   try {
     m_impl->bsearch_accel = gsl_interp_accel_alloc();
@@ -173,15 +171,15 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
 
     p.validate();
 
-    m_impl->Mx = p.Mx;
-    m_impl->My = p.My;
-    m_impl->x0 = p.x0;
-    m_impl->y0 = p.y0;
-    m_impl->Lx = p.Lx;
-    m_impl->Ly = p.Ly;
+    m_impl->Mx           = p.Mx;
+    m_impl->My           = p.My;
+    m_impl->x0           = p.x0;
+    m_impl->y0           = p.y0;
+    m_impl->Lx           = p.Lx;
+    m_impl->Ly           = p.Ly;
     m_impl->registration = p.registration;
-    m_impl->periodicity = p.periodicity;
-    m_impl->z = p.z;
+    m_impl->periodicity  = p.periodicity;
+    m_impl->z            = p.z;
     m_impl->set_ownership_ranges(p.procs_x, p.procs_y);
 
     m_impl->compute_horizontal_coordinates();
@@ -192,8 +190,7 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
       try {
         std::shared_ptr<petsc::DM> tmp = this->get_dm(1, stencil_width);
       } catch (RuntimeError &e) {
-        e.add_context("distributing a %d x %d grid across %d processors.",
-                      Mx(), My(), size());
+        e.add_context("distributing a %d x %d grid across %d processors.", Mx(), My(), size());
         throw;
       }
 
@@ -209,12 +206,11 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
       m_impl->xm = info.xm;
       m_impl->ys = info.ys;
       m_impl->ym = info.ym;
-
     }
 
     int patch_size = m_impl->xm * m_impl->ym;
     GlobalMax(com, &patch_size, &m_impl->max_patch_size, 1);
-    
+
   } catch (RuntimeError &e) {
     e.add_context("allocating IceGrid");
     throw;
@@ -223,9 +219,9 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
 
 //! Create a grid using one of variables in `var_names` in `file`.
 std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
-                               const std::string &filename,
-                               const std::vector<std::string> &var_names,
-                               grid::Registration r) {
+                                           const std::string &filename,
+                                           const std::vector<std::string> &var_names,
+                                           grid::Registration r) {
 
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -235,17 +231,15 @@ std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
     }
   }
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "file %s does not have any of %s."
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "file %s does not have any of %s."
                                 " Cannot initialize the grid.",
-                                filename.c_str(),
-                                join(var_names, ",").c_str());
+                                filename.c_str(), join(var_names, ",").c_str());
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
-                               const File &file,
-                               const std::string &var_name,
-                               grid::Registration r) {
+std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
+                                           const std::string &var_name, grid::Registration r) {
   try {
     const Logger &log = *ctx->log();
 
@@ -290,66 +284,6 @@ IceGrid::~IceGrid() {
   delete m_impl;
 }
 
-//! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
-//! (domain height), `spacing` (quadratic or equal) and `lambda` (quadratic spacing parameter).
-/*!
-  - When `vertical_spacing == EQUAL`, the vertical grid in the ice is equally spaced:
-    `zlevels[k] = k dz` where `dz = Lz / (Mz - 1)`.
-  - When `vertical_spacing == QUADRATIC`, the spacing is a quadratic function.  The intent
-    is that the spacing is smaller near the base than near the top.
-
-    In particular, if
-    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *`
-    ((\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
-    * \f$\zeta_k\f$)) where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
-    indicates the slope of the quadratic function as it leaves the base.
-    Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
-    at the base than equal spacing would be.
- */
-std::vector<double> IceGrid::compute_vertical_levels(double new_Lz, unsigned int new_Mz,
-                                                     grid::VerticalSpacing spacing, double lambda) {
-
-  if (new_Mz < 2) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
-  }
-
-  if (new_Lz <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Lz must be positive");
-  }
-
-  if (spacing == grid::QUADRATIC and lambda <= 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "lambda must be positive");
-  }
-
-  std::vector<double> result(new_Mz);
-
-  // Fill the levels in the ice:
-  switch (spacing) {
-  case grid::EQUAL: {
-    double dz = new_Lz / ((double) new_Mz - 1);
-
-    // Equal spacing
-    for (unsigned int k=0; k < new_Mz - 1; k++) {
-      result[k] = dz * ((double) k);
-    }
-    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
-    break;
-  }
-  case grid::QUADRATIC: {
-    // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k=0; k < new_Mz - 1; k++) {
-      const double zeta = ((double) k) / ((double) new_Mz - 1);
-      result[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
-    }
-    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
-    break;
-  }
-  default:
-    throw RuntimeError(PISM_ERROR_LOCATION, "spacing can not be UNKNOWN");
-  }
-
-  return result;
-}
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
 unsigned int IceGrid::kBelowHeight(double height) const {
@@ -712,7 +646,7 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   j_top = std::min(j_top, (int)m_impl->My - 1);
 }
 
-std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
+std::vector<int> IceGrid::point_neighbors(double X, double Y) const {
   int i_left, i_right, j_bottom, j_top;
   this->compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
   return {i_left, i_right, j_bottom, j_top};
@@ -721,7 +655,7 @@ std::vector<int> IceGrid::compute_point_neighbors(double X, double Y) const {
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-std::vector<double> IceGrid::compute_interp_weights(double X, double Y) const{
+std::vector<double> IceGrid::interpolation_weights(double X, double Y) const{
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   // these values (zeros) are used when interpolation is impossible
   double alpha = 0.0, beta = 0.0;
@@ -975,6 +909,66 @@ int IceGrid::max_patch_size() const {
 
 
 namespace grid {
+//! \brief Set the vertical levels in the ice according to values in `Mz` (number of levels), `Lz`
+//! (domain height), `spacing` (quadratic or equal) and `lambda` (quadratic spacing parameter).
+/*!
+  - When `vertical_spacing == EQUAL`, the vertical grid in the ice is equally spaced:
+    `zlevels[k] = k dz` where `dz = Lz / (Mz - 1)`.
+  - When `vertical_spacing == QUADRATIC`, the spacing is a quadratic function.  The intent
+    is that the spacing is smaller near the base than near the top.
+
+    In particular, if
+    \f$\zeta_k = k / (\mathtt{Mz} - 1)\f$ then `zlevels[k] = Lz *`
+    ((\f$\zeta_k\f$ / \f$\lambda\f$) * (1.0 + (\f$\lambda\f$ - 1.0)
+    * \f$\zeta_k\f$)) where \f$\lambda\f$ = 4.  The value \f$\lambda\f$
+    indicates the slope of the quadratic function as it leaves the base.
+    Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
+    at the base than equal spacing would be.
+ */
+std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
+                                            grid::VerticalSpacing spacing, double lambda) {
+
+  if (new_Mz < 2) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
+  }
+
+  if (new_Lz <= 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "Lz must be positive");
+  }
+
+  if (spacing == grid::QUADRATIC and lambda <= 0) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "lambda must be positive");
+  }
+
+  std::vector<double> result(new_Mz);
+
+  // Fill the levels in the ice:
+  switch (spacing) {
+  case grid::EQUAL: {
+    double dz = new_Lz / ((double) new_Mz - 1);
+
+    // Equal spacing
+    for (unsigned int k=0; k < new_Mz - 1; k++) {
+      result[k] = dz * ((double) k);
+    }
+    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    break;
+  }
+  case grid::QUADRATIC: {
+    // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
+    for (unsigned int k=0; k < new_Mz - 1; k++) {
+      const double zeta = ((double) k) / ((double) new_Mz - 1);
+      result[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+    }
+    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    break;
+  }
+  default:
+    throw RuntimeError(PISM_ERROR_LOCATION, "spacing can not be UNKNOWN");
+  }
+
+  return result;
+}
 
 //! Convert a string to Periodicity.
 Periodicity string_to_periodicity(const std::string &keyword) {
@@ -1219,7 +1213,7 @@ void Parameters::init_from_config(Config::ConstPtr config) {
   unsigned int Mz   = config->get_number("grid.Mz");
   double lambda     = config->get_number("grid.lambda");
   VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
-  z                 = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+  z                 = compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
@@ -1290,10 +1284,10 @@ void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> u
 void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
   double Lz         = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
   int Mz            = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
-  double lambda     = config->get_number("grid.lambda");
-  VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
-  z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+  z = compute_vertical_levels(Lz, Mz,
+                              string_to_spacing(config->get_string("grid.ice_vertical_spacing")),
+                              config->get_number("grid.lambda"));
 }
 
 void Parameters::validate() const {
