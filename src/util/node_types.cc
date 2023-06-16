@@ -63,7 +63,7 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
                         double thickness_threshold,
                         array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
 
   const double &H_min = thickness_threshold;
 

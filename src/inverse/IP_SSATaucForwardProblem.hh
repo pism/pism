@@ -114,7 +114,7 @@ public:
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$
   //! is parameterized.
-  IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
+  IP_SSATaucForwardProblem(std::shared_ptr<const IceGrid> g,
                            IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSATaucForwardProblem() = default;

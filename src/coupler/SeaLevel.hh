@@ -32,9 +32,9 @@ namespace sea_level {
 class SeaLevel : public Component {
 public:
   // "modifier" constructor
-  SeaLevel(IceGrid::ConstPtr g, std::shared_ptr<SeaLevel> input);
+  SeaLevel(std::shared_ptr<const IceGrid> g, std::shared_ptr<SeaLevel> input);
   // "model" constructor
-  SeaLevel(IceGrid::ConstPtr g);
+  SeaLevel(std::shared_ptr<const IceGrid> g);
 
   virtual ~SeaLevel() = default;
 

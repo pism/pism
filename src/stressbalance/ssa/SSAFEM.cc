@@ -42,7 +42,7 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
+SSAFEM::SSAFEM(std::shared_ptr<const IceGrid> grid)
   : SSA(grid),
     m_bc_mask(grid, "bc_mask"),
     m_bc_values(grid, "_bc"),
@@ -114,7 +114,7 @@ SSAFEM::SSAFEM(IceGrid::ConstPtr grid)
                                 "", "", "", 0); // no units or standard name
 }
 
-SSA* SSAFEMFactory(IceGrid::ConstPtr g) {
+SSA* SSAFEMFactory(std::shared_ptr<const IceGrid> g) {
   return new SSAFEM(g);
 }
 

@@ -260,7 +260,7 @@ void compute_grounded_cell_fraction(double ice_density,
                                     const array::Scalar1 &ice_thickness,
                                     const array::Scalar1 &bed_topography,
                                     array::Scalar &result) {
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   double alpha = ice_density / ocean_density;
 
   array::AccessScope list{&sea_level, &ice_thickness, &bed_topography, &result};

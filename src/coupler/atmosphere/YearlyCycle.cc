@@ -33,7 +33,7 @@
 namespace pism {
 namespace atmosphere {
 
-YearlyCycle::YearlyCycle(IceGrid::ConstPtr g)
+YearlyCycle::YearlyCycle(std::shared_ptr<const IceGrid> g)
   : AtmosphereModel(g),
     m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
     m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),

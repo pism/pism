@@ -695,7 +695,7 @@ static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
 
   array::AccessScope list{&F, &H, &result};
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   auto Mz = grid->Mz();
 

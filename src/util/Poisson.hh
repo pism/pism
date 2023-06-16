@@ -17,18 +17,18 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 
 namespace pism {
 
+class IceGrid;
+
 class Poisson {
 public:
-  Poisson(IceGrid::ConstPtr grid);
+  Poisson(std::shared_ptr<const IceGrid> grid);
 
   int solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
             bool reuse_matrix = false);
@@ -41,7 +41,7 @@ private:
                     const array::Scalar &bc,
                     array::Scalar &b);
 
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
   Logger::ConstPtr m_log;
   std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;

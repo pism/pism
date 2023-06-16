@@ -16,24 +16,29 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IPTAOTIKHONOVPROBLEM_HH_4NMM724B
-#define IPTAOTIKHONOVPROBLEM_HH_4NMM724B
+#ifndef PISM_IPTAOTIKHONOVPROBLEM_HH
+#define PISM_IPTAOTIKHONOVPROBLEM_HH
 
 #include <memory>
 
 #include "TaoUtil.hh"
 #include "functional/IPFunctional.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
-#include "pism/util/array/Array.hh" //
-#include "pism/util/Logger.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/IceGrid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/array/Array.hh" //
+#include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
+
+class IceGrid;
+
 namespace inverse {
 
-template<class ForwardProblem> class IPTaoTikhonovProblem;
+template <class ForwardProblem>
+class IPTaoTikhonovProblem;
 
 //! Iteration callback class for IPTaoTikhonovProblem
 /** A class for objects receiving iteration callbacks from a
@@ -46,7 +51,8 @@ template<class ForwardProblem> class IPTaoTikhonovProblem;
  * IPTaoTikhonovProblem, but SWIG has a hard time with nested classes,
  * so it's outer instead.
  */
-template<class ForwardProblem> class IPTaoTikhonovProblemListener {
+template <class ForwardProblem>
+class IPTaoTikhonovProblemListener {
 public:
   typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
 
@@ -55,19 +61,16 @@ public:
   typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
   typedef typename ForwardProblem::StateVec1::Ptr StateVec1Ptr;
 
-  IPTaoTikhonovProblemListener() {}
-  virtual ~IPTaoTikhonovProblemListener() {}
+  IPTaoTikhonovProblemListener() {
+  }
+  virtual ~IPTaoTikhonovProblemListener() {
+  }
 
   //! The method called after each minimization iteration.
-  virtual void iteration(IPTaoTikhonovProblem<ForwardProblem> &problem,
-                         double eta, int iter,
-                         double objectiveValue, double designValue,
-                         const DesignVecPtr d,
-                         const DesignVecPtr diff_d,
-                         const DesignVecPtr grad_d,
-                         const StateVecPtr u,
-                         const StateVecPtr diff_u,
-                         const DesignVecPtr grad_u,
+  virtual void iteration(IPTaoTikhonovProblem<ForwardProblem> &problem, double eta, int iter,
+                         double objectiveValue, double designValue, const DesignVecPtr d,
+                         const DesignVecPtr diff_d, const DesignVecPtr grad_d, const StateVecPtr u,
+                         const StateVecPtr diff_u, const DesignVecPtr grad_u,
                          const DesignVecPtr gradient) = 0;
 };
 
@@ -163,10 +166,9 @@ public:
   \f]
   </ol>
 */
-template<class ForwardProblem> class IPTaoTikhonovProblem
-{
+template <class ForwardProblem>
+class IPTaoTikhonovProblem {
 public:
-
   typedef typename ForwardProblem::DesignVec DesignVec;
   typedef typename ForwardProblem::StateVec StateVec;
   typedef typename ForwardProblem::StateVec1 StateVec1;
@@ -192,8 +194,9 @@ public:
     @param    stateFunctional The functional \f$J_S\f$
   */
 
-  IPTaoTikhonovProblem(ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta, 
-                       IPFunctional<DesignVec>&designFunctional, IPFunctional<StateVec>&stateFunctional);
+  IPTaoTikhonovProblem(ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta,
+                       IPFunctional<DesignVec> &designFunctional,
+                       IPFunctional<StateVec> &stateFunctional);
 
   virtual ~IPTaoTikhonovProblem();
 
@@ -240,24 +243,23 @@ public:
   }
 
 protected:
+  std::shared_ptr<const IceGrid> m_grid;
 
-  IceGrid::ConstPtr m_grid;
-  
   ForwardProblem &m_forward;
 
   /// Current iterate of design parameter
-  DesignVecGhostedPtr m_d;             // ghosted
+  DesignVecGhostedPtr m_d; // ghosted
   /// Initial iterate of design parameter, stored without ghosts for the benefit of TAO.
   DesignVec m_dGlobal;
   /// A-priori estimate of design parameter
   DesignVec &m_d0;
   /// Storage for (m_d-m_d0)
-  DesignVecPtr m_d_diff;        // ghosted
+  DesignVecPtr m_d_diff; // ghosted
 
   /// State parameter to match via F(d)=u_obs
   StateVec &m_u_obs;
   /// Storage for F(d)-u_obs
-  StateVec1Ptr m_u_diff;         // ghosted
+  StateVec1Ptr m_u_diff; // ghosted
 
   /// Temporary storage used in gradient computation.
   StateVec m_adjointRHS;
@@ -297,25 +299,21 @@ protected:
    * opposite directions with the same magnitude.
   */
   double m_tikhonov_rtol;
-
 };
 
-template<class ForwardProblem>
-IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forward,
-                                                           DesignVec &d0, StateVec &u_obs,
-                                                           double eta,
-                                                           IPFunctional<DesignVec> &designFunctional,
-                                                           IPFunctional<StateVec> &stateFunctional)
-  : m_grid(d0.grid()),
-    m_forward(forward),
-    m_dGlobal(d0.grid(), "design variable (global)"),
-    m_d0(d0),
-    m_u_obs(u_obs),
-    m_adjointRHS(d0.grid(), "work vector"),
-    m_eta(eta),
-    m_designFunctional(designFunctional),
-    m_stateFunctional(stateFunctional)
-{
+template <class ForwardProblem>
+IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(
+    ForwardProblem &forward, DesignVec &d0, StateVec &u_obs, double eta,
+    IPFunctional<DesignVec> &designFunctional, IPFunctional<StateVec> &stateFunctional)
+    : m_grid(d0.grid()),
+      m_forward(forward),
+      m_dGlobal(d0.grid(), "design variable (global)"),
+      m_d0(d0),
+      m_u_obs(u_obs),
+      m_adjointRHS(d0.grid(), "work vector"),
+      m_eta(eta),
+      m_designFunctional(designFunctional),
+      m_stateFunctional(stateFunctional) {
 
   m_tikhonov_atol = m_grid->ctx()->config()->get_number("inverse.tikhonov.atol");
   m_tikhonov_rtol = m_grid->ctx()->config()->get_number("inverse.tikhonov.rtol");
@@ -333,7 +331,6 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(ForwardProblem &forwa
   m_grad_design = std::make_shared<DesignVec>(m_grid, "design gradient");
 
   m_grad = std::make_shared<DesignVec>(m_grid, "gradient");
-
 }
 
 template<class ForwardProblem>
@@ -459,4 +456,4 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
 } // end of namespace inverse
 } // end of namespace pism
 
-#endif /* end of include guard: IPTAOTIKHONOVPROBLEM_HH_4NMM724B */
+#endif // PISM_IPTAOTIKHONOVPROBLEM_HH

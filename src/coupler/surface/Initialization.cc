@@ -26,7 +26,7 @@
 namespace pism {
 namespace surface {
 
-InitializationHelper::InitializationHelper(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> input)
+InitializationHelper::InitializationHelper(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(grid, input),
     m_mass_flux(m_grid, "effective_climatic_mass_balance"),
     m_temperature(m_grid, "effective_ice_surface_temp")

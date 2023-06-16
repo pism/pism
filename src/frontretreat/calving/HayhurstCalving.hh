@@ -32,7 +32,7 @@ namespace calving {
 
 class HayhurstCalving : public Component {
 public:
-  HayhurstCalving(IceGrid::ConstPtr grid);
+  HayhurstCalving(std::shared_ptr<const IceGrid> grid);
   virtual ~HayhurstCalving() = default;
 
   void init();

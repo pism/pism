@@ -30,7 +30,7 @@ namespace atmosphere {
 
 class CosineYearlyCycle : public YearlyCycle {
 public:
-  CosineYearlyCycle(IceGrid::ConstPtr g);
+  CosineYearlyCycle(std::shared_ptr<const IceGrid> g);
   virtual ~CosineYearlyCycle() = default;
 
   virtual void init_impl(const Geometry &geometry);

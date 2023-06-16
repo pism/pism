@@ -31,7 +31,7 @@
 namespace pism {
 namespace energy {
 
-EnthalpyModel::EnthalpyModel(IceGrid::ConstPtr grid,
+EnthalpyModel::EnthalpyModel(std::shared_ptr<const IceGrid> grid,
                              stressbalance::StressBalance *stress_balance)
   : EnergyModel(grid, stress_balance) {
   // empty

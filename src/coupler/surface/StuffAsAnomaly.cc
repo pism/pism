@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-StuffAsAnomaly::StuffAsAnomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
     m_mass_flux_0(m_grid, "mass_flux_0", WITHOUT_GHOSTS),

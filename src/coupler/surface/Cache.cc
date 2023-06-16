@@ -30,7 +30,7 @@
 namespace pism {
 namespace surface {
 
-Cache::Cache(IceGrid::ConstPtr grid, std::shared_ptr<SurfaceModel> in)
+Cache::Cache(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
   m_next_update_time = time().current();

@@ -38,7 +38,7 @@ namespace surface {
 
 ///// PISM surface model implementing a dEBM-Simple scheme.
 
-DEBMSimple::DEBMSimple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
+DEBMSimple::DEBMSimple(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g, std::move(input)),
       m_model(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),

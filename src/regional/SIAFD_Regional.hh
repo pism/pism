@@ -29,7 +29,7 @@ namespace stressbalance {
 //! simulations.
 class SIAFD_Regional : public SIAFD {
 public:
-  SIAFD_Regional(IceGrid::ConstPtr g);
+  SIAFD_Regional(std::shared_ptr<const IceGrid> g);
   virtual ~SIAFD_Regional() = default;
   void init();
 private:

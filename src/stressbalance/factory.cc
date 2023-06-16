@@ -36,7 +36,7 @@ namespace pism {
 namespace stressbalance {
 
 std::shared_ptr<StressBalance> create(const std::string &model,
-                                      IceGrid::ConstPtr grid,
+                                      std::shared_ptr<const IceGrid> grid,
                                       bool regional) {
 
   auto config = grid->ctx()->config();

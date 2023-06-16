@@ -325,7 +325,7 @@ static void compute_lon_lat(const std::string &projection,
 // +-----------+
 // (sw)        (se)
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   array::AccessScope list{&result};
 
@@ -389,7 +389,7 @@ static void compute_lon_lat_bounds(const std::string &projection,
 void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   (void) projection;
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   result.set(grid->dx() * grid->dy());
 }
 

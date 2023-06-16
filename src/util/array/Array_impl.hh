@@ -74,7 +74,7 @@ struct Array::Impl {
   std::vector<SpatialVariableMetadata> metadata;
 
   //! The computational grid
-  IceGrid::ConstPtr grid;
+  std::shared_ptr<const IceGrid> grid;
 
   //! number of "degrees of freedom" per grid point
   unsigned int dof;

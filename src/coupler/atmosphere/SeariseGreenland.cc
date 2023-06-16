@@ -37,7 +37,7 @@ namespace atmosphere {
 
 ///// SeaRISEGreenland
 
-SeaRISEGreenland::SeaRISEGreenland(IceGrid::ConstPtr g)
+SeaRISEGreenland::SeaRISEGreenland(std::shared_ptr<const IceGrid> g)
   : YearlyCycle(g) {
   // empty
 }

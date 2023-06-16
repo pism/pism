@@ -20,18 +20,17 @@
 #define _SSATESTCASE_H_
 
 #include "SSA.hh"
-#include "pism/util/Context.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Array3D.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
+
+class Context;
+class IceGrid;
+
 namespace stressbalance {
 
 /*! An SSATestCase manages running an SSA instance against a particular

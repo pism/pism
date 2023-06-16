@@ -45,7 +45,7 @@ namespace stressbalance {
  */
 class BlatterTestXZ : public Blatter {
 public:
-  BlatterTestXZ(IceGrid::ConstPtr grid, int Mz, int coarsening_factor);
+  BlatterTestXZ(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor);
 
 private:
   bool marine_boundary(int face,

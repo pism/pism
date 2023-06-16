@@ -24,7 +24,7 @@
 namespace pism {
 namespace surface {
 
-PSFormulas::PSFormulas(IceGrid::ConstPtr grid)
+PSFormulas::PSFormulas(std::shared_ptr<const IceGrid> grid)
   : SurfaceModel(grid) {
 
   m_mass_flux   = allocate_mass_flux(grid);

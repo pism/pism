@@ -64,7 +64,7 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
     m_target_misfit(0.0)
 {
   PetscErrorCode ierr;
-  IceGrid::ConstPtr grid = m_d0.grid();
+  std::shared_ptr<const IceGrid> grid = m_d0.grid();
   m_comm = grid->com;
 
   m_d = std::make_shared<DesignVecGhosted>(grid, "d");

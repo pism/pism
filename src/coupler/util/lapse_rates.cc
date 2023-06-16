@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2022 PISM Authors
+/* Copyright (C) 2018, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,7 +27,7 @@ void lapse_rate_correction(const array::Scalar &surface,
                            const array::Scalar &reference_surface,
                            double lapse_rate,
                            array::Scalar &result) {
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   if (fabs(lapse_rate) < 1e-12) {
     return;

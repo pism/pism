@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in)
+Anomaly::Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");

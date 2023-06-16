@@ -33,7 +33,7 @@
 namespace pism {
 namespace inverse {
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(IceGrid::ConstPtr g,
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const IceGrid> g,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g),
     m_stencil_width(1),

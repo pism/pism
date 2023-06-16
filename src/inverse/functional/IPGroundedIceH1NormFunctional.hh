@@ -47,7 +47,7 @@ namespace inverse {
 */
 class IPGroundedIceH1NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
-  IPGroundedIceH1NormFunctional2S(IceGrid::ConstPtr grid, double cL2, 
+  IPGroundedIceH1NormFunctional2S(std::shared_ptr<const IceGrid> grid, double cL2,
                                   double cH1, array::CellType1 &ice_mask,
                                   array::Scalar *dirichletLocations=NULL)
     : IPInnerProductFunctional<array::Scalar>(grid),

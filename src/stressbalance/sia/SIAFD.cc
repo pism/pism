@@ -40,7 +40,7 @@
 namespace pism {
 namespace stressbalance {
 
-SIAFD::SIAFD(IceGrid::ConstPtr g)
+SIAFD::SIAFD(std::shared_ptr<const IceGrid> g)
   : SSB_Modifier(std::move(g)),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0"),

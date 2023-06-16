@@ -20,14 +20,15 @@
 #ifndef GEOMETRY_H
 #define GEOMETRY_H
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/array/CellType.hh"
 
 namespace pism {
 
+class IceGrid;
+
 class Geometry {
 public:
-  Geometry(const IceGrid::ConstPtr &grid);
+  Geometry(const std::shared_ptr<const IceGrid> &grid);
 
   /*!
    * Ensures consistency of ice geometry by re-computing cell type, cell grounded fraction, and ice

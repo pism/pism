@@ -34,7 +34,7 @@ class Array3D : public Array {
 public:
 
   // Three-dimensional array with a number of vertical levels
-  Array3D(IceGrid::ConstPtr grid,
+  Array3D(std::shared_ptr<const IceGrid> grid,
           const std::string &name,
           Kind ghostedp,
           const std::vector<double> &levels,

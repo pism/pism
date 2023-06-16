@@ -40,7 +40,7 @@ namespace inverse {
 */
 class IPLogRatioFunctional : public IPFunctional<array::Vector> {
 public:
-  IPLogRatioFunctional(IceGrid::ConstPtr grid, array::Vector &u_observed, double eps,
+  IPLogRatioFunctional(std::shared_ptr<const IceGrid> grid, array::Vector &u_observed, double eps,
                        array::Scalar *weights=NULL) :
     IPFunctional<array::Vector>(grid), m_u_observed(u_observed), m_weights(weights),
     m_normalization(1.), m_eps(eps) {};

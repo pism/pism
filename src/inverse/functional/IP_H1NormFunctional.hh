@@ -43,7 +43,7 @@ public:
    * @param[in] cH1 The constant \f$c_{H^1}\f$.
    * @param[in] dirichletLocations Nodes where the function will be set to zero prior to integration.
    */
-  IP_H1NormFunctional2S(IceGrid::ConstPtr grid,
+  IP_H1NormFunctional2S(std::shared_ptr<const IceGrid> grid,
                         double cL2,
                         double cH1,
                         array::Scalar *dirichletLocations=NULL)

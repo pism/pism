@@ -31,9 +31,9 @@
 namespace pism {
 namespace inverse {
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(IceGrid::ConstPtr g,
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const IceGrid> grid,
                                                    IPDesignVariableParameterization &tp)
-  : SSAFEM(g),
+  : SSAFEM(grid),
     m_zeta(NULL),
     m_dzeta_local(m_grid, "d_zeta_local"),
     m_tauc_copy(m_grid, "tauc"),

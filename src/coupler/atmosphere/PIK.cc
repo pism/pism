@@ -32,7 +32,7 @@
 namespace pism {
 namespace atmosphere {
 
-PIK::PIK(IceGrid::ConstPtr g)
+PIK::PIK(std::shared_ptr<const IceGrid> g)
   : YearlyCycle(g) {
 
   auto parameterization = m_config->get_string("atmosphere.pik.parameterization");
@@ -129,7 +129,7 @@ static double huybrechts_dewolde_mean_summer(double surface_elevation, double la
  * Huybrechts & DeWolde (1999)
  */
 static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
@@ -149,7 +149,7 @@ static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, ar
  * Parametrization based on multiple regression analysis of ERA INTERIM data
  */
 static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
@@ -169,7 +169,7 @@ static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Sc
  * Parametrization based on multiple regression analysis of ERA INTERIM data with sin(lat)
  */
 static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
@@ -189,7 +189,7 @@ static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array
  * Parametrization based on multiple regression analysis of ERA INTERIM data with cos(lon)
  */
 static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
@@ -221,7 +221,7 @@ static double martin2011_mean_annual(double elevation, double latitude) {
  * - no seasonal variation of air temperature
  */
 static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
@@ -242,7 +242,7 @@ static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Sca
  * - summer mean temperature computed as an anomaly to Huybrechts & DeWolde (1999)
  */
 static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, array::Scalar &T_ms) {
-  IceGrid::ConstPtr grid = T_ma.grid();
+  auto grid = T_ma.grid();
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,

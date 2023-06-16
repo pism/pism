@@ -28,12 +28,12 @@
 namespace pism {
 namespace array {
 
-Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name)
+Staggered::Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name)
   : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
   set_begin_access_use_dof(true);
 }
 
-Staggered::Staggered(IceGrid::ConstPtr grid, const std::string &name,
+Staggered::Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name,
                      unsigned int stencil_width)
   : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
   set_begin_access_use_dof(true);
@@ -61,7 +61,7 @@ void Staggered::copy_from(const Staggered &input) {
   inc_state_counter();
 }
 
-Staggered1::Staggered1(IceGrid::ConstPtr grid, const std::string &name)
+Staggered1::Staggered1(std::shared_ptr<const IceGrid> grid, const std::string &name)
     : Staggered(grid, name, 1) {
   // empty
 }
@@ -92,7 +92,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
   using mask::grounded_ice;
   using mask::icy;
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   array::AccessScope list{&cell_type, &input, &result};
 
@@ -139,7 +139,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
   assert(cell_type.stencil_width() > 0);
   assert(input.stencil_width() > 0);
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   array::AccessScope list{&cell_type, &input, &result};
 

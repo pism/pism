@@ -46,7 +46,7 @@ namespace calving {
 class IcebergRemover : public Component
 {
 public:
-  IcebergRemover(IceGrid::ConstPtr g);
+  IcebergRemover(std::shared_ptr<const IceGrid> g);
   virtual ~IcebergRemover() = default;
 
   void update(const array::Scalar &bc_mask,

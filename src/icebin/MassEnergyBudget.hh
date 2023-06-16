@@ -3,11 +3,13 @@
 // --------------------------------
 // PISM Includes... want to be included first
 #include <petsc.h>
-#include <pism/util/IceGrid.hh>
 #include <pism/util/array/Scalar.hh>
 // --------------------------------
 
 namespace pism {
+
+class IceGrid;
+
 namespace icebin {
 
 /** Encapsulates mass and enthalpy together.  Used to tabulate total
@@ -21,7 +23,7 @@ struct MassEnthVec2S : public pism::PetscAccessible
 
     ~MassEnthVec2S() {}
 
-    MassEnthVec2S(pism::IceGrid::ConstPtr my_grid, const std::string &my_name);
+  MassEnthVec2S(std::shared_ptr<const pism::IceGrid> my_grid, const std::string &my_name);
 
     void set_attrs(
         const std::string &my_pism_intent,
@@ -169,9 +171,9 @@ protected:
 
 public:
 
-    MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix);
+  MassEnergyBudget(std::shared_ptr<const pism::IceGrid> grid, std::string const &prefix);
 
-    void set_epsilon(pism::IceGrid::ConstPtr grid);
+  void set_epsilon(std::shared_ptr<const pism::IceGrid> grid);
 };
 
 } // end of namespace icebin

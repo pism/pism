@@ -164,7 +164,7 @@ const array::Scalar& MPDATA2::x() const {
   return m_x;
 }
 
-MPDATA2::MPDATA2(IceGrid::ConstPtr grid, int N)
+MPDATA2::MPDATA2(std::shared_ptr<const IceGrid> grid, int N)
   : m_v(grid, "velocity_staggered"),
     m_v_old(grid, "tmp"),
     m_v_ghosted(grid, "velocity_ghosted"),

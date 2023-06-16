@@ -34,7 +34,7 @@ namespace hydrology {
 
 class EmptyingProblem : public Component {
 public:
-  EmptyingProblem(IceGrid::ConstPtr g);
+  EmptyingProblem(std::shared_ptr<const IceGrid> g);
   virtual ~EmptyingProblem() = default;
 
   void update(const Geometry &geometry,

@@ -217,7 +217,7 @@ protected:
 class FaustoGrevePDDObject {
 
 public:
-  FaustoGrevePDDObject(IceGrid::ConstPtr g);
+  FaustoGrevePDDObject(std::shared_ptr<const IceGrid> g);
   virtual ~FaustoGrevePDDObject() = default;
 
   void update_temp_mj(const array::Scalar &surfelev,
@@ -229,7 +229,7 @@ public:
   LocalMassBalance::DegreeDayFactors degree_day_factors(int i, int j, double latitude);
 
 protected:
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
   const Config::ConstPtr m_config;
 
   double m_beta_ice_w;

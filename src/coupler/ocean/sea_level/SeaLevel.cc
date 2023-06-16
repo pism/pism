@@ -28,7 +28,7 @@ namespace ocean {
 namespace sea_level {
 
 // "Modifier" constructor.
-SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
+SeaLevel::SeaLevel(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SeaLevel> input)
   : Component(grid),
     m_input_model(input),
     m_sea_level(grid, "sea_level") {
@@ -39,7 +39,7 @@ SeaLevel::SeaLevel(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> input)
 }
 
 // "Model" constructor (returns sea level is zero).
-SeaLevel::SeaLevel(IceGrid::ConstPtr g)
+SeaLevel::SeaLevel(std::shared_ptr<const IceGrid> g)
   : SeaLevel(g, std::shared_ptr<SeaLevel>()) {
   // empty
 }

@@ -20,12 +20,13 @@
 #ifndef PISM_UNO_2D_H
 #define PISM_UNO_2D_H
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Staggered.hh"
 
 namespace pism {
+
+class IceGrid;
 
 namespace array {
 class CellType1;
@@ -45,7 +46,7 @@ enum UNOType {PISM_UNO_UPWIND1, PISM_UNO_LAX_WENDROFF, PISM_UNO_FROMM, PISM_UNO_
  */
 class UNO {
 public:
-  UNO(IceGrid::ConstPtr grid, UNOType type);
+  UNO(std::shared_ptr<const IceGrid> grid, UNOType type);
 
   void update(double dt,
               const array::CellType1 &cell_type,

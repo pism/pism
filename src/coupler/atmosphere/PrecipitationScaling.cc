@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-PrecipitationScaling::PrecipitationScaling(IceGrid::ConstPtr grid,
+PrecipitationScaling::PrecipitationScaling(std::shared_ptr<const IceGrid> grid,
                                            std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 

@@ -3,13 +3,15 @@
 // --------------------------------
 // PISM Includes... want to be included first
 #include <petsc.h>
-#include <pism/util/IceGrid.hh>
 // --------------------------------
 
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace pism {
+
+class IceGrid;
 
 namespace array {
 class Array;
@@ -20,7 +22,7 @@ namespace icebin {
 
 /** Sets up to easily write out a bundle of PISM variables to a file. */
 class VecBundleWriter {
-  pism::IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const pism::IceGrid> m_grid;
   std::string const fname;                     // Name of the file to write
   std::vector<pism::array::Array const *> vecs; // The vectors we will write
 

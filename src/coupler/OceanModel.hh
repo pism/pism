@@ -33,9 +33,9 @@ namespace ocean {
 class OceanModel : public Component {
 public:
   // "modifier" constructor
-  OceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input);
+  OceanModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> input);
   // "model" constructor
-  OceanModel(IceGrid::ConstPtr g);
+  OceanModel(std::shared_ptr<const IceGrid> g);
 
   virtual ~OceanModel() = default;
 
@@ -66,9 +66,9 @@ protected:
   std::shared_ptr<OceanModel> m_input_model;
   array::Scalar::Ptr m_water_column_pressure;
 
-  static array::Scalar::Ptr allocate_shelf_base_temperature(IceGrid::ConstPtr g);
-  static array::Scalar::Ptr allocate_shelf_base_mass_flux(IceGrid::ConstPtr g);
-  static array::Scalar::Ptr allocate_water_column_pressure(IceGrid::ConstPtr g);
+  static array::Scalar::Ptr allocate_shelf_base_temperature(std::shared_ptr<const IceGrid> g);
+  static array::Scalar::Ptr allocate_shelf_base_mass_flux(std::shared_ptr<const IceGrid> g);
+  static array::Scalar::Ptr allocate_water_column_pressure(std::shared_ptr<const IceGrid> g);
 
   static void compute_average_water_column_pressure(const Geometry &geometry,
                                                        double ice_density,

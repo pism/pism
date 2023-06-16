@@ -39,7 +39,7 @@ namespace surface {
 */
 class TemperatureIndex : public SurfaceModel {
 public:
-  TemperatureIndex(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  TemperatureIndex(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~TemperatureIndex() = default;
 
   // diagnostics (for the last time step)

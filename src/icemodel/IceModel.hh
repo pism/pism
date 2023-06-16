@@ -388,7 +388,7 @@ protected:
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
   struct ThicknessChanges {
-    ThicknessChanges(const IceGrid::ConstPtr &grid);
+    ThicknessChanges(const std::shared_ptr<const IceGrid> &grid);
 
     // calving during the last time step
     array::Scalar calving;

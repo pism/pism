@@ -26,7 +26,7 @@
 namespace pism {
 namespace ocean {
 
-Given::Given(IceGrid::ConstPtr g)
+Given::Given(std::shared_ptr<const IceGrid> g)
   : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);

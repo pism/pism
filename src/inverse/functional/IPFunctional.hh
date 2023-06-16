@@ -16,13 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef IPFUNCTIONAL_HH_1E2DIXE6
-#define IPFUNCTIONAL_HH_1E2DIXE6
+#ifndef PISM_IPFUNCTIONAL_H
+#define PISM_IPFUNCTIONAL_H
 
 #include "pism/util/fem/FEM.hh"
-#include "pism/util/IceGrid.hh"
 
 namespace pism {
+
+class IceGrid;
 
 //! Inverse modeling code.
 namespace inverse {
@@ -40,7 +41,7 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(IceGrid::ConstPtr grid)
+  IPFunctional(std::shared_ptr<const IceGrid> grid)
     : m_grid(grid),
       m_element_index(*m_grid),
       m_element(*m_grid, fem::Q1Quadrature4())
@@ -67,7 +68,7 @@ public:
   virtual void gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
 
   fem::ElementIterator m_element_index;
   fem::Q1Element2       m_element;
@@ -93,7 +94,7 @@ template<class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
-  IPInnerProductFunctional(IceGrid::ConstPtr grid) : IPFunctional<IMVecType>(grid) {};
+  IPInnerProductFunctional(std::shared_ptr<const IceGrid> grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
   virtual void dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;
@@ -134,4 +135,4 @@ void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector 
 } // end of namespace inverse
 } // end of namespace pism
 
-#endif /* end of include guard: FUNCTIONAL_HH_1E2DIXE6 */
+#endif // PISM_IPFUNCTIONAL_H

@@ -84,7 +84,7 @@ namespace stressbalance {
 */
 class BedSmoother {
 public:
-  BedSmoother(IceGrid::ConstPtr g);
+  BedSmoother(std::shared_ptr<const IceGrid> g);
   virtual ~BedSmoother() = default;
 
   void preprocess_bed(const array::Scalar &topg);
@@ -98,7 +98,7 @@ public:
 
   const array::Scalar& smoothed_bed() const;
 protected:
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
   const Config::ConstPtr m_config;
 
   //! smoothed bed elevation; set by calling preprocess_bed()

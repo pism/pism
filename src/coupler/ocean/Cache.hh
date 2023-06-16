@@ -27,7 +27,7 @@ namespace ocean {
 
 class Cache : public OceanModel {
 public:
-  Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Cache(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in);
   virtual ~Cache() = default;
 
 protected:

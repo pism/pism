@@ -26,6 +26,7 @@
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Context.hh"
 
 namespace pism {
 namespace stressbalance {

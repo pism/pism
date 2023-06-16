@@ -34,7 +34,7 @@ namespace array {
 
 // this file contains method for derived class array::Array3D
 
-Array3D::Array3D(IceGrid::ConstPtr grid,
+Array3D::Array3D(std::shared_ptr<const IceGrid> grid,
                  const std::string &name,
                  Kind ghostedp,
                  const std::vector<double> &levels,

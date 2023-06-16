@@ -29,7 +29,7 @@ namespace ocean {
 class Given : public OceanModel
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(std::shared_ptr<const IceGrid> g);
   virtual ~Given() = default;
 
 private:

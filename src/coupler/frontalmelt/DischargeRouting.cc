@@ -26,7 +26,7 @@
 namespace pism {
 namespace frontalmelt {
   
-DischargeRouting::DischargeRouting(IceGrid::ConstPtr grid)
+DischargeRouting::DischargeRouting(std::shared_ptr<const IceGrid> grid)
   : FrontalMelt(grid, nullptr),
     m_frontal_melt_rate(grid, "frontal_melt_rate") {
 

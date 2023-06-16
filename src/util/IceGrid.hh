@@ -279,8 +279,6 @@ class IceGrid {
 public:
   ~IceGrid();
 
-  typedef std::shared_ptr<const IceGrid> ConstPtr;
-
   IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p);
 
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,

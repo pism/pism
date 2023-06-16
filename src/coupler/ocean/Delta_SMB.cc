@@ -22,7 +22,7 @@
 namespace pism {
 namespace ocean {
 
-Delta_SMB::Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Delta_SMB::Delta_SMB(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),

@@ -37,7 +37,7 @@
 namespace pism {
 namespace ocean {
 // Ocean
-Factory::Factory(IceGrid::ConstPtr g)
+Factory::Factory(std::shared_ptr<const IceGrid> g)
   : PCFactory<OceanModel>(g, "ocean.models") {
 
   add_model<GivenTH>("th");

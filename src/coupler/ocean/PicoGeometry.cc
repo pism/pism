@@ -29,7 +29,7 @@
 namespace pism {
 namespace ocean {
 
-PicoGeometry::PicoGeometry(IceGrid::ConstPtr grid)
+PicoGeometry::PicoGeometry(std::shared_ptr<const IceGrid> grid)
     : Component(grid),
       m_continental_shelf(grid, "pico_contshelf_mask"),
       m_boxes(grid, "pico_box_mask"),
@@ -187,7 +187,7 @@ static void relabel(RelabelingType type,
                     double threshold,
                     array::Scalar &mask) {
 
-  IceGrid::ConstPtr grid = mask.grid();
+  auto grid = mask.grid();
 
   int max_index = static_cast<int>(array::max(mask));
 
@@ -885,7 +885,7 @@ void eikonal_equation(array::Scalar1 &mask) {
 
   assert(mask.stencil_width() > 0);
 
-  IceGrid::ConstPtr grid = mask.grid();
+  auto grid = mask.grid();
 
   double current_label = 1;
   double continue_loop = 1;

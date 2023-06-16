@@ -37,7 +37,7 @@
 namespace pism {
 namespace surface {
 
-Factory::Factory(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Factory::Factory(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : PCFactory<SurfaceModel>(g, "surface.models"),
     m_input(input) {
 

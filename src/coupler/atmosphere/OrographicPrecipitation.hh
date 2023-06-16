@@ -31,7 +31,7 @@ class OrographicPrecipitationSerial;
 
 class OrographicPrecipitation : public AtmosphereModel {
 public:
-  OrographicPrecipitation(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  OrographicPrecipitation(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~OrographicPrecipitation();
 
 private:

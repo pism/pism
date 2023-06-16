@@ -254,7 +254,7 @@ bool Blatter::marine_boundary(int face,
  * @param[in] Mz number of vertical levels
  * @param[in] coarsening_factor grid coarsening factor
  */
-Blatter::Blatter(IceGrid::ConstPtr grid, int Mz, int coarsening_factor)
+Blatter::Blatter(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor)
   : ShallowStressBalance(grid),
     m_parameters(grid, "bp_input_parameters", array::WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature

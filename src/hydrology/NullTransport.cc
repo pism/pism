@@ -26,7 +26,7 @@
 namespace pism {
 namespace hydrology {
 
-NullTransport::NullTransport(IceGrid::ConstPtr g)
+NullTransport::NullTransport(std::shared_ptr<const IceGrid> g)
   : Hydrology(g),
     m_Wtill_old(m_grid, "Wtill_old") {
 

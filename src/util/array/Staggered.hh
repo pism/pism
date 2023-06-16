@@ -34,7 +34,7 @@ class Vector;
 //! components are not called `u` and `v` (to avoid confusion).
 class Staggered : public Array {
 public:
-  Staggered(IceGrid::ConstPtr grid, const std::string &name);
+  Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name);
 
   typedef std::shared_ptr<array::Staggered> Ptr;
   typedef std::shared_ptr<const array::Staggered> ConstPtr;
@@ -44,7 +44,7 @@ public:
 
   void copy_from(const array::Staggered &input);
 protected:
-  Staggered(IceGrid::ConstPtr grid, const std::string &name,
+  Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name,
             unsigned int stencil_width);
 };
 
@@ -64,7 +64,7 @@ inline const double& array::Staggered::operator() (int i, int j, int k) const {
 
 class Staggered1 : public Staggered {
 public:
-  Staggered1(IceGrid::ConstPtr grid, const std::string &name);
+  Staggered1(std::shared_ptr<const IceGrid> grid, const std::string &name);
 
   //! Returns the values at interfaces of the cell i,j using the staggered grid.
   /*! The ij member of the return value is set to 0, since it has no meaning in

@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-Given::Given(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Given::Given(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid)
 {
   (void) input;

@@ -31,7 +31,7 @@ namespace pism {
 //! @brief Calving and iceberg removal code.
 namespace calving {
 
-CalvingAtThickness::CalvingAtThickness(IceGrid::ConstPtr g)
+CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const IceGrid> g)
   : Component(g),
     m_old_mask(m_grid, "old_mask") {
 

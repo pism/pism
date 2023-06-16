@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2013, 2014, 2016, 2017, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _ICEMODELVEC_HELPERS_H_
-#define _ICEMODELVEC_HELPERS_H_
+#ifndef PISM_ARRAY_HELPERS_H
+#define PISM_ARRAY_HELPERS_H
+
+#include "pism/util/IceGrid.hh"
 
 namespace pism {
 
@@ -66,4 +68,4 @@ void copy(const V& source, V& destination, bool scatter=true) {
 
 } // end of namespace pism
 
-#endif /* _ICEMODELVEC_HELPERS_H_ */
+#endif /* PISM_ARRAY_HELPERS_H */

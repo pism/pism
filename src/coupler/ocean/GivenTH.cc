@@ -57,7 +57,7 @@ GivenTH::Constants::Constants(const Config &config) {
   limit_salinity_range             = config.get_flag("ocean.th.clip_salinity");
 }
 
-GivenTH::GivenTH(IceGrid::ConstPtr g)
+GivenTH::GivenTH(std::shared_ptr<const IceGrid> g)
   : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");

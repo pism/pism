@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2022 Constantine Khrulev
+// Copyright (C) 2009--2023 Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -41,7 +41,7 @@ namespace array {
 class Forcing : public array::Scalar {
 public:
 
-  Forcing(IceGrid::ConstPtr grid,
+  Forcing(std::shared_ptr<const IceGrid> grid,
           const File &file,
           const std::string &short_name,
           const std::string &standard_name,
@@ -52,7 +52,7 @@ public:
   virtual ~Forcing();
 
   static std::shared_ptr<Forcing>
-  Constant(IceGrid::ConstPtr grid, const std::string &short_name, double value);
+  Constant(std::shared_ptr<const IceGrid> grid, const std::string &short_name, double value);
 
   unsigned int buffer_size();
 
@@ -76,7 +76,7 @@ private:
 
   Data *m_data;
 
-  Forcing(IceGrid::ConstPtr grid,
+  Forcing(std::shared_ptr<const IceGrid> grid,
           const std::string &short_name,
           unsigned int buffer_size,
           InterpolationType interpolation_type);

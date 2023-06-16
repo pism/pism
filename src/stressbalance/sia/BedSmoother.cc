@@ -32,7 +32,7 @@
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(IceGrid::ConstPtr g)
+BedSmoother::BedSmoother(std::shared_ptr<const IceGrid> g)
     : m_grid(g),
       m_config(g->ctx()->config()),
       m_topgsmooth(m_grid, "topgsmooth"),

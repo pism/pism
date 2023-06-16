@@ -30,7 +30,7 @@
 namespace pism {
 namespace atmosphere {
 
-ElevationChange::ElevationChange(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+ElevationChange::ElevationChange(std::shared_ptr<const IceGrid> grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in),
   m_surface(grid, "ice_surface_elevation") {
 

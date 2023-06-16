@@ -19,19 +19,20 @@
 #ifndef PISM_DIAGNOSTIC_HH
 #define PISM_DIAGNOSTIC_HH
 
-#include <memory>
 #include <map>
+#include <memory>
 #include <string>
 
-#include "VariableMetadata.hh"
-#include "IceGrid.hh"
 #include "ConfigInterface.hh"
+#include "VariableMetadata.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
+
+class IceGrid;
 
 //! @brief Class representing diagnostic computations in PISM.
 /*!
@@ -57,13 +58,13 @@ namespace pism {
  */
 class Diagnostic {
 public:
-  Diagnostic(IceGrid::ConstPtr g);
+  Diagnostic(std::shared_ptr<const IceGrid> g);
   virtual ~Diagnostic() = default;
 
   typedef std::shared_ptr<Diagnostic> Ptr;
 
   // defined below
-  template<typename T>
+  template <typename T>
   static Ptr wrap(const T &input);
 
   void update(double dt);
@@ -74,23 +75,22 @@ public:
 
   unsigned int n_variables() const;
 
-  SpatialVariableMetadata& metadata(unsigned int N = 0);
+  SpatialVariableMetadata &metadata(unsigned int N = 0);
 
   void define(const File &file, IO_Type default_type) const;
 
   void init(const File &input, unsigned int time);
   void define_state(const File &output) const;
   void write_state(const File &output) const;
+
 protected:
   virtual void define_impl(const File &file, IO_Type default_type) const;
   virtual void init_impl(const File &input, unsigned int time);
   virtual void define_state_impl(const File &output) const;
   virtual void write_state_impl(const File &output) const;
 
-  void set_attrs(const std::string &long_name,
-                 const std::string &standard_name,
-                 const std::string &units,
-                 const std::string &glaciological_units,
+  void set_attrs(const std::string &long_name, const std::string &standard_name,
+                 const std::string &units, const std::string &glaciological_units,
                  unsigned int N = 0);
 
   virtual void update_impl(double dt);
@@ -102,7 +102,7 @@ protected:
   double to_external(double x) const;
 
   //! the grid
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
   //! the unit system
   const units::System::Ptr m_sys;
   //! Configuration flags and parameters
@@ -121,19 +121,16 @@ typedef std::map<std::string, Diagnostic::Ptr> DiagnosticList;
  * Note: Make sure that that created diagnostics don't outlast fields that they wrap (or you'll have
  * dangling pointers).
  */
-template<class T>
+template <class T>
 class DiagWithDedicatedStorage : public Diagnostic {
 public:
-  DiagWithDedicatedStorage(const T &input)
-    : Diagnostic(input.grid()),
-      m_input(input)
-  {
+  DiagWithDedicatedStorage(const T &input) : Diagnostic(input.grid()), m_input(input) {
     for (unsigned int j = 0; j < input.ndof(); ++j) {
       m_vars.emplace_back(input.metadata(j));
     }
   }
-protected:
 
+protected:
   array::Array::Ptr compute_impl() const {
     auto result = m_input.duplicate();
 
@@ -150,7 +147,7 @@ protected:
   const T &m_input;
 };
 
-template<typename T>
+template <typename T>
 Diagnostic::Ptr Diagnostic::wrap(const T &input) {
   return Ptr(new DiagWithDedicatedStorage<T>(input));
 }
@@ -159,8 +156,9 @@ Diagnostic::Ptr Diagnostic::wrap(const T &input) {
 template <class Model>
 class Diag : public Diagnostic {
 public:
-  Diag(const Model *m)
-    : Diagnostic(m->grid()), model(m) {}
+  Diag(const Model *m) : Diagnostic(m->grid()), model(m) {
+  }
+
 protected:
   const Model *model;
 };
@@ -169,30 +167,27 @@ protected:
  * Report a time-averaged rate of change of a quantity by accumulating changes over several time
  * steps.
  */
-template<class M>
-class DiagAverageRate : public Diag<M>
-{
+template <class M>
+class DiagAverageRate : public Diag<M> {
 public:
-
-  enum InputKind {TOTAL_CHANGE = 0, RATE = 1};
+  enum InputKind { TOTAL_CHANGE = 0, RATE = 1 };
 
   DiagAverageRate(const M *m, const std::string &name, InputKind kind)
-    : Diag<M>(m),
-    m_factor(1.0),
-    m_input_kind(kind),
-    m_accumulator(Diagnostic::m_grid, name + "_accumulator"),
-    m_interval_length(0.0),
-    m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
+      : Diag<M>(m),
+        m_factor(1.0),
+        m_input_kind(kind),
+        m_accumulator(Diagnostic::m_grid, name + "_accumulator"),
+        m_interval_length(0.0),
+        m_time_since_reset(name + "_time_since_reset", Diagnostic::m_sys) {
 
-    m_time_since_reset["units"] = "seconds";
-    m_time_since_reset["long_name"] =
-      "time since " + m_accumulator.get_name() + " was reset to 0";
+    m_time_since_reset["units"]     = "seconds";
+    m_time_since_reset["long_name"] = "time since " + m_accumulator.get_name() + " was reset to 0";
 
-    m_accumulator.metadata()["long_name"] =
-      "accumulator for the " + name + " diagnostic";
+    m_accumulator.metadata()["long_name"] = "accumulator for the " + name + " diagnostic";
 
     m_accumulator.set(0.0);
   }
+
 protected:
   void init_impl(const File &input, unsigned int time) {
     if (input.find_variable(m_accumulator.get_name())) {
@@ -202,8 +197,7 @@ protected:
     }
 
     if (input.find_variable(m_time_since_reset.get_name())) {
-      input.read_variable(m_time_since_reset.get_name(),
-                          {time}, {1}, // start, count
+      input.read_variable(m_time_since_reset.get_name(), { time }, { 1 }, // start, count
                           &m_interval_length);
     } else {
       m_interval_length = 0.0;
@@ -213,8 +207,8 @@ protected:
   void define_state_impl(const File &output) const {
     m_accumulator.define(output);
     io::define_timeseries(m_time_since_reset,
-                          Diagnostic::m_config->get_string("time.dimension_name"),
-                          output, PISM_DOUBLE);
+                          Diagnostic::m_config->get_string("time.dimension_name"), output,
+                          PISM_DOUBLE);
   }
 
   void write_state_impl(const File &output) const {
@@ -223,8 +217,8 @@ protected:
     auto time_name = Diagnostic::m_config->get_string("time.dimension_name");
 
     unsigned int time_length = output.dimension_length(time_name);
-    unsigned int t_start = time_length > 0 ? time_length - 1 : 0;
-    io::write_timeseries(output, m_time_since_reset, t_start, {m_interval_length});
+    unsigned int t_start     = time_length > 0 ? time_length - 1 : 0;
+    io::write_timeseries(output, m_time_since_reset, t_start, { m_interval_length });
   }
 
   virtual void update_impl(double dt) {
@@ -244,8 +238,7 @@ protected:
   }
 
   virtual array::Array::Ptr compute_impl() const {
-    array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid,
-                                                "diagnostic"));
+    array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid, "diagnostic"));
     result->metadata(0) = Diagnostic::m_vars.at(0);
 
     if (m_interval_length > 0.0) {
@@ -268,7 +261,7 @@ protected:
   VariableMetadata m_time_since_reset;
 
   // it should be enough to implement the constructor and this method
-  virtual const array::Scalar& model_input() {
+  virtual const array::Scalar &model_input() {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no default implementation");
   }
 };
@@ -278,15 +271,14 @@ class TSDiagnostic {
 public:
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+  TSDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
   virtual ~TSDiagnostic();
 
   void update(double t0, double t1);
 
   void flush();
 
-  void init(const File &output_file,
-            std::shared_ptr<std::vector<double>> requested_times);
+  void init(const File &output_file, std::shared_ptr<std::vector<double> > requested_times);
 
   const VariableMetadata &metadata() const;
 
@@ -310,7 +302,7 @@ protected:
   void set_units(const std::string &units, const std::string &glaciological_units);
 
   //! the grid
-  IceGrid::ConstPtr m_grid;
+  std::shared_ptr<const IceGrid> m_grid;
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
   //! the unit system
@@ -329,7 +321,7 @@ protected:
   std::vector<double> m_values;
 
   //! requested times
-  std::shared_ptr<std::vector<double>> m_requested_times;
+  std::shared_ptr<std::vector<double> > m_requested_times;
   //! index into m_times
   unsigned int m_current_time;
 
@@ -350,7 +342,8 @@ typedef std::map<std::string, TSDiagnostic::Ptr> TSDiagnosticList;
  */
 class TSSnapshotDiagnostic : public TSDiagnostic {
 public:
-  TSSnapshotDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+  TSSnapshotDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+
 private:
   void update_impl(double t0, double t1);
   void evaluate(double t0, double t1, double v);
@@ -364,11 +357,13 @@ private:
  */
 class TSRateDiagnostic : public TSDiagnostic {
 public:
-  TSRateDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+  TSRateDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+
 protected:
   //! accumulator of changes (used to compute rates of change)
   double m_accumulator;
   void evaluate(double t0, double t1, double change);
+
 private:
   void update_impl(double t0, double t1);
 
@@ -393,7 +388,8 @@ private:
  */
 class TSFluxDiagnostic : public TSRateDiagnostic {
 public:
-  TSFluxDiagnostic(IceGrid::ConstPtr g, const std::string &name);
+  TSFluxDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+
 private:
   void update_impl(double t0, double t1);
 };

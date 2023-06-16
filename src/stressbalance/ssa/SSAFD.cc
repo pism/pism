@@ -48,7 +48,7 @@ SSAFD::PicardFailure::PicardFailure(const std::string &message)
   // empty
 }
 
-SSA* SSAFDFactory(IceGrid::ConstPtr g) {
+SSA* SSAFDFactory(std::shared_ptr<const IceGrid> g) {
   return new SSAFD(g);
 }
 
@@ -60,7 +60,7 @@ linear systems
   \f[ A x = b \f]
 where \f$x\f$ (= Vec SSAX).  A PETSc SNES object is never created.
  */
-SSAFD::SSAFD(IceGrid::ConstPtr grid)
+SSAFD::SSAFD(std::shared_ptr<const IceGrid> grid)
   : SSA(grid),
     m_hardness(grid, "hardness"),
     m_nuH(grid, "nuH"),

@@ -28,7 +28,7 @@
 namespace pism {
 namespace calving {
 
-IcebergRemover::IcebergRemover(IceGrid::ConstPtr g)
+IcebergRemover::IcebergRemover(std::shared_ptr<const IceGrid> g)
   : Component(g),
     m_iceberg_mask(m_grid, "iceberg_mask"){
 

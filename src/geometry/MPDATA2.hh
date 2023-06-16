@@ -20,12 +20,13 @@
 #ifndef PISM_MPDATA_2D_H
 #define PISM_MPDATA_2D_H
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Staggered.hh"
 
 namespace pism {
+
+class IceGrid;
 
 namespace array {
 class CellType;
@@ -33,7 +34,7 @@ class CellType;
 
 class MPDATA2 {
 public:
-  MPDATA2(IceGrid::ConstPtr grid, int N);
+  MPDATA2(std::shared_ptr<const IceGrid> grid, int N);
 
   void update(double dt,
               const array::CellType &cell_type,

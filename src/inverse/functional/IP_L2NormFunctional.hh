@@ -34,7 +34,7 @@ namespace inverse {
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
 public:
-  IP_L2NormFunctional2S(IceGrid::ConstPtr grid) : IPInnerProductFunctional<array::Scalar>(grid) {};
+  IP_L2NormFunctional2S(std::shared_ptr<const IceGrid> grid) : IPInnerProductFunctional<array::Scalar>(grid) {};
   virtual ~IP_L2NormFunctional2S() {};
   
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
@@ -56,7 +56,7 @@ private:
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
-  IP_L2NormFunctional2V(IceGrid::ConstPtr grid) : IPInnerProductFunctional<array::Vector>(grid) {};
+  IP_L2NormFunctional2V(std::shared_ptr<const IceGrid> grid) : IPInnerProductFunctional<array::Vector>(grid) {};
   virtual ~IP_L2NormFunctional2V() {};
   
   virtual void valueAt(array::Vector &x, double *v);

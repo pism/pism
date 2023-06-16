@@ -29,7 +29,7 @@ namespace atmosphere {
 class Anomaly : public AtmosphereModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Anomaly() = default;
 
 protected:

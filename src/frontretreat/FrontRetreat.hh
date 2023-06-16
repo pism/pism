@@ -35,7 +35,7 @@ class Geometry;
  */
 class FrontRetreat : public Component {
 public:
-  FrontRetreat(IceGrid::ConstPtr g);
+  FrontRetreat(std::shared_ptr<const IceGrid> g);
   ~FrontRetreat() = default;
 
   void update_geometry(double dt,

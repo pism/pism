@@ -30,7 +30,7 @@ namespace pism {
 namespace surface {
 
 ///// "Force-to-thickness" mechanism
-ForceThickness::ForceThickness(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input)
+ForceThickness::ForceThickness(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_target_thickness(m_grid, "thk"),
     m_ftt_mask(m_grid, "ftt_mask")

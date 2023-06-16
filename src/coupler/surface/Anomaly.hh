@@ -30,7 +30,7 @@ namespace surface {
 class Anomaly : public SurfaceModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
+  Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Anomaly() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);

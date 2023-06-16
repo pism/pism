@@ -27,7 +27,7 @@
 namespace pism {
 namespace energy {
 
-BTU_Verification::BTU_Verification(IceGrid::ConstPtr g,
+BTU_Verification::BTU_Verification(std::shared_ptr<const IceGrid> g,
                                    const BTUGrid &vertical_grid,
                                    int testname, bool bedrock_is_ice)
   : BTU_Full(g, vertical_grid) {

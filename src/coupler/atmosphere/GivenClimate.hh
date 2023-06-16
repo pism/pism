@@ -31,7 +31,7 @@ namespace atmosphere {
 class Given : public AtmosphereModel
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(std::shared_ptr<const IceGrid> g);
   virtual ~Given() = default;
 private:
   void init_impl(const Geometry &geometry);

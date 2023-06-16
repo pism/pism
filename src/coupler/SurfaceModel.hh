@@ -41,9 +41,9 @@ namespace surface {
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component {
 public:
-  SurfaceModel(IceGrid::ConstPtr g);
-  SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> input);
-  SurfaceModel(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+  SurfaceModel(std::shared_ptr<const IceGrid> g);
+  SurfaceModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input);
+  SurfaceModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 
   virtual ~SurfaceModel() = default;
 
@@ -87,14 +87,14 @@ protected:
   void dummy_melt(const array::Scalar& smb, array::Scalar& result);
   void dummy_runoff(const array::Scalar& smb, array::Scalar& result);
 
-  static array::Scalar::Ptr allocate_layer_mass(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_layer_thickness(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_liquid_water_fraction(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_mass_flux(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_temperature(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_accumulation(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_melt(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_runoff(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_layer_mass(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_layer_thickness(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_liquid_water_fraction(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_mass_flux(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_temperature(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_accumulation(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_melt(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_runoff(std::shared_ptr<const IceGrid> grid);
 
 
   array::Scalar::Ptr m_liquid_water_fraction;

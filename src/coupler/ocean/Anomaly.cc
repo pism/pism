@@ -24,7 +24,7 @@
 namespace pism {
 namespace ocean {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Anomaly::Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.anomaly");

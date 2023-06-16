@@ -19,7 +19,6 @@
 #ifndef FRACTUREDENSITY_H
 #define FRACTUREDENSITY_H
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/Component.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/array/Scalar.hh"
@@ -29,11 +28,12 @@
 
 namespace pism {
 
+class IceGrid;
 class Geometry;
 
 class FractureDensity : public Component {
 public:
-  FractureDensity(IceGrid::ConstPtr grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
+  FractureDensity(std::shared_ptr<const IceGrid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~FractureDensity() = default;
 
   void restart(const File &input_file, int record);

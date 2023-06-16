@@ -30,7 +30,7 @@
 namespace pism {
 namespace ocean {
 
-PIK::PIK(IceGrid::ConstPtr g)
+PIK::PIK(std::shared_ptr<const IceGrid> g)
   : CompleteOceanModel(g) {
   // empty
 }

@@ -34,7 +34,7 @@ enum ISMIPHOMTest {HOM_A, HOM_B, HOM_C, HOM_D};
  */
 class BlatterISMIPHOM : public Blatter {
 public:
-  BlatterISMIPHOM(IceGrid::ConstPtr grid, int Mz, int coarsening_factor,
+  BlatterISMIPHOM(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor,
                   ISMIPHOMTest test);
 
 protected:

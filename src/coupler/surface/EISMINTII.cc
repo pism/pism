@@ -29,7 +29,7 @@
 namespace pism {
 namespace surface {
 
-EISMINTII::EISMINTII(IceGrid::ConstPtr g, int experiment)
+EISMINTII::EISMINTII(std::shared_ptr<const IceGrid> g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }

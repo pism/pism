@@ -35,7 +35,7 @@
 namespace pism {
 namespace calving {
 
-vonMisesCalving::vonMisesCalving(IceGrid::ConstPtr grid,
+vonMisesCalving::vonMisesCalving(std::shared_ptr<const IceGrid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
     m_calving_threshold(m_grid, "vonmises_calving_threshold"),

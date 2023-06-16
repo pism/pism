@@ -136,7 +136,7 @@ void Inputs::dump(const char *filename) const {
   }
 }
 
-StressBalance::StressBalance(IceGrid::ConstPtr g,
+StressBalance::StressBalance(std::shared_ptr<const IceGrid> g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
@@ -686,7 +686,7 @@ void compute_2D_principal_strain_rates(const array::Vector1 &V,
 
   using mask::ice_free;
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   double dx = grid->dx();
   double dy = grid->dy();
 

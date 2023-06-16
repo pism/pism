@@ -31,7 +31,7 @@ namespace surface {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PIK::PIK(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+PIK::PIK(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(grid) {
   (void) atmosphere;
 

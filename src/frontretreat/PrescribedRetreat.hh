@@ -40,7 +40,7 @@ namespace pism {
  */
 class PrescribedRetreat : public Component {
 public:
-  PrescribedRetreat(IceGrid::ConstPtr grid);
+  PrescribedRetreat(std::shared_ptr<const IceGrid> grid);
   virtual ~PrescribedRetreat() = default;
 
   void init();

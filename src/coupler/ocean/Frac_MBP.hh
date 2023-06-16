@@ -35,7 +35,7 @@ namespace ocean {
 class Frac_MBP : public OceanModel
 {
 public:
-  Frac_MBP(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Frac_MBP(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_MBP();
 
 private:

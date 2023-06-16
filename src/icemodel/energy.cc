@@ -131,8 +131,8 @@ void bedrock_surface_temperature(const array::Scalar &sea_level,
                                  const array::Scalar &ice_surface_temperature,
                                  array::Scalar &result) {
 
-  IceGrid::ConstPtr grid  = result.grid();
-  Config::ConstPtr config = grid->ctx()->config();
+  auto grid = result.grid();
+  auto config = grid->ctx()->config();
 
   const double
     T0                     = config->get_number("constants.fresh_water.melting_point_temperature"),

@@ -31,7 +31,7 @@ namespace bed {
  */
 class Given : public BedDef {
 public:
-  Given(IceGrid::ConstPtr grid);
+  Given(std::shared_ptr<const IceGrid> grid);
   virtual ~Given() = default;
 protected:
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,

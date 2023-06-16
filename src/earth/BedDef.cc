@@ -27,7 +27,7 @@
 namespace pism {
 namespace bed {
 
-BedDef::BedDef(IceGrid::ConstPtr grid)
+BedDef::BedDef(std::shared_ptr<const IceGrid> grid)
   : Component(grid),
     m_wide_stencil(m_config->get_number("grid.max_stencil_width")),
     m_topg(m_grid, "topg"),

@@ -173,7 +173,7 @@ const array::Scalar& UNO::x() const {
   return m_x;
 }
 
-UNO::UNO(IceGrid::ConstPtr grid, UNOType type)
+UNO::UNO(std::shared_ptr<const IceGrid> grid, UNOType type)
   : m_q(grid, "interface_fluxes"),
     m_q_limited(grid, "limited_interface_fluxes"),
     m_v_ghosted(grid, "velocity"),

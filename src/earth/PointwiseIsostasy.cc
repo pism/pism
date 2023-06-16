@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -26,10 +26,8 @@
 namespace pism {
 namespace bed {
 
-PointwiseIsostasy::PointwiseIsostasy(IceGrid::ConstPtr g)
-  : BedDef(g),
-    m_load_last(m_grid, "load_last")
-{
+PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const IceGrid> grid)
+    : BedDef(grid), m_load_last(m_grid, "load_last") {
   // empty
 }
 

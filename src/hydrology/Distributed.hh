@@ -42,7 +42,7 @@ namespace hydrology {
 */
 class Distributed : public Routing {
 public:
-  Distributed(IceGrid::ConstPtr g);
+  Distributed(std::shared_ptr<const IceGrid> g);
   virtual ~Distributed() = default;
 
   const array::Scalar& subglacial_water_pressure() const;

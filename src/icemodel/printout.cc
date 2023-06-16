@@ -48,7 +48,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
     return 0;
   }
 
-  IceGrid::ConstPtr grid = u3.grid();
+  std::shared_ptr<const IceGrid> grid = u3.grid();
 
   const double
     CFL_x = grid->dx() / dt,

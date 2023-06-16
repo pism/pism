@@ -39,7 +39,7 @@ namespace surface {
  */
 class InitializationHelper : public SurfaceModel {
 public:
-  InitializationHelper(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
+  InitializationHelper(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in);
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

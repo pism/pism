@@ -28,7 +28,7 @@ namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Factory::Factory(IceGrid::ConstPtr grid)
+Factory::Factory(std::shared_ptr<const IceGrid> grid)
   : PCFactory<SeaLevel>(grid, "sea_level.models") {
 
   add_model<SeaLevel>("constant");

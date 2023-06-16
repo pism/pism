@@ -26,7 +26,7 @@
 namespace pism {
 namespace frontalmelt {
   
-DischargeGiven::DischargeGiven(IceGrid::ConstPtr grid)
+DischargeGiven::DischargeGiven(std::shared_ptr<const IceGrid> grid)
   : FrontalMelt(grid, nullptr),
     m_frontal_melt_rate(grid, "frontal_melt_rate") {
 

@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-WeertmanSliding::WeertmanSliding(IceGrid::ConstPtr grid)
+WeertmanSliding::WeertmanSliding(std::shared_ptr<const IceGrid> grid)
   : ShallowStressBalance(grid) {
   // Use the SIA flow law.
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);

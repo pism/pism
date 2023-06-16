@@ -23,7 +23,7 @@ namespace pism {
 namespace ocean {
 
 // "modifier" constructor
-CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> input)
+CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> input)
   : OceanModel(g, input) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
@@ -31,7 +31,7 @@ CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g, std::shared_ptr<Ocea
 }
 
 // "model" constructor
-CompleteOceanModel::CompleteOceanModel(IceGrid::ConstPtr g)
+CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const IceGrid> g)
   : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }

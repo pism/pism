@@ -24,7 +24,7 @@
 namespace pism {
 namespace surface {
 
-ElevationChange::ElevationChange(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
+ElevationChange::ElevationChange(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   {

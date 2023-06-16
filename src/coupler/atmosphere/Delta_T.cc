@@ -25,7 +25,7 @@
 namespace pism {
 namespace atmosphere {
 
-Delta_T::Delta_T(IceGrid::ConstPtr grid, std::shared_ptr<AtmosphereModel> in)
+Delta_T::Delta_T(std::shared_ptr<const IceGrid> grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   std::string

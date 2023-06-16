@@ -36,7 +36,7 @@ namespace surface {
 
 ///// PISM surface model implementing a PDD scheme.
 
-TemperatureIndex::TemperatureIndex(IceGrid::ConstPtr g,
+TemperatureIndex::TemperatureIndex(std::shared_ptr<const IceGrid> g,
                                    std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance"),

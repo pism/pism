@@ -27,7 +27,7 @@
 namespace pism {
 namespace ocean {
 
-Constant::Constant(IceGrid::ConstPtr g)
+Constant::Constant(std::shared_ptr<const IceGrid> g)
   : CompleteOceanModel(g) {
   // empty
 }

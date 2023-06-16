@@ -29,7 +29,7 @@ namespace frontalmelt {
 class Given : public FrontalMelt
 {
 public:
-  Given(IceGrid::ConstPtr g);
+  Given(std::shared_ptr<const IceGrid> g);
   virtual ~Given() = default;
 
 private:

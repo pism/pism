@@ -272,7 +272,7 @@ Inputs::Inputs() {
   no_model_mask      = nullptr;
 }
 
-Hydrology::Hydrology(IceGrid::ConstPtr g)
+Hydrology::Hydrology(std::shared_ptr<const IceGrid> g)
   : Component(g),
     m_Q(m_grid, "water_flux"),
     m_Wtill(m_grid, "tillwat"),
@@ -558,7 +558,7 @@ void check_bounds(const array::Scalar& W, double W_max) {
 
   std::string name = W.metadata().get_string("long_name");
 
-  IceGrid::ConstPtr grid = W.grid();
+  auto grid = W.grid();
 
   array::AccessScope list(W);
   ParallelSection loop(grid->com);

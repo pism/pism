@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-Given::Given(IceGrid::ConstPtr g)
+Given::Given(std::shared_ptr<const IceGrid> g)
   : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 

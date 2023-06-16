@@ -33,7 +33,7 @@ namespace calving {
 /*! @brief An abstract class containing fields used by all stress-based calving methods. */
 class StressCalving : public Component {
 public:
-  StressCalving(IceGrid::ConstPtr grid, unsigned int stencil_width);
+  StressCalving(std::shared_ptr<const IceGrid> grid, unsigned int stencil_width);
   virtual ~StressCalving() = default;
 
   const array::Scalar &calving_rate() const;

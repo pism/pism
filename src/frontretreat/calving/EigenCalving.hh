@@ -27,7 +27,7 @@ namespace calving {
 
 class EigenCalving : public StressCalving {
 public:
-  EigenCalving(IceGrid::ConstPtr grid);
+  EigenCalving(std::shared_ptr<const IceGrid> grid);
   virtual ~EigenCalving() = default;
 
   void init();

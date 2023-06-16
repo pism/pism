@@ -74,7 +74,7 @@ private:
   Subclasses of SSA should provide an associated function pointer matching the
   SSAFactory typedef */
 class SSA;
-typedef SSA * (*SSAFactory)(IceGrid::ConstPtr);
+typedef SSA * (*SSAFactory)(std::shared_ptr<const IceGrid>);
 
 
 //! PISM's SSA solver.
@@ -109,7 +109,7 @@ typedef SSA * (*SSAFactory)(IceGrid::ConstPtr);
 */
 class SSA : public ShallowStressBalance {
 public:
-  SSA(IceGrid::ConstPtr g);
+  SSA(std::shared_ptr<const IceGrid> g);
   virtual ~SSA();
 
   SSAStrengthExtension *strength_extension;

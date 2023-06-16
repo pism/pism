@@ -34,7 +34,7 @@ namespace pism {
   Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
   sliding coefficients under ice sheets, applied to Antarctica"
 */
-OptTillphiYieldStress::OptTillphiYieldStress(IceGrid::ConstPtr grid)
+OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const IceGrid> grid)
   : MohrCoulombYieldStress(grid),
     m_mask(m_grid, "diff_mask"),
     m_usurf_difference(m_grid, "usurf_difference"),

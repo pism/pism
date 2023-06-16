@@ -39,7 +39,7 @@ namespace hydrology {
 */
 class NullTransport : public Hydrology {
 public:
-  NullTransport(IceGrid::ConstPtr g);
+  NullTransport(std::shared_ptr<const IceGrid> g);
   virtual ~NullTransport() = default;
 
 protected:

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2008-2018, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,6 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Units.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/IceGrid.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {
@@ -34,6 +33,7 @@ class File;
 class Geometry;
 class Time;
 class Profiling;
+class IceGrid;
 
 namespace array {
 template<typename T> class Array2D;
@@ -118,13 +118,13 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 class Component {
 public:
   /** Create a Component instance given a grid. */
-  Component(IceGrid::ConstPtr g);
+  Component(std::shared_ptr<const IceGrid> grid);
   virtual ~Component() = default;
 
   DiagnosticList diagnostics() const;
   TSDiagnosticList ts_diagnostics() const;
 
-  IceGrid::ConstPtr grid() const;
+  std::shared_ptr<const IceGrid> grid() const;
 
   const Time &time() const;
 
@@ -153,7 +153,7 @@ protected:
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 
   //! grid used by this component
-  const IceGrid::ConstPtr m_grid;
+  const std::shared_ptr<const IceGrid> m_grid;
   //! configuration database used by this component
   const Config::ConstPtr m_config;
   //! unit system used by this component

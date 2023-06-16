@@ -26,7 +26,7 @@
 namespace pism {
 namespace surface {
 
-NoGLRetreat::NoGLRetreat(IceGrid::ConstPtr grid,
+NoGLRetreat::NoGLRetreat(std::shared_ptr<const IceGrid> grid,
                          std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(grid, input),
     m_smb_adjustment(grid, "smb_adjustment"),

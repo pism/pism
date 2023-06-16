@@ -64,7 +64,7 @@ void remove_narrow_tongues(const Geometry &geometry,
   const auto &bed       = geometry.bed_elevation;
   const auto &sea_level = geometry.sea_level_elevation;
 
-  IceGrid::ConstPtr grid = mask.grid();
+  auto grid = mask.grid();
 
   array::AccessScope list{&mask, &bed, &sea_level, &ice_thickness};
 

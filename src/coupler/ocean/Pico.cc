@@ -46,7 +46,7 @@
 namespace pism {
 namespace ocean {
 
-Pico::Pico(IceGrid::ConstPtr grid)
+Pico::Pico(std::shared_ptr<const IceGrid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
     m_Soc(m_grid, "pico_salinity"),
     m_Soc_box0(m_grid, "pico_salinity_box0"),

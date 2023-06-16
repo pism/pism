@@ -28,7 +28,7 @@ namespace frontalmelt {
 class DischargeRouting : public FrontalMelt
 {
 public:
-  DischargeRouting(IceGrid::ConstPtr g);
+  DischargeRouting(std::shared_ptr<const IceGrid> g);
   virtual ~DischargeRouting() = default;
 
   void initialize(const array::Scalar &theta);

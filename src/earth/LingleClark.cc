@@ -33,7 +33,7 @@
 namespace pism {
 namespace bed {
 
-LingleClark::LingleClark(IceGrid::ConstPtr grid)
+LingleClark::LingleClark(std::shared_ptr<const IceGrid> grid)
   : BedDef(grid),
     m_total_displacement(m_grid, "bed_displacement"),
     m_relief(m_grid, "bed_relief"),

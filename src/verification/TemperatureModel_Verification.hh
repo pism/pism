@@ -28,7 +28,7 @@ namespace energy {
 /*! @brief Temperature-based energy balance model with verification-specific initialization code. */
 class TemperatureModel_Verification : public TemperatureModel {
 public:
-  TemperatureModel_Verification(IceGrid::ConstPtr grid,
+  TemperatureModel_Verification(std::shared_ptr<const IceGrid> grid,
                                 stressbalance::StressBalance *stress_balance,
                                 int testname, bool bedrock_is_ice);
 

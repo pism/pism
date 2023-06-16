@@ -27,7 +27,7 @@ namespace pism {
 //! Mohr-Coulomb model of deformable, pressurized till.
 class MohrCoulombYieldStress : public YieldStress {
 public:
-  MohrCoulombYieldStress(IceGrid::ConstPtr g);
+  MohrCoulombYieldStress(std::shared_ptr<const IceGrid> g);
   virtual ~MohrCoulombYieldStress() = default;
 
   void set_till_friction_angle(const array::Scalar &input);

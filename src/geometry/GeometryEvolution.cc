@@ -44,7 +44,7 @@ using mask::ice_free_ocean;
 using mask::icy;
 
 struct GeometryEvolution::Impl {
-  Impl(IceGrid::ConstPtr g);
+  Impl(std::shared_ptr<const IceGrid> g);
 
   GeometryCalculator gc;
 
@@ -90,7 +90,7 @@ struct GeometryEvolution::Impl {
   array::Scalar1   thickness;   // temporary storage
 };
 
-GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
+GeometryEvolution::Impl::Impl(std::shared_ptr<const IceGrid> grid)
   : gc(*grid->ctx()->config()),
     flux_divergence(grid, "flux_divergence"),
     conservation_error(grid, "conservation_error"),
@@ -182,7 +182,7 @@ GeometryEvolution::Impl::Impl(IceGrid::ConstPtr grid)
   }
 }
 
-GeometryEvolution::GeometryEvolution(IceGrid::ConstPtr grid)
+GeometryEvolution::GeometryEvolution(std::shared_ptr<const IceGrid> grid)
   : Component(grid) {
   m_impl = new Impl(grid);
 }
@@ -1174,7 +1174,7 @@ DiagnosticList GeometryEvolution::diagnostics_impl() const {
   return result;
 }
 
-RegionalGeometryEvolution::RegionalGeometryEvolution(IceGrid::ConstPtr grid)
+RegionalGeometryEvolution::RegionalGeometryEvolution(std::shared_ptr<const IceGrid> grid)
   : GeometryEvolution(grid),
     m_no_model_mask(m_grid, "no_model_mask") {
 

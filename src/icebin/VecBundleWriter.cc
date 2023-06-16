@@ -7,6 +7,7 @@
 #include <pism/icebin/VecBundleWriter.hh>
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array.hh"
+#include "pism/util/IceGrid.hh"
 
 using namespace pism;
 

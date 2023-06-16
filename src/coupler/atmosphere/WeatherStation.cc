@@ -28,7 +28,7 @@
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(IceGrid::ConstPtr grid)
+WeatherStation::WeatherStation(std::shared_ptr<const IceGrid> grid)
   : AtmosphereModel(grid) {
 
   m_log->message(2,

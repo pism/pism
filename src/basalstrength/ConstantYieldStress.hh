@@ -27,7 +27,7 @@ class IceGrid;
 
 class ConstantYieldStress : public YieldStress {
 public:
-  ConstantYieldStress(IceGrid::ConstPtr g);
+  ConstantYieldStress(std::shared_ptr<const IceGrid> g);
   virtual ~ConstantYieldStress() = default;
 private:
   void restart_impl(const File &input_file, int record);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PrescribedRetreat::PrescribedRetreat(IceGrid::ConstPtr grid)
+PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const IceGrid> grid)
   : Component(grid) {
   ForcingOptions opt(*m_grid->ctx(), "geometry.front_retreat.prescribed");
   {

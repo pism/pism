@@ -28,7 +28,7 @@
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(IceGrid::ConstPtr grid)
+EigenCalving::EigenCalving(std::shared_ptr<const IceGrid> grid)
   : StressCalving(grid, 2) {
 
   m_K = m_config->get_number("calving.eigen_calving.K");

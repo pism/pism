@@ -5,7 +5,7 @@
 namespace pism{
 namespace icebin{
 
-MassEnthVec2S::MassEnthVec2S(pism::IceGrid::ConstPtr my_grid,
+MassEnthVec2S::MassEnthVec2S(std::shared_ptr<const IceGrid> my_grid,
                              const std::string &my_name)
   : mass(my_grid, my_name + ".mass"),
     enth(my_grid, my_name + ".enth")
@@ -27,7 +27,7 @@ void MassEnthVec2S::set_attrs(
                  energy_units, energy_units, standard_name + ".enth", 0);
 }
 
-MassEnergyBudget::MassEnergyBudget(pism::IceGrid::ConstPtr grid, std::string const &prefix)
+MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const IceGrid> grid, std::string const &prefix)
   : total(grid, prefix+"total"),
     basal_frictional_heating(grid, prefix+"basal_frictional_heating"),
     strain_heating(grid, prefix+"strain_heating"),
@@ -162,7 +162,7 @@ std::ostream &MassEnergyBudget::print_formulas(std::ostream &out)
 }
 
 
-void MassEnergyBudget::set_epsilon(pism::IceGrid::ConstPtr grid)
+void MassEnergyBudget::set_epsilon(std::shared_ptr<const IceGrid> grid)
 {
 	// ==> epsilon = (sum of fluxes) - total
 	printf("BEGIN MassEnergyBudget::set_epsilon()\n");

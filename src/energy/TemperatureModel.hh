@@ -27,7 +27,7 @@ namespace energy {
 
 class TemperatureModel : public EnergyModel {
 public:
-  TemperatureModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
+  TemperatureModel(std::shared_ptr<const IceGrid> grid, stressbalance::StressBalance *stress_balance);
 
   const array::Array3D & temperature() const;
 

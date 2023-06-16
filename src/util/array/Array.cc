@@ -52,7 +52,7 @@ static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
 
 namespace array {
 
-Array::Array(IceGrid::ConstPtr grid,
+Array::Array(std::shared_ptr<const IceGrid> grid,
              const std::string &name,
              Kind ghostedp,
              size_t dof,
@@ -126,7 +126,7 @@ int Array::state_counter() const {
   return m_impl->state_counter;
 }
 
-IceGrid::ConstPtr Array::grid() const {
+std::shared_ptr<const IceGrid> Array::grid() const {
   return m_impl->grid;
 }
 

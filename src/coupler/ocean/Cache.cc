@@ -31,7 +31,7 @@
 namespace pism {
 namespace ocean {
 
-Cache::Cache(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in)
+Cache::Cache(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_next_update_time = time().current();

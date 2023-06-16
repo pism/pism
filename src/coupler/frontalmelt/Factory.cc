@@ -28,7 +28,7 @@
 namespace pism {
 namespace frontalmelt {
 // FrontalMelt
-Factory::Factory(IceGrid::ConstPtr g)
+Factory::Factory(std::shared_ptr<const IceGrid> g)
   : PCFactory<FrontalMelt>(g, "frontal_melt.models") {
 
   add_model<Constant>("constant");

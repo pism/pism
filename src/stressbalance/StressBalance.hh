@@ -77,7 +77,7 @@ public:
 class StressBalance : public Component
 {
 public:
-  StressBalance(IceGrid::ConstPtr g,
+  StressBalance(std::shared_ptr<const IceGrid> g,
                 std::shared_ptr<ShallowStressBalance> sb,
                 std::shared_ptr<SSB_Modifier> ssb_mod);
   virtual ~StressBalance();
@@ -144,7 +144,7 @@ protected:
 };
 
 std::shared_ptr<StressBalance> create(const std::string &model_name,
-                                      IceGrid::ConstPtr grid,
+                                      std::shared_ptr<const IceGrid> grid,
                                       bool regional);
 
 struct PrincipalStrainRates {

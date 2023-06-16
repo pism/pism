@@ -24,7 +24,6 @@
 #include <cstdint>              // uint64_t
 #include <array>
 
-#include "pism/util/IceGrid.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh" // RuntimeError
 
@@ -40,6 +39,10 @@ class DM;
 class Vec;
 class Viewer;
 } // end of namespace petsc
+
+namespace units {
+class System;
+}
 
 class PetscAccessible {
 public:
@@ -216,7 +219,7 @@ public:
     return result;
   }
 
-  IceGrid::ConstPtr grid() const;
+  std::shared_ptr<const IceGrid> grid() const;
   unsigned int ndims() const;
   std::vector<int> shape() const;
   //! @brief Returns the number of degrees of freedom per grid point.
@@ -279,7 +282,7 @@ public:
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
 
 protected:
-  Array(IceGrid::ConstPtr grid,
+  Array(std::shared_ptr<const IceGrid> grid,
         const std::string &name,
         Kind ghostedp,
         size_t dof,

@@ -24,7 +24,7 @@
 namespace pism {
 namespace inverse {
 
-IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(IceGrid::ConstPtr grid,
+IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(std::shared_ptr<const IceGrid> grid,
                                                            double c, double exponent, double eps,
                                                            array::Scalar *dirichletLocations) :
     IPFunctional<array::Scalar>(grid), m_dirichletIndices(dirichletLocations),

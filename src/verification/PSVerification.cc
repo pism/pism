@@ -48,7 +48,7 @@ const double Verification::Tmin = 223.15;  // K
 const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
-Verification::Verification(IceGrid::ConstPtr g,
+Verification::Verification(std::shared_ptr<const IceGrid> g,
                            EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty

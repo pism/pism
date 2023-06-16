@@ -73,7 +73,7 @@ public:
 
 class EnergyModel : public Component {
 public:
-  EnergyModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
+  EnergyModel(std::shared_ptr<const IceGrid> grid, stressbalance::StressBalance *stress_balance);
 
   void restart(const File &input_file, int record);
 

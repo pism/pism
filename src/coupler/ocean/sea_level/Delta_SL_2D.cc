@@ -25,7 +25,7 @@ namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Delta_SL_2D::Delta_SL_2D(IceGrid::ConstPtr grid, std::shared_ptr<SeaLevel> in)
+Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.delta_sl_2d");

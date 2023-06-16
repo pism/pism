@@ -28,7 +28,7 @@
 namespace pism {
 namespace energy {
 
-TemperatureModel::TemperatureModel(IceGrid::ConstPtr grid,
+TemperatureModel::TemperatureModel(std::shared_ptr<const IceGrid> grid,
                                    stressbalance::StressBalance *stress_balance)
   : EnergyModel(grid, stress_balance),
     m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {

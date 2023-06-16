@@ -32,8 +32,8 @@ namespace atmosphere {
 //! A purely virtual class defining the interface of a PISM Atmosphere Model.
 class AtmosphereModel : public Component {
 public:
-  AtmosphereModel(IceGrid::ConstPtr g);
-  AtmosphereModel(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> input);
+  AtmosphereModel(std::shared_ptr<const IceGrid> g);
+  AtmosphereModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> input);
   virtual ~AtmosphereModel() = default;
 
   void init(const Geometry &geometry);
@@ -84,8 +84,8 @@ protected:
 
   std::shared_ptr<AtmosphereModel> m_input_model;
 
-  static array::Scalar::Ptr allocate_temperature(IceGrid::ConstPtr grid);
-  static array::Scalar::Ptr allocate_precipitation(IceGrid::ConstPtr grid);
+  static array::Scalar::Ptr allocate_temperature(std::shared_ptr<const IceGrid> grid);
+  static array::Scalar::Ptr allocate_precipitation(std::shared_ptr<const IceGrid> grid);
 };
 
 } // end of namespace atmosphere

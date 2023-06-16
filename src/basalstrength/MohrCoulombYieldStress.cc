@@ -87,7 +87,7 @@ This determines the map of @f$\varphi(x,y)@f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-MohrCoulombYieldStress::MohrCoulombYieldStress(IceGrid::ConstPtr grid)
+MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const IceGrid> grid)
   : YieldStress(grid),
   m_till_phi(m_grid, "tillphi") {
 

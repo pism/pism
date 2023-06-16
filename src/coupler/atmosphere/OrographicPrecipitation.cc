@@ -28,7 +28,7 @@
 namespace pism {
 namespace atmosphere {
 
-OrographicPrecipitation::OrographicPrecipitation(IceGrid::ConstPtr grid,
+OrographicPrecipitation::OrographicPrecipitation(std::shared_ptr<const IceGrid> grid,
                                                  std::shared_ptr<AtmosphereModel> in)
     : AtmosphereModel(grid, in) {
 

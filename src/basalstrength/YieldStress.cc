@@ -31,7 +31,7 @@ YieldStressInputs::YieldStressInputs() {
   subglacial_water_thickness = nullptr;
 }
 
-YieldStress::YieldStress(IceGrid::ConstPtr g)
+YieldStress::YieldStress(std::shared_ptr<const IceGrid> g)
   : Component(g),
   m_basal_yield_stress(m_grid, "tauc") {
 

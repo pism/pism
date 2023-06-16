@@ -38,7 +38,7 @@ namespace pism {
  */
 class GeometryEvolution : public Component {
 public:
-  GeometryEvolution(IceGrid::ConstPtr grid);
+  GeometryEvolution(std::shared_ptr<const IceGrid> grid);
   ~GeometryEvolution();
 
   void init(const InputOptions &opts);
@@ -130,7 +130,7 @@ protected:
 
 class RegionalGeometryEvolution : public GeometryEvolution {
 public:
-  RegionalGeometryEvolution(IceGrid::ConstPtr grid);
+  RegionalGeometryEvolution(std::shared_ptr<const IceGrid> grid);
 
 protected:
   void set_no_model_mask_impl(const array::Scalar &mask);

@@ -29,7 +29,7 @@ namespace ocean {
 class Anomaly : public OceanModel
 {
 public:
-  Anomaly(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in);
   virtual ~Anomaly() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);

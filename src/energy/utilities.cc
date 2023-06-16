@@ -49,7 +49,7 @@ void compute_enthalpy_cold(const array::Array3D &temperature,
                            const array::Scalar &ice_thickness,
                            array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{&temperature, &result, &ice_thickness};
@@ -78,7 +78,7 @@ void compute_temperature(const array::Array3D &enthalpy,
                          const array::Scalar &ice_thickness,
                          array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{&enthalpy, &ice_thickness, &result};
@@ -111,7 +111,7 @@ void compute_enthalpy(const array::Array3D &temperature,
                       const array::Scalar &ice_thickness,
                       array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   array::AccessScope list{&temperature, &liquid_water_fraction, &ice_thickness, &result};
@@ -142,7 +142,7 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
                                    const array::Scalar &ice_thickness,
                                    array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
@@ -186,7 +186,7 @@ void compute_cts(const array::Array3D &ice_enthalpy,
                  const array::Scalar &ice_thickness,
                  array::Array3D &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("cts");
@@ -227,7 +227,7 @@ double total_ice_enthalpy(double thickness_threshold,
                           const array::Scalar &ice_thickness) {
   double enthalpy_sum = 0.0;
 
-  IceGrid::ConstPtr grid = ice_enthalpy.grid();
+  auto grid = ice_enthalpy.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   auto cell_area = grid->cell_area();

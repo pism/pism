@@ -32,7 +32,7 @@ class LingleClarkSerial;
 //! A wrapper class around LingleClarkSerial.
 class LingleClark : public BedDef {
 public:
-  LingleClark(IceGrid::ConstPtr g);
+  LingleClark(std::shared_ptr<const IceGrid> g);
   virtual ~LingleClark();
 
   const array::Scalar& total_displacement() const;

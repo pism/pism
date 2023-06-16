@@ -56,7 +56,7 @@ namespace atmosphere {
  */
 class PrecipitationScaling : public AtmosphereModel {
 public:
-  PrecipitationScaling(IceGrid::ConstPtr g, std::shared_ptr<AtmosphereModel> in);
+  PrecipitationScaling(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~PrecipitationScaling() = default;
 
 protected:

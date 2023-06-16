@@ -31,7 +31,7 @@
 namespace pism {
 namespace atmosphere {
 
-CosineYearlyCycle::CosineYearlyCycle(IceGrid::ConstPtr grid)
+CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const IceGrid> grid)
   : YearlyCycle(grid) {
 
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");

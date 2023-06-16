@@ -109,7 +109,7 @@ public:
 */
 class Hydrology : public Component {
 public:
-  Hydrology(IceGrid::ConstPtr g);
+  Hydrology(std::shared_ptr<const IceGrid> g);
   virtual ~Hydrology() = default;
 
   void restart(const File &input_file, int record);

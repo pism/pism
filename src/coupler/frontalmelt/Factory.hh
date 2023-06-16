@@ -26,7 +26,7 @@ namespace pism {
 namespace frontalmelt {
 class Factory : public PCFactory<frontalmelt::FrontalMelt> {
 public:
-  Factory(IceGrid::ConstPtr g);
+  Factory(std::shared_ptr<const IceGrid> g);
   ~Factory() = default;
 };
 } // end of namespace frontalmelt

@@ -31,7 +31,7 @@ namespace ocean {
 class Delta_SMB : public OceanModel
 {
 public:
-  Delta_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Delta_SMB(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SMB();
 
 private:

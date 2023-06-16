@@ -82,7 +82,7 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 /*! Allocate a complete or minimal bedrock thermal unit depending on the number of bedrock levels.
  *
  */
-std::shared_ptr<BedThermalUnit> BedThermalUnit::FromOptions(IceGrid::ConstPtr grid,
+std::shared_ptr<BedThermalUnit> BedThermalUnit::FromOptions(std::shared_ptr<const IceGrid> grid,
                                                             std::shared_ptr<const Context> ctx) {
 
   auto bedrock_grid = BTUGrid::FromOptions(ctx);
@@ -95,7 +95,7 @@ std::shared_ptr<BedThermalUnit> BedThermalUnit::FromOptions(IceGrid::ConstPtr gr
 }
 
 
-BedThermalUnit::BedThermalUnit(IceGrid::ConstPtr g)
+BedThermalUnit::BedThermalUnit(std::shared_ptr<const IceGrid> g)
   : Component(g),
     m_bottom_surface_flux(m_grid, "bheatflx"),
     m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {

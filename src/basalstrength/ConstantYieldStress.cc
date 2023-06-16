@@ -26,7 +26,7 @@
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(IceGrid::ConstPtr grid)
+ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const IceGrid> grid)
   : YieldStress(grid) {
 
   m_name = "constant yield stress model";

@@ -28,7 +28,7 @@ namespace energy {
 class BTU_Verification : public BTU_Full
 {
 public:
-  BTU_Verification(IceGrid::ConstPtr g,
+  BTU_Verification(std::shared_ptr<const IceGrid> g,
                    const BTUGrid &vertical_grid,
                    int test, bool bii);
   virtual ~BTU_Verification() = default;

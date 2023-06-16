@@ -26,7 +26,7 @@
 namespace pism {
 namespace frontalmelt {
 
-Constant::Constant(IceGrid::ConstPtr g)
+Constant::Constant(std::shared_ptr<const IceGrid> g)
   : FrontalMelt(g) {
   m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
   m_frontal_melt_rate->set_attrs("diagnostic", "frontal melt rate",

@@ -361,7 +361,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(IceGrid::ConstPtr grid)
+FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const IceGrid> grid)
   : m_grid(grid), m_config(grid->ctx()->config()),
     m_temp_mj(grid, "temp_mj_faustogreve")
 {

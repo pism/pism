@@ -199,7 +199,7 @@ void hydraulic_potential(const array::Scalar &W,
                          const array::Scalar &ice_thickness,
                          array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   Config::ConstPtr config = grid->ctx()->config();
 
@@ -257,7 +257,7 @@ protected:
 
 } // end of namespace diagnostics
 
-Routing::Routing(IceGrid::ConstPtr grid)
+Routing::Routing(std::shared_ptr<const IceGrid> grid)
   : Hydrology(grid),
     m_Qstag(grid, "advection_flux"),
     m_Qstag_average(grid, "cumulative_advection_flux"),
@@ -545,7 +545,7 @@ void wall_melt(const Routing &model,
                const array::Scalar &bed_elevation,
                array::Scalar &result) {
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   Config::ConstPtr config = grid->ctx()->config();
 

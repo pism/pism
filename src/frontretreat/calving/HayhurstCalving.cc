@@ -27,7 +27,7 @@
 namespace pism {
 namespace calving {
 
-HayhurstCalving::HayhurstCalving(IceGrid::ConstPtr grid)
+HayhurstCalving::HayhurstCalving(std::shared_ptr<const IceGrid> grid)
   : Component(grid),
     m_calving_rate(grid, "hayhurst_calving_rate")
 {

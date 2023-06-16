@@ -68,7 +68,7 @@ void generate_trough_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   const double
     b0    = 1000.0,  // plateau elevation
@@ -95,7 +95,7 @@ void generate_mound_topography(array::Scalar &result) {
   // computation based on code by Tony Payne, 6 March 1997:
   // http://homepages.vub.ac.be/~phuybrec/eismint/topog2.f
 
-  IceGrid::ConstPtr grid = result.grid();
+  auto grid = result.grid();
 
   const double slope = 250.0;
   const double w     = 150.0e3; // mound width

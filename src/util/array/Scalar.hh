@@ -33,7 +33,7 @@ public:
   typedef std::shared_ptr<Scalar> Ptr;
   typedef std::shared_ptr<const Scalar> ConstPtr;
 
-  Scalar(IceGrid::ConstPtr grid, const std::string &name);
+  Scalar(std::shared_ptr<const IceGrid> grid, const std::string &name);
 
   std::shared_ptr<Scalar> duplicate() const;
 
@@ -42,7 +42,7 @@ public:
 protected:
   inline stencils::Star<int> star_int(int i, int j) const;
   inline stencils::Box<int> box_int(int i, int j) const;
-  Scalar(IceGrid::ConstPtr grid, const std::string &name, int width);
+  Scalar(std::shared_ptr<const IceGrid> grid, const std::string &name, int width);
 };
 
 inline int Scalar::as_int(int i, int j) const {
@@ -58,13 +58,13 @@ public:
   typedef std::shared_ptr<Scalar1> Ptr;
   typedef std::shared_ptr<const Scalar1> ConstPtr;
 
-  Scalar1(IceGrid::ConstPtr grid, const std::string &name);
+  Scalar1(std::shared_ptr<const IceGrid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
   using Scalar::star_int;
   using Scalar::box_int;
 protected:
-  Scalar1(IceGrid::ConstPtr grid, const std::string &name, int width);
+  Scalar1(std::shared_ptr<const IceGrid> grid, const std::string &name, int width);
 };
 
 /*!
@@ -75,7 +75,7 @@ public:
   typedef std::shared_ptr<Scalar2> Ptr;
   typedef std::shared_ptr<const Scalar2> ConstPtr;
 
-  Scalar2(IceGrid::ConstPtr grid, const std::string &name);
+  Scalar2(std::shared_ptr<const IceGrid> grid, const std::string &name);
 };
 
 inline stencils::Star<int> Scalar::star_int(int i, int j) const {

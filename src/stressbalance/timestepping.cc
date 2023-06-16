@@ -47,7 +47,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
                             const array::Array3D &v3,
                             const array::Array3D &w3) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
@@ -118,7 +118,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
                             const array::Vector &velocity) {
 
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");

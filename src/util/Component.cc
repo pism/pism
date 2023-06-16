@@ -78,7 +78,7 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
   return InputOptions(type, input_filename, record);
 }
 
-Component::Component(IceGrid::ConstPtr g)
+Component::Component(std::shared_ptr<const IceGrid> g)
     : m_grid(g),
       m_config(g->ctx()->config()),
       m_sys(g->ctx()->unit_system()),
@@ -102,7 +102,7 @@ TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 
-IceGrid::ConstPtr Component::grid() const {
+std::shared_ptr<const IceGrid> Component::grid() const {
   return m_grid;
 }
 

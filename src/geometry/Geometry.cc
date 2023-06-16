@@ -30,7 +30,7 @@
 
 namespace pism {
 
-Geometry::Geometry(const IceGrid::ConstPtr &grid)
+Geometry::Geometry(const std::shared_ptr<const IceGrid> &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
   : latitude(grid, "lat"),
@@ -96,7 +96,7 @@ Geometry::Geometry(const IceGrid::ConstPtr &grid)
 }
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
-  IceGrid::ConstPtr grid = ice_thickness.grid();
+  auto grid = ice_thickness.grid();
   Config::ConstPtr config = grid->ctx()->config();
 
   array::AccessScope list{&sea_level_elevation, &bed_elevation,

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,7 +38,7 @@ void compute_load(const array::Scalar &bed_elevation,
 //! PISM bed deformation model (base class).
 class BedDef : public Component {
 public:
-  BedDef(IceGrid::ConstPtr g);
+  BedDef(std::shared_ptr<const IceGrid> g);
   virtual ~BedDef() = default;
 
   void init(const InputOptions &opts, const array::Scalar &ice_thickness,
@@ -91,7 +91,7 @@ protected:
  */
 class Null : public BedDef {
 public:
-  Null(IceGrid::ConstPtr g);
+  Null(std::shared_ptr<const IceGrid> g);
 protected:
   void update_impl(const array::Scalar &ice_thickness,
                    const array::Scalar &sea_level_elevation,
@@ -104,7 +104,7 @@ protected:
 //! Point-wise isostasy bed deformation model.
 class PointwiseIsostasy : public BedDef {
 public:
-  PointwiseIsostasy(IceGrid::ConstPtr g);
+  PointwiseIsostasy(std::shared_ptr<const IceGrid> g);
   virtual ~PointwiseIsostasy() = default;
 protected:
   MaxTimestep max_timestep_impl(double t) const;

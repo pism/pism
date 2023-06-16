@@ -72,7 +72,7 @@ double SSAStrengthExtension::get_min_thickness() const {
 }
 
 
-SSA::SSA(IceGrid::ConstPtr g)
+SSA::SSA(std::shared_ptr<const IceGrid> g)
   : ShallowStressBalance(g),
     m_mask(m_grid, "ssa_mask"),
     m_taud(m_grid, "taud"),

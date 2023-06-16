@@ -108,7 +108,7 @@ struct Forcing::Data {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  * @param[in] interpolation_type type of temporal interpolation (LINEAR or PIECEWISE_CONSTANT)
  */
-Forcing::Forcing(IceGrid::ConstPtr grid,
+Forcing::Forcing(std::shared_ptr<const IceGrid> grid,
                  const File &file,
                  const std::string &short_name,
                  const std::string &standard_name,
@@ -143,7 +143,7 @@ Forcing::Forcing(IceGrid::ConstPtr grid,
   allocate(short_name, buffer_size, interpolation_type);
 }
 
-std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
+std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const IceGrid> grid,
                                            const std::string &short_name,
                                            double value) {
   // note: cannot use std::make_shared because of a private constructor
@@ -166,7 +166,7 @@ std::shared_ptr<Forcing> Forcing::Constant(IceGrid::ConstPtr grid,
   return result;
 }
 
-Forcing::Forcing(IceGrid::ConstPtr grid, const std::string &short_name,
+Forcing::Forcing(std::shared_ptr<const IceGrid> grid, const std::string &short_name,
                  unsigned int buffer_size,
                  InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),

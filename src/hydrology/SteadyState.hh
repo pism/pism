@@ -33,7 +33,7 @@ class EmptyingProblem;
  */
 class SteadyState : public NullTransport {
 public:
-  SteadyState(IceGrid::ConstPtr g);
+  SteadyState(std::shared_ptr<const IceGrid> g);
   virtual ~SteadyState() = default;
 
 protected:

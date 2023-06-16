@@ -27,7 +27,7 @@
 
 namespace pism {
 
-FrontRetreat::FrontRetreat(IceGrid::ConstPtr g)
+FrontRetreat::FrontRetreat(std::shared_ptr<const IceGrid> g)
   : Component(g),
     m_cell_type(m_grid, "cell_type"),
     m_tmp(m_grid, "temporary_storage") {
@@ -74,8 +74,8 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
                                        const array::Scalar &bc_mask,
                                        const array::Scalar &retreat_rate) const {
 
-  IceGrid::ConstPtr grid = retreat_rate.grid();
-  units::System::Ptr sys = grid->ctx()->unit_system();
+  auto grid = retreat_rate.grid();
+  auto sys = grid->ctx()->unit_system();
 
   using units::convert;
 

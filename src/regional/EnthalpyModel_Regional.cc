@@ -22,7 +22,7 @@
 namespace pism {
 namespace energy {
 
-EnthalpyModel_Regional::EnthalpyModel_Regional(IceGrid::ConstPtr grid,
+EnthalpyModel_Regional::EnthalpyModel_Regional(std::shared_ptr<const IceGrid> grid,
                                                stressbalance::StressBalance *stress_balance)
   : EnthalpyModel(grid, stress_balance),
     m_basal_melt_rate_stored(m_grid, "bmr_stored")

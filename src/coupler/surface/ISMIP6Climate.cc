@@ -26,7 +26,7 @@
 namespace pism {
 namespace surface {
 
-ISMIP6::ISMIP6(IceGrid::ConstPtr grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+ISMIP6::ISMIP6(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid),
     m_mass_flux_reference(m_grid, "climatic_mass_balance"),
     m_temperature_reference(m_grid, "ice_surface_temp"),

@@ -24,7 +24,7 @@
 namespace pism {
 namespace surface {
 
-Simple::Simple(IceGrid::ConstPtr g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+Simple::Simple(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(g, atmosphere) {
 
   m_temperature = allocate_temperature(g);

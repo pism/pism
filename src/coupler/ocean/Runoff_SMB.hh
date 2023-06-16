@@ -53,7 +53,7 @@ namespace ocean {
 class Runoff_SMB : public OceanModel
 {
 public:
-  Runoff_SMB(IceGrid::ConstPtr g, std::shared_ptr<OceanModel> in);
+  Runoff_SMB(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in);
   virtual ~Runoff_SMB();
 
 private:

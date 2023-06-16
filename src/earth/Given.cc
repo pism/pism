@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 namespace pism {
 namespace bed {
 
-Given::Given(IceGrid::ConstPtr grid)
+Given::Given(std::shared_ptr<const IceGrid> grid)
   : BedDef(grid),
     m_topg_reference(grid, "topg") {
 

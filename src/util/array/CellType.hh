@@ -32,7 +32,7 @@ public:
   typedef std::shared_ptr<CellType> Ptr;
   typedef std::shared_ptr<const CellType> ConstPtr;
 
-  CellType(IceGrid::ConstPtr grid, const std::string &name);
+  CellType(std::shared_ptr<const IceGrid> grid, const std::string &name);
 
   inline bool ocean(int i, int j) const {
     return mask::ocean(as_int(i, j));
@@ -66,7 +66,7 @@ public:
     return mask::ice_free_land(as_int(i, j));
   }
 protected:
-  CellType(IceGrid::ConstPtr grid, const std::string &name, int w);
+  CellType(std::shared_ptr<const IceGrid> grid, const std::string &name, int w);
 };
 
 /*!
@@ -77,7 +77,7 @@ public:
   typedef std::shared_ptr<CellType1> Ptr;
   typedef std::shared_ptr<const CellType1> ConstPtr;
 
-  CellType1(IceGrid::ConstPtr grid, const std::string &name);
+  CellType1(std::shared_ptr<const IceGrid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
   using Scalar::star_int;
@@ -114,7 +114,7 @@ public:
             ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
   }
 protected:
-  CellType1(IceGrid::ConstPtr grid, const std::string &name, int width);
+  CellType1(std::shared_ptr<const IceGrid> grid, const std::string &name, int width);
 };
 
 /*!
@@ -125,7 +125,7 @@ public:
   typedef std::shared_ptr<CellType2> Ptr;
   typedef std::shared_ptr<const CellType2> ConstPtr;
 
-  CellType2(IceGrid::ConstPtr grid, const std::string &name);
+  CellType2(std::shared_ptr<const IceGrid> grid, const std::string &name);
 };
 
 } // end of namespace array

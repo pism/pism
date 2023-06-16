@@ -95,7 +95,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 }
 
 // "modifier" constructor
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input)
+FrontalMelt::FrontalMelt(std::shared_ptr<const IceGrid> g, std::shared_ptr<FrontalMelt> input)
   : Component(g),
     m_input_model(input),
     m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt")
@@ -107,7 +107,7 @@ FrontalMelt::FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input
 }
 
 // "model" constructor
-FrontalMelt::FrontalMelt(IceGrid::ConstPtr g)
+FrontalMelt::FrontalMelt(std::shared_ptr<const IceGrid> g)
   : FrontalMelt(g, nullptr) {
   // empty
 }

@@ -25,7 +25,7 @@ namespace pism {
 
 namespace stressbalance {
 
-SSAFD_Regional::SSAFD_Regional(IceGrid::ConstPtr g)
+SSAFD_Regional::SSAFD_Regional(std::shared_ptr<const IceGrid> g)
   : SSAFD(g) {
 
   m_h_stored      = NULL;
@@ -144,7 +144,7 @@ void SSAFD_Regional::compute_driving_stress(const array::Scalar &ice_thickness,
   } // end of the loop over grid points
 }
 
-SSA * SSAFD_RegionalFactory(IceGrid::ConstPtr grid) {
+SSA * SSAFD_RegionalFactory(std::shared_ptr<const IceGrid> grid) {
   return new SSAFD_Regional(grid);
 }
 

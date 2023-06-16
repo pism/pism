@@ -23,7 +23,7 @@
 namespace pism {
 namespace surface {
 
-Anomaly::Anomaly(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in)
+Anomaly::Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");

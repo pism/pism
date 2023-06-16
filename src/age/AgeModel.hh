@@ -42,7 +42,7 @@ public:
 
 class AgeModel : public Component {
 public:
-  AgeModel(IceGrid::ConstPtr grid, stressbalance::StressBalance *stress_balance);
+  AgeModel(std::shared_ptr<const IceGrid> grid, stressbalance::StressBalance *stress_balance);
 
   void update(double t, double dt, const AgeModelInputs &inputs);
 

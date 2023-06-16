@@ -27,7 +27,7 @@ namespace surface {
 
 class Cache : public SurfaceModel {
 public:
-  Cache(IceGrid::ConstPtr g, std::shared_ptr<SurfaceModel> in);
+  Cache(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache() = default;
 protected:
   void init_impl(const Geometry &geometry);

@@ -43,9 +43,9 @@ namespace frontalmelt {
 class FrontalMelt : public Component {
 public:
   // "modifier" constructor
-  FrontalMelt(IceGrid::ConstPtr g, std::shared_ptr<FrontalMelt> input);
+  FrontalMelt(std::shared_ptr<const IceGrid> g, std::shared_ptr<FrontalMelt> input);
   // "model" constructor
-  FrontalMelt(IceGrid::ConstPtr g);
+  FrontalMelt(std::shared_ptr<const IceGrid> g);
 
   virtual ~FrontalMelt() = default;
 

@@ -50,7 +50,7 @@ class BedSmoother;
 class SIAFD : public SSB_Modifier
 {
 public:
-  SIAFD(IceGrid::ConstPtr g);
+  SIAFD(std::shared_ptr<const IceGrid> g);
 
   virtual ~SIAFD();
 

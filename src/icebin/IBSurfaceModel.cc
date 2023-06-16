@@ -32,7 +32,7 @@ namespace icebin {
 ///// ice surface temperature parameterized as in PISM-IBSurfaceModel dependent on latitude and surface elevation
 
 
-IBSurfaceModel::IBSurfaceModel(IceGrid::ConstPtr g)
+IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const IceGrid> g)
   : SurfaceModel(g),
     icebin_wflux(m_grid, "icebin_wflux"),
     icebin_deltah(m_grid, "icebin_deltah"),
