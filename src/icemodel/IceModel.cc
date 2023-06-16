@@ -51,7 +51,7 @@
 
 namespace pism {
 
-IceModel::IceModel(const IceGrid::Ptr &grid,
+IceModel::IceModel(std::shared_ptr<IceGrid> grid,
                    const std::shared_ptr<Context> &context)
   : m_grid(grid),
     m_config(context->config()),

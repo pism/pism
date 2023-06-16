@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -82,7 +82,7 @@ protected:
   std::unique_ptr<LingleClarkSerial> m_serial_model;
 
   //! extended grid for the viscous plate displacement
-  IceGrid::Ptr m_extended_grid;
+  std::shared_ptr<IceGrid> m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
   std::shared_ptr<array::Scalar> m_viscous_displacement;

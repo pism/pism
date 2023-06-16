@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    IceGrid::Ptr grid(new IceGrid(ctx, P));
+    std::shared_ptr<IceGrid> grid(new IceGrid(ctx, P));
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));

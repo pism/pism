@@ -21,7 +21,6 @@
 #include "IceEISModel.hh"
 
 #include "pism/util/Context.hh"
-#include "pism/util/ConfigInterface.hh"
 #include "pism/util/IceGrid.hh"
 
 #include "pism/coupler/ocean/Constant.hh"
@@ -37,7 +36,7 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(IceGrid::Ptr g,
+IceEISModel::IceEISModel(std::shared_ptr<IceGrid> g,
                          std::shared_ptr<Context> context,
                          char experiment)
   : IceModel(g, context), m_experiment(experiment) {

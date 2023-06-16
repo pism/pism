@@ -107,7 +107,7 @@ public:
 
   // see iceModel.cc for implementation of constructor and destructor:
   /** @param gcm_params Pointer to IceModel::gcm_params.  Lives at least as long as this object. */
-  IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceModel::Params const &_params);
+  IBIceModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> context, IBIceModel::Params const &_params);
   virtual ~IBIceModel(); // must be virtual merely because some members are virtual
 
   virtual void allocate_subglacial_hydrology();

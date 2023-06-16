@@ -112,7 +112,7 @@ void  IceModel::prepend_history(const std::string &str) {
 }
 
 //! Return the grid used by this model.
-IceGrid::Ptr IceModel::grid() const {
+std::shared_ptr<IceGrid> IceModel::grid() const {
   return m_grid;
 }
 

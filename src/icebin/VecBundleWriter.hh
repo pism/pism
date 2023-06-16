@@ -25,7 +25,7 @@ class VecBundleWriter {
   std::vector<pism::array::Array const *> vecs; // The vectors we will write
 
 public:
-  VecBundleWriter(pism::IceGrid::Ptr grid, std::string const &_fname, std::vector<pism::array::Array const *> &_vecs);
+  VecBundleWriter(std::shared_ptr<pism::IceGrid> grid, std::string const &_fname, std::vector<pism::array::Array const *> &_vecs);
 
   void init();
 

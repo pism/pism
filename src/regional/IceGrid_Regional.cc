@@ -82,7 +82,7 @@ static void subset_extent(const std::string& axis,
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
+std::shared_ptr<IceGrid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
 
   auto options = process_input_options(ctx->com(), ctx->config());
 
@@ -159,7 +159,7 @@ IceGrid::Ptr regional_grid_from_options(std::shared_ptr<Context> ctx) {
     // process options controlling ownership ranges
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, input_grid));
+    return std::make_shared<IceGrid>(ctx, input_grid);
   }
 
   if (x_range.is_set() ^ y_range.is_set()) {

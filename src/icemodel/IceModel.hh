@@ -114,12 +114,12 @@ enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
 //! an ice sheet.
 class IceModel {
 public:
-  IceModel(const IceGrid::Ptr &grid, const std::shared_ptr<Context> &context);
+  IceModel(std::shared_ptr<IceGrid> grid, const std::shared_ptr<Context> &context);
 
   // the destructor must be virtual merely because some members are virtual
   virtual ~IceModel();
 
-  IceGrid::Ptr grid() const;
+  std::shared_ptr<IceGrid> grid() const;
   std::shared_ptr<Context> ctx() const;
 
   void init();
@@ -233,7 +233,7 @@ protected:
                                   const std::set<std::string> &additional_variables);
 
   //! Computational grid
-  const IceGrid::Ptr m_grid;
+  const std::shared_ptr<IceGrid> m_grid;
   //! Configuration flags and parameters
   const Config::Ptr m_config;
   //! Execution context

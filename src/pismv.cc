@@ -131,7 +131,7 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   return P;
 }
 
-IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
+std::shared_ptr<IceGrid> pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -154,7 +154,7 @@ IceGrid::Ptr pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   P.vertical_grid_from_options(ctx->config());
   P.ownership_ranges_from_options(ctx->size());
 
-  return IceGrid::Ptr(new IceGrid(ctx, P));
+  return std::make_shared<IceGrid>(ctx, P);
 }
 
 int main(int argc, char *argv[]) {
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     std::string testname = options::Keyword("-test", "Specifies PISM verification test",
                                             "A,B,C,D,F,G,H,K,L,V", "A");
 
-    IceGrid::Ptr g = pismv_grid(ctx, testname[0]);
+    auto g = pismv_grid(ctx, testname[0]);
 
     IceCompModel m(g, ctx, testname[0]);
 

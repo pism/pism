@@ -17,7 +17,7 @@ namespace icebin {
 
 // ================================
 
-IBIceModel::IBIceModel(IceGrid::Ptr g, std::shared_ptr<Context> context, IBIceModel::Params const &_params)
+IBIceModel::IBIceModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> context, IBIceModel::Params const &_params)
     : pism::IceModel(g, context),
       params(_params),
       base(m_grid, ""),

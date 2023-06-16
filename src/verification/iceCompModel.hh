@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,14 +20,13 @@
 #define __iceCompModel_hh
 
 #include "pism/icemodel/IceModel.hh"
-#include "pism/energy/BedThermalUnit.hh"
 
 namespace pism {
 
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(IceGrid::Ptr g, std::shared_ptr<Context> ctx, int mytest);
+  IceCompModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

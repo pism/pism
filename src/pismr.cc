@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
       ctx->profiling().start();
     }
 
-    IceGrid::Ptr grid;
+    std::shared_ptr<IceGrid> grid;
     std::unique_ptr<IceModel> model;
 
     if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {

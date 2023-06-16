@@ -57,7 +57,7 @@ namespace pism {
 
 using units::convert;
 
-IceCompModel::IceCompModel(IceGrid::Ptr grid, std::shared_ptr<Context> context, int test)
+IceCompModel::IceCompModel(std::shared_ptr<IceGrid> grid, std::shared_ptr<Context> context, int test)
     : IceModel(grid, context),
       m_testname(test),
       m_HexactL(m_grid, "HexactL"),

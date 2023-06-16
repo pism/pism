@@ -129,7 +129,7 @@ IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
+std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx,
                               double Lx, double Ly,
                               double x0, double y0,
                               unsigned int Mx, unsigned int My,
@@ -151,7 +151,7 @@ IceGrid::Ptr IceGrid::Shallow(std::shared_ptr<const Context> ctx,
 
     p.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, p));
+    return std::make_shared<IceGrid>(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing a shallow grid");
     throw;
@@ -222,7 +222,7 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
+std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const std::string &filename,
                                const std::vector<std::string> &var_names,
                                grid::Registration r) {
@@ -242,7 +242,7 @@ IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
+std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
                                const File &file,
                                const std::string &var_name,
                                grid::Registration r) {
@@ -267,7 +267,7 @@ IceGrid::Ptr IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 
     p.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, p));
+    return std::make_shared<IceGrid>(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
                   var_name.c_str(), file.filename().c_str());
@@ -819,7 +819,7 @@ std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_widt
   ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
 #endif
 
-  return std::shared_ptr<petsc::DM>(new petsc::DM(result));
+  return std::make_shared<petsc::DM>(result);
 }
 
 //! MPI rank.
@@ -833,12 +833,12 @@ unsigned int IceGrid::size() const {
 }
 
 //! Dictionary of variables (2D and 3D fields) associated with this grid.
-Vars& IceGrid::variables() {
+Vars &IceGrid::variables() {
   return m_impl->variables;
 }
 
 //! Dictionary of variables (2D and 3D fields) associated with this grid.
-const Vars& IceGrid::variables() const {
+const Vars &IceGrid::variables() const {
   return m_impl->variables;
 }
 
@@ -878,7 +878,7 @@ unsigned int IceGrid::Mz() const {
 }
 
 //! X-coordinates.
-const std::vector<double>& IceGrid::x() const {
+const std::vector<double> &IceGrid::x() const {
   return m_impl->x;
 }
 
@@ -888,7 +888,7 @@ double IceGrid::x(size_t i) const {
 }
 
 //! Y-coordinates.
-const std::vector<double>& IceGrid::y() const {
+const std::vector<double> &IceGrid::y() const {
   return m_impl->y;
 }
 
@@ -898,7 +898,7 @@ double IceGrid::y(size_t i) const {
 }
 
 //! Z-coordinates within the ice.
-const std::vector<double>& IceGrid::z() const {
+const std::vector<double> &IceGrid::z() const {
   return m_impl->z;
 }
 
@@ -926,7 +926,7 @@ double IceGrid::dz_min() const {
   double result = m_impl->z.back();
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
     const double dz = m_impl->z[k + 1] - m_impl->z[k];
-    result = std::min(dz, result);
+    result          = std::min(dz, result);
   }
   return result;
 }
@@ -936,7 +936,7 @@ double IceGrid::dz_max() const {
   double result = 0.0;
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
     const double dz = m_impl->z[k + 1] - m_impl->z[k];
-    result = std::max(dz, result);
+    result          = std::max(dz, result);
   }
   return result;
 }
@@ -994,8 +994,7 @@ Periodicity string_to_periodicity(const std::string &keyword) {
     return XY_PERIODIC;
   }
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "grid periodicity type '%s' is invalid.",
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid periodicity type '%s' is invalid.",
                                 keyword.c_str());
 }
 
@@ -1089,34 +1088,23 @@ InputGridInfo::InputGridInfo() {
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
   units::Converter km(s, "m", "km");
 
-  log.message(threshold,
-              "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-              this->x_len,
-              km(this->x0 - this->Lx),
-              km(this->x0 + this->Lx),
-              km(this->x0),
+  log.message(threshold, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
+              this->x_len, km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
               km(this->Lx));
 
-  log.message(threshold,
-              "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-              this->y_len,
-              km(this->y0 - this->Ly),
-              km(this->y0 + this->Ly),
-              km(this->y0),
+  log.message(threshold, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
+              this->y_len, km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
               km(this->Ly));
 
-  log.message(threshold,
-              "  z:  %5d points, [%10.3f, %10.3f] m\n",
-              this->z_len, this->z_min, this->z_max);
+  log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", this->z_len, this->z_min,
+              this->z_max);
 
-  log.message(threshold,
-              "  t:  %5d points, last time = %.3f years\n\n",
-              this->t_len, units::convert(s, this->time, "seconds", "years"));
+  log.message(threshold, "  t:  %5d points, last time = %.3f years\n\n", this->t_len,
+              units::convert(s, this->time, "seconds", "years"));
 }
 
 InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
-                     units::System::Ptr unit_system,
-                     Registration r) {
+                             units::System::Ptr unit_system, Registration r) {
   try {
     reset();
 
@@ -1126,7 +1114,8 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
     auto var = file.find_variable(variable, variable);
 
     if (not var.exists) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" is missing", variable.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable \"%s\" is missing",
+                                    variable.c_str());
     }
 
     auto dimensions = file.dimensions(var.name);
@@ -1136,56 +1125,47 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       AxisType dimtype = file.dimension_type(dimension_name, unit_system);
 
       switch (dimtype) {
-      case X_AXIS:
-        {
-          this->x = file.read_dimension(dimension_name);
-          this->x_len = this->x.size();
-          double
-            x_min = vector_min(this->x),
-            x_max = vector_max(this->x);
-          this->x0 = 0.5 * (x_min + x_max);
-          this->Lx = 0.5 * (x_max - x_min);
-          if (r == CELL_CENTER) {
-            const double dx = this->x[1] - this->x[0];
-            this->Lx += 0.5 * dx;
-          }
-          break;
+      case X_AXIS: {
+        this->x      = file.read_dimension(dimension_name);
+        this->x_len  = this->x.size();
+        double x_min = vector_min(this->x), x_max = vector_max(this->x);
+        this->x0 = 0.5 * (x_min + x_max);
+        this->Lx = 0.5 * (x_max - x_min);
+        if (r == CELL_CENTER) {
+          const double dx = this->x[1] - this->x[0];
+          this->Lx += 0.5 * dx;
         }
-      case Y_AXIS:
-        {
-          this->y = file.read_dimension(dimension_name);
-          this->y_len = this->y.size();
-          double
-            y_min = vector_min(this->y),
-            y_max = vector_max(this->y);
-          this->y0 = 0.5 * (y_min + y_max);
-          this->Ly = 0.5 * (y_max - y_min);
-          if (r == CELL_CENTER) {
-            const double dy = this->y[1] - this->y[0];
-            this->Ly += 0.5 * dy;
-          }
-          break;
+        break;
+      }
+      case Y_AXIS: {
+        this->y      = file.read_dimension(dimension_name);
+        this->y_len  = this->y.size();
+        double y_min = vector_min(this->y), y_max = vector_max(this->y);
+        this->y0 = 0.5 * (y_min + y_max);
+        this->Ly = 0.5 * (y_max - y_min);
+        if (r == CELL_CENTER) {
+          const double dy = this->y[1] - this->y[0];
+          this->Ly += 0.5 * dy;
         }
-      case Z_AXIS:
-        {
-          this->z = file.read_dimension(dimension_name);
-          this->z_len = this->z.size();
-          this->z_min = vector_min(this->z);
-          this->z_max = vector_max(this->z);
-          break;
-        }
-      case T_AXIS:
-        {
-          this->t_len = file.dimension_length(dimension_name);
-          this->time = vector_max(file.read_dimension(dimension_name));
-          break;
-        }
-      default:
-        {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "can't figure out which direction dimension '%s' corresponds to.",
-                                        dimension_name.c_str());
-        }
+        break;
+      }
+      case Z_AXIS: {
+        this->z     = file.read_dimension(dimension_name);
+        this->z_len = this->z.size();
+        this->z_min = vector_min(this->z);
+        this->z_max = vector_max(this->z);
+        break;
+      }
+      case T_AXIS: {
+        this->t_len = file.dimension_length(dimension_name);
+        this->time  = vector_max(file.read_dimension(dimension_name));
+        break;
+      }
+      default: {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION, "can't figure out which direction dimension '%s' corresponds to.",
+            dimension_name.c_str());
+      }
       } // switch
     }   // for loop
   } catch (RuntimeError &e) {
@@ -1235,16 +1215,16 @@ void Parameters::init_from_config(Config::ConstPtr config) {
   periodicity  = string_to_periodicity(config->get_string("grid.periodicity"));
   registration = string_to_registration(config->get_string("grid.registration"));
 
-  double Lz       = config->get_number("grid.Lz");
-  unsigned int Mz = config->get_number("grid.Mz");
-  double lambda   = config->get_number("grid.lambda");
-  VerticalSpacing s   = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
-  z               = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
+  double Lz         = config->get_number("grid.Lz");
+  unsigned int Mz   = config->get_number("grid.Mz");
+  double lambda     = config->get_number("grid.lambda");
+  VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
+  z                 = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
   // does not set ownership ranges because we don't know if these settings are final
 }
 
 void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &file,
-                                    const std::string &variable_name, Registration r) {
+                                const std::string &variable_name, Registration r) {
   int size = 0;
   MPI_Comm_size(ctx->com(), &size);
 
@@ -1264,12 +1244,12 @@ void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &
 }
 
 Parameters::Parameters(std::shared_ptr<const Context> ctx, const File &file,
-                               const std::string &variable_name, Registration r) {
+                       const std::string &variable_name, Registration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
 Parameters::Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
-                               const std::string &variable_name, Registration r) {
+                       const std::string &variable_name, Registration r) {
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
   init_from_file(ctx, file, variable_name, r);
 }
@@ -1308,9 +1288,9 @@ void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> u
 }
 
 void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz     = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
-  int Mz        = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
-  double lambda = config->get_number("grid.lambda");
+  double Lz         = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
+  int Mz            = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
+  double lambda     = config->get_number("grid.lambda");
   VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
 
   z = IceGrid::compute_vertical_levels(Lz, Mz, s, lambda);
@@ -1361,11 +1341,11 @@ void Parameters::validate() const {
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
+std::shared_ptr<IceGrid> IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
-  bool bootstrap = config->get_flag("input.bootstrap");
+  bool bootstrap  = config->get_flag("input.bootstrap");
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
@@ -1373,7 +1353,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
   if (not input_file.empty() and (not bootstrap)) {
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, {"enthalpy", "temp"}, r);
+    return IceGrid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
   }
 
   if (not input_file.empty() and bootstrap) {
@@ -1386,7 +1366,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
 
-    for (const auto *name : {"land_ice_thickness", "bedrock_altitude", "thk", "topg"}) {
+    for (const auto *name : { "land_ice_thickness", "bedrock_altitude", "thk", "topg" }) {
 
       grid_info_found = file.find_variable(name);
       if (not grid_info_found) {
@@ -1413,7 +1393,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    IceGrid::Ptr result(new IceGrid(ctx, input_grid));
+    auto result = std::make_shared<IceGrid>(ctx, input_grid);
 
     units::System::Ptr sys = ctx->unit_system();
     units::Converter km(sys, "m", "km");
@@ -1443,7 +1423,7 @@ IceGrid::Ptr IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
     P.vertical_grid_from_options(ctx->config());
     P.ownership_ranges_from_options(ctx->size());
 
-    return IceGrid::Ptr(new IceGrid(ctx, P));
+    return std::make_shared<IceGrid>(ctx, P);
   }
 }
 

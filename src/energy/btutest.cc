@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -24,11 +24,9 @@ static char help[] =
 #include "pism/util/pism_options.hh"
 #include "pism/util/IceGrid.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/verification/tests/exactTestK.h"
@@ -37,7 +35,6 @@ static char help[] =
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/Config.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
@@ -120,7 +117,7 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    IceGrid::Ptr grid(new IceGrid(ctx, P));
+    std::shared_ptr<IceGrid> grid(new IceGrid(ctx, P));
 
     auto outname = config->get_string("output.file");
 

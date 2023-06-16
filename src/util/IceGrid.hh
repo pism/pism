@@ -279,7 +279,6 @@ class IceGrid {
 public:
   ~IceGrid();
 
-  typedef std::shared_ptr<IceGrid> Ptr;
   typedef std::shared_ptr<const IceGrid> ConstPtr;
 
   IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p);
@@ -287,22 +286,19 @@ public:
   static std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                                      grid::VerticalSpacing spacing, double Lambda = 0.0);
 
-  static Ptr Shallow(std::shared_ptr<const Context> ctx,
-                     double Lx, double Ly,
-                     double x0, double y0,
-                     unsigned int Mx, unsigned int My,
-                     grid::Registration r,
-                     grid::Periodicity p);
+  static std::shared_ptr<IceGrid> Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
+                                          double x0, double y0, unsigned int Mx, unsigned int My,
+                                          grid::Registration r, grid::Periodicity p);
 
-  static Ptr FromFile(std::shared_ptr<const Context> ctx,
-                      const File &file, const std::string &var_name,
-                      grid::Registration r);
+  static std::shared_ptr<IceGrid> FromFile(std::shared_ptr<const Context> ctx, const File &file,
+                                           const std::string &var_name, grid::Registration r);
 
-  static Ptr FromFile(std::shared_ptr<const Context> ctx,
-                      const std::string &file, const std::vector<std::string> &var_names,
-                      grid::Registration r);
+  static std::shared_ptr<IceGrid> FromFile(std::shared_ptr<const Context> ctx,
+                                           const std::string &file,
+                                           const std::vector<std::string> &var_names,
+                                           grid::Registration r);
 
-  static Ptr FromOptions(std::shared_ptr<const Context> ctx);
+  static std::shared_ptr<IceGrid> FromOptions(std::shared_ptr<const Context> ctx);
 
   std::shared_ptr<petsc::DM> get_dm(unsigned int dm_dof, unsigned int stencil_width) const;
 
