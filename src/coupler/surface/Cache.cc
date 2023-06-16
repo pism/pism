@@ -23,14 +23,14 @@
 
 #include "Cache.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {
 
-Cache::Cache(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SurfaceModel> in)
+Cache::Cache(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(grid, in) {
 
   m_next_update_time = time().current();

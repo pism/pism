@@ -28,7 +28,7 @@ class testj(PISM.ssa.SSAExactTestCase):
         Lx = halfWidth
         Ly = halfWidth
         ctx = PISM.Context().ctx
-        self.grid = PISM.IceGrid.Shallow(ctx, Lx, Ly, 0, 0,
+        self.grid = PISM.Grid.Shallow(ctx, Lx, Ly, 0, 0,
                                          self.Mx, self.My,
                                          PISM.CELL_CENTER,
                                          PISM.XY_PERIODIC)

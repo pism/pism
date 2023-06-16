@@ -23,7 +23,7 @@
 namespace pism {
 namespace energy {
 
-BTU_Minimal::BTU_Minimal(std::shared_ptr<const IceGrid> g)
+BTU_Minimal::BTU_Minimal(std::shared_ptr<const Grid> g)
   : BedThermalUnit(g) {
   // empty
 }

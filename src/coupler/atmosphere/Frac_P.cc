@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-Frac_P::Frac_P(std::shared_ptr<const IceGrid> grid, std::shared_ptr<AtmosphereModel> in)
+Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(grid, in) {
 
   std::string

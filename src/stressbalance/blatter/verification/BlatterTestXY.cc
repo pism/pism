@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestXY::BlatterTestXY(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor)
+BlatterTestXY::BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
   : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law

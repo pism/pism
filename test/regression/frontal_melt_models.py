@@ -59,7 +59,7 @@ def create_grid():
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 def create_given_input_file(filename, grid, temperature, mass_flux):
     PISM.util.prepare_output(filename)

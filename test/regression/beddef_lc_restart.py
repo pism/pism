@@ -49,7 +49,7 @@ def add_disc_load(ice_thickness, radius, thickness):
 def run(dt, restart=False):
     "Run the model for 1 time step, stop, save model state, restart, do 1 more step."
 
-    grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
+    grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, 0, 0, N, N,
                                 PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     model = PISM.LingleClark(grid)

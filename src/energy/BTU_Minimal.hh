@@ -27,7 +27,7 @@ namespace energy {
 
 class BTU_Minimal : public BedThermalUnit {
 public:
-  BTU_Minimal(std::shared_ptr<const IceGrid> g);
+  BTU_Minimal(std::shared_ptr<const Grid> g);
 
 protected:
   void init_impl(const InputOptions &opts);

@@ -28,7 +28,7 @@
 
 namespace pism {
 
-Diagnostic::Diagnostic(std::shared_ptr<const IceGrid> grid)
+Diagnostic::Diagnostic(std::shared_ptr<const Grid> grid)
   : m_grid(grid),
     m_sys(grid->ctx()->unit_system()),
     m_config(grid->ctx()->config()),
@@ -179,7 +179,7 @@ array::Array::Ptr Diagnostic::compute() const {
   return result;
 }
 
-TSDiagnostic::TSDiagnostic(std::shared_ptr<const IceGrid> grid, const std::string &name)
+TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
   : m_grid(grid),
     m_config(grid->ctx()->config()),
     m_sys(grid->ctx()->unit_system()),
@@ -214,17 +214,17 @@ void TSDiagnostic::set_units(const std::string &units,
   }
 }
 
-TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const IceGrid> grid, const std::string &name)
+TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
   : TSDiagnostic(grid, name) {
   // empty
 }
 
-TSRateDiagnostic::TSRateDiagnostic(std::shared_ptr<const IceGrid> grid, const std::string &name)
+TSRateDiagnostic::TSRateDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
   : TSDiagnostic(grid, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
   // empty
 }
 
-TSFluxDiagnostic::TSFluxDiagnostic(std::shared_ptr<const IceGrid> grid, const std::string &name)
+TSFluxDiagnostic::TSFluxDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
   : TSRateDiagnostic(grid, name) {
   // empty
 }

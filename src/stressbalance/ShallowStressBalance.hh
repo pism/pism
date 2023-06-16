@@ -28,7 +28,7 @@ namespace rheology {
 class FlowLaw;
 }
 
-class IceGrid;
+class Grid;
 class IceBasalResistancePlasticLaw;
 
 namespace stressbalance {
@@ -38,7 +38,7 @@ class Inputs;
 //! Shallow stress balance (such as the SSA).
 class ShallowStressBalance : public Component {
 public:
-  ShallowStressBalance(std::shared_ptr<const IceGrid> g);
+  ShallowStressBalance(std::shared_ptr<const Grid> g);
   virtual ~ShallowStressBalance();
 
   //  initialization and I/O:
@@ -93,7 +93,7 @@ protected:
 */
 class ZeroSliding : public ShallowStressBalance {
 public:
-  ZeroSliding(std::shared_ptr<const IceGrid> g);
+  ZeroSliding(std::shared_ptr<const Grid> g);
   virtual ~ZeroSliding() = default;
 
   virtual void update(const Inputs &inputs, bool full_update);
@@ -103,7 +103,7 @@ protected:
 
 class PrescribedSliding : public ZeroSliding {
 public:
-  PrescribedSliding(std::shared_ptr<const IceGrid> g);
+  PrescribedSliding(std::shared_ptr<const Grid> g);
   virtual ~PrescribedSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:

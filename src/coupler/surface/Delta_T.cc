@@ -24,7 +24,7 @@ namespace surface {
 
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
-Delta_T::Delta_T(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in)
+Delta_T::Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
   : SurfaceModel(g, in) {
 
   m_forcing.reset(new ScalarForcing(*g->ctx(),

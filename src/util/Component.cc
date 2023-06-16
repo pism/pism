@@ -21,7 +21,7 @@
 #include "Component.hh"
 #include "Profiling.hh"
 #include "pism/util/io/File.hh"
-#include "IceGrid.hh"
+#include "Grid.hh"
 #include "pism_utilities.hh"
 #include "VariableMetadata.hh"
 #include "ConfigInterface.hh"
@@ -78,7 +78,7 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
   return InputOptions(type, input_filename, record);
 }
 
-Component::Component(std::shared_ptr<const IceGrid> g)
+Component::Component(std::shared_ptr<const Grid> g)
     : m_grid(g),
       m_config(g->ctx()->config()),
       m_sys(g->ctx()->unit_system()),
@@ -102,7 +102,7 @@ TSDiagnosticList Component::ts_diagnostics_impl() const {
   return {};
 }
 
-std::shared_ptr<const IceGrid> Component::grid() const {
+std::shared_ptr<const Grid> Component::grid() const {
   return m_grid;
 }
 

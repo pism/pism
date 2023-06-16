@@ -23,7 +23,7 @@
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"
@@ -31,7 +31,7 @@
 namespace pism {
 namespace surface {
 
-array::Scalar::Ptr SurfaceModel::allocate_layer_mass(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_layer_mass(std::shared_ptr<const Grid> grid) {
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_mass"));
 
   result->set_attrs("climate_forcing", "mass held in the surface layer",
@@ -42,7 +42,7 @@ array::Scalar::Ptr SurfaceModel::allocate_layer_mass(std::shared_ptr<const IceGr
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_layer_thickness(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_layer_thickness(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_thickness"));
 
@@ -55,7 +55,7 @@ array::Scalar::Ptr SurfaceModel::allocate_layer_thickness(std::shared_ptr<const 
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid,
                                               "ice_surface_liquid_water_fraction"));
@@ -69,7 +69,7 @@ array::Scalar::Ptr SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_mass_flux(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_mass_flux(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "climatic_mass_balance"));
 
@@ -86,7 +86,7 @@ array::Scalar::Ptr SurfaceModel::allocate_mass_flux(std::shared_ptr<const IceGri
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_temperature(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "ice_surface_temp"));
 
@@ -99,7 +99,7 @@ array::Scalar::Ptr SurfaceModel::allocate_temperature(std::shared_ptr<const IceG
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_accumulation(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_accumulation(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_accumulation_flux"));
 
@@ -110,7 +110,7 @@ array::Scalar::Ptr SurfaceModel::allocate_accumulation(std::shared_ptr<const Ice
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_melt(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_melt(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_melt_flux"));
 
@@ -121,7 +121,7 @@ array::Scalar::Ptr SurfaceModel::allocate_melt(std::shared_ptr<const IceGrid> gr
   return result;
 }
 
-array::Scalar::Ptr SurfaceModel::allocate_runoff(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr SurfaceModel::allocate_runoff(std::shared_ptr<const Grid> grid) {
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_runoff_flux"));
 
@@ -132,7 +132,7 @@ array::Scalar::Ptr SurfaceModel::allocate_runoff(std::shared_ptr<const IceGrid> 
   return result;
 }
 
-SurfaceModel::SurfaceModel(std::shared_ptr<const IceGrid> grid)
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> grid)
   : Component(grid) {
 
   m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
@@ -151,13 +151,13 @@ SurfaceModel::SurfaceModel(std::shared_ptr<const IceGrid> grid)
   m_runoff->set(0.0);
 }
 
-SurfaceModel::SurfaceModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input)
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
   : Component(g) {
   m_input_model = input;
   // this is a modifier: allocate storage only if necessary (in derived classes)
 }
 
-SurfaceModel::SurfaceModel(std::shared_ptr<const IceGrid> grid,
+SurfaceModel::SurfaceModel(std::shared_ptr<const Grid> grid,
                            std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(grid) {        // this constructor will allocate storage
 

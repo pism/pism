@@ -21,7 +21,7 @@
 #include "DEBMSimple.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
@@ -38,7 +38,7 @@ namespace surface {
 
 ///// PISM surface model implementing a dEBM-Simple scheme.
 
-DEBMSimple::DEBMSimple(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
+DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(g, std::move(input)),
       m_model(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),

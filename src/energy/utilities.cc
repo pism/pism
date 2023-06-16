@@ -19,7 +19,7 @@
 
 #include "utilities.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/Logger.hh"

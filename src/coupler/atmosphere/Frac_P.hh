@@ -30,7 +30,7 @@ namespace atmosphere {
 
 class Frac_P : public AtmosphereModel {
 public:
-  Frac_P(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in);
+  Frac_P(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Frac_P() = default;
 
 private:

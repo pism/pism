@@ -30,7 +30,7 @@ namespace atmosphere {
 //! (constant in time) precipitation field.
 class YearlyCycle : public AtmosphereModel {
 public:
-  YearlyCycle(std::shared_ptr<const IceGrid> g);
+  YearlyCycle(std::shared_ptr<const Grid> g);
   virtual ~YearlyCycle() = default;
 
   virtual const array::Scalar& mean_summer_temp() const;

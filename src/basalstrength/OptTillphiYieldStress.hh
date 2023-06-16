@@ -26,7 +26,7 @@ namespace pism {
 //! Iterative optimization of the till friction angle.
 class OptTillphiYieldStress : public MohrCoulombYieldStress {
 public:
-  OptTillphiYieldStress(std::shared_ptr<const IceGrid> g);
+  OptTillphiYieldStress(std::shared_ptr<const Grid> g);
   virtual ~OptTillphiYieldStress() = default;
 
 private:

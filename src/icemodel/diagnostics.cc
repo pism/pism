@@ -1559,7 +1559,7 @@ public:
  * mass balances do not affect the area specific volume field.)
  */
 double mass_change(const IceModel *model, TermType term, AreaType area) {
-  const IceGrid &grid = *model->grid();
+  const Grid &grid = *model->grid();
   const Config &config = *grid.ctx()->config();
 
   const double

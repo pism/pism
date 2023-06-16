@@ -30,7 +30,7 @@
 
 namespace pism {
 
-Geometry::Geometry(const std::shared_ptr<const IceGrid> &grid)
+Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
   : latitude(grid, "lat"),
@@ -392,7 +392,7 @@ double sea_level_rise_potential(const Geometry &geometry, double thickness_thres
  * @brief Set no_model_mask variable to have value 1 in strip of width 'strip' m around
  * edge of computational domain, and value 0 otherwise.
  */
-void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result) {
+void set_no_model_strip(const Grid &grid, double width, array::Scalar &result) {
 
   if (width <= 0.0) {
     return;

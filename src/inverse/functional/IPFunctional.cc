@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IPFunctional.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
@@ -26,7 +26,7 @@ namespace pism {
 namespace inverse {
 
 void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar &gradient) {
-  const IceGrid &grid = *x.grid();
+  const Grid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;
@@ -63,7 +63,7 @@ void gradientFD(IPFunctional<array::Scalar> &f, array::Scalar &x, array::Scalar 
 }
 
 void gradientFD(IPFunctional<array::Vector> &f, array::Vector &x, array::Vector &gradient) {
-  const IceGrid &grid = *x.grid();
+  const Grid &grid = *x.grid();
   double h = PETSC_SQRT_MACHINE_EPSILON;
 
   double F0,Fh;

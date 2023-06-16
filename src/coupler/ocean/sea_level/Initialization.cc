@@ -26,7 +26,7 @@ namespace pism {
 namespace ocean {
 namespace sea_level {
 
-InitializationHelper::InitializationHelper(std::shared_ptr<const IceGrid> grid,
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid,
                                            std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 

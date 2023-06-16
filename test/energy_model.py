@@ -11,7 +11,7 @@ def create_dummy_grid():
     "Create a dummy grid"
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 
 def setup():

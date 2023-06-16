@@ -30,7 +30,7 @@ namespace atmosphere {
 //! present-day temperature parameterization and stored precipitation data.
 class SeaRISEGreenland : public YearlyCycle {
 public:
-  SeaRISEGreenland(std::shared_ptr<const IceGrid> g);
+  SeaRISEGreenland(std::shared_ptr<const Grid> g);
   virtual ~SeaRISEGreenland();
 
   virtual void init_impl(const Geometry &geometry);

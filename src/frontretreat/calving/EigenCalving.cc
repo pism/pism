@@ -19,7 +19,7 @@
 
 #include "EigenCalving.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
@@ -28,7 +28,7 @@
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(std::shared_ptr<const IceGrid> grid)
+EigenCalving::EigenCalving(std::shared_ptr<const Grid> grid)
   : StressCalving(grid, 2) {
 
   m_K = m_config->get_number("calving.eigen_calving.K");

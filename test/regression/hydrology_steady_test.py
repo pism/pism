@@ -19,7 +19,7 @@ class SteadyHydrology(TestCase):
         Mx = 101
         My = 101
 
-        grid = PISM.IceGrid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
+        grid = PISM.Grid.Shallow(ctx.ctx, Lx, Ly, x0, y0, Mx, My,
                                     PISM.CELL_CENTER, PISM.NOT_PERIODIC)
         self.grid = grid
 

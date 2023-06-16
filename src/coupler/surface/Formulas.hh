@@ -32,7 +32,7 @@ namespace surface {
  */
 class PSFormulas : public SurfaceModel {
 public:
-  PSFormulas(std::shared_ptr<const IceGrid> g);
+  PSFormulas(std::shared_ptr<const Grid> g);
   ~PSFormulas() = default;
 protected:
 

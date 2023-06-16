@@ -23,7 +23,7 @@
 
 #include "Cache.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -31,7 +31,7 @@
 namespace pism {
 namespace ocean {
 
-Cache::Cache(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
+Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_next_update_time = time().current();

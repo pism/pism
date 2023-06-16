@@ -33,9 +33,9 @@ namespace ocean {
 class CompleteOceanModel : public OceanModel {
 public:
   // "modifier" constructor
-  CompleteOceanModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> input);
+  CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input);
   // "model" constructor
-  CompleteOceanModel(std::shared_ptr<const IceGrid> g);
+  CompleteOceanModel(std::shared_ptr<const Grid> g);
 
   virtual ~CompleteOceanModel() = default;
 protected:

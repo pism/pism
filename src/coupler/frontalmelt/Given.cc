@@ -18,7 +18,7 @@
 
 #include "Given.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
@@ -27,7 +27,7 @@
 namespace pism {
 namespace frontalmelt {
 
-Given::Given(std::shared_ptr<const IceGrid> grid)
+Given::Given(std::shared_ptr<const Grid> grid)
   : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
 
   m_frontal_melt_rate = array::Forcing::Constant(grid, "frontal_melt_rate", 0.0);

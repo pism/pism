@@ -22,7 +22,7 @@
 namespace pism {
 namespace calving {
 
-StressCalving::StressCalving(std::shared_ptr<const IceGrid> grid,
+StressCalving::StressCalving(std::shared_ptr<const Grid> grid,
                              unsigned int stencil_width)
   : Component(grid),
     m_stencil_width(stencil_width),

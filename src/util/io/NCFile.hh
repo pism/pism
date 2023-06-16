@@ -29,7 +29,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -101,7 +101,7 @@ public:
                        const double *op) const;
 
   void write_darray(const std::string &variable_name,
-                    const IceGrid &grid,
+                    const Grid &grid,
                     unsigned int z_count,
                     bool time_dependent,
                     unsigned int record,
@@ -190,7 +190,7 @@ protected:
                                    const double *op) const = 0;
 
   virtual void write_darray_impl(const std::string &variable_name,
-                                 const IceGrid &grid,
+                                 const Grid &grid,
                                  unsigned int z_count,
                                  bool time_dependent,
                                  unsigned int record,

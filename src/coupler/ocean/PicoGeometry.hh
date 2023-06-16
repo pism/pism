@@ -36,7 +36,7 @@ void eikonal_equation(array::Scalar1 &mask);
  */
 class PicoGeometry : public Component {
 public:
-  PicoGeometry(std::shared_ptr<const IceGrid> grid);
+  PicoGeometry(std::shared_ptr<const Grid> grid);
   virtual ~PicoGeometry() = default;
 
   void init();

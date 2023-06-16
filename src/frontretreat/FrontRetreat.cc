@@ -27,7 +27,7 @@
 
 namespace pism {
 
-FrontRetreat::FrontRetreat(std::shared_ptr<const IceGrid> g)
+FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
   : Component(g),
     m_cell_type(m_grid, "cell_type"),
     m_tmp(m_grid, "temporary_storage") {

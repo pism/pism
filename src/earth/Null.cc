@@ -18,14 +18,14 @@
  */
 
 #include "BedDef.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace bed {
 
-Null::Null(std::shared_ptr<const IceGrid> g)
+Null::Null(std::shared_ptr<const Grid> g)
   : BedDef(g) {
   // empty
 }

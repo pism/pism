@@ -28,12 +28,12 @@
 namespace pism {
 namespace array {
 
-Staggered::Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name)
   : Array(grid, name, WITHOUT_GHOSTS, 2, 1, {0.0}) {
   set_begin_access_use_dof(true);
 }
 
-Staggered::Staggered(std::shared_ptr<const IceGrid> grid, const std::string &name,
+Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name,
                      unsigned int stencil_width)
   : Array(grid, name, WITH_GHOSTS, 2, stencil_width, {0.0}){
   set_begin_access_use_dof(true);
@@ -61,7 +61,7 @@ void Staggered::copy_from(const Staggered &input) {
   inc_state_counter();
 }
 
-Staggered1::Staggered1(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Staggered1::Staggered1(std::shared_ptr<const Grid> grid, const std::string &name)
     : Staggered(grid, name, 1) {
   // empty
 }

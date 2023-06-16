@@ -18,7 +18,7 @@
 
 #include <gsl/gsl_math.h>       // GSL_NAN
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/io/File.hh"
@@ -32,7 +32,7 @@ namespace icebin {
 ///// ice surface temperature parameterized as in PISM-IBSurfaceModel dependent on latitude and surface elevation
 
 
-IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const IceGrid> g)
+IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const Grid> g)
   : SurfaceModel(g),
     icebin_wflux(m_grid, "icebin_wflux"),
     icebin_deltah(m_grid, "icebin_deltah"),

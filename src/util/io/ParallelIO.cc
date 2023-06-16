@@ -28,7 +28,7 @@
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/pism_type_conversion.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "File.hh"
 
 namespace pism {
@@ -244,7 +244,7 @@ std::vector<T> convert_data(const double *input, size_t length) {
 }
 
 void ParallelIO::write_darray_impl(const std::string &variable_name,
-                                   const IceGrid &grid,
+                                   const Grid &grid,
                                    unsigned int z_count,
                                    bool time_dependent,
                                    unsigned int record,

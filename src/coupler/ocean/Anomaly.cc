@@ -17,14 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "Anomaly.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace ocean {
 
-Anomaly::Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
+Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.anomaly");

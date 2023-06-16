@@ -25,7 +25,7 @@
 
 #include "pism/stressbalance/StressBalance.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 
@@ -48,7 +48,7 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
     return 0;
   }
 
-  std::shared_ptr<const IceGrid> grid = u3.grid();
+  std::shared_ptr<const Grid> grid = u3.grid();
 
   const double
     CFL_x = grid->dx() / dt,

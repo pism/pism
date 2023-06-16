@@ -31,7 +31,7 @@ namespace surface {
 //! ice thickness to a given target by the end of the run.
 class ForceThickness : public SurfaceModel {
 public:
-  ForceThickness(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input);
+  ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness() = default;
 protected:
   void init_impl(const Geometry &geometry);

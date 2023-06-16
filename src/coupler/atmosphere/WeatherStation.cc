@@ -20,7 +20,7 @@
 #include "WeatherStation.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/ScalarForcing.hh"
@@ -28,7 +28,7 @@
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(std::shared_ptr<const IceGrid> grid)
+WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
   : AtmosphereModel(grid) {
 
   m_log->message(2,

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "BedDef.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
@@ -26,7 +26,7 @@
 namespace pism {
 namespace bed {
 
-PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const IceGrid> grid)
+PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const Grid> grid)
     : BedDef(grid), m_load_last(m_grid, "load_last") {
   // empty
 }

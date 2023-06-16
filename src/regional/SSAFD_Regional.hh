@@ -30,7 +30,7 @@ namespace stressbalance {
 //! simulations.
 class SSAFD_Regional : public SSAFD {
 public:
-  SSAFD_Regional(std::shared_ptr<const IceGrid> g);
+  SSAFD_Regional(std::shared_ptr<const Grid> g);
   virtual ~SSAFD_Regional() = default;
   virtual void init();
   virtual void compute_driving_stress(const array::Scalar &ice_thickness,
@@ -47,7 +47,7 @@ private:
   const array::Scalar *m_no_model_mask;
 };
 
-SSA * SSAFD_RegionalFactory(std::shared_ptr<const IceGrid> grid);
+SSA * SSAFD_RegionalFactory(std::shared_ptr<const Grid> grid);
 
 } // end of namespace stressbalance
 

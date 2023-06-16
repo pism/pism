@@ -39,7 +39,7 @@ namespace atmosphere {
 
 // Atmosphere
 
-Factory::Factory(std::shared_ptr<const IceGrid> g)
+Factory::Factory(std::shared_ptr<const Grid> g)
   : PCFactory<AtmosphereModel>(g, "atmosphere.models") {
 
   add_model<PIK>("pik");

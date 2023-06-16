@@ -27,7 +27,7 @@ namespace surface {
 
 class NoGLRetreat : public SurfaceModel {
 public:
-  NoGLRetreat(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input);
+  NoGLRetreat(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~NoGLRetreat() = default;
 
   const array::Scalar& smb_adjustment() const;

@@ -53,7 +53,7 @@ if is_regional:
     registration = PISM.CELL_CORNER
 
 input_file = PISM.File(ctx.com(), input_filename, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-grid = PISM.IceGrid.FromFile(ctx, input_file, "enthalpy", registration)
+grid = PISM.Grid.FromFile(ctx, input_file, "enthalpy", registration)
 
 config.set_flag("basal_resistance.pseudo_plastic.enabled", False)
 

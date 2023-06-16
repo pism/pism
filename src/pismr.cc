@@ -26,7 +26,7 @@ static char help[] =
 #include "pism/icemodel/IceModel.hh"
 #include "pism/icemodel/IceEISModel.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/Context.hh"
 #include "pism/util/Profiling.hh"
@@ -34,7 +34,7 @@ static char help[] =
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
 
-#include "pism/regional/IceGrid_Regional.hh"
+#include "pism/regional/Grid_Regional.hh"
 #include "pism/regional/IceRegionalModel.hh"
 
 using namespace pism;
@@ -140,14 +140,14 @@ int main(int argc, char *argv[]) {
       ctx->profiling().start();
     }
 
-    std::shared_ptr<IceGrid> grid;
+    std::shared_ptr<Grid> grid;
     std::unique_ptr<IceModel> model;
 
     if (options::Bool("-regional", "enable regional (outlet glacier) mode")) {
       grid = regional_grid_from_options(ctx);
       model.reset(new IceRegionalModel(grid, ctx));
     } else {
-      grid = IceGrid::FromOptions(ctx);
+      grid = Grid::FromOptions(ctx);
 
       if (eisII.is_set()) {
         char experiment = eisII.value()[0];

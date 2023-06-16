@@ -20,7 +20,7 @@
 #include <cmath>                // std::sqrt()
 
 #include "Element.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/DM.hh"
@@ -105,7 +105,7 @@ static void set_to_identity(double A[3][3]) {
   A[2][2] = 1.0;
 }
 
-Element::Element(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element::Element(const Grid &grid, int Nq, int n_chi, int block_size)
   : m_n_chi(n_chi),
     m_Nq(Nq),
     m_block_size(block_size) {
@@ -163,7 +163,7 @@ void Element::initialize(const double J[3][3],
   }
 }
 
-Element2::Element2(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element2::Element2(const Grid &grid, int Nq, int n_chi, int block_size)
   : Element(grid, Nq, n_chi, block_size) {
   // empty
 }
@@ -237,7 +237,7 @@ void Element::add_contribution(const double *K, Mat J) const {
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
-Q1Element2::Q1Element2(const IceGrid &grid, const Quadrature &quadrature)
+Q1Element2::Q1Element2(const Grid &grid, const Quadrature &quadrature)
   : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
@@ -293,7 +293,7 @@ Q1Element2::Q1Element2(const DMDALocalInfo &grid_info,
   reset(0, 0);
 }
 
-P1Element2::P1Element2(const IceGrid &grid, const Quadrature &quadrature, int type)
+P1Element2::P1Element2(const Grid &grid, const Quadrature &quadrature, int type)
   : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
@@ -380,7 +380,7 @@ Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_
   m_k = 0;
 }
 
-Element3::Element3(const IceGrid &grid, int Nq, int n_chi, int block_size)
+Element3::Element3(const Grid &grid, int Nq, int n_chi, int block_size)
   : Element(grid, Nq, n_chi, block_size) {
   m_i = 0;
   m_j = 0;
@@ -417,7 +417,7 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
   m_germs = m_chi;
 }
 
-Q1Element3::Q1Element3(const IceGrid &grid, const Quadrature &quadrature)
+Q1Element3::Q1Element3(const Grid &grid, const Quadrature &quadrature)
   : Element3(grid, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
     m_dx(grid.dx()),
     m_dy(grid.dy()),

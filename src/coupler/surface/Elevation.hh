@@ -27,7 +27,7 @@ namespace surface {
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
 class Elevation : public SurfaceModel {
 public:
-  Elevation(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
 
 protected:
 

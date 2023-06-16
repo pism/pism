@@ -25,14 +25,14 @@
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {
 
-PIK::PIK(std::shared_ptr<const IceGrid> g)
+PIK::PIK(std::shared_ptr<const Grid> g)
   : YearlyCycle(g) {
 
   auto parameterization = m_config->get_string("atmosphere.pik.parameterization");

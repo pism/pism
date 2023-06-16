@@ -43,7 +43,7 @@
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
@@ -57,7 +57,7 @@ namespace pism {
 
 using units::convert;
 
-IceCompModel::IceCompModel(std::shared_ptr<IceGrid> grid, std::shared_ptr<Context> context, int test)
+IceCompModel::IceCompModel(std::shared_ptr<Grid> grid, std::shared_ptr<Context> context, int test)
     : IceModel(grid, context),
       m_testname(test),
       m_HexactL(m_grid, "HexactL"),

@@ -27,7 +27,7 @@ namespace surface {
 
 class ISMIP6 : public SurfaceModel {
 public:
-  ISMIP6(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  ISMIP6(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~ISMIP6() = default;
 protected:
   void init_impl(const Geometry &geometry);

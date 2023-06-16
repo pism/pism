@@ -25,7 +25,7 @@
 #include "functional/IPFunctional.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/array/Array.hh" //
 #include "pism/util/petscwrappers/DM.hh"
@@ -33,7 +33,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 namespace inverse {
 
@@ -243,7 +243,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
 
   ForwardProblem &m_forward;
 

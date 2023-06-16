@@ -24,7 +24,7 @@ static char help[] =
 
 #include <string>
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
@@ -131,7 +131,7 @@ grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   return P;
 }
 
-std::shared_ptr<IceGrid> pismv_grid(std::shared_ptr<Context> ctx, char testname) {
+std::shared_ptr<Grid> pismv_grid(std::shared_ptr<Context> ctx, char testname) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -144,7 +144,7 @@ std::shared_ptr<IceGrid> pismv_grid(std::shared_ptr<Context> ctx, char testname)
     auto r = grid::string_to_registration(ctx->config()->get_string("grid.registration"));
 
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
+    return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
   }
 
   // use defaults set by pismv_grid_defaults()
@@ -154,7 +154,7 @@ std::shared_ptr<IceGrid> pismv_grid(std::shared_ptr<Context> ctx, char testname)
   P.vertical_grid_from_options(ctx->config());
   P.ownership_ranges_from_options(ctx->size());
 
-  return std::make_shared<IceGrid>(ctx, P);
+  return std::make_shared<Grid>(ctx, P);
 }
 
 int main(int argc, char *argv[]) {

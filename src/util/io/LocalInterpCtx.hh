@@ -27,7 +27,7 @@ namespace pism {
 enum InterpolationType : int;
 class Interpolation;
 
-class IceGrid;
+class Grid;
 
 namespace grid {
 class InputGridInfo;
@@ -52,7 +52,7 @@ class InputGridInfo;
 */
 class LocalInterpCtx {
 public:
-  LocalInterpCtx(const grid::InputGridInfo &input, const IceGrid &grid,
+  LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
                  const std::vector<double> &z_output, InterpolationType type);
   // Indices in netCDF file.
   unsigned int start[4], count[4];

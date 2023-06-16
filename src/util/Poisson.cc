@@ -26,7 +26,7 @@
 
 namespace pism {
 
-Poisson::Poisson(std::shared_ptr<const IceGrid> grid)
+Poisson::Poisson(std::shared_ptr<const Grid> grid)
   : m_grid(grid),
     m_log(grid->ctx()->log()),
     m_b(grid, "poisson_rhs"),

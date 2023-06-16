@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "ForceThickness.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
@@ -30,7 +30,7 @@ namespace pism {
 namespace surface {
 
 ///// "Force-to-thickness" mechanism
-ForceThickness::ForceThickness(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input)
+ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_target_thickness(m_grid, "thk"),
     m_ftt_mask(m_grid, "ftt_mask")

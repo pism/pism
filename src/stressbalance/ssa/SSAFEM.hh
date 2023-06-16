@@ -30,7 +30,7 @@ namespace pism {
 namespace stressbalance {
 
 //! Factory function for constructing a new SSAFEM.
-SSA * SSAFEMFactory(std::shared_ptr<const IceGrid> grid);
+SSA * SSAFEMFactory(std::shared_ptr<const Grid> grid);
 
 //! PISM's SSA solver: the finite element method implementation written by Jed and David
 /*!
@@ -39,7 +39,7 @@ SSA * SSAFEMFactory(std::shared_ptr<const IceGrid> grid);
 */
 class SSAFEM : public SSA {
 public:
-  SSAFEM(std::shared_ptr<const IceGrid> g);
+  SSAFEM(std::shared_ptr<const Grid> g);
 
   virtual ~SSAFEM() = default;
 

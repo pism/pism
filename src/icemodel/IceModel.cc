@@ -30,7 +30,7 @@
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
@@ -51,7 +51,7 @@
 
 namespace pism {
 
-IceModel::IceModel(std::shared_ptr<IceGrid> grid,
+IceModel::IceModel(std::shared_ptr<Grid> grid,
                    const std::shared_ptr<Context> &context)
   : m_grid(grid),
     m_config(context->config()),
@@ -1074,7 +1074,7 @@ void IceModel::reset_diagnostics() {
   }
 }
 
-IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const IceGrid> &grid)
+IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
   : calving(grid, "thickness_change_due_to_calving"),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
     forced_retreat(grid, "thickness_change_due_to_forced_retreat") {

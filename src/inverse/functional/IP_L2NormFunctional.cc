@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_L2NormFunctional.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_utilities.hh"

@@ -40,7 +40,7 @@ class Inputs;
 //! Shallow stress balance modifier (such as the non-sliding SIA).
 class SSB_Modifier : public Component {
 public:
-  SSB_Modifier(std::shared_ptr<const IceGrid> g);
+  SSB_Modifier(std::shared_ptr<const Grid> g);
   virtual ~SSB_Modifier() = default;
 
   virtual void init();
@@ -75,7 +75,7 @@ protected:
 //! The trivial Shallow Stress Balance modifier.
 class ConstantInColumn : public SSB_Modifier {
 public:
-  ConstantInColumn(std::shared_ptr<const IceGrid> g);
+  ConstantInColumn(std::shared_ptr<const Grid> g);
   virtual ~ConstantInColumn() = default;
 
   virtual void init();

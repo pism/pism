@@ -34,7 +34,7 @@ class CHSystem;
 //! `no_model_mask` and its semantics.
 class IceRegionalModel : public IceModel {
 public:
-  IceRegionalModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> c);
+  IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c);
 
   const energy::CHSystem* cryo_hydrologic_system() const;
 

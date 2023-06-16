@@ -27,7 +27,7 @@ namespace stressbalance {
 
 class WeertmanSliding : public ShallowStressBalance {
 public:
-  WeertmanSliding(std::shared_ptr<const IceGrid> g);
+  WeertmanSliding(std::shared_ptr<const Grid> g);
   virtual ~WeertmanSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
 protected:

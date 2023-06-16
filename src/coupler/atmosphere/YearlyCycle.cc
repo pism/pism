@@ -24,7 +24,7 @@
 
 #include "YearlyCycle.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
@@ -33,7 +33,7 @@
 namespace pism {
 namespace atmosphere {
 
-YearlyCycle::YearlyCycle(std::shared_ptr<const IceGrid> g)
+YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
   : AtmosphereModel(g),
     m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
     m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),

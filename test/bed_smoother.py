@@ -23,7 +23,7 @@ def grid():
     P.vertical_grid_from_options(config)
     P.ownership_ranges_from_options(ctx.size)
 
-    return PISM.IceGrid(ctx.ctx, P)
+    return PISM.Grid(ctx.ctx, P)
 
 
 def allocate_storage(grid):

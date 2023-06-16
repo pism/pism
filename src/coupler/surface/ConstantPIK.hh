@@ -33,7 +33,7 @@ namespace surface {
 
 class PIK : public SurfaceModel {
 public:
-  PIK(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+  PIK(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

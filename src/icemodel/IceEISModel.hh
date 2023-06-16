@@ -30,7 +30,7 @@ namespace pism {
 */
 class IceEISModel : public IceModel {
 public:
-  IceEISModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> ctx, char experiment);
+  IceEISModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, char experiment);
 
 protected:
   void initialize_2d();

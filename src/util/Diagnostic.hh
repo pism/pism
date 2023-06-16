@@ -32,7 +32,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 //! @brief Class representing diagnostic computations in PISM.
 /*!
@@ -58,7 +58,7 @@ class IceGrid;
  */
 class Diagnostic {
 public:
-  Diagnostic(std::shared_ptr<const IceGrid> g);
+  Diagnostic(std::shared_ptr<const Grid> g);
   virtual ~Diagnostic() = default;
 
   typedef std::shared_ptr<Diagnostic> Ptr;
@@ -102,7 +102,7 @@ protected:
   double to_external(double x) const;
 
   //! the grid
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
   //! the unit system
   const units::System::Ptr m_sys;
   //! Configuration flags and parameters
@@ -271,7 +271,7 @@ class TSDiagnostic {
 public:
   typedef std::shared_ptr<TSDiagnostic> Ptr;
 
-  TSDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+  TSDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
   virtual ~TSDiagnostic();
 
   void update(double t0, double t1);
@@ -302,7 +302,7 @@ protected:
   void set_units(const std::string &units, const std::string &glaciological_units);
 
   //! the grid
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
   //! Configuration flags and parameters
   const Config::ConstPtr m_config;
   //! the unit system
@@ -342,7 +342,7 @@ typedef std::map<std::string, TSDiagnostic::Ptr> TSDiagnosticList;
  */
 class TSSnapshotDiagnostic : public TSDiagnostic {
 public:
-  TSSnapshotDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+  TSSnapshotDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
 
 private:
   void update_impl(double t0, double t1);
@@ -357,7 +357,7 @@ private:
  */
 class TSRateDiagnostic : public TSDiagnostic {
 public:
-  TSRateDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+  TSRateDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
 
 protected:
   //! accumulator of changes (used to compute rates of change)
@@ -388,7 +388,7 @@ private:
  */
 class TSFluxDiagnostic : public TSRateDiagnostic {
 public:
-  TSFluxDiagnostic(std::shared_ptr<const IceGrid> g, const std::string &name);
+  TSFluxDiagnostic(std::shared_ptr<const Grid> g, const std::string &name);
 
 private:
   void update_impl(double t0, double t1);

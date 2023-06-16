@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestXZ::BlatterTestXZ(std::shared_ptr<const IceGrid> grid,
+BlatterTestXZ::BlatterTestXZ(std::shared_ptr<const Grid> grid,
                              int Mz, int coarsening_factor)
   : Blatter(grid, Mz, coarsening_factor) {
 

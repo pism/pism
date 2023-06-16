@@ -22,7 +22,7 @@
 
 #include "vonMisesCalving.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
@@ -35,7 +35,7 @@
 namespace pism {
 namespace calving {
 
-vonMisesCalving::vonMisesCalving(std::shared_ptr<const IceGrid> grid,
+vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : StressCalving(grid, 2),
     m_calving_threshold(m_grid, "vonmises_calving_threshold"),

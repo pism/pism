@@ -1,8 +1,8 @@
 %{
-#include "util/IceGrid.hh"
+#include "util/Grid.hh"
 %}
 
-%extend pism::IceGrid
+%extend pism::Grid
 {
     %pythoncode {
     def points(self):
@@ -21,5 +21,6 @@
     }
 }
 
-%shared_ptr(pism::IceGrid);
-%include "util/IceGrid.hh"
+%rename("GridParameters") "pism::grid::Parameters";
+%shared_ptr(pism::Grid);
+%include "util/Grid.hh"

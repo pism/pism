@@ -22,7 +22,7 @@
 namespace pism {
 namespace bed {
 
-Given::Given(std::shared_ptr<const IceGrid> grid)
+Given::Given(std::shared_ptr<const Grid> grid)
   : BedDef(grid),
     m_topg_reference(grid, "topg") {
 

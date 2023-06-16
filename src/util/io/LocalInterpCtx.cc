@@ -25,7 +25,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "LocalInterpCtx.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/interpolation.hh"
 #include "pism/util/error_handling.hh"
@@ -76,11 +76,11 @@ static void subset_start_and_count(const std::vector<double> &x,
   do communication. The information from the NetCDF file must already be
   extracted, validly stored in a grid_info structure `input`.
 
-  The `IceGrid` is used to determine what ranges of the target arrays (i.e. \c
+  The `Grid` is used to determine what ranges of the target arrays (i.e. \c
   Vecs into which NetCDF information will be interpolated) are owned by each
   processor.
 */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const IceGrid &grid,
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
                                const std::vector<double> &z_output,
                                InterpolationType type) {
   const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity

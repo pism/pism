@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "SSAFEM.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/Mask.hh"
@@ -42,7 +42,7 @@ namespace stressbalance {
  *
  *
  */
-SSAFEM::SSAFEM(std::shared_ptr<const IceGrid> grid)
+SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   : SSA(grid),
     m_bc_mask(grid, "bc_mask"),
     m_bc_values(grid, "_bc"),
@@ -114,7 +114,7 @@ SSAFEM::SSAFEM(std::shared_ptr<const IceGrid> grid)
                                 "", "", "", 0); // no units or standard name
 }
 
-SSA* SSAFEMFactory(std::shared_ptr<const IceGrid> g) {
+SSA* SSAFEMFactory(std::shared_ptr<const Grid> g) {
   return new SSAFEM(g);
 }
 

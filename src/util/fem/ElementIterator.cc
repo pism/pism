@@ -19,12 +19,12 @@
 
 #include "ElementIterator.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 namespace fem {
 
-ElementIterator::ElementIterator(const IceGrid &grid) {
+ElementIterator::ElementIterator(const Grid &grid) {
   // Start by assuming ghost elements exist in all directions.
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum

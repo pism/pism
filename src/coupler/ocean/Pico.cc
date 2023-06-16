@@ -35,7 +35,7 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 
@@ -46,7 +46,7 @@
 namespace pism {
 namespace ocean {
 
-Pico::Pico(std::shared_ptr<const IceGrid> grid)
+Pico::Pico(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
     m_Soc(m_grid, "pico_salinity"),
     m_Soc_box0(m_grid, "pico_salinity_box0"),

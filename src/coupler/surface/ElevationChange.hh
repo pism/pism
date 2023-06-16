@@ -29,7 +29,7 @@ namespace surface {
 class ElevationChange : public SurfaceModel
 {
 public:
-  ElevationChange(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> in);
+  ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~ElevationChange() = default;
 protected:
   virtual void init_impl(const Geometry &geometry);

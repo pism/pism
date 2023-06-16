@@ -32,7 +32,7 @@ namespace pism {
 
 class VariableMetadata;
 class SpatialVariableMetadata;
-class IceGrid;
+class Grid;
 class File;
 class Time;
 class Logger;
@@ -42,7 +42,7 @@ class Config;
 namespace io {
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const File &nc,
+                             const Grid& grid, const File &nc,
                              RegriddingFlag flag, bool do_report_range,
                              bool allow_extrapolation,
                              double default_value,
@@ -50,7 +50,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              double *output);
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const File &nc,
+                             const Grid& grid, const File &nc,
                              unsigned int t_start,
                              RegriddingFlag flag, bool do_report_range,
                              bool allow_extrapolation,
@@ -59,11 +59,11 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const IceGrid& grid, const File &nc,
+                           const Grid& grid, const File &nc,
                            unsigned int time, double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const IceGrid& grid, const File &nc,
+                            const Grid& grid, const File &nc,
                             const double *input);
 
 void define_dimension(const File &nc, unsigned long int length,
@@ -78,7 +78,7 @@ void append_time(const File &file, const Config &ctx, double time_seconds);
 void append_time(const File &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const IceGrid &grid, const File &nc,
+                             const Grid &grid, const File &nc,
                              IO_Type nctype);
 
 void define_timeseries(const VariableMetadata& var,

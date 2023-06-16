@@ -34,7 +34,7 @@ namespace icebin {
 
 class IBSurfaceModel : public pism::surface::SurfaceModel {
 public:
-  IBSurfaceModel(std::shared_ptr<const IceGrid> grid);
+  IBSurfaceModel(std::shared_ptr<const Grid> grid);
 
 protected:
   virtual void init_impl(const Geometry &geometry);

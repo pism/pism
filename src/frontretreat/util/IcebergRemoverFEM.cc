@@ -32,7 +32,7 @@
 namespace pism {
 namespace calving {
 
-IcebergRemoverFEM::IcebergRemoverFEM(std::shared_ptr<const IceGrid> grid)
+IcebergRemoverFEM::IcebergRemoverFEM(std::shared_ptr<const Grid> grid)
   : IcebergRemover(grid),
     m_mask(grid, "temporary_mask") {
   m_mask.set_interpolation_type(NEAREST);

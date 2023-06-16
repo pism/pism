@@ -24,7 +24,7 @@
 namespace pism {
 namespace atmosphere {
 
-Uniform::Uniform(std::shared_ptr<const IceGrid> grid)
+Uniform::Uniform(std::shared_ptr<const Grid> grid)
   : AtmosphereModel(grid, std::shared_ptr<AtmosphereModel>()) {
   m_precipitation = allocate_precipitation(grid);
   m_temperature = allocate_temperature(grid);

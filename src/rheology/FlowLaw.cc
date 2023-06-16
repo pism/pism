@@ -25,7 +25,7 @@
 #include "pism/util/array/Array3D.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/util/error_handling.hh"
 
@@ -183,7 +183,7 @@ void averaged_hardness_vec(const FlowLaw &ice,
                            const array::Array3D  &enthalpy,
                            array::Scalar &result) {
 
-  const IceGrid &grid = *thickness.grid();
+  const Grid &grid = *thickness.grid();
 
   array::AccessScope list{&thickness, &result, &enthalpy};
 

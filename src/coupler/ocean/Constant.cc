@@ -19,7 +19,7 @@
 #include "Constant.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
@@ -27,7 +27,7 @@
 namespace pism {
 namespace ocean {
 
-Constant::Constant(std::shared_ptr<const IceGrid> g)
+Constant::Constant(std::shared_ptr<const Grid> g)
   : CompleteOceanModel(g) {
   // empty
 }

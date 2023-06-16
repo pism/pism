@@ -18,7 +18,7 @@
 
 #include "GivenClimate.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
@@ -26,7 +26,7 @@
 namespace pism {
 namespace ocean {
 
-Given::Given(std::shared_ptr<const IceGrid> g)
+Given::Given(std::shared_ptr<const Grid> g)
   : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);

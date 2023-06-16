@@ -34,7 +34,7 @@ namespace sea_level {
  */
 class InitializationHelper : public SeaLevel {
 public:
-  InitializationHelper(std::shared_ptr<const IceGrid> g, std::shared_ptr<SeaLevel> in);
+  InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<SeaLevel> in);
 
 private:
   void define_model_state_impl(const File &output) const;

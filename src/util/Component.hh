@@ -33,7 +33,7 @@ class File;
 class Geometry;
 class Time;
 class Profiling;
-class IceGrid;
+class Grid;
 
 namespace array {
 template<typename T> class Array2D;
@@ -118,13 +118,13 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config);
 class Component {
 public:
   /** Create a Component instance given a grid. */
-  Component(std::shared_ptr<const IceGrid> grid);
+  Component(std::shared_ptr<const Grid> grid);
   virtual ~Component() = default;
 
   DiagnosticList diagnostics() const;
   TSDiagnosticList ts_diagnostics() const;
 
-  std::shared_ptr<const IceGrid> grid() const;
+  std::shared_ptr<const Grid> grid() const;
 
   const Time &time() const;
 
@@ -153,7 +153,7 @@ protected:
                       RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 
   //! grid used by this component
-  const std::shared_ptr<const IceGrid> m_grid;
+  const std::shared_ptr<const Grid> m_grid;
   //! configuration database used by this component
   const Config::ConstPtr m_config;
   //! unit system used by this component

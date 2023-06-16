@@ -34,7 +34,7 @@ namespace stressbalance {
  */
 class BlatterTestvanderVeen : public Blatter {
 public:
-  BlatterTestvanderVeen(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor);
+  BlatterTestvanderVeen(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
 
   // Exact ice velocity
   Vector2d u_exact(double x) const;

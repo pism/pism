@@ -113,7 +113,7 @@ public:
   typedef array::Vector1 StateVec1;
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$ is parameterized.
-  IP_SSAHardavForwardProblem(std::shared_ptr<const IceGrid> g,
+  IP_SSAHardavForwardProblem(std::shared_ptr<const Grid> g,
                              IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSAHardavForwardProblem() = default;

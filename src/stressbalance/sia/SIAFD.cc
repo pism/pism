@@ -24,7 +24,7 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/grain_size_vostok.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
@@ -40,7 +40,7 @@
 namespace pism {
 namespace stressbalance {
 
-SIAFD::SIAFD(std::shared_ptr<const IceGrid> g)
+SIAFD::SIAFD(std::shared_ptr<const Grid> g)
   : SSB_Modifier(std::move(g)),
     m_stencil_width(m_config->get_number("grid.max_stencil_width")),
     m_work_2d_0(m_grid, "work_vector_2d_0"),

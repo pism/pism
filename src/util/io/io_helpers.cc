@@ -23,7 +23,7 @@
 
 #include "io_helpers.hh"
 #include "File.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
@@ -55,7 +55,7 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
+static void regrid(const Grid& grid, const std::vector<double> &zlevels_out,
                    LocalInterpCtx *lic, double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
@@ -276,7 +276,7 @@ void append_time(const File &file, const std::string &name, double value) {
 
 //! \brief Define dimensions a variable depends on.
 static void define_dimensions(const SpatialVariableMetadata& var,
-                              const IceGrid& grid, const File &file) {
+                              const Grid& grid, const File &file) {
 
   // x
   std::string x_name = var.x().get_name();
@@ -338,7 +338,7 @@ static void write_dimension_data(const File &file, const std::string &name,
 }
 
 void write_dimensions(const SpatialVariableMetadata& var,
-                      const IceGrid& grid, const File &file) {
+                      const Grid& grid, const File &file) {
   // x
   std::string x_name = var.x().get_name();
   if (file.find_dimension(x_name)) {
@@ -408,7 +408,7 @@ static bool use_transposed_io(const File &file,
 }
 
 //! \brief Read an array distributed according to the grid.
-static void read_distributed_array(const File &file, const IceGrid &grid,
+static void read_distributed_array(const File &file, const Grid &grid,
                                    const std::string &var_name,
                                    unsigned int z_count, unsigned int t_start,
                                    double *output) {
@@ -438,7 +438,7 @@ static void read_distributed_array(const File &file, const IceGrid &grid,
   }
 }
 
-static void regrid_vec_generic(const File &file, const IceGrid &grid,
+static void regrid_vec_generic(const File &file, const Grid &grid,
                                const std::string &variable_name,
                                const std::vector<double> &zlevels_out,
                                unsigned int t_start,
@@ -515,7 +515,7 @@ static void regrid_vec_generic(const File &file, const IceGrid &grid,
 
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
-static void regrid_vec(const File &file, const IceGrid &grid, const std::string &var_name,
+static void regrid_vec(const File &file, const Grid &grid, const std::string &var_name,
                        const std::vector<double> &zlevels_out,
                        unsigned int t_start,
                        InterpolationType interpolation_type,
@@ -539,7 +539,7 @@ static void regrid_vec(const File &file, const IceGrid &grid, const std::string 
  * @param default_value default value to replace `_FillValue` with
  * @param[out] output resulting interpolated field
  */
-static void regrid_vec_fill_missing(const File &file, const IceGrid &grid,
+static void regrid_vec_fill_missing(const File &file, const Grid &grid,
                                     const std::string &var_name,
                                     const std::vector<double> &zlevels_out,
                                     unsigned int t_start,
@@ -557,7 +557,7 @@ static void regrid_vec_fill_missing(const File &file, const IceGrid &grid,
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const IceGrid &grid, const File &file,
+                             const Grid &grid, const File &file,
                              IO_Type default_type) {
   std::vector<std::string> dims;
   std::string name = var.get_name();
@@ -615,7 +615,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 /*! This also converts data from input units to internal units if needed.
  */
 void read_spatial_variable(const SpatialVariableMetadata &variable,
-                           const IceGrid& grid, const File &file,
+                           const Grid& grid, const File &file,
                            unsigned int time, double *output) {
 
   const Logger &log = *grid.ctx()->log();
@@ -718,7 +718,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   Converts units if internal and "glaciological" units are different.
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const IceGrid& grid,
+                            const Grid& grid,
                             const File &file,
                             const double *input) {
 
@@ -784,7 +784,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   - uses the last record in the file
 */
 void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const IceGrid& grid, const File &file,
+                             const Grid& grid, const File &file,
                              RegriddingFlag flag, bool report_range,
                              bool allow_extrapolation,
                              double default_value,
@@ -840,7 +840,7 @@ void check_input_grid(const grid::InputGridInfo &input) {
  *
  * Set `allow_extrapolation` to `true` to "extend" the vertical grid during "bootstrapping".
  */
-static void check_grid_overlap(const grid::InputGridInfo &input, const IceGrid &internal,
+static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &internal,
                                const std::vector<double> &z_internal) {
 
   // Grid spacing (assume that the grid is equally-spaced) and the
@@ -919,7 +919,7 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const IceGrid &
 }
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const IceGrid& grid, const File &file,
+                             const Grid& grid, const File &file,
                              unsigned int t_start, RegriddingFlag flag,
                              bool report_range,
                              bool allow_extrapolation,

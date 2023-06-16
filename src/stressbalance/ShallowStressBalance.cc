@@ -32,7 +32,7 @@
 namespace pism {
 namespace stressbalance {
 
-ShallowStressBalance::ShallowStressBalance(std::shared_ptr<const IceGrid> g)
+ShallowStressBalance::ShallowStressBalance(std::shared_ptr<const Grid> g)
   : Component(g),
     m_basal_sliding_law(NULL),
     m_flow_law(NULL),
@@ -122,7 +122,7 @@ DiagnosticList ShallowStressBalance::diagnostics_impl() const {
 }
 
 
-ZeroSliding::ZeroSliding(std::shared_ptr<const IceGrid> g)
+ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
   : ShallowStressBalance(g) {
 
   // Use the SIA flow law.
@@ -321,7 +321,7 @@ array::Array::Ptr SSB_taub_mag::compute_impl() const {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(std::shared_ptr<const IceGrid> g)
+PrescribedSliding::PrescribedSliding(std::shared_ptr<const Grid> g)
   : ZeroSliding(g) {
   // empty
 }

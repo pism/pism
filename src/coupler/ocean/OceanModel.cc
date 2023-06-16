@@ -28,7 +28,7 @@ namespace pism {
 
 namespace ocean {
 
-array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const IceGrid> g) {
+array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbtemp"));
   result->set_attrs("diagnostic",
                     "ice temperature at the bottom of floating ice",
@@ -36,7 +36,7 @@ array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<c
   return result;
 }
 
-array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const IceGrid> g) {
+array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbmassflux"));
 
   result->set_attrs("diagnostic", "shelf base mass flux",
@@ -45,7 +45,7 @@ array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<con
   return result;
 }
 
-array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<const IceGrid> g) {
+array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g,
                                               "average_water_column_pressure"));
   result->set_attrs("diagnostic",
@@ -56,7 +56,7 @@ array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<co
 }
 
 // "modifier" constructor
-OceanModel::OceanModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> input)
+OceanModel::OceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input)
   : Component(g), m_input_model(input) {
 
   if (not input) {
@@ -65,7 +65,7 @@ OceanModel::OceanModel(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanMo
 }
 
 // "model" constructor
-OceanModel::OceanModel(std::shared_ptr<const IceGrid> g)
+OceanModel::OceanModel(std::shared_ptr<const Grid> g)
   : OceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }

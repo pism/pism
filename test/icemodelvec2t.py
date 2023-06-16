@@ -42,7 +42,7 @@ class ForcingInput(unittest.TestCase):
         self.interp_linear = "interp_linear_" + suffix
 
         M = 3
-        self.grid = PISM.IceGrid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
+        self.grid = PISM.Grid.Shallow(ctx.ctx, 1, 1, 0, 0, M, M, PISM.CELL_CORNER,
                                          PISM.NOT_PERIODIC)
 
         v = PISM.Scalar(self.grid, "v")

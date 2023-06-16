@@ -20,7 +20,7 @@
 
 #include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
@@ -33,7 +33,7 @@ namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Elevation::Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid) {
   (void) input;
 

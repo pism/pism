@@ -15,7 +15,7 @@ ctx = PISM.Context()
 filename = ctx.config.get_string("input.file")
 
 # create the grid using the input file
-grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["thk"], PISM.CELL_CENTER)
+grid = PISM.Grid.FromFile(ctx.ctx, filename, ["thk"], PISM.CELL_CENTER)
 
 # initialize geometric data
 geometry = PISM.Geometry(grid)

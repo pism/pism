@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "IP_SSATaucTaoTikhonovProblemLCL.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 
@@ -51,7 +51,7 @@ IP_SSATaucTaoTikhonovProblemLCL::IP_SSATaucTaoTikhonovProblemLCL(IP_SSATaucForwa
 {
 
   PetscErrorCode ierr;
-  std::shared_ptr<const IceGrid> grid = m_d0.grid();
+  std::shared_ptr<const Grid> grid = m_d0.grid();
 
   double stressScale = grid->ctx()->config()->get_number("inverse.design.param_tauc_scale");
   m_constraintsScale = grid->Lx()*grid->Ly()*4*stressScale;

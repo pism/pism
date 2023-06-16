@@ -29,7 +29,7 @@
 namespace pism {
 
 class Context;
-class IceGrid;
+class Grid;
 
 namespace stressbalance {
 
@@ -91,7 +91,7 @@ protected:
   const std::shared_ptr<Context> m_ctx;
   const Config::Ptr m_config;
 
-  std::shared_ptr<IceGrid> m_grid;
+  std::shared_ptr<Grid> m_grid;
 
   const units::System::Ptr m_sys;
 

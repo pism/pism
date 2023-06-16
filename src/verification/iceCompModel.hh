@@ -26,7 +26,7 @@ namespace pism {
 class IceCompModel : public IceModel {
 
 public:
-  IceCompModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> ctx, int mytest);
+  IceCompModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, int mytest);
   virtual ~IceCompModel() {}
   
   // re-defined steps of init() sequence:

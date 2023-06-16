@@ -54,7 +54,7 @@ void SteadyState::initialization_message() const {
                  "* Initializing the \"steady state\" subglacial hydrology model ...\n");
 }
 
-SteadyState::SteadyState(std::shared_ptr<const IceGrid> grid)
+SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
   : NullTransport(grid) {
 
   m_time_name = m_config->get_string("time.dimension_name") + "_hydrology_steady";

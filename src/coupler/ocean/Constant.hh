@@ -28,7 +28,7 @@ namespace ocean {
 //! sub-shelf heat flux.
 class Constant : public CompleteOceanModel {
 public:
-  Constant(std::shared_ptr<const IceGrid> g);
+  Constant(std::shared_ptr<const Grid> g);
   virtual ~Constant() = default;
 
 private:

@@ -38,7 +38,7 @@ void compute_load(const array::Scalar &bed_elevation,
 //! PISM bed deformation model (base class).
 class BedDef : public Component {
 public:
-  BedDef(std::shared_ptr<const IceGrid> g);
+  BedDef(std::shared_ptr<const Grid> g);
   virtual ~BedDef() = default;
 
   void init(const InputOptions &opts, const array::Scalar &ice_thickness,
@@ -91,7 +91,7 @@ protected:
  */
 class Null : public BedDef {
 public:
-  Null(std::shared_ptr<const IceGrid> g);
+  Null(std::shared_ptr<const Grid> g);
 protected:
   void update_impl(const array::Scalar &ice_thickness,
                    const array::Scalar &sea_level_elevation,
@@ -104,7 +104,7 @@ protected:
 //! Point-wise isostasy bed deformation model.
 class PointwiseIsostasy : public BedDef {
 public:
-  PointwiseIsostasy(std::shared_ptr<const IceGrid> g);
+  PointwiseIsostasy(std::shared_ptr<const Grid> g);
   virtual ~PointwiseIsostasy() = default;
 protected:
   MaxTimestep max_timestep_impl(double t) const;

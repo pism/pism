@@ -20,7 +20,7 @@
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
@@ -34,7 +34,7 @@ namespace pism {
   Pollard et al. (2012), TC 6(5), "A simple inverse method for the distribution of basal
   sliding coefficients under ice sheets, applied to Antarctica"
 */
-OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const IceGrid> grid)
+OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
   : MohrCoulombYieldStress(grid),
     m_mask(m_grid, "diff_mask"),
     m_usurf_difference(m_grid, "usurf_difference"),

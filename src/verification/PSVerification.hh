@@ -29,7 +29,7 @@ namespace surface {
 //! Climate inputs for verification tests.
 class Verification : public PSFormulas {
 public:
-  Verification(std::shared_ptr<const IceGrid> g, EnthalpyConverter::Ptr EC, int test);
+  Verification(std::shared_ptr<const Grid> g, EnthalpyConverter::Ptr EC, int test);
   ~Verification() = default;
 private:
   void init_impl(const Geometry &geometry);

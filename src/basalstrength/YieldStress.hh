@@ -42,7 +42,7 @@ public:
 //! \brief The PISM basal yield stress model interface (virtual base class)
 class YieldStress : public Component {
 public:
-  YieldStress(std::shared_ptr<const IceGrid> g);
+  YieldStress(std::shared_ptr<const Grid> g);
   virtual ~YieldStress() = default;
 
   void restart(const File &input_file, int record);

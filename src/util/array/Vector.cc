@@ -20,14 +20,14 @@
 #include "Array_impl.hh"
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace array {
 
-Vector::Vector(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Vector::Vector(std::shared_ptr<const Grid> grid, const std::string &name)
   : Array2D<pism::Vector2d>(grid, name, WITHOUT_GHOSTS, 2) {
   // This constructor uses the stencil width of 2 to make the DM compatible with ghosted
   // arrays with this wide stencil.
@@ -37,7 +37,7 @@ Vector::Vector(std::shared_ptr<const IceGrid> grid, const std::string &name)
   set_name("vel" + name);
 }
 
-Vector::Vector(std::shared_ptr<const IceGrid> grid, const std::string &name,
+Vector::Vector(std::shared_ptr<const Grid> grid, const std::string &name,
                unsigned int stencil_width)
   : Array2D<pism::Vector2d>(grid, name,
                            stencil_width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
@@ -57,18 +57,18 @@ std::shared_ptr<Vector> Vector::duplicate() const {
   return result;
 }
 
-Vector1::Vector1(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Vector1::Vector1(std::shared_ptr<const Grid> grid, const std::string &name)
   : Vector(grid, name, 1) {
   // empty
 }
 
-Vector1::Vector1(std::shared_ptr<const IceGrid> grid, const std::string &name,
+Vector1::Vector1(std::shared_ptr<const Grid> grid, const std::string &name,
                  unsigned int stencil_width)
   : Vector(grid, name, stencil_width) {
   // empty
 }
 
-Vector2::Vector2(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Vector2::Vector2(std::shared_ptr<const Grid> grid, const std::string &name)
   : Vector1(grid, name, 2) {
   // empty
 }

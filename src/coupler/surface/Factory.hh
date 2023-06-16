@@ -27,7 +27,7 @@ namespace surface {
 class Factory : public PCFactory<SurfaceModel> {
 public:
   typedef atmosphere::AtmosphereModel InputModel;
-  Factory(std::shared_ptr<const IceGrid> g, std::shared_ptr<InputModel> input);
+  Factory(std::shared_ptr<const Grid> g, std::shared_ptr<InputModel> input);
   ~Factory() = default;
 
   using PCFactory<SurfaceModel>::create;
@@ -36,7 +36,7 @@ public:
 private:
   class SurfaceModelCreator {
   public:
-    virtual std::shared_ptr<SurfaceModel> create(std::shared_ptr<const IceGrid> grid,
+    virtual std::shared_ptr<SurfaceModel> create(std::shared_ptr<const Grid> grid,
                                                  std::shared_ptr<InputModel> input) = 0;
     virtual ~SurfaceModelCreator() {}
   };
@@ -45,7 +45,7 @@ private:
   template <class M>
   class SpecificSurfaceModelCreator : public SurfaceModelCreator {
   public:
-    std::shared_ptr<SurfaceModel> create(std::shared_ptr<const IceGrid> grid,
+    std::shared_ptr<SurfaceModel> create(std::shared_ptr<const Grid> grid,
                                          std::shared_ptr<InputModel> input) {
       return std::shared_ptr<SurfaceModel>(new M(grid, input));
     }

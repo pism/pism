@@ -32,7 +32,7 @@ class LingleClarkSerial;
 //! A wrapper class around LingleClarkSerial.
 class LingleClark : public BedDef {
 public:
-  LingleClark(std::shared_ptr<const IceGrid> g);
+  LingleClark(std::shared_ptr<const Grid> g);
   virtual ~LingleClark();
 
   const array::Scalar& total_displacement() const;
@@ -82,7 +82,7 @@ protected:
   std::unique_ptr<LingleClarkSerial> m_serial_model;
 
   //! extended grid for the viscous plate displacement
-  std::shared_ptr<IceGrid> m_extended_grid;
+  std::shared_ptr<Grid> m_extended_grid;
 
   //! Viscous displacement on the extended grid (part of the model state).
   std::shared_ptr<array::Scalar> m_viscous_displacement;

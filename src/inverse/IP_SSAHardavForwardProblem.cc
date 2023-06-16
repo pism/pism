@@ -18,7 +18,7 @@
 
 #include "IP_SSAHardavForwardProblem.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
@@ -33,7 +33,7 @@
 namespace pism {
 namespace inverse {
 
-IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const IceGrid> g,
+IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Grid> g,
                                                        IPDesignVariableParameterization &tp)
   : SSAFEM(g),
     m_stencil_width(1),
@@ -83,7 +83,7 @@ void IP_SSAHardavForwardProblem::init() {
 
   SSAFEM::init();
 
-  // Get most of the inputs from IceGrid::variables() and fake the rest.
+  // Get most of the inputs from Grid::variables() and fake the rest.
   //
   // I will need to fix this at some point.
   {

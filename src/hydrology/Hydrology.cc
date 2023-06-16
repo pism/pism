@@ -272,7 +272,7 @@ Inputs::Inputs() {
   no_model_mask      = nullptr;
 }
 
-Hydrology::Hydrology(std::shared_ptr<const IceGrid> g)
+Hydrology::Hydrology(std::shared_ptr<const Grid> g)
   : Component(g),
     m_Q(m_grid, "water_flux"),
     m_Wtill(m_grid, "tillwat"),

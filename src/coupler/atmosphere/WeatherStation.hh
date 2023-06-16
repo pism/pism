@@ -42,7 +42,7 @@ namespace atmosphere {
  */
 class WeatherStation : public AtmosphereModel {
 public:
-  WeatherStation(std::shared_ptr<const IceGrid> g);
+  WeatherStation(std::shared_ptr<const Grid> g);
   virtual ~WeatherStation() = default;
 
 protected:

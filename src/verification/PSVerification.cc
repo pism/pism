@@ -33,7 +33,7 @@
 #include "tests/exactTestL.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Context.hh"
 
@@ -48,7 +48,7 @@ const double Verification::Tmin = 223.15;  // K
 const double Verification::LforFG = 750000; // m
 const double Verification::ApforG = 200; // m
 
-Verification::Verification(std::shared_ptr<const IceGrid> g,
+Verification::Verification(std::shared_ptr<const Grid> g,
                            EnthalpyConverter::Ptr EC, int test)
   : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty

@@ -257,7 +257,7 @@ protected:
 
 } // end of namespace diagnostics
 
-Routing::Routing(std::shared_ptr<const IceGrid> grid)
+Routing::Routing(std::shared_ptr<const Grid> grid)
   : Hydrology(grid),
     m_Qstag(grid, "advection_flux"),
     m_Qstag_average(grid, "cumulative_advection_flux"),

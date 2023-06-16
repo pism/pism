@@ -19,13 +19,13 @@
 #include "GivenClimate.hh"
 
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace surface {
 
-Given::Given(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid)
 {
   (void) input;

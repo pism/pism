@@ -20,7 +20,7 @@
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
@@ -64,7 +64,7 @@ IP_SSATaucTikhonovGNSolver::IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem 
     m_target_misfit(0.0)
 {
   PetscErrorCode ierr;
-  std::shared_ptr<const IceGrid> grid = m_d0.grid();
+  std::shared_ptr<const Grid> grid = m_d0.grid();
   m_comm = grid->com;
 
   m_d = std::make_shared<DesignVecGhosted>(grid, "d");

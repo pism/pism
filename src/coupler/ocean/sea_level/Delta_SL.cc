@@ -23,7 +23,7 @@ namespace pism {
 namespace ocean {
 namespace sea_level {
 
-Delta_SL::Delta_SL(std::shared_ptr<const IceGrid> grid, std::shared_ptr<SeaLevel> in)
+Delta_SL::Delta_SL(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in)
   : SeaLevel(grid, in) {
 
   m_forcing.reset(new ScalarForcing(*grid->ctx(),

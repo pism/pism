@@ -32,7 +32,7 @@ namespace calving {
 class CalvingAtThickness : public Component
 {
 public:
-  CalvingAtThickness(std::shared_ptr<const IceGrid> g);
+  CalvingAtThickness(std::shared_ptr<const Grid> g);
   virtual ~CalvingAtThickness() = default;
 
   void init();

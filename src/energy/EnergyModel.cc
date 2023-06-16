@@ -127,7 +127,7 @@ void EnergyModelStats::sum(MPI_Comm com) {
 }
 
 
-EnergyModel::EnergyModel(std::shared_ptr<const IceGrid> grid,
+EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
                          stressbalance::StressBalance *stress_balance)
   : Component(grid),
     m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),

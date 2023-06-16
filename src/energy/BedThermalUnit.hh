@@ -101,10 +101,10 @@ struct BTUGrid {
 class BedThermalUnit : public Component {
 public:
 
-  static std::shared_ptr<BedThermalUnit> FromOptions(std::shared_ptr<const IceGrid> g,
+  static std::shared_ptr<BedThermalUnit> FromOptions(std::shared_ptr<const Grid> g,
                                                      std::shared_ptr<const Context> ctx);
 
-  BedThermalUnit(std::shared_ptr<const IceGrid> g);
+  BedThermalUnit(std::shared_ptr<const Grid> g);
 
   virtual ~BedThermalUnit() = default;
 

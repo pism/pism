@@ -28,7 +28,7 @@
 namespace pism {
 namespace atmosphere {
 
-array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
   array::Scalar::Ptr result(new array::Scalar(grid, "air_temp"));
 
   result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
@@ -37,7 +37,7 @@ array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const I
   return result;
 }
 
-array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const IceGrid> grid) {
+array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
   array::Scalar::Ptr result(new array::Scalar(grid, "precipitation"));
   result->set_attrs("climate_forcing", "precipitation rate",
                     "kg m-2 second-1", "kg m-2 year-1",
@@ -46,12 +46,12 @@ array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const
   return result;
 }
 
-AtmosphereModel::AtmosphereModel(std::shared_ptr<const IceGrid> g)
+AtmosphereModel::AtmosphereModel(std::shared_ptr<const Grid> g)
   : Component(g) {
   // empty
 }
 
-AtmosphereModel::AtmosphereModel(std::shared_ptr<const IceGrid> g,
+AtmosphereModel::AtmosphereModel(std::shared_ptr<const Grid> g,
                                  std::shared_ptr<AtmosphereModel> input)
   :Component(g), m_input_model(input) {
   // empty

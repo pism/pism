@@ -28,7 +28,7 @@ namespace frontalmelt {
 //! model. Uses a configuration parameter for the frontal melt rate.
 class Constant : public FrontalMelt {
 public:
-  Constant(std::shared_ptr<const IceGrid> g);
+  Constant(std::shared_ptr<const Grid> g);
   virtual ~Constant() = default;
 
 private:

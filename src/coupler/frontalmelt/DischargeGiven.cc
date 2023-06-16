@@ -18,7 +18,7 @@
 
 #include "DischargeGiven.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
 #include "FrontalMeltPhysics.hh"
@@ -26,7 +26,7 @@
 namespace pism {
 namespace frontalmelt {
   
-DischargeGiven::DischargeGiven(std::shared_ptr<const IceGrid> grid)
+DischargeGiven::DischargeGiven(std::shared_ptr<const Grid> grid)
   : FrontalMelt(grid, nullptr),
     m_frontal_melt_rate(grid, "frontal_melt_rate") {
 

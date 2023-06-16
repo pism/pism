@@ -31,7 +31,7 @@
 
 namespace pism {
 
-IceRegionalModel::IceRegionalModel(std::shared_ptr<IceGrid> g, std::shared_ptr<Context> c)
+IceRegionalModel::IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c)
   : IceModel(g, c),
     m_no_model_mask(m_grid, "no_model_mask"),
     m_usurf_stored(m_grid, "usurfstore"),

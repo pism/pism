@@ -19,13 +19,13 @@
 #include "Anomaly.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Anomaly::Anomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in)
+Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in)
   : AtmosphereModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");

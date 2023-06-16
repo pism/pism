@@ -24,27 +24,27 @@
 namespace pism {
 namespace array {
 
-CellType::CellType(std::shared_ptr<const IceGrid> grid, const std::string &name)
+CellType::CellType(std::shared_ptr<const Grid> grid, const std::string &name)
   : array::Scalar(grid, name) {
   set_interpolation_type(NEAREST);
 }
 
-CellType::CellType(std::shared_ptr<const IceGrid> grid, const std::string &name, int width)
+CellType::CellType(std::shared_ptr<const Grid> grid, const std::string &name, int width)
   : array::Scalar(grid, name, width) {
   set_interpolation_type(NEAREST);
 }
 
-CellType1::CellType1(std::shared_ptr<const IceGrid> grid, const std::string &name)
+CellType1::CellType1(std::shared_ptr<const Grid> grid, const std::string &name)
   : CellType(grid, name, 1) {
   // empty
 }
 
-CellType1::CellType1(std::shared_ptr<const IceGrid> grid, const std::string &name, int width)
+CellType1::CellType1(std::shared_ptr<const Grid> grid, const std::string &name, int width)
   : CellType(grid, name, width) {
   // empty
 }
 
-CellType2::CellType2(std::shared_ptr<const IceGrid> grid, const std::string &name)
+CellType2::CellType2(std::shared_ptr<const Grid> grid, const std::string &name)
   : CellType1(grid, name, 2) {
   // empty
 }

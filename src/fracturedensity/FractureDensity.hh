@@ -28,12 +28,12 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 class Geometry;
 
 class FractureDensity : public Component {
 public:
-  FractureDensity(std::shared_ptr<const IceGrid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
+  FractureDensity(std::shared_ptr<const Grid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~FractureDensity() = default;
 
   void restart(const File &input_file, int record);

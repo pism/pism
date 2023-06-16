@@ -26,7 +26,7 @@ def create_dummy_grid():
     ctx = PISM.Context()
     params = PISM.GridParameters(ctx.config)
     params.ownership_ranges_from_options(ctx.size)
-    return PISM.IceGrid(ctx.ctx, params)
+    return PISM.Grid(ctx.ctx, params)
 
 
 def context_test():
@@ -48,7 +48,7 @@ def context_missing_attribute_test():
 
 
 def create_grid_test():
-    "Test the creation of the IceGrid object"
+    "Test the creation of the Grid object"
     grid1 = create_dummy_grid()
 
     grid2 = PISM.model.initGrid(PISM.Context(), 100e3, 100e3, 4000, 11, 11, 21, PISM.CELL_CORNER)
@@ -73,7 +73,7 @@ def printing_test():
 
 def random_vec_test():
     "Test methods creating random fields"
-    grid = PISM.IceGrid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
+    grid = PISM.Grid_Shallow(PISM.Context().ctx, 1e6, 1e6, 0, 0, 61, 31,
                                 PISM.NOT_PERIODIC, PISM.CELL_CENTER)
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -114,7 +114,7 @@ def vars_ownership_test():
 
 
 def vec_access_test():
-    "Test the PISM.vec.Access class and IceGrid::points, points_with_ghosts, coords"
+    "Test the PISM.vec.Access class and Grid::points, points_with_ghosts, coords"
     grid = create_dummy_grid()
 
     vec_scalar = PISM.vec.randVectorS(grid, 1.0)
@@ -161,7 +161,7 @@ def grid_from_file_test():
 
         pio = PISM.File(grid.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
 
-        grid2 = PISM.IceGrid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
+        grid2 = PISM.Grid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
@@ -178,7 +178,7 @@ def grid_from_file_test_2():
 
         enthalpy.write(pio)
 
-        grid2 = PISM.IceGrid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
+        grid2 = PISM.Grid.FromFile(ctx.ctx, file_name, ["enthalpy"], PISM.CELL_CORNER)
     finally:
         os.remove(file_name)
 
@@ -349,7 +349,7 @@ def sia_test():
     params.registration = PISM.CELL_CORNER
     params.periodicity = PISM.NOT_PERIODIC
     params.ownership_ranges_from_options(ctx.size)
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
     enthalpyconverter = PISM.EnthalpyConverter(ctx.config)
 
@@ -703,7 +703,7 @@ def ssa_trivial_test():
 
     class TrivialSSARun(PISM.ssa.SSAExactTestCase):
         def _initGrid(self):
-            self.grid = PISM.IceGrid.Shallow(context.ctx, L, L, 0, 0,
+            self.grid = PISM.Grid.Shallow(context.ctx, L, L, 0, 0,
                                              self.Mx, self.My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         def _initPhysics(self):
@@ -790,7 +790,7 @@ def regridding_test():
     params.My = 3
     params.ownership_ranges_from_options(1)
 
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
     thk1 = PISM.model.createIceThicknessVec(grid)
     thk2 = PISM.model.createIceThicknessVec(grid)
@@ -826,8 +826,8 @@ def interpolation_weights_test():
     "Test 2D interpolation weights."
 
     def interp2d(grid, F, x, y):
-        i_left, i_right, j_bottom, j_top = grid.compute_point_neighbors(x, y)
-        w = grid.compute_interp_weights(x, y)
+        i_left, i_right, j_bottom, j_top = grid.point_neighbors(x, y)
+        w = grid.interpolation_weights(x, y)
 
         i = [i_left, i_right, i_right, i_left]
         j = [j_bottom, j_bottom, j_top, j_top]
@@ -843,7 +843,7 @@ def interpolation_weights_test():
     Lx = 20
     Ly = 10
 
-    grid = PISM.IceGrid_Shallow(PISM.Context().ctx,
+    grid = PISM.Grid_Shallow(PISM.Context().ctx,
                                 Lx, Ly, 0, 0, Mx, My,
                                 PISM.CELL_CORNER,
                                 PISM.NOT_PERIODIC)
@@ -883,7 +883,7 @@ def vertical_extrapolation_during_regridding_test():
     z = np.linspace(0, params.Lz, params.Mz)
     params.z[:] = z
 
-    grid = PISM.IceGrid(ctx.ctx, params)
+    grid = PISM.Grid(ctx.ctx, params)
 
     # create an Array that uses this grid
     v = PISM.Array3D(grid, "test", PISM.WITHOUT_GHOSTS, grid.z())
@@ -904,7 +904,7 @@ def vertical_extrapolation_during_regridding_test():
         z_tall = np.linspace(0, params.Lz, params.Mz)
         params.z[:] = z_tall
 
-        tall_grid = PISM.IceGrid(ctx.ctx, params)
+        tall_grid = PISM.Grid(ctx.ctx, params)
 
         # create an Array that uses this grid
         v_tall = PISM.Array3D(tall_grid, "test", PISM.WITHOUT_GHOSTS, tall_grid.z())
@@ -961,7 +961,7 @@ class PrincipalStrainRates(TestCase):
 
     def create_grid(self, Mx):
         My = Mx + 10            # a non-square grid
-        return PISM.IceGrid.Shallow(self.ctx.ctx,
+        return PISM.Grid.Shallow(self.ctx.ctx,
                                     2*np.pi, 2*np.pi,
                                     0, 0, int(Mx), int(My), PISM.CELL_CENTER, PISM.NOT_PERIODIC)
 
@@ -1124,7 +1124,7 @@ class AgeModel(TestCase):
         "Create a dummy grid"
         params = PISM.GridParameters(ctx.config)
         params.ownership_ranges_from_options(ctx.size)
-        return PISM.IceGrid(ctx.ctx, params)
+        return PISM.Grid(ctx.ctx, params)
 
     def test_age_model_runs(self):
         "Check if AgeModel runs"

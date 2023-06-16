@@ -19,7 +19,7 @@
 #ifndef PISM_ARRAY_HELPERS_H
 #define PISM_ARRAY_HELPERS_H
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 

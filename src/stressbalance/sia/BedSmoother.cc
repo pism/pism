@@ -20,7 +20,7 @@
 
 #include "BedSmoother.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/array/CellType.hh"
 
@@ -32,7 +32,7 @@
 namespace pism {
 namespace stressbalance {
 
-BedSmoother::BedSmoother(std::shared_ptr<const IceGrid> g)
+BedSmoother::BedSmoother(std::shared_ptr<const Grid> g)
     : m_grid(g),
       m_config(g->ctx()->config()),
       m_topgsmooth(m_grid, "topgsmooth"),
@@ -133,7 +133,7 @@ void BedSmoother::preprocess_bed(const array::Scalar &topg,
 
   if ((Nx >= m_grid->Mx()) || (Ny >= m_grid->My())) {
     throw RuntimeError(PISM_ERROR_LOCATION, "input Nx, Ny in bed smoother is too large because\n"
-                       "domain of smoothing exceeds IceGrid domain");
+                       "domain of smoothing exceeds Grid domain");
   }
   m_Nx = Nx;
   m_Ny = Ny;

@@ -20,14 +20,14 @@
 #include "FloatKill.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace calving {
 
-FloatKill::FloatKill(std::shared_ptr<const IceGrid> g)
+FloatKill::FloatKill(std::shared_ptr<const Grid> g)
   : Component(g) {
   m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");

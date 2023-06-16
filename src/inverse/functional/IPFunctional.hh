@@ -23,7 +23,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 //! Inverse modeling code.
 namespace inverse {
@@ -41,7 +41,7 @@ template<class IMVecType>
 class IPFunctional {
 
 public:
-  IPFunctional(std::shared_ptr<const IceGrid> grid)
+  IPFunctional(std::shared_ptr<const Grid> grid)
     : m_grid(grid),
       m_element_index(*m_grid),
       m_element(*m_grid, fem::Q1Quadrature4())
@@ -55,7 +55,7 @@ public:
   virtual void valueAt(IMVecType &x, double *OUTPUT) = 0;
 
   //! Computes the gradient of the functional at the vector x.
-  /*! On an \f$m\times n\f$ IceGrid, an array::Array \f$x\f$ with \f$d\f$
+  /*! On an \f$m\times n\f$ Grid, an array::Array \f$x\f$ with \f$d\f$
     degrees of freedom will be \f$d m n\f$-dimensional with components \f$x_i\f$.
     The gradient computed here is the vector of directional derivatives \f$\nabla J\f$ of the functional
     \f$J\f$ with respect to \f$x\f$. Concretely, the \f$i^{\rm th}\f$ component of \f$\nabla J\f$
@@ -68,7 +68,7 @@ public:
   virtual void gradientAt(IMVecType &x, IMVecType &gradient) = 0;
 
 protected:
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
 
   fem::ElementIterator m_element_index;
   fem::Q1Element2       m_element;
@@ -94,7 +94,7 @@ template<class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
-  IPInnerProductFunctional(std::shared_ptr<const IceGrid> grid) : IPFunctional<IMVecType>(grid) {};
+  IPInnerProductFunctional(std::shared_ptr<const Grid> grid) : IPFunctional<IMVecType>(grid) {};
 
   //! Computes the inner product \f$Q(a, b)\f$.
   virtual void dot(IMVecType &a, IMVecType &b, double *OUTPUT) = 0;

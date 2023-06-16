@@ -26,7 +26,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 namespace array {
 class CellType1;
@@ -46,7 +46,7 @@ enum UNOType {PISM_UNO_UPWIND1, PISM_UNO_LAX_WENDROFF, PISM_UNO_FROMM, PISM_UNO_
  */
 class UNO {
 public:
-  UNO(std::shared_ptr<const IceGrid> grid, UNOType type);
+  UNO(std::shared_ptr<const Grid> grid, UNOType type);
 
   void update(double dt,
               const array::CellType1 &cell_type,

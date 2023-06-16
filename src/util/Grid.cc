@@ -23,7 +23,7 @@
 #include <petscsys.h>
 #include <gsl/gsl_interp.h>
 
-#include "IceGrid.hh"
+#include "Grid.hh"
 #include "pism_utilities.hh"
 #include "ConfigInterface.hh"
 #include "pism_options.hh"
@@ -44,8 +44,8 @@
 
 namespace pism {
 
-//! Internal structures of IceGrid.
-struct IceGrid::Impl {
+//! Internal structures of Grid.
+struct Grid::Impl {
   Impl(std::shared_ptr<const Context> context);
 
   std::shared_ptr<petsc::DM> create_dm(int da_dof, int stencil_width) const;
@@ -121,7 +121,7 @@ struct IceGrid::Impl {
   std::map<int, int> io_decompositions;
 };
 
-IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
+Grid::Impl::Impl(std::shared_ptr<const Context> context)
   : ctx(context), mapping_info("mapping", ctx->unit_system()) {
   // empty
 }
@@ -129,7 +129,7 @@ IceGrid::Impl::Impl(std::shared_ptr<const Context> context)
 /*! @brief Initialize a uniform, shallow (3 z-levels) grid with half-widths (Lx,Ly) and Mx by My
  * nodes.
  */
-std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
+std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
                                           double x0, double y0, unsigned int Mx, unsigned int My,
                                           grid::Registration registration,
                                           grid::Periodicity periodicity) {
@@ -149,7 +149,7 @@ std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx, do
 
     p.ownership_ranges_from_options(ctx->size());
 
-    return std::make_shared<IceGrid>(ctx, p);
+    return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing a shallow grid");
     throw;
@@ -157,7 +157,7 @@ std::shared_ptr<IceGrid> IceGrid::Shallow(std::shared_ptr<const Context> ctx, do
 }
 
 //! @brief Create a PISM distributed computational grid.
-IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p)
+Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
     : com(context->com()), m_impl(new Impl(context)) {
 
   try {
@@ -212,13 +212,13 @@ IceGrid::IceGrid(std::shared_ptr<const Context> context, const grid::Parameters 
     GlobalMax(com, &patch_size, &m_impl->max_patch_size, 1);
 
   } catch (RuntimeError &e) {
-    e.add_context("allocating IceGrid");
+    e.add_context("allocating Grid");
     throw;
   }
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
+std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                            const std::string &filename,
                                            const std::vector<std::string> &var_names,
                                            grid::Registration r) {
@@ -238,7 +238,7 @@ std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx,
 }
 
 //! Create a grid from a file, get information from variable `var_name`.
-std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
+std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
                                            const std::string &var_name, grid::Registration r) {
   try {
     const Logger &log = *ctx->log();
@@ -261,7 +261,7 @@ std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx, c
 
     p.ownership_ranges_from_options(ctx->size());
 
-    return std::make_shared<IceGrid>(ctx, p);
+    return std::make_shared<Grid>(ctx, p);
   } catch (RuntimeError &e) {
     e.add_context("initializing computational grid from variable \"%s\" in \"%s\"",
                   var_name.c_str(), file.filename().c_str());
@@ -269,7 +269,7 @@ std::shared_ptr<IceGrid> IceGrid::FromFile(std::shared_ptr<const Context> ctx, c
   }
 }
 
-IceGrid::~IceGrid() {
+Grid::~Grid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
 
 #if (Pism_USE_PIO==1)
@@ -286,7 +286,7 @@ IceGrid::~IceGrid() {
 
 
 //! Return the index `k` into `zlevels[]` so that `zlevels[k] <= height < zlevels[k+1]` and `k < Mz`.
-unsigned int IceGrid::kBelowHeight(double height) const {
+unsigned int Grid::kBelowHeight(double height) const {
 
   const double eps = 1.0e-6;
   if (height < 0.0 - eps) {
@@ -358,7 +358,7 @@ static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
 }
 
 //! Set processor ownership ranges. Takes care of type conversion (`unsigned int` -> `PetscInt`).
-void IceGrid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_procs_x,
+void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_procs_x,
                                          const std::vector<unsigned int> &input_procs_y) {
   if (input_procs_x.size() * input_procs_y.size() != (size_t)size) {
     throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
@@ -496,7 +496,7 @@ The upshot is that if one computes in a truly periodic way then the gap between 
 `i = 0`  and  `i = Mx - 1`  grid points should \em also have width  `dx`.
 Thus we compute  `dx = 2 * Lx / Mx`.
  */
-void IceGrid::Impl::compute_horizontal_coordinates() {
+void Grid::Impl::compute_horizontal_coordinates() {
 
   bool cell_centered = registration == grid::CELL_CENTER;
 
@@ -524,7 +524,7 @@ void IceGrid::Impl::compute_horizontal_coordinates() {
 }
 
 //! \brief Report grid parameters.
-void IceGrid::report_parameters() const {
+void Grid::report_parameters() const {
 
   const Logger &log = *this->ctx()->log();
   units::System::Ptr sys = this->ctx()->unit_system();
@@ -567,7 +567,7 @@ void IceGrid::report_parameters() const {
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
     log.message(3,
-                "  IceGrid parameters:\n");
+                "  Grid parameters:\n");
     log.message(3,
                 "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
                 km(Lx()), km(Ly()), Lz());
@@ -594,7 +594,7 @@ void IceGrid::report_parameters() const {
 
   {
     log.message(5,
-                "  REALLY verbose output on IceGrid:\n");
+                "  REALLY verbose output on Grid:\n");
     log.message(5,
                 "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
     for (unsigned int k=0; k < Mz(); k++) {
@@ -624,7 +624,7 @@ void IceGrid::report_parameters() const {
  * processor's domain. Ensures that computed indexes are within the
  * grid.
  */
-void IceGrid::compute_point_neighbors(double X, double Y,
+void Grid::compute_point_neighbors(double X, double Y,
                                       int &i_left, int &i_right,
                                       int &j_bottom, int &j_top) const {
   i_left = (int)floor((X - m_impl->x[0])/m_impl->dx);
@@ -646,7 +646,7 @@ void IceGrid::compute_point_neighbors(double X, double Y,
   j_top = std::min(j_top, (int)m_impl->My - 1);
 }
 
-std::vector<int> IceGrid::point_neighbors(double X, double Y) const {
+std::vector<int> Grid::point_neighbors(double X, double Y) const {
   int i_left, i_right, j_bottom, j_top;
   this->compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
   return {i_left, i_right, j_bottom, j_top};
@@ -655,7 +655,7 @@ std::vector<int> IceGrid::point_neighbors(double X, double Y) const {
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-std::vector<double> IceGrid::interpolation_weights(double X, double Y) const{
+std::vector<double> Grid::interpolation_weights(double X, double Y) const{
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   // these values (zeros) are used when interpolation is impossible
   double alpha = 0.0, beta = 0.0;
@@ -680,22 +680,22 @@ std::vector<double> IceGrid::interpolation_weights(double X, double Y) const{
 
 // Computes the hash corresponding to the DM with given dof and stencil_width.
 static unsigned int dm_hash(unsigned int dm_dof, unsigned int stencil_width) {
-  if (dm_dof > IceGrid::max_dm_dof) {
+  if (dm_dof > Grid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Invalid dm_dof argument: %d", dm_dof);
   }
 
-  if (stencil_width > IceGrid::max_stencil_width) {
+  if (stencil_width > Grid::max_stencil_width) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Invalid stencil_width argument: %d", stencil_width);
   }
 
-  return IceGrid::max_stencil_width * dm_dof + stencil_width;
+  return Grid::max_stencil_width * dm_dof + stencil_width;
 }
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-std::shared_ptr<petsc::DM> IceGrid::get_dm(unsigned int dm_dof,
+std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof,
                                            unsigned int stencil_width) const {
   unsigned int j = dm_hash(dm_dof, stencil_width);
 
@@ -716,22 +716,22 @@ std::shared_ptr<petsc::DM> IceGrid::get_dm(unsigned int dm_dof,
 }
 
 //! Return grid periodicity.
-grid::Periodicity IceGrid::periodicity() const {
+grid::Periodicity Grid::periodicity() const {
   return m_impl->periodicity;
 }
 
-grid::Registration IceGrid::registration() const {
+grid::Registration Grid::registration() const {
   return m_impl->registration;
 }
 
 //! Return execution context this grid corresponds to.
-std::shared_ptr<const Context> IceGrid::ctx() const {
+std::shared_ptr<const Context> Grid::ctx() const {
   return m_impl->ctx;
 }
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_width) const {
+std::shared_ptr<petsc::DM> Grid::Impl::create_dm(int da_dof, int stencil_width) const {
 
   ctx->log()->message(3,
                       "* Creating a DM with dof=%d and stencil_width=%d...\n",
@@ -757,106 +757,106 @@ std::shared_ptr<petsc::DM> IceGrid::Impl::create_dm(int da_dof, int stencil_widt
 }
 
 //! MPI rank.
-int IceGrid::rank() const {
+int Grid::rank() const {
   return m_impl->rank;
 }
 
 //! MPI communicator size.
-unsigned int IceGrid::size() const {
+unsigned int Grid::size() const {
   return m_impl->size;
 }
 
 //! Dictionary of variables (2D and 3D fields) associated with this grid.
-Vars &IceGrid::variables() {
+Vars &Grid::variables() {
   return m_impl->variables;
 }
 
 //! Dictionary of variables (2D and 3D fields) associated with this grid.
-const Vars &IceGrid::variables() const {
+const Vars &Grid::variables() const {
   return m_impl->variables;
 }
 
 //! Global starting index of this processor's subset.
-int IceGrid::xs() const {
+int Grid::xs() const {
   return m_impl->xs;
 }
 
 //! Global starting index of this processor's subset.
-int IceGrid::ys() const {
+int Grid::ys() const {
   return m_impl->ys;
 }
 
 //! Width of this processor's sub-domain.
-int IceGrid::xm() const {
+int Grid::xm() const {
   return m_impl->xm;
 }
 
 //! Width of this processor's sub-domain.
-int IceGrid::ym() const {
+int Grid::ym() const {
   return m_impl->ym;
 }
 
 //! Total grid size in the X direction.
-unsigned int IceGrid::Mx() const {
+unsigned int Grid::Mx() const {
   return m_impl->Mx;
 }
 
 //! Total grid size in the Y direction.
-unsigned int IceGrid::My() const {
+unsigned int Grid::My() const {
   return m_impl->My;
 }
 
 //! Number of vertical levels.
-unsigned int IceGrid::Mz() const {
+unsigned int Grid::Mz() const {
   return m_impl->z.size();
 }
 
 //! X-coordinates.
-const std::vector<double> &IceGrid::x() const {
+const std::vector<double> &Grid::x() const {
   return m_impl->x;
 }
 
 //! Get a particular x coordinate.
-double IceGrid::x(size_t i) const {
+double Grid::x(size_t i) const {
   return m_impl->x[i];
 }
 
 //! Y-coordinates.
-const std::vector<double> &IceGrid::y() const {
+const std::vector<double> &Grid::y() const {
   return m_impl->y;
 }
 
 //! Get a particular y coordinate.
-double IceGrid::y(size_t i) const {
+double Grid::y(size_t i) const {
   return m_impl->y[i];
 }
 
 //! Z-coordinates within the ice.
-const std::vector<double> &IceGrid::z() const {
+const std::vector<double> &Grid::z() const {
   return m_impl->z;
 }
 
 //! Get a particular z coordinate.
-double IceGrid::z(size_t i) const {
+double Grid::z(size_t i) const {
   return m_impl->z[i];
 }
 
 //! Horizontal grid spacing.
-double IceGrid::dx() const {
+double Grid::dx() const {
   return m_impl->dx;
 }
 
 //! Horizontal grid spacing.
-double IceGrid::dy() const {
+double Grid::dy() const {
   return m_impl->dy;
 }
 
-double IceGrid::cell_area() const {
+double Grid::cell_area() const {
   return m_impl->cell_area;
 }
 
 //! Minimum vertical spacing.
-double IceGrid::dz_min() const {
+double Grid::dz_min() const {
   double result = m_impl->z.back();
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
     const double dz = m_impl->z[k + 1] - m_impl->z[k];
@@ -866,7 +866,7 @@ double IceGrid::dz_min() const {
 }
 
 //! Maximum vertical spacing.
-double IceGrid::dz_max() const {
+double Grid::dz_max() const {
   double result = 0.0;
   for (unsigned int k = 0; k < m_impl->z.size() - 1; ++k) {
     const double dz = m_impl->z[k + 1] - m_impl->z[k];
@@ -876,34 +876,34 @@ double IceGrid::dz_max() const {
 }
 
 //! Half-width of the computational domain.
-double IceGrid::Lx() const {
+double Grid::Lx() const {
   return m_impl->Lx;
 }
 
 //! Half-width of the computational domain.
-double IceGrid::Ly() const {
+double Grid::Ly() const {
   return m_impl->Ly;
 }
 
 //! Height of the computational domain.
-double IceGrid::Lz() const {
+double Grid::Lz() const {
   return m_impl->z.back();
 }
 
 //! X-coordinate of the center of the domain.
-double IceGrid::x0() const {
+double Grid::x0() const {
   return m_impl->x0;
 }
 
 //! Y-coordinate of the center of the domain.
-double IceGrid::y0() const {
+double Grid::y0() const {
   return m_impl->y0;
 }
 
 /*!
  * Return the size of the biggest sub-domain (part owned by a MPI process)
  */
-int IceGrid::max_patch_size() const {
+int Grid::max_patch_size() const {
   return m_impl->max_patch_size;
 }
 
@@ -1335,7 +1335,7 @@ void Parameters::validate() const {
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-std::shared_ptr<IceGrid> IceGrid::FromOptions(std::shared_ptr<const Context> ctx) {
+std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   auto config = ctx->config();
 
   auto input_file = config->get_string("input.file");
@@ -1347,7 +1347,7 @@ std::shared_ptr<IceGrid> IceGrid::FromOptions(std::shared_ptr<const Context> ctx
 
   if (not input_file.empty() and (not bootstrap)) {
     // get grid from a PISM input file
-    return IceGrid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
+    return Grid::FromFile(ctx, input_file, { "enthalpy", "temp" }, r);
   }
 
   if (not input_file.empty() and bootstrap) {
@@ -1387,7 +1387,7 @@ std::shared_ptr<IceGrid> IceGrid::FromOptions(std::shared_ptr<const Context> ctx
     input_grid.vertical_grid_from_options(config);
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    auto result = std::make_shared<IceGrid>(ctx, input_grid);
+    auto result = std::make_shared<Grid>(ctx, input_grid);
 
     units::System::Ptr sys = ctx->unit_system();
     units::Converter km(sys, "m", "km");
@@ -1417,22 +1417,22 @@ std::shared_ptr<IceGrid> IceGrid::FromOptions(std::shared_ptr<const Context> ctx
     P.vertical_grid_from_options(ctx->config());
     P.ownership_ranges_from_options(ctx->size());
 
-    return std::make_shared<IceGrid>(ctx, P);
+    return std::make_shared<Grid>(ctx, P);
   }
 }
 
-const MappingInfo& IceGrid::get_mapping_info() const {
+const MappingInfo& Grid::get_mapping_info() const {
   return m_impl->mapping_info;
 }
 
-void IceGrid::set_mapping_info(const MappingInfo &info) {
+void Grid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
   // FIXME: re-compute lat/lon coordinates
 }
 
 #if (Pism_USE_PIO==1)
 static int pio_decomp_hash(int dof, int output_datatype) {
-  if (dof < 0 or dof > IceGrid::max_dm_dof) {
+  if (dof < 0 or dof > Grid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Invalid dof argument: %d", dof);
   }
@@ -1449,7 +1449,7 @@ static int pio_decomp_hash(int dof, int output_datatype) {
  * @param[in] dof size of the last dimension (usually z)
  * @param[in] output_datatype an integer specifying a data type (`PIO_DOUBLE`, etc)
  */
-int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
+int Grid::pio_io_decomposition(int dof, int output_datatype) const {
   int result = 0;
 #if (Pism_USE_PIO==1)
   {
@@ -1481,7 +1481,7 @@ int IceGrid::pio_io_decomposition(int dof, int output_datatype) const {
   return result;
 }
 
-PointsWithGhosts::PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width) {
+PointsWithGhosts::PointsWithGhosts(const Grid &grid, unsigned int stencil_width) {
   m_i_first = grid.xs() - stencil_width;
   m_i_last  = grid.xs() + grid.xm() + stencil_width - 1;
   m_j_first = grid.ys() - stencil_width;
@@ -1494,7 +1494,7 @@ PointsWithGhosts::PointsWithGhosts(const IceGrid &grid, unsigned int stencil_wid
 
 namespace grid {
 
-double radius(const IceGrid &grid, int i, int j) {
+double radius(const Grid &grid, int i, int j) {
   return sqrt(grid.x(i) * grid.x(i) + grid.y(j) * grid.y(j));
 }
 

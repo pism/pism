@@ -25,7 +25,7 @@ namespace pism {
 
 namespace stressbalance {
 
-SIAFD_Regional::SIAFD_Regional(std::shared_ptr<const IceGrid> grid)
+SIAFD_Regional::SIAFD_Regional(std::shared_ptr<const Grid> grid)
   : SIAFD(grid),
     m_h_x_no_model(grid, "h_x_no_model"),
     m_h_y_no_model(grid, "h_y_no_model") {

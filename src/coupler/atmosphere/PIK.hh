@@ -26,7 +26,7 @@ namespace atmosphere {
 
 class PIK : public YearlyCycle {
 public:
-  PIK(std::shared_ptr<const IceGrid> g);
+  PIK(std::shared_ptr<const Grid> g);
   virtual ~PIK() = default;
 
 private:

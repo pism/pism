@@ -23,7 +23,7 @@
 #include "VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism_options.hh"
-#include "IceGrid.hh"
+#include "Grid.hh"
 
 #include "ConfigInterface.hh"
 #include "error_handling.hh"

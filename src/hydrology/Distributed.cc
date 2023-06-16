@@ -31,7 +31,7 @@
 namespace pism {
 namespace hydrology {
 
-Distributed::Distributed(std::shared_ptr<const IceGrid> g)
+Distributed::Distributed(std::shared_ptr<const Grid> g)
   : Routing(g),
     m_P(m_grid, "bwp"),
     m_Pnew(m_grid, "Pnew_internal") {

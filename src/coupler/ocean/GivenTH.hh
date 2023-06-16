@@ -27,7 +27,7 @@ namespace ocean {
 class GivenTH : public CompleteOceanModel
 {
 public:
-  GivenTH(std::shared_ptr<const IceGrid> g);
+  GivenTH(std::shared_ptr<const Grid> g);
   virtual ~GivenTH() = default;
 
   class Constants {

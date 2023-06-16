@@ -18,7 +18,7 @@
 
 #include "IP_SSATaucForwardProblem.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
@@ -31,7 +31,7 @@
 namespace pism {
 namespace inverse {
 
-IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const IceGrid> grid,
+IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> grid,
                                                    IPDesignVariableParameterization &tp)
   : SSAFEM(grid),
     m_zeta(NULL),
@@ -85,7 +85,7 @@ void IP_SSATaucForwardProblem::init() {
   // to set m_tauc.
   SSAFEM::init();
 
-  // Get most of the inputs from IceGrid::variables() and fake the rest.
+  // Get most of the inputs from Grid::variables() and fake the rest.
   //
   // I will need to fix this at some point.
   {

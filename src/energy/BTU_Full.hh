@@ -83,7 +83,7 @@ class BedrockColumn;
 */
 class BTU_Full : public BedThermalUnit {
 public:
-  BTU_Full(std::shared_ptr<const IceGrid> g, const BTUGrid &vertical_grid);
+  BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &vertical_grid);
   virtual ~BTU_Full() = default;
 
   //! Bedrock thermal layer temperature field.

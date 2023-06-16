@@ -26,7 +26,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 namespace array {
 class CellType;
@@ -34,7 +34,7 @@ class CellType;
 
 class MPDATA2 {
 public:
-  MPDATA2(std::shared_ptr<const IceGrid> grid, int N);
+  MPDATA2(std::shared_ptr<const Grid> grid, int N);
 
   void update(double dt,
               const array::CellType &cell_type,

@@ -30,7 +30,7 @@ namespace stressbalance {
  */
 class BlatterTestHalfar : public Blatter {
 public:
-  BlatterTestHalfar(std::shared_ptr<const IceGrid> grid, int Mz, int coarsening_factor);
+  BlatterTestHalfar(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
 
   double H_exact(double x) const;
 

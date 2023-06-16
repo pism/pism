@@ -24,7 +24,7 @@
 #include "Array_impl.hh"
 
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"
@@ -52,7 +52,7 @@ static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
 
 namespace array {
 
-Array::Array(std::shared_ptr<const IceGrid> grid,
+Array::Array(std::shared_ptr<const Grid> grid,
              const std::string &name,
              Kind ghostedp,
              size_t dof,
@@ -126,7 +126,7 @@ int Array::state_counter() const {
   return m_impl->state_counter;
 }
 
-std::shared_ptr<const IceGrid> Array::grid() const {
+std::shared_ptr<const Grid> Array::grid() const {
   return m_impl->grid;
 }
 

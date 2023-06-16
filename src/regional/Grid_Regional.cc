@@ -24,7 +24,7 @@
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Component.hh" // process_input_options
 #include "pism/util/Context.hh"
@@ -82,7 +82,7 @@ static void subset_extent(const std::string& axis,
 //! Create a grid using command-line options and (possibly) an input file.
 /** Processes options -i, -bootstrap, -Mx, -My, -Mz, -Lx, -Ly, -Lz, -x_range, -y_range.
  */
-std::shared_ptr<IceGrid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
+std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
 
   auto options = process_input_options(ctx->com(), ctx->config());
 
@@ -134,7 +134,7 @@ std::shared_ptr<IceGrid> regional_grid_from_options(std::shared_ptr<Context> ctx
         subset_extent("y", full_grid.y, y_range[0], y_range[1],
                       input_grid.y0, input_grid.Ly, input_grid.My);
 
-        // Set registration to "CELL_CORNER" so that IceGrid computes
+        // Set registration to "CELL_CORNER" so that Grid computes
         // coordinates correctly.
         input_grid.registration = grid::CELL_CORNER;
 
@@ -159,14 +159,14 @@ std::shared_ptr<IceGrid> regional_grid_from_options(std::shared_ptr<Context> ctx
     // process options controlling ownership ranges
     input_grid.ownership_ranges_from_options(ctx->size());
 
-    return std::make_shared<IceGrid>(ctx, input_grid);
+    return std::make_shared<Grid>(ctx, input_grid);
   }
 
   if (x_range.is_set() ^ y_range.is_set()) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Please set both -x_range and -y_range.");
   }
 
-  return IceGrid::FromOptions(ctx);
+  return Grid::FromOptions(ctx);
 }
 
 

@@ -27,7 +27,7 @@ namespace surface {
 
 class Given : public SurfaceModel {
 public:
-  Given(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  Given(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~Given() = default;
 protected:
   void init_impl(const Geometry &geometry);

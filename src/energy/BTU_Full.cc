@@ -30,7 +30,7 @@ namespace pism {
 namespace energy {
 
 
-BTU_Full::BTU_Full(std::shared_ptr<const IceGrid> g, const BTUGrid &grid)
+BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
   : BedThermalUnit(g),
     m_bootstrapping_needed(false) {
 

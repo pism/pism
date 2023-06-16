@@ -1,14 +1,15 @@
 #include "Example.hh"
 
 #include "base/util/PISMConfigInterface.hh"
-#include "base/util/IceGrid.hh"
+#include "base/util/Grid.hh"
 #include "base/util/pism_options.hh"
 #include "base/util/MaxTimestep.hh"
+#include <memory>
 
 namespace pism {
 namespace ocean {
 
-Example::Example(IceGrid::ConstPtr g)
+Example::Example(std::shared_ptr<const Grid> g)
   : OceanModel(g) {
 
   // assume that input.forcing.buffer_size is big enough

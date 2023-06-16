@@ -19,7 +19,7 @@
 
 #include "remove_narrow_tongues.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

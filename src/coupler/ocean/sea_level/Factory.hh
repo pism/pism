@@ -28,7 +28,7 @@ namespace sea_level {
 
 class Factory : public PCFactory<ocean::sea_level::SeaLevel> {
 public:
-  Factory(std::shared_ptr<const IceGrid> grid);
+  Factory(std::shared_ptr<const Grid> grid);
   ~Factory() = default;
 };
 

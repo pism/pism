@@ -34,7 +34,7 @@ namespace stressbalance {
 class SSAFD : public SSA
 {
 public:
-  SSAFD(std::shared_ptr<const IceGrid> g);
+  SSAFD(std::shared_ptr<const Grid> g);
   virtual ~SSAFD() = default;
 
   const array::Staggered & integrated_viscosity() const;
@@ -136,7 +136,7 @@ protected:
 };
 
 //! Constructs a new SSAFD
-SSA * SSAFDFactory(std::shared_ptr<const IceGrid> grid);
+SSA * SSAFDFactory(std::shared_ptr<const Grid> grid);
 
 } // end of namespace stressbalance
 } // end of namespace pism

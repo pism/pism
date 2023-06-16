@@ -24,7 +24,7 @@ using std::shared_ptr;
 #include <petscvec.h>
 
 #include "File.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -764,7 +764,7 @@ void File::write_variable(const std::string &variable_name,
 
 
 void File::write_distributed_array(const std::string &variable_name,
-                                   const IceGrid &grid,
+                                   const Grid &grid,
                                    unsigned int z_count,
                                    bool time_dependent,
                                    const double *input) const {

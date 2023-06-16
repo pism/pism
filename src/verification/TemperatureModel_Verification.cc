@@ -35,7 +35,7 @@ static const double LforFG = 750000; // m
 static const double ST     = 1.67e-5;
 static const double Tmin   = 223.15; // K
 
-TemperatureModel_Verification::TemperatureModel_Verification(std::shared_ptr<const IceGrid> grid,
+TemperatureModel_Verification::TemperatureModel_Verification(std::shared_ptr<const Grid> grid,
                                                              stressbalance::StressBalance *stress_balance,
                                                              int testname, bool bedrock_is_ice)
   : TemperatureModel(grid, stress_balance), m_testname(testname), m_bedrock_is_ice(bedrock_is_ice) {

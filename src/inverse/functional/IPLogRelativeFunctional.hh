@@ -35,7 +35,7 @@ namespace inverse {
 */
 class IPLogRelativeFunctional : public IPFunctional<array::Vector> {
 public:
-  IPLogRelativeFunctional(std::shared_ptr<const IceGrid> grid, array::Vector &u_observed, double eps,
+  IPLogRelativeFunctional(std::shared_ptr<const Grid> grid, array::Vector &u_observed, double eps,
                           array::Scalar *weights=NULL) :
     IPFunctional<array::Vector>(grid), m_u_observed(u_observed), m_weights(weights), m_normalization(1.), m_eps(eps) {};
   virtual ~IPLogRelativeFunctional() {};

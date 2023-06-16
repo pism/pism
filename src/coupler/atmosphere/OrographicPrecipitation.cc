@@ -22,13 +22,13 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 
 namespace pism {
 namespace atmosphere {
 
-OrographicPrecipitation::OrographicPrecipitation(std::shared_ptr<const IceGrid> grid,
+OrographicPrecipitation::OrographicPrecipitation(std::shared_ptr<const Grid> grid,
                                                  std::shared_ptr<AtmosphereModel> in)
     : AtmosphereModel(grid, in) {
 

@@ -19,7 +19,7 @@
 #include "SSB_Modifier.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
@@ -29,7 +29,7 @@
 namespace pism {
 namespace stressbalance {
 
-SSB_Modifier::SSB_Modifier(std::shared_ptr<const IceGrid> g)
+SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
   : Component(g),
     m_EC(g->ctx()->enthalpy_converter()),
     m_diffusive_flux(m_grid, "diffusive_flux"),
@@ -81,7 +81,7 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(std::shared_ptr<const IceGrid> g)
+ConstantInColumn::ConstantInColumn(std::shared_ptr<const Grid> g)
   : SSB_Modifier(g) {
   rheology::FlowLawFactory ice_factory("stress_balance.sia.", m_config, m_EC);
 

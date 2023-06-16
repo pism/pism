@@ -68,7 +68,7 @@ def run(L, test):
     Lx, Ly = 1e5, 1e5
     Mx, My = 7, 7
     x0, y0 = 0.0, 0.0
-    grid = PISM.IceGrid.Shallow(ctx.ctx,
+    grid = PISM.Grid.Shallow(ctx.ctx,
                                 Lx, Ly, x0, y0, Mx, My,
                                 PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 

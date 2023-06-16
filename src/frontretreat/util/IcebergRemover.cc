@@ -21,14 +21,14 @@
 #include "pism/util/connected_components.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace calving {
 
-IcebergRemover::IcebergRemover(std::shared_ptr<const IceGrid> g)
+IcebergRemover::IcebergRemover(std::shared_ptr<const Grid> g)
   : Component(g),
     m_iceberg_mask(m_grid, "iceberg_mask"){
 

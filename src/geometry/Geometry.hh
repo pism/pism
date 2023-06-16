@@ -24,11 +24,11 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 class Geometry {
 public:
-  Geometry(const std::shared_ptr<const IceGrid> &grid);
+  Geometry(const std::shared_ptr<const Grid> &grid);
 
   /*!
    * Ensures consistency of ice geometry by re-computing cell type, cell grounded fraction, and ice
@@ -69,7 +69,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
                                           double thickness_threshold);
 double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
 
-void set_no_model_strip(const IceGrid &grid, double width, array::Scalar &result);
+void set_no_model_strip(const Grid &grid, double width, array::Scalar &result);
 
 } // end of namespace pism
 

@@ -26,7 +26,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 class Config;
 
 namespace array {
@@ -78,13 +78,13 @@ namespace stressbalance {
   ierr = smoother.get_smoothed_thk(usurf, thk, 1, &thksmooth); CHKERRQ(ierr);
   ierr = smoother.get_theta(usurf, n, 1, &theta); CHKERRQ(ierr);
   \endcode
-  See IceGrid documentation for initializing `grid`. Note we assume
+  See Grid documentation for initializing `grid`. Note we assume
   `topg`, `usurf`, `thk`, `thksmooth`, and `theta` are all created
   array::Scalar instances.
 */
 class BedSmoother {
 public:
-  BedSmoother(std::shared_ptr<const IceGrid> g);
+  BedSmoother(std::shared_ptr<const Grid> g);
   virtual ~BedSmoother() = default;
 
   void preprocess_bed(const array::Scalar &topg);
@@ -98,7 +98,7 @@ public:
 
   const array::Scalar& smoothed_bed() const;
 protected:
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
   const Config::ConstPtr m_config;
 
   //! smoothed bed elevation; set by calling preprocess_bed()

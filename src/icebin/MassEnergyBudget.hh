@@ -8,7 +8,7 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 namespace icebin {
 
@@ -23,7 +23,7 @@ struct MassEnthVec2S : public pism::PetscAccessible
 
     ~MassEnthVec2S() {}
 
-  MassEnthVec2S(std::shared_ptr<const pism::IceGrid> my_grid, const std::string &my_name);
+  MassEnthVec2S(std::shared_ptr<const pism::Grid> my_grid, const std::string &my_name);
 
     void set_attrs(
         const std::string &my_pism_intent,
@@ -171,9 +171,9 @@ protected:
 
 public:
 
-  MassEnergyBudget(std::shared_ptr<const pism::IceGrid> grid, std::string const &prefix);
+  MassEnergyBudget(std::shared_ptr<const pism::Grid> grid, std::string const &prefix);
 
-  void set_epsilon(std::shared_ptr<const pism::IceGrid> grid);
+  void set_epsilon(std::shared_ptr<const pism::Grid> grid);
 };
 
 } // end of namespace icebin

@@ -46,7 +46,7 @@ class EnthalpyColumn(object):
 
         self.dt = dt
 
-        self.grid = PISM.IceGrid(ctx.ctx, param)
+        self.grid = PISM.Grid(ctx.ctx, param)
         grid = self.grid
 
         self.enthalpy = PISM.model.createEnthalpyVec(grid)

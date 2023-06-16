@@ -54,7 +54,7 @@ class BlatterFlowline(object):
 
         P.ownership_ranges_from_options(ctx.size)
 
-        grid = PISM.IceGrid(ctx.ctx, P)
+        grid = PISM.Grid(ctx.ctx, P)
 
         geometry = PISM.Geometry(grid)
 

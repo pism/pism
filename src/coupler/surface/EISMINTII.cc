@@ -23,13 +23,13 @@
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {
 
-EISMINTII::EISMINTII(std::shared_ptr<const IceGrid> g, int experiment)
+EISMINTII::EISMINTII(std::shared_ptr<const Grid> g, int experiment)
   : PSFormulas(g), m_experiment(experiment) {
   // empty
 }

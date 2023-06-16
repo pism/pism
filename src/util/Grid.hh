@@ -20,9 +20,9 @@
 #define PISM_GRID_H
 
 #include <cassert>
-#include <vector>
+#include <memory> // shared_ptr
 #include <string>
-#include <memory>               // shared_ptr
+#include <vector>
 
 #include <mpi.h>                // MPI_Comm
 
@@ -94,7 +94,7 @@ private:
   void reset();
 };
 
-//! Grid parameters; used to collect defaults before an IceGrid is allocated.
+//! Grid parameters; used to collect defaults before an Grid is allocated.
 /* Make sure that all of
    - `horizontal_size_from_options()`
    - `horizontal_extent_from_options()`
@@ -163,7 +163,7 @@ private:
 };
 } // namespace grid
 
-class IceGrid;
+class Grid;
 
 /** Iterator class for traversing the grid, including ghost points.
  *
@@ -173,7 +173,7 @@ class IceGrid;
  */
 class PointsWithGhosts {
 public:
-  PointsWithGhosts(const IceGrid &grid, unsigned int stencil_width = 1);
+  PointsWithGhosts(const Grid &grid, unsigned int stencil_width = 1);
 
   int i() const {
     return m_i;
@@ -212,7 +212,7 @@ private:
  */
 class Points : public PointsWithGhosts {
 public:
-  Points(const IceGrid &g) : PointsWithGhosts(g, 0) {}
+  Points(const Grid &g) : PointsWithGhosts(g, 0) {}
 };
 
 
@@ -229,7 +229,7 @@ public:
 
   \section computational_grid Organization of PISM's computational grid
 
-  PISM uses the class IceGrid to manage computational grids and their
+  PISM uses the class Grid to manage computational grids and their
   parameters.
 
   Computational grids PISM can use are
@@ -275,25 +275,25 @@ public:
   }
   \endcode
 */
-class IceGrid {
+class Grid {
 public:
-  ~IceGrid();
+  ~Grid();
 
-  IceGrid(std::shared_ptr<const Context> context, const grid::Parameters &p);
+  Grid(std::shared_ptr<const Context> context, const grid::Parameters &p);
 
-  static std::shared_ptr<IceGrid> Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
+  static std::shared_ptr<Grid> Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
                                           double x0, double y0, unsigned int Mx, unsigned int My,
                                           grid::Registration r, grid::Periodicity p);
 
-  static std::shared_ptr<IceGrid> FromFile(std::shared_ptr<const Context> ctx, const File &file,
+  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx, const File &file,
                                            const std::string &var_name, grid::Registration r);
 
-  static std::shared_ptr<IceGrid> FromFile(std::shared_ptr<const Context> ctx,
+  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
                                            const std::string &file,
                                            const std::vector<std::string> &var_names,
                                            grid::Registration r);
 
-  static std::shared_ptr<IceGrid> FromOptions(std::shared_ptr<const Context> ctx);
+  static std::shared_ptr<Grid> FromOptions(std::shared_ptr<const Context> ctx);
 
   std::shared_ptr<petsc::DM> get_dm(unsigned int dm_dof, unsigned int stencil_width) const;
 
@@ -375,8 +375,8 @@ private:
   Impl *m_impl;
 
   // Hide copy constructor / assignment operator.
-  IceGrid(const IceGrid &);
-  IceGrid & operator=(const IceGrid &);
+  Grid(const Grid &);
+  Grid & operator=(const Grid &);
 };
 
 namespace grid {
@@ -385,11 +385,11 @@ std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
                                             grid::VerticalSpacing spacing, double Lambda = 0.0);
 
 //! Returns the distance from the point (i,j) to the origin.
-double radius(const IceGrid &grid, int i, int j);
+double radius(const Grid &grid, int i, int j);
 
 //! @brief Check if a point `(i,j)` is in the strip of `stripwidth` meters around the edge
 //! of the computational domain.
-inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width) {
+inline bool in_null_strip(const Grid& grid, int i, int j, double strip_width) {
   return (strip_width >  0.0                               &&
           (grid.x(i)  <= grid.x(0) + strip_width           ||
            grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
@@ -400,7 +400,7 @@ inline bool in_null_strip(const IceGrid& grid, int i, int j, double strip_width)
 /*!
  * Return `true` if a point `(i, j)` is at an edge of the domain defined by the `grid`.
  */
-inline bool domain_edge(const IceGrid &grid, int i, int j) {
+inline bool domain_edge(const Grid &grid, int i, int j) {
   return ((j == 0) or (j == (int)grid.My() - 1) or (i == 0) or (i == (int)grid.Mx() - 1));
 }
 

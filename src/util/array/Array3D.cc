@@ -23,7 +23,7 @@
 
 #include "pism/util/array/Array3D.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/array/Scalar.hh"
@@ -34,7 +34,7 @@ namespace array {
 
 // this file contains method for derived class array::Array3D
 
-Array3D::Array3D(std::shared_ptr<const IceGrid> grid,
+Array3D::Array3D(std::shared_ptr<const Grid> grid,
                  const std::string &name,
                  Kind ghostedp,
                  const std::vector<double> &levels,

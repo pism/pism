@@ -56,7 +56,7 @@ namespace fem {
 
   Integration on a physical element can be thought of as being done by change of variables. The
   quadrature weights need to be modified, and the Quadrature takes care of this. Because all
-  elements in an IceGrid are congruent, the quadrature weights are the same for each element, and
+  elements in an Grid are congruent, the quadrature weights are the same for each element, and
   are computed upon initialization.
 */
 class Quadrature {

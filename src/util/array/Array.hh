@@ -30,7 +30,7 @@
 namespace pism {
 
 enum InterpolationType : int;
-class IceGrid;
+class Grid;
 class File;
 class SpatialVariableMetadata;
 
@@ -219,7 +219,7 @@ public:
     return result;
   }
 
-  std::shared_ptr<const IceGrid> grid() const;
+  std::shared_ptr<const Grid> grid() const;
   unsigned int ndims() const;
   std::vector<int> shape() const;
   //! @brief Returns the number of degrees of freedom per grid point.
@@ -282,7 +282,7 @@ public:
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
 
 protected:
-  Array(std::shared_ptr<const IceGrid> grid,
+  Array(std::shared_ptr<const Grid> grid,
         const std::string &name,
         Kind ghostedp,
         size_t dof,

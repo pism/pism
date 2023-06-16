@@ -28,7 +28,7 @@
 namespace pism {
 namespace ocean {
 
-InitializationHelper::InitializationHelper(std::shared_ptr<const IceGrid> g, std::shared_ptr<OceanModel> in)
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   : OceanModel(g, in) {
 
   m_water_column_pressure = allocate_water_column_pressure(g);

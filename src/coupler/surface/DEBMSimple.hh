@@ -39,7 +39,7 @@ namespace surface {
 */
 class DEBMSimple : public SurfaceModel {
 public:
-  DEBMSimple(std::shared_ptr<const IceGrid> g,
+  DEBMSimple(std::shared_ptr<const Grid> g,
              std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~DEBMSimple() = default;
 

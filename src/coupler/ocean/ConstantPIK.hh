@@ -38,7 +38,7 @@ namespace ocean {
 //! shelf bottom.
 class PIK : public CompleteOceanModel {
 public:
-  PIK(std::shared_ptr<const IceGrid> g);
+  PIK(std::shared_ptr<const Grid> g);
   virtual ~PIK() = default;
 
 private:

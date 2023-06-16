@@ -27,7 +27,7 @@ namespace pism {
 namespace array {
 
 // protected constructor
-Scalar::Scalar(std::shared_ptr<const IceGrid> grid, const std::string &name,
+Scalar::Scalar(std::shared_ptr<const Grid> grid, const std::string &name,
                              int width)
   : Array2D<double>(grid, name,
                     width > 0 ? WITH_GHOSTS : WITHOUT_GHOSTS,
@@ -36,7 +36,7 @@ Scalar::Scalar(std::shared_ptr<const IceGrid> grid, const std::string &name,
 }
 
 // public constructor
-Scalar::Scalar(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Scalar::Scalar(std::shared_ptr<const Grid> grid, const std::string &name)
   : Array2D<double>(grid, name, WITHOUT_GHOSTS, 1) {
   // empty
 }
@@ -48,17 +48,17 @@ std::shared_ptr<Scalar> Scalar::duplicate() const {
   return result;
 }
 
-Scalar1::Scalar1(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Scalar1::Scalar1(std::shared_ptr<const Grid> grid, const std::string &name)
   : Scalar(grid, name, 1) {
   // empty
 }
 
-Scalar1::Scalar1(std::shared_ptr<const IceGrid> grid, const std::string &name, int width)
+Scalar1::Scalar1(std::shared_ptr<const Grid> grid, const std::string &name, int width)
   : Scalar(grid, name, width) {
   // empty
 }
 
-Scalar2::Scalar2(std::shared_ptr<const IceGrid> grid, const std::string &name)
+Scalar2::Scalar2(std::shared_ptr<const Grid> grid, const std::string &name)
   : Scalar1(grid, name, 2) {
   // empty
 }

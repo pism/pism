@@ -20,7 +20,7 @@
 
 #include "pism/util/io/File.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vars.hh"
@@ -33,7 +33,7 @@
 namespace pism {
 namespace bed {
 
-LingleClark::LingleClark(std::shared_ptr<const IceGrid> grid)
+LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
   : BedDef(grid),
     m_total_displacement(m_grid, "bed_displacement"),
     m_relief(m_grid, "bed_relief"),
@@ -83,7 +83,7 @@ LingleClark::LingleClark(std::shared_ptr<const IceGrid> grid)
     Lx = Z * (m_grid->x0() - m_grid->x(0)),
     Ly = Z * (m_grid->y0() - m_grid->y(0));
 
-  m_extended_grid = IceGrid::Shallow(m_grid->ctx(),
+  m_extended_grid = Grid::Shallow(m_grid->ctx(),
                                      Lx, Ly,
                                      m_grid->x0(), m_grid->y0(),
                                      Nx, Ny, grid::CELL_CORNER, grid::NOT_PERIODIC);

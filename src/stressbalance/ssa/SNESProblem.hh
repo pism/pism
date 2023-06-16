@@ -20,7 +20,7 @@
 #ifndef PISM_SNESPROBLEM_H
 #define PISM_SNESPROBLEM_H
 
-#include "pism/util/IceGrid.hh" // inline implementation in the header uses IceGrid
+#include "pism/util/Grid.hh" // inline implementation in the header uses Grid
 #include "pism/util/Vector2d.hh" // to get Vector2
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/Logger.hh"
@@ -29,7 +29,7 @@ namespace pism {
 
 template<int DOF, class U> class SNESProblem {
 public:
-  SNESProblem(std::shared_ptr<const IceGrid> g);
+  SNESProblem(std::shared_ptr<const Grid> g);
 
   virtual ~SNESProblem();
 
@@ -47,7 +47,7 @@ protected:
   virtual void compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
   virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
 
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
 
   petsc::Vec m_X;
   petsc::SNES m_snes;
@@ -102,7 +102,7 @@ PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
 }
 
 template<int DOF, class U>
-SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const IceGrid> g)
+SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
   : m_grid(g) {
 
   PetscErrorCode ierr;

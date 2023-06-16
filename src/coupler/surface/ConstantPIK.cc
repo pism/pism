@@ -19,7 +19,7 @@
 #include "ConstantPIK.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
@@ -31,7 +31,7 @@ namespace surface {
 ///// ice surface temperature parameterized as in PISM-PIK dependent on latitude and surface elevation
 
 
-PIK::PIK(std::shared_ptr<const IceGrid> grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+PIK::PIK(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
   : SurfaceModel(grid) {
   (void) atmosphere;
 

@@ -20,12 +20,12 @@
 #define PISM_FEM_H
 
 
-//! \brief Classes for implementing the Finite Element Method on an IceGrid.
+//! \brief Classes for implementing the Finite Element Method on an Grid.
 /*! @file FEM.hh We assume that the reader has a basic understanding of the finite element method. The
   following is a reminder of the method that also gives the background for the how to implement it
-  on an IceGrid with the tools in this module.
+  on an Grid with the tools in this module.
 
-  The IceGrid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed
+  The Grid domain \f$\Omega\f$ is decomposed into a grid of rectangular physical elements indexed
   by indices (i,j):
 
   ~~~

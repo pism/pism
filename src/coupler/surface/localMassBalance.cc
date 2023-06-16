@@ -26,7 +26,7 @@
 
 #include "pism/util/ConfigInterface.hh"
 #include "localMassBalance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {
@@ -361,7 +361,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 }
 
 
-FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const IceGrid> grid)
+FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
   : m_grid(grid), m_config(grid->ctx()->config()),
     m_temp_mj(grid, "temp_mj_faustogreve")
 {

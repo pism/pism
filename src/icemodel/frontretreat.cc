@@ -18,7 +18,7 @@
 
 #include "IceModel.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"

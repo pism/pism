@@ -7,7 +7,7 @@ add_library (util OBJECT
   ColumnInterpolation.cc
   Context.cc
   EnthalpyConverter.cc
-  IceGrid.cc
+  Grid.cc
   Logger.cc
   Mask.cc
   MaxTimestep.cc

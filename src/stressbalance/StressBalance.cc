@@ -22,7 +22,7 @@
 #include "pism/coupler/OceanModel.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Vars.hh"
@@ -136,7 +136,7 @@ void Inputs::dump(const char *filename) const {
   }
 }
 
-StressBalance::StressBalance(std::shared_ptr<const IceGrid> g,
+StressBalance::StressBalance(std::shared_ptr<const Grid> g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),

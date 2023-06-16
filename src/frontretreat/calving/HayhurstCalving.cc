@@ -19,7 +19,7 @@
 
 #include "HayhurstCalving.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
@@ -27,7 +27,7 @@
 namespace pism {
 namespace calving {
 
-HayhurstCalving::HayhurstCalving(std::shared_ptr<const IceGrid> grid)
+HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_calving_rate(grid, "hayhurst_calving_rate")
 {

@@ -112,7 +112,7 @@ static void effective_water_velocity(const Geometry &geometry,
 
 } // end of namespace diagnostics
 
-EmptyingProblem::EmptyingProblem(std::shared_ptr<const IceGrid> grid)
+EmptyingProblem::EmptyingProblem(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_potential(grid, "hydraulic_potential"),
     m_tmp(grid, "temporary_storage"),

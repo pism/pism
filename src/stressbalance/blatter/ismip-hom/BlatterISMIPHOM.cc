@@ -53,7 +53,7 @@ static double C_bed(double x, double y, double L) {
   return C_surface(x, y, L) - 1000.0;
 }
 
-BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const IceGrid> grid,
+BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid,
                                  int Mz,
                                  int coarsening_factor,
                                  ISMIPHOMTest test)

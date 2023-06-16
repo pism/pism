@@ -106,7 +106,7 @@ class LingleClarkElastic(TestCase):
         Mx = 11
         My = 2 * Mx             # non-square grid
 
-        self.grid = PISM.IceGrid.Shallow(self.ctx.ctx, Lx, Lx,
+        self.grid = PISM.Grid.Shallow(self.ctx.ctx, Lx, Lx,
                                          0, 0, Mx, My, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
         self.H, self.db_pism, self.lrm_pism = self.run_model(self.grid)

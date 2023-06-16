@@ -28,7 +28,7 @@ namespace frontalmelt {
 class DischargeGiven : public FrontalMelt
 {
 public:
-  DischargeGiven(std::shared_ptr<const IceGrid> g);
+  DischargeGiven(std::shared_ptr<const Grid> g);
   virtual ~DischargeGiven() = default;
 
   void initialize(const array::Scalar &theta, const array::Scalar &sgl);

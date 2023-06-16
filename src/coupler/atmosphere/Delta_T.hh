@@ -30,7 +30,7 @@ namespace atmosphere {
 
 class Delta_T : public AtmosphereModel {
 public:
-  Delta_T(std::shared_ptr<const IceGrid> g, std::shared_ptr<AtmosphereModel> in);
+  Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Delta_T() = default;
 
 private:

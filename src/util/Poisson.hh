@@ -24,11 +24,11 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 class Poisson {
 public:
-  Poisson(std::shared_ptr<const IceGrid> grid);
+  Poisson(std::shared_ptr<const Grid> grid);
 
   int solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
             bool reuse_matrix = false);
@@ -41,7 +41,7 @@ private:
                     const array::Scalar &bc,
                     array::Scalar &b);
 
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
   Logger::ConstPtr m_log;
   std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;

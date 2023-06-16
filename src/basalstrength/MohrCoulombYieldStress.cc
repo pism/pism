@@ -19,7 +19,7 @@
 #include "MohrCoulombYieldStress.hh"
 #include "MohrCoulombPointwise.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
@@ -87,7 +87,7 @@ This determines the map of @f$\varphi(x,y)@f$.  If this option is note given,
 the current method leaves `tillphi` unchanged, and thus either in its
 read-in-from-file state or with a default constant value from the config file.
 */
-MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const IceGrid> grid)
+MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
   : YieldStress(grid),
   m_till_phi(m_grid, "tillphi") {
 

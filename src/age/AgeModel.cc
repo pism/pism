@@ -55,7 +55,7 @@ void AgeModelInputs::check() const {
   check_input(w3, "w3");
 }
 
-AgeModel::AgeModel(std::shared_ptr<const IceGrid> grid, stressbalance::StressBalance *stress_balance)
+AgeModel::AgeModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance)
   : Component(grid),
     // FIXME: should be able to use width=1...
     m_ice_age(m_grid, "age", array::WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),

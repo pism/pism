@@ -20,7 +20,7 @@
 #include "CalvingAtThickness.hh"
 
 #include "pism/util/Mask.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/array/Forcing.hh"
@@ -31,7 +31,7 @@ namespace pism {
 //! @brief Calving and iceberg removal code.
 namespace calving {
 
-CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const IceGrid> g)
+CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
   : Component(g),
     m_old_mask(m_grid, "old_mask") {
 

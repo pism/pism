@@ -64,12 +64,12 @@ if __name__ == '__main__':
     p.My = int(config.get_number("grid.My"))
     p.Lx = Lx
     p.Ly = Ly
-    z = PISM.IceGrid.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)
+    z = PISM.compute_vertical_levels(Lz, Mz, PISM.EQUAL, 4.0)
     p.z = PISM.DoubleVector(z)
     p.ownership_ranges_from_options(context.size)
     p.registration = PISM.CELL_CORNER
     p.periodicity = PISM.NOT_PERIODIC
-    grid = PISM.IceGrid(context.ctx, p)
+    grid = PISM.Grid(context.ctx, p)
 
     vecs = PISM.model.ModelVecs(grid.variables())
     vecs.add(PISM.model.createIceSurfaceVec(grid))

@@ -23,11 +23,11 @@
 
 namespace pism {
 
-class IceGrid;
+class Grid;
 
 class ConstantYieldStress : public YieldStress {
 public:
-  ConstantYieldStress(std::shared_ptr<const IceGrid> g);
+  ConstantYieldStress(std::shared_ptr<const Grid> g);
   virtual ~ConstantYieldStress() = default;
 private:
   void restart_impl(const File &input_file, int record);

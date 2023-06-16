@@ -3,13 +3,14 @@
 
 #include "coupler/PISMOcean.hh"
 #include "base/util/iceModelVec2T.hh"
+#include <memory>
 
 namespace pism {
 namespace ocean {
 //! \brief An example ocean model illustrating the use of `array::Forcing`.
 class Example : public OceanModel {
 public:
-  Example(IceGrid::ConstPtr g);
+  Example(std::shared_ptr<const Grid> grid);
   virtual ~Example();
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;

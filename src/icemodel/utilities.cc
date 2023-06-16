@@ -21,7 +21,7 @@
 
 #include "IceModel.hh"
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
@@ -112,7 +112,7 @@ void  IceModel::prepend_history(const std::string &str) {
 }
 
 //! Return the grid used by this model.
-std::shared_ptr<IceGrid> IceModel::grid() const {
+std::shared_ptr<Grid> IceModel::grid() const {
   return m_grid;
 }
 

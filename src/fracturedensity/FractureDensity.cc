@@ -28,7 +28,7 @@
 
 namespace pism {
 
-FractureDensity::FractureDensity(std::shared_ptr<const IceGrid> grid,
+FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
   : Component(grid),
     m_density(grid, "fracture_density"),

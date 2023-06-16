@@ -24,7 +24,7 @@ def bed_def_iso(ice_thickness_change):
     M = 3
     L = 1000e3
 
-    grid = PISM.IceGrid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
+    grid = PISM.Grid.Shallow(ctx, L, L, 0, 0, M, M, PISM.CELL_CORNER, PISM.NOT_PERIODIC)
 
     geometry = PISM.Geometry(grid)
     geometry.bed_elevation.set(0.0)

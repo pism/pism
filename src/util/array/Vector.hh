@@ -31,7 +31,7 @@ class Scalar;
 */
 class Vector : public array::Array2D<pism::Vector2d> {
 public:
-  Vector(std::shared_ptr<const IceGrid> grid, const std::string &short_name);
+  Vector(std::shared_ptr<const Grid> grid, const std::string &short_name);
 
   virtual ~Vector() = default;
 
@@ -40,26 +40,26 @@ public:
 
   std::shared_ptr<Vector> duplicate() const;
 protected:
-  Vector(std::shared_ptr<const IceGrid> grid, const std::string &name,
+  Vector(std::shared_ptr<const Grid> grid, const std::string &name,
          unsigned int stencil_width);
 };
 
 class Vector1 : public Vector {
 public:
-  Vector1(std::shared_ptr<const IceGrid> grid, const std::string &name);
+  Vector1(std::shared_ptr<const Grid> grid, const std::string &name);
 
   typedef std::shared_ptr<Vector1> Ptr;
   typedef std::shared_ptr<const Vector1> ConstPtr;
   using Array2D<Vector2d>::star;
   using Array2D<Vector2d>::box;
 protected:
-  Vector1(std::shared_ptr<const IceGrid> grid, const std::string &name,
+  Vector1(std::shared_ptr<const Grid> grid, const std::string &name,
           unsigned int stencil_width);
 };
 
 class Vector2 : public Vector1 {
 public:
-  Vector2(std::shared_ptr<const IceGrid> grid, const std::string &name);
+  Vector2(std::shared_ptr<const Grid> grid, const std::string &name);
 
   typedef std::shared_ptr<Vector2> Ptr;
   typedef std::shared_ptr<const Vector2> ConstPtr;

@@ -19,14 +19,14 @@
 #include "GivenClimate.hh"
 
 #include "pism/coupler/util/options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 
 namespace pism {
 namespace atmosphere {
 
-Given::Given(std::shared_ptr<const IceGrid> g)
+Given::Given(std::shared_ptr<const Grid> g)
   : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 

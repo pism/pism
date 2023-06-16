@@ -7,14 +7,14 @@
 #include <pism/icebin/VecBundleWriter.hh>
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 using namespace pism;
 
 namespace pism {
 namespace icebin {
 
-VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::IceGrid> _grid, std::string const &_fname,
+VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string const &_fname,
                                  std::vector<pism::array::Array const *> &_vecs)
     : m_grid(_grid), fname(_fname), vecs(_vecs) {
 }

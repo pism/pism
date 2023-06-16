@@ -19,7 +19,7 @@
 #include <cassert>
 
 #include "Mask.hh"
-#include "IceGrid.hh"
+#include "Grid.hh"
 
 namespace pism {
 
@@ -38,7 +38,7 @@ void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
                                       array::Scalar &result) const {
   array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.grid();
+  const Grid &grid = *bed.grid();
 
   const unsigned int stencil = result.stencil_width();
   assert(sea_level.stencil_width() >= stencil);
@@ -58,7 +58,7 @@ void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
                                          array::Scalar &result) const {
   array::AccessScope list{&sea_level, &bed, &thickness, &result};
 
-  const IceGrid &grid = *bed.grid();
+  const Grid &grid = *bed.grid();
 
   const unsigned int stencil = result.stencil_width();
   assert(sea_level.stencil_width() >= stencil);

@@ -22,7 +22,7 @@
 #include <memory>
 #include <map>
 
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/ConfigInterface.hh"
@@ -34,7 +34,7 @@ template <class Model>
 class PCFactory {
 public:
 
-  PCFactory<Model>(std::shared_ptr<const IceGrid> g, const std::string &parameter)
+  PCFactory<Model>(std::shared_ptr<const Grid> g, const std::string &parameter)
     : m_parameter(parameter), m_grid(g)  {}
   ~PCFactory<Model>() {}
 
@@ -117,7 +117,7 @@ protected:
   // in the same dictionary
   class ModelCreator {
   public:
-    virtual std::shared_ptr<Model> create(std::shared_ptr<const IceGrid> g) = 0;
+    virtual std::shared_ptr<Model> create(std::shared_ptr<const Grid> g) = 0;
     virtual ~ModelCreator() {}
   };
 
@@ -125,7 +125,7 @@ protected:
   template <class M>
   class SpecificModelCreator : public ModelCreator {
   public:
-    std::shared_ptr<Model> create(std::shared_ptr<const IceGrid> g) {
+    std::shared_ptr<Model> create(std::shared_ptr<const Grid> g) {
       return std::shared_ptr<Model>(new M(g));
     }
   };
@@ -134,7 +134,7 @@ protected:
   // creators in the same dictionary
   class ModifierCreator {
   public:
-    virtual std::shared_ptr<Model> create(std::shared_ptr<const IceGrid> g, std::shared_ptr<Model> input) = 0;
+    virtual std::shared_ptr<Model> create(std::shared_ptr<const Grid> g, std::shared_ptr<Model> input) = 0;
     virtual ~ModifierCreator() {}
   };
 
@@ -142,7 +142,7 @@ protected:
   template <class M>
   class SpecificModifierCreator : public ModifierCreator {
   public:
-    std::shared_ptr<Model> create(std::shared_ptr<const IceGrid> g, std::shared_ptr<Model> input) {
+    std::shared_ptr<Model> create(std::shared_ptr<const Grid> g, std::shared_ptr<Model> input) {
       return std::shared_ptr<Model>(new M(g, input));
     }
   };
@@ -150,7 +150,7 @@ protected:
   std::string m_parameter;
   std::map<std::string, std::shared_ptr<ModelCreator> > m_models;
   std::map<std::string, std::shared_ptr<ModifierCreator> > m_modifiers;
-  std::shared_ptr<const IceGrid> m_grid;
+  std::shared_ptr<const Grid> m_grid;
 };
 
 } // end of namespace pism

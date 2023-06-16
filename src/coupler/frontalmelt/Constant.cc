@@ -19,14 +19,14 @@
 #include "Constant.hh"
 
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-Constant::Constant(std::shared_ptr<const IceGrid> g)
+Constant::Constant(std::shared_ptr<const Grid> g)
   : FrontalMelt(g) {
   m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
   m_frontal_melt_rate->set_attrs("diagnostic", "frontal melt rate",

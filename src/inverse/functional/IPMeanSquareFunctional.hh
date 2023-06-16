@@ -38,7 +38,7 @@ public:
    * @param[in] grid the computational grid
    * @param[in] weights Vector of weights (NULL implies all weights are 1)
    */
-  IPMeanSquareFunctional2S(std::shared_ptr<const IceGrid> grid,
+  IPMeanSquareFunctional2S(std::shared_ptr<const Grid> grid,
                            array::Scalar *weights=NULL)
     : IPInnerProductFunctional<array::Scalar>(grid),
       m_weights(weights),
@@ -71,7 +71,7 @@ private:
 */
 class IPMeanSquareFunctional2V : public IPInnerProductFunctional<array::Vector> {
 public:
-  IPMeanSquareFunctional2V(std::shared_ptr<const IceGrid> grid, array::Scalar *weights=NULL) :
+  IPMeanSquareFunctional2V(std::shared_ptr<const Grid> grid, array::Scalar *weights=NULL) :
     IPInnerProductFunctional<array::Vector>(grid), m_weights(weights), m_normalization(1.) {};
   virtual ~IPMeanSquareFunctional2V() {};
 

@@ -122,7 +122,7 @@ void DirichletData_Scalar::enforce_homogeneous(const Element2 &element, double* 
 void DirichletData_Scalar::fix_residual(double const *const *const x_global, double **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (auto p = grid.points(); p; p.next()) {
@@ -136,7 +136,7 @@ void DirichletData_Scalar::fix_residual(double const *const *const x_global, dou
 }
 
 void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (auto p = grid.points(); p; p.next()) {
@@ -150,7 +150,7 @@ void DirichletData_Scalar::fix_residual_homogeneous(double **r_global) {
 }
 
 void DirichletData_Scalar::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these
@@ -218,7 +218,7 @@ void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2d
 void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global, Vector2d **r_global) {
   assert(m_values != NULL);
 
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (auto p = grid.points(); p; p.next()) {
@@ -232,7 +232,7 @@ void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global, V
 }
 
 void DirichletData_Vector::fix_residual_homogeneous(Vector2d **r_global) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // For each node that we own:
   for (auto p = grid.points(); p; p.next()) {
@@ -247,7 +247,7 @@ void DirichletData_Vector::fix_residual_homogeneous(Vector2d **r_global) {
 }
 
 void DirichletData_Vector::fix_jacobian(Mat J) {
-  const IceGrid &grid = *m_indices->grid();
+  const Grid &grid = *m_indices->grid();
 
   // Until now, the rows and columns correspoinding to Dirichlet data
   // have not been set. We now put an identity block in for these

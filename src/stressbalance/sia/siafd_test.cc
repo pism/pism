@@ -29,7 +29,7 @@ static char help[] =
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
@@ -47,7 +47,7 @@ namespace pism {
 
 static void compute_strain_heating_errors(const array::Array3D &strain_heating,
                                           const array::Scalar &thickness,
-                                          const IceGrid &grid,
+                                          const Grid &grid,
                                           double &gmax_strain_heating_err,
                                           double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
@@ -101,7 +101,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
 }
 
 
-static void computeSurfaceVelocityErrors(const IceGrid &grid,
+static void computeSurfaceVelocityErrors(const Grid &grid,
                                          const array::Scalar &ice_thickness,
                                          const array::Array3D &u3,
                                          const array::Array3D &v3,
@@ -151,7 +151,7 @@ static void computeSurfaceVelocityErrors(const IceGrid &grid,
 
 
 static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
-                                           const IceGrid &grid,
+                                           const Grid &grid,
                                            const array::Scalar &thickness,
                                            const array::Array3D &temperature,
                                            array::Array3D &enthalpy) {
@@ -177,7 +177,7 @@ static void enthalpy_from_temperature_cold(EnthalpyConverter &EC,
 
 
 //! \brief Set the test F initial state.
-static void setInitStateF(IceGrid &grid,
+static void setInitStateF(Grid &grid,
                           EnthalpyConverter &EC,
                           array::Scalar &bed,
                           array::Scalar &mask,
@@ -222,7 +222,7 @@ static void setInitStateF(IceGrid &grid,
                                  enthalpy);
 }
 
-static void reportErrors(const IceGrid &grid,
+static void reportErrors(const Grid &grid,
                          units::System::Ptr unit_system,
                          const array::Scalar &thickness,
                          const array::Array3D &u_sia,
@@ -310,7 +310,7 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    std::shared_ptr<IceGrid> grid(new IceGrid(ctx, P));
+    std::shared_ptr<Grid> grid(new Grid(ctx, P));
     grid->report_parameters();
 
     EnthalpyConverter::Ptr EC(new ColdEnthalpyConverter(*config));

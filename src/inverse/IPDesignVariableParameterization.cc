@@ -23,7 +23,7 @@
 #include "IPDesignVariableParameterization.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -54,7 +54,7 @@ void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &ze
 
   array::AccessScope list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.grid();
+  const Grid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {
@@ -86,7 +86,7 @@ void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &
   PetscErrorCode ierr;
   array::AccessScope list{&zeta, &d};
 
-  const IceGrid &grid = *zeta.grid();
+  const Grid &grid = *zeta.grid();
 
   ParallelSection loop(grid.com);
   try {

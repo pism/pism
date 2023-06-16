@@ -28,7 +28,7 @@ def gaussian_bump_grid():
     Mx = int((x_max - x_min) / dx)
     My = int((y_max - y_min) / dy)
 
-    return PISM.IceGrid_Shallow(PISM.Context().ctx,
+    return PISM.Grid_Shallow(PISM.Context().ctx,
                                 Lx, Ly,
                                 x0, y0,
                                 Mx, My,
@@ -82,7 +82,7 @@ def input_file(filename):
 
     ctx = PISM.Context()
 
-    grid = PISM.IceGrid.FromFile(ctx.ctx, filename, ["topg"], PISM.CELL_CENTER)
+    grid = PISM.Grid.FromFile(ctx.ctx, filename, ["topg"], PISM.CELL_CENTER)
 
     geometry = PISM.Geometry(grid)
 

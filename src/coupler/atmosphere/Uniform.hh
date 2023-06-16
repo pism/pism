@@ -28,7 +28,7 @@ namespace atmosphere {
  */
 class Uniform : public AtmosphereModel {
 public:
-  Uniform(std::shared_ptr<const IceGrid> g);
+  Uniform(std::shared_ptr<const Grid> g);
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);

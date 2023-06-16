@@ -38,7 +38,7 @@ class PicoPhysics;
 //!
 class Pico : public CompleteOceanModel {
 public:
-  Pico(std::shared_ptr<const IceGrid> g);
+  Pico(std::shared_ptr<const Grid> g);
   virtual ~Pico() = default;
 
 protected:

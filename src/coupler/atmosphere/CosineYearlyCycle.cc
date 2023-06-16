@@ -20,7 +20,7 @@
 #include "pism/util/Time.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
 
 #include "pism/util/error_handling.hh"
@@ -31,7 +31,7 @@
 namespace pism {
 namespace atmosphere {
 
-CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const IceGrid> grid)
+CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const Grid> grid)
   : YearlyCycle(grid) {
 
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");

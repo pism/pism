@@ -22,7 +22,7 @@
 
 namespace pism {
 
-PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const IceGrid> grid)
+PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
   : Component(grid) {
   ForcingOptions opt(*m_grid->ctx(), "geometry.front_retreat.prescribed");
   {

@@ -23,7 +23,7 @@
 #include "pism/util/array/Staggered.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
@@ -44,7 +44,7 @@ using mask::ice_free_ocean;
 using mask::icy;
 
 struct GeometryEvolution::Impl {
-  Impl(std::shared_ptr<const IceGrid> g);
+  Impl(std::shared_ptr<const Grid> g);
 
   GeometryCalculator gc;
 
@@ -90,7 +90,7 @@ struct GeometryEvolution::Impl {
   array::Scalar1   thickness;   // temporary storage
 };
 
-GeometryEvolution::Impl::Impl(std::shared_ptr<const IceGrid> grid)
+GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
   : gc(*grid->ctx()->config()),
     flux_divergence(grid, "flux_divergence"),
     conservation_error(grid, "conservation_error"),
@@ -182,7 +182,7 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const IceGrid> grid)
   }
 }
 
-GeometryEvolution::GeometryEvolution(std::shared_ptr<const IceGrid> grid)
+GeometryEvolution::GeometryEvolution(std::shared_ptr<const Grid> grid)
   : Component(grid) {
   m_impl = new Impl(grid);
 }
@@ -1174,7 +1174,7 @@ DiagnosticList GeometryEvolution::diagnostics_impl() const {
   return result;
 }
 
-RegionalGeometryEvolution::RegionalGeometryEvolution(std::shared_ptr<const IceGrid> grid)
+RegionalGeometryEvolution::RegionalGeometryEvolution(std::shared_ptr<const Grid> grid)
   : GeometryEvolution(grid),
     m_no_model_mask(m_grid, "no_model_mask") {
 

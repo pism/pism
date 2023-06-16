@@ -29,7 +29,7 @@
 namespace pism {
 namespace ocean {
 
-PicoGeometry::PicoGeometry(std::shared_ptr<const IceGrid> grid)
+PicoGeometry::PicoGeometry(std::shared_ptr<const Grid> grid)
     : Component(grid),
       m_continental_shelf(grid, "pico_contshelf_mask"),
       m_boxes(grid, "pico_box_mask"),

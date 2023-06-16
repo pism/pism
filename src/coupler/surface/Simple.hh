@@ -39,7 +39,7 @@ namespace surface {
 */
 class Simple : public SurfaceModel {
 public:
-  Simple(std::shared_ptr<const IceGrid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+  Simple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);

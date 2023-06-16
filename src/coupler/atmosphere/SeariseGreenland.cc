@@ -24,7 +24,7 @@
 
 #include "SeariseGreenland.hh"
 #include "pism/util/Vars.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 
@@ -37,7 +37,7 @@ namespace atmosphere {
 
 ///// SeaRISEGreenland
 
-SeaRISEGreenland::SeaRISEGreenland(std::shared_ptr<const IceGrid> g)
+SeaRISEGreenland::SeaRISEGreenland(std::shared_ptr<const Grid> g)
   : YearlyCycle(g) {
   // empty
 }

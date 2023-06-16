@@ -29,7 +29,7 @@ namespace pism {
  *
  * @return A pointer to a new grid instance.
  */
-std::shared_ptr<IceGrid> regional_grid_from_options(std::shared_ptr<Context> ctx);
+std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx);
 
 } // end of namespace pism
 

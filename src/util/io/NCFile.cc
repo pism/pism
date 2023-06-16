@@ -21,7 +21,7 @@
 #include <cstdio>               // fprintf, stderr, rename, remove
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -156,7 +156,7 @@ void NCFile::put_vara_double(const std::string &variable_name,
 
 
 void NCFile::write_darray(const std::string &variable_name,
-                          const IceGrid &grid,
+                          const Grid &grid,
                           unsigned int z_count,
                           bool time_dependent,
                           unsigned int record,
@@ -169,7 +169,7 @@ void NCFile::write_darray(const std::string &variable_name,
  * The default implementation computes start and count and calls put_vara_double()
  */
 void NCFile::write_darray_impl(const std::string &variable_name,
-                               const IceGrid &grid,
+                               const Grid &grid,
                                unsigned int z_count,
                                bool time_dependent,
                                unsigned int record,

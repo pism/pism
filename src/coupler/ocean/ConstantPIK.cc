@@ -20,7 +20,7 @@
 #include "ConstantPIK.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -30,7 +30,7 @@
 namespace pism {
 namespace ocean {
 
-PIK::PIK(std::shared_ptr<const IceGrid> g)
+PIK::PIK(std::shared_ptr<const Grid> g)
   : CompleteOceanModel(g) {
   // empty
 }

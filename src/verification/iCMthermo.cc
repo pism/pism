@@ -25,7 +25,7 @@
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/util/ConfigInterface.hh"

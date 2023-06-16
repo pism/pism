@@ -20,13 +20,13 @@
 
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const IceGrid> grid)
+ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const Grid> grid)
   : YieldStress(grid) {
 
   m_name = "constant yield stress model";

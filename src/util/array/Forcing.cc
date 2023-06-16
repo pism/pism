@@ -25,7 +25,7 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"
@@ -108,7 +108,7 @@ struct Forcing::Data {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  * @param[in] interpolation_type type of temporal interpolation (LINEAR or PIECEWISE_CONSTANT)
  */
-Forcing::Forcing(std::shared_ptr<const IceGrid> grid,
+Forcing::Forcing(std::shared_ptr<const Grid> grid,
                  const File &file,
                  const std::string &short_name,
                  const std::string &standard_name,
@@ -143,7 +143,7 @@ Forcing::Forcing(std::shared_ptr<const IceGrid> grid,
   allocate(short_name, buffer_size, interpolation_type);
 }
 
-std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const IceGrid> grid,
+std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const Grid> grid,
                                            const std::string &short_name,
                                            double value) {
   // note: cannot use std::make_shared because of a private constructor
@@ -166,7 +166,7 @@ std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const IceGrid> grid,
   return result;
 }
 
-Forcing::Forcing(std::shared_ptr<const IceGrid> grid, const std::string &short_name,
+Forcing::Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name,
                  unsigned int buffer_size,
                  InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
@@ -192,11 +192,11 @@ void Forcing::allocate(const std::string &short_name,
   }
 
   // LCOV_EXCL_START
-  if (buffer_size > IceGrid::max_dm_dof) {
+  if (buffer_size > Grid::max_dm_dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "cannot allocate storage for %d records of %s"
                                   " (exceeds the maximum of %d)",
-                                  buffer_size, short_name.c_str(), IceGrid::max_dm_dof);
+                                  buffer_size, short_name.c_str(), Grid::max_dm_dof);
   }
   // LCOV_EXCL_STOP
 

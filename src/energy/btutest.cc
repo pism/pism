@@ -22,7 +22,7 @@ static char help[] =
   "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
 #include "pism/util/pism_options.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/io/File.hh"
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
@@ -56,7 +56,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
   config->set_number("grid.Mbz", 11);
   config->set_number("grid.Lbz", 1000);
 
-  // when IceGrid constructor is called, these settings are used
+  // when Grid constructor is called, these settings are used
   config->set_string("time.start", "0s");
   config->set_number("time.run_length", 1.0);
 
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
     }
 
     log->message(2,
-                 "  initializing IceGrid from options ...\n");
+                 "  initializing Grid from options ...\n");
 
     Config::Ptr config = ctx->config();
 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
     P.ownership_ranges_from_options(ctx->size());
 
     // create grid and set defaults
-    std::shared_ptr<IceGrid> grid(new IceGrid(ctx, P));
+    std::shared_ptr<Grid> grid(new Grid(ctx, P));
 
     auto outname = config->get_string("output.file");
 

@@ -30,7 +30,7 @@ namespace surface {
  */
 class EISMINTII : public PSFormulas {
 public:
-  EISMINTII(std::shared_ptr<const IceGrid> g, int experiment);
+  EISMINTII(std::shared_ptr<const Grid> g, int experiment);
   ~EISMINTII() = default;
 protected:
   void init_impl(const Geometry &geometry);

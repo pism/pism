@@ -81,7 +81,7 @@ namespace hydrology {
 class Routing : public Hydrology {
 public:
 
-  Routing(std::shared_ptr<const IceGrid> g);
+  Routing(std::shared_ptr<const Grid> g);
   virtual ~Routing() = default;
 
   const array::Scalar& subglacial_water_pressure() const;

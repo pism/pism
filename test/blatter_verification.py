@@ -100,7 +100,7 @@ class TestXY(TestCase):
         P.My = int(N)
         P.ownership_ranges_from_options(ctx.size)
 
-        grid = PISM.IceGrid(ctx.ctx, P)
+        grid = PISM.Grid(ctx.ctx, P)
 
         geometry = PISM.Geometry(grid)
 
@@ -318,7 +318,7 @@ class TestXZ(TestCase):
         P.periodicity = PISM.Y_PERIODIC
         P.ownership_ranges_from_options(ctx.size)
 
-        grid = PISM.IceGrid(ctx.ctx, P)
+        grid = PISM.Grid(ctx.ctx, P)
 
         geometry = PISM.Geometry(grid)
 
@@ -516,7 +516,7 @@ class TestCFBC(TestCase):
         P.periodicity = PISM.Y_PERIODIC
         P.ownership_ranges_from_options(ctx.size)
 
-        grid = PISM.IceGrid(ctx.ctx, P)
+        grid = PISM.Grid(ctx.ctx, P)
 
         geometry = PISM.Geometry(grid)
 
@@ -684,7 +684,7 @@ class TestXZvanderVeen(TestCase):
         P.z = PISM.DoubleVector([0, 1000])
         P.ownership_ranges_from_options(ctx.com.size)
 
-        grid = PISM.IceGrid(ctx.ctx, P)
+        grid = PISM.Grid(ctx.ctx, P)
 
         return grid
 
@@ -825,7 +825,7 @@ class TestXZHalfar(TestCase):
         P.periodicity = PISM.Y_PERIODIC
         P.ownership_ranges_from_options(ctx.size)
 
-        return PISM.IceGrid(ctx.ctx, P)
+        return PISM.Grid(ctx.ctx, P)
 
     def compute(self, grid, Mz, coarsening_factor):
         tauc = PISM.Scalar(grid, "tauc")

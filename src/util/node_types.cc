@@ -21,7 +21,7 @@
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {

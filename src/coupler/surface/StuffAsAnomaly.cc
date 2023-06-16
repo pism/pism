@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "StuffAsAnomaly.hh"
-#include "pism/util/IceGrid.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
@@ -25,7 +25,7 @@
 namespace pism {
 namespace surface {
 
-StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const IceGrid> g, std::shared_ptr<SurfaceModel> input)
+StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
   : SurfaceModel(g, input),
     m_mass_flux(m_grid, "climatic_mass_balance", WITHOUT_GHOSTS),
     m_mass_flux_0(m_grid, "mass_flux_0", WITHOUT_GHOSTS),
