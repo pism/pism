@@ -119,7 +119,7 @@ struct Grid::Impl {
   gsl_interp_accel *bsearch_accel;
 
   //! ParallelIO I/O decompositions.
-  std::map<int, int> io_decompositions;
+  std::map<std::array<int, 2>, int> io_decompositions;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -651,7 +651,7 @@ std::vector<double> Grid::interpolation_weights(double X, double Y) const {
 //! freedom per grid point) and stencil width.
 std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof, unsigned int stencil_width) const {
 
-  std::array<unsigned int, 2> key = { dm_dof, stencil_width };
+  std::array<unsigned int, 2> key{ dm_dof, stencil_width };
 
   if (m_impl->dms[key].expired()) {
     // note: here "result" is needed because m_impl->dms is a std::map of weak_ptr
@@ -661,7 +661,7 @@ std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof, unsigned int stenci
     // would create a shared_ptr, then assign it to a weak_ptr. At this point the
     // shared_ptr (the right hand side) will be destroyed and the corresponding weak_ptr
     // will be a nullptr.
-    auto result = m_impl->create_dm(dm_dof, stencil_width);
+    auto result      = m_impl->create_dm(dm_dof, stencil_width);
     m_impl->dms[key] = result;
     return result;
   }
@@ -687,24 +687,20 @@ std::shared_ptr<const Context> Grid::ctx() const {
 //! stencil width.
 std::shared_ptr<petsc::DM> Grid::Impl::create_dm(int da_dof, int stencil_width) const {
 
-  ctx->log()->message(3,
-                      "* Creating a DM with dof=%d and stencil_width=%d...\n",
-                      da_dof, stencil_width);
+  ctx->log()->message(3, "* Creating a DM with dof=%d and stencil_width=%d...\n", da_dof,
+                      stencil_width);
 
   DM result;
-  PetscErrorCode ierr = DMDACreate2d(ctx->com(),
-                                     DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC,
-                                     DMDA_STENCIL_BOX,
-                                     Mx, My,
-                                     (PetscInt)procs_x.size(),
-                                     (PetscInt)procs_y.size(),
-                                     da_dof, stencil_width,
-                                     procs_x.data(), procs_y.data(), // lx, ly
-                                     &result);
-  PISM_CHK(ierr,"DMDACreate2d");
+  PetscErrorCode ierr =
+      DMDACreate2d(ctx->com(), DM_BOUNDARY_PERIODIC, DM_BOUNDARY_PERIODIC, DMDA_STENCIL_BOX, Mx, My,
+                   (PetscInt)procs_x.size(), (PetscInt)procs_y.size(), da_dof, stencil_width,
+                   procs_x.data(), procs_y.data(), // lx, ly
+                   &result);
+  PISM_CHK(ierr, "DMDACreate2d");
 
-#if PETSC_VERSION_GE(3,8,0)
-  ierr = DMSetUp(result); PISM_CHK(ierr,"DMSetUp");
+#if PETSC_VERSION_GE(3, 8, 0)
+  ierr = DMSetUp(result);
+  PISM_CHK(ierr, "DMSetUp");
 #endif
 
   return std::make_shared<petsc::DM>(result);
@@ -899,22 +895,22 @@ std::vector<double> compute_vertical_levels(double new_Lz, unsigned int new_Mz,
   // Fill the levels in the ice:
   switch (spacing) {
   case grid::EQUAL: {
-    double dz = new_Lz / ((double) new_Mz - 1);
+    double dz = new_Lz / ((double)new_Mz - 1);
 
     // Equal spacing
-    for (unsigned int k=0; k < new_Mz - 1; k++) {
-      result[k] = dz * ((double) k);
+    for (unsigned int k = 0; k < new_Mz - 1; k++) {
+      result[k] = dz * ((double)k);
     }
-    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
     break;
   }
   case grid::QUADRATIC: {
     // this quadratic scheme is an attempt to be less extreme in the fineness near the base.
-    for (unsigned int k=0; k < new_Mz - 1; k++) {
-      const double zeta = ((double) k) / ((double) new_Mz - 1);
-      result[k] = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
+    for (unsigned int k = 0; k < new_Mz - 1; k++) {
+      const double zeta = ((double)k) / ((double)new_Mz - 1);
+      result[k]         = new_Lz * ((zeta / lambda) * (1.0 + (lambda - 1.0) * zeta));
     }
-    result[new_Mz - 1] = new_Lz;  // make sure it is exactly equal
+    result[new_Mz - 1] = new_Lz; // make sure it is exactly equal
     break;
   }
   default:
@@ -1236,8 +1232,8 @@ void Parameters::horizontal_extent_from_options(std::shared_ptr<units::System> u
 }
 
 void Parameters::vertical_grid_from_options(Config::ConstPtr config) {
-  double Lz         = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
-  int Mz            = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
+  double Lz = (not z.empty()) ? z.back() : config->get_number("grid.Lz");
+  int Mz    = (not z.empty()) ? z.size() : config->get_number("grid.Mz");
 
   z = compute_vertical_levels(Lz, Mz,
                               string_to_spacing(config->get_string("grid.ice_vertical_spacing")),
@@ -1350,12 +1346,9 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     log->message(2,
                  "  setting computational box for ice from '%s' and\n"
                  "    user options: [%6.2f km, %6.2f km] x [%6.2f km, %6.2f km] x [0 m, %6.2f m]\n",
-                 input_file.c_str(),
-                 km(result->x0() - result->Lx()),
-                 km(result->x0() + result->Lx()),
-                 km(result->y0() - result->Ly()),
-                 km(result->y0() + result->Ly()),
-                 result->Lz());
+                 input_file.c_str(), km(result->x0() - result->Lx()),
+                 km(result->x0() + result->Lx()), km(result->y0() - result->Ly()),
+                 km(result->y0() + result->Ly()), result->Lz());
 
     return result;
   }
@@ -1375,7 +1368,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
   }
 }
 
-const MappingInfo& Grid::get_mapping_info() const {
+const MappingInfo &Grid::get_mapping_info() const {
   return m_impl->mapping_info;
 }
 
@@ -1383,19 +1376,6 @@ void Grid::set_mapping_info(const MappingInfo &info) {
   m_impl->mapping_info = info;
   // FIXME: re-compute lat/lon coordinates
 }
-
-#if (Pism_USE_PIO==1)
-static int pio_decomp_hash(int dof, int output_datatype) {
-  if (dof < 0 or dof > Grid::max_dm_dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Invalid dof argument: %d", dof);
-  }
-
-  // pio.h includes netcdf.h and netcdf.h defines NC_FIRSTUSERTYPEID which exceeds
-  // all constants corresponding to built-in types
-  return NC_FIRSTUSERTYPEID * dof + output_datatype;
-}
-#endif
 
 /*!
  * initialize an I/O decomposition
@@ -1405,10 +1385,11 @@ static int pio_decomp_hash(int dof, int output_datatype) {
  */
 int Grid::pio_io_decomposition(int dof, int output_datatype) const {
   int result = 0;
-#if (Pism_USE_PIO==1)
+#if (Pism_USE_PIO == 1)
   {
-    int hash = pio_decomp_hash(dof, output_datatype);
-    result = m_impl->io_decompositions[hash];
+    std::array<int, 2> key{ dof, output_datatype };
+
+    result = m_impl->io_decompositions[key];
 
     if (result == 0) {
 
@@ -1421,7 +1402,7 @@ int Grid::pio_io_decomposition(int dof, int output_datatype) const {
       int stat = PIOc_InitDecomp_bc(m_impl->ctx->pio_iosys_id(),
                                     output_datatype, ndims, gdimlen.data(),
                                     start.data(), count.data(), &result);
-      m_impl->io_decompositions[hash] = result;
+      m_impl->io_decompositions[key] = result;
       if (stat != PIO_NOERR) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Failed to create a ParallelIO I/O decomposition");
