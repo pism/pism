@@ -218,29 +218,9 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
   }
 }
 
-//! Create a grid using one of variables in `var_names` in `file`.
-std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                     const std::string &filename,
-                                     const std::vector<std::string> &var_names,
-                                     grid::Registration r) {
-
-  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
-
-  for (const auto &name : var_names) {
-    if (file.find_variable(name)) {
-      return FromFile(ctx, file, name, r);
-    }
-  }
-
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "file %s does not have any of %s."
-                                " Cannot initialize the grid.",
-                                filename.c_str(), join(var_names, ",").c_str());
-}
-
 //! Create a grid from a file, get information from variable `var_name`.
-std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
-                                     const std::string &var_name, grid::Registration r) {
+static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, const File &file,
+                                           const std::string &var_name, grid::Registration r) {
   try {
     const Logger &log = *ctx->log();
 
@@ -268,6 +248,26 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const F
                   var_name.c_str(), file.filename().c_str());
     throw;
   }
+}
+
+//! Create a grid using one of variables in `var_names` in `file`.
+std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
+                                     const std::string &filename,
+                                     const std::vector<std::string> &var_names,
+                                     grid::Registration r) {
+
+  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+
+  for (const auto &name : var_names) {
+    if (file.find_variable(name)) {
+      return Grid_FromFile(ctx, file, name, r);
+    }
+  }
+
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "file %s does not have any of %s."
+                                " Cannot initialize the grid.",
+                                filename.c_str(), join(var_names, ",").c_str());
 }
 
 Grid::~Grid() {

@@ -145,28 +145,8 @@ def create_modeldata_test():
 
     md2 = PISM.model.ModelData(grid, config=grid.ctx().config())
 
-
 def grid_from_file_test():
-    "Intiialize a grid from a file (test 1)"
-    grid = create_dummy_grid()
-
-    enthalpy = PISM.model.createEnthalpyVec(grid)
-    enthalpy.set(80e3)
-
-    file_name = filename("grid_from_file")
-    try:
-        pio = PISM.util.prepare_output(file_name)
-
-        enthalpy.write(pio)
-
-        pio = PISM.File(grid.com, file_name, PISM.PISM_NETCDF3, PISM.PISM_READONLY)
-
-        grid2 = PISM.Grid.FromFile(ctx.ctx, pio, "enthalpy", PISM.CELL_CORNER)
-    finally:
-        os.remove(file_name)
-
-def grid_from_file_test_2():
-    "Intiialize a grid from a file (test 2)"
+    "Intiialize a grid from a file"
     grid = create_dummy_grid()
 
     enthalpy = PISM.model.createEnthalpyVec(grid)

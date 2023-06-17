@@ -282,16 +282,13 @@ public:
   Grid(std::shared_ptr<const Context> context, const grid::Parameters &p);
 
   static std::shared_ptr<Grid> Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
-                                          double x0, double y0, unsigned int Mx, unsigned int My,
-                                          grid::Registration r, grid::Periodicity p);
-
-  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx, const File &file,
-                                           const std::string &var_name, grid::Registration r);
+                                       double x0, double y0, unsigned int Mx, unsigned int My,
+                                       grid::Registration r, grid::Periodicity p);
 
   static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
-                                           const std::string &file,
-                                           const std::vector<std::string> &var_names,
-                                           grid::Registration r);
+                                        const std::string &filename,
+                                        const std::vector<std::string> &var_names,
+                                        grid::Registration r);
 
   static std::shared_ptr<Grid> FromOptions(std::shared_ptr<const Context> ctx);
 
