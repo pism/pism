@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
 
     auto output_file = config->get_string("output.file");
 
-    grid::Parameters P(config);
+    grid::Parameters P(*config);
     P.Lx = 900e3;
     P.Ly = P.Lx;
     P.horizontal_size_from_options();

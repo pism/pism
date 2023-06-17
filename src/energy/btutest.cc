@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     Config::Ptr config = ctx->config();
 
-    grid::Parameters P(config);
+    grid::Parameters P(*config);
     P.Mx = 3;
     P.My = P.Mx;
     P.Lx = 1500e3;

@@ -62,7 +62,6 @@ std::string spacing_to_string(VerticalSpacing s);
 //! @brief Contains parameters of an input file grid.
 class InputGridInfo {
 public:
-  InputGridInfo();
   InputGridInfo(const File &file, const std::string &variable,
                 std::shared_ptr<units::System> unit_system, Registration registration);
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
@@ -108,17 +107,14 @@ private:
 */
 class Parameters {
 public:
-  //! Create an uninitialized GridParameters instance.
-  Parameters();
-
   //! Initialize grid defaults from a configuration database.
-  Parameters(std::shared_ptr<const Config> config);
+  Parameters(const Config &config);
 
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
-             const std::string &variable_name, Registration r);
+  Parameters(const Context &ctx, const std::string &filename, const std::string &variable_name,
+             Registration r);
   //! Initialize grid defaults from a configuration database and a NetCDF variable.
-  Parameters(std::shared_ptr<const Context> ctx, const File &file, const std::string &variable_name,
+  Parameters(const Context &ctx, const File &file, const std::string &variable_name,
              Registration r);
 
   //! Process -Mx and -My; set Mx and My.
@@ -155,10 +151,9 @@ public:
   std::vector<unsigned int> procs_x;
   //! Processor ownership ranges in the Y direction.
   std::vector<unsigned int> procs_y;
+
 private:
-  void init_from_config(std::shared_ptr<const Config> config);
-  void init_from_file(std::shared_ptr<const Context> ctx, const File &file,
-                      const std::string &variable_name,
+  void init_from_file(const Context &ctx, const File &file, const std::string &variable_name,
                       Registration r);
 };
 } // namespace grid

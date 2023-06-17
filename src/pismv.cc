@@ -66,7 +66,7 @@ std::shared_ptr<Context> pismv_context(MPI_Comm com, const std::string &prefix) 
 grid::Parameters pismv_grid_defaults(Config::Ptr config, char testname) {
   // This sets the defaults for each test; command-line options can override this.
 
-  grid::Parameters P;
+  grid::Parameters P(*config);
 
   // use the cell corner grid registration
   P.registration = pism::grid::CELL_CORNER;

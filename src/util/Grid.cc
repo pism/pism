@@ -135,7 +135,7 @@ std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double L
                                     grid::Registration registration,
                                     grid::Periodicity periodicity) {
   try {
-    grid::Parameters p(ctx->config());
+    grid::Parameters p(*ctx->config());
     p.Lx           = Lx;
     p.Ly           = Ly;
     p.x0           = x0;
@@ -226,7 +226,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 
     // The following call may fail because var_name does not exist. (And this is fatal!)
     // Note that this sets defaults using configuration parameters, too.
-    grid::Parameters p(ctx, file, var_name, r);
+    grid::Parameters p(*ctx, file, var_name, r);
 
     // if we have no vertical grid information, create a fake 2-level vertical grid.
     if (p.z.size() < 2) {
@@ -1025,10 +1025,6 @@ void InputGridInfo::reset() {
   z_max = 0;
 }
 
-InputGridInfo::InputGridInfo() {
-  reset();
-}
-
 void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr s) const {
   units::Converter km(s, "m", "km");
 
@@ -1119,24 +1115,25 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
   }
 }
 
-Parameters::Parameters() {
-
-  // set to something invalid
-  Lx = -1.0;
-  Ly = -1.0;
+Parameters::Parameters(const Config &config) {
+  Lx = config.get_number("grid.Lx");
+  Ly = config.get_number("grid.Ly");
 
   x0 = 0.0;
   y0 = 0.0;
 
-  Mx = 0;
-  My = 0;
+  Mx = static_cast<unsigned int>(config.get_number("grid.Mx"));
+  My = static_cast<unsigned int>(config.get_number("grid.My"));
 
-  registration = CELL_CENTER;
-  periodicity  = NOT_PERIODIC;
-}
+  periodicity  = string_to_periodicity(config.get_string("grid.periodicity"));
+  registration = string_to_registration(config.get_string("grid.registration"));
 
-Parameters::Parameters(Config::ConstPtr config) {
-  init_from_config(config);
+  double Lz         = config.get_number("grid.Lz");
+  unsigned int Mz   = config.get_number("grid.Mz");
+  double lambda     = config.get_number("grid.lambda");
+  VerticalSpacing s = string_to_spacing(config.get_string("grid.ice_vertical_spacing"));
+  z                 = compute_vertical_levels(Lz, Mz, s, lambda);
+  // does not set ownership ranges because we don't know if these settings are final
 }
 
 void Parameters::ownership_ranges_from_options(unsigned int size) {
@@ -1145,37 +1142,12 @@ void Parameters::ownership_ranges_from_options(unsigned int size) {
   procs_y               = procs.y;
 }
 
-//! Initialize from a configuration database. Does not try to compute ownership ranges.
-void Parameters::init_from_config(Config::ConstPtr config) {
-  Lx = config->get_number("grid.Lx");
-  Ly = config->get_number("grid.Ly");
-
-  x0 = 0.0;
-  y0 = 0.0;
-
-  Mx = static_cast<unsigned int>(config->get_number("grid.Mx"));
-  My = static_cast<unsigned int>(config->get_number("grid.My"));
-
-  periodicity  = string_to_periodicity(config->get_string("grid.periodicity"));
-  registration = string_to_registration(config->get_string("grid.registration"));
-
-  double Lz         = config->get_number("grid.Lz");
-  unsigned int Mz   = config->get_number("grid.Mz");
-  double lambda     = config->get_number("grid.lambda");
-  VerticalSpacing s = string_to_spacing(config->get_string("grid.ice_vertical_spacing"));
-  z                 = compute_vertical_levels(Lz, Mz, s, lambda);
-  // does not set ownership ranges because we don't know if these settings are final
-}
-
-void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &file,
+void Parameters::init_from_file(const Context &ctx, const File &file,
                                 const std::string &variable_name, Registration r) {
   int size = 0;
-  MPI_Comm_size(ctx->com(), &size);
+  MPI_Comm_size(ctx.com(), &size);
 
-  // set defaults (except for ownership ranges) from configuration parameters
-  init_from_config(ctx->config());
-
-  InputGridInfo input_grid(file, variable_name, ctx->unit_system(), r);
+  InputGridInfo input_grid(file, variable_name, ctx.unit_system(), r);
 
   Lx           = input_grid.Lx;
   Ly           = input_grid.Ly;
@@ -1187,14 +1159,14 @@ void Parameters::init_from_file(std::shared_ptr<const Context> ctx, const File &
   z            = input_grid.z;
 }
 
-Parameters::Parameters(std::shared_ptr<const Context> ctx, const File &file,
-                       const std::string &variable_name, Registration r) {
+Parameters::Parameters(const Context &ctx, const File &file, const std::string &variable_name,
+                       Registration r) {
   init_from_file(ctx, file, variable_name, r);
 }
 
-Parameters::Parameters(std::shared_ptr<const Context> ctx, const std::string &filename,
+Parameters::Parameters(const Context &ctx, const std::string &filename,
                        const std::string &variable_name, Registration r) {
-  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+  File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
   init_from_file(ctx, file, variable_name, r);
 }
 
@@ -1304,7 +1276,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // bootstrapping; get domain size defaults from an input file, allow overriding all grid
     // parameters using command-line options
 
-    grid::Parameters input_grid(config);
+    grid::Parameters input_grid(*config);
 
     bool grid_info_found = false;
 
@@ -1320,7 +1292,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = grid::Parameters(ctx, file, name, r);
+        input_grid = grid::Parameters(*ctx, file, name, r);
         break;
       }
     }
@@ -1358,7 +1330,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
     // not set, -bootstrap is not set either".
 
     // Use defaults from the configuration database
-    grid::Parameters P(ctx->config());
+    grid::Parameters P(*ctx->config());
     P.horizontal_size_from_options();
     P.horizontal_extent_from_options(ctx->unit_system());
     P.vertical_grid_from_options(ctx->config());

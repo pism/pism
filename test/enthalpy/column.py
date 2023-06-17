@@ -34,7 +34,7 @@ class EnthalpyColumn(object):
         self.Lz = 1000.0
         self.z = np.linspace(0, self.Lz, Mz)
 
-        param = PISM.GridParameters()
+        param = PISM.GridParameters(config)
         param.Lx = 1e5
         param.Ly = 1e5
         param.z = PISM.DoubleVector(self.z)

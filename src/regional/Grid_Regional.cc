@@ -106,7 +106,7 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
       throw RuntimeError(PISM_ERROR_LOCATION, "invalid -y_range argument: need 2 numbers.");
     }
 
-    grid::Parameters input_grid(ctx->config());
+    grid::Parameters input_grid(*ctx->config());
 
     std::vector<std::string> names = {"enthalpy", "temp", "land_ice_thickness",
                                       "bedrock_altitude", "thk", "topg"};
@@ -123,7 +123,7 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
       }
 
       if (grid_info_found) {
-        input_grid = grid::Parameters(ctx, file, name, grid::CELL_CORNER);
+        input_grid = grid::Parameters(*ctx, file, name, grid::CELL_CORNER);
 
         auto full_grid = grid::InputGridInfo(file, name, ctx->unit_system(), grid::CELL_CORNER);
 
