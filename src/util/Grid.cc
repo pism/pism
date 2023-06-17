@@ -18,25 +18,26 @@
 
 #include <cassert>
 
+#include <array>
+#include <gsl/gsl_interp.h>
 #include <map>
 #include <numeric>
 #include <petscsys.h>
-#include <gsl/gsl_interp.h>
 
-#include "Grid.hh"
-#include "pism_utilities.hh"
 #include "ConfigInterface.hh"
-#include "pism_options.hh"
+#include "Grid.hh"
 #include "error_handling.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/projection.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/projection.hh"
+#include "pism_options.hh"
+#include "pism_utilities.hh"
 
-#if (Pism_USE_PIO==1)
+#if (Pism_USE_PIO == 1)
 // Why do I need this???
 #define _NETCDF
 #include <pio.h>
@@ -102,7 +103,7 @@ struct Grid::Impl {
   //! half width of the ice model grid in y-direction (m)
   double Ly;
 
-  std::map<int,std::weak_ptr<petsc::DM> > dms;
+  std::map<std::array<unsigned int, 2>, std::weak_ptr<petsc::DM> > dms;
 
   // This DM is used for I/O operations and is not owned by any
   // array::Array (so far, anyway). We keep a pointer to it here to
@@ -122,7 +123,7 @@ struct Grid::Impl {
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
-  : ctx(context), mapping_info("mapping", ctx->unit_system()) {
+    : ctx(context), mapping_info("mapping", ctx->unit_system()) {
   // empty
 }
 
@@ -130,9 +131,9 @@ Grid::Impl::Impl(std::shared_ptr<const Context> context)
  * nodes.
  */
 std::shared_ptr<Grid> Grid::Shallow(std::shared_ptr<const Context> ctx, double Lx, double Ly,
-                                          double x0, double y0, unsigned int Mx, unsigned int My,
-                                          grid::Registration registration,
-                                          grid::Periodicity periodicity) {
+                                    double x0, double y0, unsigned int Mx, unsigned int My,
+                                    grid::Registration registration,
+                                    grid::Periodicity periodicity) {
   try {
     grid::Parameters p(ctx->config());
     p.Lx           = Lx;
@@ -219,9 +220,9 @@ Grid::Grid(std::shared_ptr<const Context> context, const grid::Parameters &p)
 
 //! Create a grid using one of variables in `var_names` in `file`.
 std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                           const std::string &filename,
-                                           const std::vector<std::string> &var_names,
-                                           grid::Registration r) {
+                                     const std::string &filename,
+                                     const std::vector<std::string> &var_names,
+                                     grid::Registration r) {
 
   File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
 
@@ -239,7 +240,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
 
 //! Create a grid from a file, get information from variable `var_name`.
 std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
-                                           const std::string &var_name, grid::Registration r) {
+                                     const std::string &var_name, grid::Registration r) {
   try {
     const Logger &log = *ctx->log();
 
@@ -255,7 +256,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const F
                   "         Using 2 levels and Lz of %3.3fm\n",
                   var_name.c_str(), file.filename().c_str(), Lz);
 
-      p.z = {0.0, Lz};
+      p.z = { 0.0, Lz };
     }
 
 
@@ -272,7 +273,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const F
 Grid::~Grid() {
   gsl_interp_accel_free(m_impl->bsearch_accel);
 
-#if (Pism_USE_PIO==1)
+#if (Pism_USE_PIO == 1)
   for (auto p : m_impl->io_decompositions) {
     int ierr = PIOc_freedecomp(m_impl->ctx->pio_iosys_id(), p.second);
     if (ierr != PIO_NOERR) {
@@ -290,27 +291,31 @@ unsigned int Grid::kBelowHeight(double height) const {
 
   const double eps = 1.0e-6;
   if (height < 0.0 - eps) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is below base of ice"
-                                  " (height must be non-negative)\n", height);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "height = %5.4f is below base of ice"
+                                  " (height must be non-negative)\n",
+                                  height);
   }
 
   if (height > Lz() + eps) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "height = %5.4f is above top of computational"
-                                  " grid Lz = %5.4f\n", height, Lz());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "height = %5.4f is above top of computational"
+                                  " grid Lz = %5.4f\n",
+                                  height, Lz());
   }
 
   return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(), height);
 }
 
 //! \brief Computes the number of processors in the X- and Y-directions.
-static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
-                           unsigned int &Nx, unsigned int &Ny) {
+static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size, unsigned int &Nx,
+                           unsigned int &Ny) {
 
   if (My <= 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "'My' is invalid.");
   }
 
-  Nx = (unsigned int)(0.5 + sqrt(((double)Mx)*((double)size)/((double)My)));
+  Nx = (unsigned int)(0.5 + sqrt(((double)Mx) * ((double)size) / ((double)My)));
   Ny = 0;
 
   if (Nx == 0) {
@@ -319,7 +324,7 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
 
   while (Nx > 0) {
     Ny = size / Nx;
-    if (Nx*Ny == (unsigned int)size) {
+    if (Nx * Ny == (unsigned int)size) {
       break;
     }
     Nx--;
@@ -328,30 +333,31 @@ static void compute_nprocs(unsigned int Mx, unsigned int My, unsigned int size,
   if (Mx > My and Nx < Ny) {
     // Swap Nx and Ny
     auto tmp = Nx;
-    Nx = Ny;
-    Ny = tmp;
+    Nx       = Ny;
+    Ny       = tmp;
   }
 
-  if ((Mx / Nx) < 2) {          // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't split %d grid points into %d parts (X-direction).",
-                                  Mx, (int)Nx);
+  if ((Mx / Nx) < 2) { // note: integer division
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
+                                  (int)Nx);
   }
 
-  if ((My / Ny) < 2) {          // note: integer division
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't split %d grid points into %d parts (Y-direction).",
-                                  My, (int)Ny);
+  if ((My / Ny) < 2) { // note: integer division
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (Y-direction).", My,
+                                  (int)Ny);
   }
 }
 
 
 //! \brief Computes processor ownership ranges corresponding to equal area
 //! distribution among processors.
-static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
-                                              unsigned int Nx) {
+static std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx) {
 
   std::vector<unsigned int> result(Nx);
 
-  for (unsigned int i=0; i < Nx; i++) {
+  for (unsigned int i = 0; i < Nx; i++) {
     result[i] = Mx / Nx + static_cast<unsigned int>((Mx % Nx) > i);
   }
   return result;
@@ -359,7 +365,7 @@ static std::vector<unsigned int> ownership_ranges(unsigned int Mx,
 
 //! Set processor ownership ranges. Takes care of type conversion (`unsigned int` -> `PetscInt`).
 void Grid::Impl::set_ownership_ranges(const std::vector<unsigned int> &input_procs_x,
-                                         const std::vector<unsigned int> &input_procs_y) {
+                                      const std::vector<unsigned int> &input_procs_y) {
   if (input_procs_x.size() * input_procs_y.size() != (size_t)size) {
     throw RuntimeError(PISM_ERROR_LOCATION, "length(procs_x) * length(procs_y) != MPI size");
   }
@@ -381,8 +387,7 @@ struct OwnershipRanges {
 
 //! Compute processor ownership ranges using the grid size, MPI communicator size, and command-line
 //! options `-Nx`, `-Ny`, `-procs_x`, `-procs_y`.
-static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
-                                                unsigned int My,
+static OwnershipRanges compute_ownership_ranges(unsigned int Mx, unsigned int My,
                                                 unsigned int size) {
   OwnershipRanges result;
 
@@ -396,13 +401,15 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
   // validate results (compute_nprocs checks its results, but we also need to validate command-line
   // options)
   if ((Mx / Nx) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't split %d grid points into %d parts (X-direction).",
-                                  Mx, (int)Nx);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (X-direction).", Mx,
+                                  (int)Nx);
   }
 
   if ((My / Ny) < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't split %d grid points into %d parts (Y-direction).",
-                                  My, (int)Ny);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't split %d grid points into %d parts (Y-direction).", My,
+                                  (int)Ny);
   }
 
   if (Nx * Ny != (int)size) {
@@ -448,9 +455,7 @@ static OwnershipRanges compute_ownership_ranges(unsigned int Mx,
 }
 
 //! Compute horizontal grid spacing. See compute_horizontal_coordinates() for more.
-static double compute_horizontal_spacing(double half_width,
-                                         unsigned int M,
-                                         bool cell_centered) {
+static double compute_horizontal_spacing(double half_width, unsigned int M, bool cell_centered) {
   if (cell_centered) {
     return 2.0 * half_width / M;
   }
@@ -459,9 +464,8 @@ static double compute_horizontal_spacing(double half_width,
 }
 
 //! Compute grid coordinates for one direction (X or Y).
-static std::vector<double> compute_coordinates(unsigned int M, double delta,
-                                               double v_min, double v_max,
-                                               bool cell_centered) {
+static std::vector<double> compute_coordinates(unsigned int M, double delta, double v_min,
+                                               double v_max, bool cell_centered) {
   std::vector<double> result(M);
 
   // Here v_min, v_max define the extent of the computational domain,
@@ -471,7 +475,7 @@ static std::vector<double> compute_coordinates(unsigned int M, double delta,
     for (unsigned int i = 0; i < M; ++i) {
       result[i] = v_min + (i + 0.5) * delta;
     }
-    result[M - 1] = v_max - 0.5*delta;
+    result[M - 1] = v_max - 0.5 * delta;
   } else {
     for (unsigned int i = 0; i < M; ++i) {
       result[i] = v_min + i * delta;
@@ -506,27 +510,19 @@ void Grid::Impl::compute_horizontal_coordinates() {
 
   cell_area = dx * dy;
 
-  double
-    x_min = x0 - Lx,
-    x_max = x0 + Lx;
+  double x_min = x0 - Lx, x_max = x0 + Lx;
 
-  x = compute_coordinates(Mx, dx,
-                          x_min, x_max,
-                          cell_centered);
+  x = compute_coordinates(Mx, dx, x_min, x_max, cell_centered);
 
-  double
-    y_min = y0 - Ly,
-    y_max = y0 + Ly;
+  double y_min = y0 - Ly, y_max = y0 + Ly;
 
-  y = compute_coordinates(My, dy,
-                          y_min, y_max,
-                          cell_centered);
+  y = compute_coordinates(My, dy, y_min, y_max, cell_centered);
 }
 
 //! \brief Report grid parameters.
 void Grid::report_parameters() const {
 
-  const Logger &log = *this->ctx()->log();
+  const Logger &log      = *this->ctx()->log();
   units::System::Ptr sys = this->ctx()->unit_system();
 
   log.message(2, "computational domain and grid:\n");
@@ -534,75 +530,52 @@ void Grid::report_parameters() const {
   units::Converter km(sys, "m", "km");
 
   // report on grid
-  log.message(2,
-              "                grid size   %d x %d x %d\n",
-              Mx(), My(), Mz());
+  log.message(2, "                grid size   %d x %d x %d\n", Mx(), My(), Mz());
 
   // report on computational box
-  log.message(2,
-              "           spatial domain   %.2f km x %.2f km x %.2f m\n",
-              km(2*Lx()), km(2*Ly()), Lz());
+  log.message(2, "           spatial domain   %.2f km x %.2f km x %.2f m\n", km(2 * Lx()),
+              km(2 * Ly()), Lz());
 
   // report on grid cell dims
   const double one_km = 1000.0;
   if (std::min(dx(), dy()) > one_km) {
-    log.message(2,
-                "     horizontal grid cell   %.2f km x %.2f km\n",
-                km(dx()), km(dy()));
+    log.message(2, "     horizontal grid cell   %.2f km x %.2f km\n", km(dx()), km(dy()));
   } else {
-    log.message(2,
-                "     horizontal grid cell   %.0f m x %.0f m\n",
-                dx(), dy());
+    log.message(2, "     horizontal grid cell   %.0f m x %.0f m\n", dx(), dy());
   }
   if (fabs(dz_max() - dz_min()) <= 1.0e-8) {
-    log.message(2,
-                "  vertical spacing in ice   dz = %.3f m (equal spacing)\n",
-                dz_min());
+    log.message(2, "  vertical spacing in ice   dz = %.3f m (equal spacing)\n", dz_min());
   } else {
-    log.message(2,
-                "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n",
-                Mz(), dz_min(), dz_max());
+    log.message(2, "  vertical spacing in ice   uneven, %d levels, %.3f m < dz < %.3f m\n", Mz(),
+                dz_min(), dz_max());
   }
 
   // if -verbose (=-verbose 3) then (somewhat redundantly) list parameters of grid
   {
-    log.message(3,
-                "  Grid parameters:\n");
-    log.message(3,
-                "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n",
-                km(Lx()), km(Ly()), Lz());
-    log.message(3,
-                "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n",
-                km(x0()), km(y0()));
-    log.message(3,
-                "            Mx = %d, My = %d, Mz = %d, \n",
-                Mx(), My(), Mz());
-    log.message(3,
-                "            dx = %6.3f km, dy = %6.3f km, \n",
-                km(dx()), km(dy()));
-    log.message(3,
-                "            Nx = %d, Ny = %d\n",
-                (int)m_impl->procs_x.size(), (int)m_impl->procs_y.size());
+    log.message(3, "  Grid parameters:\n");
+    log.message(3, "            Lx = %6.2f km, Ly = %6.2f km, Lz = %6.2f m, \n", km(Lx()), km(Ly()),
+                Lz());
+    log.message(3, "            x0 = %6.2f km, y0 = %6.2f km, (coordinates of center)\n", km(x0()),
+                km(y0()));
+    log.message(3, "            Mx = %d, My = %d, Mz = %d, \n", Mx(), My(), Mz());
+    log.message(3, "            dx = %6.3f km, dy = %6.3f km, \n", km(dx()), km(dy()));
+    log.message(3, "            Nx = %d, Ny = %d\n", (int)m_impl->procs_x.size(),
+                (int)m_impl->procs_y.size());
 
-    log.message(3,
-                "            Registration: %s\n",
+    log.message(3, "            Registration: %s\n",
                 registration_to_string(m_impl->registration).c_str());
-    log.message(3,
-                "            Periodicity: %s\n",
+    log.message(3, "            Periodicity: %s\n",
                 periodicity_to_string(m_impl->periodicity).c_str());
   }
 
   {
-    log.message(5,
-                "  REALLY verbose output on Grid:\n");
-    log.message(5,
-                "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
-    for (unsigned int k=0; k < Mz(); k++) {
+    log.message(5, "  REALLY verbose output on Grid:\n");
+    log.message(5, "    vertical levels in ice (Mz=%d, Lz=%5.4f): ", Mz(), Lz());
+    for (unsigned int k = 0; k < Mz(); k++) {
       log.message(5, " %5.4f, ", z(k));
     }
     log.message(5, "\n");
   }
-
 }
 
 
@@ -624,38 +597,37 @@ void Grid::report_parameters() const {
  * processor's domain. Ensures that computed indexes are within the
  * grid.
  */
-void Grid::compute_point_neighbors(double X, double Y,
-                                      int &i_left, int &i_right,
-                                      int &j_bottom, int &j_top) const {
-  i_left = (int)floor((X - m_impl->x[0])/m_impl->dx);
-  j_bottom = (int)floor((Y - m_impl->y[0])/m_impl->dy);
+void Grid::compute_point_neighbors(double X, double Y, int &i_left, int &i_right, int &j_bottom,
+                                   int &j_top) const {
+  i_left   = (int)floor((X - m_impl->x[0]) / m_impl->dx);
+  j_bottom = (int)floor((Y - m_impl->y[0]) / m_impl->dy);
 
   i_right = i_left + 1;
-  j_top = j_bottom + 1;
+  j_top   = j_bottom + 1;
 
-  i_left = std::max(i_left, 0);
+  i_left  = std::max(i_left, 0);
   i_right = std::max(i_right, 0);
 
-  i_left = std::min(i_left, (int)m_impl->Mx - 1);
+  i_left  = std::min(i_left, (int)m_impl->Mx - 1);
   i_right = std::min(i_right, (int)m_impl->Mx - 1);
 
   j_bottom = std::max(j_bottom, 0);
-  j_top = std::max(j_top, 0);
+  j_top    = std::max(j_top, 0);
 
   j_bottom = std::min(j_bottom, (int)m_impl->My - 1);
-  j_top = std::min(j_top, (int)m_impl->My - 1);
+  j_top    = std::min(j_top, (int)m_impl->My - 1);
 }
 
 std::vector<int> Grid::point_neighbors(double X, double Y) const {
   int i_left, i_right, j_bottom, j_top;
   this->compute_point_neighbors(X, Y, i_left, i_right, j_bottom, j_top);
-  return {i_left, i_right, j_bottom, j_top};
+  return { i_left, i_right, j_bottom, j_top };
 }
 
 //! \brief Compute 4 interpolation weights necessary for linear interpolation
 //! from the current grid. See compute_point_neighbors for the ordering of
 //! neighbors.
-std::vector<double> Grid::interpolation_weights(double X, double Y) const{
+std::vector<double> Grid::interpolation_weights(double X, double Y) const {
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   // these values (zeros) are used when interpolation is impossible
   double alpha = 0.0, beta = 0.0;
@@ -669,37 +641,19 @@ std::vector<double> Grid::interpolation_weights(double X, double Y) const{
 
   if (j_bottom != j_top) {
     assert(m_impl->y[j_top] - m_impl->y[j_bottom] != 0.0);
-    beta  = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
+    beta = (Y - m_impl->y[j_bottom]) / (m_impl->y[j_top] - m_impl->y[j_bottom]);
   }
 
-  return {(1.0 - alpha) * (1.0 - beta),
-      alpha * (1.0 - beta),
-      alpha * beta,
-      (1.0 - alpha) * beta};
-}
-
-// Computes the hash corresponding to the DM with given dof and stencil_width.
-static unsigned int dm_hash(unsigned int dm_dof, unsigned int stencil_width) {
-  if (dm_dof > Grid::max_dm_dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Invalid dm_dof argument: %d", dm_dof);
-  }
-
-  if (stencil_width > Grid::max_stencil_width) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Invalid stencil_width argument: %d", stencil_width);
-  }
-
-  return Grid::max_stencil_width * dm_dof + stencil_width;
+  return { (1.0 - alpha) * (1.0 - beta), alpha * (1.0 - beta), alpha * beta, (1.0 - alpha) * beta };
 }
 
 //! @brief Get a PETSc DM ("distributed array manager") object for given `dof` (number of degrees of
 //! freedom per grid point) and stencil width.
-std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof,
-                                           unsigned int stencil_width) const {
-  unsigned int j = dm_hash(dm_dof, stencil_width);
+std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof, unsigned int stencil_width) const {
 
-  if (m_impl->dms[j].expired()) {
+  std::array<unsigned int, 2> key = { dm_dof, stencil_width };
+
+  if (m_impl->dms[key].expired()) {
     // note: here "result" is needed because m_impl->dms is a std::map of weak_ptr
     //
     // m_impl->dms[j] = m_impl->create_dm(dm_dof, stencil_width);
@@ -708,11 +662,11 @@ std::shared_ptr<petsc::DM> Grid::get_dm(unsigned int dm_dof,
     // shared_ptr (the right hand side) will be destroyed and the corresponding weak_ptr
     // will be a nullptr.
     auto result = m_impl->create_dm(dm_dof, stencil_width);
-    m_impl->dms[j] = result;
+    m_impl->dms[key] = result;
     return result;
   }
 
-  return m_impl->dms[j].lock();
+  return m_impl->dms[key].lock();
 }
 
 //! Return grid periodicity.

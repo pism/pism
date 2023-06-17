@@ -362,14 +362,6 @@ public:
     return {*this, stencil_width};
   }
 
-  //! Maximum number of degrees of freedom supported by PISM.
-  /*!
-   * This is also the maximum number of records an array::Forcing can hold.
-   */
-  static const int max_dm_dof = 10000;
-
-  //! Maximum stencil width supported by PISM.
-  static const int max_stencil_width = 10000;
 private:
   struct Impl;
   Impl *m_impl;

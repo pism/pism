@@ -191,15 +191,6 @@ void Forcing::allocate(const std::string &short_name,
     throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
   }
 
-  // LCOV_EXCL_START
-  if (buffer_size > Grid::max_dm_dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot allocate storage for %d records of %s"
-                                  " (exceeds the maximum of %d)",
-                                  buffer_size, short_name.c_str(), Grid::max_dm_dof);
-  }
-  // LCOV_EXCL_STOP
-
   // initialize the m_data->da member:
   m_data->da = m_impl->grid->get_dm(buffer_size, this->m_impl->da_stencil_width);
 
