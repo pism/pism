@@ -1360,11 +1360,7 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   }
   MPI_Bcast(&file_exists_flag, 1, MPI_INT, 0, com);
 
-  if (file_exists_flag == 1) {
-    return true;
-  } else {
-    return false;
-  }
+  return file_exists_flag == 1;
 }
 
 void read_attributes(const File &file,
