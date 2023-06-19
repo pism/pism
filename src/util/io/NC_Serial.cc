@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -267,7 +267,7 @@ void NC_Serial::def_var_impl(const std::string &name,
 
     if (stat == NC_NOERR) {
       stat = nc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                        static_cast<int>(dims.size()), &dimids[0], &varid);
+                        static_cast<int>(dims.size()), dimids.data(), &varid);
     }
   }
 
@@ -352,9 +352,9 @@ void NC_Serial::get_var_double(const std::string &variable_name,
       if (r != 0) {
         // Note: start, count, imap, and local_chunk_size on processor zero are
         // used *before* they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
-        MPI_Recv(&imap[0],          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
+        MPI_Recv(start.data(),         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
+        MPI_Recv(count.data(),         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
+        MPI_Recv(imap.data(),          ndims, MPI_UNSIGNED, r, imap_tag,       m_com, &mpi_stat);
         MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
       }
 
@@ -370,16 +370,16 @@ void NC_Serial::get_var_double(const std::string &variable_name,
       }
 
       if (transposed) {
-        stat = nc_get_varm_double(m_file_id, varid, &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
-                                  &processor_0_buffer[0]);
+        stat = nc_get_varm_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                  nc_stride.data(), nc_imap.data(), processor_0_buffer.data());
       } else {
-        stat = nc_get_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                  &processor_0_buffer[0]);
+        stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                  processor_0_buffer.data());
       }
       check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
 
       if (r != 0) {
-        MPI_Send(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
+        MPI_Send(processor_0_buffer.data(), local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           ip[k] = processor_0_buffer[k];
@@ -388,9 +388,9 @@ void NC_Serial::get_var_double(const std::string &variable_name,
     } // end of the for loop
 
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
-    MPI_Send(&imap[0],           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
+    MPI_Send(start.data(),          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
+    MPI_Send(count.data(),          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
+    MPI_Send(imap.data(),           ndims, MPI_UNSIGNED, 0, imap_tag,       m_com);
     MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
     MPI_Recv(ip, local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
@@ -445,11 +445,11 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       if (r != 0) {
         // Note: start, count, and local_chunk_size on processor zero are used *before*
         // they get overwritten by these calls
-        MPI_Recv(&start[0],         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
-        MPI_Recv(&count[0],         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
+        MPI_Recv(start.data(),         ndims, MPI_UNSIGNED, r, start_tag,      m_com, &mpi_stat);
+        MPI_Recv(count.data(),         ndims, MPI_UNSIGNED, r, count_tag,      m_com, &mpi_stat);
         MPI_Recv(&local_chunk_size, 1,     MPI_UNSIGNED, r, chunk_size_tag, m_com, &mpi_stat);
 
-        MPI_Recv(&processor_0_buffer[0], local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
+        MPI_Recv(processor_0_buffer.data(), local_chunk_size, MPI_DOUBLE, r, data_tag, m_com, &mpi_stat);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           processor_0_buffer[k] = op[k];
@@ -466,13 +466,13 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
                                 // stride == NULL case.
       }
 
-      stat = nc_put_vara_double(m_file_id, varid, &nc_start[0], &nc_count[0],
-                                &processor_0_buffer[0]);
+      stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
+                                processor_0_buffer.data());
       check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
     } // end of the for loop
   } else {
-    MPI_Send(&start[0],          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
-    MPI_Send(&count[0],          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
+    MPI_Send(start.data(),          ndims, MPI_UNSIGNED, 0, start_tag,      m_com);
+    MPI_Send(count.data(),          ndims, MPI_UNSIGNED, 0, count_tag,      m_com);
     MPI_Send(&local_chunk_size,  1,     MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
     MPI_Send(const_cast<double*>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
@@ -522,7 +522,7 @@ void NC_Serial::inq_vardimid_impl(const std::string &variable_name,
   dimids.resize(ndims);
 
   if (m_rank == 0) {
-    stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]);
+    stat = nc_inq_vardimid(m_file_id, varid, dimids.data());
   }
 
   MPI_Bcast(&stat,   1, MPI_INT, 0, m_com);
@@ -642,14 +642,14 @@ void NC_Serial::get_att_double_impl(const std::string &variable_name,
 
   // Now read data and broadcast stat to see if we succeeded:
   if (m_rank == 0) {
-    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]);
+    stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), result.data());
   }
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
 
   check(PISM_ERROR_LOCATION, stat);
 
   // Broadcast data
-  MPI_Bcast(&result[0], len, MPI_DOUBLE, 0, m_com);
+  MPI_Bcast(result.data(), len, MPI_DOUBLE, 0, m_com);
 }
 
 // Get a text (character array) attribute on rank 0.
@@ -665,9 +665,9 @@ static int get_att_text(int ncid, int varid, const std::string &att_name,
   }
 
   std::vector<char> buffer(attlen + 1, 0);
-  stat = nc_get_att_text(ncid, varid, att_name.c_str(), &buffer[0]);
+  stat = nc_get_att_text(ncid, varid, att_name.c_str(), buffer.data());
   if (stat == NC_NOERR) {
-    result = &buffer[0];
+    result = buffer.data();
   } else {
     result = "";
   }
@@ -689,7 +689,7 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
   }
 
   std::vector<char*> buffer(attlen + 1, 0);
-  stat = nc_get_att_string(ncid, varid, att_name.c_str(), &buffer[0]);
+  stat = nc_get_att_string(ncid, varid, att_name.c_str(), buffer.data());
   if (stat == NC_NOERR) {
     std::vector<std::string> strings(attlen);
     for (size_t k = 0; k < attlen; ++k) {
@@ -699,7 +699,7 @@ static int get_att_string(int ncid, int varid, const std::string &att_name,
   } else {
     result = "";
   }
-  stat = nc_free_string(attlen, &buffer[0]);
+  stat = nc_free_string(attlen, buffer.data());
 
   return stat;
 }
@@ -749,7 +749,7 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
   MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 
   result.resize(len);
-  MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
+  MPI_Bcast(result.data(), len, MPI_CHAR, 0, m_com);
 }
 
 
@@ -766,7 +766,7 @@ void NC_Serial::put_att_double_impl(const std::string &variable_name, const std:
 
     if (varid >= NC_GLOBAL) {
       stat = nc_put_att_double(m_file_id, varid, att_name.c_str(),
-                               pism_type_to_nc_type(nctype), data.size(), &data[0]);
+                               pism_type_to_nc_type(nctype), data.size(), data.data());
     } else {
       stat = varid;             // LCOV_EXCL_LINE
     }
