@@ -239,20 +239,20 @@ void SSATestCase::report_netcdf(const std::string &testname,
 
   bool append = options::Bool("-append", "Append the NetCDF error report");
 
-  IO_Mode mode = PISM_READWRITE;
+  io::Mode mode = io::PISM_READWRITE;
   if (not append) {
-    mode = PISM_READWRITE_MOVE;
+    mode = io::PISM_READWRITE_MOVE;
   }
 
   global_attributes["source"] = std::string("PISM ") + pism::revision;
 
   // Find the number of records in this file:
-  File file(m_grid->com, filename, PISM_NETCDF3, mode);      // OK to use NetCDF3.
+  File file(m_grid->com, filename, io::PISM_NETCDF3, mode);      // OK to use NetCDF3.
   start = file.dimension_length("N");
 
-  io::write_attributes(file, global_attributes, PISM_DOUBLE);
+  io::write_attributes(file, global_attributes, io::PISM_DOUBLE);
 
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
 
   // Write the dimension variable:
   io::write_timeseries(file, err, (size_t)start, {(double)(start + 1)});
@@ -260,58 +260,58 @@ void SSATestCase::report_netcdf(const std::string &testname,
   // Always write grid parameters:
   err.set_name("dx");
   err["units"] = "meters";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {m_grid->dx()});
   err.set_name("dy");
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {m_grid->dy()});
 
   // Always write the test name:
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("test");
-  io::define_timeseries(err, "N", file, PISM_INT);
+  io::define_timeseries(err, "N", file, io::PISM_INT);
   io::write_timeseries(file, err, (size_t)start, {(double)testname[0]});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("max_velocity");
   err["units"] = "m year-1";
   err["long_name"] = "maximum ice velocity magnitude error";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {max_vector});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("relative_velocity");
   err["units"] = "percent";
   err["long_name"] = "relative ice velocity magnitude error";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {rel_vector});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("maximum_u");
   err["units"] = "m year-1";
   err["long_name"] = "maximum error in the X-component of the ice velocity";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {max_u});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("maximum_v");
   err["units"] = "m year-1";
   err["long_name"] = "maximum error in the Y-component of the ice velocity";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {max_v});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("average_u");
   err["units"] = "m year-1";
   err["long_name"] = "average error in the X-component of the ice velocity";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {avg_u});
 
   err.clear_all_strings(); err.clear_all_doubles(); err["units"] = "1";
   err.set_name("average_v");
   err["units"] = "m year-1";
   err["long_name"] = "average error in the Y-component of the ice velocity";
-  io::define_timeseries(err, "N", file, PISM_DOUBLE);
+  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
   io::write_timeseries(file, err, (size_t)start, {avg_v});
 
   file.close();
@@ -327,7 +327,7 @@ void SSATestCase::exactSolution(int /*i*/, int /*j*/,
 void SSATestCase::write(const std::string &filename) {
 
   // Write results to an output file:
-  File file(m_grid->com, filename, PISM_NETCDF3, PISM_READWRITE_MOVE);
+  File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READWRITE_MOVE);
   io::define_time(file, *m_grid->ctx());
   io::append_time(file, *m_config, 0.0);
 

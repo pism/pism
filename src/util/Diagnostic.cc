@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -118,12 +118,12 @@ SpatialVariableMetadata& Diagnostic::metadata(unsigned int N) {
   return m_vars[N];
 }
 
-void Diagnostic::define(const File &file, IO_Type default_type) const {
+void Diagnostic::define(const File &file, io::Type default_type) const {
   this->define_impl(file, default_type);
 }
 
 //! Define NetCDF variables corresponding to a diagnostic quantity.
-void Diagnostic::define_impl(const File &file, IO_Type default_type) const {
+void Diagnostic::define_impl(const File &file, io::Type default_type) const {
   for (const auto &v : m_vars) {
     io::define_spatial_variable(v, *m_grid, file, default_type);
   }
@@ -368,8 +368,8 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
 
 void TSDiagnostic::define(const File &file) const {
   auto time_name = m_config->get_string("time.dimension_name");
-  io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
-  io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
+  io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
+  io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
 }
 
 void TSDiagnostic::flush() {
@@ -380,7 +380,7 @@ void TSDiagnostic::flush() {
 
   std::string dimension_name = m_dimension.get_name();
 
-  File file(m_grid->com, m_output_filename, PISM_NETCDF3, PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, io::PISM_NETCDF3, io::PISM_READWRITE); // OK to use netcdf3
 
   unsigned int len = file.dimension_length(dimension_name);
 
@@ -396,18 +396,18 @@ void TSDiagnostic::flush() {
 
   if (len == m_start) {
     if (not file.find_variable(m_dimension.get_name())) {
-      io::define_timeseries(m_dimension, time_name, file, PISM_DOUBLE);
+      io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);
     }
     io::write_timeseries(file, m_dimension, m_start, m_time);
 
     if (not file.find_variable(m_time_bounds.get_name())) {
-      io::define_time_bounds(m_time_bounds, time_name, "nv", file, PISM_DOUBLE);
+      io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
     }
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
 
   if (not file.find_variable(m_variable.get_name())) {
-    io::define_timeseries(m_variable, time_name, file, PISM_DOUBLE);
+    io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
   }
   io::write_timeseries(file, m_variable, m_start, m_values);
 

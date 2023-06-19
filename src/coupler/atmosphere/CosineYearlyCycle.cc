@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -30,6 +30,8 @@
 
 namespace pism {
 namespace atmosphere {
+using io::CRITICAL;
+
 
 CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const Grid> grid)
   : YearlyCycle(grid) {
@@ -63,9 +65,9 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
                  "  Reading mean annual air temperature, mean July air temperature, and\n"
                  "  precipitation fields from '%s'...\n", input_file.c_str());
 
-  m_air_temp_mean_annual.regrid(input_file, CRITICAL);
-  m_air_temp_mean_summer.regrid(input_file, CRITICAL);
-  m_precipitation.regrid(input_file, CRITICAL);
+  m_air_temp_mean_annual.regrid(input_file, io::CRITICAL);
+  m_air_temp_mean_summer.regrid(input_file, io::CRITICAL);
+  m_precipitation.regrid(input_file, io::CRITICAL);
 }
 
 MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {

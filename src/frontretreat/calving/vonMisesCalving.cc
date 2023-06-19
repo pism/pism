@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -76,7 +76,7 @@ void vonMisesCalving::init() {
                    "  Reading von Mises calving threshold from file '%s'...\n",
                    threshold_file.c_str());
 
-    m_calving_threshold.regrid(threshold_file, CRITICAL);
+    m_calving_threshold.regrid(threshold_file, io::CRITICAL);
   } else {
     m_log->message(2,
                    "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);

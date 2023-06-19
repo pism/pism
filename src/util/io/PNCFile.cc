@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -46,12 +46,12 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-void PNCFile::open_impl(const std::string &fname, IO_Mode mode) {
+void PNCFile::open_impl(const std::string &fname, io::Mode mode) {
   int stat;
 
   init_hints();
 
-  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+  int open_mode = mode == io::PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
   stat = ncmpi_open(m_com, fname.c_str(), open_mode, m_mpi_info, &m_file_id);
   check(PISM_ERROR_LOCATION, stat);
@@ -139,7 +139,7 @@ void PNCFile::inq_unlimdim_impl(std::string &result) const {
   }
 }
 
-void PNCFile::def_var_impl(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void PNCFile::def_var_impl(const std::string &name, io::Type nctype, const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat, varid;
 
@@ -336,7 +336,7 @@ void PNCFile::del_att_impl(const std::string &variable_name, const std::string &
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type nctype, const std::vector<double> &data) const {
+void PNCFile::put_att_double_impl(const std::string &variable_name, const std::string &att_name, io::Type nctype, const std::vector<double> &data) const {
 
   int stat = ncmpi_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
                                   pism_type_to_nc_type(nctype), data.size(), &data[0]);
@@ -370,7 +370,7 @@ void PNCFile::inq_attname_impl(const std::string &variable_name,
 
 void PNCFile::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
-                               IO_Type &result) const {
+                               io::Type &result) const {
   int varid = get_varid(variable_name);
 
   nc_type tmp = NC_NAT;

@@ -25,6 +25,7 @@
 
 #include "ConfigInterface.hh"
 #include "VariableMetadata.hh"
+#include "io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
@@ -77,14 +78,14 @@ public:
 
   SpatialVariableMetadata &metadata(unsigned int N = 0);
 
-  void define(const File &file, IO_Type default_type) const;
+  void define(const File &file, io::Type default_type) const;
 
   void init(const File &input, unsigned int time);
   void define_state(const File &output) const;
   void write_state(const File &output) const;
 
 protected:
-  virtual void define_impl(const File &file, IO_Type default_type) const;
+  virtual void define_impl(const File &file, io::Type default_type) const;
   virtual void init_impl(const File &input, unsigned int time);
   virtual void define_state_impl(const File &output) const;
   virtual void write_state_impl(const File &output) const;
@@ -205,10 +206,10 @@ protected:
   }
 
   void define_state_impl(const File &output) const {
-    m_accumulator.define(output);
+    m_accumulator.define(output, io::PISM_DOUBLE);
     io::define_timeseries(m_time_since_reset,
                           Diagnostic::m_config->get_string("time.dimension_name"), output,
-                          PISM_DOUBLE);
+                          io::PISM_DOUBLE);
   }
 
   void write_state_impl(const File &output) const {

@@ -65,7 +65,7 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
@@ -106,7 +106,7 @@ void GivenTH::init_impl(const Geometry &geometry) {
 
   // read ocean salinity from a file if present, otherwise use a constant
   {
-    File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+    File input(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     auto variable_name = m_salinity_ocean->metadata().get_name();
 

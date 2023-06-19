@@ -53,21 +53,21 @@ namespace pism {
 
 struct File::Impl {
   MPI_Comm com;
-  IO_Backend backend;
+  io::Backend backend;
   io::NCFile::Ptr nc;
 };
 
-IO_Backend string_to_backend(const std::string &backend) {
-  std::map<std::string, IO_Backend> backends =
+io::Backend string_to_backend(const std::string &backend) {
+  std::map<std::string, io::Backend> backends =
     {
-     {"netcdf3", PISM_NETCDF3},
-     {"netcdf4_parallel", PISM_NETCDF4_PARALLEL},
-     {"netcdf4_serial", PISM_NETCDF4_SERIAL},
-     {"pio_netcdf", PISM_PIO_NETCDF},
-     {"pio_netcdf4c", PISM_PIO_NETCDF4C},
-     {"pio_netcdf4p", PISM_PIO_NETCDF4P},
-     {"pio_pnetcdf", PISM_PIO_PNETCDF},
-     {"pnetcdf", PISM_PNETCDF},
+     {"netcdf3", io::PISM_NETCDF3},
+     {"netcdf4_parallel", io::PISM_NETCDF4_PARALLEL},
+     {"netcdf4_serial", io::PISM_NETCDF4_SERIAL},
+     {"pio_netcdf", io::PISM_PIO_NETCDF},
+     {"pio_netcdf4c", io::PISM_PIO_NETCDF4C},
+     {"pio_netcdf4p", io::PISM_PIO_NETCDF4P},
+     {"pio_pnetcdf", io::PISM_PIO_PNETCDF},
+     {"pnetcdf", io::PISM_PNETCDF},
   };
 
   if (backends.find(backend) != backends.end()) {
@@ -79,25 +79,25 @@ IO_Backend string_to_backend(const std::string &backend) {
                                 backend.c_str());
 }
 
-static std::string backend_to_string(IO_Backend backend) {
-  std::map<IO_Backend, std::string> backends =
+static std::string backend_to_string(io::Backend backend) {
+  std::map<io::Backend, std::string> backends =
     {
-     {PISM_GUESS, "unknown"},
-     {PISM_NETCDF3, "netcdf3"},
-     {PISM_NETCDF4_PARALLEL, "netcdf4_parallel"},
-     {PISM_NETCDF4_SERIAL, "netcdf4_serial"},
-     {PISM_PIO_NETCDF, "pio_netcdf"},
-     {PISM_PIO_NETCDF4C, "pio_netcdf4c"},
-     {PISM_PIO_NETCDF4P, "pio_netcdf4p"},
-     {PISM_PIO_PNETCDF, "pio_pnetcdf"},
-     {PISM_PNETCDF, "pnetcdf"}
+     {io::PISM_GUESS, "unknown"},
+     {io::PISM_NETCDF3, "netcdf3"},
+     {io::PISM_NETCDF4_PARALLEL, "netcdf4_parallel"},
+     {io::PISM_NETCDF4_SERIAL, "netcdf4_serial"},
+     {io::PISM_PIO_NETCDF, "pio_netcdf"},
+     {io::PISM_PIO_NETCDF4C, "pio_netcdf4c"},
+     {io::PISM_PIO_NETCDF4P, "pio_netcdf4p"},
+     {io::PISM_PIO_PNETCDF, "pio_pnetcdf"},
+     {io::PISM_PNETCDF, "pnetcdf"}
   };
 
   return backends[backend];
 }
 
 // Chooses the best available I/O backend for reading from 'filename'.
-static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
+static io::Backend choose_backend(MPI_Comm com, const std::string &filename) {
 
   std::string format;
   {
@@ -105,28 +105,28 @@ static IO_Backend choose_backend(MPI_Comm com, const std::string &filename) {
     // supports all the kinds of NetCDF, so this is fine.
     io::NC_Serial file(com);
 
-    file.open(filename, PISM_READONLY);
+    file.open(filename, io::PISM_READONLY);
     format = file.get_format();
     file.close();
   }
 
 #if (Pism_USE_PARALLEL_NETCDF4==1)
   if (format == "netcdf4") {
-    return PISM_NETCDF4_PARALLEL;
+    return io::PISM_NETCDF4_PARALLEL;
   }
 #endif
 
 #if (Pism_USE_PNETCDF==1)
   if (format != "netcdf4") {
-    return PISM_PNETCDF;
+    return io::PISM_PNETCDF;
   }
 #endif
 
   // this choice is appropriate for both NetCDF-3 and NetCDF-4
-  return PISM_NETCDF3;
+  return io::PISM_NETCDF3;
 }
 
-static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosysid) {
+static io::NCFile::Ptr create_backend(MPI_Comm com, io::Backend backend, int iosysid) {
   // disable a compiler warning
   (void) iosysid;
 
@@ -134,28 +134,28 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
   MPI_Comm_size(com, &size);
 
   switch (backend) {
-  case PISM_NETCDF3:
+  case io::PISM_NETCDF3:
     return io::NCFile::Ptr(new io::NC_Serial(com));
-  case PISM_NETCDF4_SERIAL:
+  case io::PISM_NETCDF4_SERIAL:
     return io::NCFile::Ptr(new io::NC4_Serial(com));
-  case PISM_NETCDF4_PARALLEL:
+  case io::PISM_NETCDF4_PARALLEL:
 #if (Pism_USE_PARALLEL_NETCDF4==1)
     return io::NCFile::Ptr(new io::NC4_Par(com));
 #else
     break;
 #endif
 
-  case PISM_PNETCDF:
+  case io::PISM_PNETCDF:
 #if (Pism_USE_PNETCDF==1)
     return io::NCFile::Ptr(new io::PNCFile(com));
 #else
     break;
 #endif
 
-  case PISM_PIO_PNETCDF:
-  case PISM_PIO_NETCDF4P:
-  case PISM_PIO_NETCDF4C:
-  case PISM_PIO_NETCDF:
+  case io::PISM_PIO_PNETCDF:
+  case io::PISM_PIO_NETCDF4P:
+  case io::PISM_PIO_NETCDF4C:
+  case io::PISM_PIO_NETCDF:
 #if (Pism_USE_PIO==1)
     {
       if (iosysid == -1) {
@@ -168,7 +168,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
     break;
 #endif
 
-  case PISM_GUESS:
+  case io::PISM_GUESS:
     break;
   } // end of switch (backend)
 
@@ -180,7 +180,7 @@ static io::NCFile::Ptr create_backend(MPI_Comm com, IO_Backend backend, int iosy
                                 backend_name.c_str());
 }
 
-File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
+File::File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode,
            int iosysid)
   : m_impl(new Impl) {
 
@@ -189,7 +189,7 @@ File::File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mod
                                   "cannot open file: provided file name is empty");
   }
 
-  if (backend == PISM_GUESS) {
+  if (backend == io::PISM_GUESS) {
     m_impl->backend = choose_backend(com, filename);
   } else {
     m_impl->backend = backend;
@@ -218,7 +218,7 @@ MPI_Comm File::com() const {
   return m_impl->com;
 }
 
-IO_Backend File::backend() const {
+io::Backend File::backend() const {
   return m_impl->backend;
 }
 
@@ -226,17 +226,17 @@ void File::set_compression_level(int level) const {
   m_impl->nc->set_compression_level(level);
 }
 
-void File::open(const std::string &filename, IO_Mode mode) {
+void File::open(const std::string &filename, io::Mode mode) {
   try {
 
     // opening for reading
-    if (mode == PISM_READONLY) {
+    if (mode == io::PISM_READONLY) {
 
       m_impl->nc->open(filename, mode);
 
-    } else if (mode == PISM_READWRITE_CLOBBER or mode == PISM_READWRITE_MOVE) {
+    } else if (mode == io::PISM_READWRITE_CLOBBER or mode == io::PISM_READWRITE_MOVE) {
 
-      if (mode == PISM_READWRITE_MOVE) {
+      if (mode == io::PISM_READWRITE_MOVE) {
         io::move_if_exists(m_impl->com, filename);
       } else {
         io::remove_if_exists(m_impl->com, filename);
@@ -245,13 +245,13 @@ void File::open(const std::string &filename, IO_Mode mode) {
       m_impl->nc->create(filename);
 
       int old_fill;
-      m_impl->nc->set_fill(PISM_NOFILL, old_fill);
-    } else if (mode == PISM_READWRITE) {                      // mode == PISM_READWRITE
+      m_impl->nc->set_fill(io::PISM_NOFILL, old_fill);
+    } else if (mode == io::PISM_READWRITE) {                      // mode == io::PISM_READWRITE
 
       m_impl->nc->open(filename, mode);
 
       int old_fill;
-      m_impl->nc->set_fill(PISM_NOFILL, old_fill);
+      m_impl->nc->set_fill(io::PISM_NOFILL, old_fill);
     } else {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid mode: %d", mode);
     }
@@ -563,7 +563,7 @@ void File::define_dimension(const std::string &name, size_t length) const {
 }
 
 //! \brief Define a variable.
-void File::define_variable(const std::string &name, IO_Type nctype, const std::vector<std::string> &dims) const {
+void File::define_variable(const std::string &name, io::Type nctype, const std::vector<std::string> &dims) const {
   try {
     m_impl->nc->def_var(name, nctype, dims);
 
@@ -628,7 +628,7 @@ void File::append_history(const std::string &history) const {
 }
 
 //! \brief Write a multiple-valued double attribute.
-void File::write_attribute(const std::string &var_name, const std::string &att_name, IO_Type nctype,
+void File::write_attribute(const std::string &var_name, const std::string &att_name, io::Type nctype,
                            const std::vector<double> &values) const {
   try {
     redef();
@@ -662,7 +662,7 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
     // Give an understandable error message if a string attribute was found when
     // a number (or a list of numbers) was expected. (We've seen datasets with
     // "valid_min" stored as a string...)
-    if (att_type == PISM_CHAR) {
+    if (att_type == io::PISM_CHAR) {
       std::string tmp = read_text_attribute(var_name, att_name);
 
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -670,7 +670,7 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
                                     att_name.c_str(), tmp.c_str());
     }
 
-    // In this case att_type might be PISM_NAT (if an attribute does not
+    // In this case att_type might be io::PISM_NAT (if an attribute does not
     // exist), but read_double_attribute can handle that.
     std::vector<double> result;
     m_impl->nc->get_att_double(var_name, att_name, result);
@@ -686,7 +686,7 @@ std::vector<double> File::read_double_attribute(const std::string &var_name, con
 std::string File::read_text_attribute(const std::string &var_name, const std::string &att_name) const {
   try {
     auto att_type = attribute_type(var_name, att_name);
-    if (att_type != PISM_NAT and att_type != PISM_CHAR) {
+    if (att_type != io::PISM_NAT and att_type != io::PISM_CHAR) {
       // attribute exists and is not a string
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "attribute %s is not a string", att_name.c_str());
@@ -725,9 +725,9 @@ std::string File::attribute_name(const std::string &var_name, unsigned int n) co
 }
 
 
-IO_Type File::attribute_type(const std::string &var_name, const std::string &att_name) const {
+io::Type File::attribute_type(const std::string &var_name, const std::string &att_name) const {
   try {
-    IO_Type result;
+    io::Type result;
     m_impl->nc->inq_atttype(var_name, att_name, result);
     return result;
   } catch (RuntimeError &e) {

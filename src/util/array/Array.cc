@@ -427,7 +427,7 @@ void Array::set_attrs(const std::string &pism_intent,
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void Array::regrid_impl(const File &file, RegriddingFlag flag,
+void Array::regrid_impl(const File &file, io::RegriddingFlag flag,
                               double default_value) {
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
@@ -528,10 +528,10 @@ void Array::read_impl(const File &file, const unsigned int time) {
 }
 
 //! \brief Define variables corresponding to an Array in a file opened using `file`.
-void Array::define(const File &file, IO_Type default_type) const {
+void Array::define(const File &file, io::Type default_type) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
-    IO_Type type = metadata(j).get_output_type();
-    type = type == PISM_NAT ? default_type : type;
+    io::Type type = metadata(j).get_output_type();
+    type = type == io::PISM_NAT ? default_type : type;
     io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
   }
 }
@@ -595,7 +595,7 @@ void Array::write_impl(const File &file) const {
 void Array::dump(const char filename[]) const {
   File file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            PISM_READWRITE_CLOBBER,
+            io::PISM_READWRITE_CLOBBER,
             m_impl->grid->ctx()->pio_iosys_id());
 
   if (not m_impl->metadata[0].get_time_independent()) {
@@ -603,7 +603,7 @@ void Array::dump(const char filename[]) const {
     io::append_time(file, *m_impl->grid->ctx()->config(), m_impl->grid->ctx()->time()->current());
   }
 
-  define(file, PISM_DOUBLE);
+  define(file, io::PISM_DOUBLE);
   write(file);
 }
 
@@ -789,20 +789,20 @@ void Array::write(const std::string &filename) const {
   File file(m_impl->grid->com,
             filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            PISM_READWRITE,
+            io::PISM_READWRITE,
             m_impl->grid->ctx()->pio_iosys_id());
 
   this->write(file);
 }
 
 void Array::read(const std::string &filename, unsigned int time) {
-  File file(m_impl->grid->com, filename, PISM_GUESS, PISM_READONLY);
+  File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
   this->read(file, time);
 }
 
-void Array::regrid(const std::string &filename, RegriddingFlag flag,
+void Array::regrid(const std::string &filename, io::RegriddingFlag flag,
                                    double default_value) {
-  File file(m_impl->grid->com, filename, PISM_GUESS, PISM_READONLY);
+  File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
 
   try {
     this->regrid(file, flag, default_value);
@@ -838,7 +838,7 @@ void Array::regrid(const std::string &filename, RegriddingFlag flag,
  *
  * @return 0 on success
  */
-void Array::regrid(const File &file, RegriddingFlag flag,
+void Array::regrid(const File &file, io::RegriddingFlag flag,
                          double default_value) {
   m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
                                 timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
@@ -870,7 +870,7 @@ void Array::read(const File &file, const unsigned int time) {
 }
 
 void Array::write(const File &file) const {
-  define(file);
+  define(file, io::PISM_DOUBLE);
 
   auto com = m_impl->grid->com;
   double start_time = get_time(com);

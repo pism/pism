@@ -115,7 +115,7 @@ void NC4File::inq_unlimdim_impl(std::string &result) const {
 
 // var
 void NC4File::def_var_impl(const std::string &name,
-                           IO_Type nctype,
+                           io::Type nctype,
                            const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat = 0, varid = -1;
@@ -357,7 +357,7 @@ void NC4File::del_att_impl(const std::string &variable_name, const std::string &
 
 void NC4File::put_att_double_impl(const std::string &variable_name,
                                   const std::string &att_name,
-                                  IO_Type xtype,
+                                  io::Type xtype,
                                   const std::vector<double> &data) const {
   int stat = nc_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
                                xtype, data.size(), data.data());
@@ -384,7 +384,7 @@ void NC4File::inq_attname_impl(const std::string &variable_name,
 
 void NC4File::inq_atttype_impl(const std::string &variable_name,
                                const std::string &att_name,
-                               IO_Type &result) const {
+                               io::Type &result) const {
   nc_type tmp = NC_NAT;
   int stat = nc_inq_atttype(m_file_id, get_varid(variable_name), att_name.c_str(), &tmp);
 

@@ -160,7 +160,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
   if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(input_file, CRITICAL);
+      m_ice_enthalpy.regrid(input_file, io::CRITICAL);
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
@@ -176,7 +176,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
                      "Kelvin", "Kelvin", "land_ice_temperature", 0);
 
       if (do_regrid) {
-        temp.regrid(input_file, CRITICAL);
+        temp.regrid(input_file, io::CRITICAL);
       } else {
         temp.read(input_file, record);
       }
@@ -193,7 +193,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
                         "1", "1", "", 0);
 
       if (do_regrid) {
-        liqfrac.regrid(input_file, CRITICAL);
+        liqfrac.regrid(input_file, io::CRITICAL);
       } else {
         liqfrac.read(input_file, record);
       }
@@ -235,7 +235,7 @@ void EnergyModel::regrid_enthalpy() {
   std::string enthalpy_name = m_ice_enthalpy.metadata().get_name();
 
   if (regrid_vars.empty() or member(enthalpy_name, regrid_vars)) {
-    File regrid_file(m_grid->com, regrid_filename, PISM_GUESS, PISM_READONLY);
+    File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
     init_enthalpy(regrid_file, true, 0);
   }
 }

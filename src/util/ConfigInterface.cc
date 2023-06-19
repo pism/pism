@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -66,7 +66,7 @@ Config::~Config() {
 
 void Config::read(MPI_Comm com, const std::string &filename) {
 
-  File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+  File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3
   this->read(file);
 }
 
@@ -82,9 +82,9 @@ void Config::write(const File &file) const {
 
 void Config::write(MPI_Comm com, const std::string &filename, bool append) const {
 
-  IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
+  io::Mode mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
 
-  File file(com, filename, PISM_NETCDF3, mode); // OK to use netcdf3
+  File file(com, filename, io::PISM_NETCDF3, mode); // OK to use netcdf3
 
   this->write(file);
 }

@@ -62,7 +62,7 @@ InputOptions process_input_options(MPI_Comm com, Config::ConstPtr config) {
 
   // get the index of the last record in the input file
   if (not input_filename.empty()) {
-    File input_file(com, input_filename, PISM_NETCDF3, PISM_READONLY);
+    File input_file(com, input_filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     // Find the index of the last record in the input file.
     unsigned int last_record = input_file.nrecords();
@@ -176,7 +176,7 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
                module_name.c_str(),
                m.get_string("short_name").c_str(), regrid_file.c_str());
 
-    variable.regrid(regrid_file, CRITICAL);
+    variable.regrid(regrid_file, io::CRITICAL);
   }
 }
 

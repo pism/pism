@@ -35,7 +35,7 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     m_temperature = std::make_shared<array::Forcing>(m_grid,
                                                 file,
@@ -121,8 +121,8 @@ const array::Scalar &Given::runoff_impl() const {
 }
 
 void Given::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void Given::write_model_state_impl(const File &output) const {

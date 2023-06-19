@@ -64,7 +64,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective ocean model outputs from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
@@ -92,9 +92,9 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_water_column_pressure->define(output);
-  m_shelf_base_mass_flux->define(output);
-  m_shelf_base_temperature->define(output);
+  m_water_column_pressure->define(output, io::PISM_DOUBLE);
+  m_shelf_base_mass_flux->define(output, io::PISM_DOUBLE);
+  m_shelf_base_temperature->define(output, io::PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }

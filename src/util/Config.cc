@@ -201,12 +201,11 @@ void NetCDFConfig::write_impl(const File &nc) const {
   bool variable_exists = nc.find_variable(m_data.get_name());
 
   if (not variable_exists) {
-    nc.define_variable(m_data.get_name(),
-               PISM_BYTE, std::vector<std::string>());
+    nc.define_variable(m_data.get_name(), io::PISM_BYTE, {});
 
-    io::write_attributes(nc, m_data, PISM_DOUBLE);
+    io::write_attributes(nc, m_data, io::PISM_DOUBLE);
   } else {
-    io::write_attributes(nc, m_data, PISM_DOUBLE);
+    io::write_attributes(nc, m_data, io::PISM_DOUBLE);
   }
 }
 

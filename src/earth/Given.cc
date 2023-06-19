@@ -39,7 +39,7 @@ Given::Given(std::shared_ptr<const Grid> grid)
     // periodic inputs are not supported
     bool periodic = false;
 
-    File file(m_grid->com, filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_topg_delta = std::make_shared<array::Forcing>(m_grid,
                                                     file,
@@ -66,7 +66,7 @@ void Given::init_impl(const InputOptions &opts, const array::Scalar &ice_thickne
 
   {
     auto reference_filename = m_config->get_string("bed_deformation.given.reference_file");
-    m_topg_reference.regrid(reference_filename, CRITICAL); // fails if not found!
+    m_topg_reference.regrid(reference_filename, io::CRITICAL); // fails if not found!
   }
 
   {

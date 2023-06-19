@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019 PISM Authors
+// Copyright (C) 2008-2019, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ void PIK::init_impl(const Geometry &geometry) {
                  "    reading surface mass balance rate 'climatic_mass_balance' from %s ... \n",
                  opts.filename.c_str());
   if (opts.type == INIT_BOOTSTRAP) {
-    m_mass_flux->regrid(opts.filename, CRITICAL); // fails if not found!
+    m_mass_flux->regrid(opts.filename, io::CRITICAL); // fails if not found!
   } else {
     m_mass_flux->read(opts.filename, opts.record); // fails if not found!
   }
@@ -112,7 +112,7 @@ const array::Scalar &PIK::runoff_impl() const {
 }
 
 void PIK::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
   SurfaceModel::define_model_state_impl(output);
 }
 

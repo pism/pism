@@ -558,7 +558,7 @@ static void regrid_vec_fill_missing(const File &file, const Grid &grid,
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const Grid &grid, const File &file,
-                             IO_Type default_type) {
+                             io::Type default_type) {
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
@@ -586,7 +586,7 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   assert(dims.size() > 1);
 
-  IO_Type type = var.get_output_type();
+  io::Type type = var.get_output_type();
   if (type == PISM_NAT) {
     type = default_type;
   }
@@ -1035,7 +1035,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 //! Define a NetCDF variable corresponding to a time-series.
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,
-                       const File &file, IO_Type nctype) {
+                       const File &file, io::Type nctype) {
 
   std::string name = var.get_name();
 
@@ -1157,7 +1157,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
 void define_time_bounds(const VariableMetadata& var,
                         const std::string &dimension_name,
                         const std::string &bounds_name,
-                        const File &file, IO_Type nctype) {
+                        const File &file, io::Type nctype) {
   std::string name = var.get_name();
 
   if (file.find_variable(name)) {
@@ -1378,7 +1378,7 @@ void read_attributes(const File &file,
 
     for (unsigned int j = 0; j < nattrs; ++j) {
       std::string attribute_name = file.attribute_name(variable_name, j);
-      IO_Type nctype = file.attribute_type(variable_name, attribute_name);
+      io::Type nctype = file.attribute_type(variable_name, attribute_name);
 
       if (nctype == PISM_CHAR) {
         variable[attribute_name] = file.read_text_attribute(variable_name,
@@ -1402,7 +1402,7 @@ void read_attributes(const File &file,
 
   - Skips empty text attributes.
 */
-void write_attributes(const File &file, const VariableMetadata &variable, IO_Type nctype) {
+void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype) {
   std::string var_name = variable.get_name();
 
   try {

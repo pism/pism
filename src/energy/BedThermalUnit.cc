@@ -50,7 +50,7 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   if (opts.type == INIT_RESTART) {
     // If we're initializing from a file we need to get the number of bedrock
     // levels and the depth of the bed thermal layer from it:
-    File input_file(ctx->com(), opts.filename, PISM_NETCDF3, PISM_READONLY);
+    File input_file(ctx->com(), opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     if (input_file.find_variable("litho_temp")) {
       grid::InputGridInfo info(input_file, "litho_temp", ctx->unit_system(),
@@ -130,7 +130,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
     m_log->message(2, "  - Reading geothermal flux from '%s' ...\n",
                    input_file.c_str());
 
-    m_bottom_surface_flux.regrid(input_file, CRITICAL);
+    m_bottom_surface_flux.regrid(input_file, io::CRITICAL);
   } else {
     m_log->message(2,
                    "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
@@ -142,7 +142,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
       m_bottom_surface_flux.read(opts.filename, opts.record);
       break;
     case INIT_BOOTSTRAP:
-      m_bottom_surface_flux.regrid(opts.filename, OPTIONAL,
+      m_bottom_surface_flux.regrid(opts.filename, io::OPTIONAL,
                                    m_config->get_number("bootstrapping.defaults.geothermal_flux"));
       break;
     case INIT_OTHER:
@@ -185,7 +185,7 @@ unsigned int BedThermalUnit::Mz() const {
 }
 
 void BedThermalUnit::define_model_state_impl(const File &output) const {
-  m_bottom_surface_flux.define(output);
+  m_bottom_surface_flux.define(output, io::PISM_DOUBLE);
 }
 
 void BedThermalUnit::write_model_state_impl(const File &output) const {

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -75,14 +75,14 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
              "      from %s ... \n",
              input_filename.c_str());
   if (do_regrid == true) {
-    m_precipitation.regrid(input_filename, CRITICAL); // fails if not found!
+    m_precipitation.regrid(input_filename, io::CRITICAL); // fails if not found!
   } else {
     m_precipitation.read(input_filename, start); // fails if not found!
   }
 }
 
 void YearlyCycle::define_model_state_impl(const File &output) const {
-  m_precipitation.define(output);
+  m_precipitation.define(output, io::PISM_DOUBLE);
 }
 
 void YearlyCycle::write_model_state_impl(const File &output) const {

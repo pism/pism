@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018, 2020, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2009--2018, 2020, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -126,8 +126,8 @@ public:
   bool get_time_independent() const;
   void set_time_independent(bool flag);
 
-  IO_Type get_output_type() const;
-  void set_output_type(IO_Type type);
+  io::Type get_output_type() const;
+  void set_output_type(io::Type type);
 
   void clear_all_doubles();
   void clear_all_strings();
@@ -165,7 +165,7 @@ private:
   std::string m_short_name;
   bool m_time_independent;
 
-  IO_Type m_output_type;
+  io::Type m_output_type;
 };
 
 //! Spatial NetCDF variable (corresponding to a 2D or 3D scalar field).

@@ -33,7 +33,7 @@ Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLe
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_forcing = std::make_shared<array::Forcing>(m_grid,
                                                  file,

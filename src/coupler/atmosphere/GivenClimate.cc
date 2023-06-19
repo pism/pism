@@ -33,7 +33,7 @@ Given::Given(std::shared_ptr<const Grid> g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     auto interp_type = m_config->get_string("atmosphere.given.air_temperature_interpolation");
 

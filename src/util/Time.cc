@@ -698,7 +698,7 @@ Time::Time(MPI_Comm com,
 
   std::unique_ptr<File> file{};
   if (not input_file.empty()) {
-    file.reset(new File(com, input_file, PISM_NETCDF3, PISM_READONLY));
+    file.reset(new File(com, input_file, io::PISM_NETCDF3, io::PISM_READONLY));
   }
 
   // set the reference date
@@ -767,7 +767,7 @@ void Time::init_from_file(MPI_Comm com,
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
 
-    File file(com, filename, PISM_NETCDF3, PISM_READONLY); // OK to use netcdf3
+    File file(com, filename, io::PISM_NETCDF3, io::PISM_READONLY); // OK to use netcdf3
 
     // Set the calendar name from file.
     std::string new_calendar = file.read_text_attribute(time_name, "calendar");

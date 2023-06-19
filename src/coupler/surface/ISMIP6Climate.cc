@@ -70,7 +70,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     {
       m_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
@@ -138,11 +138,11 @@ void ISMIP6::init_impl(const Geometry &geometry) {
   {
     // File with reference surface elevation, temperature, and climatic mass balance
     auto reference_filename = m_config->get_string("surface.ismip6.reference_file");
-    File reference_file(m_grid->com, reference_filename, PISM_GUESS, PISM_READONLY);
+    File reference_file(m_grid->com, reference_filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    m_mass_flux_reference.regrid(reference_file, CRITICAL);
-    m_surface_reference.regrid(reference_file, CRITICAL);
-    m_temperature_reference.regrid(reference_file, CRITICAL);
+    m_mass_flux_reference.regrid(reference_file, io::CRITICAL);
+    m_surface_reference.regrid(reference_file, io::CRITICAL);
+    m_temperature_reference.regrid(reference_file, io::CRITICAL);
   }
 
   {

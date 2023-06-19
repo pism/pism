@@ -118,7 +118,7 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
 
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_delta = std::make_shared<array::Forcing>(m_grid,
                                           file,
@@ -144,7 +144,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
   auto tauc_to_phi_file = m_config->get_string("basal_yield_stress.mohr_coulomb.tauc_to_phi.file");
 
   if (not tauc_to_phi_file.empty()) {
-    m_basal_yield_stress.regrid(tauc_to_phi_file, CRITICAL);
+    m_basal_yield_stress.regrid(tauc_to_phi_file, io::CRITICAL);
 
     m_log->message(2,
                    "  Will compute till friction angle (tillphi) as a function"
@@ -172,7 +172,7 @@ void MohrCoulombYieldStress::bootstrap_impl(const File &input_file,
 
   } else {
     double till_phi_default = m_config->get_number("basal_yield_stress.mohr_coulomb.till_phi_default");
-    m_till_phi.regrid(input_file, OPTIONAL, till_phi_default);
+    m_till_phi.regrid(input_file, io::OPTIONAL, till_phi_default);
   }
 
   finish_initialization(inputs);
@@ -222,8 +222,8 @@ void MohrCoulombYieldStress::set_till_friction_angle(const array::Scalar &input)
 }
 
 void MohrCoulombYieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output);
-  m_till_phi.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
+  m_till_phi.define(output, io::PISM_DOUBLE);
 }
 
 void MohrCoulombYieldStress::write_model_state_impl(const File &output) const {

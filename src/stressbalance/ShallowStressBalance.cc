@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2023 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -20,10 +20,8 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 
-#include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/Context.hh"
 
@@ -343,7 +341,7 @@ void PrescribedSliding::init_impl() {
                        "stress_balance.prescribed_sliding.file is required.");
   }
 
-  m_velocity.regrid(input_filename, CRITICAL);
+  m_velocity.regrid(input_filename, io::CRITICAL);
 }
 
 SSB_beta::SSB_beta(const ShallowStressBalance *m)

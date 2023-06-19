@@ -85,9 +85,9 @@ void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
     tmp.set_name("PISM_GLOBAL");
     tmp["history"] = std::string(tmp["history"]) + old_history;
 
-    io::write_attributes(file, tmp, PISM_DOUBLE);
+    io::write_attributes(file, tmp, io::PISM_DOUBLE);
   } else {
-    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE);
+    io::write_attributes(file, m_output_global_attributes, io::PISM_DOUBLE);
   }
 }
 
@@ -128,7 +128,7 @@ void IceModel::save_results() {
     File file(m_grid->com,
               filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
+              io::PISM_READWRITE_MOVE,
               m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
@@ -147,9 +147,9 @@ void IceModel::write_mapping(const File &file) {
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
     if (not file.find_variable(name)) {
-      file.define_variable(name, PISM_DOUBLE, {});
+      file.define_variable(name, io::PISM_DOUBLE, {});
     }
-    io::write_attributes(file, mapping, PISM_DOUBLE);
+    io::write_attributes(file, mapping, io::PISM_DOUBLE);
 
     // Write the PROJ string to mapping:proj_params (for CDO).
     std::string proj = m_grid->get_mapping_info().proj;
@@ -162,16 +162,16 @@ void IceModel::write_mapping(const File &file) {
 void IceModel::write_run_stats(const File &file) {
   update_run_stats();
   if (not file.find_variable(m_run_stats.get_name())) {
-    file.define_variable(m_run_stats.get_name(), PISM_DOUBLE, {});
+    file.define_variable(m_run_stats.get_name(), io::PISM_DOUBLE, {});
   }
-  io::write_attributes(file, m_run_stats, PISM_DOUBLE);
+  io::write_attributes(file, m_run_stats, io::PISM_DOUBLE);
 }
 
 void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type) {
+                              io::Type default_diagnostics_type) {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -183,7 +183,7 @@ void IceModel::save_variables(const File &file,
   // Note: it is time-dependent, so we need to define time first.
   io::define_timeseries(m_timestamp,
                         m_config->get_string("time.dimension_name"),
-                        file, PISM_FLOAT);
+                        file, io::PISM_FLOAT);
   // append to the time dimension
   io::append_time(file, *m_config, time);
 
@@ -251,7 +251,7 @@ void IceModel::save_variables(const File &file,
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
-                                  IO_Type default_type) {
+                                  io::Type default_type) {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -275,7 +275,7 @@ void IceModel::write_diagnostics(const File &file, const std::set<std::string> &
 
 void IceModel::define_model_state(const File &file) {
   for (auto *v : m_model_state) {
-    v->define(file);
+    v->define(file, io::PISM_DOUBLE);
   }
 
   for (const auto& m : m_submodels) {

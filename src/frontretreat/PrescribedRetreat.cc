@@ -28,7 +28,7 @@ PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_retreat_mask = std::make_shared<array::Forcing>(m_grid,
                                                       file,

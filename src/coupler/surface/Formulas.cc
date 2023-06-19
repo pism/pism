@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,8 +57,8 @@ const array::Scalar &PSFormulas::runoff_impl() const {
 void PSFormulas::define_model_state_impl(const File &output) const {
   // these are *not* model state, but I want to be able to re-start from a file produced using this
   // class
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void PSFormulas::write_model_state_impl(const File &output) const {

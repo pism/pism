@@ -73,7 +73,7 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
 
     m_log->message(2, " Surface albedo is read in from %s...", albedo_input.c_str());
 
-    File file(m_grid->com, albedo_input, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, albedo_input, io::PISM_GUESS, io::PISM_READONLY);
 
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
     bool periodic = m_config->get_flag("surface.debm_simple.albedo_input.periodic");
@@ -97,7 +97,7 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
 
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, air_temp_sd, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, air_temp_sd, io::PISM_GUESS, io::PISM_READONLY);
 
     bool periodic = m_config->get_flag("surface.debm_simple.std_dev.periodic");
     m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file, "air_temp_sd",
@@ -171,8 +171,8 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     m_snow_depth.read(input.filename, input.record);
     m_surface_albedo.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
-    m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
-    m_surface_albedo.regrid(input.filename, OPTIONAL, default_albedo);
+    m_snow_depth.regrid(input.filename, io::OPTIONAL, 0.0);
+    m_surface_albedo.regrid(input.filename, io::OPTIONAL, default_albedo);
   } else {
     m_snow_depth.set(0.0);
     m_surface_albedo.set(default_albedo);
@@ -539,8 +539,8 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
 
 void DEBMSimple::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_snow_depth.define(output, PISM_DOUBLE);
-  m_surface_albedo.define(output, PISM_DOUBLE);
+  m_snow_depth.define(output, io::PISM_DOUBLE);
+  m_surface_albedo.define(output, io::PISM_DOUBLE);
 }
 
 void DEBMSimple::write_model_state_impl(const File &output) const {

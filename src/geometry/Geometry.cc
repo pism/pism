@@ -76,7 +76,7 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
   cell_type.metadata()["flag_meanings"] =
     "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
-  cell_type.metadata().set_output_type(PISM_INT);
+  cell_type.metadata().set_output_type(io::PISM_INT);
 
   cell_grounded_fraction.set_attrs("internal",
                                    "fractional grounded/floating mask (floating=0, grounded=1)",
@@ -181,7 +181,7 @@ void Geometry::dump(const char *filename) const {
 
   File file(grid->com, filename,
             string_to_backend(grid->ctx()->config()->get_string("output.format")),
-            PISM_READWRITE_CLOBBER,
+            io::PISM_READWRITE_CLOBBER,
             grid->ctx()->pio_iosys_id());
 
   io::define_time(file, *grid->ctx());

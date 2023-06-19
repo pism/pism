@@ -16,20 +16,21 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNCWRAPPER_H_
-#define _PISMNCWRAPPER_H_
+#ifndef PISM_NCFILE_H
+#define PISM_NCFILE_H
 
+#include "IO_Flags.hh"
 #include <memory>
 #include <string>
 #include <vector>
 
 #include <mpi.h>
 
-#include "IO_Flags.hh"
-
 namespace pism {
 
 class Grid;
+
+enum IO_Mode : int;
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -62,7 +63,7 @@ public:
   virtual ~NCFile() = default;
 
   // open/create/close
-  void open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename, io::Mode mode);
 
   void create(const std::string &filename);
 
@@ -85,7 +86,7 @@ public:
   void inq_unlimdim(std::string &result) const;
 
   // var
-  void def_var(const std::string &name, IO_Type nctype,
+  void def_var(const std::string &name, io::Type nctype,
                const std::vector<std::string> &dims) const;
 
   void def_var_chunking(const std::string &name, std::vector<size_t> &dimensions) const;
@@ -133,14 +134,14 @@ public:
                     std::string &result) const;
 
   void put_att_double(const std::string &variable_name, const std::string &att_name,
-                      IO_Type xtype, const std::vector<double> &data) const;
+                      io::Type xtype, const std::vector<double> &data) const;
 
   void put_att_text(const std::string &variable_name, const std::string &att_name,
                     const std::string &value) const;
 
   void inq_attname(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  void inq_atttype(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+  void inq_atttype(const std::string &variable_name, const std::string &att_name, io::Type &result) const;
 
   // misc
   void set_fill(int fillmode, int &old_modep) const;
@@ -153,7 +154,7 @@ protected:
   // implementations:
 
   // open/create/close
-  virtual void open_impl(const std::string &filename, IO_Mode mode) = 0;
+  virtual void open_impl(const std::string &filename, io::Mode mode) = 0;
   virtual void create_impl(const std::string &filename) = 0;
   virtual void sync_impl() const = 0;
   virtual void close_impl() = 0;
@@ -173,7 +174,7 @@ protected:
   virtual void inq_unlimdim_impl(std::string &result) const = 0;
 
   // var
-  virtual void def_var_impl(const std::string &name, IO_Type nctype,
+  virtual void def_var_impl(const std::string &name, io::Type nctype,
                            const std::vector<std::string> &dims) const = 0;
 
   virtual void def_var_chunking_impl(const std::string &name,
@@ -219,13 +220,13 @@ protected:
 
   virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const = 0;
 
-  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const = 0;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, io::Type xtype, const std::vector<double> &data) const = 0;
 
   virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const = 0;
 
   virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const = 0;
 
-  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const = 0;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, io::Type &result) const = 0;
 
   // misc
   virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
@@ -244,4 +245,4 @@ private:
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _PISMNCWRAPPER_H_ */
+#endif /* PISM_NCFILE_H */

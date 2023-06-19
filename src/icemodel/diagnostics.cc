@@ -282,7 +282,7 @@ Rank::Rank(const IceModel *m)
   m_vars = {{m_sys, "rank"}};
   set_attrs("processor rank", "", "1", "", 0);
   m_vars[0].set_time_independent(true);
-  m_vars[0].set_output_type(PISM_INT);
+  m_vars[0].set_output_type(io::PISM_INT);
 }
 
 array::Array::Ptr Rank::compute_impl() const {

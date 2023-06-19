@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _IO_HELPERS_H_
-#define _IO_HELPERS_H_
+#ifndef PISM_IO_HELPERS_H
+#define PISM_IO_HELPERS_H
 
 #include <string>
 #include <vector>
@@ -79,16 +79,16 @@ void append_time(const File &nc, const std::string &name, double time_seconds);
 
 void define_spatial_variable(const SpatialVariableMetadata &var,
                              const Grid &grid, const File &nc,
-                             IO_Type nctype);
+                             io::Type nctype);
 
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,
-                       const File &nc, IO_Type nctype);
+                       const File &nc, io::Type nctype);
 
 void define_time_bounds(const VariableMetadata& var,
                         const std::string &dimension_name,
                         const std::string &bounds_name,
-                        const File &nc, IO_Type nctype = PISM_DOUBLE);
+                        const File &nc, io::Type nctype = PISM_DOUBLE);
 
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
                      const Logger &log, std::vector<double> &data);
@@ -117,7 +117,7 @@ std::string time_dimension(units::System::Ptr unit_system,
 
 void read_attributes(const File &nc, const std::string &variable_name, VariableMetadata &variable);
 
-void write_attributes(const File &nc, const VariableMetadata &variable, IO_Type nctype);
+void write_attributes(const File &nc, const VariableMetadata &variable, io::Type nctype);
 
 void read_valid_range(const File &nc, const std::string &name, VariableMetadata &variable);
 
@@ -130,4 +130,4 @@ void remove_if_exists(MPI_Comm com, const std::string &file_to_remove, int rank_
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _IO_HELPERS_H_ */
+#endif /* PISM_IO_HELPERS_H */

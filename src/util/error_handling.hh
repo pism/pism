@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _ERROR_HANDLING_H_
-#define _ERROR_HANDLING_H_
+#ifndef PISM_ERROR_HANDLING_H
+#define PISM_ERROR_HANDLING_H
 
 #include <mpi.h>                // MPI_Comm
 #include <stdexcept>
@@ -27,13 +27,12 @@
 
 #include "pism/pism_config.hh"  // Pism_DEBUG
 
-
 namespace pism {
 
 class ErrorLocation {
 public:
   ErrorLocation();
-  ErrorLocation(const char *name, int line);
+  ErrorLocation(const char *filename, int line);
   const char *filename;
   int line_number;
 };
@@ -92,4 +91,4 @@ void check_petsc_call(int errcode, const char* function_name,
 
 } // end of namespace pism
 
-#endif /* _ERROR_HANDLING_H_ */
+#endif /* PISM_ERROR_HANDLING_H */

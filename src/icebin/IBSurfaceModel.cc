@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2022 PISM Authors
+// Copyright (C) 2008-2020, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -106,11 +106,11 @@ const array::Scalar &IBSurfaceModel::temperature_impl() const {
 
 void IBSurfaceModel::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  icebin_enthxfer.define(output);
-  icebin_wflux.define(output);
-  icebin_deltah.define(output);
-  icebin_massxfer.define(output);
-  surface_temp.define(output);
+  icebin_enthxfer.define(output, io::PISM_DOUBLE);
+  icebin_wflux.define(output, io::PISM_DOUBLE);
+  icebin_deltah.define(output, io::PISM_DOUBLE);
+  icebin_massxfer.define(output, io::PISM_DOUBLE);
+  surface_temp.define(output, io::PISM_DOUBLE);
 }
 
 void IBSurfaceModel::write_model_state_impl(const File &output) const {

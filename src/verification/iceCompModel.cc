@@ -601,20 +601,15 @@ void IceCompModel::print_summary(bool /* tempAndAge */) {
   IceModel::print_summary(true);
 }
 
-static void write(units::System::Ptr sys,
-                  const File &file,
-                  size_t start,
-                  const char *name,
-                  const char *units,
-                  const char *long_name,
-                  double value,
-                  IO_Type type=PISM_DOUBLE) {
+static void write(units::System::Ptr sys, const File &file, size_t start, const char *name,
+                  const char *units, const char *long_name, double value,
+                  io::Type type = io::PISM_DOUBLE) {
   VariableMetadata v(name, sys);
-  v["units"] = units;
+  v["units"]     = units;
   v["long_name"] = long_name;
 
   io::define_timeseries(v, "N", file, type);
-  io::write_timeseries(file, v, start, {value});
+  io::write_timeseries(file, v, start, { value });
 }
 
 void IceCompModel::reportErrors() {
@@ -752,18 +747,18 @@ void IceCompModel::reportErrors() {
   options::String report_file("-report_file", "NetCDF error report file");
   bool append = options::Bool("-append", "Append the NetCDF error report");
 
-  IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
+  io::Mode mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
 
   if (report_file.is_set()) {
 
     m_log->message(2, "Also writing errors to '%s'...\n", report_file->c_str());
 
     // Find the number of records in this file:
-    File file(m_grid->com, report_file, PISM_NETCDF3, mode); // OK to use netcdf3
+    File file(m_grid->com, report_file, io::PISM_NETCDF3, mode); // OK to use netcdf3
 
     size_t start = file.dimension_length("N");
 
-    io::write_attributes(file, m_output_global_attributes, PISM_DOUBLE);
+    io::write_attributes(file, m_output_global_attributes, io::PISM_DOUBLE);
 
     // Write the dimension variable:
     write(m_sys, file, start, "N", "1", "run number", start + 1);

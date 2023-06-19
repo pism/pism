@@ -658,7 +658,7 @@ void Blatter::init_impl() {
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
   if (opts.type == INIT_RESTART) {
-    File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     bool u_sigma_found = input_file.find_variable("uvel_sigma");
     bool v_sigma_found = input_file.find_variable("vvel_sigma");
     unsigned int start = input_file.nrecords() - 1;
@@ -680,8 +680,8 @@ void Blatter::init_impl() {
 }
 
 void Blatter::define_model_state_impl(const File &output) const {
-  m_u_sigma->define(output);
-  m_v_sigma->define(output);
+  m_u_sigma->define(output, io::PISM_DOUBLE);
+  m_v_sigma->define(output, io::PISM_DOUBLE);
 }
 
 void Blatter::write_model_state_impl(const File &output) const {

@@ -239,7 +239,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
 
     m_data->filename = filename;
 
-    File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
+    File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
     auto var = file.find_variable(m_impl->metadata[0].get_name(),
                                   m_impl->metadata[0].get_string("standard_name"));
     if (not var.exists) {
@@ -336,7 +336,7 @@ void Forcing::init_periodic_data(const File &file) {
   for (unsigned int j = 0; j < n_records; ++j) {
     {
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, CRITICAL,
+      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, io::CRITICAL,
                                   m_impl->report_range, allow_extrapolation,
                                   0.0, m_impl->interpolation_type, tmp_array.get());
     }
@@ -532,14 +532,14 @@ void Forcing::update(unsigned int start) {
     m_impl->report_range = true;
   }
 
-  File file(m_impl->grid->com, m_data->filename, PISM_GUESS, PISM_READONLY);
+  File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
 
   const bool allow_extrapolation = m_impl->grid->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   for (unsigned int j = 0; j < missing; ++j) {
     try {
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j, CRITICAL,
+      io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j, io::CRITICAL,
                                   m_impl->report_range, allow_extrapolation,
                                   0.0, m_impl->interpolation_type, tmp_array.get());
     } catch (RuntimeError &e) {

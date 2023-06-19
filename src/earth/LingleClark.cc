@@ -231,7 +231,7 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
   m_log->message(2, "* Initializing the Lingle-Clark bed deformation model...\n");
 
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
-    File input_file(m_grid->com, opts.filename, PISM_NETCDF3, PISM_READONLY);
+    File input_file(m_grid->com, opts.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     if (input_file.find_variable(m_time_name)) {
       input_file.read_variable(m_time_name, {0}, {1}, &m_t_last);
@@ -407,11 +407,11 @@ void LingleClark::update_impl(const array::Scalar &ice_thickness,
 
 void LingleClark::define_model_state_impl(const File &output) const {
   BedDef::define_model_state_impl(output);
-  m_viscous_displacement->define(output);
-  m_elastic_displacement.define(output);
+  m_viscous_displacement->define(output, io::PISM_DOUBLE);
+  m_elastic_displacement.define(output, io::PISM_DOUBLE);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the Lingle-Clark bed deformation model");

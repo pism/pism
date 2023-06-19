@@ -127,7 +127,7 @@ void IceModel::model_state_setup() {
   std::unique_ptr<File> input_file;
 
   if (use_input_file) {
-    input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+    input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
   }
 
   // Initialize 2D fields owned by IceModel (ice geometry, etc)
@@ -375,7 +375,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // longitude
   {
-    m_geometry.longitude.regrid(input_file, OPTIONAL);
+    m_geometry.longitude.regrid(input_file, io::OPTIONAL);
 
     auto lon = input_file.find_variable("lon", "longitude");
 
@@ -386,7 +386,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   // latitude
   {
-    m_geometry.latitude.regrid(input_file, OPTIONAL);
+    m_geometry.latitude.regrid(input_file, io::OPTIONAL);
 
     auto lat = input_file.find_variable("lat", "latitude");
 
@@ -395,7 +395,7 @@ void IceModel::bootstrap_2d(const File &input_file) {
     }
   }
 
-  m_geometry.ice_thickness.regrid(input_file, OPTIONAL,
+  m_geometry.ice_thickness.regrid(input_file, io::OPTIONAL,
                                   m_config->get_number("bootstrapping.defaults.ice_thickness"));
 
   if (m_config->get_flag("geometry.part_grid.enabled")) {
@@ -407,21 +407,21 @@ void IceModel::bootstrap_2d(const File &input_file) {
     //
     // On the other hand, we need to read it in to be able to re-start
     // from a PISM output file using the -bootstrap option.
-    m_geometry.ice_area_specific_volume.regrid(input_file, OPTIONAL, 0.0);
+    m_geometry.ice_area_specific_volume.regrid(input_file, io::OPTIONAL, 0.0);
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     // Do not use Dirichlet B.C. anywhere if bc_mask is not present.
-    m_velocity_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+    m_velocity_bc_mask.regrid(input_file, io::OPTIONAL, 0.0);
     // In absence of u_bc and v_bc in the file the only B.C. that make sense are the
     // zero Dirichlet B.C.
-    m_velocity_bc_values.regrid(input_file, OPTIONAL,  0.0);
+    m_velocity_bc_values.regrid(input_file, io::OPTIONAL,  0.0);
   } else {
     m_velocity_bc_mask.set(0.0);
     m_velocity_bc_values.set(0.0);
   }
 
-  m_ice_thickness_bc_mask.regrid(input_file, OPTIONAL, 0.0);
+  m_ice_thickness_bc_mask.regrid(input_file, io::OPTIONAL, 0.0);
 
   // check if Lz is valid
   auto max_thickness = array::max(m_geometry.ice_thickness);
@@ -453,10 +453,10 @@ void IceModel::regrid() {
   m_log->message(2, "regridding from file %s ...\n", filename.c_str());
 
   {
-    File regrid_file(m_grid->com, filename, PISM_GUESS, PISM_READONLY);
+    File regrid_file(m_grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
     for (auto *v : m_model_state) {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
-        v->regrid(regrid_file, CRITICAL);
+        v->regrid(regrid_file, io::CRITICAL);
       }
     }
 
@@ -724,7 +724,7 @@ void IceModel::misc_setup() {
 
   if (not (opts.type == INIT_OTHER)) {
     // initializing from a file
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
     std::string source = file.read_text_attribute("PISM_GLOBAL", "source");
 
@@ -759,7 +759,7 @@ void IceModel::misc_setup() {
       Mz = m_grid->Mz();
     std::string output_format = m_config->get_string("output.format");
     if (Mx * My * Mz * sizeof(double) > two_to_thirty_two - 4 and
-        (output_format == PISM_NETCDF3)) {
+        (output_format == io::PISM_NETCDF3)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "The computational grid is too big to fit in a NetCDF-3 file.\n"
                                     "Each 3D variable requires %lu Mb.\n"
@@ -816,7 +816,7 @@ void IceModel::misc_setup() {
 
     // read in the state (accumulators) if we are re-starting a run
     if (opts.type == INIT_RESTART) {
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
       for (const auto& d : m_diagnostics) {
         d.second->init(file, opts.record);
       }
@@ -834,7 +834,7 @@ void IceModel::misc_setup() {
       m_fracture->initialize();
     } else {
       // initializing from a file
-      File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
 
       if (opts.type == INIT_RESTART) {
         m_fracture->restart(file, opts.record);

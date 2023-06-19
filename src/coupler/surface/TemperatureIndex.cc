@@ -74,7 +74,7 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
     bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
     int max_buffer_size = (int) m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, sd_file, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, sd_file, io::PISM_NETCDF3, io::PISM_READONLY);
     m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file,
                                                 "air_temp_sd", "",
                                                 max_buffer_size,
@@ -179,12 +179,12 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     m_snow_depth.read(input.filename, input.record);
   } else if (input.type == INIT_BOOTSTRAP) {
 
-    m_snow_depth.regrid(input.filename, OPTIONAL, 0.0);
+    m_snow_depth.regrid(input.filename, io::OPTIONAL, 0.0);
 
     if (firn_file.empty()) {
-      m_firn_depth.regrid(input.filename, OPTIONAL, 0.0);
+      m_firn_depth.regrid(input.filename, io::OPTIONAL, 0.0);
     } else {
-      m_firn_depth.regrid(firn_file, CRITICAL);
+      m_firn_depth.regrid(firn_file, io::CRITICAL);
     }
   } else {
 
@@ -193,7 +193,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
     if (firn_file.empty()) {
       m_firn_depth.set(0.0);
     } else {
-      m_firn_depth.regrid(firn_file, CRITICAL);
+      m_firn_depth.regrid(firn_file, io::CRITICAL);
     }
   }
 
@@ -486,8 +486,8 @@ const array::Scalar& TemperatureIndex::air_temp_sd() const {
 
 void TemperatureIndex::define_model_state_impl(const File &output) const {
   SurfaceModel::define_model_state_impl(output);
-  m_firn_depth.define(output, PISM_DOUBLE);
-  m_snow_depth.define(output, PISM_DOUBLE);
+  m_firn_depth.define(output, io::PISM_DOUBLE);
+  m_snow_depth.define(output, io::PISM_DOUBLE);
 }
 
 void TemperatureIndex::write_model_state_impl(const File &output) const {

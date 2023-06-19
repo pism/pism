@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -43,7 +43,7 @@ void ConstantYieldStress::bootstrap_impl(const File &input_file,
   (void) inputs;
 
   double tauc = m_config->get_number("basal_yield_stress.constant.value");
-  m_basal_yield_stress.regrid(input_file, OPTIONAL, tauc);
+  m_basal_yield_stress.regrid(input_file, io::OPTIONAL, tauc);
 
   regrid(name(), m_basal_yield_stress);
 }

@@ -209,7 +209,7 @@ protected:
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              IO_Type default_diagnostics_type = PISM_FLOAT);
+                              io::Type default_diagnostics_type = io::PISM_FLOAT);
 
   virtual void define_model_state(const File &file);
   virtual void write_model_state(const File &file);
@@ -225,7 +225,7 @@ protected:
 
   virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables,
-                                  IO_Type default_type);
+                                  io::Type default_type);
   virtual void write_diagnostics(const File &file,
                                  const std::set<std::string> &variables);
 

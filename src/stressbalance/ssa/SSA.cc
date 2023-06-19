@@ -137,7 +137,7 @@ void SSA::init_impl() {
   // and read the initial guess (unless asked not to).
   if (opts.type == INIT_RESTART) {
     if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
-      File input_file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+      File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
       bool u_ssa_found = input_file.find_variable("u_ssa");
       bool v_ssa_found = input_file.find_variable("v_ssa");
       unsigned int start = input_file.nrecords() - 1;
@@ -397,7 +397,7 @@ const array::Vector& SSA::driving_stress() const {
 
 
 void SSA::define_model_state_impl(const File &output) const {
-  m_velocity.define(output);
+  m_velocity.define(output, io::PISM_DOUBLE);
 }
 
 void SSA::write_model_state_impl(const File &output) const {

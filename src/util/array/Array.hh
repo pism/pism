@@ -24,12 +24,17 @@
 #include <cstdint>              // uint64_t
 #include <array>
 
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh" // RuntimeError
 
 namespace pism {
 
 enum InterpolationType : int;
+
+namespace io {
+enum Type : int;
+enum RegriddingFlag : int;
+}
+
 class Grid;
 class File;
 class SpatialVariableMetadata;
@@ -247,7 +252,7 @@ public:
                  const std::string &standard_name,
                  unsigned int component);
 
-  void define(const File &file, IO_Type default_type = PISM_DOUBLE) const;
+  void define(const File &file, io::Type default_type) const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
@@ -255,9 +260,9 @@ public:
   void write(const std::string &filename) const;
   void write(const File &file) const;
 
-  void regrid(const std::string &filename, RegriddingFlag flag,
+  void regrid(const std::string &filename, io::RegriddingFlag flag,
               double default_value = 0.0);
-  void regrid(const File &file, RegriddingFlag flag,
+  void regrid(const File &file, io::RegriddingFlag flag,
               double default_value = 0.0);
 
   virtual void begin_access() const;
@@ -298,7 +303,7 @@ protected:
   void set_begin_access_use_dof(bool flag);
 
   void read_impl(const File &file, unsigned int time);
-  void regrid_impl(const File &file, RegriddingFlag flag,
+  void regrid_impl(const File &file, io::RegriddingFlag flag,
                    double default_value = 0.0);
   void write_impl(const File &file) const;
 

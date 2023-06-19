@@ -32,7 +32,7 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_shelf_base_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
                                                                   file,

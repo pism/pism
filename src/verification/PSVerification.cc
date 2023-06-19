@@ -62,8 +62,8 @@ void Verification::init_impl(const Geometry &geometry) {
 }
 
 void Verification::define_model_state_impl(const File &output) const {
-  m_mass_flux->define(output);
-  m_temperature->define(output);
+  m_mass_flux->define(output, io::PISM_DOUBLE);
+  m_temperature->define(output, io::PISM_DOUBLE);
 }
 
 void Verification::write_model_state_impl(const File &output) const {

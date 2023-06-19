@@ -35,7 +35,7 @@ class Grid;
 /*!
  * Convert a string to PISM's backend type.
  */
-IO_Backend string_to_backend(const std::string &backend);
+io::Backend string_to_backend(const std::string &backend);
 
 struct VariableLookupData {
   bool exists;
@@ -50,11 +50,11 @@ struct VariableLookupData {
 class File
 {
 public:
-  File(MPI_Comm com, const std::string &filename, IO_Backend backend, IO_Mode mode,
+  File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode,
        int iosysid = -1);
   ~File();
 
-  IO_Backend backend() const;
+  io::Backend backend() const;
 
   MPI_Comm com() const;
 
@@ -96,7 +96,7 @@ public:
 
   std::string variable_name(unsigned int id) const;
 
-  void define_variable(const std::string &name, IO_Type nctype,
+  void define_variable(const std::string &name, io::Type nctype,
                        const std::vector<std::string> &dims) const;
 
   VariableLookupData find_variable(const std::string &short_name, const std::string &std_name) const;
@@ -132,10 +132,10 @@ public:
 
   std::string attribute_name(const std::string &var_name, unsigned int n) const;
 
-  IO_Type attribute_type(const std::string &var_name, const std::string &att_name) const;
+  io::Type attribute_type(const std::string &var_name, const std::string &att_name) const;
 
   void write_attribute(const std::string &var_name, const std::string &att_name,
-                      IO_Type nctype, const std::vector<double> &values) const;
+                      io::Type nctype, const std::vector<double> &values) const;
 
   void write_attribute(const std::string &var_name, const std::string &att_name,
                        const std::string &value) const;
@@ -150,7 +150,7 @@ private:
   struct Impl;
   Impl *m_impl;
 
-  void open(const std::string &filename, IO_Mode mode);
+  void open(const std::string &filename, io::Mode mode);
 
   // disable copying and assignments
   File(const File &other);

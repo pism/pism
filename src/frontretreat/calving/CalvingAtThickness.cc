@@ -39,7 +39,7 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_calving_threshold = std::make_shared<array::Forcing>(m_grid,
                                                       file,
@@ -63,7 +63,7 @@ void CalvingAtThickness::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
 
-  File file(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
   auto variable_exists = file.find_variable(m_calving_threshold->get_name());
   if (variable_exists) {
     m_log->message(2,

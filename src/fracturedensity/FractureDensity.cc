@@ -101,8 +101,8 @@ void FractureDensity::bootstrap(const File &input_file) {
   m_log->message(2, "* Bootstrapping the fracture density model from %s...\n",
                  input_file.filename().c_str());
 
-  m_density.regrid(input_file, OPTIONAL, 0.0);
-  m_age.regrid(input_file, OPTIONAL, 0.0);
+  m_density.regrid(input_file, io::OPTIONAL, 0.0);
+  m_age.regrid(input_file, io::OPTIONAL, 0.0);
 }
 
 void FractureDensity::initialize(const array::Scalar &density,
@@ -117,8 +117,8 @@ void FractureDensity::initialize() {
 }
 
 void FractureDensity::define_model_state_impl(const File &output) const {
-  m_density.define(output);
-  m_age.define(output);
+  m_density.define(output, io::PISM_DOUBLE);
+  m_age.define(output, io::PISM_DOUBLE);
 }
 
 void FractureDensity::write_model_state_impl(const File &output) const {

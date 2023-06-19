@@ -16,6 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <mpi.h>
+
 #include "NC_Serial.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
@@ -72,10 +74,10 @@ void NC_Serial::set_compression_level_impl(int level) const {
 }
 
 // open/create/close
-void NC_Serial::open_impl(const std::string &fname, IO_Mode mode) {
+void NC_Serial::open_impl(const std::string &fname, io::Mode mode) {
   int stat = NC_NOERR;
 
-  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+  int open_mode = mode == io::PISM_READONLY ? NC_NOWRITE : NC_WRITE;
 
   if (m_rank == 0) {
     stat = nc_open(fname.c_str(), open_mode, &m_file_id);
@@ -248,7 +250,7 @@ void NC_Serial::inq_unlimdim_impl(std::string &result) const {
 
 //! \brief Define a variable.
 void NC_Serial::def_var_impl(const std::string &name,
-                           IO_Type nctype,
+                           io::Type nctype,
                            const std::vector<std::string> &dims) const {
   int stat = NC_NOERR;
 
@@ -745,8 +747,8 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
   MPI_Bcast(&stat, 1, MPI_INT, 0, m_com);
   check(PISM_ERROR_LOCATION, stat);
 
-  int len = result.size();
-  MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
+  unsigned int len = result.size();
+  MPI_Bcast(&len, 1, MPI_UNSIGNED, 0, m_com);
 
   result.resize(len);
   MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
@@ -758,7 +760,7 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
 void NC_Serial::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
-                               IO_Type nctype, const std::vector<double> &data) const {
+                               io::Type nctype, const std::vector<double> &data) const {
   int stat = NC_NOERR;
 
   if (m_rank == 0) {
@@ -834,7 +836,7 @@ void NC_Serial::inq_attname_impl(const std::string &variable_name, unsigned int 
 /*!
  * Use "PISM_GLOBAL" as the "variable_name" to get the number of global attributes.
  */
-void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const {
+void NC_Serial::inq_atttype_impl(const std::string &variable_name, const std::string &att_name, io::Type &result) const {
   int stat, tmp;
 
   if (m_rank == 0) {

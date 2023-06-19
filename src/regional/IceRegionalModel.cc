@@ -60,7 +60,7 @@ void IceRegionalModel::allocate_storage() {
   m_no_model_mask.metadata()["flag_values"] = {0, 1};
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
   m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(PISM_INT);
+  m_no_model_mask.metadata().set_output_type(io::PISM_INT);
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
@@ -110,7 +110,7 @@ void IceRegionalModel::model_state_setup() {
     std::unique_ptr<File> input_file;
 
     if (use_input_file) {
-      input_file.reset(new File(m_grid->com, input.filename, PISM_GUESS, PISM_READONLY));
+      input_file.reset(new File(m_grid->com, input.filename, io::PISM_GUESS, io::PISM_READONLY));
     }
 
     switch (input.type) {
@@ -234,7 +234,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   // no_model_mask
   {
     if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
-      m_no_model_mask.regrid(input_file, CRITICAL);
+      m_no_model_mask.regrid(input_file, io::CRITICAL);
     } else {
       // set using the no_model_strip parameter
       double strip_width = m_config->get_number("regional.no_model_strip", "meters");

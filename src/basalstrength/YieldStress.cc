@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -94,7 +94,7 @@ const array::Scalar& YieldStress::basal_material_yield_stress() {
  * step basal_material_yield_stress() gets called before update().
  */
 void YieldStress::define_model_state_impl(const File &output) const {
-  m_basal_yield_stress.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
 }
 
 void YieldStress::write_model_state_impl(const File &output) const {

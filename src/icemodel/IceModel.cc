@@ -127,7 +127,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
     ForcingOptions surface_input(*m_ctx, "hydrology.surface_input");
     int buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, surface_input.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, surface_input.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_surface_input_for_hydrology = std::make_shared<array::Forcing>(m_grid,
                                                                 file,
@@ -235,7 +235,7 @@ void IceModel::allocate_storage() {
                                  "", "", "", 0);
     m_velocity_bc_mask.metadata()["flag_values"] = {0, 1};
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
-    m_velocity_bc_mask.metadata().set_output_type(PISM_INT);
+    m_velocity_bc_mask.metadata().set_output_type(io::PISM_INT);
     m_velocity_bc_mask.set_time_independent(true);
 
     m_velocity_bc_mask.set(0.0);
@@ -264,7 +264,7 @@ void IceModel::allocate_storage() {
                                       "", "", "", 0);
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
-    m_ice_thickness_bc_mask.metadata().set_output_type(PISM_INT);
+    m_ice_thickness_bc_mask.metadata().set_output_type(io::PISM_INT);
     m_ice_thickness_bc_mask.set_time_independent(true);
 
     m_ice_thickness_bc_mask.set(0.0);
@@ -404,7 +404,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
   File file(m_grid->com,
             output_file,
             string_to_backend(m_config->get_string("output.format")),
-            PISM_READWRITE_MOVE,
+            io::PISM_READWRITE_MOVE,
             m_ctx->pio_iosys_id());
 
   update_run_stats();

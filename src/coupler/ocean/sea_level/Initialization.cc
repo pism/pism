@@ -49,7 +49,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
     m_log->message(2, "* Reading effective sea level forcing from '%s' for re-starting...\n",
                    opts.filename.c_str());
 
-    File file(m_grid->com, opts.filename, PISM_GUESS, PISM_READONLY);
+    File file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     const unsigned int time_length = file.nrecords();
     const unsigned int last_record = time_length > 0 ? time_length - 1 : 0;
 
@@ -71,7 +71,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
 }
 
 void InitializationHelper::define_model_state_impl(const File &output) const {
-  m_sea_level.define(output);
+  m_sea_level.define(output, io::PISM_DOUBLE);
 
   m_input_model->define_model_state(output);
 }

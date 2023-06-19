@@ -112,7 +112,7 @@ std::shared_ptr<Grid> regional_grid_from_options(std::shared_ptr<Context> ctx) {
                                       "bedrock_altitude", "thk", "topg"};
     bool grid_info_found = false;
 
-    File file(ctx->com(), options.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(ctx->com(), options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
     for (const auto& name : names) {
 
       grid_info_found = file.find_variable(name);

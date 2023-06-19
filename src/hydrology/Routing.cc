@@ -354,7 +354,7 @@ void Routing::bootstrap_impl(const File &input_file,
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
   double bwat_default = m_config->get_number("bootstrapping.defaults.bwat");
-  m_W.regrid(input_file, OPTIONAL, bwat_default);
+  m_W.regrid(input_file, io::OPTIONAL, bwat_default);
 
   regrid("Hydrology", m_W);
 }
@@ -369,7 +369,7 @@ void Routing::init_impl(const array::Scalar &W_till,
 
 void Routing::define_model_state_impl(const File &output) const {
   Hydrology::define_model_state_impl(output);
-  m_W.define(output);
+  m_W.define(output, io::PISM_DOUBLE);
 }
 
 void Routing::write_model_state_impl(const File &output) const {

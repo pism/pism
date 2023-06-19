@@ -26,7 +26,7 @@ void VecBundleWriter::init() {
   pism::File file(m_grid->com,
                   fname,
                   string_to_backend(config->get_string("output.format")),
-                  PISM_READWRITE_MOVE,
+                  io::PISM_READWRITE_MOVE,
                   m_grid->ctx()->pio_iosys_id());
 
   io::define_time(file,
@@ -36,7 +36,7 @@ void VecBundleWriter::init() {
                   m_grid->ctx()->unit_system());
 
   for (pism::array::Array const *vec : vecs) {
-    vec->define(file, PISM_DOUBLE);
+    vec->define(file, io::PISM_DOUBLE);
   }
 }
 
@@ -47,7 +47,7 @@ void VecBundleWriter::write(double time_s) {
   pism::File file(m_grid->com,
                   fname,
                   string_to_backend(config->get_string("output.format")),
-                  PISM_READWRITE, // append to file
+                  io::PISM_READWRITE, // append to file
                   m_grid->ctx()->pio_iosys_id());
 
   io::append_time(file, config->get_string("time.dimension_name"), time_s);

@@ -38,7 +38,7 @@ Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
   // will be closed at the end of scope
-  File input(m_grid->com, opt.filename, PISM_GUESS, PISM_READONLY);
+  File input(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
   // Assume that we are expected to use 1D scaling if the input file contains a scalar
   // time-series.

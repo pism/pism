@@ -47,7 +47,7 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
                        "mask specifying where to apply the force-to-thickness mechanism",
                        "", "", "", 0); // no units and no standard name
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.metadata().set_output_type(PISM_INT);
+  m_ftt_mask.metadata().set_output_type(io::PISM_INT);
   m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
@@ -78,7 +78,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                  m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
-  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
 
   m_log->message(2,
                  "    reading target thickness 'thk' from %s ...\n"
@@ -92,7 +92,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
                                  "m", "m",
                                  "land_ice_thickness", 0); // standard_name *to read by*
 
-    m_target_thickness.regrid(input_file, CRITICAL);
+    m_target_thickness.regrid(input_file, io::CRITICAL);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
@@ -106,7 +106,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     m_log->message(2,
                    "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                    input_file.c_str());
-    m_ftt_mask.regrid(input_file, CRITICAL);
+    m_ftt_mask.regrid(input_file, io::CRITICAL);
   }
 }
 
@@ -299,8 +299,8 @@ MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
 }
 
 void ForceThickness::define_model_state_impl(const File &output) const {
-  m_ftt_mask.define(output);
-  m_target_thickness.define(output);
+  m_ftt_mask.define(output, io::PISM_DOUBLE);
+  m_target_thickness.define(output, io::PISM_DOUBLE);
 
   if (m_input_model != NULL) {
     m_input_model->define_model_state(output);

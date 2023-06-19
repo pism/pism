@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2019, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,7 @@ protected:
                                     std::vector<size_t> &dimensions) const;
 
   virtual void def_var_impl(const std::string &name,
-                           IO_Type nctype, const std::vector<std::string> &dims) const;
+                           io::Type nctype, const std::vector<std::string> &dims) const;
 
   virtual void get_vara_double_impl(const std::string &variable_name,
                                    const std::vector<unsigned int> &start,
@@ -89,13 +89,13 @@ protected:
 
   virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
 
-  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, io::Type xtype, const std::vector<double> &data) const;
 
   virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
 
   virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const;
 
-  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, io::Type &result) const;
 
   // misc
   virtual void set_fill_impl(int fillmode, int &old_modep) const;

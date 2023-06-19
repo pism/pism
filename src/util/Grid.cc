@@ -256,7 +256,7 @@ std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
                                      const std::vector<std::string> &var_names,
                                      grid::Registration r) {
 
-  File file(ctx->com(), filename, PISM_NETCDF3, PISM_READONLY);
+  File file(ctx->com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
   for (const auto &name : var_names) {
     if (file.find_variable(name)) {
@@ -1166,7 +1166,7 @@ Parameters::Parameters(const Context &ctx, const File &file, const std::string &
 
 Parameters::Parameters(const Context &ctx, const std::string &filename,
                        const std::string &variable_name, Registration r) {
-  File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
+  File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
   init_from_file(ctx, file, variable_name, r);
 }
 
@@ -1280,7 +1280,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
     bool grid_info_found = false;
 
-    File file(ctx->com(), input_file, PISM_NETCDF3, PISM_READONLY);
+    File file(ctx->com(), input_file, io::PISM_NETCDF3, io::PISM_READONLY);
 
     for (const auto *name : { "land_ice_thickness", "bedrock_altitude", "thk", "topg" }) {
 

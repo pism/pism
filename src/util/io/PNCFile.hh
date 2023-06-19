@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -36,7 +36,7 @@ public:
 protected:
   // implementations:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode);
+  void open_impl(const std::string &filename, io::Mode mode);
 
   void create_impl(const std::string &filename);
 
@@ -59,7 +59,7 @@ protected:
   void inq_unlimdim_impl(std::string &result) const;
 
   // var
-  void def_var_impl(const std::string &name, IO_Type nctype,
+  void def_var_impl(const std::string &name, io::Type nctype,
               const std::vector<std::string> &dims) const;
 
   void get_vara_double_impl(const std::string &variable_name,
@@ -98,7 +98,7 @@ protected:
                    std::string &result) const;
 
   void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
-                     IO_Type xtype, const std::vector<double> &data) const;
+                     io::Type xtype, const std::vector<double> &data) const;
 
   void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                    const std::string &value) const;
@@ -107,7 +107,7 @@ protected:
                   std::string &result) const;
 
   void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
-                  IO_Type &result) const;
+                  io::Type &result) const;
 
   // misc
   void set_fill_impl(int fillmode, int &old_modep) const;

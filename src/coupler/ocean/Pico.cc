@@ -65,7 +65,7 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
   {
     auto buffer_size = static_cast<int>(m_config->get_number("input.forcing.buffer_size"));
 
-    File file(m_grid->com, opt.filename, PISM_NETCDF3, PISM_READONLY);
+    File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
@@ -176,10 +176,10 @@ void Pico::init_impl(const Geometry &geometry) {
 
 void Pico::define_model_state_impl(const File &output) const {
 
-  m_geometry.basin_mask().define(output);
-  m_Soc_box0.define(output);
-  m_Toc_box0.define(output);
-  m_overturning.define(output);
+  m_geometry.basin_mask().define(output, io::PISM_DOUBLE);
+  m_Soc_box0.define(output, io::PISM_DOUBLE);
+  m_Toc_box0.define(output, io::PISM_DOUBLE);
+  m_overturning.define(output, io::PISM_DOUBLE);
 
   OceanModel::define_model_state_impl(output);
 }

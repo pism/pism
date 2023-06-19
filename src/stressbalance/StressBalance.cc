@@ -19,13 +19,11 @@
 #include "StressBalance.hh"
 #include "ShallowStressBalance.hh"
 #include "SSB_Modifier.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/array/CellType.hh"
@@ -69,7 +67,7 @@ void Inputs::dump(const char *filename) const {
 
   File output(ctx->com(), filename,
               string_to_backend(config->get_string("output.format")),
-              PISM_READWRITE_MOVE);
+              io::PISM_READWRITE_MOVE);
 
   config->write(output);
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -189,7 +189,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
   NullTransport::define_model_state_impl(output);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                         "time of the last update of the steady state subglacial water flux");
@@ -197,7 +197,7 @@ void SteadyState::define_model_state_impl(const File& output) const {
     output.write_attribute(m_time_name, "units", time().units_string());
   }
 
-  m_Q.define(output);
+  m_Q.define(output, io::PISM_DOUBLE);
 }
 
 void SteadyState::write_model_state_impl(const File& output) const {
@@ -244,7 +244,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
   // Read water flux
   if (input_file.find_variable(m_Q.metadata().get_name())) {
     // Regrid from the input file.
-    m_Q.regrid(input_file, CRITICAL);
+    m_Q.regrid(input_file, io::CRITICAL);
 
     // Allow regridding from a different file.
     regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);
@@ -283,7 +283,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   std::string variable_name = "water_input_rate";
 
-  File file(m_grid->com, input_file, PISM_GUESS, PISM_READONLY);
+  File file(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
 
   auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
                                       file, variable_name);

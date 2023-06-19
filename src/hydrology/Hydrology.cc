@@ -381,7 +381,7 @@ void Hydrology::bootstrap_impl(const File &input_file,
   (void) ice_thickness;
 
   double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
-  m_Wtill.regrid(input_file, OPTIONAL, tillwat_default);
+  m_Wtill.regrid(input_file, io::OPTIONAL, tillwat_default);
 
   // whether or not we could initialize from file, we could be asked to regrid from file
   regrid("Hydrology", m_Wtill);
@@ -468,7 +468,7 @@ DiagnosticList Hydrology::diagnostics_impl() const {
 }
 
 void Hydrology::define_model_state_impl(const File &output) const {
-  m_Wtill.define(output);
+  m_Wtill.define(output, io::PISM_DOUBLE);
 }
 
 void Hydrology::write_model_state_impl(const File &output) const {

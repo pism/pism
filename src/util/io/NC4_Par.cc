@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -38,11 +38,11 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-void NC4_Par::open_impl(const std::string &fname, IO_Mode mode) {
+void NC4_Par::open_impl(const std::string &fname, io::Mode mode) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  int open_mode = mode == PISM_READONLY ? NC_NOWRITE : NC_WRITE;
+  int open_mode = mode == io::PISM_READONLY ? NC_NOWRITE : NC_WRITE;
   open_mode = open_mode | NC_MPIIO;
 
   stat = nc_open_par(fname.c_str(), open_mode, m_com, info, &m_file_id);

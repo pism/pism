@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -79,8 +79,8 @@ void IceModel::init_timeseries() {
   {
     // default behavior is to move the file aside if it exists already; option allows appending
     bool append = m_config->get_flag("output.timeseries.append");
-    IO_Mode mode = append ? PISM_READWRITE : PISM_READWRITE_MOVE;
-    File file(m_grid->com, m_ts_filename, PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
+    auto mode = append ? io::PISM_READWRITE : io::PISM_READWRITE_MOVE;
+    File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, mode);      // Use NetCDF-3 to write time-series.
     // add the last saved time to the list of requested times so that the first time is interpreted
     // as the end of a reporting time step
     if (append and file.dimension_length("time") > 0) {
@@ -127,7 +127,7 @@ void IceModel::flush_timeseries() {
 
   // update run_stats in the time series output file
   if (not m_ts_diagnostics.empty()) {
-    File file(m_grid->com, m_ts_filename, PISM_NETCDF3, PISM_READWRITE);
+    File file(m_grid->com, m_ts_filename, io::PISM_NETCDF3, io::PISM_READWRITE);
     write_run_stats(file);
   }
 }

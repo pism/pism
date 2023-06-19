@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 PISM Authors
+// Copyright (C) 2004--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -128,12 +128,12 @@ void OptTillphiYieldStress::init_usurf_target(const File &input_file) {
   auto filename = m_config->get_string("basal_yield_stress.mohr_coulomb.tillphi_opt.file");
 
   if (not filename.empty()) {
-    m_usurf_target.regrid(filename, CRITICAL);
+    m_usurf_target.regrid(filename, io::CRITICAL);
   } else {
     m_log->message(2, "* No file set to read target surface elevation from... using '%s'\n",
                    input_file.filename().c_str());
 
-    m_usurf_target.regrid(input_file, CRITICAL);
+    m_usurf_target.regrid(input_file, io::CRITICAL);
   }
 
   m_usurf_target.metadata().set_name("usurf_target");
@@ -276,7 +276,7 @@ void OptTillphiYieldStress::define_model_state_impl(const File &output) const {
   MohrCoulombYieldStress::define_model_state_impl(output);
 
   if (not output.find_variable(m_time_name)) {
-    output.define_variable(m_time_name, PISM_DOUBLE, {});
+    output.define_variable(m_time_name, io::PISM_DOUBLE, {});
 
     output.write_attribute(m_time_name, "long_name",
                            "time of the last update of the till friction angle");

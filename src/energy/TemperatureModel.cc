@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -74,7 +74,7 @@ void TemperatureModel::bootstrap_impl(const File &input_file,
   m_log->message(2, "* Bootstrapping the temperature-based energy balance model from %s...\n",
                  input_file.filename().c_str());
 
-  m_basal_melt_rate.regrid(input_file, OPTIONAL,
+  m_basal_melt_rate.regrid(input_file, io::OPTIONAL,
                            m_config->get_number("bootstrapping.defaults.bmelt"));
   regrid("Temperature-based energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
@@ -360,8 +360,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void TemperatureModel::define_model_state_impl(const File &output) const {
-  m_ice_temperature.define(output);
-  m_basal_melt_rate.define(output);
+  m_ice_temperature.define(output, io::PISM_DOUBLE);
+  m_basal_melt_rate.define(output, io::PISM_DOUBLE);
   // ice enthalpy is not a part of the model state
 }
 

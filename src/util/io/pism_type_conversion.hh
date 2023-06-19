@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2012, 2014, 2015, 2016, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,42 +21,42 @@
 //! macros, so you need to include the appropriate NetCDF header first.
 namespace pism {
 
-static nc_type pism_type_to_nc_type(pism::IO_Type input) {
+static nc_type pism_type_to_nc_type(pism::io::Type input) {
   switch (input) {
-  case PISM_BYTE:
+  case io::PISM_BYTE:
     return NC_BYTE;
-  case PISM_CHAR:
+  case io::PISM_CHAR:
     return NC_CHAR;
-  case PISM_SHORT:
+  case io::PISM_SHORT:
     return NC_SHORT;
-  case PISM_INT:
+  case io::PISM_INT:
     return NC_INT;
-  case PISM_FLOAT:
+  case io::PISM_FLOAT:
     return NC_FLOAT;
-  case PISM_DOUBLE:
+  case io::PISM_DOUBLE:
     return NC_DOUBLE;
   default:
     return NC_NAT;
   }
 }
 
-static pism::IO_Type nc_type_to_pism_type(int input) {
+static pism::io::Type nc_type_to_pism_type(int input) {
   switch (input) {
   case NC_BYTE:
-    return PISM_BYTE;
+    return io::PISM_BYTE;
   case NC_CHAR:
   case NC_STRING:               // treat NC_CHAR and NC_STRING as equivalent
-    return PISM_CHAR;
+    return io::PISM_CHAR;
   case NC_SHORT:
-    return PISM_SHORT;
+    return io::PISM_SHORT;
   case NC_INT:
-    return PISM_INT;
+    return io::PISM_INT;
   case NC_FLOAT:
-    return PISM_FLOAT;
+    return io::PISM_FLOAT;
   case NC_DOUBLE:
-    return PISM_DOUBLE;
+    return io::PISM_DOUBLE;
   default:
-    return PISM_NAT;
+    return io::PISM_NAT;
   }
 }
 

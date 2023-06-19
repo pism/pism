@@ -103,7 +103,7 @@ void RegionalYieldStress::define_model_state_impl(const File &output) const {
 
   // define tauc (this is likely to be a no-op because m_input should have defined it by
   // now)
-  m_basal_yield_stress.define(output);
+  m_basal_yield_stress.define(output, io::PISM_DOUBLE);
 }
 
 void RegionalYieldStress::write_model_state_impl(const File &output) const {

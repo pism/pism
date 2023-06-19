@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -235,7 +235,7 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 }
 
 void CHSystem::define_model_state_impl(const File &output) const {
-  m_ice_enthalpy.define(output);
+  m_ice_enthalpy.define(output, io::PISM_DOUBLE);
 }
 
 void CHSystem::write_model_state_impl(const File &output) const {

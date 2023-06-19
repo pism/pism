@@ -72,7 +72,7 @@ bool IceModel::write_checkpoint() {
     File file(m_grid->com,
               m_checkpoint_filename,
               string_to_backend(m_config->get_string("output.format")),
-              PISM_READWRITE_MOVE,
+              io::PISM_READWRITE_MOVE,
               m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);

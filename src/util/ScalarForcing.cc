@@ -85,7 +85,7 @@ void ScalarForcing::initialize(const Context &ctx,
                          "  reading %s (%s) from file '%s'...\n",
                          long_name.c_str(), variable_name.c_str(), filename.c_str());
 
-      File file(ctx.com(), filename, PISM_NETCDF3, PISM_READONLY);
+      File file(ctx.com(), filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
       // Read forcing data. The read_timeseries() call will ensure that variable_name is a
       // scalar variable.
