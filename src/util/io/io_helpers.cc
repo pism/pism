@@ -21,21 +21,21 @@
 #include <cassert>
 #include <cmath>                // isfinite
 
-#include "io_helpers.hh"
 #include "File.hh"
+#include "io_helpers.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/io/LocalInterpCtx.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/projection.hh"
 
 namespace pism {
 namespace io {
@@ -56,20 +56,18 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid& grid, const std::vector<double> &zlevels_out,
-                   LocalInterpCtx *lic, double *output_array) {
+static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, LocalInterpCtx *lic,
+                   double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
   const int X = 1, Z = 3; // indices, just for clarity
 
   unsigned int nlevels = zlevels_out.size();
-  double *input_array = (lic->buffer).data();
+  double *input_array  = (lic->buffer).data();
 
   // array sizes for mapping from logical to "flat" indices
-  int
-    x_count = lic->count[X],
-    z_count = lic->count[Z];
+  int x_count = lic->count[X], z_count = lic->count[Z];
 
   for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
@@ -77,39 +75,29 @@ static void regrid(const Grid& grid, const std::vector<double> &zlevels_out,
     const int i = i_global - grid.xs(), j = j_global - grid.ys();
 
     // Indices of neighboring points.
-    const int
-      X_m = lic->x->left(i),
-      X_p = lic->x->right(i),
-      Y_m = lic->y->left(j),
-      Y_p = lic->y->right(j);
+    const int X_m = lic->x->left(i), X_p = lic->x->right(i), Y_m = lic->y->left(j),
+              Y_p = lic->y->right(j);
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
-      double
-        a_mm = 0.0,
-        a_mp = 0.0,
-        a_pm = 0.0,
-        a_pp = 0.0;
+      double a_mm = 0.0, a_mp = 0.0, a_pm = 0.0, a_pp = 0.0;
 
       if (nlevels > 1) {
-        const int
-          Z_m = lic->z->left(k),
-          Z_p = lic->z->right(k);
+        const int Z_m = lic->z->left(k), Z_p = lic->z->right(k);
 
         const double alpha_z = lic->z->alpha(k);
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
         // those neighbors.
-        const int
-          mmm = (Y_m * x_count + X_m) * z_count + Z_m,
-          mmp = (Y_m * x_count + X_m) * z_count + Z_p,
-          mpm = (Y_m * x_count + X_p) * z_count + Z_m,
-          mpp = (Y_m * x_count + X_p) * z_count + Z_p,
-          pmm = (Y_p * x_count + X_m) * z_count + Z_m,
-          pmp = (Y_p * x_count + X_m) * z_count + Z_p,
-          ppm = (Y_p * x_count + X_p) * z_count + Z_m,
-          ppp = (Y_p * x_count + X_p) * z_count + Z_p;
+        const int mmm = (Y_m * x_count + X_m) * z_count + Z_m,
+                  mmp = (Y_m * x_count + X_m) * z_count + Z_p,
+                  mpm = (Y_m * x_count + X_p) * z_count + Z_m,
+                  mpp = (Y_m * x_count + X_p) * z_count + Z_p,
+                  pmm = (Y_p * x_count + X_m) * z_count + Z_m,
+                  pmp = (Y_p * x_count + X_m) * z_count + Z_p,
+                  ppm = (Y_p * x_count + X_p) * z_count + Z_m,
+                  ppp = (Y_p * x_count + X_p) * z_count + Z_p;
 
         // linear interpolation in the z-direction
         a_mm = input_array[mmm] * (1.0 - alpha_z) + input_array[mmp] * alpha_z;
@@ -142,18 +130,16 @@ static void regrid(const Grid& grid, const std::vector<double> &zlevels_out,
   }
 }
 
-static void compute_start_and_count(const File& file,
-                                    units::System::Ptr unit_system,
-                                    const std::string &short_name,
-                                    unsigned int t_start, unsigned int t_count,
-                                    unsigned int x_start, unsigned int x_count,
-                                    unsigned int y_start, unsigned int y_count,
-                                    unsigned int z_start, unsigned int z_count,
-                                    std::vector<unsigned int> &start,
+static void compute_start_and_count(const File &file, units::System::Ptr unit_system,
+                                    const std::string &short_name, unsigned int t_start,
+                                    unsigned int t_count, unsigned int x_start,
+                                    unsigned int x_count, unsigned int y_start,
+                                    unsigned int y_count, unsigned int z_start,
+                                    unsigned int z_count, std::vector<unsigned int> &start,
                                     std::vector<unsigned int> &count,
                                     std::vector<unsigned int> &imap) {
   std::vector<std::string> dims = file.dimensions(short_name);
-  unsigned int ndims = dims.size();
+  unsigned int ndims            = dims.size();
 
   assert(ndims > 0);
   if (ndims == 0) {
@@ -206,7 +192,7 @@ void define_dimension(const File &file, unsigned long int length,
   try {
     file.define_dimension(name, length);
 
-    file.define_variable(name, PISM_DOUBLE, {name});
+    file.define_variable(name, PISM_DOUBLE, { name });
 
     write_attributes(file, metadata, PISM_DOUBLE);
 
@@ -219,13 +205,10 @@ void define_dimension(const File &file, unsigned long int length,
 
 //! Prepare a file for output.
 void define_time(const File &file, const Context &ctx) {
-  const Time &time = *ctx.time();
+  const Time &time     = *ctx.time();
   const Config &config = *ctx.config();
 
-  define_time(file,
-              config.get_string("time.dimension_name"),
-              time.calendar(),
-              time.units_string(),
+  define_time(file, config.get_string("time.dimension_name"), time.calendar(), time.units_string(),
               ctx.unit_system());
 }
 
@@ -243,9 +226,9 @@ void define_time(const File &file, const std::string &name, const std::string &c
     // time
     VariableMetadata time(name, unit_system);
     time["long_name"] = "time";
-    time["calendar"] = calendar;
-    time["units"] = units;
-    time["axis"] = "T";
+    time["calendar"]  = calendar;
+    time["units"]     = units;
+    time["axis"]      = "T";
 
     define_dimension(file, PISM_UNLIMITED, time);
   } catch (RuntimeError &e) {
@@ -256,8 +239,7 @@ void define_time(const File &file, const std::string &name, const std::string &c
 
 //! Prepare a file for output.
 void append_time(const File &file, const Config &config, double time_seconds) {
-  append_time(file, config.get_string("time.dimension_name"),
-              time_seconds);
+  append_time(file, config.get_string("time.dimension_name"), time_seconds);
 }
 
 //! \brief Append to the time dimension.
@@ -265,7 +247,7 @@ void append_time(const File &file, const std::string &name, double value) {
   try {
     unsigned int start = file.dimension_length(name);
 
-    file.write_variable(name, {start}, {1}, &value);
+    file.write_variable(name, { start }, { 1 }, &value);
 
     // PIO's I/O type PnetCDF requires this
     file.sync();
@@ -276,36 +258,34 @@ void append_time(const File &file, const std::string &name, double value) {
 }
 
 //! \brief Define dimensions a variable depends on.
-static void define_dimensions(const SpatialVariableMetadata& var,
-                              const Grid& grid, const File &file) {
+static void define_dimensions(const SpatialVariableMetadata &var, const Grid &grid,
+                              const File &file) {
 
   // x
   std::string x_name = var.x().get_name();
   if (not file.find_dimension(x_name)) {
     define_dimension(file, grid.Mx(), var.x());
-    file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE,
-                         {grid.x(1) - grid.x(0)});
-    file.write_attribute(x_name, "not_written", PISM_INT, {1.0});
+    file.write_attribute(x_name, "spacing_meters", PISM_DOUBLE, { grid.x(1) - grid.x(0) });
+    file.write_attribute(x_name, "not_written", PISM_INT, { 1.0 });
   }
 
   // y
   std::string y_name = var.y().get_name();
   if (not file.find_dimension(y_name)) {
     define_dimension(file, grid.My(), var.y());
-    file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE,
-                         {grid.y(1) - grid.y(0)});
-    file.write_attribute(y_name, "not_written", PISM_INT, {1.0});
+    file.write_attribute(y_name, "spacing_meters", PISM_DOUBLE, { grid.y(1) - grid.y(0) });
+    file.write_attribute(y_name, "not_written", PISM_INT, { 1.0 });
   }
 
   // z
   std::string z_name = var.z().get_name();
   if (not z_name.empty()) {
     if (not file.find_dimension(z_name)) {
-      const std::vector<double>& levels = var.levels();
+      const std::vector<double> &levels = var.levels();
       // make sure we have at least one level
       unsigned int nlevels = std::max(levels.size(), (size_t)1);
       define_dimension(file, nlevels, var.z());
-      file.write_attribute(z_name, "not_written", PISM_INT, {1.0});
+      file.write_attribute(z_name, "not_written", PISM_INT, { 1.0 });
 
       bool spatial_dim = not var.z().get_string("axis").empty();
 
@@ -314,15 +294,13 @@ static void define_dimensions(const SpatialVariableMetadata& var,
         double dz_min = levels.back() - levels.front();
 
         for (unsigned int k = 0; k < nlevels - 1; ++k) {
-          double dz = levels[k+1] - levels[k];
-          dz_max = std::max(dz_max, dz);
-          dz_min = std::min(dz_min, dz);
+          double dz = levels[k + 1] - levels[k];
+          dz_max    = std::max(dz_max, dz);
+          dz_min    = std::min(dz_min, dz);
         }
 
-        file.write_attribute(z_name, "spacing_min_meters", PISM_DOUBLE,
-                            {dz_min});
-        file.write_attribute(z_name, "spacing_max_meters", PISM_DOUBLE,
-                            {dz_max});
+        file.write_attribute(z_name, "spacing_min_meters", PISM_DOUBLE, { dz_min });
+        file.write_attribute(z_name, "spacing_max_meters", PISM_DOUBLE, { dz_max });
       }
     }
   }
@@ -332,14 +310,13 @@ static void write_dimension_data(const File &file, const std::string &name,
                                  const std::vector<double> &data) {
   bool written = file.attribute_type(name, "not_written") == PISM_NAT;
   if (not written) {
-    file.write_variable(name, {0}, {(unsigned int)data.size()}, data.data());
+    file.write_variable(name, { 0 }, { (unsigned int)data.size() }, data.data());
     file.redef();
     file.remove_attribute(name, "not_written");
   }
 }
 
-void write_dimensions(const SpatialVariableMetadata& var,
-                      const Grid& grid, const File &file) {
+void write_dimensions(const SpatialVariableMetadata &var, const Grid &grid, const File &file) {
   // x
   std::string x_name = var.x().get_name();
   if (file.find_dimension(x_name)) {
@@ -367,13 +344,12 @@ void write_dimensions(const SpatialVariableMetadata& var,
  * @param var_name name of the variable to check
  * @returns false if storage orders match, true otherwise
  */
-static bool use_transposed_io(const File &file,
-                              units::System::Ptr unit_system,
+static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
                               const std::string &var_name) {
 
   std::vector<std::string> dimnames = file.dimensions(var_name);
 
-  std::vector<AxisType> storage, memory = {Y_AXIS, X_AXIS};
+  std::vector<AxisType> storage, memory = { Y_AXIS, X_AXIS };
 
   for (unsigned int j = 0; j < dimnames.size(); ++j) {
     AxisType dimtype = file.dimension_type(dimnames[j], unit_system);
@@ -399,13 +375,7 @@ static bool use_transposed_io(const File &file,
   // we support 2D and 3D in-memory arrays, but not 4D
   assert(memory.size() <= 3);
 
-  if (storage == memory) {
-    // same storage order, do not use transposed I/O
-    return false;
-  } else {
-    // different storage orders, use transposed I/O
-    return true;
-  }
+  return storage != memory;
 }
 
 //! \brief Read an array distributed according to the grid.

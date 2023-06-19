@@ -51,17 +51,12 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                     file,
-                                                     "theta_ocean",
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid, file, "theta_ocean",
                                                      "", // no standard name
-                                                     buffer_size,
-                                                     opt.periodic,
-                                                     LINEAR);
+                                                     buffer_size, opt.periodic, LINEAR);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
+  m_theta_ocean->set_attrs("climate_forcing", "potential temperature of the adjacent ocean",
                            "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.periodic);
@@ -81,19 +76,17 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
 
   FrontalMeltPhysics physics(*m_config);
 
-  const auto          &cell_type           = inputs.geometry->cell_type;
+  const auto &cell_type                    = inputs.geometry->cell_type;
   const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
   const array::Scalar &ice_thickness       = inputs.geometry->ice_thickness;
   const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
   const array::Scalar &water_flux          = *inputs.subglacial_water_flux;
 
-  array::AccessScope list
-    {&ice_thickness, &bed_elevation, &cell_type, &sea_level_elevation,
-     &water_flux, m_theta_ocean.get(), &m_frontal_melt_rate};
+  array::AccessScope list{ &ice_thickness,       &bed_elevation, &cell_type,
+                           &sea_level_elevation, &water_flux,    m_theta_ocean.get(),
+                           &m_frontal_melt_rate };
 
-  double
-    seconds_per_day = 86400,
-    grid_spacing    = 0.5 * (m_grid->dx() + m_grid->dy());
+  double seconds_per_day = 86400, grid_spacing = 0.5 * (m_grid->dx() + m_grid->dy());
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -103,8 +96,8 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       // forcing is generally not available at the grounding line.
       double TF = (*m_theta_ocean)(i, j);
 
-      double water_depth = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
-        submerged_front_area = water_depth * grid_spacing;
+      double water_depth          = std::max(sea_level_elevation(i, j) - bed_elevation(i, j), 0.0),
+             submerged_front_area = water_depth * grid_spacing;
 
       // Convert subglacial water flux (m^2/s) to an "effective subglacial freshwater
       // velocity" or flux per unit area of ice front in m/day (see Xu et al 2013, section
@@ -139,11 +132,10 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
       auto R = m_frontal_melt_rate.star(i, j);
       auto M = cell_type.star(i, j);
 
-      int N = 0;
+      int N        = 0;
       double R_sum = 0.0;
-      for (auto d : {North, East, South, West}) {
-        if (mask::grounded_ice(M[d]) or
-            (m_include_floating_ice and mask::icy(M[d]))) {
+      for (auto d : { North, East, South, West }) {
+        if (mask::grounded_ice(M[d]) or (m_include_floating_ice and mask::icy(M[d]))) {
           R_sum += R[d];
           N++;
         }
@@ -156,7 +148,7 @@ void DischargeRouting::update_impl(const FrontalMeltInputs &inputs, double t, do
   }
 }
 
-const array::Scalar& DischargeRouting::frontal_melt_rate_impl() const {
+const array::Scalar &DischargeRouting::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 
@@ -166,9 +158,9 @@ MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "frontal_melt routing");
-  } else {
-    return MaxTimestep("frontal_melt routing");
   }
+
+  return MaxTimestep("frontal_melt routing");
 }
 
 } // end of namespace frontalmelt

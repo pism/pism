@@ -596,7 +596,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
       // current level and the top of the column)
       EC->pressure(depth, ks, pressure); // FIXME issue #15
 
-      flow_law.hardness_n(E_ij, &pressure[0], ks + 1, &hardness[0]);
+      flow_law.hardness_n(E_ij, pressure.data(), ks + 1, hardness.data());
 
       for (int k = 0; k <= ks; ++k) {
         double dz;

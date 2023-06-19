@@ -47,16 +47,13 @@ void Given::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_frontal_melt_rate = std::make_shared<array::Forcing>(m_grid,
-                                                      file,
-                                                      "frontal_melt_rate",
-                                                      "", // no standard name
-                                                      buffer_size,
-                                                      opt.periodic);
+    m_frontal_melt_rate = std::make_shared<array::Forcing>(m_grid, file, "frontal_melt_rate",
+                                                           "", // no standard name
+                                                           buffer_size, opt.periodic);
   }
 
-  m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate",
-                                 "m s-1", "m year-1", "", 0);
+  m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate", "m s-1", "m year-1", "",
+                                 0);
 
   m_frontal_melt_rate->init(opt.filename, opt.periodic);
 }
@@ -72,7 +69,7 @@ void Given::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
   // post-processing: keep values at grounded (or grounded and floating) margins and in
   // the interior, filling the rest with zeros
 
-  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{ &cell_type, m_frontal_melt_rate.get() };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -93,9 +90,8 @@ MaxTimestep Given::max_timestep_impl(double t) const {
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "frontal_melt given");
-  } else {
-    return MaxTimestep("frontal_melt given");
   }
+  return MaxTimestep("frontal_melt given");
 }
 
 

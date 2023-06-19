@@ -20,9 +20,8 @@
 #include "EmptyingProblem.hh"
 
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/geometry/Geometry.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace hydrology {
@@ -451,7 +450,7 @@ void EmptyingProblem::compute_mask(const array::CellType &cell_type,
 
   array::AccessScope list{&cell_type, &result};
 
-  if (no_model_mask) {
+  if (no_model_mask != nullptr) {
     list.add(*no_model_mask);
   }
 
@@ -464,7 +463,7 @@ void EmptyingProblem::compute_mask(const array::CellType &cell_type,
       result(i, j) = 0.0;
     }
 
-    if (no_model_mask and no_model_mask->as_int(i, j) == 1) {
+    if ((no_model_mask != nullptr) and no_model_mask->as_int(i, j) == 1) {
       result(i, j) = 0.0;
     }
   }

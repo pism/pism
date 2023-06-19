@@ -2048,9 +2048,9 @@ array::Array::Ptr IceAreaFractionGrounded::compute_impl() const {
     ice_density   = m_config->get_number("constants.ice.density"),
     ocean_density = m_config->get_number("constants.sea_water.density");
 
-  auto &ice_thickness  = model->geometry().ice_thickness;
-  auto &sea_level      = model->geometry().sea_level_elevation;
-  auto &bed_topography = model->geometry().bed_elevation;
+  const auto &ice_thickness  = model->geometry().ice_thickness;
+  const auto &sea_level      = model->geometry().sea_level_elevation;
+  const auto &bed_topography = model->geometry().bed_elevation;
 
   const auto &cell_type = model->geometry().cell_type;
 

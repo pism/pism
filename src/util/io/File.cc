@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+// Copyright (C) 2012--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,16 +19,12 @@
 #include <cassert>
 #include <cstdio>
 #include <memory>
-using std::shared_ptr;
+#include <map>
 
 #include <petscvec.h>
 
 #include "File.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/ConfigInterface.hh"
-#include "pism/util/Time.hh"
 #include "NC_Serial.hh"
 #include "NC4_Serial.hh"
 
@@ -48,6 +44,7 @@ using std::shared_ptr;
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

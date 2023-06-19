@@ -18,6 +18,7 @@
 
 #include "NC4_Par.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 // netcdf_par.h has to be included *after* mpi.h and after netcdf.h
 //

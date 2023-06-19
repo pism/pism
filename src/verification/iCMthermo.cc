@@ -174,7 +174,7 @@ void IceCompModel::getCompSourcesTestFG() {
     } else {
       TestFGParameters P = exactFG(time, r, m_grid->z(), A);
 
-      m_strain_heating3_comp.set_column(i, j, &P.Sigc[0]);
+      m_strain_heating3_comp.set_column(i, j, (P.Sigc).data());
     }
   }
 

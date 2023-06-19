@@ -19,7 +19,6 @@
 #include "NCFile.hh"
 
 #include <cstdio>               // fprintf, stderr, rename, remove
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
 

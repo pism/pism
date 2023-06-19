@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include "pism/util/io/IO_Flags.hh"
 
 //! Convert PISM's IO types into NetCDF types and back. Note that NC_* may be
 //! macros, so you need to include the appropriate NetCDF header first.

@@ -30,10 +30,10 @@
 
 #include "pism/util/node_types.hh"
 
+#include "pism/util/interpolation.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
-#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -44,46 +44,42 @@ namespace stressbalance {
  *
  */
 SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
-  : SSA(grid),
-    m_bc_mask(grid, "bc_mask"),
-    m_bc_values(grid, "_bc"),
-    m_gc(*m_config),
-    m_coefficients(grid, "ssa_coefficients", array::WITH_GHOSTS, 1),
-    m_node_type(m_grid, "node_type"),
-    m_boundary_integral(m_grid, "boundary_integral"),
-    m_element_index(*grid),
-    m_q1_element(*grid, fem::Q1Quadrature4())
-{
+    : SSA(grid),
+      m_bc_mask(grid, "bc_mask"),
+      m_bc_values(grid, "_bc"),
+      m_gc(*m_config),
+      m_coefficients(grid, "ssa_coefficients", array::WITH_GHOSTS, 1),
+      m_node_type(m_grid, "node_type"),
+      m_boundary_integral(m_grid, "boundary_integral"),
+      m_element_index(*grid),
+      m_q1_element(*grid, fem::Q1Quadrature4()) {
   m_bc_mask.set_interpolation_type(NEAREST);
   m_node_type.set_interpolation_type(NEAREST);
 
   const double ice_density = m_config->get_number("constants.ice.density");
-  m_alpha = 1 - ice_density / m_config->get_number("constants.sea_water.density");
-  m_rho_g = ice_density * m_config->get_number("constants.standard_gravity");
+  m_alpha                  = 1 - ice_density / m_config->get_number("constants.sea_water.density");
+  m_rho_g                  = ice_density * m_config->get_number("constants.standard_gravity");
 
   m_driving_stress_x = NULL;
   m_driving_stress_y = NULL;
 
   PetscErrorCode ierr;
 
-  m_dirichletScale = 1.0;
+  m_dirichletScale        = 1.0;
   m_beta_ice_free_bedrock = m_config->get_number("basal_resistance.beta_ice_free_bedrock");
 
   ierr = SNESCreate(m_grid->com, m_snes.rawptr());
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian.
-  m_callback_data.da = *m_da;
+  m_callback_data.da  = *m_da;
   m_callback_data.ssa = this;
 
-  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES,
-                                  (DMDASNESFunction)function_callback,
+  ierr = DMDASNESSetFunctionLocal(*m_da, INSERT_VALUES, (DMDASNESFunction)function_callback,
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
-  ierr = DMDASNESSetJacobianLocal(*m_da,
-                                  (DMDASNESJacobian)jacobian_callback,
-                                  &m_callback_data);
+  ierr = DMDASNESSetJacobianLocal(*m_da, (DMDASNESJacobian)jacobian_callback, &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
 
   ierr = DMSetMatType(*m_da, "baij");
@@ -97,25 +93,25 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
 
   // Default of maximum 200 iterations; possibly overridden by command line options
   int snes_max_it = 200;
-  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT,
-                           snes_max_it, PETSC_DEFAULT);
+  ierr = SNESSetTolerances(m_snes, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT, snes_max_it,
+                           PETSC_DEFAULT);
   PISM_CHK(ierr, "SNESSetTolerances");
 
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
-  m_node_type.set_attrs("internal", // intent
+  m_node_type.set_attrs("internal",                                 // intent
                         "node types: interior, boundary, exterior", // long name
-                        "", "", "", 0); // no units or standard name
+                        "", "", "", 0);                             // no units or standard name
 
   // Element::nodal_values() expects a ghosted array::Scalar. Ghosts if this field are
   // never assigned to and not communicated, though.
-  m_boundary_integral.set_attrs("internal", // intent
+  m_boundary_integral.set_attrs("internal",                                      // intent
                                 "residual contribution from lateral boundaries", // long name
                                 "", "", "", 0); // no units or standard name
 }
 
-SSA* SSAFEMFactory(std::shared_ptr<const Grid> g) {
+SSA *SSAFEMFactory(std::shared_ptr<const Grid> g) {
   return new SSAFEM(g);
 }
 
@@ -131,17 +127,14 @@ void SSAFEM::init_impl() {
     m_driving_stress_y = m_grid->variables().get_2d_scalar("ssa_driving_stress_y");
   }
 
-  m_log->message(2,
-                 "  [using the SNES-based finite element method implementation]\n");
+  m_log->message(2, "  [using the SNES-based finite element method implementation]\n");
 
   // process command-line options
   {
     m_dirichletScale = 1.0e9;
     m_dirichletScale = options::Real(m_sys, "-ssa_fe_dirichlet_scale",
                                      "Enforce Dirichlet conditions with this additional scaling",
-                                     "1",
-                                     m_dirichletScale);
-
+                                     "1", m_dirichletScale);
   }
 
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
@@ -170,9 +163,12 @@ void SSAFEM::solve(const Inputs &inputs) {
 
   TerminationReason::Ptr reason = solve_with_reason(inputs);
   if (reason->failed()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SSAFEM solve failed to converge (SNES reason %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "SSAFEM solve failed to converge (SNES reason %s)",
                                   reason->description().c_str());
-  } else if (m_log->get_threshold() > 2) {
+  }
+
+  if (m_log->get_threshold() > 2) {
     m_stdout_ssa += "SSAFEM converged (SNES reason " + reason->description() + ")";
   }
 }
@@ -305,7 +301,7 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
       const double *enthalpy = inputs.enthalpy->get_column(i, j);
       double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
                                                     m_grid->kBelowHeight(thickness),
-                                                    &z[0], enthalpy);
+                                                    z.data(), enthalpy);
 
       Coefficients c;
       c.thickness      = thickness;

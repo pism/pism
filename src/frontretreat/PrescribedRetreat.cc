@@ -30,14 +30,11 @@ PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_retreat_mask = std::make_shared<array::Forcing>(m_grid,
-                                                      file,
-                                                      "land_ice_area_fraction_retreat",
-                                                      "", // no standard name
-                                                      buffer_size,
-                                                      opt.periodic);
-    m_retreat_mask->set_attrs("forcing", "maximum ice extent mask",
-                              "1", "1", "", 0);
+    m_retreat_mask =
+        std::make_shared<array::Forcing>(m_grid, file, "land_ice_area_fraction_retreat",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic);
+    m_retreat_mask->set_attrs("forcing", "maximum ice extent mask", "1", "1", "", 0);
   }
 }
 
@@ -48,20 +45,17 @@ void PrescribedRetreat::init() {
   m_log->message(2,
                  "* Initializing the prescribed front retreat mechanism\n"
                  "  using a time-dependent ice extent mask '%s' in '%s'...\n",
-                 m_retreat_mask->get_name().c_str(),
-                 opt.filename.c_str());
+                 m_retreat_mask->get_name().c_str(), opt.filename.c_str());
 
   m_retreat_mask->init(opt.filename, opt.periodic);
 }
 
-void PrescribedRetreat::update(double t,
-                               double dt,
-                               array::Scalar& ice_thickness,
-                               array::Scalar& ice_area_specific_volume) {
+void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness,
+                               array::Scalar &ice_area_specific_volume) {
   m_retreat_mask->update(t, dt);
   m_retreat_mask->average(t, dt);
 
-  array::AccessScope list{m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume};
+  array::AccessScope list{ m_retreat_mask.get(), &ice_thickness, &ice_area_specific_volume };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -85,9 +79,8 @@ MaxTimestep PrescribedRetreat::max_timestep_impl(double t) const {
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "prescribed ice retreat");
-  } else {
-    return MaxTimestep("prescribed ice retreat");
   }
+  return MaxTimestep("prescribed ice retreat");
 }
 
 } // end of namespace pism

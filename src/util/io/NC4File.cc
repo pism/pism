@@ -403,7 +403,7 @@ void NC4File::set_fill_impl(int fillmode, int &old_modep) const {
   int stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::set_access_mode(int, bool) const {
+void NC4File::set_access_mode(int /*unused*/, bool /*unused*/) const {
   // empty
 }
 

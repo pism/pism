@@ -17,15 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "SSA.hh"
-#include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"

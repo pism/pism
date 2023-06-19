@@ -103,7 +103,7 @@ static std::set<std::string> process_extra_shortcuts(const Config &config,
     }
 
     result.erase("ismip6");
-    for (auto v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
+    for (const auto& v : set_split(config.get_string("output.ISMIP6_extra_variables"), ',')) {
       result.insert(v);
     }
   }

@@ -189,9 +189,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP6-Projections-Greenland:
   // SMB(x,y,t) = SMB_ref(x,y) + aSMB(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
 
-  array::AccessScope list{&h, &h_ref,
-                               &SMB, &SMB_ref, &aSMB, &dSMBdz,
-                               &T, &T_ref, &aT, &dTdz};
+  array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &aSMB, &dSMBdz, &T, &T_ref, &aT, &dTdz };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -209,15 +207,14 @@ MaxTimestep ISMIP6::max_timestep_impl(double t) const {
   using std::min;
 
   auto dt = m_temperature_anomaly->max_timestep(t);
-  dt = min(dt, m_temperature_gradient->max_timestep(t));
-  dt = min(dt, m_mass_flux_anomaly->max_timestep(t));
-  dt = min(dt, m_mass_flux_gradient->max_timestep(t));
+  dt      = min(dt, m_temperature_gradient->max_timestep(t));
+  dt      = min(dt, m_mass_flux_anomaly->max_timestep(t));
+  dt      = min(dt, m_mass_flux_gradient->max_timestep(t));
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "surface ISMIP6");
-  } else {
-    return MaxTimestep("surface ISMIP6");
   }
+  return MaxTimestep("surface ISMIP6");
 }
 
 const array::Scalar &ISMIP6::mass_flux_impl() const {

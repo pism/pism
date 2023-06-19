@@ -52,30 +52,22 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
-                                                     file,
-                                                     "theta_ocean",
+    m_theta_ocean = std::make_shared<array::Forcing>(m_grid, file, "theta_ocean",
                                                      "", // no standard name
-                                                     buffer_size,
-                                                     opt.periodic);
+                                                     buffer_size, opt.periodic);
 
-    m_subglacial_discharge = std::make_shared<array::Forcing>(m_grid,
-                                                              file,
-                                                              "subglacial_discharge",
+    m_subglacial_discharge = std::make_shared<array::Forcing>(m_grid, file, "subglacial_discharge",
                                                               "", // no standard name
-                                                              buffer_size,
-                                                              opt.periodic);
+                                                              buffer_size, opt.periodic);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
+  m_theta_ocean->set_attrs("climate_forcing", "potential temperature of the adjacent ocean",
                            "Celsius", "Celsius", "", 0);
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 
-  m_subglacial_discharge->set_attrs("climate_forcing",
-                                    "subglacial discharge",
-                                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
+  m_subglacial_discharge->set_attrs("climate_forcing", "subglacial discharge", "kg m-2 s-1",
+                                    "kg m-2 year-1", "", 0);
 
   m_subglacial_discharge->init(opt.filename, opt.periodic);
 }
@@ -99,17 +91,19 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
 
   FrontalMeltPhysics physics(*m_config);
 
-  const auto          &cell_type           = inputs.geometry->cell_type;
+  const auto &cell_type                    = inputs.geometry->cell_type;
   const array::Scalar &bed_elevation       = inputs.geometry->bed_elevation;
   const array::Scalar &sea_level_elevation = inputs.geometry->sea_level_elevation;
 
-  array::AccessScope list
-    {&bed_elevation, &cell_type, &sea_level_elevation,
-     m_theta_ocean.get(), m_subglacial_discharge.get(), &m_frontal_melt_rate};
+  array::AccessScope list{ &bed_elevation,
+                           &cell_type,
+                           &sea_level_elevation,
+                           m_theta_ocean.get(),
+                           m_subglacial_discharge.get(),
+                           &m_frontal_melt_rate };
 
-  double
-    water_density   = m_config->get_number("constants.fresh_water.density"),
-    seconds_per_day = 86400;
+  double water_density   = m_config->get_number("constants.fresh_water.density"),
+         seconds_per_day = 86400;
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -152,11 +146,10 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
       auto R = m_frontal_melt_rate.star(i, j);
       auto M = cell_type.star(i, j);
 
-      int N = 0;
+      int N        = 0;
       double R_sum = 0.0;
-      for (auto d : {North, East, South, West}) {
-        if (mask::grounded_ice(M[d]) or
-            (m_include_floating_ice and mask::icy(M[d]))) {
+      for (auto d : { North, East, South, West }) {
+        if (mask::grounded_ice(M[d]) or (m_include_floating_ice and mask::icy(M[d]))) {
           R_sum += R[d];
           N++;
         }
@@ -169,20 +162,19 @@ void DischargeGiven::update_impl(const FrontalMeltInputs &inputs, double t, doub
   }
 }
 
-const array::Scalar& DischargeGiven::frontal_melt_rate_impl() const {
+const array::Scalar &DischargeGiven::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 
 MaxTimestep DischargeGiven::max_timestep_impl(double t) const {
 
-  auto dt = std::min(m_theta_ocean->max_timestep(t),
-                     m_subglacial_discharge->max_timestep(t));
+  auto dt = std::min(m_theta_ocean->max_timestep(t), m_subglacial_discharge->max_timestep(t));
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), "frontal_melt discharge_given");
-  } else {
-    return MaxTimestep("frontal_melt discharge_given");
   }
+
+  return MaxTimestep("frontal_melt discharge_given");
 }
 
 } // end of namespace frontalmelt

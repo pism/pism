@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2017 Ed Bueler
+// Copyright (C) 2009--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define __tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Mask.hh"
 
 namespace pism {
@@ -67,7 +66,7 @@ public:
 
   void solveThisColumn(std::vector<double> &x);
 
-  double lambda() {
+  double lambda() const {
     return m_lambda;
   }
 

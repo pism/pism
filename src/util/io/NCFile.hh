@@ -19,7 +19,6 @@
 #ifndef PISM_NCFILE_H
 #define PISM_NCFILE_H
 
-#include "IO_Flags.hh"
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,7 +29,10 @@ namespace pism {
 
 class Grid;
 
-enum IO_Mode : int;
+namespace io {
+enum Mode : int;
+enum Type : int;
+}
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {

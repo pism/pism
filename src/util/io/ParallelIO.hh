@@ -18,20 +18,24 @@
  */
 
 #include "NCFile.hh"
-#include "IO_Flags.hh"
 
 namespace pism {
 namespace io {
 
+enum Backend : int;
+enum Type : int;
+enum Mode : int;
+
 class ParallelIO : public NCFile {
 public:
-  ParallelIO(MPI_Comm com, int iosysid, IO_Backend iotype);
+  ParallelIO(MPI_Comm com, int iosysid, io::Backend iotype);
   virtual ~ParallelIO() = default;
 
-  static IO_Backend best_iotype(bool netcdf3);
+  static io::Backend best_iotype(bool netcdf3);
+
 protected:
   // open/create/close
-  void open_impl(const std::string &filename, IO_Mode mode);
+  void open_impl(const std::string &filename, io::Mode mode);
   void create_impl(const std::string &filename);
   void sync_impl() const;
   void close_impl();
@@ -53,34 +57,26 @@ protected:
   void inq_unlimdim_impl(std::string &result) const;
 
   // var
-  void def_var_impl(const std::string &name, IO_Type nctype,
-                   const std::vector<std::string> &dims) const;
+  void def_var_impl(const std::string &name, io::Type nctype,
+                    const std::vector<std::string> &dims) const;
 
-  void def_var_chunking_impl(const std::string &name,
-                            std::vector<size_t> &dimensions) const;
+  void def_var_chunking_impl(const std::string &name, std::vector<size_t> &dimensions) const;
 
   void get_vara_double_impl(const std::string &variable_name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
-                           double *ip) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, double *ip) const;
 
   void put_vara_double_impl(const std::string &variable_name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
-                           const double *op) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const double *op) const;
 
-  void write_darray_impl(const std::string &variable_name,
-                         const Grid &grid,
-                         unsigned int z_count,
-                         bool time_dependent,
-                         unsigned int record,
-                         const double *input);
+  void write_darray_impl(const std::string &variable_name, const Grid &grid, unsigned int z_count,
+                         bool time_dependent, unsigned int record, const double *input);
 
   void get_varm_double_impl(const std::string &variable_name,
-                           const std::vector<unsigned int> &start,
-                           const std::vector<unsigned int> &count,
-                           const std::vector<unsigned int> &imap,
-                           double *ip) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count,
+                            const std::vector<unsigned int> &imap, double *ip) const;
 
   void inq_nvars_impl(int &result) const;
 
@@ -93,17 +89,23 @@ protected:
   void inq_varname_impl(unsigned int j, std::string &result) const;
 
   // att
-  void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
+  void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                           std::vector<double> &result) const;
 
-  void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
+  void get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                         std::string &result) const;
 
-  void put_att_double_impl(const std::string &variable_name, const std::string &att_name, IO_Type xtype, const std::vector<double> &data) const;
+  void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                           io::Type xtype, const std::vector<double> &data) const;
 
-  void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
+  void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                         const std::string &value) const;
 
-  void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const;
+  void inq_attname_impl(const std::string &variable_name, unsigned int n,
+                        std::string &result) const;
 
-  void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, IO_Type &result) const;
+  void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
+                        io::Type &result) const;
 
   // misc
   void set_fill_impl(int fillmode, int &old_modep) const;
