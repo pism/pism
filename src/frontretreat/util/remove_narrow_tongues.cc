@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "remove_narrow_tongues.hh"
+#include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"

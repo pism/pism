@@ -20,10 +20,10 @@
 #ifndef IP_SSATAUCTAOTIKHONOVPROBLEM_HH_HB8UWICX
 #define IP_SSATAUCTAOTIKHONOVPROBLEM_HH_HB8UWICX
 
-#include "IPTaoTikhonovProblem.hh"
-#include "IP_SSATaucForwardProblem.hh"
-#include "TaoUtil.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/IPTaoTikhonovProblem.hh"
+#include "pism/inverse/IP_SSATaucForwardProblem.hh"
+#include "pism/inverse/TaoUtil.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2014, 2016 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2014, 2016, 2023 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "exactTestH.h"
+#include "pism/verification/tests/exactTestH.h"
 
 static const double SperA = 31556926.0;  /* seconds per year; 365.2422 days */
 

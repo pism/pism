@@ -19,7 +19,7 @@
 #ifndef IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
 #define IPLOGRELATIVEFUNCTIONAL_HH_97I6BWHG
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

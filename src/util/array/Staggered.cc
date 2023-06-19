@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Staggered.hh"
+#include "pism/util/array/Staggered.hh"
 
 #include "pism/util/Mask.hh"
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019 PISM Authors
+/* Copyright (C) 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #include <cassert>              // assert
 #include <algorithm>            // std::min
 
-#include "PicoPhysics.hh"
+#include "pism/coupler/ocean/PicoPhysics.hh"
 
 #include "pism/util/ConfigInterface.hh"
 

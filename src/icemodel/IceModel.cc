@@ -23,7 +23,7 @@
 
 #include "pism/pism_config.hh"
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/frontretreat/util/IcebergRemover.hh"

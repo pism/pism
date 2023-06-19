@@ -20,17 +20,17 @@
 #include <algorithm>
 #include <vector>
 
-#include "PSVerification.hh"
+#include "pism/verification/PSVerification.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/ConfigInterface.hh"
 
-#include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.hh"
-#include "tests/exactTestH.h"
-#include "tests/exactTestL.hh"
+#include "pism/verification/tests/exactTestsABCD.h"
+#include "pism/verification/tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestH.h"
+#include "pism/verification/tests/exactTestL.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"

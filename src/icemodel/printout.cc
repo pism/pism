@@ -21,7 +21,7 @@
 
 #include <petscsys.h>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
 

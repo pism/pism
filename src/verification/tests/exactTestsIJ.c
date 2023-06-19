@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2008, 2011, 2014, 2015, 2016 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007-2008, 2011, 2014, 2015, 2016, 2023 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <gsl/gsl_math.h>       /* M_PI */
-#include "exactTestsIJ.h"
+#include "pism/verification/tests/exactTestsIJ.h"
 
 #define secpera 31556926.0        /* seconds per year; 365.2422 days */
 

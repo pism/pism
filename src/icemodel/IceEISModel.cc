@@ -18,7 +18,7 @@
 
 #include <gsl/gsl_math.h>       // M_PI
 
-#include "IceEISModel.hh"
+#include "pism/icemodel/IceEISModel.hh"
 
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "ScalarForcing.hh"
+#include "pism/util/ScalarForcing.hh"
 
 #include <algorithm>            // std::min_element(), std::max_element()
 #include <cassert>              // assert()

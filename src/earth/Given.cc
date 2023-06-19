@@ -17,7 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Given.hh"
+#include "pism/earth/Given.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace bed {

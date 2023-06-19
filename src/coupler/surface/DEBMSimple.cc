@@ -18,7 +18,7 @@
 
 #include <algorithm> // std::min
 
-#include "DEBMSimple.hh"
+#include "pism/coupler/surface/DEBMSimple.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Grid.hh"
@@ -32,6 +32,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {

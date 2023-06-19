@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "ColumnInterpolation.hh"
+#include "pism/util/ColumnInterpolation.hh"
 #include <algorithm>  // for max, min
 #include <cmath>      // for fabs
 

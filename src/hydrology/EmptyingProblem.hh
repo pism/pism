@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,7 +23,6 @@
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Staggered.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
 
 namespace pism {
@@ -37,20 +36,18 @@ public:
   EmptyingProblem(std::shared_ptr<const Grid> g);
   virtual ~EmptyingProblem() = default;
 
-  void update(const Geometry &geometry,
-              const array::Scalar *no_model_mask,
-              const array::Scalar &water_input_rate,
-              bool recompute_potential = true);
+  void update(const Geometry &geometry, const array::Scalar *no_model_mask,
+              const array::Scalar &water_input_rate, bool recompute_potential = true);
 
   // output
-  const array::Vector& flux() const;
+  const array::Vector &flux() const;
 
   // diagnostics
-  const array::Scalar& remaining_water_thickness() const;
-  const array::Vector& effective_water_velocity() const;
-  const array::Scalar& potential() const;
-  const array::Scalar& adjustment() const;
-  const array::Scalar& sinks() const;
+  const array::Scalar &remaining_water_thickness() const;
+  const array::Vector &effective_water_velocity() const;
+  const array::Scalar &potential() const;
+  const array::Scalar &adjustment() const;
+  const array::Scalar &sinks() const;
 
   DiagnosticList diagnostics() const;
 

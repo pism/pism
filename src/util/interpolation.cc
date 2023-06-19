@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,9 +20,8 @@
 #include <gsl/gsl_interp.h>
 #include <cassert>
 
-#include "interpolation.hh"
-#include "error_handling.hh"
-#include "pism_utilities.hh"
+#include "pism/util/interpolation.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

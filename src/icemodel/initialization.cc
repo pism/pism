@@ -19,7 +19,7 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/OptTillphiYieldStress.hh"
@@ -65,6 +65,7 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 

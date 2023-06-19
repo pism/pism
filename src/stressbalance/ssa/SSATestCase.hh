@@ -19,7 +19,7 @@
 #ifndef _SSATESTCASE_H_
 #define _SSATESTCASE_H_
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/array/Array3D.hh"

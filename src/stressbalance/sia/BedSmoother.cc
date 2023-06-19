@@ -18,16 +18,14 @@
 
 #include <cassert>
 
-#include "BedSmoother.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/array/CellType.hh"
-
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

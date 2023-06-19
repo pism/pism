@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2015, 2017, 2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2015, 2017, 2018, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,7 +23,7 @@
 #include <string>
 #include <memory>
 
-#include "FlowLaw.hh"
+#include "pism/rheology/FlowLaw.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {

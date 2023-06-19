@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,6 @@
 #define _PODIRECTFORCING_H_
 
 #include "pism/coupler/OceanModel.hh"
-
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {

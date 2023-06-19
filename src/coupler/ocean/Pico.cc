@@ -39,9 +39,10 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 
-#include "Pico.hh"
-#include "PicoGeometry.hh"
-#include "PicoPhysics.hh"
+#include "pism/coupler/ocean/Pico.hh"
+#include "pism/coupler/ocean/PicoGeometry.hh"
+#include "pism/coupler/ocean/PicoPhysics.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {

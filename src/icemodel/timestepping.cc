@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2019, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,13 +19,12 @@
 #include <algorithm>            // std::sort
 #include <cmath>                // std::floor
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
 
 #include "pism/frontretreat/calving/EigenCalving.hh"
@@ -33,8 +32,6 @@
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 
-#include "pism/energy/EnergyModel.hh"
-#include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/FrontalMelt.hh"
 
 namespace pism {

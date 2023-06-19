@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
+// Copyright (C) 2012-2016, 2018, 2020, 2021, 2022, 2023 Ricarda Winkelmann, Ronja Reese, Torsten Albrecht
 // and Matthias Mengel
 //
 // This file is part of PISM.
@@ -20,10 +20,9 @@
 #ifndef _POPICO_H_
 #define _POPICO_H_
 
-#include "CompleteOceanModel.hh"
+#include "pism/coupler/ocean/CompleteOceanModel.hh"
 
-#include "pism/util/array/Forcing.hh"
-#include "PicoGeometry.hh"
+#include "pism/coupler/ocean/PicoGeometry.hh"
 
 namespace pism {
 

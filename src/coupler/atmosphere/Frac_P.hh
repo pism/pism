@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define PISM_ATMOSPHERE_FRAC_P
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
@@ -47,7 +46,7 @@ private:
 
   mutable std::vector<double> m_scaling_values;
 
-  std::unique_ptr<ScalarForcing> m_1d_scaling;
+  std::shared_ptr<ScalarForcing> m_1d_scaling;
 
   std::shared_ptr<array::Forcing> m_2d_scaling;
 

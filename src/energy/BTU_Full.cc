@@ -16,15 +16,13 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#include "BTU_Full.hh"
+#include "pism/energy/BTU_Full.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Array3D.hh"
-#include "BedrockColumn.hh"
+#include "pism/energy/BedrockColumn.hh"
 
 namespace pism {
 namespace energy {

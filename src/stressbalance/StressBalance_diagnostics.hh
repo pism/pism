@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PISMSTRESSBALANCE_DIAGNOSTICS_H_
 #define _PISMSTRESSBALANCE_DIAGNOSTICS_H_
 
-#include "StressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {

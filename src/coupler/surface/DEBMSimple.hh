@@ -21,9 +21,8 @@
 
 #include <memory>
 
-#include "DEBMSimplePointwise.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {

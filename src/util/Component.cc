@@ -18,14 +18,14 @@
 
 #include <cassert>
 
-#include "Component.hh"
-#include "Profiling.hh"
+#include "pism/util/Component.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/io/File.hh"
-#include "Grid.hh"
-#include "pism_utilities.hh"
-#include "VariableMetadata.hh"
-#include "ConfigInterface.hh"
-#include "MaxTimestep.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
 

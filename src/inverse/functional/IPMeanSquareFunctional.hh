@@ -19,7 +19,7 @@
 #ifndef IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 #define IPMEANSQUAREFUNCTIONAL_HH_DZ18EO5C
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

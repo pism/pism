@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <set>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"

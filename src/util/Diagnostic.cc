@@ -18,10 +18,10 @@
  */
 #include <cmath>
 
-#include "Diagnostic.hh"
+#include "pism/util/Diagnostic.hh"
 #include "pism/util/Time.hh"
-#include "error_handling.hh"
-#include "io/io_helpers.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Context.hh"

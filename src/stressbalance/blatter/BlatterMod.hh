@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,7 +22,7 @@
 
 #include <memory>               // std::shared_ptr
 
-#include "Blatter.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
 
 namespace pism {

@@ -19,7 +19,7 @@
 #ifndef _PISMNC4_PAR_H_
 #define _PISMNC4_PAR_H_
 
-#include "NC4File.hh"
+#include "pism/util/io/NC4File.hh"
 
 namespace pism {
 namespace io {

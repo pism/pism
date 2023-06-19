@@ -19,7 +19,7 @@
 #ifndef PISM_NC_SERIAL_H
 #define PISM_NC_SERIAL_H
 
-#include "NCFile.hh"
+#include "pism/util/io/NCFile.hh"
 
 namespace pism {
 namespace io {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#include "pism/coupler/frontalmelt/Factory.hh"
 
 // frontal melt models:
-#include "Constant.hh"
-#include "DischargeGiven.hh"
-#include "DischargeRouting.hh"
-#include "Given.hh"
+#include "pism/coupler/frontalmelt/Constant.hh"
+#include "pism/coupler/frontalmelt/DischargeGiven.hh"
+#include "pism/coupler/frontalmelt/DischargeRouting.hh"
+#include "pism/coupler/frontalmelt/Given.hh"
 
 namespace pism {
 namespace frontalmelt {

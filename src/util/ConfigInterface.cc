@@ -24,16 +24,16 @@
 
 
 #include "pism/util/io/File.hh"
-#include "ConfigInterface.hh"
-#include "Units.hh"
-#include "pism_utilities.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 // include an implementation header so that we can allocate a DefaultConfig instance in
 // config_from_options()
-#include "Config.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {

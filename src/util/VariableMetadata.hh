@@ -24,7 +24,7 @@
 #include <vector>
 #include <string>
 
-#include "Units.hh"
+#include "pism/util/Units.hh"
 
 namespace pism {
 namespace io {

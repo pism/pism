@@ -18,10 +18,10 @@
 
 #include <cmath>
 
-#include "tests/exactTestsFG.hh"
-#include "tests/exactTestK.h"
-#include "tests/exactTestO.h"
-#include "iceCompModel.hh"
+#include "pism/verification/tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestK.h"
+#include "pism/verification/tests/exactTestO.h"
+#include "pism/verification/iceCompModel.hh"
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Time.hh"
@@ -30,7 +30,7 @@
 #include "pism/earth/BedDef.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/pism_utilities.hh"
-#include "BTU_Verification.hh"
+#include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/OceanModel.hh"

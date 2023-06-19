@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef VONMISESCALVING_H
 #define VONMISESCALVING_H
 
-#include "StressCalving.hh"
+#include "pism/frontretreat/calving/StressCalving.hh"
 
 namespace pism {
 

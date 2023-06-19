@@ -20,7 +20,7 @@
 #include <cmath>                // std::pow
 #include <algorithm>            // std::min, std::max
 
-#include "FractureDensity.hh"
+#include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/pism_options.hh"

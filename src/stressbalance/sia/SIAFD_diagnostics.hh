@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _SIAFD_DIAGNOSTICS_H_
 #define _SIAFD_DIAGNOSTICS_H_
 
-#include "SIAFD.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/util/Diagnostic.hh"
 
 namespace pism {

@@ -20,7 +20,7 @@
 #include <cmath>                // std::pow, std::sqrt
 #include <algorithm>            // std::max
 
-#include "vonMisesCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"

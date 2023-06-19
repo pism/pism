@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "GeometryEvolution.hh"
+#include "pism/geometry/GeometryEvolution.hh"
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Staggered.hh"
@@ -33,7 +33,7 @@
 #include "pism/util/interpolation.hh"
 #include "pism/util/pism_utilities.hh"
 
-#include "flux_limiter.hh"
+#include "pism/geometry/flux_limiter.hh"
 
 namespace pism {
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -241,12 +241,12 @@ enum ElementFace {FACE_LEFT   = 0,
 } // end of namespace fem
 } // end of namespace pism
 
-#include "DirichletData.hh"
+#include "pism/util/fem/DirichletData.hh"
 
-#include "Element.hh"
+#include "pism/util/fem/Element.hh"
 
-#include "ElementIterator.hh"
+#include "pism/util/fem/ElementIterator.hh"
 
-#include "Quadrature.hh"
+#include "pism/util/fem/Quadrature.hh"
 
 #endif /* PISM_FEM_H */

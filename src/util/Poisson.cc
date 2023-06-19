@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Poisson.hh"
+#include "pism/util/Poisson.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/petscwrappers/DM.hh"

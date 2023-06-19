@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,7 +18,7 @@
  */
 #include <cmath>                // pow, tan, atan
 
-#include "MohrCoulombPointwise.hh"
+#include "pism/basalstrength/MohrCoulombPointwise.hh"
 
 namespace pism {
 

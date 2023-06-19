@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -18,13 +18,11 @@
 
 #include <cstring>
 
-#include "pism_options.hh"
-#include "pism_utilities.hh"
-#include "VariableMetadata.hh"
-#include "ConfigInterface.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/pism_config.hh"
 
-#include "error_handling.hh"
-#include "Logger.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 

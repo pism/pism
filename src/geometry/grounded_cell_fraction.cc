@@ -20,7 +20,7 @@
 #include <cassert>
 #include <cmath>                // fabs, isnan
 
-#include "grounded_cell_fraction.hh"
+#include "pism/geometry/grounded_cell_fraction.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh" // clip

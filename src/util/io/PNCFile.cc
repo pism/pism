@@ -20,9 +20,9 @@
 #include <sstream>
 #include <cstring>              // memset
 
-#include "PNCFile.hh"
+#include "pism/util/io/PNCFile.hh"
 
-#include "pism_type_conversion.hh" // has to go after pnetcdf.h
+#include "pism/util/io/pism_type_conversion.hh" // has to go after pnetcdf.h
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"

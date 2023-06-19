@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define PRECIPITATIONSCALING_H
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 
@@ -71,7 +70,7 @@ protected:
 
 protected:
   double m_exp_factor;
-  std::unique_ptr<ScalarForcing> m_forcing;
+  std::shared_ptr<ScalarForcing> m_forcing;
   mutable std::vector<double> m_scaling_values;
 
   array::Scalar::Ptr m_precipitation;

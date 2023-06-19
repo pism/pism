@@ -19,7 +19,7 @@
 #ifndef _ROUTING_H_
 #define _ROUTING_H_
 
-#include "Hydrology.hh"
+#include "pism/hydrology/Hydrology.hh"
 #include "pism/util/array/Staggered.hh"
 
 namespace pism {

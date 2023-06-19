@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include <cstring>              // memcpy
 
-#include "fftw_utilities.hh"
+#include "pism/util/fftw_utilities.hh"
 
 #include "pism/util/petscwrappers/Vec.hh"
 

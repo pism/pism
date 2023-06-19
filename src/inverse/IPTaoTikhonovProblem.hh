@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "TaoUtil.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/TaoUtil.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"

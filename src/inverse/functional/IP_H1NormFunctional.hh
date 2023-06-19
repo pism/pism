@@ -19,7 +19,7 @@
 #ifndef IP_H1NORMFUNCTIONAL_HH_TF8AKRNQ
 #define IP_H1NORMFUNCTIONAL_HH_TF8AKRNQ
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

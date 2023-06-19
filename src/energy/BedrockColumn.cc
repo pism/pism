@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,8 +19,7 @@
 
 #include <cassert>
 
-#include "BedrockColumn.hh"
-
+#include "pism/energy/BedrockColumn.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {

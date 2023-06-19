@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "BlatterTestHalfar.hh"
+#include "pism/stressbalance/blatter/verification/BlatterTestHalfar.hh"
 
 #include "pism/rheology/IsothermalGlen.hh"
 
-#include "manufactured_solutions.hh"
+#include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {

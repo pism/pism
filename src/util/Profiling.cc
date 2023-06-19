@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,8 +19,8 @@
 
 #include <petscviewer.h>
 
-#include "Profiling.hh"
-#include "error_handling.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

@@ -22,7 +22,7 @@
 #include <netcdf_meta.h>
 #endif
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"

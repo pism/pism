@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Config.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/io/File.hh"
-#include "pism_options.hh"
-#include "error_handling.hh"
-#include "io/io_helpers.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/pism_config.hh"  // pism::config_file
 #include "pism/util/io/IO_Flags.hh"

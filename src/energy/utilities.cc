@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "utilities.hh"
+#include "pism/energy/utilities.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
@@ -26,7 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/pism_utilities.hh"
-#include "bootstrapping.hh"
+#include "pism/energy/bootstrapping.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/VariableMetadata.hh"

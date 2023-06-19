@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,22 +18,17 @@
 
 #include <cassert>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Profiling.hh"
 
-#include "pism/hydrology/Hydrology.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/energy/EnergyModel.hh"
-#include "pism/energy/utilities.hh"
 
 namespace pism {
 

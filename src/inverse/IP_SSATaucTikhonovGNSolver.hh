@@ -19,11 +19,11 @@
 #ifndef IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 #define IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 
-#include "IP_SSATaucForwardProblem.hh"
+#include "pism/inverse/IP_SSATaucForwardProblem.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/KSP.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

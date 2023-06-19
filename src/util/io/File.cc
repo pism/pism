@@ -23,23 +23,23 @@
 
 #include <petscvec.h>
 
-#include "File.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
-#include "NC_Serial.hh"
-#include "NC4_Serial.hh"
+#include "pism/util/io/NC_Serial.hh"
+#include "pism/util/io/NC4_Serial.hh"
 
 #include "pism/pism_config.hh"
 
 #if (Pism_USE_PARALLEL_NETCDF4==1)
-#include "NC4_Par.hh"
+#include "pism/util/io/NC4_Par.hh"
 #endif
 
 #if (Pism_USE_PNETCDF==1)
-#include "PNCFile.hh"
+#include "pism/util/io/PNCFile.hh"
 #endif
 
 #if (Pism_USE_PIO==1)
-#include "ParallelIO.hh"
+#include "pism/util/io/ParallelIO.hh"
 #endif
 
 #include "pism/util/error_handling.hh"

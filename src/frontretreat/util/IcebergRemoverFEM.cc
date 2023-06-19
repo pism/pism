@@ -23,7 +23,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/connected_components.hh"
 
-#include "IcebergRemoverFEM.hh"
+#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 
 #include "pism/util/fem/Element.hh"
 #include "pism/util/array/CellType.hh"

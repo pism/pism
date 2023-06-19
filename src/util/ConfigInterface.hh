@@ -28,7 +28,7 @@
 
 #include <mpi.h>                // MPI_Comm
 
-#include "Units.hh"
+#include "pism/util/Units.hh"
 
 namespace pism {
 

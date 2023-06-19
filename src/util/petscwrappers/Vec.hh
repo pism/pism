@@ -23,7 +23,7 @@
 #include <petscvec.h>
 
 #include "pism/util/Wrapper.hh"
-#include "DM.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace petsc {

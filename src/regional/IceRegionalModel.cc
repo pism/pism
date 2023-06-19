@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "IceRegionalModel.hh"
+#include "pism/regional/IceRegionalModel.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "RegionalYieldStress.hh"
+#include "pism/regional/RegionalYieldStress.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "EnthalpyModel_Regional.hh"
+#include "pism/regional/EnthalpyModel_Regional.hh"
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/utilities.hh"

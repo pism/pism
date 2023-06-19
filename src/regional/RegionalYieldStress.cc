@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "RegionalYieldStress.hh"
+#include "pism/regional/RegionalYieldStress.hh"
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Scalar.hh"

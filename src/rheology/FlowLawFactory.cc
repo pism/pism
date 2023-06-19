@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2018 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2018, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,17 +18,17 @@
 
 #include <cassert>
 
-#include "FlowLawFactory.hh"
+#include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/error_handling.hh"
 
-#include "IsothermalGlen.hh"
-#include "PatersonBudd.hh"
-#include "GPBLD.hh"
-#include "Hooke.hh"
-#include "PatersonBuddCold.hh"
-#include "PatersonBuddWarm.hh"
-#include "GoldsbyKohlstedt.hh"
+#include "pism/rheology/IsothermalGlen.hh"
+#include "pism/rheology/PatersonBudd.hh"
+#include "pism/rheology/GPBLD.hh"
+#include "pism/rheology/Hooke.hh"
+#include "pism/rheology/PatersonBuddCold.hh"
+#include "pism/rheology/PatersonBuddWarm.hh"
+#include "pism/rheology/GoldsbyKohlstedt.hh"
 
 namespace pism {
 namespace rheology {

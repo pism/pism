@@ -23,15 +23,15 @@
 #include <memory>
 #include <vector> // STL vector container; sortable; used in test L
 
-#include "tests/exactTestH.h"
-#include "tests/exactTestL.hh"
-#include "tests/exactTestsABCD.h"
-#include "tests/exactTestsFG.hh"
+#include "pism/verification/tests/exactTestH.h"
+#include "pism/verification/tests/exactTestL.hh"
+#include "pism/verification/tests/exactTestsABCD.h"
+#include "pism/verification/tests/exactTestsFG.hh"
 
-#include "BTU_Verification.hh"
-#include "PSVerification.hh"
-#include "TemperatureModel_Verification.hh"
-#include "iceCompModel.hh"
+#include "pism/verification/BTU_Verification.hh"
+#include "pism/verification/PSVerification.hh"
+#include "pism/verification/TemperatureModel_Verification.hh"
+#include "pism/verification/iceCompModel.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/earth/BedDef.hh"

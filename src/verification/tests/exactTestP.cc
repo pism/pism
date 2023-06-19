@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "exactTestP.hh"
+#include "pism/verification/tests/exactTestP.hh"
 #include <gsl/gsl_errno.h>    // for GSL_SUCCESS
 #include <cmath>              // for pow, fabs
 #include <cstdlib>            // for NULL

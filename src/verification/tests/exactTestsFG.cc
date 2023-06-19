@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "exactTestsFG.hh"
+#include "pism/verification/tests/exactTestsFG.hh"
 #include <cmath>      // for pow, exp, cos, sin, M_PI, fabs, sqrt
 #include <cstddef>    // for size_t
 #include <stdexcept>  // for runtime_error

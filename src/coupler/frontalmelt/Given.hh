@@ -1,4 +1,4 @@
-// Copyright (C) 2019 PISM Authors
+// Copyright (C) 2019, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,8 +20,6 @@
 #define _PFM_GIVEN_H_
 
 #include "pism/coupler/FrontalMelt.hh"
-
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {

@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "BedDef.hh"
+#include "pism/earth/BedDef.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Vars.hh"

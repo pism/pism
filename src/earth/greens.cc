@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2007, 2015, 2017, 2018, 2019 Jed Brown and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2007, 2015, 2017, 2018, 2019, 2023 Jed Brown and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "greens.hh"
+#include "pism/earth/greens.hh"
 #include <gsl/gsl_integration.h>  // for gsl_integration_qag, gsl_integratio...
 #include <gsl/gsl_math.h>         // for gsl_function
 #include <gsl/gsl_sf_bessel.h>    // for gsl_sf_bessel_J0, gsl_sf_bessel_J1

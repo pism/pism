@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "OptTillphiYieldStress.hh"
+#include "pism/basalstrength/OptTillphiYieldStress.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"

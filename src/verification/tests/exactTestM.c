@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2008, 2014, 2016 Ed Bueler
+   Copyright (C) 2008, 2014, 2016, 2023 Ed Bueler
   
    This file is part of PISM.
   
@@ -25,7 +25,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_odeiv.h>
-#include "exactTestM.h"
+#include "pism/verification/tests/exactTestM.h"
 
 #define MAX(a, b) (a > b ? a : b)
 #define MIN(a, b) (a > b ? b : a)

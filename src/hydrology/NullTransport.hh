@@ -19,7 +19,7 @@
 #ifndef _NULLTRANSPORT_H_
 #define _NULLTRANSPORT_H_
 
-#include "Hydrology.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 namespace pism {
 

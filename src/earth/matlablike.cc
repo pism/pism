@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009, 2014, 2015, 2017, 2018 Ed Bueler and Constantine Khroulev
+/* Copyright (C) 2004-2009, 2014, 2015, 2017, 2018, 2023 Ed Bueler and Constantine Khroulev
 
  This file is part of PISM.
 
@@ -17,7 +17,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "matlablike.hh"
+#include "pism/earth/matlablike.hh"
 
 double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
                         double reqRelError, void *fdata) {

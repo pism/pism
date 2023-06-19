@@ -19,7 +19,7 @@
 #ifndef PISM_DIRICHLETDATA_H
 #define PISM_DIRICHLETDATA_H
 
-#include "FEM.hh"
+#include "pism/util/fem/FEM.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat
 #include "pism/util/Vector2d.hh"
 

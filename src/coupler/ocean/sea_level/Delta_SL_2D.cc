@@ -16,10 +16,11 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Delta_SL_2D.hh"
+#include "pism/coupler/ocean/sea_level/Delta_SL_2D.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace ocean {

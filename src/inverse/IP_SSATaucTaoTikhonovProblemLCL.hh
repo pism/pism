@@ -23,10 +23,10 @@
 
 #include <petscsys.h>
 
-#include "TaoUtil.hh"
-#include "IPTwoBlockVec.hh"
-#include "IP_SSATaucForwardProblem.hh"
-#include "functional/IPFunctional.hh"
+#include "pism/inverse/TaoUtil.hh"
+#include "pism/inverse/IPTwoBlockVec.hh"
+#include "pism/inverse/IP_SSATaucForwardProblem.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

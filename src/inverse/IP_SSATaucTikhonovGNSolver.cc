@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IP_SSATaucTikhonovGNSolver.hh"
+#include "pism/inverse/IP_SSATaucTikhonovGNSolver.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/ConfigInterface.hh"

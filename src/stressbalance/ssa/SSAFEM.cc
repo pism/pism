@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/util/Grid.hh"
-#include "SSAFEM.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
@@ -29,7 +29,7 @@
 #include "pism/geometry/Geometry.hh"
 
 #include "pism/util/node_types.hh"
-
+#include "pism/util/pism_utilities.hh" // average_water_column_pressure()
 #include "pism/util/interpolation.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"

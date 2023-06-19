@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 #include <cassert>              // assert
 #include <cmath>                // std::sqrt()
 
-#include "Element.hh"
+#include "pism/util/fem/Element.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"

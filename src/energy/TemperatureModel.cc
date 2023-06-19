@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "TemperatureModel.hh"
+#include "pism/energy/TemperatureModel.hh"
 #include "pism/energy/tempSystem.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {

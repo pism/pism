@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,13 +17,13 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Blatter.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/node_types.hh"
-#include "util/DataAccess.hh"
-#include "util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "pism/stressbalance/blatter/util/DataAccess.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
 
 namespace pism {
 namespace stressbalance {

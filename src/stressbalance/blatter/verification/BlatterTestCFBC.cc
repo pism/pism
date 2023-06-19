@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "BlatterTestCFBC.hh"
+#include "pism/stressbalance/blatter/verification/BlatterTestCFBC.hh"
 
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
-#include "manufactured_solutions.hh"
+#include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {

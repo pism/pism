@@ -24,12 +24,12 @@
 #define _NETCDF
 #include <pio.h>
 
-#include "ParallelIO.hh"
+#include "pism/util/io/ParallelIO.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/pism_type_conversion.hh"
 #include "pism/util/Grid.hh"
-#include "File.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace io {

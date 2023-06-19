@@ -23,9 +23,9 @@
 #include <memory>
 #include <string>
 
-#include "ConfigInterface.hh"
-#include "VariableMetadata.hh"
-#include "io/IO_Flags.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"

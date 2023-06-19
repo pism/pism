@@ -18,7 +18,7 @@
 
 #include <cmath>                // pow, sqrt
 
-#include "basal_resistance.hh"
+#include "pism/basalstrength/basal_resistance.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Logger.hh"

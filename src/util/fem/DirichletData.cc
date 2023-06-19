@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "DirichletData.hh"
+#include "pism/util/fem/DirichletData.hh"
 
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"

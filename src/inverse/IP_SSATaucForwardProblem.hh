@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022 David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,7 @@
 #define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "IPDesignVariableParameterization.hh"
+#include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 

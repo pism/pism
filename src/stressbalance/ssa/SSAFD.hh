@@ -19,7 +19,7 @@
 #ifndef _SSAFD_H_
 #define _SSAFD_H_
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Viewer.hh"

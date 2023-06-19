@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PAGIVEN_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 

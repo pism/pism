@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2022 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2022, 2023 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PFMDISCHARGE_ROUTING_H_
 
 #include "pism/coupler/FrontalMelt.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {

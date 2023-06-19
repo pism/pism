@@ -24,9 +24,9 @@
 #include <numeric>
 #include <petscsys.h>
 
-#include "ConfigInterface.hh"
-#include "Grid.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/pism_config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
@@ -34,8 +34,8 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/projection.hh"
-#include "pism_options.hh"
-#include "pism_utilities.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 #if (Pism_USE_PIO == 1)

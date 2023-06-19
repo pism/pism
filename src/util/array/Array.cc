@@ -20,8 +20,8 @@
 
 #include <petscdraw.h>
 
-#include "Array.hh"
-#include "Array_impl.hh"
+#include "pism/util/array/Array.hh"
+#include "pism/util/array/Array_impl.hh"
 
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
@@ -82,9 +82,8 @@ Array::Array(std::shared_ptr<const Grid> grid,
   auto system = m_impl->grid->ctx()->unit_system();
   if (m_impl->dof > 1) {
     // dof > 1: this is a 2D vector
-    using pism::printf;
     for (unsigned int j = 0; j < m_impl->dof; ++j) {
-      m_impl->metadata.push_back({system, printf("%s[%d]", name.c_str(), j)});
+      m_impl->metadata.push_back({system, pism::printf("%s[%d]", name.c_str(), j)});
     }
   } else {
     // both 2D and 3D vectors

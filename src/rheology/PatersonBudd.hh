@@ -20,7 +20,7 @@
 #ifndef _PATERSONBUDD_H_
 #define _PATERSONBUDD_H_
 
-#include "FlowLaw.hh"
+#include "pism/rheology/FlowLaw.hh"
 #include <string>                          // for string
 #include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
 namespace pism { class Config; }

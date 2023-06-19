@@ -19,7 +19,7 @@
 #ifndef _POCONSTANTPIK_H_
 #define _POCONSTANTPIK_H_
 
-#include "CompleteOceanModel.hh"
+#include "pism/coupler/ocean/CompleteOceanModel.hh"
 
 namespace pism {
 namespace ocean {

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <cmath>                // exp()
 
-#include "PrecipitationScaling.hh"
+#include "pism/coupler/atmosphere/PrecipitationScaling.hh"
 
 #include "pism/util/ScalarForcing.hh"
 #include "pism/util/ConfigInterface.hh"

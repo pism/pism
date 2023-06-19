@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C) 2009-2018, 2023 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,7 @@
 
 // This includes the PIK temperature parameterization.
 
-#include "PIK.hh"
+#include "pism/coupler/atmosphere/PIK.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/ConfigInterface.hh"

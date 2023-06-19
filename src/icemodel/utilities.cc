@@ -19,7 +19,7 @@
 #include <cstring>
 #include <petscsys.h>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"

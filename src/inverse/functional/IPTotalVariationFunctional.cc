@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2020, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPTotalVariationFunctional.hh"
+#include "pism/inverse/functional/IPTotalVariationFunctional.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/Scalar.hh"

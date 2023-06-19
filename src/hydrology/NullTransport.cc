@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NullTransport.hh"
+#include "pism/hydrology/NullTransport.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/CellType.hh"

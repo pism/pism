@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,9 +19,7 @@
 #ifndef _SSB_MODIFIER_H_
 #define _SSB_MODIFIER_H_
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Staggered.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
 

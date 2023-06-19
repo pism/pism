@@ -19,7 +19,7 @@
 #ifndef _NC4_Serial_H_
 #define _NC4_Serial_H_
 
-#include "NC_Serial.hh"
+#include "pism/util/io/NC_Serial.hh"
 
 namespace pism {
 namespace io {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021 PISM Authors
+/* Copyright (C) 2018, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef CHSYSTEM_H
 #define CHSYSTEM_H
 
-#include "EnergyModel.hh"
+#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 namespace energy {

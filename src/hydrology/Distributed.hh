@@ -19,7 +19,7 @@
 #ifndef _DISTRIBUTED_H_
 #define _DISTRIBUTED_H_
 
-#include "Routing.hh"
+#include "pism/hydrology/Routing.hh"
 
 namespace pism {
 

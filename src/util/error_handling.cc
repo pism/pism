@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "error_handling.hh"
+#include "pism/util/error_handling.hh"
 #include <petsc.h>
 
 #include <stdexcept>

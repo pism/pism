@@ -21,14 +21,14 @@
 #include <cstring>              // strlen()
 #include <limits>
 
-#include "Time.hh"
+#include "pism/util/Time.hh"
 
 #include "pism/external/calcalcs/calcalcs.h"
 
-#include "ConfigInterface.hh"
-#include "VariableMetadata.hh"
-#include "pism_utilities.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/Logger.hh"

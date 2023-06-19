@@ -21,9 +21,9 @@
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
-#include "File.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
-#include "LocalInterpCtx.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 

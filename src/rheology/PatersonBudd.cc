@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "PatersonBudd.hh"
+#include "pism/rheology/PatersonBudd.hh"
 #include <cmath>   // for pow
 #include <memory>  // for __shared_ptr_access
 

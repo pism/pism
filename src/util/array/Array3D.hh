@@ -20,7 +20,7 @@
 #ifndef PISM_ARRAY3D_H
 #define PISM_ARRAY3D_H
 
-#include "Array.hh"
+#include "pism/util/array/Array.hh"
 
 namespace pism {
 

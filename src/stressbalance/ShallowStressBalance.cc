@@ -16,16 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ShallowStressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
-
-#include "pism/util/Vars.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/CellType.hh"
+#include "pism/stressbalance/SSB_diagnostics.hh"
 #include "pism/util/Context.hh"
-
-#include "SSB_diagnostics.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace stressbalance {

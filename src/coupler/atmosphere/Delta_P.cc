@@ -16,11 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "Delta_P.hh"
+#include "pism/coupler/atmosphere/Delta_P.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/ScalarForcing.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Formulas.hh"
+#include "pism/coupler/surface/Formulas.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/pism_utilities.hh"
 

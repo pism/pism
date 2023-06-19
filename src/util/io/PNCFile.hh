@@ -19,7 +19,7 @@
 #ifndef _PISMPNCFILE_H_
 #define _PISMPNCFILE_H_
 
-#include "NCFile.hh"
+#include "pism/util/io/NCFile.hh"
 
 namespace pism {
 

@@ -19,8 +19,8 @@
 #ifndef PISM_ARRAY2D_H
 #define PISM_ARRAY2D_H
 
-#include "Array.hh"
-#include "Array_helpers.hh"
+#include "pism/util/array/Array.hh"
+#include "pism/util/array/Array_helpers.hh"
 #include "pism/util/stencils.hh"
 
 namespace pism {

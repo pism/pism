@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022 PISM Authors
+/* Copyright (C) 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "NoGLRetreat.hh"
+#include "pism/coupler/surface/NoGLRetreat.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Diagnostic.hh"

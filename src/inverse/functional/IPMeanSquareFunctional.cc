@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPMeanSquareFunctional.hh"
+#include "pism/inverse/functional/IPMeanSquareFunctional.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"

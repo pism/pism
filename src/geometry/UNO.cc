@@ -19,8 +19,8 @@
 
 #include <cmath>
 
-#include "UNO.hh"
-#include "flux_limiter.hh"
+#include "pism/geometry/UNO.hh"
+#include "pism/geometry/flux_limiter.hh"
 
 #include "pism/util/array/CellType.hh"
 

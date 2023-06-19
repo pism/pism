@@ -16,16 +16,15 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ElevationChange.hh"
+#include "pism/coupler/atmosphere/ElevationChange.hh"
 
 #include <cmath>                // std::exp()
 
 #include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace atmosphere {

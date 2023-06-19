@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "HayhurstCalving.hh"
+#include "pism/frontretreat/calving/HayhurstCalving.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"

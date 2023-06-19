@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "NC4File.hh"
+#include "pism/util/io/NC4File.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -25,7 +25,7 @@
 #endif
 #include <netcdf.h>
 
-#include "pism_type_conversion.hh"
+#include "pism/util/io/pism_type_conversion.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 

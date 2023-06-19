@@ -19,7 +19,7 @@
 #ifndef IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8
 #define IPLOGRATIOFUNCTIONAL_HH_HSEWI0Q8
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

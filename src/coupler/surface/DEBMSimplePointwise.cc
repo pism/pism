@@ -20,7 +20,7 @@
 #include <cassert>
 #include <cmath>
 
-#include "DEBMSimplePointwise.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"

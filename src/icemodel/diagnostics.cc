@@ -41,7 +41,7 @@
 #include "pism/util/Proj.hh"
 #endif
 
-#include "flux_balance.hh"
+#include "pism/icemodel/flux_balance.hh"
 
 namespace pism {
 

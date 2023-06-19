@@ -3,7 +3,7 @@
 // --------------------------------
 // PISM Includes... want to be included first
 #include <petsc.h>
-#include <pism/util/array/Scalar.hh>
+#include "pism/util/array/Scalar.hh"
 // --------------------------------
 
 namespace pism {

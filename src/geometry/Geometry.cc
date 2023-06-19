@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "Geometry.hh"
+#include "pism/geometry/Geometry.hh"
 
 #include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"

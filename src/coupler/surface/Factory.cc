@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#include "pism/coupler/surface/Factory.hh"
 
 // surface models:
-#include "Anomaly.hh"
-#include "Cache.hh"
-#include "ConstantPIK.hh"
-#include "Delta_T.hh"
-#include "Elevation.hh"
-#include "ElevationChange.hh"
-#include "ForceThickness.hh"
-#include "GivenClimate.hh"
-#include "ISMIP6Climate.hh"
-#include "NoGLRetreat.hh"
-#include "DEBMSimple.hh"
-#include "Simple.hh"
-#include "TemperatureIndex.hh"
+#include "pism/coupler/surface/Anomaly.hh"
+#include "pism/coupler/surface/Cache.hh"
+#include "pism/coupler/surface/ConstantPIK.hh"
+#include "pism/coupler/surface/Delta_T.hh"
+#include "pism/coupler/surface/Elevation.hh"
+#include "pism/coupler/surface/ElevationChange.hh"
+#include "pism/coupler/surface/ForceThickness.hh"
+#include "pism/coupler/surface/GivenClimate.hh"
+#include "pism/coupler/surface/ISMIP6Climate.hh"
+#include "pism/coupler/surface/NoGLRetreat.hh"
+#include "pism/coupler/surface/DEBMSimple.hh"
+#include "pism/coupler/surface/Simple.hh"
+#include "pism/coupler/surface/TemperatureIndex.hh"
 
 namespace pism {
 namespace surface {

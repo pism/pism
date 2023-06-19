@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2022 PISM Authors
+// Copyright (C) 2012-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,7 +21,6 @@
 
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 

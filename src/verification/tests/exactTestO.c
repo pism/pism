@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011, 2013, 2014, 2016 Ed Bueler
+   Copyright (C) 2011, 2013, 2014, 2016, 2023 Ed Bueler
   
    This file is part of PISM.
   
@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "exactTestO.h"
+#include "pism/verification/tests/exactTestO.h"
 
 static const double beta_CC   = 7.9e-8; /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
 static const double T_triple  = 273.15; /* K; triple point of pure water */

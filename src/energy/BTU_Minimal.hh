@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 PISM Authors
+/* Copyright (C) 2016, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef BTU_MINIMAL_H
 #define BTU_MINIMAL_H
 
-#include "BedThermalUnit.hh"
+#include "pism/energy/BedThermalUnit.hh"
 
 namespace pism {
 namespace energy {

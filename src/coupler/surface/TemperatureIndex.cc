@@ -18,8 +18,8 @@
 
 #include <algorithm>            // std::min
 
-#include "TemperatureIndex.hh"
-#include "localMassBalance.hh"
+#include "pism/coupler/surface/TemperatureIndex.hh"
+#include "pism/coupler/surface/localMassBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 #include "pism/coupler/AtmosphereModel.hh"
@@ -29,7 +29,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {

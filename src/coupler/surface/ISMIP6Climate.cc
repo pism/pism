@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,12 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ISMIP6Climate.hh"
+#include "pism/coupler/surface/ISMIP6Climate.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {

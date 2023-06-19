@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,8 +20,7 @@
 #ifndef PISM_BEDDEF_GIVEN
 #define PISM_BEDDEF_GIVEN
 
-#include "BedDef.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/earth/BedDef.hh"
 
 namespace pism {
 namespace bed {

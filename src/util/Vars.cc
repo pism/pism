@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022 Constantine Khroulev
+// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,12 @@
 #include <memory>
 using std::dynamic_pointer_cast;
 
-#include "Vars.hh"
-#include "VariableMetadata.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Array3D.hh"
-#include "error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 

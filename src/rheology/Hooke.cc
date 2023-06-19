@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-#include "Hooke.hh"
+#include "pism/rheology/Hooke.hh"
 #include "pism/util/ConfigInterface.hh"
 
 namespace pism {

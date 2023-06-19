@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 PISM Authors
+/* Copyright (C) 2019, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include <algorithm>            // std::min, std::max
 
-#include "grain_size_vostok.hh"
+#include "pism/rheology/grain_size_vostok.hh"
 
 namespace pism {
 namespace rheology {

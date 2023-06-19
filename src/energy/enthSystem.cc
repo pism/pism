@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018, 2020, 2021, 2022 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018, 2020, 2021, 2022, 2023 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,12 +19,11 @@
 #include <cmath>                // NAN, std::isnan, std::pow
 #include <algorithm>            // std::min
 
-#include "enthSystem.hh"
+#include "pism/energy/enthSystem.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/EnthalpyConverter.hh"
 
 #include "pism/util/error_handling.hh"
-#include "pism/util/ColumnInterpolation.hh"
 
 namespace pism {
 namespace energy {

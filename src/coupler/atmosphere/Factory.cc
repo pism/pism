@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2020 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2020, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,22 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Factory.hh"
+#include "pism/coupler/atmosphere/Factory.hh"
 
 // atmosphere models:
-#include "GivenClimate.hh"
-#include "ElevationChange.hh"
-#include "SeariseGreenland.hh"
-#include "Delta_T.hh"
-#include "Delta_P.hh"
-#include "Frac_P.hh"
-#include "PrecipitationScaling.hh"
-#include "PIK.hh"
-#include "Anomaly.hh"
-#include "CosineYearlyCycle.hh"
-#include "WeatherStation.hh"
-#include "Uniform.hh"
-#include "OrographicPrecipitation.hh"
+#include "pism/coupler/atmosphere/GivenClimate.hh"
+#include "pism/coupler/atmosphere/ElevationChange.hh"
+#include "pism/coupler/atmosphere/SeariseGreenland.hh"
+#include "pism/coupler/atmosphere/Delta_T.hh"
+#include "pism/coupler/atmosphere/Delta_P.hh"
+#include "pism/coupler/atmosphere/Frac_P.hh"
+#include "pism/coupler/atmosphere/PrecipitationScaling.hh"
+#include "pism/coupler/atmosphere/PIK.hh"
+#include "pism/coupler/atmosphere/Anomaly.hh"
+#include "pism/coupler/atmosphere/CosineYearlyCycle.hh"
+#include "pism/coupler/atmosphere/WeatherStation.hh"
+#include "pism/coupler/atmosphere/Uniform.hh"
+#include "pism/coupler/atmosphere/OrographicPrecipitation.hh"
 
 namespace pism {
 namespace atmosphere {

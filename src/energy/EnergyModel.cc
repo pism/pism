@@ -17,20 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnergyModel.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/energy/EnergyModel.hh"
+#include "pism/energy/utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Vars.hh"
-#include "utilities.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "bootstrapping.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {

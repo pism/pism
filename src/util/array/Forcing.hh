@@ -19,7 +19,7 @@
 #ifndef PISM_ARRAY_FORCING
 #define PISM_ARRAY_FORCING
 
-#include "Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/interpolation.hh"     // InterpolationType
 

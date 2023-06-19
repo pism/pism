@@ -17,15 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include "SteadyState.hh"
+#include "pism/hydrology/SteadyState.hh"
 
 #include <gsl/gsl_interp.h>     // gsl_interp_bsearch
 
-#include "EmptyingProblem.hh"
+#include "pism/hydrology/EmptyingProblem.hh"
 
 #include "pism/util/Time.hh"    // time().current()
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/MaxTimestep.hh"
 
 /* FIXMEs
  *

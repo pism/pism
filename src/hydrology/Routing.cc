@@ -18,7 +18,7 @@
 
 #include <cassert>
 
-#include "Routing.hh"
+#include "pism/hydrology/Routing.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/MaxTimestep.hh"

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -20,7 +20,7 @@
 #ifndef __PASeariseGreenland_hh
 #define __PASeariseGreenland_hh
 
-#include "YearlyCycle.hh"
+#include "pism/coupler/atmosphere/YearlyCycle.hh"
 
 namespace pism {
 namespace atmosphere {

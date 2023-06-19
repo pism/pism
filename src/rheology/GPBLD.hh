@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _GPBLD_H_
 #define _GPBLD_H_
 
-#include "FlowLaw.hh"
+#include "pism/rheology/FlowLaw.hh"
 
 namespace pism {
 namespace rheology {

@@ -22,7 +22,7 @@
 
 #include <jansson.h>
 
-#include "Config.hh"
+#include "pism/util/Config.hh"
 
 namespace pism {
 

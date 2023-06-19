@@ -22,7 +22,7 @@
 
 #include <memory>               // std::unique_ptr
 
-#include "BedDef.hh"
+#include "pism/earth/BedDef.hh"
 
 namespace pism {
 namespace bed {

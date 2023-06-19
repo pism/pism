@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "WeertmanSliding.hh"
+#include "pism/stressbalance/WeertmanSliding.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/geometry/Geometry.hh"
-#include "StressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 namespace stressbalance {

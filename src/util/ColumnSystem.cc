@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2022 PISM Authors
+// Copyright (C) 2004-2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -24,7 +24,7 @@
 
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/array/Array3D.hh"
-#include "ColumnSystem.hh"
+#include "pism/util/ColumnSystem.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/util/ColumnInterpolation.hh"

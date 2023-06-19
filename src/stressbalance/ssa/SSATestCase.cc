@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SSATestCase.hh"
-#include "SSAFD.hh"
-#include "SSAFEM.hh"
+#include "pism/stressbalance/ssa/SSATestCase.hh"
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"

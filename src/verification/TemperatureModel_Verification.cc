@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "TemperatureModel_Verification.hh"
+#include "pism/verification/TemperatureModel_Verification.hh"
 
 #include "pism/util/error_handling.hh"
 #include "pism/verification/tests/exactTestsFG.hh"

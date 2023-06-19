@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020, 2023 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/energy/EnergyModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"

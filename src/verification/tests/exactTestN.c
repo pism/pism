@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010, 2014, 2016 Ed Bueler
+   Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
   
    This file is part of PISM.
   
@@ -19,7 +19,7 @@
 */
 
 #include <math.h>
-#include "exactTestN.h"
+#include "pism/verification/tests/exactTestN.h"
 
 #define secpera  31556926.0    /* seconds per year; 365.2422 days */
 #define g        9.81

@@ -22,8 +22,8 @@
 
 #include <string>
 
-#include "Units.hh"
-#include "VariableMetadata.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 

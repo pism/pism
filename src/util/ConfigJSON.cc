@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2016, 2018 PISM Authors
+/* Copyright (C) 2014, 2016, 2018, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,10 @@
 #include <vector>
 #include <cstdlib>              // free
 
-#include "ConfigJSON.hh"
-#include "error_handling.hh"
-#include "pism_utilities.hh"
-#include "io/File.hh"
+#include "pism/util/ConfigJSON.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 

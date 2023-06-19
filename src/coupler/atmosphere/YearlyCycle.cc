@@ -22,7 +22,7 @@
 
 #include <gsl/gsl_math.h>       // M_PI
 
-#include "YearlyCycle.hh"
+#include "pism/coupler/atmosphere/YearlyCycle.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"

@@ -16,12 +16,13 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "DischargeRouting.hh"
+#include "pism/coupler/frontalmelt/DischargeRouting.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/coupler/util/options.hh"
-#include "FrontalMeltPhysics.hh"
+#include "pism/coupler/frontalmelt/FrontalMeltPhysics.hh"
+#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {

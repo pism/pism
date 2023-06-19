@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EmptyingProblem.hh"
+#include "pism/hydrology/EmptyingProblem.hh"
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/interpolation.hh"

@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IPLogRatioFunctional.hh"
+#include "pism/inverse/functional/IPLogRatioFunctional.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"

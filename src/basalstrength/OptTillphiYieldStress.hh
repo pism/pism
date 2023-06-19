@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2022 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
 #define _PISMOPTTILLPHIYIELDSTRESS_H_
 
-#include "MohrCoulombYieldStress.hh"
+#include "pism/basalstrength/MohrCoulombYieldStress.hh"
 
 namespace pism {
 

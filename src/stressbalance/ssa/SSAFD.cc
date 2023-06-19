@@ -19,21 +19,19 @@
 #include <cassert>
 #include <stdexcept>
 
-#include "SSAFD.hh"
-#include "SSAFD_diagnostics.hh"
-#include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ssa/SSAFD.hh"
+#include "pism/stressbalance/ssa/SSAFD_diagnostics.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace stressbalance {

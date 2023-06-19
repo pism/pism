@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021 PISM Authors
+/* Copyright (C) 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include <algorithm>           // std::min, std::max
 
-#include "BlatterMod.hh"
+#include "pism/stressbalance/blatter/BlatterMod.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"
 

@@ -19,7 +19,7 @@
 #ifndef TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I
 #define TOTALVARIATIONFUNCTIONAL_HH_HKBL1T7I
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

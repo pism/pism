@@ -20,11 +20,11 @@
 #include <petsc.h>
 
 #include "pism/util/array/Scalar.hh"
-#include "IPDesignVariableParameterization.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {

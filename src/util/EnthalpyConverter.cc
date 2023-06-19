@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2017, 2021 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2017, 2021, 2023 Andreas Aschwanden, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/pism_utilities.hh"
-#include "EnthalpyConverter.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/ConfigInterface.hh"
 
 #include "pism/util/error_handling.hh"

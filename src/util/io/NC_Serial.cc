@@ -18,7 +18,7 @@
 
 #include <mpi.h>
 
-#include "NC_Serial.hh"
+#include "pism/util/io/NC_Serial.hh"
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -32,7 +32,7 @@
 #include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
 
-#include "pism_type_conversion.hh" // This has to be included *after* netcdf.h.
+#include "pism/util/io/pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
 namespace pism {
 namespace io {

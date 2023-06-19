@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Mask.hh"
@@ -26,7 +26,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 
-#include "SSA_diagnostics.hh"
+#include "pism/stressbalance/ssa/SSA_diagnostics.hh"
 
 namespace pism {
 namespace stressbalance {

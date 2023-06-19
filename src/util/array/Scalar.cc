@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Scalar.hh"
+#include "pism/util/array/Scalar.hh"
 
 #include "pism/util/array/Vector.hh"
 #include "pism/util/VariableMetadata.hh"

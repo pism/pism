@@ -24,7 +24,7 @@
 
 #include <petscdmda.h>          // DMDALocalInfo
 
-#include "FEM.hh"
+#include "pism/util/fem/FEM.hh"
 #include "pism/util/Vector2d.hh"
 #include "pism/util/petscwrappers/Mat.hh" // Mat, MatStencil
 

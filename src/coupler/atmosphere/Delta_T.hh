@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2022 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define PISM_ATMOSPHERE_DELTA_T
 
 #include "pism/coupler/AtmosphereModel.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 
@@ -47,7 +46,7 @@ private:
 
   mutable std::vector<double> m_offset_values;
 
-  std::unique_ptr<ScalarForcing> m_1d_offsets;
+  std::shared_ptr<ScalarForcing> m_1d_offsets;
 
   std::shared_ptr<array::Forcing> m_2d_offsets;
 

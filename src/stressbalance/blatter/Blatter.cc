@@ -22,20 +22,21 @@
 #include <algorithm>            // std::max
 #include <cstring>              // memset
 
-#include "Blatter.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/Vector2d.hh"
 
-#include "util/DataAccess.hh"
-#include "util/grid_hierarchy.hh"
+#include "pism/stressbalance/blatter/util/DataAccess.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"
 #include "pism/util/node_types.hh"
 
 #include "pism/rheology/FlowLawFactory.hh"
 
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/pism_options.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh" // pism::printf()
 
 namespace pism {
 namespace stressbalance {

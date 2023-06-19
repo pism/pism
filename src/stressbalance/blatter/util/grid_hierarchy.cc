@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,10 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "grid_hierarchy.hh"
-#include "pism/util/fem/FEM.hh"
-#include "pism/util/node_types.hh"
-#include "pism/util/error_handling.hh"
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"
 
 namespace pism {
 

@@ -22,10 +22,8 @@ static char help[] =
   "  IceModel. Uses verification test F. Also may be used in a PISM software"
   "(regression) test.\n\n";
 
-#include "SIAFD.hh"
-#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
@@ -33,7 +31,6 @@ static char help[] =
 #include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"

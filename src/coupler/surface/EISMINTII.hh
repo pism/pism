@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _PS_EISMINTII_H_
 #define _PS_EISMINTII_H_
 
-#include "Formulas.hh"
+#include "pism/coupler/surface/Formulas.hh"
 
 namespace pism {
 namespace surface {

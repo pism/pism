@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007, 2011, 2014, 2016 Ed Bueler
+   Copyright (C) 2007, 2011, 2014, 2016, 2023 Ed Bueler
   
    This file is part of PISM.
   
@@ -23,7 +23,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>       /* M_PI */
 #include <gsl/gsl_roots.h>
-#include "exactTestK.h"
+#include "pism/verification/tests/exactTestK.h"
 
 const double SperA = 31556926.0; /* seconds per year; 365.2422 days */
 

@@ -21,7 +21,7 @@
 #include <cassert>
 #include <algorithm>            // for std::min()
 
-#include "Cache.hh"
+#include "pism/coupler/surface/Cache.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"

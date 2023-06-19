@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "CalvingAtThickness.hh"
+#include "pism/frontretreat/calving/CalvingAtThickness.hh"
 
 #include "pism/util/Mask.hh"
 #include "pism/util/Grid.hh"

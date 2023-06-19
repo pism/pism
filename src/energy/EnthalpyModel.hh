@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef ENTHALPYMODEL_H
 #define ENTHALPYMODEL_H
 
-#include "EnergyModel.hh"
+#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 namespace energy {

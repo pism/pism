@@ -17,16 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "EnthalpyModel.hh"
-
-#include "DrainageCalculator.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/energy/EnthalpyModel.hh"
+#include "pism/energy/DrainageCalculator.hh"
 #include "pism/energy/enthSystem.hh"
+#include "pism/energy/utilities.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
-#include "utilities.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace energy {

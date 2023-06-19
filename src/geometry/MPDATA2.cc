@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-#include "MPDATA2.hh"
+#include "pism/geometry/MPDATA2.hh"
 
 #include "pism/util/array/CellType.hh"
 

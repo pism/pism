@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "SIAFD_diagnostics.hh"
-#include "BedSmoother.hh"
+#include "pism/stressbalance/sia/SIAFD_diagnostics.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 

@@ -1,4 +1,4 @@
-// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022 Ed Bueler and Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2009, 2010, 2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023 Ed Bueler and Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -25,7 +25,7 @@
 #include <algorithm>
 
 #include "pism/util/ConfigInterface.hh"
-#include "localMassBalance.hh"
+#include "pism/coupler/surface/localMassBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
 

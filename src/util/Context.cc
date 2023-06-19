@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2017, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2017, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,12 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Context.hh"
-#include "Profiling.hh"
-#include "Units.hh"
-#include "Config.hh"
-#include "Time.hh"
-#include "Logger.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/pism_config.hh"

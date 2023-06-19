@@ -20,7 +20,7 @@
 #ifndef STEADY_STATE_H
 #define STEADY_STATE_H
 
-#include "NullTransport.hh"
+#include "pism/hydrology/NullTransport.hh"
 
 namespace pism {
 namespace hydrology {

@@ -19,7 +19,7 @@
 #ifndef PISM_QUADRATURE_H
 #define PISM_QUADRATURE_H
 
-#include "FEM.hh"
+#include "pism/util/fem/FEM.hh"
 
 namespace pism {
 namespace fem {

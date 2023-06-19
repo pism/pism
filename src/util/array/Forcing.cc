@@ -21,7 +21,7 @@
 #include <cmath>                // std::floor
 #include <array>
 
-#include "Forcing.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Time.hh"

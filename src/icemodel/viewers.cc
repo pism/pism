@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -19,14 +19,14 @@
 #include <cstring>
 #include <cmath>
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 

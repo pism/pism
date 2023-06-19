@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "StressBalance.hh"
-#include "ShallowStressBalance.hh"
-#include "SSB_Modifier.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Grid.hh"

@@ -20,15 +20,15 @@
 #include <algorithm>
 #include <cmath>
 
-#include "VariableMetadata.hh"
+#include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
-#include "pism_options.hh"
-#include "Grid.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/util/Grid.hh"
 
-#include "ConfigInterface.hh"
-#include "error_handling.hh"
+#include "pism/util/ConfigInterface.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
-#include "pism_utilities.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {

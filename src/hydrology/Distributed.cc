@@ -18,7 +18,7 @@
 
 #include <algorithm>            // std::min, std::max
 
-#include "Distributed.hh"
+#include "pism/hydrology/Distributed.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"

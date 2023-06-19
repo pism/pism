@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021 PISM Authors
+// Copyright (C) 2019, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,7 +20,6 @@
 #define _PSISMIP6_H_
 
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace surface {

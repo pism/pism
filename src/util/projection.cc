@@ -20,11 +20,11 @@
 #include <cstdlib>              // strtol
 #include <cmath>                // std::pow, std::sqrt, std::fabs
 
-#include "projection.hh"
-#include "VariableMetadata.hh"
-#include "error_handling.hh"
-#include "io/File.hh"
-#include "io/io_helpers.hh"
+#include "pism/util/projection.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"

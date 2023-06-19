@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2015, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef _ISOTHERMALGLEN_H_
 #define _ISOTHERMALGLEN_H_
 
-#include "PatersonBudd.hh"
+#include "pism/rheology/PatersonBudd.hh"
 
 namespace pism {
 namespace rheology {

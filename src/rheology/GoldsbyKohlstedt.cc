@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "GoldsbyKohlstedt.hh"
+#include "pism/rheology/GoldsbyKohlstedt.hh"
 #include <cmath>      // for pow, exp, fabs, M_PI
 #include <memory>     // for __shared_ptr_access
 #include <stdexcept>  // for runtime_error

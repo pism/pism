@@ -1,4 +1,4 @@
-/* Copyright (C) 2021, 2022 PISM Authors
+/* Copyright (C) 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 #ifndef ICEBERGREMOVERFEM_H
 #define ICEBERGREMOVERFEM_H
 
-#include "IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/util/array/Scalar.hh"
 
 namespace pism {

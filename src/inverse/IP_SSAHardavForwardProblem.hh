@@ -20,7 +20,7 @@
 #define IP_SSAHARDAVFORWARDPROBLEM_HH_HAD68BK7
 
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "IPDesignVariableParameterization.hh"
+#include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 

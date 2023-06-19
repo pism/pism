@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Initialization.hh"
+#include "pism/coupler/ocean/sea_level/Initialization.hh"
 
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Context.hh"

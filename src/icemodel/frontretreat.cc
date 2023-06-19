@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2021, 2023 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,15 +16,12 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IceModel.hh"
+#include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/util/Grid.hh"
 
 #include "pism/frontretreat/FrontRetreat.hh"
-#include "pism/frontretreat/util/IcebergRemover.hh"
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/FloatKill.hh"

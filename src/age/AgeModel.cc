@@ -17,11 +17,9 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "AgeModel.hh"
-
+#include "pism/age/AgeModel.hh"
 #include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/io/File.hh"
 
 namespace pism {

@@ -19,7 +19,7 @@
 #ifndef IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
 #define IP_L2NORMFUNCTIONAL_HH_BSVF8BMQ
 
-#include "IPFunctional.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {

@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2021, 2022 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021, 2022, 2023 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -17,14 +17,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "ConstantPIK.hh"
-#include "pism/util/Vars.hh"
+#include "pism/coupler/ocean/ConstantPIK.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
 
 namespace pism {

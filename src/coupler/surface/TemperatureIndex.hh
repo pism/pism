@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,9 +21,8 @@
 
 #include <memory>
 
-#include "pism/util/array/Forcing.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "localMassBalance.hh"
+#include "pism/coupler/surface/localMassBalance.hh"
 
 namespace pism {
 namespace surface {

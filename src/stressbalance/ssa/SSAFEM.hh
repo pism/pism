@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2017, 2020, 2021, 2022 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
+// Copyright (C) 2009--2017, 2020, 2021, 2022, 2023 Jed Brown and Ed Bueler and Constantine Khroulev and David Maxwell
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,7 @@
 #ifndef _SSAFEM_H_
 #define _SSAFEM_H_
 
-#include "SSA.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/fem/FEM.hh"
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/TerminationReason.hh"

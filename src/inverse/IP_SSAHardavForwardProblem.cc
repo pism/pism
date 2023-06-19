@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "IP_SSAHardavForwardProblem.hh"
+#include "pism/inverse/IP_SSAHardavForwardProblem.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"

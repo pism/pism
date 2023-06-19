@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef BTU_FULL_H
 #define BTU_FULL_H
 
-#include "BedThermalUnit.hh"
+#include "pism/energy/BedThermalUnit.hh"
 #include "pism/util/Context.hh"
 
 namespace pism {

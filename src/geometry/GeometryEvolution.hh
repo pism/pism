@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,7 +20,7 @@
 #ifndef GEOMETRYEVOLUTION_H
 #define GEOMETRYEVOLUTION_H
 
-#include "Geometry.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
 

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism_utilities.hh"
+#include "pism/util/pism_utilities.hh"
 
 #include <cstdarg>              // va_list, va_start(), va_end()
 #include <sstream>              // istringstream, ostringstream
@@ -53,7 +53,7 @@
 
 #include <cstdlib>              // strtol(), strtod()
 
-#include "error_handling.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 
