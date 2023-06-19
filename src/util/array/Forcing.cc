@@ -35,6 +35,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace array {

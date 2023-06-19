@@ -8,6 +8,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/array/Array.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 using namespace pism;
 

@@ -21,6 +21,7 @@
 #include "pism/util/pism_utilities.hh" // pism::combine()
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 

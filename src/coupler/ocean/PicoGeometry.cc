@@ -25,6 +25,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 
 #include "pism/coupler/util/options.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace ocean {

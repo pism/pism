@@ -22,6 +22,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace hydrology {

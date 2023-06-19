@@ -27,6 +27,7 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

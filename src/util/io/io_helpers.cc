@@ -35,6 +35,7 @@
 #include "pism/util/projection.hh"
 #include "pism/util/interpolation.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace io {

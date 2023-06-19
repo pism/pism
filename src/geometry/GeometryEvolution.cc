@@ -31,6 +31,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/interpolation.hh"
 
 #include "flux_limiter.hh"
 

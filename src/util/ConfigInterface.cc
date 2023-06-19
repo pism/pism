@@ -29,6 +29,7 @@
 #include "pism_utilities.hh"
 #include "pism_options.hh"
 #include "error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 // include an implementation header so that we can allocate a DefaultConfig instance in
 // config_from_options()

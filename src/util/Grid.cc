@@ -36,6 +36,7 @@
 #include "pism/util/projection.hh"
 #include "pism_options.hh"
 #include "pism_utilities.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 #if (Pism_USE_PIO == 1)
 // Why do I need this???

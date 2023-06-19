@@ -26,9 +26,10 @@
 
 #include "Units.hh"
 
-#include "pism/util/io/IO_Flags.hh" // IO_Type
-
 namespace pism {
+namespace io {
+enum Type : int;
+}
 
 class Logger;
 

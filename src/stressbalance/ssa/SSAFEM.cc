@@ -33,6 +33,7 @@
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace stressbalance {

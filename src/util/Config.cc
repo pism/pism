@@ -24,6 +24,7 @@
 #include "io/io_helpers.hh"
 #include "pism/util/Logger.hh"
 #include "pism/pism_config.hh"  // pism::config_file
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 

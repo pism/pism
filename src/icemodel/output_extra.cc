@@ -334,7 +334,7 @@ void IceModel::write_extras() {
       m_extra_file->write_attribute(time_name, "bounds", "time_bounds");
 
       io::define_time_bounds(m_extra_bounds,
-                             time_name, "nv", *m_extra_file);
+                             time_name, "nv", *m_extra_file, io::PISM_DOUBLE);
 
       write_metadata(*m_extra_file, WRITE_MAPPING, PREPEND_HISTORY);
 

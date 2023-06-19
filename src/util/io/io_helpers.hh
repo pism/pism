@@ -24,9 +24,7 @@
 #include <vector>
 #include <mpi.h>
 
-#include "IO_Flags.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/interpolation.hh"
 
 namespace pism {
 
@@ -39,7 +37,12 @@ class Logger;
 class Context;
 class Config;
 
+enum InterpolationType : int;
+
 namespace io {
+
+enum Type : int;
+enum RegriddingFlag : int;
 
 void regrid_spatial_variable(SpatialVariableMetadata &var,
                              const Grid& grid, const File &nc,
@@ -88,7 +91,7 @@ void define_timeseries(const VariableMetadata& var,
 void define_time_bounds(const VariableMetadata& var,
                         const std::string &dimension_name,
                         const std::string &bounds_name,
-                        const File &nc, io::Type nctype = PISM_DOUBLE);
+                        const File &nc, io::Type nctype);
 
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
                      const Logger &log, std::vector<double> &data);

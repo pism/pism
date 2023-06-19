@@ -24,9 +24,14 @@
 #include <mpi.h>
 
 #include "pism/util/Units.hh"
-#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
+
+namespace io {
+enum Type : int;
+enum Backend : int;
+enum Mode : int;
+} // namespace io
 
 enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
 

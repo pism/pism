@@ -27,6 +27,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace stressbalance {

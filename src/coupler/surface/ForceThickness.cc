@@ -25,6 +25,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/interpolation.hh"
 
 namespace pism {
 namespace surface {
