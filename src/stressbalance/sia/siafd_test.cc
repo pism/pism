@@ -209,7 +209,7 @@ static void setInitStateF(IceGrid &grid,
       TestFGParameters F = exactFG(0.0, r, grid.z(), 0.0);
 
       thickness(i, j) = F.H;
-      enthalpy.set_column(i, j, &F.T[0]);
+      enthalpy.set_column(i, j, (F.T).data());
     }
   }
 

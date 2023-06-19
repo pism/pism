@@ -749,7 +749,7 @@ void NC_Serial::get_att_text_impl(const std::string &variable_name,
   MPI_Bcast(&len, 1, MPI_INT, 0, m_com);
 
   result.resize(len);
-  MPI_Bcast(result.data(), len, MPI_CHAR, 0, m_com);
+  MPI_Bcast(&result[0], len, MPI_CHAR, 0, m_com);
 }
 
 

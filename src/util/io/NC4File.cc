@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -127,7 +127,7 @@ void NC4File::def_var_impl(const std::string &name,
   }
 
   stat = nc_def_var(m_file_id, name.c_str(), pism_type_to_nc_type(nctype),
-                    static_cast<int>(dims.size()), &dimids[0], &varid);
+                    static_cast<int>(dims.size()), dimids.data(), &varid);
   check(PISM_ERROR_LOCATION, stat);
 
   // Compress 2D and 3D variables
@@ -151,7 +151,7 @@ void NC4File::def_var_chunking_impl(const std::string &name,
   stat = nc_inq_varid(m_file_id, name.c_str(), &varid);
   check(PISM_ERROR_LOCATION, stat);
 
-  stat = nc_def_var_chunking(m_file_id, varid, NC_CHUNKED, &dimensions[0]);
+  stat = nc_def_var_chunking(m_file_id, varid, NC_CHUNKED, dimensions.data());
   check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -208,7 +208,7 @@ void NC4File::inq_vardimid_impl(const std::string &variable_name, std::vector<st
   result.resize(ndims);
   dimids.resize(ndims);
 
-  stat = nc_inq_vardimid(m_file_id, varid, &dimids[0]); check(PISM_ERROR_LOCATION, stat);
+  stat = nc_inq_vardimid(m_file_id, varid, dimids.data()); check(PISM_ERROR_LOCATION, stat);
 
   for (int k = 0; k < ndims; ++k) {
     std::vector<char> name(NC_MAX_NAME + 1, 0);
@@ -282,7 +282,7 @@ void NC4File::get_att_double_impl(const std::string &variable_name,
   result.resize(len);
 
   // Now read data and see if we succeeded:
-  stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), &result[0]);
+  stat = nc_get_att_double(m_file_id, varid, att_name.c_str(), result.data());
   check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -360,7 +360,7 @@ void NC4File::put_att_double_impl(const std::string &variable_name,
                                   IO_Type xtype,
                                   const std::vector<double> &data) const {
   int stat = nc_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
-                               xtype, data.size(), &data[0]);
+                               xtype, data.size(), data.data());
   check(PISM_ERROR_LOCATION, stat);
 }
 
@@ -439,11 +439,11 @@ void NC4File::get_put_var_double(const std::string &variable_name,
 
     if (get) {
       stat = nc_get_varm_double(m_file_id, varid,
-                                &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                nc_start.data(), nc_count.data(), nc_stride.data(), nc_imap.data(),
                                 op); check(PISM_ERROR_LOCATION, stat);
     } else {
       stat = nc_put_varm_double(m_file_id, varid,
-                                &nc_start[0], &nc_count[0], &nc_stride[0], &nc_imap[0],
+                                nc_start.data(), nc_count.data(), nc_stride.data(), nc_imap.data(),
                                 op); check(PISM_ERROR_LOCATION, stat);
     }
   } else {
@@ -452,11 +452,11 @@ void NC4File::get_put_var_double(const std::string &variable_name,
 
     if (get) {
       stat = nc_get_vara_double(m_file_id, varid,
-                                &nc_start[0], &nc_count[0],
+                                nc_start.data(), nc_count.data(),
                                 op); check(PISM_ERROR_LOCATION, stat);
     } else {
       stat = nc_put_vara_double(m_file_id, varid,
-                                &nc_start[0], &nc_count[0],
+                                nc_start.data(), nc_count.data(),
                                 op); check(PISM_ERROR_LOCATION, stat);
     }
   }

@@ -63,7 +63,7 @@ static void regrid(const IceGrid& grid, const std::vector<double> &zlevels_out,
   const int X = 1, Z = 3; // indices, just for clarity
 
   unsigned int nlevels = zlevels_out.size();
-  double *input_array = &(lic->buffer[0]);
+  double *input_array = (lic->buffer).data();
 
   // array sizes for mapping from logical to "flat" indices
   int
@@ -740,10 +740,10 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
     bool written = file.attribute_type(var.get_name(), "not_written") == PISM_NAT;
     if (written) {
       return;
-    } else {
-      file.redef();
-      file.remove_attribute(var.get_name(), "not_written");
     }
+
+    file.redef();
+    file.remove_attribute(var.get_name(), "not_written");
   }
 
   // make sure we have at least one level
@@ -808,11 +808,11 @@ static void compute_range(MPI_Comm com, double *data, size_t data_size, double *
     max_result = std::max(max_result, data[k]);
   }
 
-  if (min) {
+  if (min != nullptr) {
     *min = GlobalMin(com, min_result);
   }
 
-  if (max) {
+  if (max != nullptr) {
     *max = GlobalMax(com, max_result);
   }
 }
@@ -874,9 +874,9 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
                                   input_x_min, input_x_max, input_y_min, input_y_max);
   }
 
-  if (z_internal.size() == 0) {
+  if (z_internal.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Interval vertical grid has 0 levels. This should never happen.");
+                                  "Internal vertical grid has 0 levels. This should never happen.");
   }
 
   if (z_internal.size() == 1 and input.z.size() > 1) {
@@ -897,7 +897,7 @@ static void check_grid_overlap(const grid_info &input, const IceGrid &internal,
                                   "a 2D field", input.filename.c_str());
   }
 
-  if (z_internal.size() > 1 and input.z.size() > 0) {
+  if (z_internal.size() > 1 and (not input.z.empty())) {
     // both internal field and input variable are 3D: check vertical grid extent
     // Note: in PISM 2D fields have one vertical level (z = 0).
     const double
@@ -928,8 +928,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              double *output) {
   const Logger &log = *grid.ctx()->log();
 
-  units::System::Ptr sys = variable.unit_system();
-  const std::vector<double>& levels = variable.levels();
+  auto sys = variable.unit_system();
+  const auto& levels = variable.levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
@@ -1073,7 +1073,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
       throw RuntimeError(PISM_ERROR_LOCATION, "variable " + name + " is missing");
     }
 
-    std::vector<std::string> dims = file.dimensions(var.name);
+    auto dims = file.dimensions(var.name);
     if (dims.size() != 1) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "variable '%s' in '%s' should to have 1 dimension (got %d)",
@@ -1185,7 +1185,7 @@ void read_time_bounds(const File &file,
   std::string name = metadata.get_name();
 
   try {
-    units::System::Ptr system = metadata.unit_system();
+    auto system = metadata.unit_system();
     units::Unit internal_units(system, metadata.get_string("units"));
 
     // Find the variable:
@@ -1463,7 +1463,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, IO_Typ
     }
 
     // Write text attributes:
-    for (auto s : variable.all_strings()) {
+    for (const auto& s : variable.all_strings()) {
       std::string
         name  = s.first,
         value = s.second;
@@ -1478,7 +1478,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, IO_Typ
     }
 
     // Write double attributes:
-    for (auto d : variable.all_doubles()) {
+    for (const auto& d : variable.all_doubles()) {
       std::string name  = d.first;
       std::vector<double> values = d.second;
 
@@ -1553,7 +1553,7 @@ std::string time_dimension(units::System::Ptr unit_system,
 
   auto dims = file.dimensions(variable_name);
 
-  for (auto d : dims) {
+  for (const auto &d : dims) {
     if (file.dimension_type(d, unit_system) == T_AXIS) {
       return d;
     }
