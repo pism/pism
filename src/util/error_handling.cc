@@ -199,10 +199,10 @@ void ParallelSection::reset() {
 }
 
 void ParallelSection::check() {
+#if (Pism_DEBUG==1)
   int success_flag = m_failed ? 0 : 1;
   int success_flag_global = 0;
 
-#if (Pism_DEBUG==1)
   MPI_Allreduce(&success_flag, &success_flag_global, 1, MPI_INT, MPI_LAND, m_com);
 
   if (success_flag_global == 0) {
