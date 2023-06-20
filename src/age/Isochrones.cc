@@ -17,16 +17,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "Isochrones.hh"
-
-#include <gsl/gsl_interp.h>
 #include <algorithm>
 #include <cassert>
+#include <gsl/gsl_interp.h>
+#include <memory>
 
-#include "pism/util/Context.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/age/Isochrones.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
 
 /*!
  *
@@ -37,7 +37,7 @@
 
 namespace pism {
 
-Isochrones::Isochrones(IceGrid::ConstPtr grid)
+Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
   : Component(grid) {
 
   const auto& time = grid->ctx()->time();
@@ -63,19 +63,14 @@ Isochrones::Isochrones(IceGrid::ConstPtr grid)
   m_depths = std::make_shared<array::Array3D>(grid, "isochronal_layer_depths",
                                               array::WITHOUT_GHOSTS, m_deposition_times);
 
-  m_depths->set_attrs("model_state",
-                      "thicknesses of isochronal layers",
-                      "m",
-                      "m",
-                      "", /* no standard name */
-                      0);
-
-  m_depths->metadata(0).z().clear_all_strings();
-  m_depths->metadata(0).z().set_name("deposition_time");
-  m_depths->metadata(0).z()["units"] = time->units_string();
-  m_depths->metadata(0).z()["calendar"] = time->calendar();
-  m_depths->metadata(0).z()["long name"] = "minimum deposition time for an isochronal layer";
-  m_depths->metadata(0).z()["axis"] = "T";
+  m_depths->metadata().long_name("thicknesses of isochronal layers").units("m");
+  auto &z = m_depths->metadata(0).z();
+  z.clear_all_strings();
+  z.set_name("deposition_time");
+  z["units"] = time->units_string();
+  z["calendar"] = time->calendar();
+  z["long name"] = "minimum deposition time for an isochronal layer";
+  z["axis"] = "T";
 
   m_tmp = std::make_shared<array::Array3D>(grid, "temporary storage",
                                            array::WITH_GHOSTS, m_deposition_times);
@@ -91,7 +86,7 @@ void Isochrones::init(const Geometry &geometry) {
   {
     array::AccessScope scope{&geometry.ice_thickness, m_depths.get()};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       m_depths->get_column(i, j)[0] = geometry.ice_thickness(i, j);
@@ -105,7 +100,7 @@ void Isochrones::init(const Geometry &geometry) {
   if (t < m_deposition_times[0]) {
     m_time_index = -1;
   } else {
-    int N = m_deposition_times.size();
+    int N = static_cast<int>(m_deposition_times.size());
 
     // Find the index k such that m_deposition_times[k] <= T < m_deposition_times[k + 1]
     //
@@ -130,7 +125,7 @@ void Isochrones::update(double t, double dt,
   {
     array::AccessScope scope{&climatic_mass_balance, &basal_melt_rate, m_depths.get()};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *d = m_depths->get_column(i, j);
@@ -187,7 +182,7 @@ void Isochrones::update(double t, double dt,
     return U * (U >= 0 ? f_n : f_p);
   };
 
-  for (Points p(*m_grid); p; p.next()) {
+  for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     const double
@@ -313,7 +308,7 @@ MaxTimestep Isochrones::max_timestep_impl(double t) const {
 }
 
 void Isochrones::define_model_state_impl(const File &output) const {
-  m_depths->define(output);
+  m_depths->define(output, io::PISM_DOUBLE);
 }
 
 void Isochrones::write_model_state_impl(const File &output) const {
@@ -337,17 +332,18 @@ public:
 
     m_vars = {{m_sys, "isochrone_depth", model->layer_depths().levels()}};
 
-    set_attrs("isochrone depth", "", "m", "m", 0);
-    m_vars[0].z().clear_all_strings();
-    m_vars[0].z().set_name("deposition_time");
-    m_vars[0].z()["units"] = time->units_string();
-    m_vars[0].z()["calendar"] = time->calendar();
-    m_vars[0].z()["long name"] = "minimum deposition time for an isochronal layer";
-    m_vars[0].z()["axis"] = "T";
+    m_vars[0].long_name("isochrone depth").units("m");
+    auto &z = m_vars[0].z();
+    z.clear_all_strings();
+    z.set_name("deposition_time");
+    z["units"] = time->units_string();
+    z["calendar"] = time->calendar();
+    z["long name"] = "minimum deposition time for an isochronal layer";
+    z["axis"] = "T";
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
     const auto& layer_depths = model->layer_depths();
 
@@ -358,7 +354,7 @@ protected:
 
     array::AccessScope scope{&layer_depths, result.get()};
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double *column = result->get_column(i, j);

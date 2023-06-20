@@ -19,12 +19,13 @@
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Array3D.hh"
+#include <memory>
 
 namespace pism {
 
 class Isochrones : public Component {
 public:
-  Isochrones(IceGrid::ConstPtr grid);
+  Isochrones(std::shared_ptr<const Grid> grid);
   virtual ~Isochrones() = default;
 
   void init(const Geometry &geometry);
