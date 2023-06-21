@@ -37,7 +37,7 @@ BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid,
   assert(m_flow_law->exponent() == 3.0);
 
   // make sure the grid is periodic in the Y direction
-  assert(m_grid->periodicity() == Y_PERIODIC);
+  assert(m_grid->periodicity() == grid::Y_PERIODIC);
 
   // store constant ice hardness (enthalpy and pressure values are irrelevant)
   m_B = m_flow_law->hardness(1e5, 0);
