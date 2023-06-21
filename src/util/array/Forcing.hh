@@ -80,9 +80,7 @@ private:
           const std::string &short_name,
           unsigned int buffer_size,
           InterpolationType interpolation_type);
-  void allocate(const std::string &short_name,
-                unsigned int buffer_size,
-                InterpolationType interpolation_type);
+  void allocate(unsigned int buffer_size, InterpolationType interpolation_type);
 
   double*** array3();
   void update(unsigned int start);

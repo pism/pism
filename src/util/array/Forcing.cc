@@ -141,7 +141,7 @@ Forcing::Forcing(std::shared_ptr<const Grid> grid,
   // (atmosphere::Given) when "-surface given" (Given) is selected.
   buffer_size = std::max(buffer_size, 1U);
 
-  allocate(short_name, buffer_size, interpolation_type);
+  allocate(buffer_size, interpolation_type);
 }
 
 std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const Grid> grid,
@@ -172,16 +172,14 @@ Forcing::Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name
                  InterpolationType interpolation_type)
   : array::Scalar(grid, short_name, 0),
     m_data(new Data()) {
-  allocate(short_name, buffer_size, interpolation_type);
+  allocate(buffer_size, interpolation_type);
 }
 
-void Forcing::allocate(const std::string &short_name,
-                       unsigned int buffer_size,
-                       InterpolationType interpolation_type) {
+void Forcing::allocate(unsigned int buffer_size, InterpolationType interpolation_type) {
   m_impl->report_range = false;
 
-  m_data->interp_type            = interpolation_type;
-  m_data->buffer_size            = buffer_size;
+  m_data->interp_type = interpolation_type;
+  m_data->buffer_size = buffer_size;
 
   auto config = m_impl->grid->ctx()->config();
 
