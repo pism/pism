@@ -290,8 +290,8 @@ void MohrCoulombYieldStress::update_impl(const YieldStressInputs &inputs,
   const auto &bed_topography = inputs.geometry->bed_elevation;
   const auto &sea_level      = inputs.geometry->sea_level_elevation;
 
-  array::AccessScope list{&W_till, &m_till_phi, &m_basal_yield_stress, &cell_type,
-                               &bed_topography, &sea_level, &ice_thickness};
+  array::AccessScope list{ &W_till,         &m_till_phi, &m_basal_yield_stress, &cell_type,
+                           &bed_topography, &sea_level,  &ice_thickness };
 
   if (add_transportable_water) {
     list.add(W_subglacial);
