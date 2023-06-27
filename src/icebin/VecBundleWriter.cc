@@ -1,60 +1,45 @@
 // See here for useful changes:
 // https://github.com/pism/pism/commit/443050f30743d6c2ef431c53e87dc6eb19a73dfd
 
-#include "pism/icebin/VecBundleWriter.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/array/Array.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/io_helpers.hh"
+#include <base/util/PISMTime.hh>
+#include <base/util/io/PIO.hh>
+#include <base/util/io/io_helpers.hh>
+#include <icebin/VecBundleWriter.hh>
 
 using namespace pism;
 
 namespace pism {
 namespace icebin {
 
-VecBundleWriter::VecBundleWriter(std::shared_ptr<pism::Grid> _grid, std::string const &_fname,
-                                 std::vector<pism::array::Array const *> &_vecs)
+VecBundleWriter::VecBundleWriter(pism::IceGrid::Ptr _grid, std::string const &_fname,
+                                 std::vector<pism::IceModelVec const *> &_vecs)
     : m_grid(_grid), fname(_fname), vecs(_vecs) {
 }
 
 void VecBundleWriter::init() {
-  auto config = m_grid->ctx()->config();
-  auto time = m_grid->ctx()->time();
+  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+               fname, PISM_READWRITE_MOVE);
 
-  pism::File file(m_grid->com,
-                  fname,
-                  string_to_backend(config->get_string("output.format")),
-                  io::PISM_READWRITE_MOVE,
-                  m_grid->ctx()->pio_iosys_id());
-
-  io::define_time(file,
-                  config->get_string("time.dimension_name"),
-                  time->calendar(),
-                  time->units_string(),
+  io::define_time(nc,
+                  m_grid->ctx()->config()->get_string("time.dimension_name"),
+                  m_grid->ctx()->time()->calendar(),
+                  m_grid->ctx()->time()->CF_units_string(),
                   m_grid->ctx()->unit_system());
 
-  for (pism::array::Array const *vec : vecs) {
-    vec->define(file, io::PISM_DOUBLE);
+  for (pism::IceModelVec const *vec : vecs) {
+    vec->define(nc, PISM_DOUBLE);
   }
 }
 
 /** Dump the value of the Vectors at curent PISM simulation time. */
 void VecBundleWriter::write(double time_s) {
-  auto config = m_grid->ctx()->config();
+  pism::PIO nc(m_grid->com, m_grid->ctx()->config()->get_string("output.format"),
+               fname.c_str(), PISM_READWRITE); // append to file
 
-  pism::File file(m_grid->com,
-                  fname,
-                  string_to_backend(config->get_string("output.format")),
-                  io::PISM_READWRITE, // append to file
-                  m_grid->ctx()->pio_iosys_id());
+  io::append_time(nc, m_grid->ctx()->config()->get_string("time.dimension_name"), time_s);
 
-  io::append_time(file, config->get_string("time.dimension_name"), time_s);
-
-  for (pism::array::Array const *vec : vecs) {
-    vec->write(file);
+  for (pism::IceModelVec const *vec : vecs) {
+    vec->write(nc);
   }
 }
 

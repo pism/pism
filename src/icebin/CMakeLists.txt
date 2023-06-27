@@ -5,6 +5,7 @@ add_library (pismicebin
   IBIceModel.cc
   IBSurfaceModel.cc
   MassEnergyBudget.cc
+  NullTransportHydrology.cc
   VecBundleWriter.cc
   )
 target_link_libraries (pismicebin pism)
