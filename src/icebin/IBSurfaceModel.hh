@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,73 +16,58 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _IBSURFACEMODEL_H_
-#define _IBSURFACEMODEL_H_
+#ifndef PISM_ICEBIN_SURFACE_MODEL_H
+#define PISM_ICEBIN_SURFACE_MODEL_H
 
-#include "base/util/iceModelVec.hh"
-#include "coupler/PISMAtmosphere.hh"
-#include "coupler/PISMSurface.hh"
+#include "pism/coupler/SurfaceModel.hh"
+
+#include <memory>
 
 namespace pism {
 namespace icebin {
 
-//! \brief A class implementing a constant-in-time surface model for the surface mass balance.
-//!
-//! Reads data from a PISM input file.
-//!
-//! Ice surface temperature is parameterized as in PISM-IBSurfaceModel, using a latitude
-//! and surface elevation-dependent formula.
-
 class IBSurfaceModel : public pism::surface::SurfaceModel {
 public:
-  IBSurfaceModel(IceGrid::ConstPtr g);
+  IBSurfaceModel(std::shared_ptr<const pism::Grid> grid);
 
 protected:
-  virtual void init_impl();
-  virtual void attach_atmosphere_model_impl(atmosphere::AtmosphereModel *input);
-  virtual void ice_surface_mass_flux_impl(IceModelVec2S &result);
-  virtual void ice_surface_temperature_impl(IceModelVec2S &result);
-  virtual void ice_surface_liquid_water_fraction_impl(IceModelVec2S &result);
-  virtual MaxTimestep max_timestep_impl(double t);
-  virtual void update_impl(double my_t, double my_dt);
-  virtual void get_diagnostics_impl(std::map<std::string, Diagnostic::Ptr> &dict,
-                                    std::map<std::string, TSDiagnostic::Ptr> &ts_dict);
-  virtual void write_variables_impl(const std::set<std::string> &vars, const PIO &nc);
-  virtual void add_vars_to_output_impl(const std::string &keyword, std::set<std::string> &result);
-  virtual void define_variables_impl(const std::set<std::string> &vars, const PIO &nc, IO_Type nctype);
+  void init_impl(const Geometry &geometry);
+  void update_impl(const Geometry &geometry, double my_t, double my_dt);
 
-protected:
-  bool _initialized;
+  const array::Scalar& accumulation_impl() const;
+  const array::Scalar& liquid_water_fraction_impl() const;
+  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar& melt_impl() const;
+  const array::Scalar& runoff_impl() const;
+  const array::Scalar& temperature_impl() const;
+
+  void define_model_state_impl(const File &output) const;
+  void write_model_state_impl(const File &output) const;
+
+  MaxTimestep max_timestep_impl(double t) const;
+
   std::string m_input_file;
-
-  // Organized list of the variables...
-  std::vector<std::pair<std::string, pism::IceModelVec2S *>> vecs;
-
-  // Used internally
-  void create(pism::IceModelVec2S &vec, std::string const &name);
-
 
 public:
   // ------ See icebin/contracts/modele_pism.cpp
   // Inputs from IceBin
 
-
   // Mass of ice being transferred GCM --> Ice Model
-  pism::IceModelVec2S massxfer; // [kg m-2 s-1]
+  pism::array::Scalar massxfer; // [kg m-2 s-1]
   // Enthalpy of ice being transferred Stieglitz --> Icebin
-  pism::IceModelVec2S enthxfer; // [J m-2 s-1]
+  pism::array::Scalar enthxfer; // [J m-2 s-1]
 
   // GCM's idea of energy transfer into ice sheet.
   // Used to compute mass/energy budget
-  pism::IceModelVec2S deltah;
+  pism::array::Scalar deltah;
 
   // Temperature of the Dirichlet B.C.
-  pism::IceModelVec2S ice_top_bc_temp;
+  pism::array::Scalar ice_top_bc_temp;
   // Water content of the Dirichlet B.C.
-  pism::IceModelVec2S ice_top_bc_wc;
+  pism::array::Scalar ice_top_bc_wc;
 };
 
-} // end of namespace surface
+} // end of namespace icebin
 } // end of namespace pism
 
-#endif /* _IBSURFACEMODEL_H_ */
+#endif /* PISM_ICEBIN_SURFACE_MODEL_H */
