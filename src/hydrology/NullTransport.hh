@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2018, 2021, 2022 PISM Authors
+// Copyright (C) 2012-2018, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,7 +60,7 @@ protected:
   void diffuse_till_water(double dt);
 
 private:
-  double m_diffuse_tillwat;
+  bool m_diffuse_tillwat;
   double m_diffusion_time;
   double m_diffusion_distance;
   double m_tillwat_max;
