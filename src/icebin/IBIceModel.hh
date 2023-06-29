@@ -33,6 +33,7 @@ IBIceModel.
 */
 
 class IBIceModel : public pism::IceModel {
+  // FIXME: this is a bad idea. It means that IBIceModel needs a better public API.
   friend class ::icebin::gpism::IceCoupler_PISM;
 
 public:
