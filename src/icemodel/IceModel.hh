@@ -209,25 +209,25 @@ protected:
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              io::Type default_diagnostics_type = io::PISM_FLOAT);
+                              io::Type default_diagnostics_type = io::PISM_FLOAT) const;
 
-  virtual void define_model_state(const File &file);
-  virtual void write_model_state(const File &file);
+  virtual void define_model_state(const File &file) const;
+  virtual void write_model_state(const File &file) const;
 
   enum HistoryTreatment {OVERWRITE_HISTORY = 0, PREPEND_HISTORY};
   enum MappingTreatment {WRITE_MAPPING = 0, SKIP_MAPPING};
   virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
-                              HistoryTreatment history_flag);
+                              HistoryTreatment history_flag) const;
 
-  virtual void write_mapping(const File &file);
-  virtual void write_run_stats(const File &file);
+  virtual void write_mapping(const File &file) const;
+  virtual void write_run_stats(const File &file) const;
 
 
   virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables,
-                                  io::Type default_type);
+                                  io::Type default_type) const;
   virtual void write_diagnostics(const File &file,
-                                 const std::set<std::string> &variables);
+                                 const std::set<std::string> &variables) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -249,9 +249,6 @@ protected:
 
   //! stores global attributes saved in a PISM output file
   VariableMetadata m_output_global_attributes;
-
-  //! run statistics
-  VariableMetadata m_run_stats;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
   std::map<std::string,const Component*> m_submodels;
@@ -379,7 +376,7 @@ protected:
   // see iMutil.cc
   virtual int process_signals();
   virtual void prepend_history(const std::string &string);
-  virtual void update_run_stats();
+  VariableMetadata run_stats() const;
 
   // working space (a convenience)
   static const int m_n_work2d = 3;

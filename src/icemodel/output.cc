@@ -70,7 +70,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 
 //! Write time-independent metadata to a file.
 void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
-                              HistoryTreatment history_flag) {
+                              HistoryTreatment history_flag) const {
   if (mapping_flag == WRITE_MAPPING) {
     write_mapping(file);
   }
@@ -97,13 +97,13 @@ Calls save_variables() to do the actual work.
  */
 void IceModel::save_results() {
   {
-    update_run_stats();
+    auto stats = run_stats();
 
     auto str = pism::printf(
       "PISM done. Performance stats: %.4f wall clock hours, %.4f proc.-hours, %.4f model years per proc.-hour.",
-      (double)m_run_stats["wall_clock_hours"],
-      (double)m_run_stats["processor_hours"],
-      (double)m_run_stats["model_years_per_processor_hour"]);
+      (double)stats["wall_clock_hours"],
+      (double)stats["processor_hours"],
+      (double)stats["model_years_per_processor_hour"]);
 
     prepend_history(str);
   }
@@ -141,7 +141,7 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void IceModel::write_mapping(const File &file) {
+void IceModel::write_mapping(const File &file) const {
   // only write mapping if it is set.
   const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
   std::string name = mapping.get_name();
@@ -159,19 +159,19 @@ void IceModel::write_mapping(const File &file) {
   }
 }
 
-void IceModel::write_run_stats(const File &file) {
-  update_run_stats();
-  if (not file.find_variable(m_run_stats.get_name())) {
-    file.define_variable(m_run_stats.get_name(), io::PISM_DOUBLE, {});
+void IceModel::write_run_stats(const File &file) const {
+  auto stats = run_stats();
+  if (not file.find_variable(stats.get_name())) {
+    file.define_variable(stats.get_name(), io::PISM_DOUBLE, {});
   }
-  io::write_attributes(file, m_run_stats, io::PISM_DOUBLE);
+  io::write_attributes(file, stats, io::PISM_DOUBLE);
 }
 
 void IceModel::save_variables(const File &file,
                               OutputKind kind,
                               const std::set<std::string> &variables,
                               double time,
-                              io::Type default_diagnostics_type) {
+                              io::Type default_diagnostics_type) const {
 
   // Compress 2D and 3D variables if output.compression_level > 0 and the output.format
   // supports it.
@@ -251,7 +251,7 @@ void IceModel::save_variables(const File &file,
 }
 
 void IceModel::define_diagnostics(const File &file, const std::set<std::string> &variables,
-                                  io::Type default_type) {
+                                  io::Type default_type) const {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -263,7 +263,7 @@ void IceModel::define_diagnostics(const File &file, const std::set<std::string> 
 
 //! \brief Writes variables listed in vars to filename, using nctype to write
 //! fields stored in dedicated Arrays.
-void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) {
+void IceModel::write_diagnostics(const File &file, const std::set<std::string> &variables) const {
   for (const auto& variable : variables) {
     auto diag = m_diagnostics.find(variable);
 
@@ -273,7 +273,7 @@ void IceModel::write_diagnostics(const File &file, const std::set<std::string> &
   }
 }
 
-void IceModel::define_model_state(const File &file) {
+void IceModel::define_model_state(const File &file) const {
   for (auto *v : m_model_state) {
     v->define(file, io::PISM_DOUBLE);
   }
@@ -287,7 +287,7 @@ void IceModel::define_model_state(const File &file) {
   }
 }
 
-void IceModel::write_model_state(const File &file) {
+void IceModel::write_model_state(const File &file) const {
   for (auto *v : m_model_state) {
     v->write(file);
   }

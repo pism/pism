@@ -61,7 +61,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
     m_time(context->time()),
     m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
     m_output_global_attributes("PISM_GLOBAL", m_sys),
-    m_run_stats("run_stats", m_sys),
     m_geometry(m_grid),
     m_new_bed_elevation(true),
     m_basal_yield_stress(m_grid, "tauc"),
@@ -77,12 +76,6 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
-
-  // time-independent info
-  {
-    m_run_stats["source"] = std::string("PISM ") + pism::revision;
-    m_run_stats["long_name"] = "Run statistics";
-  }
 
   m_extra_bounds["units"] = m_time->units_string();
 
@@ -407,7 +400,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
             io::PISM_READWRITE_MOVE,
             m_ctx->pio_iosys_id());
 
-  update_run_stats();
+  run_stats();
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
