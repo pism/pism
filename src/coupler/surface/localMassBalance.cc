@@ -287,6 +287,9 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
   return result;
 }
 
+struct PDDrandMassBalance::Impl {
+  gsl_rng *rng;
+};
 
 /*!
 Initializes the random number generator (RNG).  The RNG is GSL's recommended default,
@@ -295,9 +298,11 @@ wall clock time in seconds in non-repeatable case, and with 0 in repeatable case
  */
 PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::Ptr system,
                                        Kind kind)
-  : PDDMassBalance(config, system) {
-  pddRandGen = gsl_rng_alloc(gsl_rng_default);  // so pddRandGen != NULL now
-  gsl_rng_set(pddRandGen, kind == REPEATABLE ? 0 : time(0));
+  : PDDMassBalance(config, system),
+    m_impl(new Impl)
+{
+  m_impl->rng = gsl_rng_alloc(gsl_rng_default);  // so m_impl->rng != NULL now
+  gsl_rng_set(m_impl->rng, kind == REPEATABLE ? 0 : time(0));
 
   m_method = (kind == NOT_REPEATABLE
               ? "simulation of a random process"
@@ -306,10 +311,11 @@ PDDrandMassBalance::PDDrandMassBalance(Config::ConstPtr config, units::System::P
 
 
 PDDrandMassBalance::~PDDrandMassBalance() {
-  if (pddRandGen != NULL) {
-    gsl_rng_free(pddRandGen);
-    pddRandGen = NULL;
+  if (m_impl->rng != NULL) {
+    gsl_rng_free(m_impl->rng);
+    m_impl->rng = NULL;
   }
+  delete m_impl;
 }
 
 
@@ -352,7 +358,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
-    double T_k = T[k] + gsl_ran_gaussian(pddRandGen, S[k]); // add random: N(0,sigma)
+    double T_k = T[k] + gsl_ran_gaussian(m_impl->rng, S[k]); // add random: N(0,sigma)
 
     if (T_k > pdd_threshold_temp) {
       PDDs[k] = h_days * (T_k - pdd_threshold_temp);

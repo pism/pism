@@ -19,9 +19,6 @@
 #ifndef __localMassBalance_hh
 #define __localMassBalance_hh
 
-
-#include <gsl/gsl_rng.h>
-
 #include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
 #include "pism/util/ConfigInterface.hh" // needed to get Config::ConstPtr
 
@@ -196,7 +193,8 @@ public:
                         const std::vector<double> &T,
                         std::vector<double> &PDDs);
 protected:
-  gsl_rng *pddRandGen;
+  struct Impl;
+  Impl *m_impl;
 };
 
 

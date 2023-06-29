@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -21,8 +21,6 @@
 
 #include <memory>               // std::unique_ptr
 #include <vector>               // std::vector
-
-#include <gsl/gsl_spline.h>
 
 namespace pism {
 
@@ -75,20 +73,8 @@ private:
 
   double integral(double a, double b) const;
 
-  // period, in seconds (zero if not periodic)
-  double m_period;
-
-  // start of the period, in seconds (not used if not periodic)
-  double m_period_start;
-
-  // Times associated with corresponding values (used for linear interpolation)
-  std::vector<double> m_times;
-
-  // Forcing values
-  std::vector<double> m_values;
-
-  gsl_interp_accel* m_acc;
-  gsl_spline*       m_spline;
+  struct Impl;
+  Impl *m_impl;
 };
 
 } // end of namespace pism
