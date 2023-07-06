@@ -111,11 +111,16 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
   }
 
-  m_air_temp_sd->set_attrs("climate_forcing", "standard deviation of near-surface air temperature", "Kelvin", "Kelvin",
-                           "", 0);
+  m_air_temp_sd->metadata(0)
+      .intent("climate_forcing")
+      .long_name("standard deviation of near-surface air temperature")
+      .units("Kelvin");
 
-  m_mass_flux.set_attrs("diagnostic", "instantaneous surface mass balance (accumulation/ablation) rate", "kg m-2 s-1",
-                        "kg m-2 s-1", "land_ice_surface_specific_mass_balance_flux", 0);
+  m_mass_flux.metadata(0)
+      .intent("diagnostic")
+      .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1")
+      .standard_name("land_ice_surface_specific_mass_balance_flux");
   m_mass_flux.metadata().set_string("comment", "positive values correspond to ice gain");
 
   // diagnostic fields:
@@ -126,29 +131,43 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
     m_runoff       = allocate_runoff(g);
     m_temperature  = allocate_temperature(g);
 
-    m_temperature_driven_melt.set_attrs("diagnostic",
-                                        "temperature-driven melt in dEBM-simple",
-                                        "kg m-2", "kg m-2", "", 0);
+    m_temperature_driven_melt.metadata(0)
+        .intent("diagnostic")
+        .long_name("temperature-driven melt in dEBM-simple")
+        .units("kg m-2");
     m_temperature_driven_melt.set(0.0);
 
-    m_insolation_driven_melt.set_attrs("diagnostic",
-                                       "insolation-driven melt in dEBM-simple",
-                                       "kg m-2", "kg m-2", "", 0);
+    m_insolation_driven_melt.metadata(0)
+        .intent("diagnostic")
+        .long_name("insolation-driven melt in dEBM-simple")
+        .units("kg m-2");
     m_insolation_driven_melt.set(0.0);
 
-    m_background_melt.set_attrs("diagnostic",
-                                "background melt in dEBM-simple",
-                                "kg m-2", "kg m-2", "", 0);
+    m_background_melt.metadata(0)
+        .intent("diagnostic")
+        .long_name("background melt in dEBM-simple")
+        .units("kg m-2");
     m_background_melt.set(0.0);
   }
 
-  m_snow_depth.set_attrs("diagnostic", "snow cover depth (set to zero once a year)", "m", "m", "", 0);
+  m_snow_depth.metadata(0)
+      .intent("diagnostic")
+      .long_name("snow cover depth (set to zero once a year)")
+      .units("m");
   m_snow_depth.set(0.0);
 
-  m_surface_albedo.set_attrs("diagnostic", "surface_albedo", "1", "1", "surface_albedo", 0);
+  m_surface_albedo.metadata(0)
+      .intent("diagnostic")
+      .long_name("surface_albedo")
+      .units("1")
+      .standard_name("surface_albedo");
   m_surface_albedo.set(0.0);
 
-  m_transmissivity.set_attrs("diagnostic", "atmosphere_transmissivity", "", "", "", 0);
+  m_transmissivity.metadata(0)
+      .intent("diagnostic")
+      .long_name("atmosphere_transmissivity")
+      .units("1");
+
   m_transmissivity.set(0.0);
 }
 

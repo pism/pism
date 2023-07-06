@@ -22,7 +22,6 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace calving {
@@ -31,10 +30,11 @@ HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_calving_rate(grid, "hayhurst_calving_rate")
 {
-  m_calving_rate.set_attrs("diagnostic",
-                           "horizontal calving rate due to Hayhurst calving",
-                           "m s-1", "m day-1", "", 0);
-
+  m_calving_rate.metadata(0)
+      .intent("diagnostic")
+      .long_name("horizontal calving rate due to Hayhurst calving")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 }
 
 void HayhurstCalving::init() {

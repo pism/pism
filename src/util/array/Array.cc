@@ -395,35 +395,6 @@ const std::string& Array::get_name() const {
   return m_impl->name;
 }
 
-//! Sets NetCDF attributes of an Array object.
-/*! Call set_attrs("new pism_intent", "new long name", "new units", "") if a
-  variable does not have a standard name. Similarly, by putting "" in an
-  appropriate spot, it is possible tp leave long_name, units or pism_intent
-  unmodified.
-
-  If units != "", this also resets glaciological_units, so that they match
-  internal units.
- */
-void Array::set_attrs(const std::string &pism_intent,
-                            const std::string &long_name,
-                            const std::string &units,
-                            const std::string &glaciological_units,
-                            const std::string &standard_name,
-                            unsigned int component) {
-
-  metadata(component)["long_name"] = long_name;
-
-  metadata(component)["units"] = units;
-
-  if (not m_impl->grid->ctx()->config()->get_flag("output.use_MKS")) {
-    metadata(component)["glaciological_units"] = glaciological_units;
-  }
-
-  metadata(component)["pism_intent"] = pism_intent;
-
-  metadata(component)["standard_name"] = standard_name;
-}
-
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */

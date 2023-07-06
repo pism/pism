@@ -1849,9 +1849,10 @@ public:
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_last_thickness.set_attrs("internal",
-                               "ice thickness at the time of the last report of dHdt",
-                               "m", "m", "land_ice_thickness", 0);
+    m_last_thickness.metadata(0)
+        .long_name("ice thickness at the time of the last report of the rate of change of ice thickness")
+        .units("m")
+        .standard_name("land_ice_thickness");
   }
 protected:
   array::Array::Ptr compute_impl() const {

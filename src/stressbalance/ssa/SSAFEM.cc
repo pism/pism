@@ -100,15 +100,13 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
-  m_node_type.set_attrs("internal",                                 // intent
-                        "node types: interior, boundary, exterior", // long name
-                        "", "", "", 0);                             // no units or standard name
+  m_node_type.metadata(0).long_name(
+      "node types: interior, boundary, exterior"); // no units or standard name
 
   // Element::nodal_values() expects a ghosted array::Scalar. Ghosts if this field are
   // never assigned to and not communicated, though.
-  m_boundary_integral.set_attrs("internal",                                      // intent
-                                "residual contribution from lateral boundaries", // long name
-                                "", "", "", 0); // no units or standard name
+  m_boundary_integral.metadata(0).long_name(
+      "residual contribution from lateral boundaries"); // no units or standard name
 }
 
 SSA *SSAFEMFactory(std::shared_ptr<const Grid> g) {

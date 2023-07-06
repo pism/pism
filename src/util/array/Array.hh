@@ -245,13 +245,6 @@ public:
   void set_name(const std::string &name);
   const std::string& get_name() const;
 
-  void set_attrs(const std::string &pism_intent,
-                 const std::string &long_name,
-                 const std::string &units,
-                 const std::string &glaciological_units,
-                 const std::string &standard_name,
-                 unsigned int component);
-
   void define(const File &file, io::Type default_type) const;
 
   void read(const std::string &filename, unsigned int time);

@@ -38,24 +38,28 @@ ShallowStressBalance::ShallowStressBalance(std::shared_ptr<const Grid> g)
     m_e_factor(1.0)
 {
 
-  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled") == true) {
+  if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled")) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
-  } else if (m_config->get_flag("basal_resistance.regularized_coulomb.enabled") == true) {
+  } else if (m_config->get_flag("basal_resistance.regularized_coulomb.enabled")) {
     m_basal_sliding_law = new IceBasalResistanceRegularizedLaw(*m_config);
   } else {
     m_basal_sliding_law = new IceBasalResistancePlasticLaw(*m_config);
   }
 
-  m_velocity.set_attrs("model_state",
-                       "thickness-advective ice velocity (x-component)",
-                       "m s-1", "m s-1", "", 0);
-  m_velocity.set_attrs("model_state",
-                       "thickness-advective ice velocity (y-component)",
-                       "m s-1", "m s-1", "", 1);
+  m_velocity.metadata(0)
+      .intent("model_state")
+      .long_name("thickness-advective ice velocity (x-component)")
+      .units("m s-1");
+  m_velocity.metadata(1)
+      .intent("model_state")
+      .long_name("thickness-advective ice velocity (y-component)")
+      .units("m s-1");
 
-  m_basal_frictional_heating.set_attrs("diagnostic",
-                                       "basal frictional heating",
-                                       "W m-2", "mW m-2", "", 0);
+  m_basal_frictional_heating.metadata(0)
+      .intent("diagnostic")
+      .long_name("basal frictional heating")
+      .units("W m-2")
+      .glaciological_units("mW m-2");
 }
 
 ShallowStressBalance::~ShallowStressBalance() {

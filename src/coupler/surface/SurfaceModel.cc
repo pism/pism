@@ -34,10 +34,12 @@ namespace surface {
 array::Scalar::Ptr SurfaceModel::allocate_layer_mass(std::shared_ptr<const Grid> grid) {
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_mass"));
 
-  result->set_attrs("climate_forcing", "mass held in the surface layer",
-                    "kg", "kg", "", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("mass held in the surface layer")
+      .units("kg");
 
-  result->metadata()["valid_min"] = {0.0};
+  result->metadata()["valid_min"] = { 0.0 };
 
   return result;
 }
@@ -46,25 +48,26 @@ array::Scalar::Ptr SurfaceModel::allocate_layer_thickness(std::shared_ptr<const 
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_layer_thickness"));
 
-  result->set_attrs("climate_forcing",
-                    "thickness of the surface process layer at the top surface of the ice",
-                    "m", "m", "", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("thickness of the surface process layer at the top surface of the ice")
+      .units("m");
 
-  result->metadata()["valid_min"] = {0.0};
+  result->metadata()["valid_min"] = { 0.0 };
 
   return result;
 }
 
 array::Scalar::Ptr SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid) {
 
-  array::Scalar::Ptr result(new array::Scalar(grid,
-                                              "ice_surface_liquid_water_fraction"));
+  array::Scalar::Ptr result(new array::Scalar(grid, "ice_surface_liquid_water_fraction"));
 
-  result->set_attrs("climate_forcing",
-                    "liquid water fraction of the ice at the top surface",
-                    "1", "1", "", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("liquid water fraction of the ice at the top surface")
+      .units("1");
 
-  result->metadata()["valid_range"] = {0.0, 1.0};
+  result->metadata()["valid_range"] = { 0.0, 1.0 };
 
   return result;
 }
@@ -73,15 +76,17 @@ array::Scalar::Ptr SurfaceModel::allocate_mass_flux(std::shared_ptr<const Grid> 
 
   array::Scalar::Ptr result(new array::Scalar(grid, "climatic_mass_balance"));
 
-  result->set_attrs("climate_forcing",
-                    "surface mass balance (accumulation/ablation) rate",
-                    "kg m-2 second-1", "kg m-2 year-1",
-                    "land_ice_surface_specific_mass_balance_flux", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 second-1")
+      .glaciological_units("kg m-2 year-1")
+      .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   Config::ConstPtr config = grid->ctx()->config();
-  const double smb_max = config->get_number("surface.given.smb_max", "kg m-2 second-1");
+  const double smb_max    = config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
-  result->metadata()["valid_range"] = {-smb_max, smb_max};
+  result->metadata()["valid_range"] = { -smb_max, smb_max };
 
   return result;
 }
@@ -90,11 +95,12 @@ array::Scalar::Ptr SurfaceModel::allocate_temperature(std::shared_ptr<const Grid
 
   array::Scalar::Ptr result(new array::Scalar(grid, "ice_surface_temp"));
 
-  result->set_attrs("climate_forcing",
-                    "temperature of the ice at the ice surface but below firn processes",
-                    "Kelvin", "Kelvin", "", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("temperature of the ice at the ice surface but below firn processes")
+      .units("Kelvin");
 
-  result->metadata()["valid_range"] = {0.0, 323.15}; // [0C, 50C]
+  result->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
 
   return result;
 }
@@ -103,9 +109,10 @@ array::Scalar::Ptr SurfaceModel::allocate_accumulation(std::shared_ptr<const Gri
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_accumulation_flux"));
 
-  result->set_attrs("diagnostic",
-                    "surface accumulation (precipitation minus rain)",
-                    "kg m-2", "kg m-2", "", 0);
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("surface accumulation (precipitation minus rain)")
+      .units("kg m-2");
 
   return result;
 }
@@ -114,9 +121,10 @@ array::Scalar::Ptr SurfaceModel::allocate_melt(std::shared_ptr<const Grid> grid)
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_melt_flux"));
 
-  result->set_attrs("diagnostic",
-                    "surface melt",
-                    "kg m-2", "kg m-2", "", 0);
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("surface melt")
+      .units("kg m-2");
 
   return result;
 }
@@ -125,9 +133,10 @@ array::Scalar::Ptr SurfaceModel::allocate_runoff(std::shared_ptr<const Grid> gri
 
   array::Scalar::Ptr result(new array::Scalar(grid, "surface_runoff_flux"));
 
-  result->set_attrs("diagnostic",
-                    "surface meltwater runoff",
-                    "kg m-2", "kg m-2", "", 0);
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("surface meltwater runoff")
+      .units("kg m-2");
 
   return result;
 }

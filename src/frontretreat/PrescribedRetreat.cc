@@ -35,7 +35,10 @@ PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
         std::make_shared<array::Forcing>(m_grid, file, "land_ice_area_fraction_retreat",
                                          "", // no standard name
                                          buffer_size, opt.periodic);
-    m_retreat_mask->set_attrs("forcing", "maximum ice extent mask", "1", "1", "", 0);
+    m_retreat_mask->metadata(0)
+        .intent("forcing")
+        .long_name("maximum ice extent mask")
+        .units("1");
   }
 }
 

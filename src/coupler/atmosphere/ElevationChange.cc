@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -62,8 +62,11 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> grid, std::shared_p
                                                       buffer_size,
                                                       opt.periodic,
                                                       LINEAR);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
-                                   "m", "m", "surface_altitude", 0);
+    m_reference_surface->metadata()
+        .intent("climate_forcing")
+        .long_name("ice surface elevation")
+        .units("m")
+        .standard_name("surface_altitude");
   }
 
   m_precipitation = allocate_precipitation(grid);

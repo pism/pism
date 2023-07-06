@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -53,8 +53,11 @@ void Given::init_impl(const Geometry &geometry) {
                                                            buffer_size, opt.periodic);
   }
 
-  m_frontal_melt_rate->set_attrs("climate_forcing", "frontal melt rate", "m s-1", "m year-1", "",
-                                 0);
+  m_frontal_melt_rate->metadata(0)
+      .intent("climate_forcing")
+      .long_name("frontal melt rate")
+      .units("m s-1")
+      .glaciological_units("m year-1");
 
   m_frontal_melt_rate->init(opt.filename, opt.periodic);
 }

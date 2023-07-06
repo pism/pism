@@ -36,9 +36,10 @@ YieldStress::YieldStress(std::shared_ptr<const Grid> g)
   m_basal_yield_stress(m_grid, "tauc") {
 
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
-  m_basal_yield_stress.set_attrs("model_state",
-                                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                                 "Pa", "Pa", "", 0);
+  m_basal_yield_stress.metadata(0)
+      .intent("model_state")
+      .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
+      .units("Pa");
 }
 
 /*!

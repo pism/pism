@@ -18,25 +18,26 @@
 
 #include "pism/coupler/frontalmelt/DischargeGiven.hh"
 
-#include "pism/util/Grid.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/coupler/util/options.hh"
 #include "pism/coupler/frontalmelt/FrontalMeltPhysics.hh"
+#include "pism/coupler/util/options.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/array/Forcing.hh"
 
 namespace pism {
 namespace frontalmelt {
-  
+
 DischargeGiven::DischargeGiven(std::shared_ptr<const Grid> grid)
-  : FrontalMelt(grid, nullptr),
-    m_frontal_melt_rate(grid, "frontal_melt_rate") {
+    : FrontalMelt(grid, nullptr), m_frontal_melt_rate(grid, "frontal_melt_rate") {
 
-  m_frontal_melt_rate.set_attrs("diagnostic", "frontal melt rate",
-                                "m s-1", "m day-1", "", 0);
+  m_frontal_melt_rate.metadata(0)
+      .intent("diagnostic")
+      .long_name("frontal melt rate")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 
-  m_log->message(2,
-                 "* Initializing the frontal melt model\n"
-                 "  UAF-UT\n");
+  m_log->message(2, "* Initializing the frontal melt model\n"
+                    "  UAF-UT\n");
 
   m_theta_ocean = array::Forcing::Constant(grid, "theta_ocean", 0.0);
 
@@ -44,7 +45,7 @@ DischargeGiven::DischargeGiven(std::shared_ptr<const Grid> grid)
 }
 
 void DischargeGiven::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.discharge_given");
 
@@ -62,13 +63,18 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
                                                               buffer_size, opt.periodic);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing", "potential temperature of the adjacent ocean",
-                           "Celsius", "Celsius", "", 0);
+  m_theta_ocean->metadata(0)
+      .intent("climate_forcing")
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Celsius");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 
-  m_subglacial_discharge->set_attrs("climate_forcing", "subglacial discharge", "kg m-2 s-1",
-                                    "kg m-2 year-1", "", 0);
+  m_subglacial_discharge->metadata(0)
+      .intent("climate_forcing")
+      .long_name("subglacial discharge")
+      .units("kg m-2 s-1")
+      .glaciological_units("kg m-2 year-1");
 
   m_subglacial_discharge->init(opt.filename, opt.periodic);
 }

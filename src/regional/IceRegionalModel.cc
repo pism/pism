@@ -32,15 +32,15 @@
 namespace pism {
 
 IceRegionalModel::IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c)
-  : IceModel(g, c),
-    m_no_model_mask(m_grid, "no_model_mask"),
-    m_usurf_stored(m_grid, "usurfstore"),
-    m_thk_stored(m_grid, "thkstore")
-{
+    : IceModel(g, c),
+      m_no_model_mask(m_grid, "no_model_mask"),
+      m_usurf_stored(m_grid, "usurfstore"),
+      m_thk_stored(m_grid, "thkstore") {
   m_no_model_mask.set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
-    m_ch_warming_flux.reset(new array::Array3D(m_grid, "ch_warming_flux", array::WITHOUT_GHOSTS, m_grid->z()));
+    m_ch_warming_flux.reset(
+        new array::Array3D(m_grid, "ch_warming_flux", array::WITHOUT_GHOSTS, m_grid->z()));
   }
 }
 
@@ -49,33 +49,31 @@ void IceRegionalModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-  m_log->message(2,
-                 "  creating IceRegionalModel vecs ...\n");
+  m_log->message(2, "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
-  m_no_model_mask.set_attrs("model_state",
-                            "mask: zeros (modeling domain) and ones"
-                            " (no-model buffer near grid edges)",
-                            "", "", "", 0); // no units and no standard name
-  m_no_model_mask.metadata()["flag_values"] = {0, 1};
+  m_no_model_mask.metadata(0)
+      .intent("model_state")
+      .long_name(
+          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
+  m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
   m_no_model_mask.set_time_independent(true);
   m_no_model_mask.metadata().set_output_type(io::PISM_INT);
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
-  m_usurf_stored.set_attrs("model_state",
-                           "saved surface elevation for use to keep surface gradient constant"
-                           " in no_model strip",
-                           "m", "m",
-                           "", 0); //  no standard name
+  m_usurf_stored.metadata(0)
+      .intent("model_state")
+      .long_name(
+          "saved surface elevation for use to keep surface gradient constant in no_model strip")
+      .units("m"); //  no standard name
 
   // stencil width of 1 needed for differentiation
-  m_thk_stored.set_attrs("model_state",
-                         "saved ice thickness for use to keep driving stress constant"
-                         " in no_model strip",
-                         "m", "m",
-                         "", 0); //  no standard name
+  m_thk_stored.metadata(0)
+      .intent("model_state")
+      .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
+      .units("m"); //  no standard name
 
   m_model_state.insert(&m_thk_stored);
   m_model_state.insert(&m_usurf_stored);

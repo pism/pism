@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -30,27 +30,31 @@ namespace ocean {
 
 array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbtemp"));
-  result->set_attrs("diagnostic",
-                    "ice temperature at the bottom of floating ice",
-                    "Kelvin", "Kelvin", "", 0);
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("ice temperature at the bottom of floating ice")
+      .units("Kelvin");
   return result;
 }
 
 array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbmassflux"));
 
-  result->set_attrs("diagnostic", "shelf base mass flux",
-                    "kg m-2 s-1", "kg m-2 year-1", "", 0);
-
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("shelf base mass flux")
+      .units("kg m-2 s-1")
+      .glaciological_units("kg m-2 year-1");
   return result;
 }
 
 array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
-  array::Scalar::Ptr result(new array::Scalar(g,
-                                              "average_water_column_pressure"));
-  result->set_attrs("diagnostic",
-                    "vertically-averaged water column pressure",
-                    "Pa", "Pa", "", 0);
+  array::Scalar::Ptr result(new array::Scalar(g, "average_water_column_pressure"));
+
+  result->metadata(0)
+      .intent("diagnostic")
+      .long_name("vertically-averaged water column pressure")
+      .units("Pa");
 
   return result;
 }

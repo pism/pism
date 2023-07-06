@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -56,12 +56,16 @@ Given::Given(std::shared_ptr<const Grid> g)
                                                    opt.periodic);
   }
 
-  m_shelfbtemp->set_attrs("climate_forcing",
-                          "absolute temperature at ice shelf base",
-                          "Kelvin", "Kelvin", "", 0);
-  m_shelfbmassflux->set_attrs("climate_forcing",
-                              "ice mass flux from ice shelf base (positive flux is loss from ice shelf)",
-                              "kg m-2 s-1", "kg m-2 year-1", "", 0);
+  m_shelfbtemp->metadata(0)
+      .intent("climate_forcing")
+      .long_name("absolute temperature at ice shelf base")
+      .units("Kelvin");
+
+  m_shelfbmassflux->metadata(0)
+      .intent("climate_forcing")
+      .long_name("ice mass flux from ice shelf base (positive flux is loss from ice shelf)")
+      .units("kg m-2 s-1")
+      .glaciological_units("kg m-2 year-1");
 }
 
 void Given::init_impl(const Geometry &geometry) {

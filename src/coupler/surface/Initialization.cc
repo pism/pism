@@ -38,36 +38,45 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
 
   // allocate storage
   {
-    m_mass_flux.set_attrs("model_state",
-                          "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)",
-                          "kg m-2 s-1", "kg m-2 s-1", "", 0);
+    m_mass_flux.metadata(0)
+        .intent("model_state")
+        .long_name(
+            "surface mass balance (accumulation/ablation) rate, as seen by the ice dynamics code (used for restarting)")
+        .units("kg m-2 s-1");
     m_mass_flux.set_time_independent(false);
 
-    m_temperature.set_attrs("model_state",
-                            "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)",
-                            "Kelvin", "Kelvin", "", 0);
+    m_temperature.metadata(0)
+        .intent("model_state")
+        .long_name(
+            "temperature of the ice at the ice surface but below firn processes, as seen by the ice dynamics code (used for restarting)")
+        .units("Kelvin");
     m_temperature.set_time_independent(false);
 
     m_liquid_water_fraction = allocate_liquid_water_fraction(grid);
     m_liquid_water_fraction->metadata().set_name("effective_ice_surface_liquid_water_fraction");
-    m_liquid_water_fraction->set_attrs("model_state",
-                                       "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)",
-                                       "1", "1", "", 0);
+    m_liquid_water_fraction->metadata(0)
+        .intent("model_state")
+        .long_name(
+            "liquid water fraction of the ice at the top surface, as seen by the ice dynamics code (used for restarting)")
+        .units("1");
     m_liquid_water_fraction->set_time_independent(false);
 
     m_layer_mass = allocate_layer_mass(grid);
     m_layer_mass->metadata().set_name("effective_surface_layer_mass");
-    m_layer_mass->set_attrs("model_state",
-                            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)",
-                            "kg", "kg",
-                            "", 0);
+    m_layer_mass->metadata(0)
+        .intent("model_state")
+        .long_name(
+            "mass held in the surface layer, as seen by the ice dynamics code (used for restarting)")
+        .units("kg");
     m_layer_mass->set_time_independent(false);
 
     m_layer_thickness = allocate_layer_thickness(grid);
     m_layer_thickness->metadata().set_name("effective_surface_layer_thickness");
-    m_layer_thickness->set_attrs("model_state",
-                                 "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)",
-                                 "meters", "meters", "", 0);
+    m_layer_thickness->metadata(0)
+        .intent("model_state")
+        .long_name(
+            "thickness of the surface layer, as seen by the ice dynamics code (used for restarting)")
+        .units("meters");
     m_layer_thickness->set_time_independent(false);
   }
 

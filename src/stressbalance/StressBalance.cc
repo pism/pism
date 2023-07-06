@@ -143,14 +143,17 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
 
-  m_w.set_attrs("diagnostic",
-                "vertical velocity of ice, relative to base of ice directly below",
-                "m s-1", "m year-1", "", 0);
+  m_w.metadata(0)
+      .intent("diagnostic")
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s-1")
+      .glaciological_units("m year-1");
   m_w.set_time_independent(false);
 
-  m_strain_heating.set_attrs("internal",
-                             "rate of strain heating in ice (dissipation heating)",
-                             "W m-3", "W m-3", "", 0);
+  m_strain_heating.metadata(0)
+      .intent("internal")
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m-3");
 }
 
 StressBalance::~StressBalance() {

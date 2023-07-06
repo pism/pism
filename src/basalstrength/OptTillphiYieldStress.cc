@@ -45,22 +45,24 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
 
   m_name = "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
 
-  m_usurf_target.set_attrs("",
-                           "target surface elevation for tillphi optimization",
-                           "m", "m", "" /* no standard name */, 0);
+  m_usurf_target.metadata()
+      .long_name("target surface elevation for tillphi optimization")
+      .units("m");
+
   m_usurf_target.set_time_independent(true);
 
-  m_usurf_difference.set_attrs("diagnostic",
-                               "difference between modeled and target"
-                               " surface elevations",
-                               "m", "m", "" /* no standard name */, 0);
+  m_usurf_difference.metadata()
+      .intent("diagnostic")
+      .long_name("difference between modeled and target surface elevations")
+      .units("m");
+
   m_usurf_difference.set(0.0);
 
-  m_mask.set_attrs("diagnostic",
-                   "one if the till friction angle was"
-                   " updated by the last iteration, zero otherwise ",
-                   "", "",      // no units
-                   "" /* no standard name */, 0);
+  m_mask.metadata()
+      .intent("diagnostic")
+      .long_name(
+          "one if the till friction angle was updated by the last iteration, zero otherwise ");
+
   m_mask.metadata()["flag_values"] = {0.0, 1.0};
   m_mask.metadata()["flag_meanings"] = "no_update updated_during_last_iteration";
 

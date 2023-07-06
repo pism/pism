@@ -20,12 +20,9 @@
 
 #include "pism/hydrology/Routing.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/MaxTimestep.hh"
 
 #include "pism/util/error_handling.hh"
 
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
@@ -276,44 +273,44 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
   m_rg = (m_config->get_number("constants.fresh_water.density") *
           m_config->get_number("constants.standard_gravity"));
 
-  m_Qstag.set_attrs("internal",
-                    "cell face-centered (staggered) components of advective subglacial water flux",
-                    "m2 s-1", "m2 s-1", "", 0);
+  m_Qstag.metadata(0)
+      .long_name("cell face-centered (staggered) components of advective subglacial water flux")
+      .units("m2 s-1");
 
-  m_Qstag_average.set_attrs("internal",
-                            "average (over time) advection flux on the staggered grid",
-                            "m2 s-1", "m2 s-1", "", 0);
+  m_Qstag_average.metadata(0)
+      .long_name("average (over time) advection flux on the staggered grid")
+      .units("m2 s-1");
 
-  m_Vstag.set_attrs("internal",
-                    "cell face-centered (staggered) components of water velocity"
-                    " in subglacial water layer",
-                    "m s-1", "m s-1", "", 0);
+  m_Vstag.metadata(0)
+      .long_name(
+          "cell face-centered (staggered) components of water velocity in subglacial water layer")
+      .units("m s-1");
 
   // auxiliary variables which NEED ghosts
-  m_Wstag.set_attrs("internal",
-                    "cell face-centered (staggered) values of water layer thickness",
-                    "m", "m", "", 0);
-  m_Wstag.metadata()["valid_min"] = {0.0};
+  m_Wstag.metadata(0)
+      .long_name("cell face-centered (staggered) values of water layer thickness")
+      .units("m");
+  m_Wstag.metadata()["valid_min"] = { 0.0 };
 
-  m_Kstag.set_attrs("internal",
-                    "cell face-centered (staggered) values of nonlinear conductivity",
-                    "", "", "", 0);
-  m_Kstag.metadata()["valid_min"] = {0.0};
+  m_Kstag.metadata(0)
+      .intent("internal")
+      .long_name("cell face-centered (staggered) values of nonlinear conductivity");
+  m_Kstag.metadata()["valid_min"] = { 0.0 };
 
-  m_R.set_attrs("internal",
-                "work space for modeled subglacial water hydraulic potential",
-                "Pa", "Pa", "", 0);
+  m_R.metadata(0)
+      .long_name("work space for modeled subglacial water hydraulic potential")
+      .units("Pa");
 
   // temporaries during update; do not need ghosts
-  m_Wnew.set_attrs("internal",
-                   "new thickness of transportable subglacial water layer during update",
-                   "m", "m", "", 0);
-  m_Wnew.metadata()["valid_min"] = {0.0};
+  m_Wnew.metadata(0)
+      .long_name("new thickness of transportable subglacial water layer during update")
+      .units("m");
+  m_Wnew.metadata()["valid_min"] = { 0.0 };
 
-  m_Wtillnew.set_attrs("internal",
-                       "new thickness of till (subglacial) water layer during update",
-                       "m", "m", "", 0);
-  m_Wtillnew.metadata()["valid_min"] = {0.0};
+  m_Wtillnew.metadata(0)
+      .long_name("new thickness of till (subglacial) water layer during update")
+      .units("m");
+  m_Wtillnew.metadata()["valid_min"] = { 0.0 };
 
   {
     double alpha = m_config->get_number("hydrology.thickness_power_in_flux");

@@ -32,18 +32,21 @@ StressCalving::StressCalving(std::shared_ptr<const Grid> grid,
 {
 
   m_strain_rates.metadata(0).set_name("eigen1");
-  m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 0);
+  m_strain_rates.metadata(0)
+      .long_name("major principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
-  m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 1);
+  m_strain_rates.metadata(1)
+      .long_name("minor principal component of horizontal strain-rate")
+      .units("second-1");
 
-  m_calving_rate.set_attrs("internal", "horizontal calving rate", "m s-1", "m year-1", "", 0);
+  m_calving_rate.metadata(0)
+      .long_name("horizontal calving rate")
+      .units("m s-1")
+      .glaciological_units("m year-1");
 
-  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
+  m_cell_type.metadata(0).long_name("cell type mask");
 }
 
 const array::Scalar &StressCalving::calving_rate() const {

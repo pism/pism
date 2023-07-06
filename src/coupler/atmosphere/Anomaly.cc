@@ -52,13 +52,16 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel>
                                                           opt.periodic);
   }
 
-  m_air_temp_anomaly->set_attrs("climate_forcing",
-                                "anomaly of the near-surface air temperature",
-                                "Kelvin", "Kelvin", "", 0);
+  m_air_temp_anomaly->metadata(0)
+      .intent("climate_forcing")
+      .long_name("anomaly of the near-surface air temperature")
+      .units("Kelvin");
 
-  m_precipitation_anomaly->set_attrs("climate_forcing",
-                                     "anomaly of the ice-equivalent precipitation rate",
-                                     "kg m-2 second-1", "kg m-2 year-1", "", 0);
+  m_precipitation_anomaly->metadata(0)
+      .intent("climate_forcing")
+      .long_name("anomaly of the ice-equivalent precipitation rate")
+      .units("kg m-2 second-1")
+      .glaciological_units("kg m-2 year-1");
 
   m_precipitation = allocate_precipitation(g);
   m_temperature   = allocate_temperature(g);

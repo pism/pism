@@ -86,25 +86,29 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
     m_sd_file_set = false;
   }
 
-  m_air_temp_sd->set_attrs("climate_forcing",
-                           "standard deviation of near-surface air temperature",
-                           "Kelvin", "Kelvin", "", 0);
+  m_air_temp_sd->metadata(0)
+      .intent("climate_forcing")
+      .long_name("standard deviation of near-surface air temperature")
+      .units("Kelvin");
 
-  m_mass_flux.set_attrs("diagnostic",
-                        "instantaneous surface mass balance (accumulation/ablation) rate",
-                        "kg m-2 s-1", "kg m-2 s-1",
-                        "land_ice_surface_specific_mass_balance_flux", 0);
+  m_mass_flux.metadata(0)
+      .intent("diagnostic")
+      .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1")
+      .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   m_mass_flux.metadata()["comment"] = "positive values correspond to ice gain";
 
-  m_snow_depth.set_attrs("diagnostic",
-                         "snow cover depth (set to zero once a year)",
-                         "m", "m", "", 0);
+  m_snow_depth.metadata(0)
+      .intent("diagnostic")
+      .long_name("snow cover depth (set to zero once a year)")
+      .units("m");
   m_snow_depth.set(0.0);
 
-  m_firn_depth.set_attrs("diagnostic",
-                         "firn cover depth",
-                         "m", "m", "", 0);
+  m_firn_depth.metadata(0)
+      .intent("diagnostic")
+      .long_name("firn cover depth")
+      .units("m");
   m_firn_depth.metadata()["valid_min"] = {0.0};
   m_firn_depth.set(0.0);
 

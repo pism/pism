@@ -122,16 +122,16 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
 
     File file(m_grid->com, surface_input.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_surface_input_for_hydrology = std::make_shared<array::Forcing>(m_grid,
-                                                                file,
-                                                                "water_input_rate",
-                                                                "", // no standard name
-                                                                buffer_size,
-                                                                surface_input.periodic);
-    m_surface_input_for_hydrology->set_attrs("diagnostic",
-                                             "water input rate for the subglacial hydrology model",
-                                             "kg m-2 s-1", "kg m-2 year-1", "", 0);
-    m_surface_input_for_hydrology->metadata()["valid_min"] = {0.0};
+    m_surface_input_for_hydrology =
+        std::make_shared<array::Forcing>(m_grid, file, "water_input_rate",
+                                         "", // no standard name
+                                         buffer_size, surface_input.periodic);
+    m_surface_input_for_hydrology->metadata(0)
+        .intent("diagnostic")
+        .long_name("water input rate for the subglacial hydrology model")
+        .units("kg m-2 s-1")
+        .glaciological_units("kg m-2 year-1");
+    m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 }
 
@@ -156,7 +156,7 @@ void IceModel::reset_counters() {
       // and not a multiple of year_increment:
       last_multiple -= year_increment * static_cast<int>(year % year_increment < 0);
 
-      units::DateTime last_date{last_multiple, 1, 1, 0, 0, 0.0};
+      units::DateTime last_date{ last_multiple, 1, 1, 0, 0, 0.0 };
 
       m_timestep_hit_multiples_last_time = m_time->units().time(last_date, m_time->calendar());
     } else {
@@ -202,31 +202,37 @@ void IceModel::allocate_storage() {
   // yield stress for basal till (plastic or pseudo-plastic model)
   {
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
-    m_basal_yield_stress.set_attrs("diagnostic",
-                                 "yield stress for basal till (plastic or pseudo-plastic model)",
-                                   "Pa", "Pa", "", 0);
+    m_basal_yield_stress.metadata(0)
+        .intent("diagnostic")
+        .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
+        .units("Pa");
     m_grid->variables().add(m_basal_yield_stress);
   }
 
   {
-    m_bedtoptemp.set_attrs("diagnostic",
-                           "temperature at the top surface of the bedrock thermal layer",
-                           "Kelvin", "Kelvin", "", 0);
+    m_bedtoptemp.metadata(0)
+        .intent("diagnostic")
+        .long_name("temperature at the top surface of the bedrock thermal layer")
+        .units("Kelvin");
   }
 
   // basal melt rate
-  m_basal_melt_rate.set_attrs("internal",
-                              "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time",
-                              "m s-1", "m year-1", "land_ice_basal_melt_rate", 0);
+  m_basal_melt_rate.metadata(0)
+      .intent("internal")
+      .long_name(
+          "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time")
+      .units("m s-1")
+      .glaciological_units("m year-1")
+      .standard_name("land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
 
   // Sliding velocity (usually SSA) Dirichlet B.C. locations and values
   {
-    m_velocity_bc_mask.set_attrs("model_state",
-                                 "Mask prescribing Dirichlet boundary locations for the sliding velocity",
-                                 "", "", "", 0);
-    m_velocity_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_velocity_bc_mask.metadata(0)
+        .intent("model_state")
+        .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity");
+    m_velocity_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
     m_velocity_bc_mask.metadata().set_output_type(io::PISM_INT);
     m_velocity_bc_mask.set_time_independent(true);
@@ -235,26 +241,28 @@ void IceModel::allocate_storage() {
   }
   // SSA Dirichlet B.C. values
   {
-    double fill_value = m_config->get_number("output.fill_value");
+    double fill_value       = m_config->get_number("output.fill_value");
     const double huge_value = 1e6;
     // vel_bc
-    m_velocity_bc_values.set_attrs("model_state",
-                                   "X-component of the SSA velocity boundary conditions",
-                                   "m s-1", "m s-1", "", 0);
-    m_velocity_bc_values.set_attrs("model_state",
-                                   "Y-component of the SSA velocity boundary conditions",
-                                   "m s-1", "m s-1", "", 1);
-    for (int j : {0, 1}) {
-      m_velocity_bc_values.metadata(j)["valid_range"] = {-huge_value, huge_value};
-      m_velocity_bc_values.metadata(j)["_FillValue"] = {fill_value};
+    m_velocity_bc_values.metadata(0)
+        .intent("model_state")
+        .long_name("X-component of the SSA velocity boundary conditions")
+        .units("m s-1");
+    m_velocity_bc_values.metadata(1)
+        .intent("model_state")
+        .long_name("Y-component of the SSA velocity boundary conditions")
+        .units("m s-1");
+    for (int j : { 0, 1 }) {
+      m_velocity_bc_values.metadata(j)["valid_range"] = { -huge_value, huge_value };
+      m_velocity_bc_values.metadata(j)["_FillValue"]  = { fill_value };
     }
   }
 
   // Ice thickness BC mask
   {
-    m_ice_thickness_bc_mask.set_attrs("model_state",
-                                      "Mask specifying locations where ice thickness is held constant",
-                                      "", "", "", 0);
+    m_ice_thickness_bc_mask.metadata(0)
+        .intent("model_state")
+        .long_name("Mask specifying locations where ice thickness is held constant");
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
     m_ice_thickness_bc_mask.metadata().set_output_type(io::PISM_INT);

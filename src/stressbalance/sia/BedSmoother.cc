@@ -26,6 +26,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -45,21 +46,26 @@ BedSmoother::BedSmoother(std::shared_ptr<const Grid> g)
   {
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
     //   their prospective uses
-    m_topgsmooth.set_attrs("bed_smoother_tool",
-                           "smoothed bed elevation, in bed roughness parameterization",
-                           "m", "m", "", 0);
-    m_maxtl.set_attrs("bed_smoother_tool",
-                      "maximum elevation in local topography patch, in bed roughness parameterization",
-                      "m", "m", "", 0);
-    m_C2.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-2, in bed roughness parameterization",
-                   "m2", "m2", "", 0);
-    m_C3.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-3, in bed roughness parameterization",
-                   "m3", "m3", "", 0);
-    m_C4.set_attrs("bed_smoother_tool",
-                   "polynomial coeff of H^-4, in bed roughness parameterization",
-                   "m4", "m4", "", 0);
+    m_topgsmooth.metadata(0)
+        .intent("bed_smoother_tool")
+        .long_name("smoothed bed elevation, in bed roughness parameterization")
+        .units("m");
+    m_maxtl.metadata(0)
+        .intent("bed_smoother_tool")
+        .long_name("maximum elevation in local topography patch, in bed roughness parameterization")
+        .units("m");
+    m_C2.metadata(0)
+        .intent("bed_smoother_tool")
+        .long_name("polynomial coeff of H^-2, in bed roughness parameterization")
+        .units("m2");
+    m_C3.metadata(0)
+        .intent("bed_smoother_tool")
+        .long_name("polynomial coeff of H^-3, in bed roughness parameterization")
+        .units("m3");
+    m_C4.metadata(0)
+        .intent("bed_smoother_tool")
+        .long_name("polynomial coeff of H^-4, in bed roughness parameterization")
+        .units("m4");
 
     // allocate Vecs that live on processor 0:
     m_topgp0 = m_topgsmooth.allocate_proc0_copy();

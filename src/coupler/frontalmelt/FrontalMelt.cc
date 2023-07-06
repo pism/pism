@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2022 Constantine Khroulev and Andy Aschwanden
+/* Copyright (C) 2018, 2019, 2020, 2022, 2023 Constantine Khroulev and Andy Aschwanden
  *
  * This file is part of PISM.
  *
@@ -96,12 +96,15 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
 // "modifier" constructor
 FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g, std::shared_ptr<FrontalMelt> input)
-  : Component(g),
-    m_input_model(input),
-    m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt")
-{
-  m_retreat_rate.set_attrs("diagnostic", "retreat rate due to frontal melt",
-                           "m s-1", "m day-1", "", 0);
+    : Component(g),
+      m_input_model(input),
+      m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt") {
+
+  m_retreat_rate.metadata(0)
+      .intent("diagnostic")
+      .long_name("retreat rate due to frontal melt")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 
   m_include_floating_ice = m_config->get_flag("frontal_melt.include_floating_ice");
 }

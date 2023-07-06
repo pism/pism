@@ -44,10 +44,13 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
   m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
-  m_ftt_mask.set_attrs("diagnostic",
-                       "mask specifying where to apply the force-to-thickness mechanism",
-                       "", "", "", 0); // no units and no standard name
-  m_ftt_mask.set(1.0); // default: applied in whole domain
+  m_ftt_mask.metadata(0)
+      .intent("diagnostic")
+      .long_name("mask specifying where to apply the force-to-thickness mechanism")
+      .units("")
+      .glaciological_units("")
+      .standard_name(""); // no units and no standard name
+  m_ftt_mask.set(1.0);    // default: applied in whole domain
   m_ftt_mask.metadata().set_output_type(io::PISM_INT);
   m_ftt_mask.metadata().set_time_independent(true);
 
@@ -62,8 +65,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing force-to-thickness mass-balance modifier...\n");
+  m_log->message(2, "* Initializing force-to-thickness mass-balance modifier...\n");
 
   std::string input_file = m_config->get_string("surface.force_to_thickness.file");
 
@@ -71,12 +73,13 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     throw RuntimeError(PISM_ERROR_LOCATION, "surface.force_to_thickness.file cannot be empty");
   }
 
-  m_log->message(2,
-                 "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
-                 "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
-                 units::convert(m_sys, m_alpha, "s-1", "year-1"),
-                 m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
-                 m_ice_free_thickness_threshold);
+  m_log->message(
+      2,
+      "    alpha = %.6f year-1 for -force_to_thickness mechanism\n"
+      "    alpha = %.6f year-1 in areas with target ice thickness of less than %.3f meters\n",
+      units::convert(m_sys, m_alpha, "s-1", "year-1"),
+      m_alpha_ice_free_factor * units::convert(m_sys, m_alpha, "s-1", "year-1"),
+      m_ice_free_thickness_threshold);
 
   // check of the input file is really there and regrid the target thickness
   File file(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
@@ -88,19 +91,17 @@ void ForceThickness::init_impl(const Geometry &geometry) {
   {
     m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
-    m_target_thickness.set_attrs("diagnostic",
-                                 "target thickness for force-to-thickness mechanism (hit this at end of run)",
-                                 "m", "m",
-                                 "land_ice_thickness", 0); // standard_name *to read by*
+    m_target_thickness.metadata(0)
+        .intent("diagnostic")
+        .long_name("target thickness for force-to-thickness mechanism (hit this at end of run)")
+        .units("m")
+        .standard_name("land_ice_thickness"); // standard_name *to read by*
 
     m_target_thickness.regrid(input_file, io::CRITICAL);
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
-    m_target_thickness.set_attrs("diagnostic",
-                                 "target thickness for force-to-thickness mechanism (wants to hit this at end of run)",
-                                 "m", "m",
-                                 "", 0);  // no CF standard_name, to put it mildly
+    m_target_thickness.metadata(0).standard_name(""); // no CF standard_name, to put it mildly
   }
 
   {

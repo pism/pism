@@ -16,36 +16,33 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>            // std::min, std::max
+#include <algorithm> // std::min, std::max
 
+#include "pism/geometry/Geometry.hh"
 #include "pism/hydrology/Distributed.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace hydrology {
 
 Distributed::Distributed(std::shared_ptr<const Grid> g)
-  : Routing(g),
-    m_P(m_grid, "bwp"),
-    m_Pnew(m_grid, "Pnew_internal") {
+    : Routing(g), m_P(m_grid, "bwp"), m_Pnew(m_grid, "Pnew_internal") {
 
   // additional variables beyond hydrology::Routing
-  m_P.set_attrs("model_state",
-                "pressure of transportable water in subglacial layer",
-                "Pa", "Pa", "", 0);
-  m_P.metadata()["valid_min"] = {0.0};
+  m_P.metadata(0)
+      .intent("model_state")
+      .long_name("pressure of transportable water in subglacial layer")
+      .units("Pa");
+  m_P.metadata()["valid_min"] = { 0.0 };
 
-  m_Pnew.set_attrs("internal",
-                   "new transportable subglacial water pressure during update",
-                   "Pa", "Pa", "", 0);
-  m_Pnew.metadata()["valid_min"] = {0.0};
+  m_Pnew.metadata(0)
+      .intent("internal")
+      .long_name("new transportable subglacial water pressure during update")
+      .units("Pa");
+  m_Pnew.metadata()["valid_min"] = { 0.0 };
 }
 
 void Distributed::initialization_message() const {
@@ -61,8 +58,7 @@ void Distributed::restart_impl(const File &input_file, int record) {
   regrid("Hydrology", m_P);
 }
 
-void Distributed::bootstrap_impl(const File &input_file,
-                                 const array::Scalar &ice_thickness) {
+void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
   Routing::bootstrap_impl(input_file, ice_thickness);
 
   double bwp_default = m_config->get_number("bootstrapping.defaults.bwp");
@@ -73,14 +69,12 @@ void Distributed::bootstrap_impl(const File &input_file,
   bool init_P_from_steady = m_config->get_flag("hydrology.distributed.init_p_from_steady");
 
   if (init_P_from_steady) { // if so, just overwrite -i or -bootstrap value of P=bwp
-    m_log->message(2,
-                   "  initializing P from P(W) formula which applies in steady state\n");
+    m_log->message(2, "  initializing P from P(W) formula which applies in steady state\n");
 
     compute_overburden_pressure(ice_thickness, m_Pover);
 
     array::Scalar sliding_speed(m_grid, "velbase_mag");
-    sliding_speed.set_attrs("internal", "basal sliding speed",
-                            "m s-1", "m s-1", "", 0);
+    sliding_speed.metadata(0).long_name("basal sliding speed").units("m s-1");
 
     std::string filename = m_config->get_string("hydrology.distributed.sliding_speed_file");
 

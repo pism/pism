@@ -19,12 +19,12 @@
 
 #include "pism/geometry/GeometryEvolution.hh"
 
-#include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Staggered.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Staggered.hh"
+#include "pism/util/array/Vector.hh"
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/util/Context.hh"
@@ -124,62 +124,71 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
   // reported quantities
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
-    flux_staggered.set_attrs("diagnostic",
-                             "fluxes through cell interfaces (sides)"
-                             " on the staggered grid (x-offset)",
-                             "m2 s-1", "m2 year-1", "", 0);
-    flux_staggered.set_attrs("diagnostic",
-                             "fluxes through cell interfaces (sides)"
-                             " on the staggered grid (y-offset)",
-                             "m2 s-1", "m2 year-1", "", 1);
+    flux_staggered.metadata(0)
+        .intent("diagnostic")
+        .long_name("fluxes through cell interfaces (sides) on the staggered grid (x-offset)")
+        .units("m2 s-1")
+        .glaciological_units("m2 year-1");
+    flux_staggered.metadata(1)
+        .intent("diagnostic")
+        .long_name("fluxes through cell interfaces (sides) on the staggered grid (y-offset)")
+        .units("m2 s-1")
+        .glaciological_units("m2 year-1");
 
-    flux_divergence.set_attrs("diagnostic", "flux divergence", "m s-1", "m year-1", "", 0);
+    flux_divergence.metadata(0)
+        .intent("diagnostic")
+        .long_name("flux divergence")
+        .units("m s-1")
+        .glaciological_units("m year-1");
 
-    conservation_error.set_attrs("diagnostic",
-                                 "conservation error due to enforcing non-negativity of"
-                                 " ice thickness (over the last time step)",
-                                 "meters", "meters", "", 0);
+    conservation_error.metadata(0)
+        .intent("diagnostic")
+        .long_name(
+            "conservation error due to enforcing non-negativity of ice thickness (over the last time step)")
+        .units("meters");
 
-    effective_SMB.set_attrs("internal", "effective surface mass balance over the last time step",
-                            "meters", "meters", "", 0);
+    effective_SMB.metadata(0)
+        .long_name("effective surface mass balance over the last time step")
+        .units("meters");
 
-    effective_BMB.set_attrs("internal", "effective basal mass balance over the last time step",
-                            "meters", "meters", "", 0);
+    effective_BMB.metadata(0)
+        .long_name("effective basal mass balance over the last time step")
+        .units("meters");
 
-    thickness_change.set_attrs("internal", "change in thickness due to flow", "meters", "meters",
-                               "", 0);
+    thickness_change.metadata(0).long_name("change in thickness due to flow").units("meters");
 
-    ice_area_specific_volume_change.set_attrs("interval",
-                                              "change in area-specific volume due to flow",
-                                              "meters3 / meters2", "meters3 / meters2", "", 0);
+    ice_area_specific_volume_change.metadata(0)
+        .long_name("change in area-specific volume due to flow")
+        .units("meters3 / meters2");
   }
 
   // internal storage
   {
-    input_velocity.set_attrs("internal", "ghosted copy of the input velocity", "meters / second",
-                             "meters / second", "", 0);
+    input_velocity.metadata(0)
+        .long_name("ghosted copy of the input velocity")
+        .units("meters / second");
 
-    bed_elevation.set_attrs("internal", "ghosted copy of the bed elevation", "meters", "meters", "",
-                            0);
+    bed_elevation.metadata(0).long_name("ghosted copy of the bed elevation").units("meters");
 
-    sea_level.set_attrs("internal", "ghosted copy of the sea level elevation", "meters", "meters",
-                        "", 0);
+    sea_level.metadata(0).long_name("ghosted copy of the sea level elevation").units("meters");
 
-    ice_thickness.set_attrs("internal", "working (ghosted) copy of the ice thickness", "meters",
-                            "meters", "", 0);
+    ice_thickness.metadata(0)
+        .long_name("working (ghosted) copy of the ice thickness")
+        .units("meters");
 
-    area_specific_volume.set_attrs("internal", "working (ghosted) copy of the area specific volume",
-                                   "meters3 / meters2", "meters3 / meters2", "", 0);
+    area_specific_volume.metadata(0)
+        .long_name("working (ghosted) copy of the area specific volume")
+        .units("meters3 / meters2");
 
-    surface_elevation.set_attrs("internal", "working (ghosted) copy of the surface elevation",
-                                "meters", "meters", "", 0);
+    surface_elevation.metadata(0)
+        .long_name("working (ghosted) copy of the surface elevation")
+        .units("meters");
 
-    cell_type.set_attrs("internal", "working (ghosted) copy of the cell type mask", "", "", "", 0);
+    cell_type.metadata(0).long_name("working (ghosted) copy of the cell type mask");
 
-    residual.set_attrs("internal", "residual area specific volume", "meters3 / meters2",
-                       "meters3 / meters2", "", 0);
+    residual.metadata(0).long_name("residual area specific volume").units("meters3 / meters2");
 
-    thickness.set_attrs("internal", "thickness (temporary storage)", "meters", "meters", "", 0);
+    thickness.metadata(0).long_name("thickness (temporary storage)").units("meters");
   }
 }
 
@@ -1008,18 +1017,14 @@ static inline double effective_change(double H, double dH) {
  *
  * This computation is purely local.
  */
-void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
-                                                               const array::Scalar      &thickness_bc_mask,
-                                                               const array::Scalar        &ice_thickness,
-                                                               const array::CellType &cell_type,
-                                                               const array::Scalar        &smb_flux,
-                                                               const array::Scalar        &basal_melt_rate,
-                                                               array::Scalar              &effective_SMB,
-                                                               array::Scalar              &effective_BMB) {
+void GeometryEvolution::compute_surface_and_basal_mass_balance(
+    double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,
+    const array::CellType &cell_type, const array::Scalar &smb_flux,
+    const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
+    array::Scalar &effective_BMB) {
 
-  array::AccessScope list{&ice_thickness,
-      &smb_flux, &basal_melt_rate, &cell_type, &thickness_bc_mask,
-      &effective_SMB, &effective_BMB};
+  array::AccessScope list{ &ice_thickness,     &smb_flux,      &basal_melt_rate, &cell_type,
+                           &thickness_bc_mask, &effective_SMB, &effective_BMB };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1044,8 +1049,8 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
       //
       // Note that basal_melt_rate is in [m s-1]. Here the negative sign converts the melt rate into
       // mass balance.
-      double dH_BMB = effective_change(H + dH_SMB,
-                                       dt * (m_impl->use_bmr ? -basal_melt_rate(i, j) : 0.0));
+      double dH_BMB =
+          effective_change(H + dH_SMB, dt * (m_impl->use_bmr ? -basal_melt_rate(i, j) : 0.0));
 
       effective_SMB(i, j) = dH_SMB;
       effective_BMB(i, j) = dH_BMB;
@@ -1059,13 +1064,12 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
 namespace diagnostics {
 
 /*! @brief Report the divergence of the ice flux. */
-class FluxDivergence : public Diag<GeometryEvolution>
-{
+class FluxDivergence : public Diag<GeometryEvolution> {
 public:
-  FluxDivergence(const GeometryEvolution *m)
-    : Diag<GeometryEvolution>(m) {
-    m_vars = {model->flux_divergence().metadata()};
+  FluxDivergence(const GeometryEvolution *m) : Diag<GeometryEvolution>(m) {
+    m_vars = { model->flux_divergence().metadata() };
   }
+
 protected:
   array::Array::Ptr compute_impl() const {
     array::Scalar::Ptr result(new array::Scalar(m_grid, "flux_divergence"));
@@ -1078,14 +1082,12 @@ protected:
 };
 
 /*! @brief Report mass flux on the staggered grid. */
-class FluxStaggered : public Diag<GeometryEvolution>
-{
+class FluxStaggered : public Diag<GeometryEvolution> {
 public:
-  FluxStaggered(const GeometryEvolution *m)
-    : Diag<GeometryEvolution>(m) {
-    m_vars = {model->flux_staggered().metadata(0),
-      model->flux_staggered().metadata(1)};
+  FluxStaggered(const GeometryEvolution *m) : Diag<GeometryEvolution>(m) {
+    m_vars = { model->flux_staggered().metadata(0), model->flux_staggered().metadata(1) };
   }
+
 protected:
   array::Array::Ptr compute_impl() const {
     auto result = std::make_shared<array::Staggered>(m_grid, "flux_staggered");
@@ -1094,11 +1096,11 @@ protected:
     result->metadata(1) = m_vars[1];
 
     const array::Staggered &input = model->flux_staggered();
-    array::Staggered &output = *result.get();
+    array::Staggered &output      = *result.get();
 
     // FIXME: implement array::Staggered::copy_from()
 
-    array::AccessScope list{&input, &output};
+    array::AccessScope list{ &input, &output };
 
     ParallelSection loop(m_grid->com);
     try {
@@ -1125,19 +1127,18 @@ DiagnosticList GeometryEvolution::diagnostics_impl() const {
 
   std::map<std::string, Ptr> result;
   result = {
-    {"flux_staggered",               Ptr(new FluxStaggered(this))},
-    {"flux_divergence",              Ptr(new FluxDivergence(this))},
+    { "flux_staggered", Ptr(new FluxStaggered(this)) },
+    { "flux_divergence", Ptr(new FluxDivergence(this)) },
   };
   return result;
 }
 
 RegionalGeometryEvolution::RegionalGeometryEvolution(std::shared_ptr<const Grid> grid)
-  : GeometryEvolution(grid),
-    m_no_model_mask(m_grid, "no_model_mask") {
+    : GeometryEvolution(grid), m_no_model_mask(m_grid, "no_model_mask") {
 
   m_no_model_mask.set_interpolation_type(NEAREST);
 
-  m_no_model_mask.set_attrs("model_mask", "'no model' mask", "", "", "", 0);
+  m_no_model_mask.metadata(0).long_name("'no model' mask");
 }
 
 void RegionalGeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {

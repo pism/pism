@@ -32,10 +32,8 @@ FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
     m_cell_type(m_grid, "cell_type"),
     m_tmp(m_grid, "temporary_storage") {
 
-  m_tmp.set_attrs("internal", "additional mass loss at points near the front",
-                  "m", "m", "", 0);
-
-  m_cell_type.set_attrs("internal", "cell type mask", "", "", "", 0);
+  m_tmp.metadata(0).long_name("additional mass loss at points near the front").units("m");
+  m_cell_type.metadata(0).long_name("cell type mask");
 }
 
 /*!

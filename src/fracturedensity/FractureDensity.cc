@@ -17,73 +17,79 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // std::pow
-#include <algorithm>            // std::min, std::max
+#include <algorithm> // std::min, std::max
+#include <cmath>     // std::pow
 
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
-  : Component(grid),
-    m_density(grid, "fracture_density"),
-    m_density_new(grid, "new_fracture_density"),
-    m_growth_rate(grid, "fracture_growth_rate"),
-    m_healing_rate(grid, "fracture_healing_rate"),
-    m_flow_enhancement(grid, "fracture_flow_enhancement"),
-    m_age(grid, "fracture_age"),
-    m_age_new(grid, "new_fracture_age"),
-    m_toughness(grid, "fracture_toughness"),
-    m_strain_rates(grid, "strain_rates", array::WITHOUT_GHOSTS),
-    m_deviatoric_stresses(grid, "sigma",
-                          array::WITHOUT_GHOSTS, 3),
-    m_velocity(grid, "ghosted_velocity"),
-    m_flow_law(flow_law) {
+    : Component(grid),
+      m_density(grid, "fracture_density"),
+      m_density_new(grid, "new_fracture_density"),
+      m_growth_rate(grid, "fracture_growth_rate"),
+      m_healing_rate(grid, "fracture_healing_rate"),
+      m_flow_enhancement(grid, "fracture_flow_enhancement"),
+      m_age(grid, "fracture_age"),
+      m_age_new(grid, "new_fracture_age"),
+      m_toughness(grid, "fracture_toughness"),
+      m_strain_rates(grid, "strain_rates", array::WITHOUT_GHOSTS),
+      m_deviatoric_stresses(grid, "sigma", array::WITHOUT_GHOSTS, 3),
+      m_velocity(grid, "ghosted_velocity"),
+      m_flow_law(flow_law) {
 
-  m_density.set_attrs("model_state", "fracture density in ice shelf", "1", "1", "", 0);
-  m_density.metadata()["valid_max"] = {1.0};
-  m_density.metadata()["valid_min"] = {0.0};
+  m_density.metadata(0).intent("model_state").long_name("fracture density in ice shelf").units("1");
+  m_density.metadata()["valid_max"] = { 1.0 };
+  m_density.metadata()["valid_min"] = { 0.0 };
 
-  m_growth_rate.set_attrs("model_state", "fracture growth rate", "second-1", "second-1", "", 0);
-  m_growth_rate.metadata()["valid_min"] = {0.0};
+  m_growth_rate.metadata(0)
+      .intent("model_state")
+      .long_name("fracture growth rate")
+      .units("second-1");
+  m_growth_rate.metadata()["valid_min"] = { 0.0 };
 
-  m_healing_rate.set_attrs("model_state", "fracture healing rate", "second-1", "second-1", "", 0);
+  m_healing_rate.metadata(0)
+      .intent("model_state")
+      .long_name("fracture healing rate")
+      .units("second-1");
 
-  m_flow_enhancement.set_attrs("model_state", "fracture-induced flow enhancement", "", "", "", 0);
+  m_flow_enhancement.metadata(0)
+      .intent("model_state")
+      .long_name("fracture-induced flow enhancement");
 
-  m_age.set_attrs("model_state", "age since fracturing", "seconds", "seconds", "", 0);
+  m_age.metadata(0)
+      .intent("model_state")
+      .long_name("age since fracturing")
+      .units("seconds");
 
-  m_toughness.set_attrs("model_state", "fracture toughness", "Pa", "Pa", "", 0);
+  m_toughness.metadata(0)
+      .intent("model_state")
+      .long_name("fracture toughness")
+      .units("Pa");
 
   m_strain_rates.metadata(0).set_name("eigen1");
-  m_strain_rates.set_attrs("internal",
-                           "major principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 0);
+  m_strain_rates.metadata(0)
+      .long_name("major principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_strain_rates.metadata(1).set_name("eigen2");
-  m_strain_rates.set_attrs("internal",
-                           "minor principal component of horizontal strain-rate",
-                           "second-1", "second-1", "", 1);
+  m_strain_rates.metadata(1)
+      .long_name("minor principal component of horizontal strain-rate")
+      .units("second-1");
 
   m_deviatoric_stresses.metadata(0).set_name("sigma_xx");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in x direction",
-                                  "Pa", "Pa", "", 0);
+  m_deviatoric_stresses.metadata(0).long_name("deviatoric stress in x direction").units("Pa");
 
   m_deviatoric_stresses.metadata(1).set_name("sigma_yy");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric stress in y direction",
-                                  "Pa", "Pa", "", 1);
+  m_deviatoric_stresses.metadata(1).long_name("deviatoric stress in y direction").units("Pa");
 
   m_deviatoric_stresses.metadata(2).set_name("sigma_xy");
-  m_deviatoric_stresses.set_attrs("internal",
-                                  "deviatoric shear stress",
-                                  "Pa", "Pa", "", 2);
+  m_deviatoric_stresses.metadata(2).long_name("deviatoric shear stress").units("Pa");
 }
 
 void FractureDensity::restart(const File &input_file, int record) {

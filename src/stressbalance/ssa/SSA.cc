@@ -80,26 +80,28 @@ SSA::SSA(std::shared_ptr<const Grid> g)
   strength_extension = new SSAStrengthExtension(*m_config);
 
   // grounded_dragging_floating integer mask
-  m_mask.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                   "", "", "", 0);
-  m_mask.metadata()["flag_values"] =
-    {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
-  m_mask.metadata()["flag_meanings"] =
-    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+  m_mask.metadata(0)
+      .intent("diagnostic")
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                         MASK_ICE_FREE_OCEAN };
+  m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
-  m_taud.set_attrs("diagnostic",
-                   "X-component of the driving shear stress at the base of ice",
-                   "Pa", "Pa", "", 0);
-  m_taud.set_attrs("diagnostic",
-                   "Y-component of the driving shear stress at the base of ice",
-                   "Pa", "Pa", "", 1);
+  m_taud.metadata(0)
+      .intent("diagnostic")
+      .long_name("X-component of the driving shear stress at the base of ice")
+      .units("Pa");
+  m_taud.metadata(1)
+      .intent("diagnostic")
+      .long_name("Y-component of the driving shear stress at the base of ice")
+      .units("Pa");
 
   // override velocity metadata
   m_velocity.metadata(0).set_name("u_ssa");
-  m_velocity.metadata(0)["long_name"] = "SSA model ice velocity in the X direction";
+  m_velocity.metadata(0).long_name("SSA model ice velocity in the X direction");
 
   m_velocity.metadata(1).set_name("v_ssa");
-  m_velocity.metadata(1)["long_name"] = "SSA model ice velocity in the Y direction";
+  m_velocity.metadata(1).long_name("SSA model ice velocity in the Y direction");
 
   m_da = m_velocity_global.dm();
 

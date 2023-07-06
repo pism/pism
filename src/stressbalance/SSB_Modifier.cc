@@ -21,7 +21,6 @@
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
-#include "pism/util/Vars.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
@@ -37,16 +36,23 @@ SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
     m_v(m_grid, "vvel", array::WITH_GHOSTS, m_grid->z()) {
   m_D_max = 0.0;
 
-  m_u.set_attrs("diagnostic", "horizontal velocity of ice in the X direction",
-                "m s-1", "m year-1", "land_ice_x_velocity", 0);
+  m_u.metadata(0)
+      .intent("diagnostic")
+      .long_name("horizontal velocity of ice in the X direction")
+      .units("m s-1")
+      .glaciological_units("m year-1")
+      .standard_name("land_ice_x_velocity");
 
-  m_v.set_attrs("diagnostic", "horizontal velocity of ice in the Y direction",
-                "m s-1", "m year-1", "land_ice_y_velocity", 0);
+  m_v.metadata(0)
+      .intent("diagnostic")
+      .long_name("horizontal velocity of ice in the Y direction")
+      .units("m s-1")
+      .glaciological_units("m year-1")
+      .standard_name("land_ice_y_velocity");
 
-  m_diffusive_flux.set_attrs("internal",
-                             "diffusive (SIA) flux components on the staggered grid",
-                             "", "", "", 0);
-
+  m_diffusive_flux.metadata(0)
+      .long_name("diffusive (SIA) flux components on the staggered grid")
+      .units("m2 s-1");
 }
 
 void SSB_Modifier::init() {

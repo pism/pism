@@ -52,9 +52,10 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g
   m_velocity_shared->metadata(0) = m_velocity.metadata(0);
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
-  m_tauc_copy.set_attrs("diagnostic",
-                        "yield stress for basal till (plastic or pseudo-plastic model)",
-                        "Pa", "Pa", "", 0);
+  m_tauc_copy.metadata(0)
+      .intent("diagnostic")
+      .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
+      .units("Pa");
 
   ierr = DMSetMatType(*m_da, MATBAIJ);
   PISM_CHK(ierr, "DMSetMatType");

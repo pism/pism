@@ -156,9 +156,9 @@ void IceCompModel::allocate_storage() {
 
   IceModel::allocate_storage();
 
-
-  m_strain_heating3_comp.set_attrs("internal", "rate of compensatory strain heating in ice",
-                                   "W m-3", "W m-3", "", 0);
+  m_strain_heating3_comp.metadata(0)
+      .long_name("rate of compensatory strain heating in ice")
+      .units("W m-3");
 }
 
 void IceCompModel::allocate_bedrock_thermal_unit() {

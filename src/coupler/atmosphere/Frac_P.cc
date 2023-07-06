@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -61,8 +61,7 @@ Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel
                                                buffer_size,
                                                opt.periodic);
 
-    m_2d_scaling->set_attrs("climate_forcing",
-                            long_name, units, units, "", 0);
+    m_2d_scaling->metadata().intent("climate_forcing").long_name(long_name).units(units);
   }
 
   m_precipitation = allocate_precipitation(grid);

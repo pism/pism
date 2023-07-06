@@ -29,9 +29,9 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(std::shared_ptr<const Grid> grid,
 {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.
-  m_basal_melt_rate_stored.set_attrs("internal",
-                                     "time-independent basal melt rate in the no-model-strip",
-                                     "m s-1", "m s-1", "", 0);
+  m_basal_melt_rate_stored.metadata(0)
+      .long_name("time-independent basal melt rate in the no-model-strip")
+      .units("m s-1");
 }
 
 void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {

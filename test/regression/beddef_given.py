@@ -33,7 +33,7 @@ class BeddefGiven(TestCase):
 
         # Create the reference topography
         topg_ref = PISM.Scalar(self.grid, "topg")
-        topg_ref.set_attrs("bed", "bed elevation change relative to reference", "m", "m", "", 0)
+        topg_ref.metadata(0).long_name("bed elevation change relative to reference").units("m")
         topg_ref.set(-1.0)
 
         topg_ref.dump(self.ref_filename)

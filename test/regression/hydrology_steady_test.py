@@ -38,7 +38,7 @@ class SteadyHydrology(TestCase):
         geometry.ensure_consistency(0.0)
 
         surface_input_rate = PISM.Scalar(grid, "water_input_rate")
-        surface_input_rate.set_attrs("", "water input rate", "kg m-2 s-1", "kg m-2 s-1", "", 0)
+        surface_input_rate.metadata(0).long_name("water input rate").units("kg m-2 s-1")
         self.surface_input_rate = surface_input_rate
 
         self.surface_input_file = "hydrology_steady_surface_input.nc"

@@ -129,35 +129,48 @@ EmptyingProblem::EmptyingProblem(std::shared_ptr<const Grid> grid)
   m_domain_mask.set_interpolation_type(NEAREST);
   m_sinks.set_interpolation_type(NEAREST);
 
-  m_potential.set_attrs("diagnostic", "estimate of the steady state hydraulic potential in the steady hydrology model",
-                        "Pa", "Pa", "", 0);
+  m_potential.metadata(0)
+      .intent("diagnostic")
+      .long_name("estimate of the steady state hydraulic potential in the steady hydrology model")
+      .units("Pa");
 
-  m_bottom_surface.set_attrs("internal", "ice bottom surface elevation",
-                             "m", "m", "", 0);
+  m_bottom_surface.metadata(0).long_name("ice bottom surface elevation").units("m");
 
-  m_W.set_attrs("diagnostic",
-                "scaled water thickness in the steady state hydrology model"
-                " (has no physical meaning)",
-                "m", "m", "", 0);
+  m_W.metadata(0)
+      .intent("diagnostic")
+      .long_name(
+          "scaled water thickness in the steady state hydrology model (has no physical meaning)")
+      .units("m");
 
-  m_Vstag.set_attrs("diagnostic", "water velocity on the staggered grid",
-                    "m s-1", "m s-1", "", 0);
+  m_Vstag.metadata(0)
+      .intent("diagnostic")
+      .long_name("water velocity on the staggered grid")
+      .units("m s-1");
 
-  m_domain_mask.set_attrs("internal", "mask defining the domain", "", "", "", 0);
+  m_domain_mask.metadata(0).long_name("mask defining the domain");
 
-  m_Q.set_attrs("diagnostic", "steady state water flux", "m2 s-1", "m2 s-1", "", 0);
+  m_Q.metadata(0).intent("diagnostic").long_name("steady state water flux").units("m2 s-1");
 
-  m_q_sg.set_attrs("diagnostic", "x-component of the effective water velocity in the steady-state hydrology model",
-                   "m s-1", "m day-1", "", 0);
-  m_q_sg.set_attrs("diagnostic", "y-component of the effective water velocity in the steady-state hydrology model",
-                   "m s-1", "m day-1", "", 1);
+  m_q_sg.metadata(0)
+      .intent("diagnostic")
+      .long_name("x-component of the effective water velocity in the steady-state hydrology model")
+      .units("m s-1")
+      .glaciological_units("m day-1");
+  m_q_sg.metadata(1)
+      .intent("diagnostic")
+      .long_name("y-component of the effective water velocity in the steady-state hydrology model")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 
-  m_sinks.set_attrs("diagnostic", "map of sinks in the domain (for debugging)", "", "", "", 0);
+  m_sinks.metadata(0)
+      .intent("diagnostic")
+      .long_name("map of sinks in the domain (for debugging)");
 
-  m_adjustment.set_attrs("diagnostic",
-                         "potential adjustment needed to fill sinks"
-                         " when computing an estimate of the steady-state hydraulic potential",
-                         "Pa", "Pa", "", 0);
+  m_adjustment.metadata(0)
+      .intent("diagnostic")
+      .long_name(
+          "potential adjustment needed to fill sinks when computing an estimate of the steady-state hydraulic potential")
+      .units("Pa");
 
   m_eps_gradient = 1e-2;
   m_speed = 1.0;

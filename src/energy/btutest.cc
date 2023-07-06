@@ -126,14 +126,13 @@ int main(int argc, char *argv[]) {
 
     // allocate tools and Arrays
     array::Scalar bedtoptemp(grid, "bedtoptemp");
-    bedtoptemp.set_attrs("",
-                         "temperature at top of bedrock thermal layer",
-                         "K", "K", "", 0);
+    bedtoptemp.metadata(0).long_name("temperature at top of bedrock thermal layer").units("K");
 
     array::Scalar heat_flux_at_ice_base(grid, "upward_heat_flux_at_ice_base");
-    heat_flux_at_ice_base.set_attrs("",
-                                    "upward geothermal flux at bedrock thermal layer base",
-                                    "W m-2", "mW m-2", "", 0);
+    heat_flux_at_ice_base.metadata(0)
+        .long_name("upward geothermal flux at bedrock thermal layer base")
+        .units("W m-2")
+        .glaciological_units("mW m-2");
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);

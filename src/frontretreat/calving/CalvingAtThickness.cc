@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,10 +49,10 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
                                                       opt.periodic,
                                                       LINEAR);
 
-    m_calving_threshold->set_attrs("diagnostic",
-                                   "threshold used by the 'calving at threshold' calving method",
-                                   "m", "m",
-                                   "", 0); // no standard name
+    m_calving_threshold->metadata(0)
+        .intent("diagnostic")
+        .long_name("threshold used by the 'calving at threshold' calving method")
+        .units("m"); // no standard name
     m_calving_threshold->metadata()["valid_min"] = {0.0};
   }
 }

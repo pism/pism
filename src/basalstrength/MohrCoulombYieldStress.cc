@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2022 PISM Authors
+// Copyright (C) 2004--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -93,9 +93,11 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
 
   m_name = "Mohr-Coulomb yield stress model";
 
-  m_till_phi.set_attrs("model_state",
-                       "friction angle for till under grounded ice sheet",
-                       "degrees", "degrees", "", 0);
+  m_till_phi.metadata()
+      .intent("model_state")
+      .long_name("friction angle for till under grounded ice sheet")
+      .units("degrees");
+
   m_till_phi.set_time_independent(true);
   // in this model; need not be time-independent in general
 
@@ -126,8 +128,9 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
                                           "", // no standard name
                                           buffer_size,
                                           opt.periodic, LINEAR);
-    m_delta->set_attrs("", "minimum effective pressure on till as a fraction of overburden pressure",
-                       "1", "1", "", 0);
+    m_delta->metadata()
+        .long_name("minimum effective pressure on till as a fraction of overburden pressure")
+        .units("1");
   }
 }
 

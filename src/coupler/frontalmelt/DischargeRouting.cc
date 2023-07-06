@@ -31,19 +31,21 @@ DischargeRouting::DischargeRouting(std::shared_ptr<const Grid> grid)
   : FrontalMelt(grid, nullptr),
     m_frontal_melt_rate(grid, "frontal_melt_rate") {
 
-  m_frontal_melt_rate.set_attrs("diagnostic", "frontal melt rate",
-                                "m s-1", "m day-1", "", 0);
+  m_frontal_melt_rate.metadata(0)
+      .intent("diagnostic")
+      .long_name("frontal melt rate")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 
-  m_log->message(2,
-                 "* Initializing the frontal melt model\n"
-                 "  using the Rignot/Xu parameterization\n"
-                 "  and routing of subglacial discharge\n");
+  m_log->message(2, "* Initializing the frontal melt model\n"
+                    "  using the Rignot/Xu parameterization\n"
+                    "  and routing of subglacial discharge\n");
 
   m_theta_ocean = array::Forcing::Constant(grid, "theta_ocean", 0.0);
 }
 
 void DischargeRouting::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.routing");
 
@@ -57,8 +59,10 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
                                                      buffer_size, opt.periodic, LINEAR);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing", "potential temperature of the adjacent ocean",
-                           "Celsius", "Celsius", "", 0);
+  m_theta_ocean->metadata(0)
+      .intent("climate_forcing")
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Celsius");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 }

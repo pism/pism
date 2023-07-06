@@ -106,8 +106,35 @@ public:
     return Attribute(this, name);
   }
 
-  const ConstAttribute operator[](const std::string &name) const {
+  ConstAttribute operator[](const std::string &name) const {
     return ConstAttribute(this, name);
+  }
+
+  // setters for common attributes
+
+  VariableMetadata &intent(const std::string &input) {
+    set_string("pism_intent", input);
+    return *this;
+  }
+
+  VariableMetadata &long_name(const std::string &input) {
+    set_string("long_name", input);
+    return *this;
+  }
+
+  VariableMetadata &standard_name(const std::string &input) {
+    set_string("standard_name", input);
+    return *this;
+  }
+
+  VariableMetadata &units(const std::string &input) {
+    set_string("units", input);
+    return *this;
+  }
+
+  VariableMetadata &glaciological_units(const std::string &input) {
+    set_string("glaciological_units", input);
+    return *this;
   }
 
   // getters and setters

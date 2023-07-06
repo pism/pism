@@ -17,9 +17,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/earth/BedDef.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
@@ -35,21 +32,30 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid)
     m_uplift(m_grid, "dbdt")
 {
 
-  m_topg.set_attrs("model_state", "bedrock surface elevation",
-                   "m", "m", "bedrock_altitude", 0);
+  m_topg.metadata(0)
+      .intent("model_state")
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  m_topg_last.set_attrs("model_state", "bedrock surface elevation",
-                        "m", "m", "bedrock_altitude", 0);
+  m_topg_last.metadata(0)
+      .intent("model_state")
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  m_uplift.set_attrs("model_state", "bedrock uplift rate",
-                     "m s-1", "m s-1", "tendency_of_bedrock_altitude", 0);
+  m_uplift.metadata(0)
+      .intent("model_state")
+      .long_name("bedrock uplift rate")
+      .units("m s-1")
+      .standard_name("tendency_of_bedrock_altitude");
 }
 
-const array::Scalar& BedDef::bed_elevation() const {
+const array::Scalar &BedDef::bed_elevation() const {
   return m_topg;
 }
 
-const array::Scalar& BedDef::uplift() const {
+const array::Scalar &BedDef::uplift() const {
   return m_uplift;
 }
 
@@ -65,10 +71,7 @@ void BedDef::write_model_state_impl(const File &output) const {
 
 DiagnosticList BedDef::diagnostics_impl() const {
   DiagnosticList result;
-  result = {
-    {"dbdt", Diagnostic::wrap(m_uplift)},
-    {"topg", Diagnostic::wrap(m_topg)}
-  };
+  result = { { "dbdt", Diagnostic::wrap(m_uplift) }, { "topg", Diagnostic::wrap(m_topg) } };
 
   return result;
 }
@@ -79,27 +82,24 @@ void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
 }
 
 //! Initialize using provided bed elevation and uplift.
-void BedDef::bootstrap(const array::Scalar &bed_elevation,
-                       const array::Scalar &bed_uplift,
+void BedDef::bootstrap(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
                        const array::Scalar &ice_thickness,
                        const array::Scalar &sea_level_elevation) {
   this->bootstrap_impl(bed_elevation, bed_uplift, ice_thickness, sea_level_elevation);
 }
 
-void BedDef::bootstrap_impl(const array::Scalar &bed_elevation,
-                            const array::Scalar &bed_uplift,
+void BedDef::bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
                             const array::Scalar &ice_thickness,
                             const array::Scalar &sea_level_elevation) {
   m_topg.copy_from(bed_elevation);
   m_uplift.copy_from(bed_uplift);
 
   // suppress a compiler warning:
-  (void) ice_thickness;
-  (void) sea_level_elevation;
+  (void)ice_thickness;
+  (void)sea_level_elevation;
 }
 
-void BedDef::update(const array::Scalar &ice_thickness,
-                    const array::Scalar &sea_level_elevation,
+void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation,
                     double t, double dt) {
   this->update_impl(ice_thickness, sea_level_elevation, t, dt);
 }
@@ -107,31 +107,28 @@ void BedDef::update(const array::Scalar &ice_thickness,
 //! Initialize from the context (input file and the "variables" database).
 void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                        const array::Scalar &sea_level_elevation) {
-  (void) ice_thickness;
-  (void) sea_level_elevation;
+  (void)ice_thickness;
+  (void)sea_level_elevation;
 
   switch (opts.type) {
   case INIT_RESTART:
     // read bed elevation and uplift rate from file
-    m_log->message(2,
-                   "    reading bed topography and uplift from %s ... \n",
+    m_log->message(2, "    reading bed topography and uplift from %s ... \n",
                    opts.filename.c_str());
     // re-starting
-    m_topg.read(opts.filename, opts.record); // fails if not found!
+    m_topg.read(opts.filename, opts.record);   // fails if not found!
     m_uplift.read(opts.filename, opts.record); // fails if not found!
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
-    m_topg.regrid(opts.filename, io::OPTIONAL,
-                  m_config->get_number("bootstrapping.defaults.bed"));
+    m_topg.regrid(opts.filename, io::OPTIONAL, m_config->get_number("bootstrapping.defaults.bed"));
     m_uplift.regrid(opts.filename, io::OPTIONAL,
                     m_config->get_number("bootstrapping.defaults.uplift"));
     break;
   case INIT_OTHER:
-  default:
-    {
-      // do nothing
-    }
+  default: {
+    // do nothing
+  }
   }
 
   // process -regrid_file and -regrid_vars
@@ -142,9 +139,7 @@ void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickn
 
   std::string uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
   if (not uplift_file.empty()) {
-    m_log->message(2,
-                   "    reading bed uplift from %s ... \n",
-                   uplift_file.c_str());
+    m_log->message(2, "    reading bed uplift from %s ... \n", uplift_file.c_str());
     m_uplift.regrid(uplift_file, io::CRITICAL);
   }
 
@@ -161,12 +156,10 @@ void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickn
  * Apply a correction to the bed topography by reading topg_delta from filename.
  */
 void BedDef::apply_topg_offset(const std::string &filename) {
-  m_log->message(2, "  Adding a bed topography correction read in from %s...\n",
-                 filename.c_str());
+  m_log->message(2, "  Adding a bed topography correction read in from %s...\n", filename.c_str());
 
   array::Scalar topg_delta(m_grid, "topg_delta");
-  topg_delta.set_attrs("internal", "bed topography correction",
-                       "meters", "meters", "", 0);
+  topg_delta.metadata(0).long_name("bed topography correction").units("meters");
 
   topg_delta.regrid(filename, io::CRITICAL);
 

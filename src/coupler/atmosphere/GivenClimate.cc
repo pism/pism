@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -57,13 +57,19 @@ Given::Given(std::shared_ptr<const Grid> g)
   }
 
   {
-    m_air_temp->set_attrs("diagnostic", "mean annual near-surface air temperature",
-                          "Kelvin", "Kelvin", "", 0);
-    m_air_temp->metadata(0)["valid_range"] = {0.0, 323.15}; // (0 C, 50 C)
+    m_air_temp->metadata(0)
+        .intent("diagnostic")
+        .long_name("mean annual near-surface air temperature")
+        .units("Kelvin");
+    m_air_temp->metadata(0)["valid_range"] = { 0.0, 323.15 }; // (0 C, 50 C)
   }
   {
-    m_precipitation->set_attrs("model_state", "precipitation rate",
-                               "kg m-2 second-1", "kg m-2 year-1", "precipitation_flux", 0);
+    m_precipitation->metadata(0)
+        .intent("model_state")
+        .long_name("precipitation rate")
+        .units("kg m-2 second-1")
+        .glaciological_units("kg m-2 year-1")
+        .standard_name("precipitation_flux");
   }
 }
 

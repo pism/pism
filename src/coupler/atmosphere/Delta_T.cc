@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2022 PISM Authors
+// Copyright (C) 2011--2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,11 +60,11 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
                                                     "", // no standard name
                                                     buffer_size,
                                                     opt.periodic);
-
-    m_2d_offsets->set_attrs("climate_forcing",
-                            long_name, units, external_units,
-                            "", // no standard name
-                            0);
+    m_2d_offsets->metadata()
+        .intent("climate_forcing")
+        .long_name(long_name)
+        .units(units)
+        .glaciological_units(external_units);
   }
 
   m_temperature = allocate_temperature(grid);

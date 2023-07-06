@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -84,13 +84,15 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
                                                    LINEAR);
   }
 
-  m_theta_ocean->set_attrs("climate_forcing",
-                           "potential temperature of the adjacent ocean",
-                           "Kelvin", "Kelvin", "", 0);
+  m_theta_ocean->metadata(0)
+      .intent("climate_forcing")
+      .long_name("potential temperature of the adjacent ocean")
+      .units("Kelvin");
 
-  m_salinity_ocean->set_attrs("climate_forcing",
-                              "salinity of the adjacent ocean",
-                              "g/kg", "g/kg", "", 0);
+  m_salinity_ocean->metadata(0)
+      .intent("climate_forcing")
+      .long_name("salinity of the adjacent ocean")
+      .units("g/kg");
 }
 
 void GivenTH::init_impl(const Geometry &geometry) {

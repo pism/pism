@@ -41,27 +41,32 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 
   // set metadata of reference fields
   {
-    m_mass_flux_reference.set_attrs("climate_forcing",
-                                    "reference surface mass balance rate",
-                                    "kg m-2 s-1", "kg m-2 year-1",
-                                    "land_ice_surface_specific_mass_balance_flux", 0);
+    m_mass_flux_reference.metadata(0)
+        .intent("climate_forcing")
+        .long_name("reference surface mass balance rate")
+        .units("kg m-2 s-1")
+        .glaciological_units("kg m-2 year-1")
+        .standard_name("land_ice_surface_specific_mass_balance_flux");
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
-    m_mass_flux_reference.metadata()["valid_range"] = {-smb_max, smb_max};
+    m_mass_flux_reference.metadata()["valid_range"] = { -smb_max, smb_max };
     m_mass_flux_reference.set_time_independent(true);
 
-    m_surface_reference.set_attrs("climate_forcing",
-                                  "reference surface altitude",
-                                  "m", "m", "surface_altitude", 0);
+    m_surface_reference.metadata(0)
+        .intent("climate_forcing")
+        .long_name("reference surface altitude")
+        .units("m")
+        .standard_name("surface_altitude");
 
-    m_surface_reference.metadata()["valid_range"] = {0.0, m_grid->Lz()};
+    m_surface_reference.metadata()["valid_range"] = { 0.0, m_grid->Lz() };
     m_surface_reference.set_time_independent(true);
 
-    m_temperature_reference.set_attrs("climate_forcing",
-                                      "reference temperature",
-                                      "Kelvin", "Kelvin", "", 0);
+    m_temperature_reference.metadata(0)
+        .intent("climate_forcing")
+        .long_name("reference temperature")
+        .units("Kelvin");
 
-    m_temperature_reference.metadata()["valid_range"] = {0.0, 373.15};
+    m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
     m_temperature_reference.set_time_independent(true);
   }
 
@@ -74,60 +79,54 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     {
-      m_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                        file,
-                                                        "climatic_mass_balance_anomaly",
-                                                        "", // no standard name
-                                                        buffer_size,
-                                                        opt.periodic);
+      m_mass_flux_anomaly =
+          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_anomaly",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_mass_flux_anomaly->set_attrs("climate_forcing",
-                                     "surface mass balance rate anomaly",
-                                     "kg m-2 s-1", "kg m-2 year-1",
-                                     "", 0);
-
+      m_mass_flux_anomaly->metadata(0)
+          .intent("climate_forcing")
+          .long_name("surface mass balance rate anomaly")
+          .units("kg m-2 s-1")
+          .glaciological_units("kg m-2 year-1");
     }
 
     {
-      m_mass_flux_gradient = std::make_shared<array::Forcing>(m_grid,
-                                                         file,
-                                                         "climatic_mass_balance_gradient",
-                                                         "", // no standard name
-                                                         buffer_size,
-                                                         opt.periodic);
+      m_mass_flux_gradient =
+          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_gradient",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_mass_flux_gradient->set_attrs("climate_forcing",
-                                      "surface mass balance rate elevation lapse rate",
-                                      "kg m-2 s-1 m-1", "kg m-2 year-1 m-1",
-                                      "", 0);
+      m_mass_flux_gradient->metadata(0)
+          .intent("climate_forcing")
+          .long_name("surface mass balance rate elevation lapse rate")
+          .units("kg m-2 s-1 m-1")
+          .glaciological_units("kg m-2 year-1 m-1");
     }
 
     {
-      m_temperature_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                          file,
-                                                          "ice_surface_temp_anomaly",
-                                                          "", // no standard name
-                                                          buffer_size,
-                                                          opt.periodic);
+      m_temperature_anomaly =
+          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_anomaly",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_temperature_anomaly->set_attrs("climate_forcing",
-                                       "ice surface temperature anomaly",
-                                       "Kelvin", "Kelvin", "", 0);
+      m_temperature_anomaly->metadata(0)
+          .intent("climate_forcing")
+          .long_name("ice surface temperature anomaly")
+          .units("Kelvin");
     }
 
     {
-      m_temperature_gradient = std::make_shared<array::Forcing>(m_grid,
-                                                           file,
-                                                           "ice_surface_temp_gradient",
-                                                           "", // no standard name
-                                                           buffer_size,
-                                                           opt.periodic);
+      m_temperature_gradient =
+          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_gradient",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
 
-      m_temperature_gradient->set_attrs("climate_forcing",
-                                        "ice surface temperature elevation lapse rate",
-                                        "Kelvin m-1", "Kelvin m-1", "", 0);
+      m_temperature_gradient->metadata(0)
+          .intent("climate_forcing")
+          .long_name("ice surface temperature elevation lapse rate")
+          .units("Kelvin m-1");
     }
-
   }
 }
 

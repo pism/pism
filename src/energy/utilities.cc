@@ -19,17 +19,17 @@
 
 #include "pism/energy/utilities.hh"
 
-#include "pism/util/Grid.hh"
-#include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Array3D.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/energy/bootstrapping.hh"
-#include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -45,27 +45,26 @@ content in the air is set to the value that ice would have if it a chunk of it
 occupied the air; the atmosphere actually has much lower energy content.  It is
 done this way for regularity (i.e. dEnth/dz computations).
 */
-void compute_enthalpy_cold(const array::Array3D &temperature,
-                           const array::Scalar &ice_thickness,
+void compute_enthalpy_cold(const array::Array3D &temperature, const array::Scalar &ice_thickness,
                            array::Array3D &result) {
 
-  auto grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  array::AccessScope list{&temperature, &result, &ice_thickness};
+  array::AccessScope list{ &temperature, &result, &ice_thickness };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *Tij = temperature.get_column(i,j);
-    double *Enthij = result.get_column(i,j);
+    const double *Tij = temperature.get_column(i, j);
+    double *Enthij    = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
       const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
-      Enthij[k] = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
+      Enthij[k]          = EC->enthalpy_permissive(Tij[k], 0.0, EC->pressure(depth));
     }
   }
 
@@ -74,29 +73,26 @@ void compute_enthalpy_cold(const array::Array3D &temperature,
   result.update_ghosts();
 }
 
-void compute_temperature(const array::Array3D &enthalpy,
-                         const array::Scalar &ice_thickness,
+void compute_temperature(const array::Array3D &enthalpy, const array::Scalar &ice_thickness,
                          array::Array3D &result) {
 
-  auto grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  array::AccessScope list{&enthalpy, &ice_thickness, &result};
+  array::AccessScope list{ &enthalpy, &ice_thickness, &result };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      *E = enthalpy.get_column(i, j),
-      H  = ice_thickness(i, j);
+    const double *E = enthalpy.get_column(i, j), H = ice_thickness(i, j);
     double *T = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
       const double depth = H - z[k]; // FIXME issue #15
-      T[k] = EC->temperature(E[k], EC->pressure(depth));
+      T[k]               = EC->temperature(E[k], EC->pressure(depth));
     }
   }
 
@@ -108,27 +104,26 @@ void compute_temperature(const array::Array3D &enthalpy,
 //! Compute `result` (enthalpy) from `temperature` and liquid fraction.
 void compute_enthalpy(const array::Array3D &temperature,
                       const array::Array3D &liquid_water_fraction,
-                      const array::Scalar &ice_thickness,
-                      array::Array3D &result) {
+                      const array::Scalar &ice_thickness, array::Array3D &result) {
 
-  auto grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
-  array::AccessScope list{&temperature, &liquid_water_fraction, &ice_thickness, &result};
+  array::AccessScope list{ &temperature, &liquid_water_fraction, &ice_thickness, &result };
 
-  const unsigned int Mz = grid->Mz();
+  const unsigned int Mz        = grid->Mz();
   const std::vector<double> &z = grid->z();
 
   for (auto p = grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *T     = temperature.get_column(i,j);
-    const double *omega = liquid_water_fraction.get_column(i,j);
-    double       *E     = result.get_column(i,j);
+    const double *T     = temperature.get_column(i, j);
+    const double *omega = liquid_water_fraction.get_column(i, j);
+    double *E           = result.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i,j) - z[k]; // FIXME issue #15
-      E[k] = EC->enthalpy_permissive(T[k], omega[k], EC->pressure(depth));
+      const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
+      E[k]               = EC->enthalpy_permissive(T[k], omega[k], EC->pressure(depth));
     }
   }
 
@@ -139,8 +134,7 @@ void compute_enthalpy(const array::Array3D &temperature,
 
 //! Compute the liquid fraction corresponding to enthalpy and ice_thickness.
 void compute_liquid_water_fraction(const array::Array3D &enthalpy,
-                                   const array::Scalar &ice_thickness,
-                                   array::Array3D &result) {
+                                   const array::Scalar &ice_thickness, array::Array3D &result) {
 
   auto grid = result.grid();
 
@@ -148,23 +142,24 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
-  result.set_attrs("diagnostic",
-                   "liquid water fraction in ice (between 0 and 1)",
-                   "1", "1", "", 0);
+  result.metadata(0)
+      .intent("diagnostic")
+      .long_name("liquid water fraction in ice (between 0 and 1)")
+      .units("1");
 
-  array::AccessScope list{&result, &enthalpy, &ice_thickness};
+  array::AccessScope list{ &result, &enthalpy, &ice_thickness };
 
   ParallelSection loop(grid->com);
   try {
     for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double *Enthij = enthalpy.get_column(i,j);
-      double *omegaij = result.get_column(i,j);
+      const double *Enthij = enthalpy.get_column(i, j);
+      double *omegaij      = result.get_column(i, j);
 
-      for (unsigned int k=0; k < grid->Mz(); ++k) {
-        const double depth = ice_thickness(i,j) - grid->z(k); // FIXME issue #15
-        omegaij[k] = EC->water_fraction(Enthij[k],EC->pressure(depth));
+      for (unsigned int k = 0; k < grid->Mz(); ++k) {
+        const double depth = ice_thickness(i, j) - grid->z(k); // FIXME issue #15
+        omegaij[k]         = EC->water_fraction(Enthij[k], EC->pressure(depth));
       }
     }
   } catch (...) {
@@ -182,18 +177,18 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
  *
  * Does not communicate ghosts for array::Array3D result.
  */
-void compute_cts(const array::Array3D &ice_enthalpy,
-                 const array::Scalar &ice_thickness,
+void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_thickness,
                  array::Array3D &result) {
 
-  auto grid = result.grid();
+  auto grid                 = result.grid();
   EnthalpyConverter::Ptr EC = grid->ctx()->enthalpy_converter();
 
   result.set_name("cts");
   result.metadata(0).set_name("cts");
-  result.set_attrs("diagnostic",
-                   "cts = E/E_s(p), so cold-temperate transition surface is at cts = 1",
-                   "1", "1", "", 0);
+  result.metadata(0)
+      .intent("diagnostic")
+      .long_name("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1")
+      .units("1");
 
   array::AccessScope list{&ice_enthalpy, &ice_thickness, &result};
 

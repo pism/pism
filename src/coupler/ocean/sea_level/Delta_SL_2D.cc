@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,9 +43,10 @@ Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLe
                                                  buffer_size,
                                                  opt.periodic,
                                                  LINEAR);
-    m_forcing->set_attrs("climate_forcing",
-                         "two-dimensional sea level offsets",
-                         "meters", "meters", "", 0);
+    m_forcing->metadata(0)
+        .intent("climate_forcing")
+        .long_name("two-dimensional sea level offsets")
+        .units("meters");
   }
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -61,10 +61,9 @@ public:
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["cell_methods"] = "time: mean";
 
-    auto units = internal_units + " second";
-    m_last_amount.set_attrs("internal",
-                            "ice amount at the time of the last report of " + name,
-                            units, units, "", 0);
+    m_last_amount.metadata()
+        .long_name("ice amount at the time of the last report of " + name)
+        .units(internal_units + " second");
   }
 protected:
   array::Array::Ptr compute_impl() const {

@@ -29,8 +29,11 @@ namespace frontalmelt {
 Constant::Constant(std::shared_ptr<const Grid> g)
   : FrontalMelt(g) {
   m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
-  m_frontal_melt_rate->set_attrs("diagnostic", "frontal melt rate",
-                                 "m s-1", "m day-1", "", 0);
+  m_frontal_melt_rate->metadata(0)
+      .intent("diagnostic")
+      .long_name("frontal melt rate")
+      .units("m s-1")
+      .glaciological_units("m day-1");
 }
 
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {

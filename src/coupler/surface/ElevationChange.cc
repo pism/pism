@@ -52,15 +52,14 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_reference_surface = std::make_shared<array::Forcing>(m_grid,
-                                                      file,
-                                                      "usurf",
-                                                      "", // no standard name
-                                                      buffer_size,
-                                                      opt.periodic,
-                                                      LINEAR);
-    m_reference_surface->set_attrs("climate_forcing", "ice surface elevation",
-                                   "m", "m", "surface_altitude", 0);
+    m_reference_surface = std::make_shared<array::Forcing>(m_grid, file, "usurf",
+                                                           "", // no standard name
+                                                           buffer_size, opt.periodic, LINEAR);
+    m_reference_surface->metadata(0)
+        .intent("climate_forcing")
+        .long_name("ice surface elevation")
+        .units("m")
+        .standard_name("surface_altitude");
   }
 
   m_mass_flux    = allocate_mass_flux(g);

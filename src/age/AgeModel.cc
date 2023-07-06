@@ -60,13 +60,14 @@ AgeModel::AgeModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalanc
     m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
     m_stress_balance(stress_balance) {
 
-  m_ice_age.set_attrs("model_state", "age of ice",
-                      "s", "s", "" /* no standard name*/, 0);
+  m_ice_age.metadata()
+    .intent("model_state")
+    .long_name("age of ice")
+    .units("s");
 
   m_ice_age.metadata()["valid_min"] = {0.0};
 
-  m_work.set_attrs("internal", "new values of age during time step",
-                   "s", "s", "", 0);
+  m_work.metadata().units("s");
 }
 
 /*!

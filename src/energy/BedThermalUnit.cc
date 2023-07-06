@@ -95,17 +95,21 @@ BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
     m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {
 
   {
-    m_top_surface_flux.set_attrs("diagnostic", "upward geothermal flux at the top bedrock surface",
-                                 "W m-2", "mW m-2",
-                                 "upward_geothermal_heat_flux_at_ground_level_in_land_ice", 0);
+    m_top_surface_flux.metadata(0)
+        .intent("diagnostic")
+        .long_name("upward geothermal flux at the top bedrock surface")
+        .units("W m-2")
+        .glaciological_units("mW m-2")
+        .standard_name("upward_geothermal_heat_flux_at_ground_level_in_land_ice");
     m_top_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
   }
   {
     // PROPOSED standard_name = lithosphere_upward_heat_flux
-    m_bottom_surface_flux.set_attrs("model_state",
-                                    "upward geothermal flux at the bottom bedrock surface",
-                                    "W m-2", "W m-2", "", 0); // note: don't convert to
-                                                              // "mW m-2" when saving
+    m_bottom_surface_flux.metadata(0)
+        .intent("model_state")
+        .long_name("upward geothermal flux at the bottom bedrock surface")
+        .units("W m-2"); // note: don't convert to
+                         // "mW m-2" when saving
 
     m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
     m_bottom_surface_flux.set_time_independent(true);

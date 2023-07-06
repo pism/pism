@@ -28,6 +28,7 @@
 #include "pism/coupler/surface/localMassBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
@@ -385,9 +386,10 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
   m_pdd_fausto_latitude_beta_w = m_config->get_number("surface.pdd.fausto.latitude_beta_w");
   m_refreeze_fraction          = m_config->get_number("surface.pdd.refreeze");
 
-  m_temp_mj.set_attrs("internal",
-                    "mean July air temp from Fausto et al (2009) parameterization",
-                      "K", "K", "", 0);
+  m_temp_mj.metadata(0)
+      .intent("internal")
+      .long_name("mean July air temp from Fausto et al (2009) parameterization")
+      .units("K");
 }
 
 LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int i, int j,

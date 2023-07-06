@@ -33,37 +33,43 @@ namespace icebin {
 
 
 IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const Grid> g)
-  : SurfaceModel(g),
-    icebin_wflux(m_grid, "icebin_wflux"),
-    icebin_deltah(m_grid, "icebin_deltah"),
-    icebin_massxfer(m_grid, "icebin_massxfer"),
-    icebin_enthxfer(m_grid, "icebin_enthxfer"),
-    surface_temp(m_grid, "surface_temp")
-{
+    : SurfaceModel(g),
+      icebin_wflux(m_grid, "icebin_wflux"),
+      icebin_deltah(m_grid, "icebin_deltah"),
+      icebin_massxfer(m_grid, "icebin_massxfer"),
+      icebin_enthxfer(m_grid, "icebin_enthxfer"),
+      surface_temp(m_grid, "surface_temp") {
 
-  printf("BEGIN IBSurfaceModel::allocate_IBSurfaceModel()\n");
-  icebin_wflux.set_attrs("climate_state",
-                         "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-                         "kg m-2 s-1", "kg m-2 year-1", "land_ice_surface_specific_mass_balance", 0);
+  icebin_wflux.metadata(0)
+      .intent("climate_state")
+      .long_name(
+          "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1")
+      .glaciological_units("kg m-2 year-1")
+      .standard_name("land_ice_surface_specific_mass_balance");
 
-  icebin_deltah.set_attrs(
-      "climate_state",
-      "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-      "W m-2", "W m-2", "", 0);
+  icebin_deltah.metadata(0)
+      .intent("climate_state")
+      .long_name(
+          "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
+      .units("W m-2");
 
-  icebin_massxfer.set_attrs(
-      "climate_state",
-      "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate",
-      "kg m-2 s-1", "kg m-2 s-1", "", 0);
+  icebin_massxfer.metadata(0)
+      .intent("climate_state")
+      .long_name(
+          "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
+      .units("kg m-2 s-1");
 
-  icebin_enthxfer.set_attrs("climate_state", "constant-in-time heat flux through top surface",
-                            "W m-2", "W m-2", "", 0);
+  icebin_enthxfer.metadata(0)
+      .intent("climate_state")
+      .long_name("constant-in-time heat flux through top surface")
+      .units("W m-2");
 
   // This variable is computed from the inputs above.
-  surface_temp.set_attrs("climate_state", "Temperature to use for Dirichlet B.C. at surface",
-                         "K", "K", "", 0);
-
-  printf("END IBSurfaceModel::allocate_IBSurfaceModel()\n");
+  surface_temp.metadata(0)
+      .intent("climate_state")
+      .long_name("Temperature to use for Dirichlet B.C. at surface")
+      .units("K");
 }
 
 void IBSurfaceModel::init_impl(const Geometry &geometry) {

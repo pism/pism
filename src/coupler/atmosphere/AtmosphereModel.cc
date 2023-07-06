@@ -18,6 +18,7 @@
 */
 
 #include <gsl/gsl_math.h>       // GSL_NAN
+#include <memory>
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Time.hh"
@@ -29,19 +30,25 @@ namespace pism {
 namespace atmosphere {
 
 array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
-  array::Scalar::Ptr result(new array::Scalar(grid, "air_temp"));
+  auto result = std::make_shared<array::Scalar>(grid, "air_temp");
 
-  result->set_attrs("climate_forcing", "mean annual near-surface air temperature",
-                    "Kelvin", "Kelvin", "", 0);
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("mean annual near-surface air temperature")
+      .units("Kelvin");
 
   return result;
 }
 
 array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
-  array::Scalar::Ptr result(new array::Scalar(grid, "precipitation"));
-  result->set_attrs("climate_forcing", "precipitation rate",
-                    "kg m-2 second-1", "kg m-2 year-1",
-                    "precipitation_flux", 0);
+  auto result = std::make_shared<array::Scalar>(grid, "precipitation");
+
+  result->metadata(0)
+      .intent("climate_forcing")
+      .long_name("precipitation rate")
+      .units("kg m-2 second-1")
+      .glaciological_units("kg m-2 year-1")
+      .standard_name("precipitation_flux");
 
   return result;
 }

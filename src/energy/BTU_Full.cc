@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -75,9 +75,10 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
       m_temp->metadata(0).z().set_string(z_attr.first, z_attr.second);
     }
 
-    m_temp->set_attrs("model_state",
-                      "lithosphere (bedrock) temperature, in BTU_Full",
-                      "K", "K", "", 0);
+    m_temp->metadata(0)
+        .intent("model_state")
+        .long_name("lithosphere (bedrock) temperature, in BTU_Full")
+        .units("K");
     m_temp->metadata()["valid_min"] = {0.0};
   }
 

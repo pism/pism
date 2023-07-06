@@ -17,13 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/hydrology/Hydrology.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
 
@@ -122,8 +117,9 @@ public:
 
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
 
-    m_flux_magnitude.set_attrs("internal", "magnitude of the subglacial water flux",
-                               "m2 s-1", "m2 s-1", "", 0);
+    m_flux_magnitude.metadata(0)
+        .long_name("magnitude of the subglacial water flux")
+        .units("m2 s-1");
   }
 
 protected:
@@ -140,124 +136,120 @@ protected:
 
 
 /*! @brief Report water flux at the grounded margin. */
-class GroundedMarginFlux : public DiagAverageRate<Hydrology>
-{
+class GroundedMarginFlux : public DiagAverageRate<Hydrology> {
 public:
   GroundedMarginFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounded_margins",
-                                 TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounded_margins",
+                                   TOTAL_CHANGE) {
 
-    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins"}};
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounded_margins" } };
     m_accumulator.metadata()["units"] = "kg";
 
-    set_attrs("subglacial water flux at grounded ice margins", "",
-              "kg second-1", "Gt year-1", 0);
+    set_attrs("subglacial water flux at grounded ice margins", "", "kg second-1", "Gt year-1", 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_at_grounded_margin();
   }
 };
 
 /*! @brief Report subglacial water flux at grounding lines. */
-class GroundingLineFlux : public DiagAverageRate<Hydrology>
-{
+class GroundingLineFlux : public DiagAverageRate<Hydrology> {
 public:
   GroundingLineFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line", TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_grounding_line",
+                                   TOTAL_CHANGE) {
 
-    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_grounding_line"}};
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_grounding_line" } };
     m_accumulator.metadata()["units"] = "kg";
 
-    set_attrs("subglacial water flux at grounding lines", "",
-              "kg second-1", "Gt year-1", 0);
+    set_attrs("subglacial water flux at grounding lines", "", "kg second-1", "Gt year-1", 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_at_grounding_line();
   }
 };
 
 /*! @brief Report subglacial water conservation error flux (mass added to preserve non-negativity). */
-class ConservationErrorFlux : public DiagAverageRate<Hydrology>
-{
+class ConservationErrorFlux : public DiagAverageRate<Hydrology> {
 public:
   ConservationErrorFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_conservation_error",
-                                 TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_conservation_error",
+                                   TOTAL_CHANGE) {
 
-    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error"}};
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_conservation_error" } };
     m_accumulator.metadata()["units"] = "kg";
 
-    set_attrs("subglacial water flux due to conservation error (mass added to preserve non-negativity)", "",
-              "kg second-1", "Gt year-1", 0);
+    set_attrs(
+        "subglacial water flux due to conservation error (mass added to preserve non-negativity)",
+        "", "kg second-1", "Gt year-1", 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_due_to_conservation_error();
   }
 };
 
 /*! @brief Report subglacial water flux at domain boundary (in regional model configurations). */
-class DomainBoundaryFlux : public DiagAverageRate<Hydrology>
-{
+class DomainBoundaryFlux : public DiagAverageRate<Hydrology> {
 public:
   DomainBoundaryFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary", TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_at_domain_boundary",
+                                   TOTAL_CHANGE) {
 
-    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary"}};
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_at_domain_boundary" } };
     m_accumulator.metadata()["units"] = "kg";
 
     set_attrs("subglacial water flux at domain boundary (in regional model configurations)", "",
               "kg second-1", "Gt year-1", 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_at_domain_boundary();
   }
 };
 
 /*! @brief Report water flux at the grounded margin. */
-class TendencyOfWaterMassDueToFlow : public DiagAverageRate<Hydrology>
-{
+class TendencyOfWaterMassDueToFlow : public DiagAverageRate<Hydrology> {
 public:
   TendencyOfWaterMassDueToFlow(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_flow",
-                                 TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass_due_to_flow",
+                                   TOTAL_CHANGE) {
 
-    m_vars = {{m_sys, "tendency_of_subglacial_water_mass_due_to_flow"}};
+    m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_flow" } };
     m_accumulator.metadata()["units"] = "kg";
 
-    set_attrs("rate of change subglacial water mass due to lateral flow", "",
-              "kg second-1", "Gt year-1", 0);
+    set_attrs("rate of change subglacial water mass due to lateral flow", "", "kg second-1",
+              "Gt year-1", 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_due_to_lateral_flow();
   }
 };
@@ -273,82 +265,87 @@ Inputs::Inputs() {
 }
 
 Hydrology::Hydrology(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_Q(m_grid, "water_flux"),
-    m_Wtill(m_grid, "tillwat"),
-    m_W(m_grid, "bwat"),
-    m_Pover(m_grid, "overburden_pressure"),
-    m_surface_input_rate(m_grid, "water_input_rate_from_surface"),
-    m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt"),
-    m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow"),
-    m_conservation_error_change(m_grid, "conservation_error_change"),
-    m_grounded_margin_change(m_grid, "grounded_margin_change"),
-    m_grounding_line_change(m_grid, "grounding_line_change"),
-    m_input_change(m_grid, "water_mass_change_due_to_input"),
-    m_no_model_mask_change(m_grid, "no_model_mask_change"),
-    m_total_change(m_grid, "water_mass_change"),
-    m_flow_change(m_grid, "water_mass_change_due_to_flow") {
+    : Component(g),
+      m_Q(m_grid, "water_flux"),
+      m_Wtill(m_grid, "tillwat"),
+      m_W(m_grid, "bwat"),
+      m_Pover(m_grid, "overburden_pressure"),
+      m_surface_input_rate(m_grid, "water_input_rate_from_surface"),
+      m_basal_melt_rate(m_grid, "water_input_rate_due_to_basal_melt"),
+      m_flow_change_incremental(m_grid, "water_thickness_change_due_to_flow"),
+      m_conservation_error_change(m_grid, "conservation_error_change"),
+      m_grounded_margin_change(m_grid, "grounded_margin_change"),
+      m_grounding_line_change(m_grid, "grounding_line_change"),
+      m_input_change(m_grid, "water_mass_change_due_to_input"),
+      m_no_model_mask_change(m_grid, "no_model_mask_change"),
+      m_total_change(m_grid, "water_mass_change"),
+      m_flow_change(m_grid, "water_mass_change_due_to_flow") {
 
-  m_surface_input_rate.set_attrs("internal",
-                                 "hydrology model workspace for water input rate from the ice surface",
-                                 "m s-1", "m s-1", "", 0);
+  m_surface_input_rate.metadata(0)
+      .long_name("hydrology model workspace for water input rate from the ice surface")
+      .units("m s-1");
 
-  m_basal_melt_rate.set_attrs("internal",
-                              "hydrology model workspace for water input rate due to basal melt",
-                              "m s-1", "m s-1", "", 0);
+  m_basal_melt_rate.metadata(0)
+      .long_name("hydrology model workspace for water input rate due to basal melt")
+      .units("m s-1");
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
-  m_Wtill.set_attrs("model_state",
-                    "effective thickness of subglacial water stored in till",
-                    "m", "m", "", 0);
-  m_Wtill.metadata()["valid_min"] = {0.0};
+  m_Wtill.metadata(0)
+      .intent("model_state")
+      .long_name("effective thickness of subglacial water stored in till")
+      .units("m");
+  m_Wtill.metadata()["valid_min"] = { 0.0 };
 
-  m_Pover.set_attrs("internal", "overburden pressure",
-                    "Pa", "Pa", "", 0);
-  m_Pover.metadata()["valid_min"] = {0.0};
+  m_Pover.metadata(0).long_name("overburden pressure").units("Pa");
+  m_Pover.metadata()["valid_min"] = { 0.0 };
 
   // needs ghosts in Routing and Distributed
-  m_W.set_attrs("diagnostic",
-                "thickness of transportable subglacial water layer",
-                "m", "m", "", 0);
-  m_W.metadata()["valid_min"] = {0.0};
+  m_W.metadata(0)
+      .intent("diagnostic")
+      .long_name("thickness of transportable subglacial water layer")
+      .units("m");
+  m_W.metadata()["valid_min"] = { 0.0 };
 
-  m_Q.set_attrs("diagnostic", "advective subglacial water flux",
-                "m2 s-1", "m2 day-1", "", 0);
+  m_Q.metadata(0)
+      .intent("diagnostic")
+      .long_name("advective subglacial water flux")
+      .units("m2 s-1")
+      .glaciological_units("m2 day-1");
   m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
-  m_total_change.set_attrs("internal",
-                           "total change in water mass over one time step",
-                           "kg", "kg", "", 0);
+  m_total_change.metadata(0).long_name("total change in water mass over one time step").units("kg");
 
-  m_input_change.set_attrs("internal",
-                           "change in water mass over one time step due to the input "
-                           "(basal melt and surface drainage)",
-                           "kg", "kg", "", 0);
+  m_input_change.metadata(0)
+      .long_name(
+          "change in water mass over one time step due to the input (basal melt and surface drainage)")
+      .units("kg");
 
+  m_flow_change.metadata(0)
+      .long_name("change in water mass due to lateral flow (over one time step)")
+      .units("kg");
 
-  m_flow_change.set_attrs("internal",
-                          "change in water mass due to lateral flow (over one time step)",
-                          "kg", "kg", "", 0);
+  m_grounded_margin_change.metadata(0)
+      .intent("diagnostic")
+      .long_name("changes in subglacial water thickness at the grounded margin")
+      .units("kg");
 
-  m_grounded_margin_change.set_attrs("diagnostic",
-                                     "changes in subglacial water thickness at the grounded margin",
-                                     "kg", "kg", "", 0);
-  m_grounding_line_change.set_attrs("diagnostic",
-                                    "changes in subglacial water thickness at the grounding line",
-                                    "kg", "kg", "", 0);
+  m_grounding_line_change.metadata(0)
+      .intent("diagnostic")
+      .long_name("changes in subglacial water thickness at the grounding line")
+      .units("kg");
 
-  m_no_model_mask_change.set_attrs("diagnostic",
-                                   "changes in subglacial water thickness at the edge of the modeling domain"
-                                   " (regional models)",
-                                   "kg", "kg", "", 0);
+  m_no_model_mask_change.metadata(0)
+      .intent("diagnostic")
+      .long_name(
+          "changes in subglacial water thickness at the edge of the modeling domain (regional models)")
+      .units("kg");
 
-  m_conservation_error_change.set_attrs("diagnostic",
-                                        "changes in subglacial water thickness required "
-                                        "to preserve non-negativity or "
-                                        "keep water thickness within bounds",
-                                        "kg", "kg", "", 0);
+  m_conservation_error_change.metadata(0)
+      .intent("diagnostic")
+      .long_name(
+          "changes in subglacial water thickness required to preserve non-negativity or keep water thickness within bounds")
+      .units("kg");
 }
 
 void Hydrology::restart(const File &input_file, int record) {
@@ -356,15 +353,12 @@ void Hydrology::restart(const File &input_file, int record) {
   this->restart_impl(input_file, record);
 }
 
-void Hydrology::bootstrap(const File &input_file,
-                          const array::Scalar &ice_thickness) {
+void Hydrology::bootstrap(const File &input_file, const array::Scalar &ice_thickness) {
   initialization_message();
   this->bootstrap_impl(input_file, ice_thickness);
 }
 
-void Hydrology::init(const array::Scalar &W_till,
-                           const array::Scalar &W,
-                           const array::Scalar &P) {
+void Hydrology::init(const array::Scalar &W_till, const array::Scalar &W, const array::Scalar &P) {
   initialization_message();
   this->init_impl(W_till, W, P);
 }
@@ -376,9 +370,8 @@ void Hydrology::restart_impl(const File &input_file, int record) {
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::bootstrap_impl(const File &input_file,
-                               const array::Scalar &ice_thickness) {
-  (void) ice_thickness;
+void Hydrology::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
+  (void)ice_thickness;
 
   double tillwat_default = m_config->get_number("bootstrapping.defaults.tillwat");
   m_Wtill.regrid(input_file, io::OPTIONAL, tillwat_default);
@@ -387,15 +380,14 @@ void Hydrology::bootstrap_impl(const File &input_file,
   regrid("Hydrology", m_Wtill);
 }
 
-void Hydrology::init_impl(const array::Scalar &W_till,
-                                const array::Scalar &W,
-                                const array::Scalar &P) {
-  (void) W;
-  (void) P;
+void Hydrology::init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                          const array::Scalar &P) {
+  (void)W;
+  (void)P;
   m_Wtill.copy_from(W_till);
 }
 
-void Hydrology::update(double t, double dt, const Inputs& inputs) {
+void Hydrology::update(double t, double dt, const Inputs &inputs) {
 
   // reset water thickness changes
   {
@@ -409,14 +401,11 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
 
   compute_overburden_pressure(inputs.geometry->ice_thickness, m_Pover);
 
-  compute_surface_input_rate(inputs.geometry->cell_type,
-                             inputs.surface_input_rate,
+  compute_surface_input_rate(inputs.geometry->cell_type, inputs.surface_input_rate,
                              m_surface_input_rate);
-  compute_basal_melt_rate(inputs.geometry->cell_type,
-                          *inputs.basal_melt_rate,
-                          m_basal_melt_rate);
+  compute_basal_melt_rate(inputs.geometry->cell_type, *inputs.basal_melt_rate, m_basal_melt_rate);
 
-  array::AccessScope list{&m_W, &m_Wtill, &m_total_change};
+  array::AccessScope list{ &m_W, &m_Wtill, &m_total_change };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -435,33 +424,37 @@ void Hydrology::update(double t, double dt, const Inputs& inputs) {
   // convert from m to kg
   // kg = m * (kg / m^3) * m^2
 
-  double
-    water_density = m_config->get_number("constants.fresh_water.density"),
-    kg_per_m      = water_density * m_grid->cell_area();
+  double water_density = m_config->get_number("constants.fresh_water.density"),
+         kg_per_m      = water_density * m_grid->cell_area();
 
-  list.add({&m_flow_change, &m_input_change});
+  list.add({ &m_flow_change, &m_input_change });
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
     m_total_change(i, j) *= kg_per_m;
     m_input_change(i, j) *= kg_per_m;
-    m_flow_change(i, j)  *= kg_per_m;
+    m_flow_change(i, j) *= kg_per_m;
   }
 }
 
 DiagnosticList Hydrology::diagnostics_impl() const {
   using namespace diagnostics;
   DiagnosticList result = {
-    {"bwat",                                                        Diagnostic::wrap(m_W)},
-    {"tillwat",                                                     Diagnostic::wrap(m_Wtill)},
-    {"subglacial_water_input_rate",                                 Diagnostic::Ptr(new TotalInputRate(this))},
-    {"tendency_of_subglacial_water_mass_due_to_input",              Diagnostic::Ptr(new WaterInputFlux(this))},
-    {"tendency_of_subglacial_water_mass_due_to_flow",               Diagnostic::Ptr(new TendencyOfWaterMassDueToFlow(this))},
-    {"tendency_of_subglacial_water_mass_due_to_conservation_error", Diagnostic::Ptr(new ConservationErrorFlux(this))},
-    {"tendency_of_subglacial_water_mass",                           Diagnostic::Ptr(new TendencyOfWaterMass(this))},
-    {"tendency_of_subglacial_water_mass_at_grounded_margins",       Diagnostic::Ptr(new GroundedMarginFlux(this))},
-    {"tendency_of_subglacial_water_mass_at_grounding_line",         Diagnostic::Ptr(new GroundingLineFlux(this))},
-    {"tendency_of_subglacial_water_mass_at_domain_boundary",        Diagnostic::Ptr(new DomainBoundaryFlux(this))},
-    {"subglacial_water_flux_mag",                                   Diagnostic::Ptr(new SubglacialWaterFlux(this))},
+    { "bwat", Diagnostic::wrap(m_W) },
+    { "tillwat", Diagnostic::wrap(m_Wtill) },
+    { "subglacial_water_input_rate", Diagnostic::Ptr(new TotalInputRate(this)) },
+    { "tendency_of_subglacial_water_mass_due_to_input", Diagnostic::Ptr(new WaterInputFlux(this)) },
+    { "tendency_of_subglacial_water_mass_due_to_flow",
+      Diagnostic::Ptr(new TendencyOfWaterMassDueToFlow(this)) },
+    { "tendency_of_subglacial_water_mass_due_to_conservation_error",
+      Diagnostic::Ptr(new ConservationErrorFlux(this)) },
+    { "tendency_of_subglacial_water_mass", Diagnostic::Ptr(new TendencyOfWaterMass(this)) },
+    { "tendency_of_subglacial_water_mass_at_grounded_margins",
+      Diagnostic::Ptr(new GroundedMarginFlux(this)) },
+    { "tendency_of_subglacial_water_mass_at_grounding_line",
+      Diagnostic::Ptr(new GroundingLineFlux(this)) },
+    { "tendency_of_subglacial_water_mass_at_domain_boundary",
+      Diagnostic::Ptr(new DomainBoundaryFlux(this)) },
+    { "subglacial_water_flux_mag", Diagnostic::Ptr(new SubglacialWaterFlux(this)) },
   };
 
   return result;
@@ -484,11 +477,10 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
                                             array::Scalar &result) const {
   // FIXME issue #15
 
-  const double
-    ice_density      = m_config->get_number("constants.ice.density"),
-    standard_gravity = m_config->get_number("constants.standard_gravity");
+  const double ice_density      = m_config->get_number("constants.ice.density"),
+               standard_gravity = m_config->get_number("constants.standard_gravity");
 
-  array::AccessScope list{&ice_thickness, &result};
+  array::AccessScope list{ &ice_thickness, &result };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
@@ -497,17 +489,17 @@ void Hydrology::compute_overburden_pressure(const array::Scalar &ice_thickness,
   }
 }
 
-const array::Scalar& Hydrology::overburden_pressure() const {
+const array::Scalar &Hydrology::overburden_pressure() const {
   return m_Pover;
 }
 
 //! Return the effective thickness of the water stored in till.
-const array::Scalar& Hydrology::till_water_thickness() const {
+const array::Scalar &Hydrology::till_water_thickness() const {
   return m_Wtill;
 }
 
 //! Return the effective thickness of the transportable basal water layer.
-const array::Scalar& Hydrology::subglacial_water_thickness() const {
+const array::Scalar &Hydrology::subglacial_water_thickness() const {
   return m_W;
 }
 
@@ -515,46 +507,46 @@ const array::Scalar& Hydrology::subglacial_water_thickness() const {
  * Return subglacial water flux (time-average over the time step requested at the time of
  * the update() call).
  */
-const array::Vector& Hydrology::flux() const {
+const array::Vector &Hydrology::flux() const {
   return m_Q;
 }
 
-const array::Scalar& Hydrology::surface_input_rate() const {
+const array::Scalar &Hydrology::surface_input_rate() const {
   return m_surface_input_rate;
 }
 
-const array::Scalar& Hydrology::mass_change_at_grounded_margin() const {
+const array::Scalar &Hydrology::mass_change_at_grounded_margin() const {
   return m_grounded_margin_change;
 }
 
-const array::Scalar& Hydrology::mass_change_at_grounding_line() const {
+const array::Scalar &Hydrology::mass_change_at_grounding_line() const {
   return m_grounding_line_change;
 }
 
-const array::Scalar& Hydrology::mass_change_due_to_conservation_error() const {
+const array::Scalar &Hydrology::mass_change_due_to_conservation_error() const {
   return m_conservation_error_change;
 }
 
-const array::Scalar& Hydrology::mass_change_at_domain_boundary() const {
+const array::Scalar &Hydrology::mass_change_at_domain_boundary() const {
   return m_no_model_mask_change;
 }
 
-const array::Scalar& Hydrology::mass_change() const {
+const array::Scalar &Hydrology::mass_change() const {
   return m_total_change;
 }
 
-const array::Scalar& Hydrology::mass_change_due_to_input() const {
+const array::Scalar &Hydrology::mass_change_due_to_input() const {
   return m_input_change;
 }
 
-const array::Scalar& Hydrology::mass_change_due_to_lateral_flow() const {
+const array::Scalar &Hydrology::mass_change_due_to_lateral_flow() const {
   return m_flow_change;
 }
 
 /*!
   Checks @f$ 0 \le W \le W^{max} @f$.
 */
-void check_bounds(const array::Scalar& W, double W_max) {
+void check_bounds(const array::Scalar &W, double W_max) {
 
   std::string name = W.metadata().get_string("long_name");
 

@@ -27,10 +27,11 @@ Given::Given(std::shared_ptr<const Grid> grid)
   : BedDef(grid),
     m_topg_reference(grid, "topg") {
 
-  m_topg_reference.set_attrs("bed_deformation", "reference bed elevation",
-                             "meters",
-                             "meters",
-                             "bedrock_altitude", 0);
+  m_topg_reference.metadata(0)
+      .intent("bed_deformation")
+      .long_name("reference bed elevation")
+      .units("meters")
+      .standard_name("bedrock_altitude");
 
   auto filename = m_config->get_string("bed_deformation.given.file");
 
@@ -42,16 +43,13 @@ Given::Given(std::shared_ptr<const Grid> grid)
 
     File file(m_grid->com, filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_topg_delta = std::make_shared<array::Forcing>(m_grid,
-                                                    file,
-                                                    "topg_delta",
+    m_topg_delta = std::make_shared<array::Forcing>(m_grid, file, "topg_delta",
                                                     "", // no standard name
-                                                    buffer_size,
-                                                    periodic,
-                                                    LINEAR);
-    m_topg_delta->set_attrs("bed_deformation",
-                            "two-dimensional bed elevation changes",
-                            "meters", "meters", "", 0);
+                                                    buffer_size, periodic, LINEAR);
+    m_topg_delta->metadata(0)
+        .intent("bed_deformation")
+        .long_name("two-dimensional bed elevation changes")
+        .units("meters");
   }
 }
 

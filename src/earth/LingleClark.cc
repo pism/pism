@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2017, 2018, 2019, 2020, 2021, 2023 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -53,23 +53,24 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
-  m_total_displacement.set_attrs("internal",
-                                 "total (viscous and elastic) displacement "
-                                 "in the Lingle-Clark bed deformation model",
-                                 "meters", "meters", "", 0);
+  m_total_displacement.metadata(0)
+      .long_name(
+          "total (viscous and elastic) displacement in the Lingle-Clark bed deformation model")
+      .units("meters");
 
   m_work0 = m_total_displacement.allocate_proc0_copy();
 
-  m_relief.set_attrs("internal",
-                     "bed relief relative to the modeled bed displacement",
-                     "meters", "meters", "", 0);
+  m_relief.metadata(0)
+      .long_name("bed relief relative to the modeled bed displacement")
+      .units("meters");
 
   bool use_elastic_model = m_config->get_flag("bed_deformation.lc.elastic_model");
 
-  m_elastic_displacement.set_attrs("model state",
-                                   "elastic part of the displacement in the "
-                                   "Lingle-Clark bed deformation model; "
-                                   "see :cite:`BLKfastearth`", "meters", "meters", "", 0);
+  m_elastic_displacement.metadata(0)
+      .intent("model_state")
+      .long_name(
+          "elastic part of the displacement in the Lingle-Clark bed deformation model; see :cite:`BLKfastearth`")
+      .units("meters");
   m_elastic_displacement0 = m_elastic_displacement.allocate_proc0_copy();
 
   const int
@@ -90,11 +91,11 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
 
   m_viscous_displacement.reset(new array::Scalar(m_extended_grid,
                                                  "viscous_bed_displacement"));
-  m_viscous_displacement->set_attrs("model state",
-                                    "bed displacement in the viscous half-space "
-                                    "bed deformation model; "
-                                    "see BuelerLingleBrown",
-                                    "meters", "meters", "", 0);
+  m_viscous_displacement->metadata(0)
+      .intent("model_state")
+      .long_name(
+          "bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown")
+      .units("meters");
 
   // coordinate variables of the extended grid should have different names
   m_viscous_displacement->metadata().x().set_name("x_lc");

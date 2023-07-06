@@ -44,47 +44,68 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
     cell_grounded_fraction(grid, "cell_grounded_fraction"),
     ice_surface_elevation(grid, "usurf") {
 
-  latitude.set_attrs("mapping", "latitude", "degree_north", "degree_north", "latitude", 0);
+  latitude.metadata(0)
+      .intent("mapping")
+      .long_name("latitude")
+      .units("degree_north")
+      .standard_name("latitude");
   latitude.set_time_independent(true);
   latitude.metadata()["grid_mapping"] = "";
-  latitude.metadata()["valid_range"] = {-90.0, 90.0};
+  latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
 
-  longitude.set_attrs("mapping", "longitude", "degree_east", "degree_east", "longitude", 0);
+  longitude.metadata(0)
+      .intent("mapping")
+      .long_name("longitude")
+      .units("degree_east")
+      .standard_name("longitude");
   longitude.set_time_independent(true);
   longitude.metadata()["grid_mapping"] = "";
-  longitude.metadata()["valid_range"] = {-180.0, 180.0};
+  longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
-  bed_elevation.set_attrs("model_state", "bedrock surface elevation",
-                          "m", "m", "bedrock_altitude", 0);
+  bed_elevation.metadata(0)
+      .intent("model_state")
+      .long_name("bedrock surface elevation")
+      .units("m")
+      .standard_name("bedrock_altitude");
 
-  sea_level_elevation.set_attrs("model_state",
-                                "sea level elevation above reference ellipsoid", "meters", "meters",
-                                "sea_surface_height_above_reference_ellipsoid", 0);
+  sea_level_elevation.metadata(0)
+      .intent("model_state")
+      .long_name("sea level elevation above reference ellipsoid")
+      .units("meters")
+      .standard_name("sea_surface_height_above_reference_ellipsoid");
 
-  ice_thickness.set_attrs("model_state", "land ice thickness",
-                          "m", "m", "land_ice_thickness", 0);
-  ice_thickness.metadata()["valid_min"] = {0.0};
+  ice_thickness.metadata(0)
+      .intent("model_state")
+      .long_name("land ice thickness")
+      .units("m")
+      .standard_name("land_ice_thickness");
+  ice_thickness.metadata()["valid_min"] = { 0.0 };
 
-  ice_area_specific_volume.set_attrs("model_state",
-                                     "ice-volume-per-area in partially-filled grid cells",
-                                     "m3/m2", "m3/m2", "", 0);
+  ice_area_specific_volume.metadata(0)
+      .intent("model_state")
+      .long_name("ice-volume-per-area in partially-filled grid cells")
+      .units("m3/m2");
   ice_area_specific_volume.metadata()["comment"] =
-    "this variable represents the amount of ice in a partially-filled cell and not "
-    "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
+      "this variable represents the amount of ice in a partially-filled cell and not "
+      "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
-  cell_type.set_attrs("diagnostic", "ice-type (ice-free/grounded/floating/ocean) integer mask",
-                      "", "", "", 0);
-  cell_type.metadata()["flag_values"] = {MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING, MASK_ICE_FREE_OCEAN};
+  cell_type.metadata(0)
+      .intent("diagnostic")
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                          MASK_ICE_FREE_OCEAN };
   cell_type.metadata()["flag_meanings"] =
-    "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+      "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
   cell_type.metadata().set_output_type(io::PISM_INT);
 
-  cell_grounded_fraction.set_attrs("internal",
-                                   "fractional grounded/floating mask (floating=0, grounded=1)",
-                                   "", "", "", 0);
+  cell_grounded_fraction.metadata(0).long_name(
+      "fractional grounded/floating mask (floating=0, grounded=1)");
 
-  ice_surface_elevation.set_attrs("diagnostic", "ice upper surface elevation",
-                                  "m", "m", "surface_altitude", 0);
+  ice_surface_elevation.metadata(0)
+      .intent("diagnostic")
+      .long_name("ice upper surface elevation")
+      .units("m")
+      .standard_name("surface_altitude");
 
   // make sure all the fields are initialized
   latitude.set(0.0);

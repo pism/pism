@@ -132,24 +132,25 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
     m_stress_balance(stress_balance) {
 
   // POSSIBLE standard name = land_ice_enthalpy
-  m_ice_enthalpy.set_attrs("model_state",
-                           "ice enthalpy (includes sensible heat, latent heat, pressure)",
-                           "J kg-1", "J kg-1", "", 0);
+  m_ice_enthalpy.metadata(0)
+      .intent("model_state")
+      .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
+      .units("J kg-1");
 
   {
     // ghosted to allow the "redundant" computation of tauc
-    m_basal_melt_rate.set_attrs("model_state",
-                                "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)",
-                                "m s-1", "m s-1", "", 0);
+    m_basal_melt_rate.metadata(0)
+        .intent("model_state")
+        .long_name(
+            "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)")
+        .units("m s-1");
     // We could use land_ice_basal_melt_rate, but that way both basal_melt_rate_grounded and bmelt
     // have this standard name.
     m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   }
 
   // a 3d work vector
-  m_work.set_attrs("internal",
-                   "usually new values of temperature or enthalpy during time step",
-                   "", "", "", 0);
+  m_work.metadata(0).long_name("usually new values of temperature or enthalpy during time step");
 }
 
 void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
@@ -161,15 +162,15 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       m_ice_enthalpy.read(input_file, record);
     }
   } else if (input_file.find_variable("temp")) {
-    array::Array3D
-      &temp    = m_work,
-      &liqfrac = m_ice_enthalpy;
+    array::Array3D &temp = m_work, &liqfrac = m_ice_enthalpy;
 
     {
       temp.set_name("temp");
       temp.metadata(0).set_name("temp");
-      temp.set_attrs("temporary", "ice temperature",
-                     "Kelvin", "Kelvin", "land_ice_temperature", 0);
+      temp.metadata(0)
+          .long_name("ice temperature")
+          .units("Kelvin")
+          .standard_name("land_ice_temperature");
 
       if (do_regrid) {
         temp.regrid(input_file, io::CRITICAL);
@@ -178,15 +179,14 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       }
     }
 
-    const array::Scalar & ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
+    const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     if (input_file.find_variable("liqfrac")) {
       SpatialVariableMetadata enthalpy_metadata = m_ice_enthalpy.metadata();
 
       liqfrac.set_name("liqfrac");
       liqfrac.metadata(0).set_name("liqfrac");
-      liqfrac.set_attrs("temporary", "ice liquid water fraction",
-                        "1", "1", "", 0);
+      liqfrac.metadata(0).long_name("ice liquid water fraction").units("1");
 
       if (do_regrid) {
         liqfrac.regrid(input_file, io::CRITICAL);

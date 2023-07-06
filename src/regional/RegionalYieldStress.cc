@@ -61,10 +61,10 @@ void RegionalYieldStress::restart_impl(const File &input_file, int record) {
 
   array::Scalar no_model_mask(m_grid, "no_model_mask");
   no_model_mask.set_interpolation_type(NEAREST);
-  no_model_mask.set_attrs("model_state",
-                          "mask: zeros (modeling domain) and ones"
-                          " (no-model buffer near grid edges)",
-                          "", "", "", 0); // no units and no standard name
+  no_model_mask.metadata(0)
+      .intent("model_state")
+      .long_name(
+          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
   // We are re-starting a simulation, so the input file has to contain no_model_mask.
   no_model_mask.read(input_file, record);
   // However, the used can set "-regrid_vars no_model_mask,...", so we have to try this,
