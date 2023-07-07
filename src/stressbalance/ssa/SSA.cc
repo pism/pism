@@ -81,18 +81,15 @@ SSA::SSA(std::shared_ptr<const Grid> g)
 
   // grounded_dragging_floating integer mask
   m_mask.metadata(0)
-      .intent("diagnostic")
       .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
   m_mask.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
                                          MASK_ICE_FREE_OCEAN };
   m_mask.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   m_taud.metadata(0)
-      .intent("diagnostic")
       .long_name("X-component of the driving shear stress at the base of ice")
       .units("Pa");
   m_taud.metadata(1)
-      .intent("diagnostic")
       .long_name("Y-component of the driving shear stress at the base of ice")
       .units("Pa");
 

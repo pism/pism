@@ -31,7 +31,6 @@ namespace ocean {
 array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbtemp"));
   result->metadata(0)
-      .intent("diagnostic")
       .long_name("ice temperature at the bottom of floating ice")
       .units("Kelvin");
   return result;
@@ -41,10 +40,9 @@ array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<con
   array::Scalar::Ptr result(new array::Scalar(g, "shelfbmassflux"));
 
   result->metadata(0)
-      .intent("diagnostic")
       .long_name("shelf base mass flux")
       .units("kg m-2 s-1")
-      .glaciological_units("kg m-2 year-1");
+      .output_units("kg m-2 year-1");
   return result;
 }
 
@@ -52,7 +50,6 @@ array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<co
   array::Scalar::Ptr result(new array::Scalar(g, "average_water_column_pressure"));
 
   result->metadata(0)
-      .intent("diagnostic")
       .long_name("vertically-averaged water column pressure")
       .units("Pa");
 

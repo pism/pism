@@ -2846,12 +2846,12 @@ static void print_diagnostics(const Logger &log, const Metadata &list) {
       std::string
         var_name            = v.get_name(),
         units               = v.get_string("units"),
-        glaciological_units = v.get_string("glaciological_units"),
+        output_units = v.get_string("output_units"),
         long_name           = v.get_string("long_name"),
         comment             = v.get_string("comment");
 
-      if (not glaciological_units.empty()) {
-        units = glaciological_units;
+      if (not output_units.empty()) {
+        units = output_units;
       }
 
       log.message(1, "   %s [%s]\n", var_name.c_str(), units.c_str());
@@ -2883,13 +2883,13 @@ static void print_diagnostics_json(const Logger &log, const Metadata &list) {
       std::string
         var_name            = variable.get_name(),
         units               = variable.get_string("units"),
-        glaciological_units = variable.get_string("glaciological_units"),
+        output_units = variable.get_string("output_units"),
         long_name           = variable.get_string("long_name"),
         standard_name       = variable.get_string("standard_name"),
         comment             = variable.get_string("comment");
 
-      if (not glaciological_units.empty()) {
-        units = glaciological_units;
+      if (not output_units.empty()) {
+        units = output_units;
       }
 
       if (not first_variable) {

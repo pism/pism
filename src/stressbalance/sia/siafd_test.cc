@@ -322,12 +322,11 @@ int main(int argc, char *argv[]) {
     geometry.sea_level_elevation.set(0.0);
 
     // age of the ice; is not used here
-    age.metadata(0).intent("diagnostic").long_name("age of the ice").units("s");
+    age.metadata(0).long_name("age of the ice").units("s");
     age.set(0.0);
 
     // enthalpy in the ice
     enthalpy.metadata(0)
-        .intent("model_state")
         .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
         .units("J kg-1");
     //

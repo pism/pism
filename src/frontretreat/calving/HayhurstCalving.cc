@@ -31,10 +31,9 @@ HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
     m_calving_rate(grid, "hayhurst_calving_rate")
 {
   m_calving_rate.metadata(0)
-      .intent("diagnostic")
       .long_name("horizontal calving rate due to Hayhurst calving")
       .units("m s-1")
-      .glaciological_units("m day-1");
+      .output_units("m day-1");
 }
 
 void HayhurstCalving::init() {

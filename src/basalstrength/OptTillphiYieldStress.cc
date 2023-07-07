@@ -52,14 +52,12 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
   m_usurf_target.set_time_independent(true);
 
   m_usurf_difference.metadata()
-      .intent("diagnostic")
       .long_name("difference between modeled and target surface elevations")
       .units("m");
 
   m_usurf_difference.set(0.0);
 
   m_mask.metadata()
-      .intent("diagnostic")
       .long_name(
           "one if the till friction angle was updated by the last iteration, zero otherwise ");
 

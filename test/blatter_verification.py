@@ -348,7 +348,7 @@ class TestXZ(TestCase):
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").glaciological_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
 
         rho = config.get_number("constants.ice.density")
         g = config.get_number("constants.standard_gravity")
@@ -393,7 +393,7 @@ class TestXZ(TestCase):
         u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
-        u_model.metadata(0).long_name("modeled velocity").units("m / s").glaciological_units("m / year")
+        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
@@ -543,7 +543,7 @@ class TestCFBC(TestCase):
     def exact_solution(self, grid, bed, Z):
         "Returns an array with the exact solution"
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").glaciological_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
 
         rho_i = config.get_number("constants.ice.density")
         rho_w = config.get_number("constants.sea_water.density")
@@ -585,14 +585,14 @@ class TestCFBC(TestCase):
         u_model_z = model.velocity_u_sigma().levels()
 
         u_model = PISM.Array3D(grid, "u_model", PISM.WITHOUT_GHOSTS, u_model_z)
-        u_model.metadata(0).long_name("modeled velocity").units("m / s").glaciological_units("m / year")
+        u_model.metadata(0).long_name("modeled velocity").units("m / s").output_units("m / year")
         u_model.copy_from(model.velocity_u_sigma())
 
         u_exact = self.exact_solution(grid, geometry.bed_elevation, u_model_z)
 
         # compute the error
         u_error = PISM.Array3D(grid, "error", PISM.WITHOUT_GHOSTS, u_model_z)
-        u_error.metadata(0).long_name("error").units("m / s").glaciological_units("m / year")
+        u_error.metadata(0).long_name("error").units("m / s").output_units("m / year")
         u_error.copy_from(u_exact)
         u_error.add(-1.0, model.velocity_u_sigma())
 
@@ -864,7 +864,7 @@ class TestXZHalfar(TestCase):
         grid = model.grid()
 
         exact = PISM.Array3D(grid, "exact", PISM.WITHOUT_GHOSTS, Z)
-        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").glaciological_units("m / year")
+        exact.metadata(0).long_name("x-component of the exact solution").units("m / s").output_units("m / year")
 
         u = np.zeros_like(Z)
         with PISM.vec.Access(exact):

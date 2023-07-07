@@ -34,10 +34,9 @@ EigenCalving::EigenCalving(std::shared_ptr<const Grid> grid)
 
   m_calving_rate.metadata().set_name("eigen_calving_rate");
   m_calving_rate.metadata(0)
-      .intent("diagnostic")
       .long_name("horizontal calving rate due to eigen-calving")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
 }
 
 void EigenCalving::init() {

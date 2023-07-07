@@ -85,12 +85,10 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
   }
 
   m_theta_ocean->metadata(0)
-      .intent("climate_forcing")
       .long_name("potential temperature of the adjacent ocean")
       .units("Kelvin");
 
   m_salinity_ocean->metadata(0)
-      .intent("climate_forcing")
       .long_name("salinity of the adjacent ocean")
       .units("g/kg");
 }

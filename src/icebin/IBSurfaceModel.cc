@@ -41,33 +41,28 @@ IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const Grid> g)
       surface_temp(m_grid, "surface_temp") {
 
   icebin_wflux.metadata(0)
-      .intent("climate_state")
       .long_name(
           "constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1")
-      .glaciological_units("kg m-2 year-1")
+      .output_units("kg m-2 year-1")
       .standard_name("land_ice_surface_specific_mass_balance");
 
   icebin_deltah.metadata(0)
-      .intent("climate_state")
       .long_name(
           "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
       .units("W m-2");
 
   icebin_massxfer.metadata(0)
-      .intent("climate_state")
       .long_name(
           "enthalpy of constant-in-time ice-equivalent surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1");
 
   icebin_enthxfer.metadata(0)
-      .intent("climate_state")
       .long_name("constant-in-time heat flux through top surface")
       .units("W m-2");
 
   // This variable is computed from the inputs above.
   surface_temp.metadata(0)
-      .intent("climate_state")
       .long_name("Temperature to use for Dirichlet B.C. at surface")
       .units("K");
 }

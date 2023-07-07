@@ -33,19 +33,16 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid)
 {
 
   m_topg.metadata(0)
-      .intent("model_state")
       .long_name("bedrock surface elevation")
       .units("m")
       .standard_name("bedrock_altitude");
 
   m_topg_last.metadata(0)
-      .intent("model_state")
       .long_name("bedrock surface elevation")
       .units("m")
       .standard_name("bedrock_altitude");
 
   m_uplift.metadata(0)
-      .intent("model_state")
       .long_name("bedrock uplift rate")
       .units("m s-1")
       .standard_name("tendency_of_bedrock_altitude");

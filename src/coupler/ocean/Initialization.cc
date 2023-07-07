@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,12 +18,9 @@
  */
 
 #include "pism/coupler/ocean/Initialization.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/coupler/util/init_step.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace ocean {
@@ -33,18 +30,15 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::s
 
   m_water_column_pressure = allocate_water_column_pressure(g);
   m_water_column_pressure->set_name("effective_water_column_pressure");
-  m_water_column_pressure->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_temperature->set_name("effective_shelf_base_temperature");
-  m_shelf_base_temperature->metadata()["pism_intent"] = "model_state";
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
   // use internal units when saving
   auto units = m_shelf_base_mass_flux->metadata().get_string("units");
-  m_shelf_base_mass_flux->metadata()["glaciological_units"] = units;
-  m_shelf_base_mass_flux->metadata()["pism_intent"] = "model_state";
+  m_shelf_base_mass_flux->metadata()["output_units"] = units;
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {

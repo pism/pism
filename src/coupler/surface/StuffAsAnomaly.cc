@@ -38,7 +38,7 @@ StuffAsAnomaly::StuffAsAnomaly(std::shared_ptr<const Grid> g, std::shared_ptr<Su
                       "surface mass balance (accumulation/ablation) rate",
                       "kg m-2 s-1",
                       "land_ice_surface_specific_mass_balance_flux");
-  m_mass_flux.metadata()["glaciological_units"] = "kg m-2 year-1";
+  m_mass_flux.metadata()["output_units"] = "kg m-2 year-1";
 
   m_temp.set_attrs("climate_state", "ice temperature at the ice surface",
                    "K", "");

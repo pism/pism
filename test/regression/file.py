@@ -510,7 +510,7 @@ class File(TestCase):
 
         grid = PISM.testing.shallow_grid()
         vec = PISM.Scalar(grid, "v")
-        vec.metadata(0).long_name("dummy variable for testing").units("Kelvin").glaciological_units("Celsius").standard_name("standard_name")
+        vec.metadata(0).long_name("dummy variable for testing").units("Kelvin").output_units("Celsius").standard_name("standard_name")
         vec.set(1.0)
         vec.set_time_independent(True)
         vec.dump(self.file_without_time)

@@ -44,7 +44,7 @@ StressCalving::StressCalving(std::shared_ptr<const Grid> grid,
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
 
   m_cell_type.metadata(0).long_name("cell type mask");
 }

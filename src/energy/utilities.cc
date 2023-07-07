@@ -143,7 +143,6 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
   result.metadata(0)
-      .intent("diagnostic")
       .long_name("liquid water fraction in ice (between 0 and 1)")
       .units("1");
 
@@ -186,7 +185,6 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
   result.set_name("cts");
   result.metadata(0).set_name("cts");
   result.metadata(0)
-      .intent("diagnostic")
       .long_name("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1")
       .units("1");
 

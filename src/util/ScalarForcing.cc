@@ -49,7 +49,7 @@ static void report_range(const std::vector<double> &data,
 
   units::Converter c(unit_system,
                      metadata.get_string("units"),
-                     metadata.get_string("glaciological_units"));
+                     metadata.get_string("output_units"));
   min = c(min);
   max = c(max);
 
@@ -60,7 +60,7 @@ static void report_range(const std::vector<double> &data,
               "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
               metadata.get_name().c_str(),
               metadata.get_string("long_name").c_str(), spacer.c_str(), min, max,
-              metadata.get_string("glaciological_units").c_str());
+              metadata.get_string("output_units").c_str());
 }
 
 struct ScalarForcing::Impl {
@@ -84,7 +84,7 @@ void ScalarForcing::initialize(const Context &ctx,
                                const std::string &filename,
                                const std::string &variable_name,
                                const std::string &units,
-                               const std::string &glaciological_units,
+                               const std::string &output_units,
                                const std::string &long_name,
                                bool periodic) {
   try {
@@ -93,7 +93,7 @@ void ScalarForcing::initialize(const Context &ctx,
     VariableMetadata variable(variable_name, unit_system);
 
     variable["units"]               = units;
-    variable["glaciological_units"] = glaciological_units;
+    variable["output_units"] = output_units;
     variable["long_name"]           = long_name;
 
     double forcing_t0{};
@@ -204,7 +204,7 @@ void ScalarForcing::initialize(const Context &ctx,
 
 ScalarForcing::ScalarForcing(const Context &ctx, const std::string &prefix,
                              const std::string &variable_name, const std::string &units,
-                             const std::string &glaciological_units, const std::string &long_name)
+                             const std::string &output_units, const std::string &long_name)
     : m_impl(new Impl) {
 
   m_impl->acc    = nullptr;
@@ -222,7 +222,7 @@ ScalarForcing::ScalarForcing(const Context &ctx, const std::string &prefix,
                                   "%s.file is required", prefix.c_str());
   }
 
-  initialize(ctx, filename, variable_name, units, glaciological_units,
+  initialize(ctx, filename, variable_name, units, output_units,
              long_name, periodic);
 }
 
@@ -230,7 +230,7 @@ ScalarForcing::ScalarForcing(const Context &ctx,
                              const std::string &filename,
                              const std::string &variable_name,
                              const std::string &units,
-                             const std::string &glaciological_units,
+                             const std::string &output_units,
                              const std::string &long_name,
                              bool periodic)
   : m_impl(new Impl) {
@@ -240,7 +240,7 @@ ScalarForcing::ScalarForcing(const Context &ctx,
   m_impl->period = 0.0;
   m_impl->period_start = 0.0;
 
-  initialize(ctx, filename, variable_name, units, glaciological_units,
+  initialize(ctx, filename, variable_name, units, output_units,
              long_name, periodic);
 }
 

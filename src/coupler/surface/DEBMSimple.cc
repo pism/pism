@@ -112,12 +112,10 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
   }
 
   m_air_temp_sd->metadata(0)
-      .intent("climate_forcing")
       .long_name("standard deviation of near-surface air temperature")
       .units("Kelvin");
 
   m_mass_flux.metadata(0)
-      .intent("diagnostic")
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
@@ -132,39 +130,33 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
     m_temperature  = allocate_temperature(g);
 
     m_temperature_driven_melt.metadata(0)
-        .intent("diagnostic")
         .long_name("temperature-driven melt in dEBM-simple")
         .units("kg m-2");
     m_temperature_driven_melt.set(0.0);
 
     m_insolation_driven_melt.metadata(0)
-        .intent("diagnostic")
         .long_name("insolation-driven melt in dEBM-simple")
         .units("kg m-2");
     m_insolation_driven_melt.set(0.0);
 
     m_background_melt.metadata(0)
-        .intent("diagnostic")
         .long_name("background melt in dEBM-simple")
         .units("kg m-2");
     m_background_melt.set(0.0);
   }
 
   m_snow_depth.metadata(0)
-      .intent("diagnostic")
       .long_name("snow cover depth (set to zero once a year)")
       .units("m");
   m_snow_depth.set(0.0);
 
   m_surface_albedo.metadata(0)
-      .intent("diagnostic")
       .long_name("surface_albedo")
       .units("1")
       .standard_name("surface_albedo");
   m_surface_albedo.set(0.0);
 
   m_transmissivity.metadata(0)
-      .intent("diagnostic")
       .long_name("atmosphere_transmissivity")
       .units("1");
 

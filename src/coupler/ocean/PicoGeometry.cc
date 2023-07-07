@@ -60,7 +60,7 @@ PicoGeometry::PicoGeometry(std::shared_ptr<const Grid> grid)
   m_ice_rises.metadata()["flag_meanings"] =
     "ocean ice_rise continental_ice_sheet, floating_ice";
 
-  m_basin_mask.metadata(0).intent("climate_forcing").long_name("mask determines basins for PICO");
+  m_basin_mask.metadata(0).long_name("mask determines basins for PICO");
   m_n_basins = 0;
 
   m_tmp_p0 = m_tmp.allocate_proc0_copy();

@@ -53,7 +53,6 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g
   m_velocity_shared->metadata(1) = m_velocity.metadata(1);
 
   m_tauc_copy.metadata(0)
-      .intent("diagnostic")
       .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
       .units("Pa");
 

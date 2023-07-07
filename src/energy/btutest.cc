@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
     heat_flux_at_ice_base.metadata(0)
         .long_name("upward geothermal flux at bedrock thermal layer base")
         .units("W m-2")
-        .glaciological_units("mW m-2");
+        .output_units("mW m-2");
 
     // initialize BTU object:
     energy::BTUGrid bedrock_grid = energy::BTUGrid::FromOptions(ctx);

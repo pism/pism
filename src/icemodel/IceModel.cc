@@ -127,10 +127,9 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
                                          "", // no standard name
                                          buffer_size, surface_input.periodic);
     m_surface_input_for_hydrology->metadata(0)
-        .intent("diagnostic")
         .long_name("water input rate for the subglacial hydrology model")
         .units("kg m-2 s-1")
-        .glaciological_units("kg m-2 year-1");
+        .output_units("kg m-2 year-1");
     m_surface_input_for_hydrology->metadata()["valid_min"] = { 0.0 };
   }
 }
@@ -203,7 +202,6 @@ void IceModel::allocate_storage() {
   {
     // PROPOSED standard_name = land_ice_basal_material_yield_stress
     m_basal_yield_stress.metadata(0)
-        .intent("diagnostic")
         .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
         .units("Pa");
     m_grid->variables().add(m_basal_yield_stress);
@@ -211,18 +209,16 @@ void IceModel::allocate_storage() {
 
   {
     m_bedtoptemp.metadata(0)
-        .intent("diagnostic")
         .long_name("temperature at the top surface of the bedrock thermal layer")
         .units("Kelvin");
   }
 
   // basal melt rate
   m_basal_melt_rate.metadata(0)
-      .intent("internal")
       .long_name(
           "ice basal melt rate from energy conservation and subshelf melt, in ice thickness per time")
       .units("m s-1")
-      .glaciological_units("m year-1")
+      .output_units("m year-1")
       .standard_name("land_ice_basal_melt_rate");
   m_basal_melt_rate.metadata()["comment"] = "positive basal melt rate corresponds to ice loss";
   m_grid->variables().add(m_basal_melt_rate);
@@ -230,7 +226,6 @@ void IceModel::allocate_storage() {
   // Sliding velocity (usually SSA) Dirichlet B.C. locations and values
   {
     m_velocity_bc_mask.metadata(0)
-        .intent("model_state")
         .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity");
     m_velocity_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
@@ -245,11 +240,9 @@ void IceModel::allocate_storage() {
     const double huge_value = 1e6;
     // vel_bc
     m_velocity_bc_values.metadata(0)
-        .intent("model_state")
         .long_name("X-component of the SSA velocity boundary conditions")
         .units("m s-1");
     m_velocity_bc_values.metadata(1)
-        .intent("model_state")
         .long_name("Y-component of the SSA velocity boundary conditions")
         .units("m s-1");
     for (int j : { 0, 1 }) {
@@ -261,7 +254,6 @@ void IceModel::allocate_storage() {
   // Ice thickness BC mask
   {
     m_ice_thickness_bc_mask.metadata(0)
-        .intent("model_state")
         .long_name("Mask specifying locations where ice thickness is held constant");
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";

@@ -45,7 +45,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
     ice_surface_elevation(grid, "usurf") {
 
   latitude.metadata(0)
-      .intent("mapping")
       .long_name("latitude")
       .units("degree_north")
       .standard_name("latitude");
@@ -54,7 +53,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
 
   longitude.metadata(0)
-      .intent("mapping")
       .long_name("longitude")
       .units("degree_east")
       .standard_name("longitude");
@@ -63,26 +61,22 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
   bed_elevation.metadata(0)
-      .intent("model_state")
       .long_name("bedrock surface elevation")
       .units("m")
       .standard_name("bedrock_altitude");
 
   sea_level_elevation.metadata(0)
-      .intent("model_state")
       .long_name("sea level elevation above reference ellipsoid")
       .units("meters")
       .standard_name("sea_surface_height_above_reference_ellipsoid");
 
   ice_thickness.metadata(0)
-      .intent("model_state")
       .long_name("land ice thickness")
       .units("m")
       .standard_name("land_ice_thickness");
   ice_thickness.metadata()["valid_min"] = { 0.0 };
 
   ice_area_specific_volume.metadata(0)
-      .intent("model_state")
       .long_name("ice-volume-per-area in partially-filled grid cells")
       .units("m3/m2");
   ice_area_specific_volume.metadata()["comment"] =
@@ -90,7 +84,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
   cell_type.metadata(0)
-      .intent("diagnostic")
       .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
   cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
                                           MASK_ICE_FREE_OCEAN };
@@ -102,7 +95,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       "fractional grounded/floating mask (floating=0, grounded=1)");
 
   ice_surface_elevation.metadata(0)
-      .intent("diagnostic")
       .long_name("ice upper surface elevation")
       .units("m")
       .standard_name("surface_altitude");

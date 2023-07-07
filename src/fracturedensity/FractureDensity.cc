@@ -43,32 +43,27 @@ FractureDensity::FractureDensity(std::shared_ptr<const Grid> grid,
       m_velocity(grid, "ghosted_velocity"),
       m_flow_law(flow_law) {
 
-  m_density.metadata(0).intent("model_state").long_name("fracture density in ice shelf").units("1");
+  m_density.metadata(0).long_name("fracture density in ice shelf").units("1");
   m_density.metadata()["valid_max"] = { 1.0 };
   m_density.metadata()["valid_min"] = { 0.0 };
 
   m_growth_rate.metadata(0)
-      .intent("model_state")
       .long_name("fracture growth rate")
       .units("second-1");
   m_growth_rate.metadata()["valid_min"] = { 0.0 };
 
   m_healing_rate.metadata(0)
-      .intent("model_state")
       .long_name("fracture healing rate")
       .units("second-1");
 
   m_flow_enhancement.metadata(0)
-      .intent("model_state")
       .long_name("fracture-induced flow enhancement");
 
   m_age.metadata(0)
-      .intent("model_state")
       .long_name("age since fracturing")
       .units("seconds");
 
   m_toughness.metadata(0)
-      .intent("model_state")
       .long_name("fracture toughness")
       .units("Pa");
 

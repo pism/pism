@@ -55,7 +55,6 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
   }
 
   m_temperature->metadata(0)
-      .intent("climate_forcing")
       .long_name("temperature of the ice at the ice surface but below firn processes")
       .units("Kelvin");
   m_temperature->metadata()["valid_range"] = { 0.0, 323.15 }; // [0C, 50C]
@@ -63,10 +62,9 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
   const double smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
   m_mass_flux->metadata(0)
-      .intent("climate_forcing")
       .long_name("surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1")
-      .glaciological_units("kg m-2 year-1")
+      .output_units("kg m-2 year-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
   m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};

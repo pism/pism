@@ -61,7 +61,7 @@ Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel
                                                buffer_size,
                                                opt.periodic);
 
-    m_2d_scaling->metadata().intent("climate_forcing").long_name(long_name).units(units);
+    m_2d_scaling->metadata().long_name(long_name).units(units);
   }
 
   m_precipitation = allocate_precipitation(grid);

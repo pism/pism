@@ -101,10 +101,9 @@ FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g, std::shared_ptr<FrontalM
       m_retreat_rate(m_grid, "retreat_rate_due_to_frontal_melt") {
 
   m_retreat_rate.metadata(0)
-      .intent("diagnostic")
       .long_name("retreat rate due to frontal melt")
       .units("m s-1")
-      .glaciological_units("m day-1");
+      .output_units("m day-1");
 
   m_include_floating_ice = m_config->get_flag("frontal_melt.include_floating_ice");
 }

@@ -34,7 +34,6 @@ SeaLevel::SeaLevel(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> i
     m_sea_level(grid, "sea_level") {
 
   m_sea_level.metadata(0)
-      .intent("diagnostic")
       .long_name("sea level elevation, relative to the geoid")
       .units("meter");
 }

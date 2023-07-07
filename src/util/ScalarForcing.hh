@@ -41,14 +41,14 @@ public:
                 const std::string &option_prefix,
                 const std::string &variable_name,
                 const std::string &units,
-                const std::string &glaciological_units,
+                const std::string &output_units,
                 const std::string &long_name);
 
   ScalarForcing(const Context &ctx,
                 const std::string &filename,
                 const std::string &variable_name,
                 const std::string &units,
-                const std::string &glaciological_units,
+                const std::string &output_units,
                 const std::string &long_name,
                 bool periodic);
 
@@ -67,7 +67,7 @@ private:
                   const std::string &filename,
                   const std::string &variable_name,
                   const std::string &units,
-                  const std::string &glaciological_units,
+                  const std::string &output_units,
                   const std::string &long_name,
                   bool periodic);
 

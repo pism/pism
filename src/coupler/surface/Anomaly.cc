@@ -51,16 +51,14 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
   }
 
   m_ice_surface_temp_anomaly->metadata(0)
-      .intent("climate_forcing")
       .long_name(
           "anomaly of the temperature of the ice at the ice surface but below firn processes")
       .units("Kelvin");
 
   m_climatic_mass_balance_anomaly->metadata(0)
-      .intent("climate_forcing")
       .long_name("anomaly of the surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1")
-      .glaciological_units("kg m-2 year-1");
+      .output_units("kg m-2 year-1");
 
   m_mass_flux = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);

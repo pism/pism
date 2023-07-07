@@ -33,7 +33,6 @@ array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const G
   auto result = std::make_shared<array::Scalar>(grid, "air_temp");
 
   result->metadata(0)
-      .intent("climate_forcing")
       .long_name("mean annual near-surface air temperature")
       .units("Kelvin");
 
@@ -44,10 +43,9 @@ array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const
   auto result = std::make_shared<array::Scalar>(grid, "precipitation");
 
   result->metadata(0)
-      .intent("climate_forcing")
       .long_name("precipitation rate")
       .units("kg m-2 second-1")
-      .glaciological_units("kg m-2 year-1")
+      .output_units("kg m-2 year-1")
       .standard_name("precipitation_flux");
 
   return result;

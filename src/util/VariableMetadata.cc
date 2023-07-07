@@ -163,7 +163,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
   // units::Converter constructor will make sure that units are compatible.
   units::Converter c(m_unit_system,
                      this->get_string("units"),
-                     this->get_string("glaciological_units"));
+                     this->get_string("output_units"));
   min = c(min);
   max = c(max);
 
@@ -177,14 +177,14 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
                   get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("glaciological_units").c_str());
+                  get_string("output_units").c_str());
     } else {
       log.message(2,
                   " %s / WARNING! standard_name=%s is missing, found by short_name\n"
                   "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                   get_name().c_str(),
                   get_string("standard_name").c_str(), spacer.c_str(), min, max,
-                  get_string("glaciological_units").c_str());
+                  get_string("output_units").c_str());
     }
 
   } else {
@@ -193,7 +193,7 @@ void VariableMetadata::report_range(const Logger &log, double min, double max,
                 "         %s \\ min,max = %9.3f,%9.3f (%s)\n",
                 get_name().c_str(),
                 get_string("long_name").c_str(), spacer.c_str(), min, max,
-                get_string("glaciological_units").c_str());
+                get_string("output_units").c_str());
   }
 }
 
@@ -304,7 +304,7 @@ const VariableMetadata::DoubleAttrs& VariableMetadata::all_doubles() const {
  */
 void VariableMetadata::set_units_without_validation(const std::string &value) {
   m_strings["units"] = value;
-  m_strings["glaciological_units"] = value;
+  m_strings["output_units"] = value;
 }
 
 //! Set a string attribute.
@@ -315,8 +315,8 @@ void VariableMetadata::set_string(const std::string &name, const std::string &va
     units::Unit tmp(m_unit_system, value);
 
     m_strings[name] = value;
-    m_strings["glaciological_units"] = value;
-  } else if (name == "glaciological_units") {
+    m_strings["output_units"] = value;
+  } else if (name == "output_units") {
     m_strings[name] = value;
 
     units::Unit internal(m_unit_system, get_string("units"));

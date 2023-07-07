@@ -40,9 +40,9 @@ class Logger;
 
   - units: specifies internal units. When read, a variable is
   converted to these units. When written, it is converted from these
-  to glaciological_units.
+  to output_units.
 
-  - glaciological_units: is never written to a file; replaces 'units'
+  - output_units: is never written to a file; replaces 'units'
   in the output file.
 
   - valid_min, valid_max: specify the valid range of a variable. Are
@@ -61,7 +61,7 @@ class Logger;
   - standard_name
   - pism_intent
   - units
-  - glaciological_units (saved to files as "units")
+  - output_units (saved to files as "units")
 
   Use the `name` of "PISM_GLOBAL" to read and write global attributes.
   (See also File.)
@@ -112,11 +112,6 @@ public:
 
   // setters for common attributes
 
-  VariableMetadata &intent(const std::string &input) {
-    set_string("pism_intent", input);
-    return *this;
-  }
-
   VariableMetadata &long_name(const std::string &input) {
     set_string("long_name", input);
     return *this;
@@ -132,8 +127,8 @@ public:
     return *this;
   }
 
-  VariableMetadata &glaciological_units(const std::string &input) {
-    set_string("glaciological_units", input);
+  VariableMetadata &output_units(const std::string &input) {
+    set_string("output_units", input);
     return *this;
   }
 

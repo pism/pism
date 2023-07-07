@@ -31,10 +31,9 @@ DischargeGiven::DischargeGiven(std::shared_ptr<const Grid> grid)
     : FrontalMelt(grid, nullptr), m_frontal_melt_rate(grid, "frontal_melt_rate") {
 
   m_frontal_melt_rate.metadata(0)
-      .intent("diagnostic")
       .long_name("frontal melt rate")
       .units("m s-1")
-      .glaciological_units("m day-1");
+      .output_units("m day-1");
 
   m_log->message(2, "* Initializing the frontal melt model\n"
                     "  UAF-UT\n");
@@ -64,17 +63,15 @@ void DischargeGiven::init_impl(const Geometry &geometry) {
   }
 
   m_theta_ocean->metadata(0)
-      .intent("climate_forcing")
       .long_name("potential temperature of the adjacent ocean")
       .units("Celsius");
 
   m_theta_ocean->init(opt.filename, opt.periodic);
 
   m_subglacial_discharge->metadata(0)
-      .intent("climate_forcing")
       .long_name("subglacial discharge")
       .units("kg m-2 s-1")
-      .glaciological_units("kg m-2 year-1");
+      .output_units("kg m-2 year-1");
 
   m_subglacial_discharge->init(opt.filename, opt.periodic);
 }

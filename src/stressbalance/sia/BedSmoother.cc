@@ -47,23 +47,18 @@ BedSmoother::BedSmoother(std::shared_ptr<const Grid> g)
     // allocate Vecs that live on all procs; all have to be as "wide" as any of
     //   their prospective uses
     m_topgsmooth.metadata(0)
-        .intent("bed_smoother_tool")
         .long_name("smoothed bed elevation, in bed roughness parameterization")
         .units("m");
     m_maxtl.metadata(0)
-        .intent("bed_smoother_tool")
         .long_name("maximum elevation in local topography patch, in bed roughness parameterization")
         .units("m");
     m_C2.metadata(0)
-        .intent("bed_smoother_tool")
         .long_name("polynomial coeff of H^-2, in bed roughness parameterization")
         .units("m2");
     m_C3.metadata(0)
-        .intent("bed_smoother_tool")
         .long_name("polynomial coeff of H^-3, in bed roughness parameterization")
         .units("m3");
     m_C4.metadata(0)
-        .intent("bed_smoother_tool")
         .long_name("polynomial coeff of H^-4, in bed roughness parameterization")
         .units("m4");
 

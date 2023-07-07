@@ -13,13 +13,11 @@ MassEnthVec2S::MassEnthVec2S(std::shared_ptr<const Grid> my_grid,
   // empty
 }
 
-void MassEnthVec2S::set_attrs(const std::string &pism_intent, const std::string &long_name,
-                              const std::string &units, const std::string &standard_name) {
-  (void) standard_name;         // FIXME: these quantities don't have standard names
+void MassEnthVec2S::set_attrs(const std::string &long_name, const std::string &units) {
   auto mass_units   = "kg " + units;
   auto energy_units = "J " + units;
-  mass.metadata().intent(pism_intent).long_name(long_name + " (mass portion)").units(mass_units);
-  enth.metadata().intent(pism_intent).long_name(long_name + " (enthalpy portion)").units(energy_units);
+  mass.metadata().long_name(long_name + " (mass portion)").units(mass_units);
+  enth.metadata().long_name(long_name + " (enthalpy portion)").units(energy_units);
 }
 
 MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const Grid> grid, std::string const &prefix)
@@ -41,42 +39,25 @@ MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const Grid> grid, std::string
   printf("MassEnergyBudget(%p)::create()\n", (void *)this);
 
   // ----------- Mass and Enthalpy State of the Ice Sheet
-  total.set_attrs("diagnostic", "State of the ice sheet (NOT a difference between timetseps)",
-                  "m-2", "total");
+  total.set_attrs("State of the ice sheet (NOT a difference between timetseps)", "m-2");
   add_massenth(total, TOTAL, "", "");
 
   // ----------- Heat generation of flows [vertical]
   // Postive means heat is flowing INTO the ice sheet.
-  basal_frictional_heating.metadata(0)
-      .intent("internal")
-      .long_name("Basal frictional heating")
-      .units("W m-2")
-      .glaciological_units("W m-2")
-      .standard_name("");
+  basal_frictional_heating.metadata(0).long_name("Basal frictional heating").units("W m-2");
   add_enth(basal_frictional_heating, DELTA, "basal_frictional_heating");
 
-  strain_heating.metadata(0)
-      .intent("internal")
-      .long_name("Strain heating")
-      .units("W m-2")
-      .glaciological_units("W m-2")
-      .standard_name("");
+  strain_heating.metadata(0).long_name("Strain heating").units("W m-2");
   add_enth(strain_heating, DELTA, "strain_heating"); //!< Total amount of strain heating [J/m^2]
 
   geothermal_flux.metadata(0)
-      .intent("internal")
       .long_name("Geothermal energy through (compare to upward_geothermal_flux?)")
-      .units("W m-2")
-      .glaciological_units("W m-2")
-      .standard_name("");
+      .units("W m-2");
   add_enth(geothermal_flux, 0, "geothermal_flux"); //!< Total amount of geothermal energy [J/m^2]
 
   upward_geothermal_flux.metadata(0)
-      .intent("internal")
       .long_name("Geothermal energy through (compare to geothermal_flux?)")
-      .units("W m-2")
-      .glaciological_units("W m-2")
-      .standard_name("");
+      .units("W m-2");
   add_enth(upward_geothermal_flux, DELTA,
            "upward_geothermal_flux"); //!< Total amount of geothermal energy [J/m^2]
 
@@ -84,50 +65,38 @@ MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const Grid> grid, std::string
   // Postive means mass/enthalpy is flowing INTO the ice sheet.
   std::string name;
 
-  calving.set_attrs("diagnostic", "Mass/Enthalpy gain from calving.  Should be negative.",
-                    "m-2 s-1", "calving");
+  calving.set_attrs("Mass/Enthalpy gain from calving.  Should be negative.", "m-2 s-1");
   add_massenth(calving, DELTA, "calving.mass", "calving.enth");
 
-  pism_smb.set_attrs("diagnostic", "pism_smb", "m-2 s-1", "pism_smb");
+  pism_smb.set_attrs("pism_smb", "m-2 s-1");
   // No DELTA< does not participate in epsilon computation
   add_massenth(pism_smb, 0, "pism_smb.mass", "pism_smb.enth");
 
-  icebin_xfer.set_attrs("diagnostic", "icebin_xfer", "m-2 s-1", "icebin_xfer");
+  icebin_xfer.set_attrs("icebin_xfer", "m-2 s-1");
   add_massenth(icebin_xfer, DELTA, "icebin_xfer.mass", "icebin_xfer.enth");
 
-  icebin_deltah.metadata(0)
-      .intent("diagnostic")
-      .long_name("icebin_deltah")
-      .units("J m-2 s-1");
+  icebin_deltah.metadata(0).long_name("icebin_deltah").units("J m-2 s-1");
   add_enth(icebin_deltah, DELTA, "");
 
-  href_to_h.metadata(0)
-      .intent("diagnostic")
-      .long_name("href_to_h")
-      .units("kg m-2 s-1");
+  href_to_h.metadata(0).long_name("href_to_h").units("kg m-2 s-1");
   add_mass(href_to_h, 0, "");
 
-  nonneg_rule.metadata(0)
-      .intent("diagnostic")
-      .long_name("nonneg_rule")
-      .units("kg m-2 s-1");
+  nonneg_rule.metadata(0).long_name("nonneg_rule").units("kg m-2 s-1");
   add_mass(nonneg_rule, 0, "");
 
 
-  melt_grounded.set_attrs("diagnostic", "Basal melting of grounded ice (negative)", "m-2 s-1",
-                          "melt_grounded");
+  melt_grounded.set_attrs("Basal melting of grounded ice (negative)", "m-2 s-1");
   add_massenth(melt_grounded, DELTA, "melt_grounded.mass", "melt_grounded.enth");
 
-  melt_floating.set_attrs("diagnostic", "Sub-shelf melting (negative)", "m-2 s-1", "melt_floating");
+  melt_floating.set_attrs("Sub-shelf melting (negative)", "m-2 s-1");
   add_massenth(melt_floating, DELTA, "melt_floating.mass", "melt_floating.enth");
 
   // ----------- Advection WITHIN the ice sheet
-  internal_advection.set_attrs("diagnostic", "Advection within the ice sheet", "m-2 s-1",
-                               "internal_advection");
+  internal_advection.set_attrs("Advection within the ice sheet", "m-2 s-1");
   add_massenth(internal_advection, DELTA, "internal_advection.mass", "internal_advection.enth");
 
   // ----------- Balance the Budget
-  epsilon.set_attrs("diagnostic", "Unaccounted-for changes", "m-2 s-1", "epsilon");
+  epsilon.set_attrs("Unaccounted-for changes", "m-2 s-1");
   add_massenth(epsilon, EPSILON, "epsilon.mass", "epsilon.enth");
 }
 

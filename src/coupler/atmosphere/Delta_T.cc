@@ -61,10 +61,9 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
                                                     buffer_size,
                                                     opt.periodic);
     m_2d_offsets->metadata()
-        .intent("climate_forcing")
         .long_name(long_name)
         .units(units)
-        .glaciological_units(external_units);
+        .output_units(external_units);
   }
 
   m_temperature = allocate_temperature(grid);

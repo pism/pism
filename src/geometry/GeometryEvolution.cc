@@ -125,24 +125,20 @@ GeometryEvolution::Impl::Impl(std::shared_ptr<const Grid> grid)
   {
     // This is the only reported field that is ghosted (we need ghosts to compute flux divergence).
     flux_staggered.metadata(0)
-        .intent("diagnostic")
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (x-offset)")
         .units("m2 s-1")
-        .glaciological_units("m2 year-1");
+        .output_units("m2 year-1");
     flux_staggered.metadata(1)
-        .intent("diagnostic")
         .long_name("fluxes through cell interfaces (sides) on the staggered grid (y-offset)")
         .units("m2 s-1")
-        .glaciological_units("m2 year-1");
+        .output_units("m2 year-1");
 
     flux_divergence.metadata(0)
-        .intent("diagnostic")
         .long_name("flux divergence")
         .units("m s-1")
-        .glaciological_units("m year-1");
+        .output_units("m year-1");
 
     conservation_error.metadata(0)
-        .intent("diagnostic")
         .long_name(
             "conservation error due to enforcing non-negativity of ice thickness (over the last time step)")
         .units("meters");

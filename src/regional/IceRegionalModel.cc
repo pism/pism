@@ -53,7 +53,6 @@ void IceRegionalModel::allocate_storage() {
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.metadata(0)
-      .intent("model_state")
       .long_name(
           "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
   m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
@@ -64,14 +63,12 @@ void IceRegionalModel::allocate_storage() {
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   m_usurf_stored.metadata(0)
-      .intent("model_state")
       .long_name(
           "saved surface elevation for use to keep surface gradient constant in no_model strip")
       .units("m"); //  no standard name
 
   // stencil width of 1 needed for differentiation
   m_thk_stored.metadata(0)
-      .intent("model_state")
       .long_name("saved ice thickness for use to keep driving stress constant in no_model strip")
       .units("m"); //  no standard name
 

@@ -87,12 +87,10 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
   }
 
   m_air_temp_sd->metadata(0)
-      .intent("climate_forcing")
       .long_name("standard deviation of near-surface air temperature")
       .units("Kelvin");
 
   m_mass_flux.metadata(0)
-      .intent("diagnostic")
       .long_name("instantaneous surface mass balance (accumulation/ablation) rate")
       .units("kg m-2 s-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
@@ -100,13 +98,11 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
   m_mass_flux.metadata()["comment"] = "positive values correspond to ice gain";
 
   m_snow_depth.metadata(0)
-      .intent("diagnostic")
       .long_name("snow cover depth (set to zero once a year)")
       .units("m");
   m_snow_depth.set(0.0);
 
   m_firn_depth.metadata(0)
-      .intent("diagnostic")
       .long_name("firn cover depth")
       .units("m");
   m_firn_depth.metadata()["valid_min"] = {0.0};

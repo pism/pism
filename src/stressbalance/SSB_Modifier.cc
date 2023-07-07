@@ -37,17 +37,15 @@ SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
   m_D_max = 0.0;
 
   m_u.metadata(0)
-      .intent("diagnostic")
       .long_name("horizontal velocity of ice in the X direction")
       .units("m s-1")
-      .glaciological_units("m year-1")
+      .output_units("m year-1")
       .standard_name("land_ice_x_velocity");
 
   m_v.metadata(0)
-      .intent("diagnostic")
       .long_name("horizontal velocity of ice in the Y direction")
       .units("m s-1")
-      .glaciological_units("m year-1")
+      .output_units("m year-1")
       .standard_name("land_ice_y_velocity");
 
   m_diffusive_flux.metadata(0)

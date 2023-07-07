@@ -291,7 +291,6 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
 
   // *all* Hydrology classes have layer of water stored in till as a state variable
   m_Wtill.metadata(0)
-      .intent("model_state")
       .long_name("effective thickness of subglacial water stored in till")
       .units("m");
   m_Wtill.metadata()["valid_min"] = { 0.0 };
@@ -301,16 +300,14 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
 
   // needs ghosts in Routing and Distributed
   m_W.metadata(0)
-      .intent("diagnostic")
       .long_name("thickness of transportable subglacial water layer")
       .units("m");
   m_W.metadata()["valid_min"] = { 0.0 };
 
   m_Q.metadata(0)
-      .intent("diagnostic")
       .long_name("advective subglacial water flux")
       .units("m2 s-1")
-      .glaciological_units("m2 day-1");
+      .output_units("m2 day-1");
   m_Q.set(0.0);
 
   // storage for water conservation reporting quantities
@@ -326,23 +323,19 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
       .units("kg");
 
   m_grounded_margin_change.metadata(0)
-      .intent("diagnostic")
       .long_name("changes in subglacial water thickness at the grounded margin")
       .units("kg");
 
   m_grounding_line_change.metadata(0)
-      .intent("diagnostic")
       .long_name("changes in subglacial water thickness at the grounding line")
       .units("kg");
 
   m_no_model_mask_change.metadata(0)
-      .intent("diagnostic")
       .long_name(
           "changes in subglacial water thickness at the edge of the modeling domain (regional models)")
       .units("kg");
 
   m_conservation_error_change.metadata(0)
-      .intent("diagnostic")
       .long_name(
           "changes in subglacial water thickness required to preserve non-negativity or keep water thickness within bounds")
       .units("kg");

@@ -73,8 +73,10 @@ and then set its metadata:
 
    // land ice thickness
    array::Scalar ice_thickness(grid, "thk");
-   ice_thickness.set_attrs("model_state", "land ice thickness",
-                           "m", "land_ice_thickness");
+   ice_thickness.metadata()
+       .long_name("land ice thickness")
+       .units("m")
+       .standard_name("land_ice_thickness");
    ice_thickness.metadata().set_number("valid_min", 0.0);
 
 Here `grid` is an `IceGrid` instance, `thk` is the name of the NetCDF variable,
@@ -86,9 +88,6 @@ PISM output files:
 
 .. list-table::
 
-   * - `pism_intent`
-     - variables that are a part of the model state of a sub-model should have
-       `pism_intent` set to "model_state"
    * - `long_name`
      - the (descriptive) long name used for plotting, etc (a free-form string)
    * - `units`
@@ -105,11 +104,11 @@ PISM will automatically convert units from ones present in an input file into in
 units defines by the `set_attrs()` call above.
 
 If you want PISM to save data in units other than internal ones, first set these
-"glaciological" units:
+"output" units:
 
 .. code-block:: c++
 
-   ice_thickness.metadata().set_string("glaciological_units", "km");
+   ice_thickness.metadata().output_units("km");
 
 Read data from a file
 ---------------------

@@ -44,7 +44,6 @@ Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLe
                                                  opt.periodic,
                                                  LINEAR);
     m_forcing->metadata(0)
-        .intent("climate_forcing")
         .long_name("two-dimensional sea level offsets")
         .units("meters");
   }

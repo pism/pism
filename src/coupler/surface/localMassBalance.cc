@@ -387,7 +387,6 @@ FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
   m_refreeze_fraction          = m_config->get_number("surface.pdd.refreeze");
 
   m_temp_mj.metadata(0)
-      .intent("internal")
       .long_name("mean July air temp from Fausto et al (2009) parameterization")
       .units("K");
 }

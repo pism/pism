@@ -61,7 +61,6 @@ AgeModel::AgeModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalanc
     m_stress_balance(stress_balance) {
 
   m_ice_age.metadata()
-    .intent("model_state")
     .long_name("age of ice")
     .units("s");
 

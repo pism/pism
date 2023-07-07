@@ -56,7 +56,6 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<
                                                            "", // no standard name
                                                            buffer_size, opt.periodic, LINEAR);
     m_reference_surface->metadata(0)
-        .intent("climate_forcing")
         .long_name("ice surface elevation")
         .units("m")
         .standard_name("surface_altitude");

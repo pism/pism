@@ -1190,10 +1190,10 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
     std::string
       long_name           = m_impl->metadata[i].get_string("long_name"),
       units               = m_impl->metadata[i].get_string("units"),
-      glaciological_units = m_impl->metadata[i].get_string("glaciological_units"),
+      output_units = m_impl->metadata[i].get_string("output_units"),
       title               = pism::printf("%s (%s)",
                                          long_name.c_str(),
-                                         glaciological_units.c_str());
+                                         output_units.c_str());
 
     PetscViewer v = *viewers[i].get();
 
@@ -1207,7 +1207,7 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
     get_dof(da2, tmp, i);
 
     convert_vec(tmp, m_impl->metadata[i].unit_system(),
-                units, glaciological_units);
+                units, output_units);
 
     double bounds[2] = {0.0, 0.0};
     ierr = VecMin(tmp, NULL, &bounds[0]); PISM_CHK(ierr, "VecMin");

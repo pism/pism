@@ -62,10 +62,9 @@ Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
                                                     opt.periodic);
 
     m_2d_offsets->metadata()
-        .intent("climate_forcing")
         .long_name(long_name)
         .units(units)
-        .glaciological_units(external_units);
+        .output_units(external_units);
   }
 
   m_precipitation = allocate_precipitation(grid);

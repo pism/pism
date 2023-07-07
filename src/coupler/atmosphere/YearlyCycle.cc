@@ -42,24 +42,21 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
   m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
   m_air_temp_mean_annual.metadata(0)
-      .intent("diagnostic")
       .long_name(
           "mean annual near-surface air temperature (without sub-year time-dependence or forcing)")
       .units("K");
   m_air_temp_mean_annual.metadata()["source"] = m_reference;
 
   m_air_temp_mean_summer.metadata(0)
-      .intent("diagnostic")
       .long_name(
           "mean summer (NH: July/ SH: January) near-surface air temperature (without sub-year time-dependence or forcing)")
       .units("Kelvin");
   m_air_temp_mean_summer.metadata()["source"] = m_reference;
 
   m_precipitation.metadata(0)
-      .intent("model_state")
       .long_name("precipitation rate")
       .units("kg m-2 second-1")
-      .glaciological_units("kg m-2 year-1")
+      .output_units("kg m-2 year-1")
       .standard_name("precipitation_flux");
   m_precipitation.set_time_independent(true);
 }

@@ -33,13 +33,11 @@ Distributed::Distributed(std::shared_ptr<const Grid> g)
 
   // additional variables beyond hydrology::Routing
   m_P.metadata(0)
-      .intent("model_state")
       .long_name("pressure of transportable water in subglacial layer")
       .units("Pa");
   m_P.metadata()["valid_min"] = { 0.0 };
 
   m_Pnew.metadata(0)
-      .intent("internal")
       .long_name("new transportable subglacial water pressure during update")
       .units("Pa");
   m_Pnew.metadata()["valid_min"] = { 0.0 };

@@ -45,10 +45,9 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
   m_ftt_mask.metadata(0)
-      .intent("diagnostic")
       .long_name("mask specifying where to apply the force-to-thickness mechanism")
       .units("")
-      .glaciological_units("")
+      .output_units("")
       .standard_name(""); // no units and no standard name
   m_ftt_mask.set(1.0);    // default: applied in whole domain
   m_ftt_mask.metadata().set_output_type(io::PISM_INT);
@@ -92,7 +91,6 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     m_target_thickness.metadata(0).set_name("thk"); // name to read by
     // set attributes for the read stage; see below for reset
     m_target_thickness.metadata(0)
-        .intent("diagnostic")
         .long_name("target thickness for force-to-thickness mechanism (hit this at end of run)")
         .units("m")
         .standard_name("land_ice_thickness"); // standard_name *to read by*

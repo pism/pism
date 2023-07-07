@@ -412,7 +412,7 @@ def run():
     # the output file.  Otherwise, if 'zeta_inv' is in the inverse data file, use it.
     # If none of the above, copy from 'zeta_prior'.
     zeta = PISM.Scalar2(grid, "zeta_inv")
-    zeta.metadata(0).intent("diagnostic").long_name("zeta_inv").units("1").glaciological_units("1").standard_name("zeta_inv")
+    zeta.metadata(0).long_name("zeta_inv").units("1").output_units("1").standard_name("zeta_inv")
     if do_restart:
         # Just to be sure, verify that we have a 'zeta_inv' in the output file.
         if not PISM.util.fileHasVariable(output_filename, 'zeta_inv'):
@@ -563,7 +563,7 @@ def run():
 
     r_mag = PISM.Scalar(grid, "inv_ssa_residual")
 
-    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s-1").glaciological_units("m year-1")
+    r_mag.metadata(0).long_name("magnitude of mismatch between observed surface velocities and their reconstrution by inversion").units("m s-1").output_units("m year-1")
     r_mag.metadata().set_number("_FillValue", convert(-0.01, 'm/year', 'm/s'))
     r_mag.metadata().set_number("valid_min", 0.0)
 

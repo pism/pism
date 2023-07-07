@@ -46,13 +46,11 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
 
   // yield stress for basal till (plastic or pseudo-plastic model)
   m_tauc.metadata(0)
-      .intent("diagnostic")
       .long_name("yield stress for basal till (plastic or pseudo-plastic model)")
       .units("Pa");
 
   // enthalpy
   m_ice_enthalpy.metadata(0)
-      .intent("model_state")
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
       .units("J kg-1");
 
@@ -60,11 +58,11 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
   m_bc_values.metadata(0)
       .long_name("X-component of the SSA velocity boundary conditions")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
   m_bc_values.metadata(1)
       .long_name("Y-component of the SSA velocity boundary conditions")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
 
   Config::ConstPtr config = m_grid->ctx()->config();
   units::System::Ptr sys  = m_grid->ctx()->unit_system();
@@ -82,7 +80,7 @@ SSATestCase::SSATestCase(std::shared_ptr<Context> ctx, int Mx, int My, double Lx
   m_bc_values.set(fill_value);
 
   // Dirichlet B.C. mask
-  m_bc_mask.metadata().intent("model_state").long_name("grounded_dragging_floating integer mask");
+  m_bc_mask.metadata().long_name("grounded_dragging_floating integer mask");
 
   m_bc_mask.metadata()["flag_values"]   = { 0.0, 1.0 };
   m_bc_mask.metadata()["flag_meanings"] = "no_data ssa.dirichlet_bc_location";
@@ -333,11 +331,9 @@ void SSATestCase::write(const std::string &filename) {
 
   array::Vector exact(m_grid, "_exact");
   exact.metadata(0)
-      .intent("diagnostic")
       .long_name("X-component of the SSA exact solution")
       .units("m s-1");
   exact.metadata(1)
-      .intent("diagnostic")
       .long_name("Y-component of the SSA exact solution")
       .units("m s-1");
 

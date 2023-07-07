@@ -28,7 +28,6 @@ Given::Given(std::shared_ptr<const Grid> grid)
     m_topg_reference(grid, "topg") {
 
   m_topg_reference.metadata(0)
-      .intent("bed_deformation")
       .long_name("reference bed elevation")
       .units("meters")
       .standard_name("bedrock_altitude");
@@ -47,7 +46,6 @@ Given::Given(std::shared_ptr<const Grid> grid)
                                                     "", // no standard name
                                                     buffer_size, periodic, LINEAR);
     m_topg_delta->metadata(0)
-        .intent("bed_deformation")
         .long_name("two-dimensional bed elevation changes")
         .units("meters");
   }

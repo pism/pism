@@ -71,14 +71,12 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
 {
 
   m_velocity_old.metadata(0)
-      .intent("internal")
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
       .units("m s-1");
 
   auto units = pism::printf("Pa s^(1/%f)", m_flow_law->exponent());
 
   m_hardness.metadata(0)
-      .intent("diagnostic")
       .long_name("vertically-averaged ice hardness")
       .set_units_without_validation(units);
 
@@ -1661,7 +1659,6 @@ void SSAFD::update_nuH_viewers() {
 
   array::Scalar tmp(m_grid, "nuH");
   tmp.metadata(0)
-      .intent("temporary")
       .long_name("log10 of (viscosity * thickness)")
       .units("Pa s m");
 

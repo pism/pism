@@ -42,10 +42,9 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   // set metadata of reference fields
   {
     m_mass_flux_reference.metadata(0)
-        .intent("climate_forcing")
         .long_name("reference surface mass balance rate")
         .units("kg m-2 s-1")
-        .glaciological_units("kg m-2 year-1")
+        .output_units("kg m-2 year-1")
         .standard_name("land_ice_surface_specific_mass_balance_flux");
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
@@ -53,7 +52,6 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     m_mass_flux_reference.set_time_independent(true);
 
     m_surface_reference.metadata(0)
-        .intent("climate_forcing")
         .long_name("reference surface altitude")
         .units("m")
         .standard_name("surface_altitude");
@@ -62,7 +60,6 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     m_surface_reference.set_time_independent(true);
 
     m_temperature_reference.metadata(0)
-        .intent("climate_forcing")
         .long_name("reference temperature")
         .units("Kelvin");
 
@@ -85,10 +82,9 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
                                            buffer_size, opt.periodic);
 
       m_mass_flux_anomaly->metadata(0)
-          .intent("climate_forcing")
           .long_name("surface mass balance rate anomaly")
           .units("kg m-2 s-1")
-          .glaciological_units("kg m-2 year-1");
+          .output_units("kg m-2 year-1");
     }
 
     {
@@ -98,10 +94,9 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
                                            buffer_size, opt.periodic);
 
       m_mass_flux_gradient->metadata(0)
-          .intent("climate_forcing")
           .long_name("surface mass balance rate elevation lapse rate")
           .units("kg m-2 s-1 m-1")
-          .glaciological_units("kg m-2 year-1 m-1");
+          .output_units("kg m-2 year-1 m-1");
     }
 
     {
@@ -111,7 +106,6 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
                                            buffer_size, opt.periodic);
 
       m_temperature_anomaly->metadata(0)
-          .intent("climate_forcing")
           .long_name("ice surface temperature anomaly")
           .units("Kelvin");
     }
@@ -123,7 +117,6 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
                                            buffer_size, opt.periodic);
 
       m_temperature_gradient->metadata(0)
-          .intent("climate_forcing")
           .long_name("ice surface temperature elevation lapse rate")
           .units("Kelvin m-1");
     }

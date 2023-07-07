@@ -722,9 +722,9 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
   std::string
     units               = var.get_string("units"),
-    glaciological_units = var.get_string("glaciological_units");
+    output_units = var.get_string("output_units");
 
-  if (units != glaciological_units) {
+  if (units != output_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
 
     // create a temporary array, convert to glaciological units, and
@@ -736,7 +736,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
 
     units::Converter(var.unit_system(),
                      units,
-                     glaciological_units).convert_doubles(tmp.data(), tmp.size());
+                     output_units).convert_doubles(tmp.data(), tmp.size());
 
     file.write_distributed_array(name, grid, nlevels, time_dependent, tmp.data());
   } else {
@@ -984,7 +984,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // units::Converter constructor will make sure that units are compatible.
     units::Converter c(sys,
                        variable.get_string("units"),
-                       variable.get_string("glaciological_units"));
+                       variable.get_string("output_units"));
 
     std::string spacer(variable.get_name().size(), ' ');
     log.message(2,
@@ -993,7 +993,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
                 variable.get_name().c_str(),
                 variable.get_string("long_name").c_str(),
                 spacer.c_str(), c(default_value),
-                variable.get_string("glaciological_units").c_str());
+                variable.get_string("output_units").c_str());
 
     for (size_t k = 0; k < data_size; ++k) {
       output[k] = default_value;
@@ -1113,7 +1113,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
     // convert to glaciological units:
     units::Converter(metadata.unit_system(),
                      metadata["units"],
-                     metadata.get_string("glaciological_units")).convert_doubles(tmp.data(),
+                     metadata.get_string("output_units")).convert_doubles(tmp.data(),
                                                                                  tmp.size());
 
     file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
@@ -1247,7 +1247,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
     // convert to glaciological units:
     units::Converter(metadata.unit_system(),
                      metadata.get_string("units"),
-                     metadata.get_string("glaciological_units")).convert_doubles(tmp.data(), tmp.size());
+                     metadata.get_string("output_units")).convert_doubles(tmp.data(), tmp.size());
 
     file.write_variable(name,
                         {(unsigned int)t_start, 0},
@@ -1379,15 +1379,13 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
   try {
     std::string
       units               = variable.get_string("units"),
-      glaciological_units = variable.get_string("glaciological_units");
+      output_units = variable.get_string("output_units");
 
-    bool use_glaciological_units = units != glaciological_units;
+    bool use_output_units = units != output_units;
 
     // units, valid_min, valid_max and valid_range need special treatment:
     if (variable.has_attribute("units")) {
-      std::string output_units = use_glaciological_units ? glaciological_units : units;
-
-      file.write_attribute(var_name, "units", output_units);
+      file.write_attribute(var_name, "units", use_output_units ? output_units : units);
     }
 
     std::vector<double> bounds(2);
@@ -1409,9 +1407,9 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
 
     // We need to save valid_min, valid_max and valid_range in the units
     // matching the ones in the output.
-    if (use_glaciological_units) {
+    if (use_output_units) {
 
-      units::Converter c(variable.unit_system(), units, glaciological_units);
+      units::Converter c(variable.unit_system(), units, output_units);
 
       bounds[0]  = c(bounds[0]);
       bounds[1]  = c(bounds[1]);
@@ -1440,7 +1438,7 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
         value = s.second;
 
       if (name == "units" or
-          name == "glaciological_units" or
+          name == "output_units" or
           value.empty()) {
         continue;
       }

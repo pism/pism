@@ -133,14 +133,12 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
 
   // POSSIBLE standard name = land_ice_enthalpy
   m_ice_enthalpy.metadata(0)
-      .intent("model_state")
       .long_name("ice enthalpy (includes sensible heat, latent heat, pressure)")
       .units("J kg-1");
 
   {
     // ghosted to allow the "redundant" computation of tauc
     m_basal_melt_rate.metadata(0)
-        .intent("model_state")
         .long_name(
             "ice basal melt rate from energy conservation, in ice thickness per time (valid in grounded areas)")
         .units("m s-1");

@@ -58,17 +58,15 @@ Given::Given(std::shared_ptr<const Grid> g)
 
   {
     m_air_temp->metadata(0)
-        .intent("diagnostic")
         .long_name("mean annual near-surface air temperature")
         .units("Kelvin");
     m_air_temp->metadata(0)["valid_range"] = { 0.0, 323.15 }; // (0 C, 50 C)
   }
   {
     m_precipitation->metadata(0)
-        .intent("model_state")
         .long_name("precipitation rate")
         .units("kg m-2 second-1")
-        .glaciological_units("kg m-2 year-1")
+        .output_units("kg m-2 year-1")
         .standard_name("precipitation_flux");
   }
 }

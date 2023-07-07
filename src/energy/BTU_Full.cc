@@ -76,7 +76,6 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
     }
 
     m_temp->metadata(0)
-        .intent("model_state")
         .long_name("lithosphere (bedrock) temperature, in BTU_Full")
         .units("K");
     m_temp->metadata()["valid_min"] = {0.0};

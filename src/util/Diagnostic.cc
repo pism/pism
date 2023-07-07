@@ -58,7 +58,7 @@ void Diagnostic::reset_impl() {
  */
 double Diagnostic::to_internal(double x) const {
   std::string
-    out = m_vars.at(0).get_string("glaciological_units");
+    out = m_vars.at(0).get_string("output_units");
   std::string
     in  = m_vars.at(0).get_string("units");
   return convert(m_sys, x, out, in);
@@ -69,7 +69,7 @@ double Diagnostic::to_internal(double x) const {
  */
 double Diagnostic::to_external(double x) const {
   std::string
-    out = m_vars.at(0).get_string("glaciological_units"),
+    out = m_vars.at(0).get_string("output_units"),
     in  = m_vars.at(0).get_string("units");
   return convert(m_sys, x, in, out);
 }
@@ -133,7 +133,7 @@ void Diagnostic::define_impl(const File &file, io::Type default_type) const {
 void Diagnostic::set_attrs(const std::string &long_name,
                            const std::string &standard_name,
                            const std::string &units,
-                           const std::string &glaciological_units,
+                           const std::string &output_units,
                            unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -141,25 +141,23 @@ void Diagnostic::set_attrs(const std::string &long_name,
                                   static_cast<int>(m_vars.size()));
   }
 
-  m_vars[N]["pism_intent"] = "diagnostic";
-
   m_vars[N]["long_name"] = long_name;
 
   m_vars[N]["standard_name"] = standard_name;
 
-  if (units == glaciological_units) {
+  if (units == output_units) {
     // No unit conversion needed to write data, so we assume that we don't need to check
     // if units are valid. This is needed to be able to set units like "Pa s^(1/3)", which
     // are correct (ice hardness with the Glen exponent n=3) but are not supported by
     // UDUNITS.
     //
-    // Also note that this automatically sets glaciological_units.
+    // Also note that this automatically sets output_units.
     m_vars[N].set_units_without_validation(units);
   } else {
     m_vars[N]["units"] = units;
 
-    if (not (m_config->get_flag("output.use_MKS") or glaciological_units.empty())) {
-      m_vars[N]["glaciological_units"] = glaciological_units;
+    if (not (m_config->get_flag("output.use_MKS") or output_units.empty())) {
+      m_vars[N]["output_units"] = output_units;
     }
   }
 }
@@ -206,11 +204,11 @@ TSDiagnostic::~TSDiagnostic() {
 }
 
 void TSDiagnostic::set_units(const std::string &units,
-                             const std::string &glaciological_units) {
+                             const std::string &output_units) {
   m_variable["units"] = units;
 
   if (not m_config->get_flag("output.use_MKS")) {
-    m_variable["glaciological_units"] = glaciological_units;
+    m_variable["output_units"] = output_units;
   }
 }
 

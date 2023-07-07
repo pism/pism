@@ -94,7 +94,6 @@ MohrCoulombYieldStress::MohrCoulombYieldStress(std::shared_ptr<const Grid> grid)
   m_name = "Mohr-Coulomb yield stress model";
 
   m_till_phi.metadata()
-      .intent("model_state")
       .long_name("friction angle for till under grounded ice sheet")
       .units("degrees");
 

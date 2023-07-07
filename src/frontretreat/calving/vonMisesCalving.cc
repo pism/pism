@@ -50,13 +50,11 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
 
   m_calving_rate.metadata().set_name("vonmises_calving_rate");
   m_calving_rate.metadata(0)
-      .intent("diagnostic")
       .long_name("horizontal calving rate due to von Mises calving")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
 
   m_calving_threshold.metadata(0)
-      .intent("diagnostic")
       .long_name("threshold used by the 'von Mises' calving method")
       .units("Pa"); // no standard name
   m_calving_threshold.set_time_independent(true);

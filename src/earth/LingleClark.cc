@@ -67,7 +67,6 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
   bool use_elastic_model = m_config->get_flag("bed_deformation.lc.elastic_model");
 
   m_elastic_displacement.metadata(0)
-      .intent("model_state")
       .long_name(
           "elastic part of the displacement in the Lingle-Clark bed deformation model; see :cite:`BLKfastearth`")
       .units("meters");
@@ -92,7 +91,6 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
   m_viscous_displacement.reset(new array::Scalar(m_extended_grid,
                                                  "viscous_bed_displacement"));
   m_viscous_displacement->metadata(0)
-      .intent("model_state")
       .long_name(
           "bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown")
       .units("meters");

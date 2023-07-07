@@ -50,7 +50,6 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
                                                       LINEAR);
 
     m_calving_threshold->metadata(0)
-        .intent("diagnostic")
         .long_name("threshold used by the 'calving at threshold' calving method")
         .units("m"); // no standard name
     m_calving_threshold->metadata()["valid_min"] = {0.0};

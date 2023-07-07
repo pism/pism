@@ -86,42 +86,39 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
   }
 
   m_theta_ocean->metadata(0)
-      .intent("climate_forcing")
       .long_name("potential temperature of the adjacent ocean")
       .units("Kelvin");
 
   m_salinity_ocean->metadata(0)
-      .intent("climate_forcing")
       .long_name("salinity of the adjacent ocean")
       .units("g/kg");
 
   // computed salinity in ocean boxes
-  m_Soc.metadata(0).intent("model_state").long_name("ocean salinity field").units("g/kg");
+  m_Soc.metadata(0).long_name("ocean salinity field").units("g/kg");
   m_Soc.metadata()["_FillValue"] = { 0.0 };
 
   // salinity input for box 1
-  m_Soc_box0.metadata(0).intent("model_state").long_name("ocean base salinity field").units("g/kg");
+  m_Soc_box0.metadata(0).long_name("ocean base salinity field").units("g/kg");
   m_Soc_box0.metadata()["_FillValue"] = { 0.0 };
 
   // computed temperature in ocean boxes
-  m_Toc.metadata(0).intent("model_state").long_name("ocean temperature field").units("K");
+  m_Toc.metadata(0).long_name("ocean temperature field").units("K");
   m_Toc.metadata()["_FillValue"] = { 0.0 };
 
   // temperature input for box 1
-  m_Toc_box0.metadata(0).intent("model_state").long_name("ocean base temperature").units("K");
+  m_Toc_box0.metadata(0).long_name("ocean base temperature").units("K");
   m_Toc_box0.metadata()["_FillValue"] = { 0.0 };
 
-  m_T_star.metadata(0).intent("model_state").long_name("T_star field").units("Celsius");
+  m_T_star.metadata(0).long_name("T_star field").units("Celsius");
   m_T_star.metadata()["_FillValue"] = { 0.0 };
 
-  m_overturning.metadata(0).intent("model_state").long_name("cavity overturning").units("m^3 s-1");
+  m_overturning.metadata(0).long_name("cavity overturning").units("m^3 s-1");
   m_overturning.metadata()["_FillValue"] = { 0.0 };
 
   m_basal_melt_rate.metadata(0)
-      .intent("model_state")
       .long_name("PICO sub-shelf melt rate")
       .units("m s-1")
-      .glaciological_units("m year-1");
+      .output_units("m year-1");
   m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
 
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};

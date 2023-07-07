@@ -91,7 +91,7 @@ protected:
   virtual void write_state_impl(const File &output) const;
 
   void set_attrs(const std::string &long_name, const std::string &standard_name,
-                 const std::string &units, const std::string &glaciological_units,
+                 const std::string &units, const std::string &output_units,
                  unsigned int N = 0);
 
   virtual void update_impl(double dt);
@@ -298,9 +298,9 @@ protected:
   /*!
    * Set internal (MKS) and "glaciological" units.
    *
-   * glaciological_units is ignored if output.use_MKS is set.
+   * output_units is ignored if output.use_MKS is set.
    */
-  void set_units(const std::string &units, const std::string &glaciological_units);
+  void set_units(const std::string &units, const std::string &output_units);
 
   //! the grid
   std::shared_ptr<const Grid> m_grid;

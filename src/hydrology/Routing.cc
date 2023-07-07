@@ -268,8 +268,6 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
     m_dy(grid->dy()),
     m_bottom_surface(grid, "ice_bottom_surface_elevation") {
 
-  m_W.metadata()["pism_intent"] = "model_state";
-
   m_rg = (m_config->get_number("constants.fresh_water.density") *
           m_config->get_number("constants.standard_gravity"));
 
@@ -293,7 +291,6 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
   m_Wstag.metadata()["valid_min"] = { 0.0 };
 
   m_Kstag.metadata(0)
-      .intent("internal")
       .long_name("cell face-centered (staggered) values of nonlinear conductivity");
   m_Kstag.metadata()["valid_min"] = { 0.0 };
 

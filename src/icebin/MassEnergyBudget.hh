@@ -16,32 +16,26 @@ namespace icebin {
 enthalpy of a bunch of advected H2O based on its mass and specific
 enthalpy.  This allows us to have only one C++ variable per advected
 quanity, instead of two. */
-struct MassEnthVec2S : public pism::PetscAccessible
-{
-    pism::array::Scalar mass;
-    pism::array::Scalar enth;
+struct MassEnthVec2S : public pism::PetscAccessible {
+  pism::array::Scalar mass;
+  pism::array::Scalar enth;
 
-    ~MassEnthVec2S() {}
+  ~MassEnthVec2S() {
+  }
 
   MassEnthVec2S(std::shared_ptr<const pism::Grid> my_grid, const std::string &my_name);
 
-    void set_attrs(
-        const std::string &my_pism_intent,
-        const std::string &my_long_name,
-        const std::string &my_units,
-        const std::string &my_standard_name);
+  void set_attrs(const std::string &my_long_name, const std::string &my_units);
 
-    virtual void begin_access() const
-    {
-        mass.begin_access();
-        enth.begin_access();
-    }
+  virtual void begin_access() const {
+    mass.begin_access();
+    enth.begin_access();
+  }
 
-    virtual void end_access() const
-    {
-        mass.end_access();
-        enth.end_access();
-    }
+  virtual void end_access() const {
+    mass.end_access();
+    enth.end_access();
+  }
 
 #if 0
     /** @param mass [kg m-2]

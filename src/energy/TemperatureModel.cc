@@ -34,7 +34,6 @@ TemperatureModel::TemperatureModel(std::shared_ptr<const Grid> grid,
     m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
 
   m_ice_temperature.metadata(0)
-      .intent("model_state")
       .long_name("ice temperature")
       .units("K")
       .standard_name("land_ice_temperature");
