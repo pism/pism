@@ -23,17 +23,19 @@
 
 namespace pism {
 
-namespace vec {
+namespace array {
+
+namespace details {
 
 //! \brief Computes result = x + alpha * y, where x, y, and z are 2D
 //! Arrays (scalar or vector).
 /*!
  */
-template<class V>
-void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
+template <class V>
+void add(const V &x, double alpha, const V &y, V &result, bool scatter = true) {
 
-  array::AccessScope list{&x, &y, &result};
-  for (Points p(*result.grid()); p; p.next()) {
+  array::AccessScope list{ &x, &y, &result };
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
     result(i, j) = x(i, j) + y(i, j) * alpha;
@@ -46,25 +48,27 @@ void add(const V &x, double alpha, const V &y, V &result, bool scatter=true) {
   result.inc_state_counter();
 }
 
-template<class V>
-void copy(const V& source, V& destination, bool scatter=true) {
+template <class V>
+void copy(const V &input, V &result, bool scatter = true) {
 
-  array::AccessScope list{&source, &destination};
+  array::AccessScope list{ &input, &result };
 
-  for (Points p(*destination.grid()); p; p.next()) {
+  for (auto p = result.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    destination(i, j) = source(i, j);
+    result(i, j) = input(i, j);
   }
 
   if (scatter) {
-    destination.update_ghosts();
+    result.update_ghosts();
   }
 
-  destination.inc_state_counter();
+  result.inc_state_counter();
 }
 
-} // end of namespace vec
+} // namespace details
+
+} // namespace array
 
 } // end of namespace pism
 

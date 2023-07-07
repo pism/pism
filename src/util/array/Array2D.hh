@@ -63,15 +63,15 @@ public:
   }
 
   void add(double alpha, const Array2D<T> &x) {
-    vec::add(*this, alpha, x, *this);
+    details::add(*this, alpha, x, *this);
   }
 
   void add(double alpha, const Array2D<T> &x, Array2D<T> &result) const {
-    vec::add(*this, alpha, x, result);
+    details::add(*this, alpha, x, result);
   }
 
   void copy_from(const Array2D<T> &source) {
-    return vec::copy(source, *this);
+    return details::copy(source, *this);
   }
 
 protected:
