@@ -130,7 +130,7 @@ const double* Array3D::get_column(int i, int j) const {
   return ((double***) m_array)[j][i];
 }
 
-//! Copies a horizontal slice at level z of an Array3D into an Scalar gslice.
+//! Copies a horizontal slice at level z of an Array3D into `output`.
 void extract_surface(const Array3D &data, double z, Scalar &output) {
   array::AccessScope list{&data, &output};
 
@@ -147,7 +147,8 @@ void extract_surface(const Array3D &data, double z, Scalar &output) {
 }
 
 
-//! Copies the values of an Array3D at the ice surface (specified by the level `z`) to an Scalar gsurf.
+//! Copies the values of an Array3D at the ice surface (specified by the level `z`) into
+//! `output`.
 void extract_surface(const Array3D &data, const Scalar &z, Scalar &output) {
   array::AccessScope list{&data, &output, &z};
 

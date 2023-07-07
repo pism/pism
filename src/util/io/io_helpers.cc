@@ -686,7 +686,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
 
 //! \brief Write a double array to a file.
 /*!
-  Converts units if internal and "glaciological" units are different.
+  Converts units if internal and "output" units are different.
  */
 void write_spatial_variable(const SpatialVariableMetadata &var,
                             const Grid& grid,
@@ -727,7 +727,7 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   if (units != output_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
 
-    // create a temporary array, convert to glaciological units, and
+    // create a temporary array, convert to output units, and
     // save
     std::vector<double> tmp(data_size);
     for (size_t k = 0; k < data_size; ++k) {
@@ -1095,7 +1095,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
 
 /** @brief Write a time-series `data` to a file.
  *
- * Always use glaciological units when saving time-series.
+ * Always use output units when saving time-series.
  */
 void write_timeseries(const File &file, const VariableMetadata &metadata, size_t t_start,
                       const std::vector<double> &data) {
@@ -1110,7 +1110,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
     // create a copy of "data":
     std::vector<double> tmp = data;
 
-    // convert to glaciological units:
+    // convert to output units:
     units::Converter(metadata.unit_system(),
                      metadata["units"],
                      metadata.get_string("output_units")).convert_doubles(tmp.data(),
@@ -1244,7 +1244,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
     // make a copy of "data"
     std::vector<double> tmp = data;
 
-    // convert to glaciological units:
+    // convert to output units:
     units::Converter(metadata.unit_system(),
                      metadata.get_string("units"),
                      metadata.get_string("output_units")).convert_doubles(tmp.data(), tmp.size());

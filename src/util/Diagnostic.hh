@@ -297,7 +297,7 @@ protected:
   virtual double compute() = 0;
 
   /*!
-   * Set internal (MKS) and "glaciological" units.
+   * Set internal (MKS) and "output" units.
    *
    * output_units is ignored if output.use_MKS is set.
    */

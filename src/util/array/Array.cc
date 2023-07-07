@@ -251,7 +251,7 @@ void Array::scale(double alpha) {
   PetscErrorCode ierr = VecScale(vec(), alpha);
   PISM_CHK(ierr, "VecScale");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! Copies v to a global vector 'destination'. Ghost points are discarded.
@@ -261,8 +261,7 @@ void Array::scale(double alpha) {
     DMLocalToGlobalBegin/End is broken in PETSc 3.5, so we roll our
     own.
  */
-void  Array::copy_to_vec(std::shared_ptr<petsc::DM> destination_da,
-                               petsc::Vec &destination) const {
+void Array::copy_to_vec(std::shared_ptr<petsc::DM> destination_da, petsc::Vec &destination) const {
   // m_dof > 1 for vector, staggered grid 2D fields, etc. In this case
   // zlevels.size() == 1. For 3D fields, m_dof == 1 (all 3D fields are
   // scalar) and zlevels.size() corresponds to dof of the underlying PETSc
@@ -272,25 +271,23 @@ void  Array::copy_to_vec(std::shared_ptr<petsc::DM> destination_da,
   this->get_dof(destination_da, destination, 0, N);
 }
 
-void Array::get_dof(std::shared_ptr<petsc::DM> da_result,
-                          petsc::Vec &result,
-                          unsigned int start, unsigned int count) const {
+void Array::get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, unsigned int start,
+                    unsigned int count) const {
   if (start >= m_impl->dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
   petsc::DMDAVecArrayDOF tmp_res(da_result, result), tmp_v(dm(), vec());
 
-  double
-    ***result_a = static_cast<double***>(tmp_res.get()),
-    ***source_a = static_cast<double***>(tmp_v.get());
+  double ***result_a = static_cast<double ***>(tmp_res.get()),
+         ***source_a = static_cast<double ***>(tmp_v.get());
 
   ParallelSection loop(m_impl->grid->com);
   try {
     for (auto p = m_impl->grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
-      PetscErrorCode ierr = PetscMemcpy(result_a[j][i], &source_a[j][i][start],
-                                        count*sizeof(PetscScalar));
+      PetscErrorCode ierr =
+          PetscMemcpy(result_a[j][i], &source_a[j][i][start], count * sizeof(PetscScalar));
       PISM_CHK(ierr, "PetscMemcpy");
     }
   } catch (...) {
@@ -299,24 +296,23 @@ void Array::get_dof(std::shared_ptr<petsc::DM> da_result,
   loop.check();
 }
 
-void Array::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source,
-                          unsigned int start, unsigned int count) {
+void Array::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source, unsigned int start,
+                    unsigned int count) {
   if (start >= m_impl->dof) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid argument (start); got %d", start);
   }
 
   petsc::DMDAVecArrayDOF tmp_src(da_source, source), tmp_v(dm(), vec());
 
-  double
-    ***source_a = static_cast<double***>(tmp_src.get()),
-    ***result_a = static_cast<double***>(tmp_v.get());
+  double ***source_a = static_cast<double ***>(tmp_src.get()),
+         ***result_a = static_cast<double ***>(tmp_v.get());
 
   ParallelSection loop(m_impl->grid->com);
   try {
     for (auto p = m_impl->grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
-      PetscErrorCode ierr = PetscMemcpy(&result_a[j][i][start], source_a[j][i],
-                                        count*sizeof(PetscScalar));
+      PetscErrorCode ierr =
+          PetscMemcpy(&result_a[j][i][start], source_a[j][i], count * sizeof(PetscScalar));
       PISM_CHK(ierr, "PetscMemcpy");
     }
   } catch (...) {
@@ -324,7 +320,7 @@ void Array::set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source,
   }
   loop.check();
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 //! @brief Get the stencil width of the current Array. Returns 0
@@ -337,7 +333,7 @@ unsigned int Array::stencil_width() const {
   return 0;
 }
 
-petsc::Vec& Array::vec() const {
+petsc::Vec &Array::vec() const {
   if (m_impl->v.get() == nullptr) {
     PetscErrorCode ierr = 0;
     if (m_impl->ghosted) {
@@ -381,15 +377,14 @@ void Array::set_name(const std::string &name) {
  * several NetCDF variables. Use metadata(...).get_name() to get the
  * name of NetCDF variables an Array is saved to.)
  */
-const std::string& Array::get_name() const {
+const std::string &Array::get_name() const {
   return m_impl->name;
 }
 
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void Array::regrid_impl(const File &file, io::RegriddingFlag flag,
-                              double default_value) {
+void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 
@@ -492,7 +487,10 @@ void Array::read_impl(const File &file, const unsigned int time) {
 void Array::define(const File &file, io::Type default_type) const {
   for (unsigned int j = 0; j < ndof(); ++j) {
     io::Type type = metadata(j).get_output_type();
-    type = type == io::PISM_NAT ? default_type : type;
+    if (type == io::PISM_NAT) {
+      type = default_type;
+    }
+
     io::define_spatial_variable(metadata(j), *m_impl->grid, file, type);
   }
 }
@@ -710,10 +708,10 @@ std::vector<double> Array::norm(int n) const {
     // otherwise GlobalSum; carefully in NORM_2 case
     switch (type) {
     case NORM_1_AND_2: {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Array::norm_all(...): NORM_1_AND_2"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Array::norm_all(...): NORM_1_AND_2"
                                     " not implemented (called as %s.norm_all(...))",
                                     m_impl->name.c_str());
-
     }
     case NORM_1: {
       for (unsigned int k = 0; k < m_impl->dof; ++k) {
@@ -724,7 +722,7 @@ std::vector<double> Array::norm(int n) const {
     case NORM_2: {
       for (unsigned int k = 0; k < m_impl->dof; ++k) {
         // undo sqrt in VecNorm before sum; sum up; take sqrt
-        result[k] = sqrt(GlobalSum(m_impl->grid->com, result[k]*result[k]));
+        result[k] = sqrt(GlobalSum(m_impl->grid->com, result[k] * result[k]));
       }
       return result;
     }
@@ -735,7 +733,8 @@ std::vector<double> Array::norm(int n) const {
       return result;
     }
     default: {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Array::norm_all(...): unknown norm type"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Array::norm_all(...): unknown norm type"
                                     " (called as %s.norm_all(...))",
                                     m_impl->name.c_str());
     }
@@ -747,11 +746,9 @@ std::vector<double> Array::norm(int n) const {
 
 void Array::write(const std::string &filename) const {
   // We expect the file to be present and ready to write into.
-  File file(m_impl->grid->com,
-            filename,
+  File file(m_impl->grid->com, filename,
             string_to_backend(m_impl->grid->ctx()->config()->get_string("output.format")),
-            io::PISM_READWRITE,
-            m_impl->grid->ctx()->pio_iosys_id());
+            io::PISM_READWRITE, m_impl->grid->ctx()->pio_iosys_id());
 
   this->write(file);
 }
@@ -761,15 +758,13 @@ void Array::read(const std::string &filename, unsigned int time) {
   this->read(file, time);
 }
 
-void Array::regrid(const std::string &filename, io::RegriddingFlag flag,
-                                   double default_value) {
+void Array::regrid(const std::string &filename, io::RegriddingFlag flag, double default_value) {
   File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
 
   try {
     this->regrid(file, flag, default_value);
   } catch (RuntimeError &e) {
-    e.add_context("regridding '%s' from '%s'",
-                  this->get_name().c_str(), filename.c_str());
+    e.add_context("regridding '%s' from '%s'", this->get_name().c_str(), filename.c_str());
     throw;
   }
 }
@@ -799,10 +794,9 @@ void Array::regrid(const std::string &filename, io::RegriddingFlag flag,
  *
  * @return 0 on success
  */
-void Array::regrid(const File &file, io::RegriddingFlag flag,
-                         double default_value) {
+void Array::regrid(const File &file, io::RegriddingFlag flag, double default_value) {
   m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
-                                timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
+                                      timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
   double start_time = get_time(m_impl->grid->com);
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
