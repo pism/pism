@@ -41,15 +41,14 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
     m_usurf_target(m_grid, "usurf")
 {
   // In this model tillphi is NOT time-independent.
-  m_till_phi.set_time_independent(false);
+  m_till_phi.metadata().set_time_independent(false);
 
   m_name = "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
 
   m_usurf_target.metadata()
       .long_name("target surface elevation for tillphi optimization")
-      .units("m");
-
-  m_usurf_target.set_time_independent(true);
+      .units("m")
+      .set_time_independent(true);
 
   m_usurf_difference.metadata()
       .long_name("difference between modeled and target surface elevations")

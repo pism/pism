@@ -143,7 +143,7 @@ protected:
   virtual void write_model_state_impl(const File &output) const;
 
   virtual DiagnosticList diagnostics_impl() const;
-protected:
+
   //! upward heat flux through the bottom surface of the bed thermal layer
   array::Scalar m_bottom_surface_flux;
 
@@ -155,7 +155,7 @@ class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
   BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
 protected:
-  virtual array::Array::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 } // end of namespace energy

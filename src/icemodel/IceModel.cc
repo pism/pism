@@ -226,11 +226,11 @@ void IceModel::allocate_storage() {
   // Sliding velocity (usually SSA) Dirichlet B.C. locations and values
   {
     m_velocity_bc_mask.metadata(0)
-        .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity");
+        .long_name("Mask prescribing Dirichlet boundary locations for the sliding velocity")
+        .set_output_type(io::PISM_INT)
+        .set_time_independent(true);
     m_velocity_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_velocity_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
-    m_velocity_bc_mask.metadata().set_output_type(io::PISM_INT);
-    m_velocity_bc_mask.set_time_independent(true);
 
     m_velocity_bc_mask.set(0.0);
   }
@@ -239,26 +239,25 @@ void IceModel::allocate_storage() {
     double fill_value       = m_config->get_number("output.fill_value");
     const double huge_value = 1e6;
     // vel_bc
-    m_velocity_bc_values.metadata(0)
-        .long_name("X-component of the SSA velocity boundary conditions")
-        .units("m s-1");
-    m_velocity_bc_values.metadata(1)
-        .long_name("Y-component of the SSA velocity boundary conditions")
-        .units("m s-1");
+    m_velocity_bc_values.metadata(0).long_name(
+        "X-component of the SSA velocity boundary conditions");
+    m_velocity_bc_values.metadata(1).long_name(
+        "Y-component of the SSA velocity boundary conditions");
     for (int j : { 0, 1 }) {
       m_velocity_bc_values.metadata(j)["valid_range"] = { -huge_value, huge_value };
       m_velocity_bc_values.metadata(j)["_FillValue"]  = { fill_value };
+      m_velocity_bc_values.metadata(j).units("m s-1");
     }
   }
 
   // Ice thickness BC mask
   {
     m_ice_thickness_bc_mask.metadata(0)
-        .long_name("Mask specifying locations where ice thickness is held constant");
+        .long_name("Mask specifying locations where ice thickness is held constant")
+        .set_time_independent(true)
+        .set_output_type(io::PISM_INT);
     m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
-    m_ice_thickness_bc_mask.metadata().set_output_type(io::PISM_INT);
-    m_ice_thickness_bc_mask.set_time_independent(true);
 
     m_ice_thickness_bc_mask.set(0.0);
   }

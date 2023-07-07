@@ -209,21 +209,6 @@ class Array : public PetscAccessible {
 public:
   virtual ~Array();
 
-  typedef std::shared_ptr<Array> Ptr;
-  typedef std::shared_ptr<const Array> ConstPtr;
-
-  //! `dynamic_pointer_cast` wrapper that checks if the cast succeeded.
-  template<class T>
-  static typename T::Ptr cast(Array::Ptr input) {
-    auto result = std::dynamic_pointer_cast<T,Array>(input);
-
-    if (not result) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
-    }
-
-    return result;
-  }
-
   std::shared_ptr<const Grid> grid() const;
   unsigned int ndims() const;
   std::vector<int> shape() const;
@@ -274,7 +259,7 @@ public:
 
   int state_counter() const;
   void inc_state_counter();
-  void set_time_independent(bool flag);
+
   void set_interpolation_type(InterpolationType type);
 
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
@@ -329,6 +314,18 @@ protected:
   void put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const;
   void get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) const;
 };
+
+//! `std::dynamic_pointer_cast` wrapper that checks if the cast succeeded.
+template <class T>
+static typename std::shared_ptr<T> cast(std::shared_ptr<Array> input) {
+  auto result = std::dynamic_pointer_cast<T, Array>(input);
+
+  if (not result) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "dynamic cast failure");
+  }
+
+  return result;
+}
 
 } // end of namespace array
 

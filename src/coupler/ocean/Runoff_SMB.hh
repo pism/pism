@@ -72,7 +72,7 @@ private:
   double m_runoff_to_ocean_melt_power_alpha;
   double m_runoff_to_ocean_melt_power_beta;
 
-  array::Scalar::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 

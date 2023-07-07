@@ -61,8 +61,8 @@ protected:
 
   std::shared_ptr<array::Forcing> m_reference_surface;
 
-  array::Scalar::Ptr m_precipitation;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
   array::Scalar m_surface;
 };
 

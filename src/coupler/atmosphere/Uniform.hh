@@ -44,7 +44,7 @@ private:
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 
 private:
-  array::Scalar::Ptr m_precipitation, m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation, m_temperature;
 };
 
 } // end of namespace atmosphere

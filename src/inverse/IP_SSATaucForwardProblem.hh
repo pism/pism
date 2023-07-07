@@ -138,7 +138,7 @@ public:
   }
 
   //! Returns the last solution of the %SSA as computed by \ref linearize_at.
-  virtual array::Vector::Ptr solution() {
+  virtual std::shared_ptr<array::Vector> solution() {
     m_velocity_shared->copy_from(m_velocity);
     return m_velocity_shared;
   }
@@ -150,7 +150,7 @@ public:
 
   virtual void set_design(array::Scalar &zeta);
 
-  virtual TerminationReason::Ptr linearize_at(array::Scalar &zeta);
+  virtual std::shared_ptr<TerminationReason> linearize_at(array::Scalar &zeta);
 
   virtual void assemble_residual(array::Vector &u, array::Vector &R);
   virtual void assemble_residual(array::Vector &u, Vec R);
@@ -189,7 +189,7 @@ protected:
   IPDesignVariableParameterization &m_tauc_param;
 
   /// Copy of the velocity field managed using a shared pointer.
-  array::Vector::Ptr m_velocity_shared;
+  std::shared_ptr<array::Vector> m_velocity_shared;
 
   /// Temporary storage when state vectors need to be used without ghosts.
   array::Vector  m_du_global;

@@ -20,6 +20,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
+#include <memory>
 
 namespace pism {
 namespace inverse {
@@ -103,7 +104,8 @@ void IP_SSATaucTaoTikhonovProblemLCL::setInitialGuess(DesignVec &d0) {
   m_dGlobal.copy_from(d0);
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::StateVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
+std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCL::StateVec>
+IP_SSATaucTaoTikhonovProblemLCL::stateSolution() {
 
   m_x->scatterToB(m_uGlobal->vec());
   m_uGlobal->scale(m_velocityScale);
@@ -111,8 +113,9 @@ IP_SSATaucTaoTikhonovProblemLCL::StateVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::
   return m_uGlobal;
 }
 
-IP_SSATaucTaoTikhonovProblemLCL::DesignVec::Ptr IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
-  m_x->scatterToA(m_d->vec()); //CHKERRQ(ierr);
+std::shared_ptr<IP_SSATaucTaoTikhonovProblemLCL::DesignVec>
+IP_SSATaucTaoTikhonovProblemLCL::designSolution() {
+  m_x->scatterToA(m_d->vec());
   return m_d;
 }
 
@@ -180,9 +183,9 @@ void IP_SSATaucTaoTikhonovProblemLCL::evaluateObjectiveAndGradient(Tao /*tao*/, 
   *value = m_val_design / m_eta + m_val_state;
 }
 
-TerminationReason::Ptr IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x) {
+std::shared_ptr<TerminationReason> IP_SSATaucTaoTikhonovProblemLCL::formInitialGuess(Vec *x) {
   m_d->copy_from(m_dGlobal);
-  TerminationReason::Ptr reason = m_ssaforward.linearize_at(*m_d);
+  auto reason = m_ssaforward.linearize_at(*m_d);
   if (reason->failed()) {
     return reason;
   }

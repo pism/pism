@@ -426,9 +426,9 @@ SSA_taud::SSA_taud(const SSA *m)
   }
 }
 
-array::Array::Ptr SSA_taud::compute_impl() const {
+std::shared_ptr<array::Array> SSA_taud::compute_impl() const {
 
-  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
+  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -449,10 +449,10 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
     "this is the magnitude of the driving stress used by the SSA solver";
 }
 
-array::Array::Ptr SSA_taud_mag::compute_impl() const {
+std::shared_ptr<array::Array> SSA_taud_mag::compute_impl() const {
 
   // Allocate memory:
-  array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata() = m_vars[0];
 
   compute_magnitude(model->driving_stress(), *result);

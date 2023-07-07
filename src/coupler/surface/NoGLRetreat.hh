@@ -42,7 +42,7 @@ protected:
 
   DiagnosticList diagnostics_impl() const;
 private:
-  array::Scalar::Ptr m_mass_flux;
+  std::shared_ptr<array::Scalar> m_mass_flux;
   array::Scalar m_smb_adjustment;
   array::Scalar m_min_ice_thickness;
 };

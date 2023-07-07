@@ -87,22 +87,22 @@ protected:
   void dummy_melt(const array::Scalar& smb, array::Scalar& result);
   void dummy_runoff(const array::Scalar& smb, array::Scalar& result);
 
-  static array::Scalar::Ptr allocate_layer_mass(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_layer_thickness(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_mass_flux(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_temperature(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_accumulation(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_melt(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_runoff(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_layer_mass(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_layer_thickness(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_mass_flux(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_temperature(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_accumulation(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_melt(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_runoff(std::shared_ptr<const Grid> grid);
 
 
-  array::Scalar::Ptr m_liquid_water_fraction;
-  array::Scalar::Ptr m_layer_mass;
-  array::Scalar::Ptr m_layer_thickness;
-  array::Scalar::Ptr m_accumulation;
-  array::Scalar::Ptr m_melt;
-  array::Scalar::Ptr m_runoff;
+  std::shared_ptr<array::Scalar> m_liquid_water_fraction;
+  std::shared_ptr<array::Scalar> m_layer_mass;
+  std::shared_ptr<array::Scalar> m_layer_thickness;
+  std::shared_ptr<array::Scalar> m_accumulation;
+  std::shared_ptr<array::Scalar> m_melt;
+  std::shared_ptr<array::Scalar> m_runoff;
   
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;

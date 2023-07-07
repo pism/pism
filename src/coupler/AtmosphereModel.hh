@@ -84,8 +84,8 @@ protected:
 
   std::shared_ptr<AtmosphereModel> m_input_model;
 
-  static array::Scalar::Ptr allocate_temperature(std::shared_ptr<const Grid> grid);
-  static array::Scalar::Ptr allocate_precipitation(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_temperature(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar> allocate_precipitation(std::shared_ptr<const Grid> grid);
 };
 
 } // end of namespace atmosphere

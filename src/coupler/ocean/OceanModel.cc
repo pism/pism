@@ -28,16 +28,16 @@ namespace pism {
 
 namespace ocean {
 
-array::Scalar::Ptr OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
-  array::Scalar::Ptr result(new array::Scalar(g, "shelfbtemp"));
+std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "shelfbtemp"));
   result->metadata(0)
       .long_name("ice temperature at the bottom of floating ice")
       .units("Kelvin");
   return result;
 }
 
-array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
-  array::Scalar::Ptr result(new array::Scalar(g, "shelfbmassflux"));
+std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "shelfbmassflux"));
 
   result->metadata(0)
       .long_name("shelf base mass flux")
@@ -46,8 +46,8 @@ array::Scalar::Ptr OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<con
   return result;
 }
 
-array::Scalar::Ptr OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
-  array::Scalar::Ptr result(new array::Scalar(g, "average_water_column_pressure"));
+std::shared_ptr<array::Scalar> OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "average_water_column_pressure"));
 
   result->metadata(0)
       .long_name("vertically-averaged water column pressure")
@@ -180,9 +180,9 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbtemp"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "shelfbtemp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_temperature());
@@ -207,9 +207,9 @@ public:
               "kg m-2 s-1", "kg m-2 s-1", 0);
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "shelfbmassflux"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "shelfbmassflux"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_mass_flux());

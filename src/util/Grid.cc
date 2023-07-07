@@ -1266,7 +1266,7 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
   auto r = grid::string_to_registration(config->get_string("grid.registration"));
 
-  Logger::ConstPtr log = ctx->log();
+  auto log = ctx->log();
 
   if (not input_file.empty() and (not bootstrap)) {
     // get grid from a PISM input file

@@ -66,8 +66,8 @@ protected:
 
   mutable std::vector<double> m_precip_values, m_air_temp_values;
 
-  array::Scalar::Ptr m_temperature;
-  array::Scalar::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation;
 };
 
 } // end of namespace atmosphere

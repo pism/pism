@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2018  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2014, 2015, 2016, 2018, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -41,8 +41,6 @@ public:
   virtual ~TerminationReason() {
   }
   
-  typedef std::shared_ptr<TerminationReason> Ptr;
-  
   virtual int reason() {
     return m_reason;
   }
@@ -72,11 +70,11 @@ public:
     return (bool)m_root_cause;
   }
 
-  TerminationReason::Ptr root_cause() {
+  std::shared_ptr<TerminationReason> root_cause() {
     return m_root_cause;
   }
 
-  void set_root_cause(TerminationReason::Ptr cause) {
+  void set_root_cause(std::shared_ptr<TerminationReason> cause) {
     m_root_cause = cause;
   }
   
@@ -94,7 +92,7 @@ public:
   
 protected:
   int m_reason;
-  TerminationReason::Ptr m_root_cause;
+  std::shared_ptr<TerminationReason> m_root_cause;
   static const char *sm_indent;
 
 private:
@@ -128,23 +126,23 @@ public:
     // empty
   }
   
-  static TerminationReason::Ptr keep_iterating() {
-    static TerminationReason::Ptr sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
+  static std::shared_ptr<TerminationReason> keep_iterating() {
+    static std::shared_ptr<TerminationReason> sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
     return sm_keep_iterating;
   }
 
-  static TerminationReason::Ptr max_iter() {
-    static TerminationReason::Ptr sm_max_iter(new GenericTerminationReason(-1,"Iteration count exceeded."));
+  static std::shared_ptr<TerminationReason> max_iter() {
+    static std::shared_ptr<TerminationReason> sm_max_iter(new GenericTerminationReason(-1,"Iteration count exceeded."));
     return sm_max_iter;
   }
 
-  static TerminationReason::Ptr success() {
-    static TerminationReason::Ptr sm_success(new GenericTerminationReason(1,"Success."));
+  static std::shared_ptr<TerminationReason> success() {
+    static std::shared_ptr<TerminationReason> sm_success(new GenericTerminationReason(1,"Success."));
     return sm_success;
   }
 
-  static TerminationReason::Ptr failure() {
-    static TerminationReason::Ptr sm_failure(new GenericTerminationReason(-1,"Failure."));
+  static std::shared_ptr<TerminationReason> failure() {
+    static std::shared_ptr<TerminationReason> sm_failure(new GenericTerminationReason(-1,"Failure."));
     return sm_failure;
   }
 

@@ -47,16 +47,16 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   latitude.metadata(0)
       .long_name("latitude")
       .units("degree_north")
-      .standard_name("latitude");
-  latitude.set_time_independent(true);
+      .standard_name("latitude")
+      .set_time_independent(true);
   latitude.metadata()["grid_mapping"] = "";
   latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
 
   longitude.metadata(0)
       .long_name("longitude")
       .units("degree_east")
-      .standard_name("longitude");
-  longitude.set_time_independent(true);
+      .standard_name("longitude")
+      .set_time_independent(true);
   longitude.metadata()["grid_mapping"] = "";
   longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
@@ -84,12 +84,12 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       "the corresponding geometry, so thinking about it as 'thickness' is not helpful";
 
   cell_type.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask")
+      .set_output_type(io::PISM_INT);
   cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
                                           MASK_ICE_FREE_OCEAN };
   cell_type.metadata()["flag_meanings"] =
       "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
-  cell_type.metadata().set_output_type(io::PISM_INT);
 
   cell_grounded_fraction.metadata(0).long_name(
       "fractional grounded/floating mask (floating=0, grounded=1)");

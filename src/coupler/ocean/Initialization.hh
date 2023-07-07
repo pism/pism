@@ -53,8 +53,8 @@ private:
   const array::Scalar& average_water_column_pressure_impl() const;
 
   // storage for melange_back_pressure_fraction is inherited from OceanModel
-  array::Scalar::Ptr m_shelf_base_temperature;
-  array::Scalar::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_temperature;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

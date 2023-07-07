@@ -63,7 +63,7 @@ private:
   array::Scalar1   m_thk_stored;
 
   std::shared_ptr<energy::CHSystem> m_ch_system;
-  array::Array3D::Ptr m_ch_warming_flux;
+  std::shared_ptr<array::Array3D> m_ch_warming_flux;
 };
 
 } // end of namespace pism

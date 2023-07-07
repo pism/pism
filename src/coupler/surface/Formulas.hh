@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,9 +46,8 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-protected:
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 

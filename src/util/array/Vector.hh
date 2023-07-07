@@ -35,9 +35,6 @@ public:
 
   virtual ~Vector() = default;
 
-  typedef std::shared_ptr<Vector> Ptr;
-  typedef std::shared_ptr<const Vector> ConstPtr;
-
   std::shared_ptr<Vector> duplicate() const;
 protected:
   Vector(std::shared_ptr<const Grid> grid, const std::string &name,
@@ -48,8 +45,6 @@ class Vector1 : public Vector {
 public:
   Vector1(std::shared_ptr<const Grid> grid, const std::string &name);
 
-  typedef std::shared_ptr<Vector1> Ptr;
-  typedef std::shared_ptr<const Vector1> ConstPtr;
   using Array2D<Vector2d>::star;
   using Array2D<Vector2d>::box;
 protected:
@@ -60,9 +55,6 @@ protected:
 class Vector2 : public Vector1 {
 public:
   Vector2(std::shared_ptr<const Grid> grid, const std::string &name);
-
-  typedef std::shared_ptr<Vector2> Ptr;
-  typedef std::shared_ptr<const Vector2> ConstPtr;
 };
 
 void compute_magnitude(const array::Vector &input, array::Scalar &result);

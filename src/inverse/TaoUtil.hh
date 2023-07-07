@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012, 2013, 2014, 2015, 2017, 2022, 2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -114,14 +114,14 @@ public:
   }
 
   //! Solve the minimization problem.
-  virtual TerminationReason::Ptr solve() {
+  virtual std::shared_ptr<TerminationReason> solve() {
     PetscErrorCode ierr;
 
     /* Solve the application */ 
     Vec x0;
-    TerminationReason::Ptr reason = m_problem.formInitialGuess(&x0);
+    auto reason = m_problem.formInitialGuess(&x0);
     if (reason->failed()) {
-      TerminationReason::Ptr root_cause = reason;
+      auto root_cause = reason;
       reason.reset(new GenericTerminationReason(-1, "Unable to form initial guess"));
       reason->set_root_cause(root_cause);
       return reason;

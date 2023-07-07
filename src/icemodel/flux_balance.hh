@@ -66,7 +66,7 @@ public:
         .units(internal_units + " second");
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
     auto result = std::make_shared<array::Scalar>(m_grid, "");
     result->metadata() = m_vars[0];

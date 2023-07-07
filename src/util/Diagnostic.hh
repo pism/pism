@@ -48,7 +48,7 @@ class Grid;
  * methods of a class, but it is possible to define a (friend) function
  *
  * @code
- * array::Array::Ptr compute_bar(Foo* model, ...);
+ * std::shared_ptr<array::Array> compute_bar(Foo* model, ...);
  * @endcode
  *
  * which is the same as creating a method `Foo::compute_bar()`, but you *can*
@@ -72,7 +72,7 @@ public:
   void reset();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
-  array::Array::Ptr compute() const;
+  std::shared_ptr<array::Array> compute() const;
 
   unsigned int n_variables() const;
 
@@ -97,7 +97,7 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual array::Array::Ptr compute_impl() const = 0;
+  virtual std::shared_ptr<array::Array> compute_impl() const = 0;
 
   double to_internal(double x) const;
   double to_external(double x) const;
@@ -132,7 +132,7 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
     auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
@@ -238,8 +238,9 @@ protected:
     m_interval_length = 0.0;
   }
 
-  virtual array::Array::Ptr compute_impl() const {
-    array::Scalar::Ptr result(new array::Scalar(Diagnostic::m_grid, "diagnostic"));
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = std::make_shared<array::Scalar>(Diagnostic::m_grid, "diagnostic");
+
     result->metadata(0) = Diagnostic::m_vars.at(0);
 
     if (m_interval_length > 0.0) {

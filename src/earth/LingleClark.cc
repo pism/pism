@@ -186,8 +186,8 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
  *
  * This method is used for testing only.
  */
-array::Scalar::Ptr LingleClark::elastic_load_response_matrix() const {
-  array::Scalar::Ptr result(new array::Scalar(m_extended_grid, "lrm"));
+std::shared_ptr<array::Scalar> LingleClark::elastic_load_response_matrix() const {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_extended_grid, "lrm"));
 
   int
     Nx = m_extended_grid->Mx(),

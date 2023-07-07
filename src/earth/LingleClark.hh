@@ -47,7 +47,7 @@ public:
             const array::Scalar &sea_level_elevation,
             double dt);
 
-  array::Scalar::Ptr elastic_load_response_matrix() const;
+  std::shared_ptr<array::Scalar> elastic_load_response_matrix() const;
 protected:
   virtual void define_model_state_impl(const File &output) const;
   virtual void write_model_state_impl(const File &output) const;

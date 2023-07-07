@@ -144,7 +144,7 @@ const array::Array* Vars::get_internal(const std::string &name) const {
     return (k->second);
   }
 
-  array::Array::Ptr shared = get_internal_shared(name);
+  std::shared_ptr<array::Array> shared = get_internal_shared(name);
   if ((bool)shared) {
     return shared.get();
   }
@@ -269,8 +269,8 @@ bool Vars::is_available_shared(const std::string &name) const {
 }
 
 
-array::Array::Ptr Vars::get_shared(const std::string &name) const {
-  array::Array::Ptr tmp = get_internal_shared(name);
+std::shared_ptr<array::Array> Vars::get_shared(const std::string &name) const {
+  std::shared_ptr<array::Array> tmp = get_internal_shared(name);
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared variable '%s' is not available", name.c_str());
   }
@@ -278,8 +278,8 @@ array::Array::Ptr Vars::get_shared(const std::string &name) const {
 }
 
 
-array::Scalar::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
-  array::Scalar::Ptr tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
+std::shared_ptr<array::Scalar> Vars::get_2d_scalar_shared(const std::string &name) const {
+  std::shared_ptr<array::Scalar> tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D scalar variable '%s' is not available", name.c_str());
   }
@@ -287,8 +287,8 @@ array::Scalar::Ptr Vars::get_2d_scalar_shared(const std::string &name) const {
 }
 
 
-array::Vector::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
-  array::Vector::Ptr tmp = dynamic_pointer_cast<array::Vector,array::Array>(this->get_internal_shared(name));
+std::shared_ptr<array::Vector> Vars::get_2d_vector_shared(const std::string &name) const {
+  std::shared_ptr<array::Vector> tmp = dynamic_pointer_cast<array::Vector,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D vector variable '%s' is not available", name.c_str());
   }
@@ -296,15 +296,15 @@ array::Vector::Ptr Vars::get_2d_vector_shared(const std::string &name) const {
 }
 
 
-array::Scalar::Ptr Vars::get_2d_mask_shared(const std::string &name) const {
-  array::Scalar::Ptr tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
+std::shared_ptr<array::Scalar> Vars::get_2d_mask_shared(const std::string &name) const {
+  std::shared_ptr<array::Scalar> tmp = dynamic_pointer_cast<array::Scalar,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 2D mask variable '%s' is not available", name.c_str());
   }
   return tmp;
 }
 
-array::CellType::Ptr Vars::get_2d_cell_type_shared(const std::string &name) const {
+std::shared_ptr<array::CellType> Vars::get_2d_cell_type_shared(const std::string &name) const {
   auto tmp = dynamic_pointer_cast<array::CellType,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -314,8 +314,8 @@ array::CellType::Ptr Vars::get_2d_cell_type_shared(const std::string &name) cons
 }
 
 
-array::Array3D::Ptr Vars::get_3d_scalar_shared(const std::string &name) const {
-  array::Array3D::Ptr tmp = dynamic_pointer_cast<array::Array3D,array::Array>(this->get_internal_shared(name));
+std::shared_ptr<array::Array3D> Vars::get_3d_scalar_shared(const std::string &name) const {
+  std::shared_ptr<array::Array3D> tmp = dynamic_pointer_cast<array::Array3D,array::Array>(this->get_internal_shared(name));
   if (not (bool)tmp) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared 3D scalar variable '%s' is not available", name.c_str());
   }
@@ -333,7 +333,7 @@ std::set<std::string> Vars::keys_shared() const {
   return result;
 }
 
-array::Array::Ptr Vars::get_internal_shared(const std::string &name) const {
+std::shared_ptr<array::Array> Vars::get_internal_shared(const std::string &name) const {
 
   auto j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
@@ -344,7 +344,7 @@ array::Array::Ptr Vars::get_internal_shared(const std::string &name) const {
       return k->second;
     }
 
-    return array::Array::Ptr();
+    return std::shared_ptr<array::Array>();
   }
 
   auto k = m_variables_shared.find(name);
@@ -352,7 +352,7 @@ array::Array::Ptr Vars::get_internal_shared(const std::string &name) const {
     return (k->second);
   }
 
-  return array::Array::Ptr();
+  return std::shared_ptr<array::Array>();
 }
 
 } // end of namespace pism

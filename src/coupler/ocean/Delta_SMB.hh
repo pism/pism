@@ -41,7 +41,7 @@ private:
 
   const array::Scalar& shelf_base_mass_flux_impl() const;
 
-  array::Scalar::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

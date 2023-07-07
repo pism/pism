@@ -52,8 +52,8 @@ protected:
   array::Scalar m_surface_reference;
 
   // outputs; stored as shared_ptr to be able to use SurfaceModel::allocate_xxx()
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 
 };
 

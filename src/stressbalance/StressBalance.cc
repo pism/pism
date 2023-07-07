@@ -146,8 +146,8 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
   m_w.metadata(0)
       .long_name("vertical velocity of ice, relative to base of ice directly below")
       .units("m s-1")
-      .output_units("m year-1");
-  m_w.set_time_independent(false);
+      .output_units("m year-1")
+      .set_time_independent(false);
 
   m_strain_heating.metadata(0)
       .long_name("rate of strain heating in ice (dissipation heating)")

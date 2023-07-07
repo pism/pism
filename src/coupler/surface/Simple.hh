@@ -51,8 +51,8 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

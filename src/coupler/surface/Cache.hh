@@ -46,8 +46,8 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 protected:
   // storage for the rest of the fields is inherited from SurfaceModel
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 
   double m_next_update_time;
   double m_update_interval_years;

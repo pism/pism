@@ -159,7 +159,7 @@ void SSAFEM::init_impl() {
  */
 void SSAFEM::solve(const Inputs &inputs) {
 
-  TerminationReason::Ptr reason = solve_with_reason(inputs);
+  auto reason = solve_with_reason(inputs);
   if (reason->failed()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "SSAFEM solve failed to converge (SNES reason %s)",
@@ -171,7 +171,7 @@ void SSAFEM::solve(const Inputs &inputs) {
   }
 }
 
-TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
+std::shared_ptr<TerminationReason> SSAFEM::solve_with_reason(const Inputs &inputs) {
 
   // Set up the system to solve.
   cache_inputs(inputs);
@@ -181,7 +181,7 @@ TerminationReason::Ptr SSAFEM::solve_with_reason(const Inputs &inputs) {
 
 //! Solve the SSA without first recomputing the values of coefficients at quad
 //! points.  See the disccusion of SSAFEM::solve for more discussion.
-TerminationReason::Ptr SSAFEM::solve_nocache() {
+std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
   PetscErrorCode ierr;
 
   m_epsilon_ssa = m_config->get_number("stress_balance.ssa.epsilon");
@@ -218,7 +218,7 @@ TerminationReason::Ptr SSAFEM::solve_nocache() {
   SNESConvergedReason snes_reason;
   ierr = SNESGetConvergedReason(m_snes, &snes_reason); PISM_CHK(ierr, "SNESGetConvergedReason");
 
-  TerminationReason::Ptr reason(new SNESTerminationReason(snes_reason));
+  std::shared_ptr<TerminationReason> reason(new SNESTerminationReason(snes_reason));
   if (not reason->failed()) {
 
     // Extract the solution back from SSAX to velocity and communicate.

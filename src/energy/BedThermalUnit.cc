@@ -106,11 +106,10 @@ BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
     // PROPOSED standard_name = lithosphere_upward_heat_flux
     m_bottom_surface_flux.metadata(0)
         .long_name("upward geothermal flux at the bottom bedrock surface")
-        .units("W m-2"); // note: don't convert to
-                         // "mW m-2" when saving
+        .units("W m-2") // note: don't convert to "mW m-2" when saving
+        .set_time_independent(true);
 
     m_bottom_surface_flux.metadata()["comment"] = "positive values correspond to an upward flux";
-    m_bottom_surface_flux.set_time_independent(true);
   }
 }
 
@@ -228,7 +227,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
   m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 
-array::Array::Ptr BTU_geothermal_flux_at_ground_level::compute_impl() const {
+std::shared_ptr<array::Array> BTU_geothermal_flux_at_ground_level::compute_impl() const {
   auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 

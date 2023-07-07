@@ -63,27 +63,6 @@ Scalar2::Scalar2(std::shared_ptr<const Grid> grid, const std::string &name)
   // empty
 }
 
-/*! Sets the result to the magnitude of a 2D vector field with components `v_x` and `v_y`.
-
-    Computes the magnitude *pointwise*, so any of `v_x`, `v_y` and the `result` can be the
-    same.
-
-    Does not communicate.
- */
-void compute_magnitude(const array::Scalar &v_x,
-                       const array::Scalar &v_y,
-                       array::Scalar &result) {
-  array::AccessScope list{&result, &v_x, &v_y};
-
-  for (auto p = result.grid()->points(); p; p.next()) {
-    const int i = p.i(), j = p.j();
-
-    result(i, j) = Vector2d(v_x(i, j), v_y(i, j)).magnitude();
-  }
-
-  result.inc_state_counter();          // mark as modified
-}
-
 void compute_magnitude(const array::Vector &input, array::Scalar &result) {
   array::AccessScope list{&result, &input};
 

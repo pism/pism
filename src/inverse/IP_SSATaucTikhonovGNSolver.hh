@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022  David Maxwell
+// Copyright (C) 2012, 2014, 2015, 2016, 2017, 2019, 2020, 2021, 2022, 2023  David Maxwell
 //
 // This file is part of PISM.
 //
@@ -69,11 +69,11 @@ public:
 
   ~IP_SSATaucTikhonovGNSolver() = default;
   
-  virtual StateVec::Ptr stateSolution() {
+  virtual std::shared_ptr<StateVec> stateSolution() {
     return m_ssaforward.solution();
   }
 
-  virtual DesignVec::Ptr designSolution() {
+  virtual std::shared_ptr<DesignVec> designSolution() {
     return m_d;
   }
 
@@ -91,23 +91,23 @@ public:
   virtual void apply_GN(array::Scalar &h, array::Scalar &out);
   virtual void apply_GN(Vec h, Vec out);
 
-  virtual TerminationReason::Ptr init();
+  virtual std::shared_ptr<TerminationReason> init();
 
-  virtual TerminationReason::Ptr check_convergence(); 
+  virtual std::shared_ptr<TerminationReason> check_convergence();
   
-  virtual TerminationReason::Ptr solve();
+  virtual std::shared_ptr<TerminationReason> solve();
 
-  virtual TerminationReason::Ptr evaluate_objective_and_gradient();
+  virtual std::shared_ptr<TerminationReason> evaluate_objective_and_gradient();
 
 protected:
 
   virtual void assemble_GN_rhs(DesignVec &out);
 
-  virtual TerminationReason::Ptr solve_linearized();
+  virtual std::shared_ptr<TerminationReason> solve_linearized();
 
-  virtual TerminationReason::Ptr compute_dlogalpha(double *dalpha);
+  virtual std::shared_ptr<TerminationReason> compute_dlogalpha(double *dalpha);
 
-  virtual TerminationReason::Ptr linesearch();
+  virtual std::shared_ptr<TerminationReason> linesearch();
 
   const unsigned int m_design_stencil_width;
   const unsigned int m_state_stencil_width;
@@ -127,7 +127,7 @@ protected:
 
   DesignVec  m_GN_rhs;
 
-  DesignVecGhosted::Ptr m_d;           // ghosted
+  std::shared_ptr<DesignVecGhosted> m_d;           // ghosted
   DesignVec &m_d0;
   DesignVec m_dGlobal;
   DesignVecGhosted m_d_diff;

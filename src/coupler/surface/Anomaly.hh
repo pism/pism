@@ -41,8 +41,8 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 protected:
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 
   std::shared_ptr<array::Forcing> m_climatic_mass_balance_anomaly;
   std::shared_ptr<array::Forcing> m_ice_surface_temp_anomaly;

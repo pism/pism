@@ -169,16 +169,6 @@ std::vector<int> Array::shape() const {
   return {(int)grid->My(), (int)grid->Mx(), (int)ndof()};
 }
 
-//! Set the time independent flag for all variables corresponding to this Array instance.
-/** A "time independent" Array will be saved to a NetCDF
-    variable which does not depend on the "time" dimension.
- */
-void Array::set_time_independent(bool flag) {
-  for (unsigned int j = 0; j < m_impl->dof; ++j) {
-    m_impl->metadata[j].set_time_independent(flag);
-  }
-}
-
 void Array::set_begin_access_use_dof(bool flag) {
   m_impl->begin_access_use_dof = flag;
 }
@@ -454,7 +444,7 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag,
 //! Reads appropriate NetCDF variable(s) into an Array.
 void Array::read_impl(const File &file, const unsigned int time) {
 
-  Logger::ConstPtr log = grid()->ctx()->log();
+  auto log = grid()->ctx()->log();
   log->message(4, "  Reading %s...\n", m_impl->name.c_str());
 
   if (ndof() == 1) {
@@ -521,7 +511,7 @@ const SpatialVariableMetadata& Array::metadata(unsigned int N) const {
 
 //! Writes an Array to a NetCDF file.
 void Array::write_impl(const File &file) const {
-  Logger::ConstPtr log = m_impl->grid->ctx()->log();
+  auto log = m_impl->grid->ctx()->log();
   auto time = timestamp(m_impl->grid->com);
 
   // The simplest case:

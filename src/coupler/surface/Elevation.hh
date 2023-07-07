@@ -50,8 +50,8 @@ private:
   double m_T_min, m_T_max, m_z_T_min, m_z_T_max;
   double m_M_min, m_M_max, m_M_limit_min, m_M_limit_max, m_z_M_min, m_z_ELA, m_z_M_max;
 
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

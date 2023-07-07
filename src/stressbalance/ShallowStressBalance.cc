@@ -191,9 +191,9 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-array::Array::Ptr SSB_taud::compute_impl() const {
+std::shared_ptr<array::Array> SSB_taud::compute_impl() const {
 
-  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
+  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -232,11 +232,11 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-array::Array::Ptr SSB_taud_mag::compute_impl() const {
-  array::Scalar::Ptr result(new array::Scalar(m_grid, "taud_mag"));
+std::shared_ptr<array::Array> SSB_taud_mag::compute_impl() const {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "taud_mag"));
   result->metadata(0) = m_vars[0];
 
-  array::Vector::Ptr taud = array::Array::cast<array::Vector>(SSB_taud(model).compute());
+  auto taud = array::cast<array::Vector>(SSB_taud(model).compute());
 
   compute_magnitude(*taud, *result);
 
@@ -260,9 +260,9 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 }
 
 
-array::Array::Ptr SSB_taub::compute_impl() const {
+std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
 
-  array::Vector::Ptr result(new array::Vector(m_grid, "result"));
+  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
   result->metadata() = m_vars[0];
   result->metadata(1) = m_vars[1];
 
@@ -301,11 +301,11 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-array::Array::Ptr SSB_taub_mag::compute_impl() const {
-  array::Scalar::Ptr result(new array::Scalar(m_grid, "taub_mag"));
+std::shared_ptr<array::Array> SSB_taub_mag::compute_impl() const {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "taub_mag"));
   result->metadata(0) = m_vars[0];
 
-  array::Vector::Ptr taub = array::Array::cast<array::Vector>(SSB_taub(model).compute());
+  std::shared_ptr<array::Vector> taub = array::cast<array::Vector>(SSB_taub(model).compute());
 
   compute_magnitude(*taub, *result);
 
@@ -351,8 +351,8 @@ SSB_beta::SSB_beta(const ShallowStressBalance *m)
   set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
 }
 
-array::Array::Ptr SSB_beta::compute_impl() const {
-  array::Scalar::Ptr result(new array::Scalar(m_grid, "beta"));
+std::shared_ptr<array::Array> SSB_beta::compute_impl() const {
+  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "beta"));
   result->metadata(0) = m_vars[0];
 
   const array::Scalar *tauc = m_grid->variables().get_2d_scalar("tauc");

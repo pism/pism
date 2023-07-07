@@ -41,8 +41,8 @@ private:
   std::shared_ptr<array::Forcing> m_shelfbtemp;
   std::shared_ptr<array::Forcing> m_shelfbmassflux;
 
-  array::Scalar::Ptr m_shelf_base_temperature;
-  array::Scalar::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_temperature;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 };
 
 } // end of namespace ocean

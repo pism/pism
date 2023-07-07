@@ -134,23 +134,23 @@ public:
 
   // getters and setters
   double get_number(const std::string &name) const;
-  void set_number(const std::string &name, double value);
+  VariableMetadata &set_number(const std::string &name, double value);
 
   std::vector<double> get_numbers(const std::string &name) const;
-  void set_numbers(const std::string &name, const std::vector<double> &values);
+  VariableMetadata &set_numbers(const std::string &name, const std::vector<double> &values);
 
   std::string get_name() const;
-  void set_name(const std::string &name);
+  VariableMetadata &set_name(const std::string &name);
 
   std::string get_string(const std::string &name) const;
-  void set_string(const std::string &name, const std::string &value);
-  void set_units_without_validation(const std::string &value);
+  VariableMetadata &set_string(const std::string &name, const std::string &value);
+  VariableMetadata &set_units_without_validation(const std::string &value);
 
   bool get_time_independent() const;
-  void set_time_independent(bool flag);
+  VariableMetadata &set_time_independent(bool flag);
 
   io::Type get_output_type() const;
-  void set_output_type(io::Type type);
+  VariableMetadata &set_output_type(io::Type type);
 
   void clear_all_doubles();
   void clear_all_strings();

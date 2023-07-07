@@ -50,7 +50,7 @@ private:
 
   std::shared_ptr<array::Forcing> m_2d_offsets;
 
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace atmosphere

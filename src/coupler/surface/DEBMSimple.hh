@@ -86,7 +86,7 @@ private:
   //! cached surface mass balance rate
   array::Scalar m_mass_flux;
 
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_temperature;
 
   //! snow depth (reset once a year)
   array::Scalar m_snow_depth;
@@ -95,13 +95,13 @@ private:
   std::shared_ptr<array::Forcing> m_air_temp_sd;
 
   //! total accumulation during the last time step
-  array::Scalar::Ptr m_accumulation;
+  std::shared_ptr<array::Scalar> m_accumulation;
 
   //! total melt during the last time step
-  array::Scalar::Ptr m_melt;
+  std::shared_ptr<array::Scalar> m_melt;
 
   //! total runoff during the last time step
-  array::Scalar::Ptr m_runoff;
+  std::shared_ptr<array::Scalar> m_runoff;
 
   //! total temperature melt during the last time step
   array::Scalar m_temperature_driven_melt;

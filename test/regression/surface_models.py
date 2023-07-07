@@ -749,7 +749,7 @@ class ISMIP6(TestCase):
 
         # write time-independent fields
         for v in [usurf, SMB_ref, T_ref]:
-            v.set_time_independent(True)
+            v.metadata().set_time_independent(True)
             v.write(out)
 
         out.close()

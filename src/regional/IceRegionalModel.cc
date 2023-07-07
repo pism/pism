@@ -53,12 +53,12 @@ void IceRegionalModel::allocate_storage() {
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
   m_no_model_mask.metadata(0)
-      .long_name(
-          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
+      .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
+      .set_time_independent(true)
+      .set_output_type(io::PISM_INT); // no units and no standard name
   m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
   m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
-  m_no_model_mask.set_time_independent(true);
-  m_no_model_mask.metadata().set_output_type(io::PISM_INT);
+
   m_no_model_mask.set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
@@ -332,9 +332,9 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
                                 model->geometry().ice_thickness,
@@ -359,9 +359,9 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
                                           model->geometry().ice_thickness,
@@ -386,9 +386,9 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Array3D::Ptr result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),

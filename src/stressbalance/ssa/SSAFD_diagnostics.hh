@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,7 +31,7 @@ class SSAFD_nuH : public Diag<SSAFD>
 public:
   SSAFD_nuH(const SSAFD *m);
 protected:
-  virtual array::Array::Ptr compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 } // end of namespace stressbalance
 } // end of namespace pism

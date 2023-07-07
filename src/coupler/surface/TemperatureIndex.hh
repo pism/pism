@@ -84,7 +84,7 @@ protected:
   //! cached surface mass balance rate
   array::Scalar m_mass_flux;
 
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_temperature;
 
   //! firn depth
   array::Scalar m_firn_depth;
@@ -96,13 +96,13 @@ protected:
   std::shared_ptr<array::Forcing> m_air_temp_sd;
 
   //! total accumulation during the last time step
-  array::Scalar::Ptr m_accumulation;
+  std::shared_ptr<array::Scalar> m_accumulation;
 
   //! total melt during the last time step
-  array::Scalar::Ptr m_melt;
+  std::shared_ptr<array::Scalar> m_melt;
 
   //! total runoff during the last time step
-  array::Scalar::Ptr m_runoff;
+  std::shared_ptr<array::Scalar> m_runoff;
 
   bool m_sd_use_param, m_sd_file_set;
   double m_sd_param_a, m_sd_param_b;

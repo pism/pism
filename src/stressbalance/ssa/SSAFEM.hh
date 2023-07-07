@@ -107,9 +107,9 @@ protected:
 
   virtual void solve(const Inputs &inputs);
 
-  TerminationReason::Ptr solve_with_reason(const Inputs &inputs);
+  std::shared_ptr<TerminationReason> solve_with_reason(const Inputs &inputs);
 
-  TerminationReason::Ptr solve_nocache();
+  std::shared_ptr<TerminationReason> solve_nocache();
 
   //! Adaptor for gluing SNESDAFormFunction callbacks to an SSAFEM.
   /* The callbacks from SNES are mediated via SNESDAFormFunction, which has the

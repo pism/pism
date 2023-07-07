@@ -1190,11 +1190,11 @@ void Blatter::compute_averaged_velocity(array::Vector &result) {
 }
 
 
-array::Array3D::Ptr Blatter::velocity_u_sigma() const {
+std::shared_ptr<array::Array3D> Blatter::velocity_u_sigma() const {
   return m_u_sigma;
 }
 
-array::Array3D::Ptr Blatter::velocity_v_sigma() const {
+std::shared_ptr<array::Array3D> Blatter::velocity_v_sigma() const {
   return m_v_sigma;
 }
 

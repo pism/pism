@@ -45,26 +45,26 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
         .long_name("reference surface mass balance rate")
         .units("kg m-2 s-1")
         .output_units("kg m-2 year-1")
-        .standard_name("land_ice_surface_specific_mass_balance_flux");
+        .standard_name("land_ice_surface_specific_mass_balance_flux")
+        .set_time_independent(true);
 
     auto smb_max = m_config->get_number("surface.given.smb_max", "kg m-2 second-1");
     m_mass_flux_reference.metadata()["valid_range"] = { -smb_max, smb_max };
-    m_mass_flux_reference.set_time_independent(true);
 
     m_surface_reference.metadata(0)
         .long_name("reference surface altitude")
         .units("m")
-        .standard_name("surface_altitude");
+        .standard_name("surface_altitude")
+        .set_time_independent(true);
 
     m_surface_reference.metadata()["valid_range"] = { 0.0, m_grid->Lz() };
-    m_surface_reference.set_time_independent(true);
 
     m_temperature_reference.metadata(0)
         .long_name("reference temperature")
-        .units("Kelvin");
+        .units("Kelvin")
+        .set_time_independent(true);
 
     m_temperature_reference.metadata()["valid_range"] = { 0.0, 373.15 };
-    m_temperature_reference.set_time_independent(true);
   }
 
   // allocate storage for time-dependent inputs

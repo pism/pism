@@ -49,8 +49,8 @@ protected:
   std::shared_ptr<array::Forcing> m_air_temp_anomaly;
   std::shared_ptr<array::Forcing> m_precipitation_anomaly;
 
-  array::Scalar::Ptr m_precipitation;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_precipitation;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace atmosphere

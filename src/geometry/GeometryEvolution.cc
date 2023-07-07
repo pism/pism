@@ -1067,8 +1067,8 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "flux_divergence"));
+  std::shared_ptr<array::Array> compute_impl() const {
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "flux_divergence"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->flux_divergence());
@@ -1085,7 +1085,7 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
     auto result = std::make_shared<array::Staggered>(m_grid, "flux_staggered");
 
     result->metadata(0) = m_vars[0];

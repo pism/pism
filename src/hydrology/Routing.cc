@@ -45,8 +45,8 @@ public:
   }
 
 protected:
-  virtual array::Array::Ptr compute_impl() const {
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "bwp"));
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "bwp"));
     result->metadata() = m_vars[0];
     result->copy_from(model->subglacial_water_pressure());
     return result;
@@ -69,10 +69,10 @@ public:
   }
 
 protected:
-  virtual array::Array::Ptr compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl() const {
     double fill_value = m_fill_value;
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "bwprel"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "bwprel"));
     result->metadata(0) = m_vars[0];
 
     const array::Scalar
@@ -109,9 +109,9 @@ public:
   }
 
 protected:
-  virtual array::Array::Ptr compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "effbwp"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "effbwp"));
     result->metadata() = m_vars[0];
 
     const array::Scalar
@@ -145,8 +145,8 @@ public:
   }
 
 protected:
-  virtual array::Array::Ptr compute_impl() const {
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "wallmelt"));
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "wallmelt"));
     result->metadata() = m_vars[0];
 
     const array::Scalar &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
@@ -174,7 +174,7 @@ public:
               "m s-1", "m s-1", 1);
   }
 protected:
-  virtual array::Array::Ptr compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl() const {
     auto result = std::make_shared<array::Staggered>(m_grid, "bwatvel");
     result->metadata(0) = m_vars[0];
     result->metadata(1) = m_vars[1];
@@ -232,9 +232,9 @@ public:
   }
 
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "hydraulic_potential"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "hydraulic_potential"));
     result->metadata(0) = m_vars[0];
 
     const array::Scalar        &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");

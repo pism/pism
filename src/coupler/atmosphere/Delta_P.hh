@@ -50,7 +50,7 @@ private:
 
   std::shared_ptr<array::Forcing> m_2d_offsets;
 
-  array::Scalar::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_precipitation;
 };
 
 } // end of namespace atmosphere

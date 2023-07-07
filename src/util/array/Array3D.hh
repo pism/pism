@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 PISM Authors
+/* Copyright (C) 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,9 +41,6 @@ public:
           unsigned int stencil_width = 1);
 
   virtual ~Array3D() = default;
-
-  typedef std::shared_ptr<Array3D> Ptr;
-  typedef std::shared_ptr<const Array3D> ConstPtr;
 
   std::shared_ptr<Array3D> duplicate() const;
 

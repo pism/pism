@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2019, 2020, 2022 PISM Authors
+/* Copyright (C) 2016, 2019, 2020, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,9 +29,6 @@ namespace array {
 //! "Cell type" mask. Adds convenience methods to `array::Scalar`.
 class CellType : public Scalar {
 public:
-  typedef std::shared_ptr<CellType> Ptr;
-  typedef std::shared_ptr<const CellType> ConstPtr;
-
   CellType(std::shared_ptr<const Grid> grid, const std::string &name);
 
   inline bool ocean(int i, int j) const {
@@ -74,9 +71,6 @@ protected:
  */
 class CellType1 : public CellType {
 public:
-  typedef std::shared_ptr<CellType1> Ptr;
-  typedef std::shared_ptr<const CellType1> ConstPtr;
-
   CellType1(std::shared_ptr<const Grid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
@@ -122,9 +116,6 @@ protected:
  */
 class CellType2 : public CellType1 {
 public:
-  typedef std::shared_ptr<CellType2> Ptr;
-  typedef std::shared_ptr<const CellType2> ConstPtr;
-
   CellType2(std::shared_ptr<const Grid> grid, const std::string &name);
 };
 

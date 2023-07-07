@@ -57,7 +57,7 @@ private:
   array::Scalar m_target_thickness;
   array::Scalar m_ftt_mask;
 
-  array::Scalar::Ptr m_mass_flux;
+  std::shared_ptr<array::Scalar> m_mass_flux;
 };
 
 } // end of namespace surface

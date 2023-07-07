@@ -29,7 +29,7 @@
 namespace pism {
 namespace atmosphere {
 
-array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar> AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
   auto result = std::make_shared<array::Scalar>(grid, "air_temp");
 
   result->metadata(0)
@@ -39,7 +39,7 @@ array::Scalar::Ptr AtmosphereModel::allocate_temperature(std::shared_ptr<const G
   return result;
 }
 
-array::Scalar::Ptr AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar> AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
   auto result = std::make_shared<array::Scalar>(grid, "precipitation");
 
   result->metadata(0)
@@ -116,9 +116,9 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_snapshot"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "air_temp_snapshot"));
     result->metadata(0) = m_vars[0];
 
     std::vector<double> current_time = { m_grid->ctx()->time()->current() };
@@ -162,9 +162,9 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_air_temp"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "effective_air_temp"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->air_temperature());
@@ -187,9 +187,9 @@ public:
               "kg m-2 second-1", "kg m-2 year-1", 0);
   }
 protected:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "effective_precipitation"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "effective_precipitation"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->precipitation());

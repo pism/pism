@@ -40,7 +40,7 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  array::Scalar::Ptr m_frontal_melt_rate;
+  std::shared_ptr<array::Scalar> m_frontal_melt_rate;
 };
 
 } // end of namespace frontalmelt

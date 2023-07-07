@@ -1751,7 +1751,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
             "Pa s m", "kPa s m", 1);
 }
 
-array::Array::Ptr SSAFD_nuH::compute_impl() const {
+std::shared_ptr<array::Array> SSAFD_nuH::compute_impl() const {
 
   auto result = std::make_shared<array::Staggered>(m_grid, "nuH");
 

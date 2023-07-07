@@ -44,11 +44,12 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
   m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
-  m_ftt_mask.metadata(0).long_name(
-      "mask specifying where to apply the force-to-thickness mechanism"); // no units and no standard name
+  m_ftt_mask.metadata(0)
+      .long_name("mask specifying where to apply the force-to-thickness mechanism")
+      .set_output_type(io::PISM_INT)
+      .set_time_independent(true);
+
   m_ftt_mask.set(1.0); // default: applied in whole domain
-  m_ftt_mask.metadata().set_output_type(io::PISM_INT);
-  m_ftt_mask.metadata().set_time_independent(true);
 
   m_mass_flux = allocate_mass_flux(g);
 

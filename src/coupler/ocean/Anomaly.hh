@@ -37,7 +37,7 @@ protected:
   virtual const array::Scalar& shelf_base_mass_flux_impl() const;
 
 protected:
-  array::Scalar::Ptr m_shelf_base_mass_flux;
+  std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 
   std::shared_ptr<array::Forcing> m_shelf_base_mass_flux_anomaly;
 

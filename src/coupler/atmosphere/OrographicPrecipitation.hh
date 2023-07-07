@@ -48,7 +48,7 @@ private:
 protected:
   std::string m_reference;
 
-  array::Scalar::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_precipitation;
 
   //! Storage on rank zero. Used to pass the load to the serial orographic precipitation
   //! Model.

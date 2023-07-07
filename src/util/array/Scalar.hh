@@ -30,9 +30,6 @@ namespace array {
 /** A class for storing and accessing scalar 2D fields. */
 class Scalar : public Array2D<double> {
 public:
-  typedef std::shared_ptr<Scalar> Ptr;
-  typedef std::shared_ptr<const Scalar> ConstPtr;
-
   Scalar(std::shared_ptr<const Grid> grid, const std::string &name);
 
   std::shared_ptr<Scalar> duplicate() const;
@@ -55,9 +52,6 @@ inline int Scalar::as_int(int i, int j) const {
  */
 class Scalar1 : public Scalar {
 public:
-  typedef std::shared_ptr<Scalar1> Ptr;
-  typedef std::shared_ptr<const Scalar1> ConstPtr;
-
   Scalar1(std::shared_ptr<const Grid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
@@ -72,9 +66,6 @@ protected:
  */
 class Scalar2 : public Scalar1 {
 public:
-  typedef std::shared_ptr<Scalar2> Ptr;
-  typedef std::shared_ptr<const Scalar2> ConstPtr;
-
   Scalar2(std::shared_ptr<const Grid> grid, const std::string &name);
 };
 
@@ -116,10 +107,6 @@ double max(const array::Scalar &input);
 double absmax(const array::Scalar &input);
 
 void apply_mask(const array::Scalar &M, double fill, array::Scalar &result);
-
-void compute_magnitude(const array::Scalar &v_x,
-                       const array::Scalar &v_y,
-                       array::Scalar &result);
 
 } // end of namespace array
 

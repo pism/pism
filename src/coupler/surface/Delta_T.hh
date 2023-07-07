@@ -47,7 +47,7 @@ protected:
 
   std::unique_ptr<ScalarForcing> m_forcing;
 
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

@@ -51,8 +51,8 @@ protected:
   MaxTimestep max_timestep_impl(double t) const;
 
 protected:
-  array::Scalar::Ptr m_mass_flux;
-  array::Scalar::Ptr m_temperature;
+  std::shared_ptr<array::Scalar> m_mass_flux;
+  std::shared_ptr<array::Scalar> m_temperature;
 };
 
 } // end of namespace surface

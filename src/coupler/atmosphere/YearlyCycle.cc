@@ -57,8 +57,8 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
       .long_name("precipitation rate")
       .units("kg m-2 second-1")
       .output_units("kg m-2 year-1")
-      .standard_name("precipitation_flux");
-  m_precipitation.set_time_independent(true);
+      .standard_name("precipitation_flux")
+      .set_time_independent(true);
 }
 
 //! Reads in the precipitation data from the input file.
@@ -166,9 +166,9 @@ public:
               "Kelvin", "Kelvin", 0);
   }
 private:
-  array::Array::Ptr compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl() const {
 
-    array::Scalar::Ptr result(new array::Scalar(m_grid, "air_temp_mean_summer"));
+    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "air_temp_mean_summer"));
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->mean_summer_temp());

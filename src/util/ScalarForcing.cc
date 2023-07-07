@@ -212,7 +212,7 @@ ScalarForcing::ScalarForcing(const Context &ctx, const std::string &prefix,
   m_impl->period = 0.0;
   m_impl->period_start = 0.0;
 
-  Config::ConstPtr config = ctx.config();
+  auto config = ctx.config();
 
   auto filename = config->get_string(prefix + ".file");
   bool periodic = config->get_flag(prefix + ".periodic");

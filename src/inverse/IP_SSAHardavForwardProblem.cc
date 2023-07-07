@@ -142,7 +142,7 @@ void IP_SSAHardavForwardProblem::set_design(array::Scalar &new_zeta) {
 //! Sets the current value of the design variable \f$\zeta\f$ and solves the %SSA to find the associated \f$u_{\rm SSA}\f$.
 /* Use this method for inverse methods employing the reduced gradient. Use this method
 in conjuction with apply_linearization and apply_linearization_transpose.*/
-TerminationReason::Ptr IP_SSAHardavForwardProblem::linearize_at(array::Scalar &zeta) {
+std::shared_ptr<TerminationReason> IP_SSAHardavForwardProblem::linearize_at(array::Scalar &zeta) {
   this->set_design(zeta);
   return this->solve_nocache();
 }

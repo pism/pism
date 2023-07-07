@@ -73,7 +73,7 @@ protected:
   std::shared_ptr<ScalarForcing> m_forcing;
   mutable std::vector<double> m_scaling_values;
 
-  array::Scalar::Ptr m_precipitation;
+  std::shared_ptr<array::Scalar> m_precipitation;
 };
 
 } // end of namespace atmosphere

@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016,2017,2020,2022  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017,2020,2022,2023  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,10 +56,9 @@ class IPTaoTikhonovProblemListener {
 public:
   typedef std::shared_ptr<IPTaoTikhonovProblemListener> Ptr;
 
-
-  typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
-  typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
-  typedef typename ForwardProblem::StateVec1::Ptr StateVec1Ptr;
+  typedef std::shared_ptr<typename ForwardProblem::DesignVec> DesignVecPtr;
+  typedef std::shared_ptr<typename ForwardProblem::StateVec> StateVecPtr;
+  typedef std::shared_ptr<typename ForwardProblem::StateVec1> StateVec1Ptr;
 
   IPTaoTikhonovProblemListener() {
   }
@@ -174,11 +173,11 @@ public:
   typedef typename ForwardProblem::StateVec1 StateVec1;
 
   typedef typename ForwardProblem::DesignVecGhosted DesignVecGhosted;
-  typedef typename ForwardProblem::DesignVecGhosted::Ptr DesignVecGhostedPtr;
+  typedef std::shared_ptr<typename ForwardProblem::DesignVecGhosted> DesignVecGhostedPtr;
 
-  typedef typename ForwardProblem::DesignVec::Ptr DesignVecPtr;
-  typedef typename ForwardProblem::StateVec::Ptr StateVecPtr;
-  typedef typename ForwardProblem::StateVec1::Ptr StateVec1Ptr;
+  typedef std::shared_ptr<typename ForwardProblem::DesignVec> DesignVecPtr;
+  typedef std::shared_ptr<typename ForwardProblem::StateVec> StateVecPtr;
+  typedef std::shared_ptr<typename ForwardProblem::StateVec1> StateVec1Ptr;
 
   /*! Constructs a Tikhonov problem:
   
@@ -237,7 +236,7 @@ public:
 
   //! Callback from TaoBasicSolver to form the starting iterate for the minimization.  See also
   //  setInitialGuess.
-  virtual TerminationReason::Ptr formInitialGuess(Vec *v) {
+  virtual std::shared_ptr<TerminationReason> formInitialGuess(Vec *v) {
     *v = m_dGlobal.vec();
     return GenericTerminationReason::success();
   }
@@ -414,7 +413,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
     PISM_CHK(ierr, "DMGlobalToLocalEnd");
   }
 
-  TerminationReason::Ptr reason = m_forward.linearize_at(*m_d);
+  auto reason = m_forward.linearize_at(*m_d);
   if (reason->failed()) {
     Logger::ConstPtr log = m_grid->ctx()->log();
     log->message(2,

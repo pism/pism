@@ -40,7 +40,7 @@ private:
 
   const array::Scalar& shelf_base_temperature_impl() const;
 
-  array::Scalar::Ptr m_shelf_base_temperature;
+  std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::unique_ptr<ScalarForcing> m_forcing;
 };
 

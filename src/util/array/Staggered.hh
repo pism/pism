@@ -36,9 +36,6 @@ class Staggered : public Array {
 public:
   Staggered(std::shared_ptr<const Grid> grid, const std::string &name);
 
-  typedef std::shared_ptr<array::Staggered> Ptr;
-  typedef std::shared_ptr<const array::Staggered> ConstPtr;
-
   inline double& operator() (int i, int j, int k);
   inline const double& operator() (int i, int j, int k) const;
 
