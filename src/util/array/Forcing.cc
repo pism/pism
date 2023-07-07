@@ -240,7 +240,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
 
     File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
     auto var = file.find_variable(m_impl->metadata[0].get_name(),
-                                  m_impl->metadata[0].get_string("standard_name"));
+                                  m_impl->metadata[0]["standard_name"]);
     if (not var.exists) {
       throw RuntimeError(PISM_ERROR_LOCATION, "variable not found");
     }
@@ -316,7 +316,7 @@ void Forcing::init_periodic_data(const File &file) {
   auto ctx = grid()->ctx();
 
   auto name = get_name();
-  auto n_records = file.nrecords(name, metadata().get_string("standard_name"),
+  auto n_records = file.nrecords(name, metadata()["standard_name"],
                                  ctx->unit_system());
 
   auto buffer_required = n_records + 2 * static_cast<int>(m_data->interp_type == LINEAR);

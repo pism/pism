@@ -592,7 +592,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   const Logger &log = *grid.ctx()->log();
 
   // Find the variable:
-  auto var = file.find_variable(variable.get_name(), variable.get_string("standard_name"));
+  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
   if (not var.exists) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.",
@@ -650,10 +650,10 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   read_distributed_array(file, grid, var.name, nlevels, time, output);
 
   std::string input_units = file.read_text_attribute(var.name, "units");
-  const std::string &internal_units = variable.get_string("units");
+  const std::string &internal_units = variable["units"];
 
   if (input_units.empty() and not internal_units.empty()) {
-    const std::string &long_name = variable.get_string("long_name");
+    const std::string &long_name = variable["long_name"];
     log.message(2,
                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                "              Assuming that it is in '%s'.\n",
@@ -721,8 +721,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   unsigned int nlevels = std::max(var.levels().size(), (size_t)1);
 
   std::string
-    units               = var.get_string("units"),
-    output_units = var.get_string("output_units");
+    units               = var["units"],
+    output_units = var["output_units"];
 
   if (units != output_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
@@ -762,7 +762,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              InterpolationType interpolation_type,
                              double *output) {
   unsigned int t_length = file.nrecords(var.get_name(),
-                                        var.get_string("standard_name"),
+                                        var["standard_name"],
                                         var.unit_system());
 
   regrid_spatial_variable(var, grid, file, t_length - 1, flag,
@@ -904,7 +904,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
-  auto var = file.find_variable(variable.get_name(), variable.get_string("standard_name"));
+  auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
   if (var.exists) {                      // the variable was found successfully
 
@@ -935,7 +935,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // be in PISM (MKS) units.
 
     std::string input_units = file.read_text_attribute(var.name, "units");
-    std::string internal_units = variable.get_string("units");
+    std::string internal_units = variable["units"];
 
     if (input_units.empty() and not internal_units.empty()) {
       log.message(2,
@@ -983,8 +983,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // If it is optional, fill with the provided default value.
     // units::Converter constructor will make sure that units are compatible.
     units::Converter c(sys,
-                       variable.get_string("units"),
-                       variable.get_string("output_units"));
+                       variable["units"],
+                       variable["output_units"]);
 
     std::string spacer(variable.get_name().size(), ' ');
     log.message(2,
@@ -1035,8 +1035,8 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
   try {
     // Find the variable:
     std::string
-      long_name      = metadata.get_string("long_name"),
-      standard_name  = metadata.get_string("standard_name");
+      long_name      = metadata["long_name"],
+      standard_name  = metadata["standard_name"];
 
     auto var = file.find_variable(name, standard_name);
 
@@ -1063,7 +1063,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
     file.read_variable(var.name, {0}, {length}, data.data());
 
     units::System::Ptr system = metadata.unit_system();
-    units::Unit internal_units(system, metadata.get_string("units")),
+    units::Unit internal_units(system, metadata["units"]),
       input_units(system, "1");
 
     std::string input_units_string = file.read_text_attribute(var.name, "units");
@@ -1113,7 +1113,7 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
     // convert to output units:
     units::Converter(metadata.unit_system(),
                      metadata["units"],
-                     metadata.get_string("output_units")).convert_doubles(tmp.data(),
+                     metadata["output_units"]).convert_doubles(tmp.data(),
                                                                                  tmp.size());
 
     file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
@@ -1157,7 +1157,7 @@ void read_time_bounds(const File &file,
 
   try {
     auto system = metadata.unit_system();
-    units::Unit internal_units(system, metadata.get_string("units"));
+    units::Unit internal_units(system, metadata["units"]);
 
     // Find the variable:
     if (not file.find_variable(name)) {
@@ -1245,9 +1245,8 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
     std::vector<double> tmp = data;
 
     // convert to output units:
-    units::Converter(metadata.unit_system(),
-                     metadata.get_string("units"),
-                     metadata.get_string("output_units")).convert_doubles(tmp.data(), tmp.size());
+    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+        .convert_doubles(tmp.data(), tmp.size());
 
     file.write_variable(name,
                         {(unsigned int)t_start, 0},
@@ -1378,8 +1377,8 @@ void write_attributes(const File &file, const VariableMetadata &variable, io::Ty
 
   try {
     std::string
-      units               = variable.get_string("units"),
-      output_units = variable.get_string("output_units");
+      units               = variable["units"],
+      output_units = variable["output_units"];
 
     bool use_output_units = units != output_units;
 

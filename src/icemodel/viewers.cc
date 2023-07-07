@@ -42,10 +42,8 @@ void IceModel::view_field(const array::Array *field) {
 
   if (m_viewers[name].empty()) {
     for (size_t k = 0; k < field->ndof(); ++k) {
-      auto dof_name = field->metadata(k).get_string("short_name");
-      auto v = std::make_shared<petsc::Viewer>(m_grid->com,
-                                               dof_name, viewer_size,
-                                               m_grid->Lx(), m_grid->Ly());
+      auto v = std::make_shared<petsc::Viewer>(m_grid->com, field->metadata(k)["short_name"],
+                                               viewer_size, m_grid->Lx(), m_grid->Ly());
       m_viewers[name].emplace_back(v);
     }
   }

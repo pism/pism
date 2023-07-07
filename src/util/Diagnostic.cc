@@ -58,9 +58,8 @@ void Diagnostic::reset_impl() {
  */
 double Diagnostic::to_internal(double x) const {
   std::string
-    out = m_vars.at(0).get_string("output_units");
-  std::string
-    in  = m_vars.at(0).get_string("units");
+    out = m_vars.at(0)["output_units"],
+    in  = m_vars.at(0)["units"];
   return convert(m_sys, x, out, in);
 }
 
@@ -69,8 +68,8 @@ double Diagnostic::to_internal(double x) const {
  */
 double Diagnostic::to_external(double x) const {
   std::string
-    out = m_vars.at(0).get_string("output_units"),
-    in  = m_vars.at(0).get_string("units");
+    out = m_vars.at(0)["output_units"],
+    in  = m_vars.at(0)["units"];
   return convert(m_sys, x, in, out);
 }
 

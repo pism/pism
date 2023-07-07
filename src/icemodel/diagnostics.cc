@@ -2832,11 +2832,11 @@ static void print_diagnostics(const Logger &log, const Metadata &list) {
     for (const auto &v : d.second) {
 
       std::string
-        var_name            = v.get_name(),
-        units               = v.get_string("units"),
-        output_units = v.get_string("output_units"),
-        long_name           = v.get_string("long_name"),
-        comment             = v.get_string("comment");
+        var_name     = v.get_name(),
+        units        = v["units"],
+        output_units = v["output_units"],
+        long_name    = v["long_name"],
+        comment      = v["comment"];
 
       if (not output_units.empty()) {
         units = output_units;
@@ -2869,12 +2869,12 @@ static void print_diagnostics_json(const Logger &log, const Metadata &list) {
     for (const auto &variable : d.second) {
 
       std::string
-        var_name            = variable.get_name(),
-        units               = variable.get_string("units"),
-        output_units = variable.get_string("output_units"),
-        long_name           = variable.get_string("long_name"),
-        standard_name       = variable.get_string("standard_name"),
-        comment             = variable.get_string("comment");
+        var_name      = variable.get_name(),
+        units         = variable["units"],
+        output_units  = variable["output_units"],
+        long_name     = variable["long_name"],
+        standard_name = variable["standard_name"],
+        comment       = variable["comment"];
 
       if (not output_units.empty()) {
         units = output_units;

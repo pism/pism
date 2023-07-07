@@ -156,7 +156,7 @@ void check_consistency_epsg(const MappingInfo &info) {
                                       s.first.c_str());
       }
 
-      std::string string = info.mapping.get_string(s.first);
+      std::string string = info.mapping[s.first];
 
       if (not (string == s.second)) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION, "inconsistent metadata:\n"

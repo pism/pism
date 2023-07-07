@@ -48,8 +48,8 @@ static void report_range(const std::vector<double> &data,
   double max = *std::max_element(data.begin(), data.end());
 
   units::Converter c(unit_system,
-                     metadata.get_string("units"),
-                     metadata.get_string("output_units"));
+                     metadata["units"],
+                     metadata["output_units"]);
   min = c(min);
   max = c(max);
 

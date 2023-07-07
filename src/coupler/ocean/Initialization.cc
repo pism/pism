@@ -37,8 +37,8 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::s
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
   m_shelf_base_mass_flux->set_name("effective_shelf_base_mass_flux");
   // use internal units when saving
-  auto units = m_shelf_base_mass_flux->metadata().get_string("units");
-  m_shelf_base_mass_flux->metadata()["output_units"] = units;
+  auto units = m_shelf_base_mass_flux->metadata()["units"];
+  m_shelf_base_mass_flux->metadata().output_units(units);
 }
 
 void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {

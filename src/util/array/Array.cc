@@ -1172,9 +1172,9 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
 
   for (unsigned int i = 0; i < ndof(); ++i) {
     std::string
-      long_name           = m_impl->metadata[i].get_string("long_name"),
-      units               = m_impl->metadata[i].get_string("units"),
-      output_units = m_impl->metadata[i].get_string("output_units"),
+      long_name           = m_impl->metadata[i]["long_name"],
+      units               = m_impl->metadata[i]["units"],
+      output_units = m_impl->metadata[i]["output_units"],
       title               = pism::printf("%s (%s)",
                                          long_name.c_str(),
                                          output_units.c_str());

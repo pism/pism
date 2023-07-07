@@ -93,7 +93,7 @@ void NetCDFConfig::set_numbers_impl(const std::string &name,
 std::string NetCDFConfig::get_string_impl(const std::string &name) const {
   const VariableMetadata::StringAttrs& strings = m_data.all_strings();
   if (strings.find(name) != strings.end()) {
-    return m_data.get_string(name);
+    return m_data[name];
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,

@@ -71,7 +71,7 @@ void Vars::add(const array::Array &v) {
 
   if (m.has_attribute("standard_name")) {
 
-    std::string standard_name = m.get_string("standard_name");
+    std::string standard_name = m["standard_name"];
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
@@ -99,7 +99,7 @@ void Vars::remove(const std::string &name) {
   if (v != NULL) {              // the argument is a "short" name
     m_variables.erase(name);
     if (m.has_attribute("standard_name")) {
-      std::string std_name = m.get_string("standard_name");
+      std::string std_name = m["standard_name"];
 
       m_standard_names.erase(std_name);
     }
@@ -223,7 +223,7 @@ void Vars::add_shared(VecPtr variable) {
 
   if (m.has_attribute("standard_name")) {
 
-    std::string standard_name = m.get_string("standard_name");
+    std::string standard_name = m["standard_name"];
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {

@@ -541,7 +541,7 @@ const array::Scalar &Hydrology::mass_change_due_to_lateral_flow() const {
 */
 void check_bounds(const array::Scalar &W, double W_max) {
 
-  std::string name = W.metadata().get_string("long_name");
+  std::string name = W.metadata()["long_name"];
 
   auto grid = W.grid();
 

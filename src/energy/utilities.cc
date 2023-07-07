@@ -374,7 +374,7 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
       const unsigned int ks = grid->kBelowHeight(H);
 
       if (G < 0.0 and ks > 0) {
-        auto units = basal_heat_flux.metadata().get_string("units");
+        std::string units = basal_heat_flux.metadata()["units"];
         int Mbz = config->get_number("grid.Mbz");
         const char *quantity = (Mbz > 0 ?
                                 "temperature of the bedrock thermal layer" :
