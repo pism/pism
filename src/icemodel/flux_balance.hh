@@ -163,7 +163,7 @@ public:
     m_factor = m_config->get_number("constants.ice.density");
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata()["units"] = accumulator_units;
+    m_accumulator.metadata().units(accumulator_units);
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0]["cell_methods"] = "time: mean";
@@ -377,29 +377,67 @@ protected:
   AmountKind m_kind;
 };
 
+enum ChangeKind {CALVING, FRONTAL_MELT, FORCED_RETREAT, TOTAL_DISCHARGE};
+
+static void accumulate_changes(const IceModel *model, double factor, ChangeKind kind,
+                               array::Scalar &accumulator) {
+
+  const auto &calving        = model->calving();
+  const auto &frontal_melt   = model->frontal_melt();
+  const auto &forced_retreat = model->forced_retreat();
+
+  auto grid = accumulator.grid();
+
+  bool add_calving        = (kind == CALVING or kind == TOTAL_DISCHARGE);
+  bool add_frontal_melt   = (kind == FRONTAL_MELT or kind == TOTAL_DISCHARGE);
+  bool add_forced_retreat = (kind == FORCED_RETREAT or kind == TOTAL_DISCHARGE);
+
+  array::AccessScope scope{ &accumulator };
+  if (add_calving) {
+    scope.add(calving);
+  }
+  if (add_frontal_melt) {
+    scope.add(frontal_melt);
+  }
+  if (add_forced_retreat) {
+    scope.add(forced_retreat);
+  }
+
+  for (auto p = grid->points(); p; p.next()) {
+    const int i = p.i(), j = p.j();
+
+    if (add_calving) {
+      accumulator(i, j) += factor * calving(i, j);
+    }
+    if (add_frontal_melt) {
+      accumulator(i, j) += factor * frontal_melt(i, j);
+    }
+    if (add_forced_retreat) {
+      accumulator(i, j) += factor * forced_retreat(i, j);
+    }
+  }
+}
+
+
 /*! @brief Report discharge (calving and frontal melt) flux. */
-class DischargeFlux : public DiagAverageRate<IceModel>
-{
+class DischargeFlux : public DiagAverageRate<IceModel> {
 public:
   DischargeFlux(const IceModel *m, AmountKind kind)
-    : DiagAverageRate<IceModel>(m,
-                                kind == AMOUNT
-                                ? "tendency_of_ice_amount_due_to_discharge"
-                                : "tendency_of_ice_mass_due_to_discharge",
-                                TOTAL_CHANGE),
-    m_kind(kind) {
+      : DiagAverageRate<IceModel>(m,
+                                  kind == AMOUNT ? "tendency_of_ice_amount_due_to_discharge" :
+                                                   "tendency_of_ice_mass_due_to_discharge",
+                                  TOTAL_CHANGE),
+        m_kind(kind) {
 
     m_factor = m_config->get_number("constants.ice.density");
 
     auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-    std::string
-      name              = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
-      long_name         = "discharge flux (calving, frontal melt, forced retreat)",
-      accumulator_units = "kg m-2",
-      standard_name     = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
-      internal_units    = "kg m-2 s-1",
-      external_units    = "kg m-2 year-1";
+    std::string name      = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
+                long_name = "discharge flux (calving, frontal melt, forced retreat)",
+                accumulator_units = "kg m-2",
+                standard_name  = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
+                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
     if (kind == MASS) {
       name              = "tendency_of_ice_mass_due_to_discharge";
       long_name         = "discharge flux (calving, frontal melt, forced retreat)";
@@ -409,33 +447,23 @@ public:
       external_units    = "Gt year-1";
     }
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars                            = { SpatialVariableMetadata(m_sys, name) };
     m_accumulator.metadata()["units"] = accumulator_units;
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to ice gain";
   }
 
 protected:
   void update_impl(double dt) {
-    const array::Scalar &calving = model->calving();
-    const array::Scalar &frontal_melt = model->frontal_melt();
-    const array::Scalar &forced_retreat = model->forced_retreat();
 
-    array::AccessScope list{&m_accumulator, &calving, &frontal_melt, &forced_retreat};
-
-    auto cell_area = m_grid->cell_area();
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
-
-      m_accumulator(i, j) += C * (calving(i, j) + frontal_melt(i, j) + forced_retreat(i, j));
-    }
+    accumulate_changes(model,
+                       m_factor * (m_kind == AMOUNT ? 1.0 : m_grid->cell_area()),
+                       TOTAL_DISCHARGE,
+                       m_accumulator);
 
     m_interval_length += dt;
   }
@@ -475,7 +503,7 @@ public:
     }
 
     m_vars = {SpatialVariableMetadata(m_sys, name)};
-    m_accumulator.metadata()["units"] = accumulator_units;
+    m_accumulator.metadata().units(accumulator_units);
 
     set_attrs(long_name, standard_name, internal_units, external_units, 0);
     m_vars[0]["cell_methods"] = "time: mean";
@@ -486,19 +514,11 @@ public:
 
 protected:
   void update_impl(double dt) {
-    const array::Scalar &calving = model->calving();
 
-    array::AccessScope list{&m_accumulator, &calving};
-
-    auto cell_area = m_grid->cell_area();
-
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
-
-      m_accumulator(i, j) += C * calving(i, j);
-    }
+    accumulate_changes(model,
+                       m_factor * (m_kind == AMOUNT ? 1.0 : m_grid->cell_area()),
+                       CALVING,
+                       m_accumulator);
 
     m_interval_length += dt;
   }
