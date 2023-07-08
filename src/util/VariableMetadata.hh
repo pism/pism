@@ -113,23 +113,19 @@ public:
   // setters for common attributes
 
   VariableMetadata &long_name(const std::string &input) {
-    set_string("long_name", input);
-    return *this;
+    return set_string("long_name", input);
   }
 
   VariableMetadata &standard_name(const std::string &input) {
-    set_string("standard_name", input);
-    return *this;
+    return set_string("standard_name", input);
   }
 
   VariableMetadata &units(const std::string &input) {
-    set_string("units", input);
-    return *this;
+    return set_string("units", input);
   }
 
   VariableMetadata &output_units(const std::string &input) {
-    set_string("output_units", input);
-    return *this;
+    return set_string("output_units", input);
   }
 
   // getters and setters
