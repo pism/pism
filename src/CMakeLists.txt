@@ -64,7 +64,6 @@ add_library (pism
   icemodel/diagnostics.cc
   icemodel/diagnostics.cc
   icemodel/energy.cc
-  icemodel/flux_balance.hh
   icemodel/fracture_density.cc
   icemodel/initialization.cc
   icemodel/output.cc
