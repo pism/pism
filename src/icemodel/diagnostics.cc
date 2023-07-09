@@ -94,7 +94,7 @@ protected:
 
       array::AccessScope list{ result.get(), &thickness, &area_specific_volume, &m_last_amount };
 
-      for (Points p(*m_grid); p; p.next()) {
+      for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
 
         // m * (kg / m^3) = kg / m^2
@@ -124,7 +124,7 @@ protected:
 
     array::AccessScope list{ &m_last_amount, &thickness, &area_specific_volume };
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       // m * (kg / m^3) = kg / m^2
@@ -187,7 +187,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &dH, &dV };
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -246,7 +246,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &SMB };
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -301,7 +301,7 @@ protected:
 
     array::AccessScope list{ &m_accumulator, &BMB };
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);
@@ -358,7 +358,7 @@ protected:
 
     auto cell_area = m_grid->cell_area();
 
-    for (Points p(*m_grid); p; p.next()) {
+    for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       double C = m_factor * (m_kind == AMOUNT ? 1.0 : cell_area);

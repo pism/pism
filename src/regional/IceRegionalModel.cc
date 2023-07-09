@@ -326,9 +326,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "ch_temp", m_grid->z())};
-
-    set_attrs("temperature of the cryo-hydrologic system", "",
-              "Kelvin", "Kelvin", 0);
+    m_vars[0].long_name("temperature of the cryo-hydrologic system").units("Kelvin");
   }
 
 protected:
@@ -354,8 +352,7 @@ public:
 
     m_vars = {SpatialVariableMetadata(m_sys, "ch_liqfrac", m_grid->z())};
 
-    set_attrs("liquid water fraction in the cryo-hydrologic system", "",
-              "1", "1", 0);
+    m_vars[0].long_name("liquid water fraction in the cryo-hydrologic system").units("1");
   }
 
 protected:
@@ -380,9 +377,7 @@ public:
     : Diag<IceRegionalModel>(m) {
 
     m_vars = {SpatialVariableMetadata(m_sys, "ch_heat_flux", m_grid->z())};
-
-    set_attrs("rate of cryo-hydrologic warming", "",
-              "W m-3", "W m-3", 0);
+    m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m-3");
   }
 
 protected:

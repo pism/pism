@@ -43,10 +43,10 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "schoofs_theta")};
 
-  set_attrs("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA", "",
-            "1", "", 0);
-  m_vars[0]["valid_min"] = {0};
-  m_vars[0]["valid_max"] = {1};
+  m_vars[0]
+      .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
+      .units("1");
+  m_vars[0]["valid_range"] = {0.0, 1.0};
 }
 
 std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
@@ -66,8 +66,9 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
 
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "topgsmooth")};
-  set_attrs("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
-            "", "m", "m", 0);
+  m_vars[0]
+      .long_name("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
 }
 
 std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
@@ -83,10 +84,11 @@ std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
 SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "thksmooth")};
-  set_attrs("thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA",
-            "", "m", "m", 0);
+  m_vars = { { m_sys, "thksmooth" } };
+  m_vars[0]
+      .long_name(
+          "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
 }
 
 std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
@@ -113,11 +115,8 @@ std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
 SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "diffusivity")};
-
-  set_attrs("diffusivity of SIA mass continuity equation", "",
-            "m2 s-1", "m2 s-1", 0);
+  m_vars = { { m_sys, "diffusivity" } };
+  m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m2 s-1");
 }
 
 std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
@@ -138,14 +137,13 @@ std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
 SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "diffusivity_i"),
-            SpatialVariableMetadata(m_sys, "diffusivity_j")};
-
-  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)", "",
-            "m2 s-1", "m2 s-1", 0);
-  set_attrs("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)", "",
-            "m2 s-1", "m2 s-1", 1);
+  m_vars = { { m_sys, "diffusivity_i" }, { m_sys, "diffusivity_j" } };
+  m_vars[0]
+      .long_name("diffusivity of SIA mass continuity equation on the staggered grid (i-offset)")
+      .units("m2 s-1");
+  m_vars[1]
+      .long_name("diffusivity of SIA mass continuity equation on the staggered grid (j-offset)")
+      .units("m2 s-1");
 }
 
 static void copy_staggered_vec(const array::Staggered &input, array::Staggered &output) {
@@ -167,7 +165,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const 
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  copy_staggered_vec(model->diffusivity(), *result.get());
+  copy_staggered_vec(model->diffusivity(), *result);
 
   return result;
 }
@@ -175,14 +173,9 @@ std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const 
 SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "h_x_i"),
-            SpatialVariableMetadata(m_sys, "h_x_j")};
-
-  set_attrs("the x-component of the surface gradient, i-offset", "",
-            "", "", 0);
-  set_attrs("the x-component of the surface gradient, j-offset", "",
-            "", "", 1);
+  m_vars = { { m_sys, "h_x_i" }, { m_sys, "h_x_j" } };
+  m_vars[0].long_name("the x-component of the surface gradient, i-offset").units("1");
+  m_vars[1].long_name("the x-component of the surface gradient, j-offset").units("1");
 }
 
 std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
@@ -200,14 +193,9 @@ std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
 SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "h_y_i"),
-            SpatialVariableMetadata(m_sys, "h_y_j")};
-
-  set_attrs("the y-component of the surface gradient, i-offset", "",
-            "", "", 0);
-  set_attrs("the y-component of the surface gradient, j-offset", "",
-            "", "", 1);
+  m_vars = { { m_sys, "h_y_i" }, { m_sys, "h_y_j" } };
+  m_vars[0].long_name("the y-component of the surface gradient, i-offset").units("1");
+  m_vars[1].long_name("the y-component of the surface gradient, j-offset").units("1");
 }
 
 std::shared_ptr<array::Array> SIAFD_h_y::compute_impl() const {

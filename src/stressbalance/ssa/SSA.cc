@@ -416,12 +416,11 @@ SSA_taud::SSA_taud(const SSA *m)
   m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
             SpatialVariableMetadata(m_sys, "taud_y")};
 
-  set_attrs("X-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
+  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
 
   for (auto &v : m_vars) {
+    v.units("Pa");
     v["comment"] = "this is the driving stress used by the SSA solver";
   }
 }
@@ -443,10 +442,8 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "taud_mag")};
 
-  set_attrs("magnitude of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  m_vars[0]["comment"] =
-    "this is the magnitude of the driving stress used by the SSA solver";
+  m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
+  m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSA solver";
 }
 
 std::shared_ptr<array::Array> SSA_taud_mag::compute_impl() const {

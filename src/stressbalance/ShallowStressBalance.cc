@@ -175,13 +175,11 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
   // set metadata:
   m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
             SpatialVariableMetadata(m_sys, "taud_y")};
-
-  set_attrs("X-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the driving shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
+  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
 
   for (auto &v : m_vars) {
+    v.units("Pa");
     v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
@@ -198,37 +196,34 @@ std::shared_ptr<array::Array> SSB_taud::compute_impl() const {
   result->metadata(1) = m_vars[1];
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
-  const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
+  const array::Scalar *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
 
   double standard_gravity = m_config->get_number("constants.standard_gravity"),
-    ice_density = m_config->get_number("constants.ice.density");
+         ice_density      = m_config->get_number("constants.ice.density");
 
-  array::AccessScope list{surface, thickness, result.get()};
+  array::AccessScope list{ surface, thickness, result.get() };
 
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    double pressure = ice_density * standard_gravity * (*thickness)(i,j);
+    double pressure = ice_density * standard_gravity * (*thickness)(i, j);
     if (pressure <= 0.0) {
-      (*result)(i,j).u = 0.0;
-      (*result)(i,j).v = 0.0;
+      (*result)(i, j).u = 0.0;
+      (*result)(i, j).v = 0.0;
     } else {
-      (*result)(i,j).u = - pressure * diff_x_p(*surface, i,j);
-      (*result)(i,j).v = - pressure * diff_y_p(*surface, i,j);
+      (*result)(i, j).u = -pressure * diff_x_p(*surface, i, j);
+      (*result)(i, j).v = -pressure * diff_y_p(*surface, i, j);
     }
   }
 
   return result;
 }
 
-SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m)
-  : Diag<ShallowStressBalance>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_mag")};
-
-  set_attrs("magnitude of the gravitational driving stress at the base of ice", "",
-            "Pa", "Pa", 0);
+SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
+  m_vars = { SpatialVariableMetadata(m_sys, "taud_mag") };
+  m_vars[0]
+      .long_name("magnitude of the gravitational driving stress at the base of ice")
+      .units("Pa");
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
@@ -243,18 +238,14 @@ std::shared_ptr<array::Array> SSB_taud_mag::compute_impl() const {
   return result;
 }
 
-SSB_taub::SSB_taub(const ShallowStressBalance *m)
-  : Diag<ShallowStressBalance>(m) {
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taub_x"),
-            SpatialVariableMetadata(m_sys, "taub_y")};
+SSB_taub::SSB_taub(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
+  m_vars = { SpatialVariableMetadata(m_sys, "taub_x"), SpatialVariableMetadata(m_sys, "taub_y") };
 
-  set_attrs("X-component of the shear stress at the base of ice", "",
-            "Pa", "Pa", 0);
-  set_attrs("Y-component of the shear stress at the base of ice", "",
-            "Pa", "Pa", 1);
+  m_vars[0].long_name("X-component of the shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the shear stress at the base of ice");
 
   for (auto &v : m_vars) {
+    v.units("Pa");
     v["comment"] = "this field is purely diagnostic (not used by the model)";
   }
 }
@@ -263,7 +254,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m)
 std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
 
   std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
-  result->metadata() = m_vars[0];
+  result->metadata()  = m_vars[0];
   result->metadata(1) = m_vars[1];
 
   const auto &velocity = model->velocity();
@@ -272,13 +263,13 @@ std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
 
   const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
 
-  array::AccessScope list{tauc, &velocity, &mask, result.get()};
+  array::AccessScope list{ tauc, &velocity, &mask, result.get() };
   for (auto p = m_grid->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.grounded_ice(i,j)) {
-      double beta = basal_sliding_law->drag((*tauc)(i, j), velocity(i, j).u, velocity(i, j).v);
-      (*result)(i, j) = - beta * velocity(i, j);
+    if (mask.grounded_ice(i, j)) {
+      double beta     = basal_sliding_law->drag((*tauc)(i, j), velocity(i, j).u, velocity(i, j).v);
+      (*result)(i, j) = -beta * velocity(i, j);
     } else {
       (*result)(i, j) = 0.0;
     }
@@ -287,17 +278,15 @@ std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
   return result;
 }
 
-SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m)
-  : Diag<ShallowStressBalance>(m) {
+SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "strbasemag" : "taub_mag")};
-
-  set_attrs("magnitude of the basal shear stress at the base of ice",
-            "land_ice_basal_drag", // ISMIP6 "standard" name
-            "Pa", "Pa", 0);
+  m_vars = { SpatialVariableMetadata(m_sys, ismip6 ? "strbasemag" : "taub_mag") };
+  m_vars[0]
+      .long_name("magnitude of the basal shear stress at the base of ice")
+      .standard_name("land_ice_basal_drag") // ISMIP6 "standard" name
+      .units("Pa");
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
@@ -318,13 +307,12 @@ std::shared_ptr<array::Array> SSB_taub_mag::compute_impl() const {
  *
  * The only use I can think of right now is testing.
  */
-PrescribedSliding::PrescribedSliding(std::shared_ptr<const Grid> g)
-  : ZeroSliding(g) {
+PrescribedSliding::PrescribedSliding(std::shared_ptr<const Grid> g) : ZeroSliding(g) {
   // empty
 }
 
 void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
-  (void) inputs;
+  (void)inputs;
   if (full_update) {
     m_basal_frictional_heating.set(0.0);
   }
@@ -336,19 +324,15 @@ void PrescribedSliding::init_impl() {
   auto input_filename = m_config->get_string("stress_balance.prescribed_sliding.file");
 
   if (input_filename.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "stress_balance.prescribed_sliding.file is required.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "stress_balance.prescribed_sliding.file is required.");
   }
 
   m_velocity.regrid(input_filename, io::CRITICAL);
 }
 
-SSB_beta::SSB_beta(const ShallowStressBalance *m)
-  : Diag<ShallowStressBalance>(m) {
-  // set metadata:
+SSB_beta::SSB_beta(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "beta")};
-
-  set_attrs("basal drag coefficient", "", "Pa s / m", "Pa s / m", 0);
+  m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
 }
 
 std::shared_ptr<array::Array> SSB_beta::compute_impl() const {

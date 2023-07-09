@@ -147,17 +147,14 @@ public:
                                    "no_gl_retreat_smb_adjustment",
                                    RATE)
   {
-
-    m_vars = {{m_sys, "no_gl_retreat_smb_adjustment"}};
     m_accumulator.metadata()["units"] = "kg m-2";
 
-    set_attrs("SMB adjustment needed to maintain grounded ice extent",
-              "",               // no standard name
-              "kg m-2 s-1",
-              "kg m-2 year-1",
-              0);
+    m_vars = { { m_sys, "no_gl_retreat_smb_adjustment" } };
+    m_vars[0]
+        .long_name("SMB adjustment needed to maintain grounded ice extent")
+        .units("kg m-2 s-1")
+        .output_units("kg m-2 year-1");
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 

@@ -571,14 +571,12 @@ namespace diagnostics {
 class DEBMSInsolation : public Diag<DEBMSimple>
 {
 public:
-  DEBMSInsolation(const DEBMSimple *m)
-    : Diag<DEBMSimple>(m) {
-
-    m_vars = {{m_sys, "insolation"}};
-
-    set_attrs("mean top of atmosphere insolation "
-              "during the period when the sun is above the critical angle Phi", "",
-              "W m-2", "W m-2", 0);
+  DEBMSInsolation(const DEBMSimple *m) : Diag<DEBMSimple>(m) {
+    m_vars = { { m_sys, "insolation" } };
+    m_vars[0]
+        .long_name(
+            "mean top of atmosphere insolation during the period when the sun is above the critical angle Phi")
+        .units("W m-2");
   }
 
 protected:
@@ -627,22 +625,23 @@ public:
     std::string
       name          = "debms_insolation_driven_melt_flux",
       long_name     = "surface insolation melt, averaged over the reporting interval",
-      standard_name,
       accumulator_units = "kg m-2",
       internal_units = "kg m-2 second-1",
       external_units = "kg m-2 year-1";
     if (kind == MASS) {
       name          = "debms_insolation_driven_melt_rate";
-      standard_name = "";
       accumulator_units = "kg";
       internal_units = "kg second-1";
       external_units = "Gt year-1";
     }
 
-    m_vars = { SpatialVariableMetadata(m_sys, name) };
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata().units(accumulator_units);
 
-    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars = { SpatialVariableMetadata(m_sys, name) };
+    m_vars[0]
+        .long_name(long_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
 
     double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
@@ -682,26 +681,25 @@ public:
     std::string
       name          = "debms_temperature_driven_melt_flux",
       long_name     = "temperature-driven melt, averaged over the reporting interval",
-      standard_name,
       accumulator_units = "kg m-2",
       internal_units = "kg m-2 second-1",
       external_units = "kg m-2 year-1";
     if (kind == MASS) {
       name          = "debms_temperature_driven_melt_rate";
-      standard_name = "";
       accumulator_units = "kg";
       internal_units = "kg second-1";
       external_units = "Gt year-1";
     }
 
-    m_vars = { SpatialVariableMetadata(m_sys, name) };
-    m_accumulator.metadata().set_string("units", accumulator_units);
+    m_accumulator.metadata().units(accumulator_units);
 
-    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars = { { m_sys, name } };
+    m_vars[0]
+        .long_name(long_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_number("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
   }
 
 protected:
@@ -734,24 +732,27 @@ public:
         m_kind(kind),
         m_melt_mass(m_grid, "backround_melt_mass") {
 
-    std::string name          = "debms_background_melt_flux",
-                long_name     = "background melt, averaged over the reporting interval",
-                standard_name = "debms_background_melt_flux", accumulator_units = "kg m-2",
-                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
+    std::string name              = "debms_background_melt_flux",
+                long_name         = "background melt, averaged over the reporting interval",
+                accumulator_units = "kg m-2",
+                internal_units    = "kg m-2 second-1",
+                external_units    = "kg m-2 year-1";
+
     if (kind == MASS) {
-      name          = "debms_background_melt_rate";
-      standard_name = "", accumulator_units = "kg", internal_units = "kg second-1";
-      external_units = "Gt year-1";
+      name              = "debms_background_melt_rate";
+      accumulator_units = "kg";
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1";
     }
+    m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { SpatialVariableMetadata(m_sys, name) };
-    m_accumulator.metadata().set_string("units", accumulator_units);
-
-    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars = { { m_sys, name } };
+    m_vars[0]
+        .long_name(long_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_number("_FillValue", fill_value);
+    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
   }
 
 protected:

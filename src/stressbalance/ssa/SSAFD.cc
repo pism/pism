@@ -1745,10 +1745,14 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
   m_vars = {SpatialVariableMetadata(m_sys, "nuH[0]"),
             SpatialVariableMetadata(m_sys, "nuH[1]")};
 
-  set_attrs("ice thickness times effective viscosity, i-offset", "",
-            "Pa s m", "kPa s m", 0);
-  set_attrs("ice thickness times effective viscosity, j-offset", "",
-            "Pa s m", "kPa s m", 1);
+  m_vars[0]
+      .long_name("ice thickness times effective viscosity, i-offset")
+      .units("Pa s m")
+      .output_units("kPa s m");
+  m_vars[1]
+      .long_name("ice thickness times effective viscosity, j-offset")
+      .units("Pa s m")
+      .output_units("kPa s m");
 }
 
 std::shared_ptr<array::Array> SSAFD_nuH::compute_impl() const {

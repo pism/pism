@@ -156,15 +156,13 @@ namespace diagnostics {
 class MeanSummerTemperature : public Diag<YearlyCycle>
 {
 public:
-  MeanSummerTemperature(const YearlyCycle *m)
-    : Diag<YearlyCycle>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "air_temp_mean_summer")};
-
-    set_attrs("mean summer near-surface air temperature used in the cosine yearly cycle", "",
-              "Kelvin", "Kelvin", 0);
+  MeanSummerTemperature(const YearlyCycle *m) : Diag<YearlyCycle>(m) {
+    m_vars = { SpatialVariableMetadata(m_sys, "air_temp_mean_summer") };
+    m_vars[0]
+        .long_name("mean summer near-surface air temperature used in the cosine yearly cycle")
+        .units("Kelvin");
   }
+
 private:
   std::shared_ptr<array::Array> compute_impl() const {
 

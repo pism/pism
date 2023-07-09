@@ -167,9 +167,8 @@ void FrontalMelt::define_model_state_impl(const File &output) const {
 void FrontalMelt::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
-  } else {
-    // no state to write
   }
+  // no state to write
 }
 
 namespace diagnostics {
@@ -181,13 +180,14 @@ public:
   FrontalMeltRate(const FrontalMelt *m)
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
-    m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_rate")};
     m_accumulator.metadata()["units"] = "m";
 
-    set_attrs("frontal melt rate", "",
-              "m second-1", "m day-1", 0);
+    m_vars = { { m_sys, "frontal_melt_rate" } };
+    m_vars[0]
+        .long_name("frontal melt rate")
+        .units("m second-1")
+        .output_units("m day-1");
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
@@ -203,14 +203,14 @@ class FrontalMeltRetreatRate : public DiagAverageRate<FrontalMelt>
 public:
   FrontalMeltRetreatRate(const FrontalMelt *m)
     : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
-
-    m_vars = {SpatialVariableMetadata(m_sys, "frontal_melt_retreat_rate")};
     m_accumulator.metadata()["units"] = "m";
 
-    set_attrs("retreat rate due to frontal melt", "",
-              "m second-1", "m year-1", 0);
+    m_vars = { { m_sys, "frontal_melt_retreat_rate" } };
+    m_vars[0]
+        .long_name("retreat rate due to frontal melt")
+        .units("m second-1")
+        .output_units("m year-1");
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
     m_vars[0]["comment"] = "takes into account what part of the front is submerged";
   }

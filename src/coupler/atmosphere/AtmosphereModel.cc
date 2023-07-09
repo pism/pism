@@ -105,16 +105,11 @@ namespace diagnostics {
 /*! @brief Instantaneous near-surface air temperature. */
 class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
 public:
-  AirTemperatureSnapshot(const AtmosphereModel *m)
-    : Diag<AtmosphereModel>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "air_temp_snapshot")};
-
-    set_attrs("instantaneous value of the near-surface air temperature",
-              "",                 // no standard name
-              "Kelvin", "Kelvin", 0);
+  AirTemperatureSnapshot(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
+    m_vars = { SpatialVariableMetadata(m_sys, "air_temp_snapshot") };
+    m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("Kelvin");
   }
+
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
@@ -152,15 +147,11 @@ protected:
 /*! @brief Effective near-surface mean-annual air temperature. */
 class AirTemperature : public Diag<AtmosphereModel> {
 public:
-  AirTemperature(const AtmosphereModel *m)
-    : Diag<AtmosphereModel>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "effective_air_temp")};
-
-    set_attrs("effective mean-annual near-surface air temperature", "",
-              "Kelvin", "Kelvin", 0);
+  AirTemperature(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
+    m_vars = { SpatialVariableMetadata(m_sys, "effective_air_temp") };
+    m_vars[0].long_name("effective mean-annual near-surface air temperature").units("Kelvin");
   }
+
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
@@ -176,16 +167,15 @@ protected:
 /*! @brief Effective precipitation rate (average over time step). */
 class Precipitation : public Diag<AtmosphereModel> {
 public:
-  Precipitation(const AtmosphereModel *m)
-    : Diag<AtmosphereModel>(m) {
-
-    /* set metadata: */
-    m_vars = {SpatialVariableMetadata(m_sys, "effective_precipitation")};
-
-    set_attrs("effective precipitation rate",
-              "precipitation_flux",
-              "kg m-2 second-1", "kg m-2 year-1", 0);
+  Precipitation(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
+    m_vars = { SpatialVariableMetadata(m_sys, "effective_precipitation") };
+    m_vars[0]
+        .long_name("effective precipitation rate")
+        .standard_name("precipitation_flux")
+        .units("kg m-2 second-1")
+        .output_units("kg m-2 year-1");
   }
+
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
