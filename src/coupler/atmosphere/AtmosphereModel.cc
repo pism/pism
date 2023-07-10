@@ -113,8 +113,7 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "air_temp_snapshot"));
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("air_temp_snapshot");
 
     std::vector<double> current_time = { m_grid->ctx()->time()->current() };
     std::vector<double> temperature  = { 0.0 };
@@ -154,9 +153,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "effective_air_temp"));
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("effective_air_temp");
 
     result->copy_from(model->air_temperature());
 
@@ -178,9 +175,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "effective_precipitation"));
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("effective_precipitation");
 
     result->copy_from(model->precipitation());
 

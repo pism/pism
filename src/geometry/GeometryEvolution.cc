@@ -1068,8 +1068,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "flux_divergence"));
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("flux_divergence");
 
     result->copy_from(model->flux_divergence());
 
@@ -1086,13 +1085,10 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-    auto result = std::make_shared<array::Staggered>(m_grid, "flux_staggered");
-
-    result->metadata(0) = m_vars[0];
-    result->metadata(1) = m_vars[1];
+    auto result = allocate<array::Staggered>("flux_staggered");
 
     const array::Staggered &input = model->flux_staggered();
-    array::Staggered &output      = *result.get();
+    array::Staggered &output      = *result;
 
     // FIXME: implement array::Staggered::copy_from()
 

@@ -1749,11 +1749,7 @@ SSAFD_nuH::SSAFD_nuH(const SSAFD *m) : Diag<SSAFD>(m) {
 }
 
 std::shared_ptr<array::Array> SSAFD_nuH::compute_impl() const {
-
-  auto result = std::make_shared<array::Staggered>(m_grid, "nuH");
-
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Staggered>("nuH");
 
   result->copy_from(model->integrated_viscosity());
 

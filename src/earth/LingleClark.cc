@@ -29,6 +29,7 @@
 #include "pism/util/fftw_utilities.hh"
 #include "pism/earth/LingleClarkSerial.hh"
 #include "pism/util/Context.hh"
+#include <memory>
 
 namespace pism {
 namespace bed {
@@ -83,13 +84,11 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
     Lx = Z * (m_grid->x0() - m_grid->x(0)),
     Ly = Z * (m_grid->y0() - m_grid->y(0));
 
-  m_extended_grid = Grid::Shallow(m_grid->ctx(),
-                                     Lx, Ly,
-                                     m_grid->x0(), m_grid->y0(),
-                                     Nx, Ny, grid::CELL_CORNER, grid::NOT_PERIODIC);
+  m_extended_grid = Grid::Shallow(m_grid->ctx(), Lx, Ly, m_grid->x0(), m_grid->y0(), Nx, Ny,
+                                  grid::CELL_CORNER, grid::NOT_PERIODIC);
 
-  m_viscous_displacement.reset(new array::Scalar(m_extended_grid,
-                                                 "viscous_bed_displacement"));
+  m_viscous_displacement =
+      std::make_shared<array::Scalar>(m_extended_grid, "viscous_bed_displacement");
   m_viscous_displacement->metadata(0)
       .long_name(
           "bed displacement in the viscous half-space bed deformation model; see BuelerLingleBrown")

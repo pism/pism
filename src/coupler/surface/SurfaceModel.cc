@@ -462,10 +462,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 }
 
 std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
-
-  auto result = std::make_shared<array::Scalar>(m_grid, "climatic_mass_balance");
-
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("climatic_mass_balance");
 
   result->copy_from(model->mass_flux());
 
@@ -484,10 +481,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceMo
 }
 
 std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
-
-  auto result = std::make_shared<array::Scalar>(m_grid, "ice_surface_temp");
-
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("ice_surface_temp");
 
   result->copy_from(model->temperature());
 
@@ -501,9 +495,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag
 
 std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 
-  auto result = std::make_shared<array::Scalar>(m_grid, "ice_surface_liquid_water_fraction");
-
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("ice_surface_liquid_water_fraction");
 
   result->copy_from(model->liquid_water_fraction());
 
@@ -517,9 +509,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
 
 std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
 
-  auto result = std::make_shared<array::Scalar>(m_grid, "surface_layer_mass");
-
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("surface_layer_mass");
 
   result->copy_from(model->layer_mass());
 
@@ -533,9 +523,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceMode
 
 std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
 
-  auto result = std::make_shared<array::Scalar>(m_grid, "surface_layer_thickness");
-
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("surface_layer_thickness");
 
   result->copy_from(model->layer_thickness());
 

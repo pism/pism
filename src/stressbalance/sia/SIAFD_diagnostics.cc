@@ -37,23 +37,18 @@ DiagnosticList SIAFD::diagnostics_impl() const {
   return result;
 }
 
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
-  : Diag<SIAFD>(m) {
-
-  // set metadata:
+SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m) : Diag<SIAFD>(m) {
   m_vars = { { m_sys, "schoofs_theta" } };
 
   m_vars[0]
       .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
       .units("1");
-  m_vars[0]["valid_range"] = {0.0, 1.0};
+  m_vars[0]["valid_range"] = { 0.0, 1.0 };
 }
 
 std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
   const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
-
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "schoofs_theta"));
-  result->metadata(0) = m_vars[0];
+  auto result                  = allocate<array::Scalar>("schoofs_theta");
 
   model->bed_smoother().theta(*surface, *result);
 
@@ -61,10 +56,7 @@ std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
 }
 
 
-SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
-  : Diag<SIAFD>(m) {
-
-  // set metadata:
+SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m) : Diag<SIAFD>(m) {
   m_vars = { { m_sys, "topgsmooth" } };
   m_vars[0]
       .long_name("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
@@ -72,9 +64,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
 }
 
 std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
-
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "topgsmooth"));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("topgsmooth");
 
   result->copy_from(model->bed_smoother().smoothed_bed());
 
@@ -102,8 +92,7 @@ std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
     cell_type.copy_from(mask);
   }
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "thksmooth"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("thksmooth");
 
   model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
                                      *result);
@@ -120,8 +109,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
 }
 
 std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "diffusivity"));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("diffusivity");
 
   array::CellType1 cell_type(m_grid, "cell_type");
   {
@@ -160,10 +148,7 @@ static void copy_staggered_vec(const array::Staggered &input, array::Staggered &
 }
 
 std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const {
-  auto result = std::make_shared<array::Staggered>(m_grid, "diffusivity");
-
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Staggered>("diffusivity");
 
   copy_staggered_vec(model->diffusivity(), *result);
 
@@ -179,13 +164,9 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
 }
 
 std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
+  auto result = allocate<array::Staggered>("h_x");
 
-  auto result = std::make_shared<array::Staggered>(m_grid, "h_x");
-
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
-
-  copy_staggered_vec(model->surface_gradient_x(), *result.get());
+  copy_staggered_vec(model->surface_gradient_x(), *result);
 
   return result;
 }
@@ -200,12 +181,9 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
 
 std::shared_ptr<array::Array> SIAFD_h_y::compute_impl() const {
 
-  auto result = std::make_shared<array::Staggered>(m_grid, "h_y");
+  auto result = allocate<array::Staggered>("h_y");
 
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
-
-  copy_staggered_vec(model->surface_gradient_y(), *result.get());
+  copy_staggered_vec(model->surface_gradient_y(), *result);
 
   return result;
 }

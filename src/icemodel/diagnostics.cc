@@ -654,8 +654,7 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<Ice
 
 std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "ice_margin_pressure_difference");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("ice_margin_pressure_difference");
 
   array::CellType1 mask(m_grid, "mask");
 
@@ -888,8 +887,7 @@ CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
 
 std::shared_ptr<array::Array> CTS::compute_impl() const {
 
-  std::shared_ptr<array::Array3D> result(
-      new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
   energy::compute_cts(model->energy_balance_model()->enthalpy(), model->geometry().ice_thickness,
@@ -1193,8 +1191,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
 
 std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "basal_temperature");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("basal_temperature");
 
   const auto &thickness = model->geometry().ice_thickness;
 
@@ -1334,12 +1331,11 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>
 
 std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "tempicethk");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("tempicethk");
 
-  const auto &cell_type              = model->geometry().cell_type;
-  const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const auto &cell_type     = model->geometry().cell_type;
+  const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
+  const auto &ice_thickness = model->geometry().ice_thickness;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_enthalpy, &ice_thickness };
 
@@ -1403,14 +1399,13 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag
  */
 std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "tempicethk_basal");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("tempicethk_basal");
 
   EnthalpyConverter::Ptr EC = model->ctx()->enthalpy_converter();
 
-  const auto &cell_type              = model->geometry().cell_type;
-  const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const auto &cell_type     = model->geometry().cell_type;
+  const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
+  const auto &ice_thickness = model->geometry().ice_thickness;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &ice_enthalpy };
 
@@ -2436,8 +2431,7 @@ IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
 
 std::shared_ptr<array::Array> IceAreaFraction::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, land_ice_area_fraction_name);
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>(land_ice_area_fraction_name);
 
   const array::Scalar1 &thickness         = model->geometry().ice_thickness,
                        &surface_elevation = model->geometry().ice_surface_elevation,
@@ -2599,8 +2593,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>
 
 std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "height_above_flotation");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("height_above_flotation");
 
   const auto &cell_type = model->geometry().cell_type;
 
@@ -2653,8 +2646,7 @@ IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
 
 std::shared_ptr<array::Array> IceMass::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "ice_mass");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("ice_mass");
 
   const auto &cell_type = model->geometry().cell_type;
 
@@ -2718,8 +2710,7 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
 
 std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl() const {
 
-  auto result         = std::make_shared<array::Scalar>(m_grid, "topg_sl_adjusted");
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("topg_sl_adjusted");
 
   const auto &bed       = model->geometry().bed_elevation;
   const auto &sea_level = model->geometry().sea_level_elevation;
@@ -2971,8 +2962,7 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    auto result         = std::make_shared<array::Scalar>(m_grid, "thk");
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("thk");
 
     result->copy_from(model->geometry().ice_thickness);
 
@@ -2994,8 +2984,7 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    auto result         = std::make_shared<array::Scalar>(m_grid, "ice_base_elevation");
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("ice_base_elevation");
 
     ice_bottom_surface(model->geometry(), *result);
 
@@ -3016,9 +3005,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    auto result         = std::make_shared<array::Scalar>(m_grid, "usurf");
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("usurf");
 
     result->copy_from(model->geometry().ice_surface_elevation);
 

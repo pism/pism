@@ -166,10 +166,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    auto result = std::make_shared<array::Scalar>(m_grid, "shelfbtemp");
-
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("shelfbtemp");
 
     result->copy_from(model->shelf_base_temperature());
 
@@ -188,10 +185,7 @@ public:
 
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    auto result = std::make_shared<array::Scalar>(m_grid, "shelfbmassflux");
-
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("shelfbmassflux");
 
     result->copy_from(model->shelf_base_mass_flux());
 

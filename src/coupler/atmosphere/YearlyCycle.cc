@@ -165,9 +165,7 @@ public:
 
 private:
   std::shared_ptr<array::Array> compute_impl() const {
-
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "air_temp_mean_summer"));
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("air_temp_mean_summer");
 
     result->copy_from(model->mean_summer_temp());
 

@@ -582,8 +582,7 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    auto result = std::make_shared<array::Scalar>(m_grid, "insolation");
-    result->metadata(0) = m_vars[0];
+    auto result = allocate<array::Scalar>("insolation");
 
     const auto *latitude = m_grid->variables().get_2d_scalar("latitude");
     auto ctx = m_grid->ctx();

@@ -190,9 +190,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
  */
 std::shared_ptr<array::Array> SSB_taud::compute_impl() const {
 
-  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("taud");
 
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
   const array::Scalar *surface   = m_grid->variables().get_2d_scalar("surface_altitude");
@@ -227,9 +225,7 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m) : Diag<ShallowStressBa
 }
 
 std::shared_ptr<array::Array> SSB_taud_mag::compute_impl() const {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "taud_mag"));
-  result->metadata(0) = m_vars[0];
-
+  auto result = allocate<array::Scalar>("taud_mag");
   auto taud = array::cast<array::Vector>(SSB_taud(model).compute());
 
   compute_magnitude(*taud, *result);
@@ -252,9 +248,7 @@ SSB_taub::SSB_taub(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m
 
 std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
 
-  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "result"));
-  result->metadata()  = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("taub");
 
   const auto &velocity = model->velocity();
   const auto *tauc     = m_grid->variables().get_2d_scalar("tauc");
@@ -290,8 +284,7 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m) : Diag<ShallowStressBa
 }
 
 std::shared_ptr<array::Array> SSB_taub_mag::compute_impl() const {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "taub_mag"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("taub_mag");
 
   std::shared_ptr<array::Vector> taub = array::cast<array::Vector>(SSB_taub(model).compute());
 
@@ -335,8 +328,7 @@ SSB_beta::SSB_beta(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m
 }
 
 std::shared_ptr<array::Array> SSB_beta::compute_impl() const {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "beta"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("beta");
 
   const array::Scalar *tauc = m_grid->variables().get_2d_scalar("tauc");
 

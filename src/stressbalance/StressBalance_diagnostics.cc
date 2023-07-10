@@ -146,9 +146,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
 }
 
 std::shared_ptr<array::Array> PSB_velbar_mag::compute_impl() const {
-
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "velbar_mag"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("velbar_mag");
 
   // compute vertically-averaged horizontal velocity:
   auto velbar = array::cast<array::Vector>(PSB_velbar(model).compute());
@@ -183,9 +181,7 @@ PSB_flux::PSB_flux(const StressBalance *m)
 std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "flux"));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("flux");
 
   // get the thickness
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
@@ -196,7 +192,7 @@ std::shared_ptr<array::Array> PSB_flux::compute_impl() const {
 
   array::AccessScope list{&u3, &v3, thickness, result.get()};
 
-  auto &z = m_grid->z();
+  const auto &z = m_grid->z();
 
   ParallelSection loop(m_grid->com);
   try {
@@ -296,8 +292,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
 }
 
 std::shared_ptr<array::Array> PSB_velbase_mag::compute_impl() const {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "velbase_mag"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("velbase_mag");
 
   compute_magnitude(*array::cast<array::Vector>(PSB_velbase(model).compute()), *result);
 
@@ -332,8 +327,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
 std::shared_ptr<array::Array> PSB_velsurf_mag::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "velsurf_mag"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("velsurf_mag");
 
   compute_magnitude(*array::cast<array::Vector>(PSB_velsurf(model).compute()), *result);
 
@@ -377,9 +371,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 std::shared_ptr<array::Array> PSB_velsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "surf"));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("surf");
 
   array::Scalar u_surf(m_grid, "u_surf");
   array::Scalar v_surf(m_grid, "v_surf");
@@ -514,8 +506,7 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
 std::shared_ptr<array::Array> PSB_wvelsurf::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "wvelsurf"));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("wvelsurf");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
   auto w3 = array::cast<array::Array3D>(PSB_wvel(model).compute(false));
@@ -559,8 +550,7 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
 std::shared_ptr<array::Array> PSB_wvelbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "wvelbase"));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("wvelbase");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
   auto w3 = array::cast<array::Array3D>(PSB_wvel(model).compute(false));
@@ -609,9 +599,7 @@ PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
 std::shared_ptr<array::Array> PSB_velbase::compute_impl() const {
   double fill_value = to_internal(m_fill_value);
 
-  std::shared_ptr<array::Vector> result(new array::Vector(m_grid, "base"));
-  result->metadata(0) = m_vars[0];
-  result->metadata(1) = m_vars[1];
+  auto result = allocate<array::Vector>("base");
 
   array::Scalar u_base(m_grid, "u_base");
   array::Scalar v_base(m_grid, "v_base");
@@ -646,8 +634,7 @@ PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
 
 std::shared_ptr<array::Array> PSB_bfrict::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "bfrict"));
-  result->metadata() = m_vars[0];
+  auto result = allocate<array::Scalar>("bfrict");
 
   result->copy_from(model->basal_frictional_heating());
 
@@ -1010,8 +997,7 @@ std::shared_ptr<array::Array> PSB_vonmises_stress::compute_impl() const {
   using std::sqrt;
   using std::pow;
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "vonmises_stress"));
-  result->metadata(0) = m_vars[0];
+  auto result = allocate<array::Scalar>("vonmises_stress");
 
   array::Scalar &vonmises_stress = *result;
 

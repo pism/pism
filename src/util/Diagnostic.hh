@@ -98,6 +98,18 @@ protected:
   double to_internal(double x) const;
   double to_external(double x) const;
 
+  /*!
+   * Allocate storage for an array of type `T` and copy metadata from `m_vars`.
+   */
+  template<typename T>
+  std::shared_ptr<T> allocate(const std::string &name) const {
+    auto result = std::make_shared<T>(m_grid, name);
+    for (unsigned int k = 0; k < result->ndof(); ++k) {
+      result->metadata(k) = m_vars.at(k);
+    }
+    return result;
+  }
+
   //! the grid
   std::shared_ptr<const Grid> m_grid;
   //! the unit system
@@ -235,9 +247,7 @@ protected:
   }
 
   virtual std::shared_ptr<array::Array> compute_impl() const {
-    auto result = std::make_shared<array::Scalar>(Diagnostic::m_grid, "diagnostic");
-
-    result->metadata(0) = Diagnostic::m_vars.at(0);
+    auto result = Diagnostic::allocate<array::Scalar>("diagnostic");
 
     if (m_interval_length > 0.0) {
       result->copy_from(m_accumulator);
