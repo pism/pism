@@ -457,10 +457,11 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance")};
-
-  set_attrs("surface mass balance (accumulation/ablation) rate",
-            "land_ice_surface_specific_mass_balance_flux",
-            "kg m-2 second-1", "kg m-2 year-1", 0);
+  m_vars[0]
+      .long_name("surface mass balance (accumulation/ablation) rate")
+      .standard_name("land_ice_surface_specific_mass_balance_flux")
+      .units("kg m-2 second-1")
+      .output_units("kg m-2 year-1");
 }
 
 std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
@@ -482,10 +483,10 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   /* set metadata: */
   m_vars = {SpatialVariableMetadata(m_sys,
                                     ismip6 ? "litemptop" : "ice_surface_temp")};
-
-  set_attrs("ice temperature at the top ice surface",
-            "temperature_at_top_of_ice_sheet_model",
-            "K", "K", 0);
+  m_vars[0]
+      .long_name("ice temperature at the top ice surface")
+      .standard_name("temperature_at_top_of_ice_sheet_model")
+      .units("K");
 }
 
 std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
@@ -498,19 +499,15 @@ std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
   return result;
 }
 
-PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction")};
-
-  set_attrs("ice liquid water fraction at the ice surface", "",
-            "1", "1", 0);
+PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
+  m_vars = { SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction") };
+  m_vars[0].long_name("ice liquid water fraction at the ice surface").units("1");
 }
 
 std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "ice_surface_liquid_water_fraction"));
+  std::shared_ptr<array::Scalar> result(
+      new array::Scalar(m_grid, "ice_surface_liquid_water_fraction"));
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->liquid_water_fraction());
@@ -518,14 +515,9 @@ std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
   return result;
 }
 
-PS_layer_mass::PS_layer_mass(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_mass")};
-
-  set_attrs("mass of the surface layer (snow and firn)", "",
-            "kg", "kg", 0);
+PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
+  m_vars = { SpatialVariableMetadata(m_sys, "surface_layer_mass") };
+  m_vars[0].long_name("mass of the surface layer (snow and firn)").units("kg");
 }
 
 std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
@@ -538,14 +530,9 @@ std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
   return result;
 }
 
-PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
-  /* set metadata: */
+PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
   m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_thickness")};
-
-  set_attrs("thickness of the surface layer (snow and firn)", "",
-            "meters", "meters", 0);
+  m_vars[0].long_name("thickness of the surface layer (snow and firn)").units("meters");
 }
 
 std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
@@ -589,12 +576,15 @@ public:
       external_units    = "Gt year-1" ;
     }
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars[0]
+        .long_name(long_name)
+        .standard_name(standard_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
@@ -649,12 +639,15 @@ public:
       external_units    = "Gt year-1" ;
     }
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    set_attrs(long_name, standard_name, internal_units, external_units, 0);
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars[0]
+        .long_name(long_name)
+        .standard_name(standard_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 
@@ -708,13 +701,14 @@ public:
       external_units    = "Gt year-1" ;
     }
 
-
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    set_attrs(long_name, "", internal_units, external_units, 0);
+    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars[0]
+        .long_name(long_name)
+        .units(internal_units)
+        .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
   }
 

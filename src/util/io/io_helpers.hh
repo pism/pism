@@ -65,8 +65,8 @@ void read_spatial_variable(const SpatialVariableMetadata &var,
                            const Grid& grid, const File &nc,
                            unsigned int time, double *output);
 
-void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const Grid& grid, const File &nc,
+void write_spatial_variable(const SpatialVariableMetadata &metadata,
+                            const Grid& grid, const File &file,
                             const double *input);
 
 void define_dimension(const File &nc, unsigned long int length,
@@ -80,18 +80,18 @@ void define_time(const File &nc, const std::string &name, const std::string &cal
 void append_time(const File &file, const Config &ctx, double time_seconds);
 void append_time(const File &nc, const std::string &name, double time_seconds);
 
-void define_spatial_variable(const SpatialVariableMetadata &var,
-                             const Grid &grid, const File &nc,
-                             io::Type nctype);
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
+                             const Grid &grid, const File &file,
+                             io::Type default_type);
 
 void define_timeseries(const VariableMetadata& var,
                        const std::string &dimension_name,
                        const File &nc, io::Type nctype);
 
-void define_time_bounds(const VariableMetadata& var,
+void define_time_bounds(const VariableMetadata& metadata,
                         const std::string &dimension_name,
                         const std::string &bounds_name,
-                        const File &nc, io::Type nctype);
+                        const File &file, io::Type nctype);
 
 void read_timeseries(const File &nc, const VariableMetadata &metadata,
                      const Logger &log, std::vector<double> &data);
@@ -99,11 +99,11 @@ void read_timeseries(const File &nc, const VariableMetadata &metadata,
 void write_timeseries(const File &nc, const VariableMetadata &metadata,
                       size_t t_start, const std::vector<double> &data);
 
-void read_time_bounds(const File &nc,
+void read_time_bounds(const File &file,
                       const VariableMetadata &metadata,
                       const Logger &log, std::vector<double> &data);
 
-void write_time_bounds(const File &nc, const VariableMetadata &metadata,
+void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data);
 
 void read_time_info(const Logger &log,
@@ -118,11 +118,11 @@ std::string time_dimension(units::System::Ptr unit_system,
                            const File &file,
                            const std::string &variable_name);
 
-void read_attributes(const File &nc, const std::string &variable_name, VariableMetadata &variable);
+void read_attributes(const File &file, const std::string &variable_name, VariableMetadata &variable);
 
-void write_attributes(const File &nc, const VariableMetadata &variable, io::Type nctype);
+void write_attributes(const File &file, const VariableMetadata &variable, io::Type nctype);
 
-void read_valid_range(const File &nc, const std::string &name, VariableMetadata &variable);
+void read_valid_range(const File &file, const std::string &name, VariableMetadata &variable);
 
 bool file_exists(MPI_Comm com, const std::string &filename);
 

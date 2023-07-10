@@ -128,41 +128,7 @@ void Diagnostic::define_impl(const File &file, io::Type default_type) const {
   }
 }
 
-//! \brief A method for setting common variable attributes.
-void Diagnostic::set_attrs(const std::string &long_name,
-                           const std::string &standard_name,
-                           const std::string &units,
-                           const std::string &output_units,
-                           unsigned int N) {
-  if (N >= m_vars.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "N (%d) >= m_dof (%d)", N,
-                                  static_cast<int>(m_vars.size()));
-  }
-
-  m_vars[N]["long_name"] = long_name;
-
-  m_vars[N]["standard_name"] = standard_name;
-
-  if (units == output_units) {
-    // No unit conversion needed to write data, so we assume that we don't need to check
-    // if units are valid. This is needed to be able to set units like "Pa s^(1/3)", which
-    // are correct (ice hardness with the Glen exponent n=3) but are not supported by
-    // UDUNITS.
-    //
-    // Also note that this automatically sets output_units.
-    m_vars[N].set_units_without_validation(units);
-  } else {
-    m_vars[N]["units"] = units;
-
-    if (not (m_config->get_flag("output.use_MKS") or output_units.empty())) {
-      m_vars[N]["output_units"] = output_units;
-    }
-  }
-}
-
 std::shared_ptr<array::Array> Diagnostic::compute() const {
-  // use the name of the first variable
   std::vector<std::string> names;
   for (const auto &v : m_vars) {
     names.push_back(v.get_name());
@@ -363,12 +329,6 @@ void TSFluxDiagnostic::update_impl(double t0, double t1) {
   evaluate(t0, t1, this->compute());
 }
 
-void TSDiagnostic::define(const File &file) const {
-  auto time_name = m_config->get_string("time.dimension_name");
-  io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
-  io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
-}
-
 void TSDiagnostic::flush() {
 
   if (m_time.empty()) {
@@ -377,7 +337,8 @@ void TSDiagnostic::flush() {
 
   std::string dimension_name = m_dimension.get_name();
 
-  File file(m_grid->com, m_output_filename, io::PISM_NETCDF3, io::PISM_READWRITE); // OK to use netcdf3
+  File file(m_grid->com, m_output_filename, io::PISM_NETCDF3,
+            io::PISM_READWRITE); // OK to use netcdf3
 
   unsigned int len = file.dimension_length(dimension_name);
 
@@ -392,20 +353,14 @@ void TSDiagnostic::flush() {
   auto time_name = m_config->get_string("time.dimension_name");
 
   if (len == m_start) {
-    if (not file.find_variable(m_dimension.get_name())) {
-      io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);
-    }
-    io::write_timeseries(file, m_dimension, m_start, m_time);
+    io::define_timeseries(m_dimension, time_name, file, io::PISM_DOUBLE);
+    io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
 
-    if (not file.find_variable(m_time_bounds.get_name())) {
-      io::define_time_bounds(m_time_bounds, time_name, "nv", file, io::PISM_DOUBLE);
-    }
+    io::write_timeseries(file, m_dimension, m_start, m_time);
     io::write_time_bounds(file, m_time_bounds, m_start, m_bounds);
   }
 
-  if (not file.find_variable(m_variable.get_name())) {
-    io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
-  }
+  io::define_timeseries(m_variable, time_name, file, io::PISM_DOUBLE);
   io::write_timeseries(file, m_variable, m_start, m_values);
 
   m_start += m_time.size();

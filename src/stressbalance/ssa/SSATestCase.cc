@@ -197,17 +197,15 @@ void SSATestCase::report(const std::string &testname) {
 
 void SSATestCase::report_netcdf(const std::string &testname, double max_vector, double rel_vector,
                                 double max_u, double max_v, double avg_u, double avg_v) {
-  VariableMetadata err("N", m_grid->ctx()->unit_system());
-  unsigned int start;
-  VariableMetadata global_attributes("PISM_GLOBAL", m_grid->ctx()->unit_system());
+  auto sys = m_grid->ctx()->unit_system();
+
+  VariableMetadata global_attributes("PISM_GLOBAL", sys);
 
   options::String filename("-report_file", "NetCDF error report file");
 
   if (not filename.is_set()) {
     return;
   }
-
-  err["units"] = "1";
 
   m_ctx->log()->message(2, "Also writing errors to '%s'...\n", filename->c_str());
 
@@ -222,86 +220,69 @@ void SSATestCase::report_netcdf(const std::string &testname, double max_vector, 
 
   // Find the number of records in this file:
   File file(m_grid->com, filename, io::PISM_NETCDF3, mode); // OK to use NetCDF3.
-  start = file.dimension_length("N");
+  size_t start = static_cast<size_t>(file.dimension_length("N"));
 
   io::write_attributes(file, global_attributes, io::PISM_DOUBLE);
 
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-
-  // Write the dimension variable:
-  io::write_timeseries(file, err, (size_t)start, { (double)(start + 1) });
-
-  // Always write grid parameters:
-  err.set_name("dx");
-  err["units"] = "meters";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { m_grid->dx() });
-  err.set_name("dy");
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { m_grid->dy() });
-
-  // Always write the test name:
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("test");
-  io::define_timeseries(err, "N", file, io::PISM_INT);
-  io::write_timeseries(file, err, (size_t)start, { (double)testname[0] });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("max_velocity");
-  err["units"]     = "m year-1";
-  err["long_name"] = "maximum ice velocity magnitude error";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { max_vector });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("relative_velocity");
-  err["units"]     = "percent";
-  err["long_name"] = "relative ice velocity magnitude error";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { rel_vector });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("maximum_u");
-  err["units"]     = "m year-1";
-  err["long_name"] = "maximum error in the X-component of the ice velocity";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { max_u });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("maximum_v");
-  err["units"]     = "m year-1";
-  err["long_name"] = "maximum error in the Y-component of the ice velocity";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { max_v });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("average_u");
-  err["units"]     = "m year-1";
-  err["long_name"] = "average error in the X-component of the ice velocity";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { avg_u });
-
-  err.clear_all_strings();
-  err.clear_all_doubles();
-  err["units"] = "1";
-  err.set_name("average_v");
-  err["units"]     = "m year-1";
-  err["long_name"] = "average error in the Y-component of the ice velocity";
-  io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
-  io::write_timeseries(file, err, (size_t)start, { avg_v });
-
+  {
+    VariableMetadata err("N", sys);
+    io::define_timeseries(err, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, err, start, { (double)(start + 1) });
+  }
+  {
+    VariableMetadata dx{"dx", sys};
+    dx.units("meters");
+    io::define_timeseries(dx, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, dx, start, { m_grid->dx() });
+  }
+  {
+    VariableMetadata dy{"dy", sys};
+    dy.units("meters");
+    io::define_timeseries(dy, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, dy, start, { m_grid->dy() });
+  }
+  {
+    VariableMetadata test{"test", sys};
+    test.units("1");
+    io::define_timeseries(test, "N", file, io::PISM_INT);
+    io::write_timeseries(file, test, start, { (double)testname[0] });
+  }
+  {
+    VariableMetadata max_velocity{ "max_velocity", sys };
+    max_velocity.long_name("maximum ice velocity magnitude error").units("m year-1");
+    io::define_timeseries(max_velocity, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, max_velocity, start, { max_vector });
+  }
+  {
+    VariableMetadata rel_velocity{ "relative_velocity", sys };
+    rel_velocity.long_name("relative ice velocity magnitude error").units("percent");
+    io::define_timeseries(rel_velocity, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, rel_velocity, start, { rel_vector });
+  }
+  {
+    VariableMetadata maximum_u{ "maximum_u", sys };
+    maximum_u.long_name("maximum error in the X-component of the ice velocity").units("m year-1");
+    io::define_timeseries(maximum_u, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, maximum_u, start, { max_u });
+  }
+  {
+    VariableMetadata maximum_v{ "maximum_v", sys };
+    maximum_v.long_name("maximum error in the Y-component of the ice velocity").units("m year-1");
+    io::define_timeseries(maximum_v, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, maximum_v, start, { max_v });
+  }
+  {
+    VariableMetadata average_u{ "average_u", sys };
+    average_u.long_name("average error in the X-component of the ice velocity").units("m year-1");
+    io::define_timeseries(average_u, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, average_u, start, { avg_u });
+  }
+  {
+    VariableMetadata average_v{ "average_v", sys };
+    average_v.long_name("average error in the Y-component of the ice velocity").units("m year-1");
+    io::define_timeseries(average_v, "N", file, io::PISM_DOUBLE);
+    io::write_timeseries(file, average_v, start, { avg_v });
+  }
   file.close();
 }
 

@@ -527,9 +527,18 @@ static void regrid_vec_fill_missing(const File &file, const Grid &grid,
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
-void define_spatial_variable(const SpatialVariableMetadata &var,
+void define_spatial_variable(const SpatialVariableMetadata &metadata,
                              const Grid &grid, const File &file,
                              io::Type default_type) {
+  auto config = grid.ctx()->config();
+
+  // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
+  // set.
+  SpatialVariableMetadata var = metadata;
+  if (config->get_flag("output.use_MKS")) {
+    var.output_units(var["units"]);
+  }
+
   std::vector<std::string> dims;
   std::string name = var.get_name();
 
@@ -539,13 +548,10 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
 
   define_dimensions(var, grid, file);
 
-  std::string
-    x = var.x().get_name(),
-    y = var.y().get_name(),
-    z = var.z().get_name();
+  std::string x = var.x().get_name(), y = var.y().get_name(), z = var.z().get_name();
 
   if (not var.get_time_independent()) {
-    dims.push_back(grid.ctx()->config()->get_string("time.dimension_name"));
+    dims.push_back(config->get_string("time.dimension_name"));
   }
 
   dims.push_back(y);
@@ -569,25 +575,22 @@ void define_spatial_variable(const SpatialVariableMetadata &var,
   // lat_bnds, and lon_bnds should not have the grid_mapping attribute to support CDO (see issue
   // #384).
   const VariableMetadata &mapping = grid.get_mapping_info().mapping;
-  if (mapping.has_attributes() and
-      not member(name, {"lat_bnds", "lon_bnds", "lat", "lon"})) {
-    file.write_attribute(var.get_name(), "grid_mapping",
-                         mapping.get_name());
+  if (mapping.has_attributes() and not member(name, { "lat_bnds", "lon_bnds", "lat", "lon" })) {
+    file.write_attribute(var.get_name(), "grid_mapping", mapping.get_name());
   }
 
   if (var.get_time_independent()) {
     // mark this variable as "not written" so that write_spatial_variable can avoid
     // writing it more than once.
-    file.write_attribute(var.get_name(), "not_written", PISM_INT, {1.0});
+    file.write_attribute(var.get_name(), "not_written", PISM_INT, { 1.0 });
   }
 }
 
 //! Read a variable from a file into an array `output`.
 /*! This also converts data from input units to internal units if needed.
  */
-void read_spatial_variable(const SpatialVariableMetadata &variable,
-                           const Grid& grid, const File &file,
-                           unsigned int time, double *output) {
+void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &grid,
+                           const File &file, unsigned int time, double *output) {
 
   const Logger &log = *grid.ctx()->log();
 
@@ -595,23 +598,22 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
   if (not var.exists) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.",
-                                  variable.get_name().c_str(),
-                                  variable.get_string("standard_name").c_str(),
-                                  file.filename().c_str());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Can't find '%s' (%s) in '%s'.", variable.get_name().c_str(),
+        variable.get_string("standard_name").c_str(), file.filename().c_str());
   }
 
   // Sanity check: the variable in an input file should have the expected
   // number of spatial dimensions.
   {
     // Set of spatial dimensions this field has.
-    std::set<int> axes {X_AXIS, Y_AXIS};
+    std::set<int> axes{ X_AXIS, Y_AXIS };
     if (not variable.z().get_name().empty()) {
       axes.insert(Z_AXIS);
     }
 
     std::vector<std::string> input_dims;
-    int input_ndims = 0;                 // number of spatial dimensions (input file)
+    int input_ndims           = 0; // number of spatial dimensions (input file)
     size_t matching_dim_count = 0; // number of matching dimensions
 
     input_dims = file.dimensions(var.name);
@@ -633,32 +635,28 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "found the %dD variable %s (%s) in '%s' while trying to read\n"
                                     "'%s' ('%s'), which is %d-dimensional.",
-                                    input_ndims,
-                                    var.name.c_str(),
-                                    join(input_dims, ",").c_str(),
-                                    file.filename().c_str(),
-                                    variable.get_name().c_str(),
+                                    input_ndims, var.name.c_str(), join(input_dims, ",").c_str(),
+                                    file.filename().c_str(), variable.get_name().c_str(),
                                     variable.get_string("long_name").c_str(),
                                     static_cast<int>(axes.size()));
     }
   }
 
   // make sure we have at least one level
-  auto zlevels = variable.levels();
+  auto zlevels         = variable.levels();
   unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
 
   read_distributed_array(file, grid, var.name, nlevels, time, output);
 
-  std::string input_units = file.read_text_attribute(var.name, "units");
+  std::string input_units           = file.read_text_attribute(var.name, "units");
   const std::string &internal_units = variable["units"];
 
   if (input_units.empty() and not internal_units.empty()) {
     const std::string &long_name = variable["long_name"];
     log.message(2,
-               "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
-               "              Assuming that it is in '%s'.\n",
-               variable.get_name().c_str(), long_name.c_str(),
-               internal_units.c_str());
+                "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
+                "              Assuming that it is in '%s'.\n",
+                variable.get_name().c_str(), long_name.c_str(), internal_units.c_str());
     input_units = internal_units;
   }
 
@@ -672,26 +670,33 @@ void read_spatial_variable(const SpatialVariableMetadata &variable,
       double fill_value = att[0];
       for (size_t k = 0; k < size; ++k) {
         if (output[k] == fill_value) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
-                                        var.name.c_str(), file.filename().c_str());
+          throw RuntimeError::formatted(
+              PISM_ERROR_LOCATION,
+              "Some values of the variable '%s' in '%s' match the _FillValue attribute.",
+              var.name.c_str(), file.filename().c_str());
         }
       }
     }
   }
 
-  units::Converter(variable.unit_system(),
-                   input_units, internal_units).convert_doubles(output, size);
+  units::Converter(variable.unit_system(), input_units, internal_units)
+      .convert_doubles(output, size);
 }
 
 //! \brief Write a double array to a file.
 /*!
   Converts units if internal and "output" units are different.
  */
-void write_spatial_variable(const SpatialVariableMetadata &var,
-                            const Grid& grid,
-                            const File &file,
-                            const double *input) {
+void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid &grid,
+                            const File &file, const double *input) {
+  auto config = grid.ctx()->config();
+
+  // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
+  // set.
+  SpatialVariableMetadata var = metadata;
+  if (config->get_flag("output.use_MKS")) {
+    var.output_units(var["units"]);
+  }
 
   auto name = var.get_name();
 
@@ -734,9 +739,8 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
       tmp[k] = input[k];
     }
 
-    units::Converter(var.unit_system(),
-                     units,
-                     output_units).convert_doubles(tmp.data(), tmp.size());
+    units::Converter(var.unit_system(), units, output_units)
+        .convert_doubles(tmp.data(), tmp.size());
 
     file.write_distributed_array(name, grid, nlevels, time_dependent, tmp.data());
   } else {
@@ -754,26 +758,18 @@ void write_spatial_variable(const SpatialVariableMetadata &var,
   variable was not found in the input file
   - uses the last record in the file
 */
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const Grid& grid, const File &file,
-                             RegriddingFlag flag, bool report_range,
-                             bool allow_extrapolation,
-                             double default_value,
-                             InterpolationType interpolation_type,
+void regrid_spatial_variable(SpatialVariableMetadata &var, const Grid &grid, const File &file,
+                             RegriddingFlag flag, bool report_range, bool allow_extrapolation,
+                             double default_value, InterpolationType interpolation_type,
                              double *output) {
-  unsigned int t_length = file.nrecords(var.get_name(),
-                                        var["standard_name"],
-                                        var.unit_system());
+  unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
 
-  regrid_spatial_variable(var, grid, file, t_length - 1, flag,
-                          report_range, allow_extrapolation,
+  regrid_spatial_variable(var, grid, file, t_length - 1, flag, report_range, allow_extrapolation,
                           default_value, interpolation_type, output);
 }
 
 static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
-  double
-    min_result = data[0],
-    max_result = data[0];
+  double min_result = data[0], max_result = data[0];
   for (size_t k = 0; k < data_size; ++k) {
     min_result = std::min(min_result, data[k]);
     max_result = std::max(max_result, data[k]);
@@ -820,29 +816,24 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
   // the grid spacing away from grid points at the edge.
   //
   // Note that x_min is not the same as internal.x(0).
-  const double
-    x_min       = internal.x0() - internal.Lx(),
-    x_max       = internal.x0() + internal.Lx(),
-    y_min       = internal.y0() - internal.Ly(),
-    y_max       = internal.y0() + internal.Ly(),
-    input_x_min = input.x0 - input.Lx,
-    input_x_max = input.x0 + input.Lx,
-    input_y_min = input.y0 - input.Ly,
-    input_y_max = input.y0 + input.Ly;
+  const double x_min = internal.x0() - internal.Lx(), x_max = internal.x0() + internal.Lx(),
+               y_min = internal.y0() - internal.Ly(), y_max = internal.y0() + internal.Ly(),
+               input_x_min = input.x0 - input.Lx, input_x_max = input.x0 + input.Lx,
+               input_y_min = input.y0 - input.Ly, input_y_max = input.y0 + input.Ly;
 
   // tolerance (one micron)
   double eps = 1e-6;
 
   // horizontal grid extent
-  if (not (x_min >= input_x_min - eps and x_max <= input_x_max + eps and
-           y_min >= input_y_min - eps and y_max <= input_y_max + eps)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "PISM's computational domain is not a subset of the domain in '%s'\n"
-                                  "PISM grid:       x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters\n"
-                                  "input file grid: x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters",
-                                  input.filename.c_str(),
-                                  x_min, x_max, y_min, y_max,
-                                  input_x_min, input_x_max, input_y_min, input_y_max);
+  if (not(x_min >= input_x_min - eps and x_max <= input_x_max + eps and
+          y_min >= input_y_min - eps and y_max <= input_y_max + eps)) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "PISM's computational domain is not a subset of the domain in '%s'\n"
+        "PISM grid:       x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters\n"
+        "input file grid: x: [%3.3f, %3.3f] y: [%3.3f, %3.3f] meters",
+        input.filename.c_str(), x_min, x_max, y_min, y_max, input_x_min, input_x_max, input_y_min,
+        input_y_max);
   }
 
   if (z_internal.empty()) {
@@ -856,8 +847,7 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "trying to read in a 2D field but the input file %s contains\n"
                                   "a 3D field with %d levels",
-                                  input.filename.c_str(),
-                                  static_cast<int>(input.z.size()));
+                                  input.filename.c_str(), static_cast<int>(input.z.size()));
   }
 
   if (z_internal.size() > 1 and input.z.size() <= 1) {
@@ -865,48 +855,41 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
     // with 1 level
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "trying to read in a 3D field but the input file %s contains\n"
-                                  "a 2D field", input.filename.c_str());
+                                  "a 2D field",
+                                  input.filename.c_str());
   }
 
   if (z_internal.size() > 1 and (not input.z.empty())) {
     // both internal field and input variable are 3D: check vertical grid extent
     // Note: in PISM 2D fields have one vertical level (z = 0).
-    const double
-      input_z_min = input.z.front(),
-      input_z_max = input.z.back(),
-      z_min       = z_internal.front(),
-      z_max       = z_internal.back();
+    const double input_z_min = input.z.front(), input_z_max = input.z.back(),
+                 z_min = z_internal.front(), z_max = z_internal.back();
 
-    if (not (z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "PISM's computational domain is not a subset of the domain in '%s'\n"
-                                    "PISM grid:       z: [%3.3f, %3.3f] meters\n"
-                                    "input file grid: z: [%3.3f, %3.3f] meters",
-                                    input.filename.c_str(),
-                                    z_min, z_max,
-                                    input_z_min, input_z_max);
+    if (not(z_min >= input.z_min - eps and z_max <= input.z_max + eps)) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "PISM's computational domain is not a subset of the domain in '%s'\n"
+          "PISM grid:       z: [%3.3f, %3.3f] meters\n"
+          "input file grid: z: [%3.3f, %3.3f] meters",
+          input.filename.c_str(), z_min, z_max, input_z_min, input_z_max);
     }
   }
 }
 
-void regrid_spatial_variable(SpatialVariableMetadata &variable,
-                             const Grid& grid, const File &file,
-                             unsigned int t_start, RegriddingFlag flag,
-                             bool report_range,
-                             bool allow_extrapolation,
-                             double default_value,
-                             InterpolationType interpolation_type,
-                             double *output) {
+void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
+                             unsigned int t_start, RegriddingFlag flag, bool report_range,
+                             bool allow_extrapolation, double default_value,
+                             InterpolationType interpolation_type, double *output) {
   const Logger &log = *grid.ctx()->log();
 
-  auto sys = variable.unit_system();
-  const auto& levels = variable.levels();
+  auto sys               = variable.unit_system();
+  const auto &levels     = variable.levels();
   const size_t data_size = grid.xm() * grid.ym() * levels.size();
 
   // Find the variable
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  if (var.exists) {                      // the variable was found successfully
+  if (var.exists) { // the variable was found successfully
 
     {
       grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
@@ -919,13 +902,14 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     }
 
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-      log.message(2,
-                  "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-                  default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
-                  file.filename().c_str());
+      log.message(
+          2,
+          "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
+          default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
+          file.filename().c_str());
 
-      regrid_vec_fill_missing(file, grid, var.name, levels,
-                              t_start, default_value, interpolation_type, output);
+      regrid_vec_fill_missing(file, grid, var.name, levels, t_start, default_value,
+                              interpolation_type, output);
     } else {
       regrid_vec(file, grid, var.name, levels, t_start, interpolation_type, output);
     }
@@ -934,15 +918,14 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
     // the units, because check_range and report_range expect data to
     // be in PISM (MKS) units.
 
-    std::string input_units = file.read_text_attribute(var.name, "units");
+    std::string input_units    = file.read_text_attribute(var.name, "units");
     std::string internal_units = variable["units"];
 
     if (input_units.empty() and not internal_units.empty()) {
       log.message(2,
                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                   "              Assuming that it is in '%s'.\n",
-                  variable.get_name().c_str(),
-                  variable.get_string("long_name").c_str(),
+                  variable.get_name().c_str(), variable.get_string("long_name").c_str(),
                   internal_units.c_str());
       input_units = internal_units;
     }
@@ -958,10 +941,10 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
       compute_range(grid.com, output, data_size, &min, &max);
 
       if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-                                      variable.get_name().c_str(),
-                                      variable.get_string("long_name").c_str());
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
+            variable.get_name().c_str(), variable.get_string("long_name").c_str());
       }
 
       // Check the range and warn the user if needed:
@@ -973,27 +956,24 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
         variable.report_range(log, min, max, var.found_using_standard_name);
       }
     }
-  } else {                // couldn't find the variable
+  } else { // couldn't find the variable
     if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
       // if it's critical, print an error message and stop
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in the regridding file '%s'.",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Can't find '%s' in the regridding file '%s'.",
                                     variable.get_name().c_str(), file.filename().c_str());
     }
 
     // If it is optional, fill with the provided default value.
     // units::Converter constructor will make sure that units are compatible.
-    units::Converter c(sys,
-                       variable["units"],
-                       variable["output_units"]);
+    units::Converter c(sys, variable["units"], variable["output_units"]);
 
     std::string spacer(variable.get_name().size(), ' ');
     log.message(2,
                 "  absent %s / %-10s\n"
                 "         %s \\ not found; using default constant %7.2f (%s)\n",
-                variable.get_name().c_str(),
-                variable.get_string("long_name").c_str(),
-                spacer.c_str(), c(default_value),
-                variable.get_string("output_units").c_str());
+                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
+                spacer.c_str(), c(default_value), variable.get_string("output_units").c_str());
 
     for (size_t k = 0; k < data_size; ++k) {
       output[k] = default_value;
@@ -1002,10 +982,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable,
 }
 
 
-
 //! Define a NetCDF variable corresponding to a time-series.
-void define_timeseries(const VariableMetadata& var,
-                       const std::string &dimension_name,
+void define_timeseries(const VariableMetadata &var, const std::string &dimension_name,
                        const File &file, io::Type nctype) {
 
   std::string name = var.get_name();
@@ -1015,28 +993,25 @@ void define_timeseries(const VariableMetadata& var,
   }
 
   if (not file.find_dimension(dimension_name)) {
-    define_dimension(file, PISM_UNLIMITED,
-                     VariableMetadata(dimension_name, var.unit_system()));
+    define_dimension(file, PISM_UNLIMITED, VariableMetadata(dimension_name, var.unit_system()));
   }
 
   if (not file.find_variable(name)) {
-    file.define_variable(name, nctype, {dimension_name});
+    file.define_variable(name, nctype, { dimension_name });
   }
 
   write_attributes(file, var, nctype);
 }
 
 //! Read a time-series variable from a NetCDF file to a vector of doubles.
-void read_timeseries(const File &file, const VariableMetadata &metadata,
-                     const Logger &log, std::vector<double> &data) {
+void read_timeseries(const File &file, const VariableMetadata &metadata, const Logger &log,
+                     std::vector<double> &data) {
 
   std::string name = metadata.get_name();
 
   try {
     // Find the variable:
-    std::string
-      long_name      = metadata["long_name"],
-      standard_name  = metadata["standard_name"];
+    std::string long_name = metadata["long_name"], standard_name = metadata["standard_name"];
 
     auto var = file.find_variable(name, standard_name);
 
@@ -1058,13 +1033,12 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
       throw RuntimeError(PISM_ERROR_LOCATION, "dimension " + dimension_name + " has length zero");
     }
 
-    data.resize(length);        // memory allocation happens here
+    data.resize(length); // memory allocation happens here
 
-    file.read_variable(var.name, {0}, {length}, data.data());
+    file.read_variable(var.name, { 0 }, { length }, data.data());
 
     units::System::Ptr system = metadata.unit_system();
-    units::Unit internal_units(system, metadata["units"]),
-      input_units(system, "1");
+    units::Unit internal_units(system, metadata["units"]), input_units(system, "1");
 
     std::string input_units_string = file.read_text_attribute(var.name, "units");
 
@@ -1079,8 +1053,7 @@ void read_timeseries(const File &file, const VariableMetadata &metadata,
       log.message(2,
                   "PISM WARNING: Variable '%s' ('%s') does not have the units attribute.\n"
                   "              Assuming that it is in '%s'.\n",
-                  name.c_str(), long_name.c_str(),
-                  units_string.c_str());
+                  name.c_str(), long_name.c_str(), units_string.c_str());
       input_units = internal_units;
     }
 
@@ -1103,18 +1076,15 @@ void write_timeseries(const File &file, const VariableMetadata &metadata, size_t
   std::string name = metadata.get_name();
   try {
     if (not file.find_variable(name)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "variable '%s' not found", name.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' not found", name.c_str());
     }
 
     // create a copy of "data":
     std::vector<double> tmp = data;
 
     // convert to output units:
-    units::Converter(metadata.unit_system(),
-                     metadata["units"],
-                     metadata["output_units"]).convert_doubles(tmp.data(),
-                                                                                 tmp.size());
+    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+        .convert_doubles(tmp.data(), tmp.size());
 
     file.write_variable(name, {(unsigned int)t_start}, {(unsigned int)tmp.size()}, tmp.data());
 
@@ -1233,7 +1203,10 @@ void read_time_bounds(const File &file,
 
 void write_time_bounds(const File &file, const VariableMetadata &metadata,
                        size_t t_start, const std::vector<double> &data) {
-  std::string name = metadata.get_name();
+
+  VariableMetadata var = metadata;
+
+  std::string name = var.get_name();
   try {
     bool variable_exists = file.find_variable(name);
     if (not variable_exists) {
@@ -1245,7 +1218,7 @@ void write_time_bounds(const File &file, const VariableMetadata &metadata,
     std::vector<double> tmp = data;
 
     // convert to output units:
-    units::Converter(metadata.unit_system(), metadata["units"], metadata["output_units"])
+    units::Converter(var.unit_system(), var["units"], var["output_units"])
         .convert_doubles(tmp.data(), tmp.size());
 
     file.write_variable(name,

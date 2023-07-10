@@ -90,10 +90,6 @@ protected:
   virtual void define_state_impl(const File &output) const;
   virtual void write_state_impl(const File &output) const;
 
-  void set_attrs(const std::string &long_name, const std::string &standard_name,
-                 const std::string &units, const std::string &output_units,
-                 unsigned int N = 0);
-
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
@@ -283,8 +279,6 @@ public:
   void init(const File &output_file, std::shared_ptr<std::vector<double> > requested_times);
 
   const VariableMetadata &metadata() const;
-
-  void define(const File &file) const;
 
 protected:
   virtual void update_impl(double t0, double t1) = 0;

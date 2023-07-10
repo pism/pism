@@ -3233,7 +3233,7 @@ static void print_diagnostics_json(const Logger &log, const Metadata &list) {
 static Metadata diag_metadata(const std::map<std::string,Diagnostic::Ptr> &diags) {
   Metadata result;
 
-  for (auto f : diags) {
+  for (const auto& f : diags) {
     Diagnostic::Ptr diag = f.second;
 
     for (unsigned int k = 0; k < diag->n_variables(); ++k) {

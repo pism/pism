@@ -212,18 +212,16 @@ const array::Scalar& BedThermalUnit::flux_through_bottom_surface() const {
 }
 
 BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
-  : Diag<BedThermalUnit>(m) {
+    : Diag<BedThermalUnit>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock")};
-
-  set_attrs("upward geothermal flux at the top bedrock surface",
-            (ismip6 ?
-             "upward_geothermal_heat_flux_in_land_ice" :
-             "upward_geothermal_heat_flux_at_ground_level_in_land_ice"),
-            "W m-2", "mW m-2", 0);
+  m_vars      = { SpatialVariableMetadata(m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock") };
+  m_vars[0]
+      .long_name("upward geothermal flux at the top bedrock surface")
+      .standard_name((ismip6 ? "upward_geothermal_heat_flux_in_land_ice" :
+                               "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
+      .units("W m-2")
+      .output_units("mW m-2");
   m_vars[0]["comment"] = "positive values correspond to an upward flux";
 }
 
