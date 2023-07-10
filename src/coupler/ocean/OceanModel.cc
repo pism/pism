@@ -29,7 +29,7 @@ namespace pism {
 namespace ocean {
 
 std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "shelfbtemp"));
+  auto result = std::make_shared<array::Scalar>(g, "shelfbtemp");
   result->metadata(0)
       .long_name("ice temperature at the bottom of floating ice")
       .units("Kelvin");
@@ -37,7 +37,7 @@ std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_temperature(std::
 }
 
 std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "shelfbmassflux"));
+  auto result = std::make_shared<array::Scalar>(g, "shelfbmassflux");
 
   result->metadata(0)
       .long_name("shelf base mass flux")
@@ -47,18 +47,16 @@ std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::sh
 }
 
 std::shared_ptr<array::Scalar> OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(g, "average_water_column_pressure"));
+  auto result = std::make_shared<array::Scalar>(g, "average_water_column_pressure");
 
-  result->metadata(0)
-      .long_name("vertically-averaged water column pressure")
-      .units("Pa");
+  result->metadata(0).long_name("vertically-averaged water column pressure").units("Pa");
 
   return result;
 }
 
 // "modifier" constructor
 OceanModel::OceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input)
-  : Component(g), m_input_model(input) {
+    : Component(g), m_input_model(input) {
 
   if (not input) {
     m_water_column_pressure = allocate_water_column_pressure(g);
@@ -67,7 +65,7 @@ OceanModel::OceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel
 
 // "model" constructor
 OceanModel::OceanModel(std::shared_ptr<const Grid> g)
-  : OceanModel(g, std::shared_ptr<OceanModel>()) {
+    : OceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 
@@ -79,13 +77,12 @@ void OceanModel::init_impl(const Geometry &geometry) {
   if (m_input_model) {
     m_input_model->init(geometry);
   } else {
-    double
-      ice_density   = m_config->get_number("constants.ice.density"),
-      water_density = m_config->get_number("constants.sea_water.density"),
-      g             = m_config->get_number("constants.standard_gravity");
+    double ice_density   = m_config->get_number("constants.ice.density"),
+           water_density = m_config->get_number("constants.sea_water.density"),
+           g             = m_config->get_number("constants.standard_gravity");
 
     compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                             *m_water_column_pressure);
+                                          *m_water_column_pressure);
   }
 }
 
@@ -93,16 +90,15 @@ void OceanModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
 }
 
-
-const array::Scalar& OceanModel::shelf_base_mass_flux() const {
+const array::Scalar &OceanModel::shelf_base_mass_flux() const {
   return shelf_base_mass_flux_impl();
 }
 
-const array::Scalar& OceanModel::shelf_base_temperature() const {
+const array::Scalar &OceanModel::shelf_base_temperature() const {
   return shelf_base_temperature_impl();
 }
 
-const array::Scalar& OceanModel::average_water_column_pressure() const {
+const array::Scalar &OceanModel::average_water_column_pressure() const {
   return average_water_column_pressure_impl();
 }
 
@@ -119,56 +115,49 @@ void OceanModel::update_impl(const Geometry &geometry, double t, double dt) {
 MaxTimestep OceanModel::max_timestep_impl(double t) const {
   if (m_input_model) {
     return m_input_model->max_timestep(t);
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
 void OceanModel::define_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->define_model_state(output);
-  } else {
-    // no state to define
   }
+  // no state to define
 }
 
 void OceanModel::write_model_state_impl(const File &output) const {
   if (m_input_model) {
     return m_input_model->write_model_state(output);
-  } else {
-    // no state to write
   }
+  // no state to write
 }
 
-const array::Scalar& OceanModel::shelf_base_temperature_impl() const {
+const array::Scalar &OceanModel::shelf_base_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->shelf_base_temperature();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const array::Scalar& OceanModel::shelf_base_mass_flux_impl() const {
+const array::Scalar &OceanModel::shelf_base_mass_flux_impl() const {
   if (m_input_model) {
     return m_input_model->shelf_base_mass_flux();
-  } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
   }
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const array::Scalar& OceanModel::average_water_column_pressure_impl() const {
+const array::Scalar &OceanModel::average_water_column_pressure_impl() const {
   if (m_input_model) {
     return m_input_model->average_water_column_pressure();
-  } else {
-    return *m_water_column_pressure;
   }
+  return *m_water_column_pressure;
 }
 
 namespace diagnostics {
 
 /*! @brief Shelf base temperature. */
-class PO_shelf_base_temperature : public Diag<OceanModel>
-{
+class PO_shelf_base_temperature : public Diag<OceanModel> {
 public:
   PO_shelf_base_temperature(const OceanModel *m) : Diag<OceanModel>(m) {
     m_vars = { { m_sys, "shelfbtemp" } };
@@ -178,7 +167,8 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "shelfbtemp"));
+    auto result = std::make_shared<array::Scalar>(m_grid, "shelfbtemp");
+
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_temperature());
@@ -199,7 +189,8 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "shelfbmassflux"));
+    auto result = std::make_shared<array::Scalar>(m_grid, "shelfbmassflux");
+
     result->metadata(0) = m_vars[0];
 
     result->copy_from(model->shelf_base_mass_flux());
@@ -212,55 +203,46 @@ protected:
 
 DiagnosticList OceanModel::diagnostics_impl() const {
   using namespace diagnostics;
-  DiagnosticList result = {
-    {"shelfbtemp",                     Diagnostic::Ptr(new PO_shelf_base_temperature(this))},
-    {"shelfbmassflux",                 Diagnostic::Ptr(new PO_shelf_base_mass_flux(this))}
-  };
+  DiagnosticList result = { { "shelfbtemp", Diagnostic::Ptr(new PO_shelf_base_temperature(this)) },
+                            { "shelfbmassflux",
+                              Diagnostic::Ptr(new PO_shelf_base_mass_flux(this)) } };
 
   if (m_input_model) {
     return combine(m_input_model->diagnostics(), result);
-  } else {
-    return result;
   }
+  return result;
 }
 
 TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->ts_diagnostics();
-  } else {
-    return {};
   }
+  return {};
 }
 
-void OceanModel::compute_average_water_column_pressure(const Geometry &geometry,
-                                                          double ice_density,
-                                                          double water_density,
-                                                          double g,
-                                                          array::Scalar &result) {
+void OceanModel::compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
+                                                       double water_density, double g,
+                                                       array::Scalar &result) {
 
   auto grid = result.grid();
 
-  const array::Scalar
-    &bed = geometry.bed_elevation,
-    &H   = geometry.ice_thickness,
-    &z_s = geometry.sea_level_elevation;
+  const array::Scalar &bed = geometry.bed_elevation, &H = geometry.ice_thickness,
+                      &z_s = geometry.sea_level_elevation;
 
-  array::AccessScope l{&bed, &H, &z_s, &result};
+  array::AccessScope l{ &bed, &H, &z_s, &result };
 
   ParallelSection loop(grid->com);
   try {
     for (auto p = grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      result(i, j) = pism::average_water_column_pressure(H(i, j), bed(i, j), z_s(i, j),
-                                                         ice_density, water_density, g);
+      result(i, j) = pism::average_water_column_pressure(H(i, j), bed(i, j), z_s(i, j), ice_density,
+                                                         water_density, g);
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-
-
 }
 
 

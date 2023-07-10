@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <gsl/gsl_math.h>       // GSL_NAN
+#include <memory>
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/AtmosphereModel.hh"
@@ -32,7 +33,7 @@ namespace pism {
 namespace surface {
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_mass(std::shared_ptr<const Grid> grid) {
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "surface_layer_mass"));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_layer_mass");
 
   result->metadata(0)
       .long_name("mass held in the surface layer")
@@ -45,7 +46,7 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_mass(std::shared_ptr
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_thickness(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "surface_layer_thickness"));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_layer_thickness");
 
   result->metadata(0)
       .long_name("thickness of the surface process layer at the top surface of the ice")
@@ -58,7 +59,7 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_layer_thickness(std::share
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "ice_surface_liquid_water_fraction"));
+  auto result = std::make_shared<array::Scalar>(grid, "ice_surface_liquid_water_fraction");
 
   result->metadata(0)
       .long_name("liquid water fraction of the ice at the top surface")
@@ -71,7 +72,7 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_liquid_water_fraction(std:
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_mass_flux(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "climatic_mass_balance"));
+  auto result = std::make_shared<array::Scalar>(grid, "climatic_mass_balance");
 
   result->metadata(0)
       .long_name("surface mass balance (accumulation/ablation) rate")
@@ -79,17 +80,18 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_mass_flux(std::shared_ptr<
       .output_units("kg m-2 year-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
-  Config::ConstPtr config = grid->ctx()->config();
-  const double smb_max    = config->get_number("surface.given.smb_max", "kg m-2 second-1");
+  auto config = grid->ctx()->config();
+  const double smb_max = config->get_number("surface.given.smb_max", "kg m-2 second-1");
 
   result->metadata()["valid_range"] = { -smb_max, smb_max };
 
   return result;
 }
 
-std::shared_ptr<array::Scalar> SurfaceModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar>
+SurfaceModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "ice_surface_temp"));
+  auto result = std::make_shared<array::Scalar>(grid, "ice_surface_temp");
 
   result->metadata(0)
       .long_name("temperature of the ice at the ice surface but below firn processes")
@@ -100,35 +102,30 @@ std::shared_ptr<array::Scalar> SurfaceModel::allocate_temperature(std::shared_pt
   return result;
 }
 
-std::shared_ptr<array::Scalar> SurfaceModel::allocate_accumulation(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar>
+SurfaceModel::allocate_accumulation(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "surface_accumulation_flux"));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_accumulation_flux");
 
-  result->metadata(0)
-      .long_name("surface accumulation (precipitation minus rain)")
-      .units("kg m-2");
+  result->metadata(0).long_name("surface accumulation (precipitation minus rain)").units("kg m-2");
 
   return result;
 }
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_melt(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "surface_melt_flux"));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_melt_flux");
 
-  result->metadata(0)
-      .long_name("surface melt")
-      .units("kg m-2");
+  result->metadata(0).long_name("surface melt").units("kg m-2");
 
   return result;
 }
 
 std::shared_ptr<array::Scalar> SurfaceModel::allocate_runoff(std::shared_ptr<const Grid> grid) {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(grid, "surface_runoff_flux"));
+  auto result = std::make_shared<array::Scalar>(grid, "surface_runoff_flux");
 
-  result->metadata(0)
-      .long_name("surface meltwater runoff")
-      .units("kg m-2");
+  result->metadata(0).long_name("surface meltwater runoff").units("kg m-2");
 
   return result;
 }
@@ -466,7 +463,8 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
 
 std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "climatic_mass_balance"));
+  auto result = std::make_shared<array::Scalar>(m_grid, "climatic_mass_balance");
+
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->mass_flux());
@@ -474,13 +472,10 @@ std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
   return result;
 }
 
-PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
-  : Diag<SurfaceModel>(m) {
-
+PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-  /* set metadata: */
   m_vars = { { m_sys, ismip6 ? "litemptop" : "ice_surface_temp" } };
   m_vars[0]
       .long_name("ice temperature at the top ice surface")
@@ -490,7 +485,8 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
 
 std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "ice_surface_temp"));
+  auto result = std::make_shared<array::Scalar>(m_grid, "ice_surface_temp");
+
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->temperature());
@@ -505,8 +501,8 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag
 
 std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(
-      new array::Scalar(m_grid, "ice_surface_liquid_water_fraction"));
+  auto result = std::make_shared<array::Scalar>(m_grid, "ice_surface_liquid_water_fraction");
+
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->liquid_water_fraction());
@@ -521,7 +517,8 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
 
 std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "surface_layer_mass"));
+  auto result = std::make_shared<array::Scalar>(m_grid, "surface_layer_mass");
+
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_mass());
@@ -536,7 +533,8 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceMode
 
 std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
 
-  std::shared_ptr<array::Scalar> result(new array::Scalar(m_grid, "surface_layer_thickness"));
+  auto result = std::make_shared<array::Scalar>(m_grid, "surface_layer_thickness");
+
   result->metadata(0) = m_vars[0];
 
   result->copy_from(model->layer_thickness());
