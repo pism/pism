@@ -74,11 +74,9 @@ SSAFD::SSAFD(std::shared_ptr<const Grid> grid)
       .long_name("old SSA velocity field; used for re-trying with a different epsilon")
       .units("m s-1");
 
-  auto units = pism::printf("Pa s^(1/%f)", m_flow_law->exponent());
-
   m_hardness.metadata(0)
       .long_name("vertically-averaged ice hardness")
-      .set_units_without_validation(units);
+      .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
 
   m_nuH.metadata(0)
       .long_name("ice thickness times effective viscosity")
