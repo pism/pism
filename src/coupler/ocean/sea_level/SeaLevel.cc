@@ -100,7 +100,7 @@ namespace diagnostics {
 class SL : public Diag<SeaLevel> {
 public:
   SL(const SeaLevel *m) : Diag<SeaLevel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "sea_level") };
+    m_vars = { { m_sys, "sea_level" } };
     m_vars[0].long_name("sea level elevation, relative to the geoid").units("meters");
   }
 

@@ -215,7 +215,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
     : Diag<BedThermalUnit>(m) {
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
-  m_vars      = { SpatialVariableMetadata(m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock") };
+  m_vars      = { { m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock" } };
   m_vars[0]
       .long_name("upward geothermal flux at the top bedrock surface")
       .standard_name((ismip6 ? "upward_geothermal_heat_flux_in_land_ice" :

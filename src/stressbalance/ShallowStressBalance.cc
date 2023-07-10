@@ -173,8 +173,7 @@ SSB_taud::SSB_taud(const ShallowStressBalance *m)
   : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
-            SpatialVariableMetadata(m_sys, "taud_y")};
+  m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
   m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
   m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
 
@@ -220,7 +219,7 @@ std::shared_ptr<array::Array> SSB_taud::compute_impl() const {
 }
 
 SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
-  m_vars = { SpatialVariableMetadata(m_sys, "taud_mag") };
+  m_vars = { { m_sys, "taud_mag" } };
   m_vars[0]
       .long_name("magnitude of the gravitational driving stress at the base of ice")
       .units("Pa");
@@ -239,7 +238,7 @@ std::shared_ptr<array::Array> SSB_taud_mag::compute_impl() const {
 }
 
 SSB_taub::SSB_taub(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
-  m_vars = { SpatialVariableMetadata(m_sys, "taub_x"), SpatialVariableMetadata(m_sys, "taub_y") };
+  m_vars = { { m_sys, "taub_x" }, { m_sys, "taub_y" } };
 
   m_vars[0].long_name("X-component of the shear stress at the base of ice");
   m_vars[1].long_name("Y-component of the shear stress at the base of ice");
@@ -282,7 +281,7 @@ SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m) : Diag<ShallowStressBa
 
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
-  m_vars = { SpatialVariableMetadata(m_sys, ismip6 ? "strbasemag" : "taub_mag") };
+  m_vars = { { m_sys, ismip6 ? "strbasemag" : "taub_mag" } };
   m_vars[0]
       .long_name("magnitude of the basal shear stress at the base of ice")
       .standard_name("land_ice_basal_drag") // ISMIP6 "standard" name
@@ -331,7 +330,7 @@ void PrescribedSliding::init_impl() {
 }
 
 SSB_beta::SSB_beta(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "beta")};
+  m_vars = { { m_sys, "beta" } };
   m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
 }
 

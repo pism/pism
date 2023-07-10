@@ -637,7 +637,7 @@ public:
 
     m_accumulator.metadata().units(accumulator_units);
 
-    m_vars = { SpatialVariableMetadata(m_sys, name) };
+    m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)

@@ -413,8 +413,7 @@ SSA_taud::SSA_taud(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_x"),
-            SpatialVariableMetadata(m_sys, "taud_y")};
+  m_vars = { { m_sys, "taud_x" }, { m_sys, "taud_y" } };
 
   m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
   m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
@@ -440,7 +439,7 @@ SSA_taud_mag::SSA_taud_mag(const SSA *m)
   : Diag<SSA>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "taud_mag")};
+  m_vars = { { m_sys, "taud_mag" } };
 
   m_vars[0].long_name("magnitude of the driving shear stress at the base of ice").units("Pa");
   m_vars[0]["comment"] = "this is the magnitude of the driving stress used by the SSA solver";

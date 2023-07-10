@@ -106,7 +106,7 @@ namespace diagnostics {
 class AirTemperatureSnapshot : public Diag<AtmosphereModel> {
 public:
   AirTemperatureSnapshot(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "air_temp_snapshot") };
+    m_vars = { { m_sys, "air_temp_snapshot" } };
     m_vars[0].long_name("instantaneous value of the near-surface air temperature").units("Kelvin");
   }
 
@@ -148,7 +148,7 @@ protected:
 class AirTemperature : public Diag<AtmosphereModel> {
 public:
   AirTemperature(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "effective_air_temp") };
+    m_vars = { { m_sys, "effective_air_temp" } };
     m_vars[0].long_name("effective mean-annual near-surface air temperature").units("Kelvin");
   }
 
@@ -168,7 +168,7 @@ protected:
 class Precipitation : public Diag<AtmosphereModel> {
 public:
   Precipitation(const AtmosphereModel *m) : Diag<AtmosphereModel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "effective_precipitation") };
+    m_vars = { { m_sys, "effective_precipitation" } };
     m_vars[0]
         .long_name("effective precipitation rate")
         .standard_name("precipitation_flux")

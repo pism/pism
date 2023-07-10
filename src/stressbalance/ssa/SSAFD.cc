@@ -1738,13 +1738,8 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
   PISM_CHK(ierr, "VecView");
 }
 
-SSAFD_nuH::SSAFD_nuH(const SSAFD *m)
-  : Diag<SSAFD>(m) {
-
-  // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "nuH[0]"),
-            SpatialVariableMetadata(m_sys, "nuH[1]")};
-
+SSAFD_nuH::SSAFD_nuH(const SSAFD *m) : Diag<SSAFD>(m) {
+  m_vars = { { m_sys, "nuH[0]" }, { m_sys, "nuH[1]" } };
   m_vars[0]
       .long_name("ice thickness times effective viscosity, i-offset")
       .units("Pa s m")

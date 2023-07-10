@@ -171,7 +171,7 @@ class PO_shelf_base_temperature : public Diag<OceanModel>
 {
 public:
   PO_shelf_base_temperature(const OceanModel *m) : Diag<OceanModel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "shelfbtemp") };
+    m_vars = { { m_sys, "shelfbtemp" } };
     m_vars[0].long_name("ice temperature at the basal surface of ice shelves").units("Kelvin");
   }
 
@@ -192,7 +192,7 @@ protected:
 class PO_shelf_base_mass_flux : public Diag<OceanModel> {
 public:
   PO_shelf_base_mass_flux(const OceanModel *m) : Diag<OceanModel>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "shelfbmassflux") };
+    m_vars = { { m_sys, "shelfbmassflux" } };
     m_vars[0].long_name("mass flux at the basal surface of ice shelves").units("kg m-2 s-1");
   }
 

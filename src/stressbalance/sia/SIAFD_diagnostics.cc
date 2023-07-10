@@ -41,7 +41,7 @@ SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "schoofs_theta")};
+  m_vars = { { m_sys, "schoofs_theta" } };
 
   m_vars[0]
       .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
@@ -65,7 +65,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m)
   : Diag<SIAFD>(m) {
 
   // set metadata:
-  m_vars = {SpatialVariableMetadata(m_sys, "topgsmooth")};
+  m_vars = { { m_sys, "topgsmooth" } };
   m_vars[0]
       .long_name("smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
       .units("m");

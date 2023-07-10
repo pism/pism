@@ -456,7 +456,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
   : Diag<SurfaceModel>(m) {
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys, "climatic_mass_balance")};
+  m_vars = { { m_sys, "climatic_mass_balance" } };
   m_vars[0]
       .long_name("surface mass balance (accumulation/ablation) rate")
       .standard_name("land_ice_surface_specific_mass_balance_flux")
@@ -481,8 +481,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m)
   auto ismip6 = m_config->get_flag("output.ISMIP6");
 
   /* set metadata: */
-  m_vars = {SpatialVariableMetadata(m_sys,
-                                    ismip6 ? "litemptop" : "ice_surface_temp")};
+  m_vars = { { m_sys, ismip6 ? "litemptop" : "ice_surface_temp" } };
   m_vars[0]
       .long_name("ice temperature at the top ice surface")
       .standard_name("temperature_at_top_of_ice_sheet_model")
@@ -500,7 +499,7 @@ std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
 }
 
 PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
-  m_vars = { SpatialVariableMetadata(m_sys, "ice_surface_liquid_water_fraction") };
+  m_vars = { { m_sys, "ice_surface_liquid_water_fraction" } };
   m_vars[0].long_name("ice liquid water fraction at the ice surface").units("1");
 }
 
@@ -516,7 +515,7 @@ std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 }
 
 PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
-  m_vars = { SpatialVariableMetadata(m_sys, "surface_layer_mass") };
+  m_vars = { { m_sys, "surface_layer_mass" } };
   m_vars[0].long_name("mass of the surface layer (snow and firn)").units("kg");
 }
 
@@ -531,7 +530,7 @@ std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
 }
 
 PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
-  m_vars = {SpatialVariableMetadata(m_sys, "surface_layer_thickness")};
+  m_vars = { { m_sys, "surface_layer_thickness" } };
   m_vars[0].long_name("thickness of the surface layer (snow and firn)").units("meters");
 }
 
@@ -578,7 +577,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -641,7 +640,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(long_name)
         .standard_name(standard_name)
@@ -703,7 +702,7 @@ public:
 
     m_accumulator.metadata()["units"] = accumulator_units;
 
-    m_vars = {SpatialVariableMetadata(m_sys, name)};
+    m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(long_name)
         .units(internal_units)

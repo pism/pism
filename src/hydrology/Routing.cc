@@ -40,7 +40,7 @@ class BasalWaterPressure : public Diag<Routing>
 public:
   BasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "bwp")};
+    m_vars = { { m_sys, "bwp" } };
     m_vars[0].long_name("pressure of transportable water in subglacial layer").units("Pa");
   }
 
@@ -61,7 +61,7 @@ class RelativeBasalWaterPressure : public Diag<Routing>
 public:
   RelativeBasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "bwprel")};
+    m_vars = { { m_sys, "bwprel" } };
     m_vars[0]
         .long_name(
             "pressure of transportable water in subglacial layer as fraction of the overburden pressure")
@@ -103,7 +103,7 @@ class EffectiveBasalWaterPressure : public Diag<Routing>
 public:
   EffectiveBasalWaterPressure(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "effbwp")};
+    m_vars = { { m_sys, "effbwp" } };
     m_vars[0]
         .long_name("effective pressure of transportable water in subglacial layer"
                    " (overburden pressure minus water pressure)")
@@ -140,7 +140,7 @@ class WallMelt : public Diag<Routing>
 public:
   WallMelt(const Routing *m)
     : Diag<Routing>(m) {
-    m_vars = {SpatialVariableMetadata(m_sys, "wallmelt")};
+    m_vars = { { m_sys, "wallmelt" } };
     m_vars[0]
         .long_name("wall melt into subglacial hydrology layer from (turbulent)"
                    " dissipation of energy in transportable water")
@@ -221,7 +221,7 @@ class HydraulicPotential : public Diag<Routing>
 {
 public:
   HydraulicPotential(const Routing *m) : Diag<Routing>(m) {
-    m_vars = { SpatialVariableMetadata(m_sys, "hydraulic_potential") };
+    m_vars = { { m_sys, "hydraulic_potential" } };
     m_vars[0].long_name("hydraulic potential in the subglacial hydrology system").units("Pa");
   }
 
