@@ -328,12 +328,11 @@ public:
     std::string name              = "tendency_of_ice_amount_due_to_conservation_error",
                 accumulator_units = "kg m-2",
                 long_name         = "average mass conservation error flux over reporting interval",
-                standard_name = "", internal_units = "kg m-2 second-1",
-                external_units = "kg m-2 year-1";
+                internal_units = "kg m-2 second-1", external_units = "kg m-2 year-1";
     if (kind == MASS) {
       name = "tendency_of_ice_mass_due_to_conservation_error", accumulator_units = "kg",
       long_name     = "average mass conservation error flux over reporting interval",
-      standard_name = "", internal_units = "kg second-1", external_units = "Gt year-1";
+      internal_units = "kg second-1", external_units = "Gt year-1";
     }
 
     m_accumulator.metadata()["units"] = accumulator_units;
@@ -341,7 +340,6 @@ public:
     m_vars = { { m_sys, name } };
     m_vars[0]
         .long_name(long_name)
-        .standard_name(standard_name)
         .units(internal_units)
         .output_units(external_units);
     m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};

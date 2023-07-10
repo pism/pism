@@ -89,7 +89,6 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_input" } };
     m_vars[0]
         .long_name("subglacial water flux due to input")
-        .standard_name("")
         .units("kg second-1")
         .output_units("Gt year-1");
     m_vars[0]["cell_methods"] = "time: mean";
@@ -253,7 +252,6 @@ public:
     m_vars = { { m_sys, "tendency_of_subglacial_water_mass_due_to_flow" } };
     m_vars[0]
         .long_name("rate of change subglacial water mass due to lateral flow")
-        .standard_name("")
         .units("kg second-1")
         .output_units("Gt year-1");
     m_vars[0]["cell_methods"] = "time: mean";
