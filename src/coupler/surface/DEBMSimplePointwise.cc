@@ -331,14 +331,15 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   if (not paleo_file.empty()) {
     m_use_paleo_file = true;
 
-    m_eccentricity.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "", "", "eccentricity of the earth"));
+    m_eccentricity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "1",
+                                           "1", "eccentricity of the earth"));
 
-    m_obliquity.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian", "degree", "obliquity of the earth"));
+    m_obliquity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian",
+                                        "degree", "obliquity of the earth"));
 
     m_perihelion_longitude.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian", "degree", "longitude of the perihelion relative to the vernal equinox"));
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian",
+                          "degree", "longitude of the perihelion relative to the vernal equinox"));
   } else {
     m_use_paleo_file = false;
   }
