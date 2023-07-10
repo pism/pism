@@ -159,11 +159,8 @@ public:
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
 
-  typedef std::map<std::string,std::string> StringAttrs;
-  const StringAttrs& all_strings() const;
-
-  typedef std::map<std::string,std::vector<double> > DoubleAttrs;
-  const DoubleAttrs& all_doubles() const;
+  const std::map<std::string, std::string> &all_strings() const;
+  const std::map<std::string, std::vector<double> > &all_doubles() const;
 
   void report_to_stdout(const Logger &log, int verbosity_threshold) const;
   void check_range(const std::string &filename, double min, double max) const;

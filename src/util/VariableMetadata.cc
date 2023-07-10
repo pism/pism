@@ -289,11 +289,11 @@ std::vector<double> VariableMetadata::get_numbers(const std::string &name) const
   return {};
 }
 
-const VariableMetadata::StringAttrs &VariableMetadata::all_strings() const {
+const std::map<std::string, std::string> &VariableMetadata::all_strings() const {
   return m_strings;
 }
 
-const VariableMetadata::DoubleAttrs &VariableMetadata::all_doubles() const {
+const std::map<std::string, std::vector<double> > &VariableMetadata::all_doubles() const {
   return m_doubles;
 }
 
@@ -356,8 +356,8 @@ std::string VariableMetadata::get_string(const std::string &name) const {
 
 void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_threshold) const {
 
-  const VariableMetadata::StringAttrs &strings = this->all_strings();
-  const VariableMetadata::DoubleAttrs &doubles = this->all_doubles();
+  const auto &strings = this->all_strings();
+  const auto &doubles = this->all_doubles();
 
   // Find the maximum name length so that we can pad output below:
   size_t max_name_length = 0;

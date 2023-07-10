@@ -44,7 +44,7 @@ bool NetCDFConfig::is_set_impl(const std::string &name) const {
 // doubles
 
 double NetCDFConfig::get_number_impl(const std::string &name) const {
-  const VariableMetadata::DoubleAttrs &doubles = m_data.all_doubles();
+  const auto &doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_number(name);
   }
@@ -57,7 +57,7 @@ double NetCDFConfig::get_number_impl(const std::string &name) const {
 }
 
 std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
-  const VariableMetadata::DoubleAttrs& doubles = m_data.all_doubles();
+  const auto& doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_numbers(name);
   }
@@ -91,7 +91,7 @@ void NetCDFConfig::set_numbers_impl(const std::string &name,
 // strings
 
 std::string NetCDFConfig::get_string_impl(const std::string &name) const {
-  const VariableMetadata::StringAttrs& strings = m_data.all_strings();
+  const auto& strings = m_data.all_strings();
   if (strings.find(name) != strings.end()) {
     return m_data[name];
   }
@@ -104,7 +104,7 @@ std::string NetCDFConfig::get_string_impl(const std::string &name) const {
 }
 
 Config::Strings NetCDFConfig::all_strings_impl() const {
-  VariableMetadata::StringAttrs strings = m_data.all_strings();
+  auto strings = m_data.all_strings();
   Strings result;
 
   for (const auto& s : strings) {
@@ -137,7 +137,7 @@ static bool string_is_true(const std::string &value) {
 }
 
 bool NetCDFConfig::get_flag_impl(const std::string &name) const {
-  const VariableMetadata::StringAttrs& strings = m_data.all_strings();
+  const auto &strings = m_data.all_strings();
   auto j = strings.find(name);
   if (j != strings.end()) {
 
