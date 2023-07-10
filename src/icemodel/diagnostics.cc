@@ -456,7 +456,6 @@ public:
 
 protected:
   void update_impl(double dt) {
-
     accumulate_changes(model,
                        m_factor * (m_kind == AMOUNT ? 1.0 : m_grid->cell_area()),
                        TOTAL_DISCHARGE,
@@ -467,7 +466,7 @@ protected:
   AmountKind m_kind;
 };
 
-/*! @brief Report discharge (calving and frontal melt) flux. */
+/*! @brief Report the calving flux. */
 class CalvingFlux : public DiagAverageRate<IceModel>
 {
 public:
@@ -526,6 +525,50 @@ protected:
   AmountKind m_kind;
 };
 
+/*! @brief Report the frontal melt flux. */
+class FrontalMeltFlux : public DiagAverageRate<IceModel>
+{
+public:
+  FrontalMeltFlux(const IceModel *m, AmountKind kind)
+    : DiagAverageRate<IceModel>(m,
+                                kind == AMOUNT
+                                ? "tendency_of_ice_amount_due_to_frontal_melt"
+                                : "tendency_of_ice_mass_due_to_frontal_melt",
+                                TOTAL_CHANGE),
+    m_kind(kind) {
+
+    m_factor = m_config->get_number("constants.ice.density");
+
+    std::string name = "tendency_of_ice_amount_due_to_frontal_melt", accumulator_units = "kg m-2",
+                internal_units = "kg m-2 s-1", external_units = "kg m-2 year-1";
+    if (kind == MASS) {
+      name              = "tendency_of_ice_mass_due_to_frontal_melt";
+      accumulator_units = "kg";
+      internal_units    = "kg second-1";
+      external_units    = "Gt year-1";
+    }
+
+    m_accumulator.metadata().units(accumulator_units);
+
+    m_vars = { { m_sys, name } };
+    m_vars[0].long_name("frontal melt flux").units(internal_units).output_units(external_units);
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"] = "positive flux corresponds to ice gain";
+  }
+
+protected:
+  void update_impl(double dt) {
+
+    accumulate_changes(model,
+                       m_factor * (m_kind == AMOUNT ? 1.0 : m_grid->cell_area()),
+                       FRONTAL_MELT,
+                       m_accumulator);
+
+    m_interval_length += dt;
+  }
+  AmountKind m_kind;
+};
 
 } // end of namespace diagnostics
 } // end of namespace pism
@@ -3039,6 +3082,7 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_amount_due_to_basal_mass_flux",    f(new BasalFlux(this,                    AMOUNT))},
     {"tendency_of_ice_amount_due_to_discharge",          f(new DischargeFlux(this,                AMOUNT))},
     {"tendency_of_ice_amount_due_to_calving",            f(new CalvingFlux(this,                  AMOUNT))},
+    {"tendency_of_ice_amount_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              AMOUNT))},
 
     // same, in terms of mass
     // tendency_of_ice_mass = (tendency_of_ice_mass_due_to_flow +
@@ -3053,6 +3097,7 @@ void IceModel::init_diagnostics() {
     {"tendency_of_ice_mass_due_to_basal_mass_flux",    f(new BasalFlux(this,                    MASS))},
     {"tendency_of_ice_mass_due_to_discharge",          f(new DischargeFlux(this,                MASS))},
     {"tendency_of_ice_mass_due_to_calving",            f(new CalvingFlux(this,                  MASS))},
+    {"tendency_of_ice_mass_due_to_frontal_melt",       f(new FrontalMeltFlux(this,              MASS))},
 
     // other rates and fluxes
     {"basal_mass_flux_grounded", f(new BMBSplit(this, GROUNDED))},
