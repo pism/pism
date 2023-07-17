@@ -65,11 +65,11 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
 
   m_depths->metadata().long_name("thicknesses of isochronal layers").units("m");
   auto &z = m_depths->metadata(0).z();
-  z.clear_all_strings();
-  z.set_name("deposition_time");
-  z["units"] = time->units_string();
+  z.clear()
+      .set_name("deposition_time")
+      .long_name("minimum deposition time for an isochronal layer")
+      .units(time->units_string());
   z["calendar"] = time->calendar();
-  z["long name"] = "minimum deposition time for an isochronal layer";
   z["axis"] = "T";
 
   m_tmp = std::make_shared<array::Array3D>(grid, "temporary storage",
@@ -334,11 +334,11 @@ public:
 
     m_vars[0].long_name("isochrone depth").units("m");
     auto &z = m_vars[0].z();
-    z.clear_all_strings();
-    z.set_name("deposition_time");
-    z["units"] = time->units_string();
+    z.clear()
+      .set_name("deposition_time")
+      .long_name("minimum deposition time for an isochronal layer")
+      .units(time->units_string());
     z["calendar"] = time->calendar();
-    z["long name"] = "minimum deposition time for an isochronal layer";
     z["axis"] = "T";
   }
 
