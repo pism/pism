@@ -29,6 +29,16 @@ macro(pism_test name script)
     set_memcheck_test_properties("${name}:${script}"
       PROPERTIES FAIL_REGULAR_EXPRESSION "ERROR SUMMARY: [^0]")
   endif()
+  if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16")
+    set_property(TEST "${name}:${script}" PROPERTY
+      SKIP_REGULAR_EXPRESSION
+      "ModuleNotFoundError: No module named"
+      "ncpdq: command not found"
+      "ncap2: command not found"
+      "ncks: command not found"
+      "ncrcat: command not found"
+    )
+  endif()
 endmacro()
 
 macro(pism_python_test name script)
