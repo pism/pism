@@ -37,8 +37,7 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
       m_time_independent(false),
       m_output_type(io::PISM_NAT) {
 
-  clear_all_strings();
-  clear_all_doubles();
+  clear();
 
   // long_name is unset
   // standard_name is unset
@@ -255,12 +254,11 @@ VariableMetadata &VariableMetadata::set_numbers(const std::string &name, const s
   return *this;
 }
 
-void VariableMetadata::clear_all_doubles() {
+VariableMetadata &VariableMetadata::clear() {
   m_doubles.clear();
-}
-
-void VariableMetadata::clear_all_strings() {
   m_strings.clear();
+
+  return *this;
 }
 
 std::string VariableMetadata::get_name() const {

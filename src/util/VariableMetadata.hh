@@ -148,8 +148,8 @@ public:
   io::Type get_output_type() const;
   VariableMetadata &set_output_type(io::Type type);
 
-  void clear_all_doubles();
-  void clear_all_strings();
+  //! Clear all attributes
+  VariableMetadata &clear();
 
   // more getters
   units::System::Ptr unit_system() const;

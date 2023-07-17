@@ -2375,11 +2375,9 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
 
   // set metadata:
   m_vars = { { m_sys, m_var_name + "_bnds", { 0.0, 1.0, 2.0, 3.0 } } };
-  m_vars[0].z().set_name("nv4");
-  m_vars[0].z().clear_all_strings();
-  m_vars[0].z().clear_all_doubles();
-  m_vars[0].set_time_independent(true);
+  m_vars[0].z().clear().set_name("nv4");
 
+  m_vars[0].set_time_independent(true);
   if (m_var_name == "lon") {
     m_vars[0].long_name("longitude bounds").units("degree_east");
     m_vars[0]["valid_range"] = { -180, 180 };

@@ -1314,8 +1314,7 @@ void read_attributes(const File &file,
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is missing", variable_name.c_str());
     }
 
-    variable.clear_all_strings();
-    variable.clear_all_doubles();
+    variable.clear();
 
     unsigned int nattrs = file.nattributes(variable_name);
 
