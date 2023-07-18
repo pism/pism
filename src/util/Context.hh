@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2019, 2020, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -39,36 +39,26 @@ class Logger;
 
 class Context {
 public:
-  typedef std::shared_ptr<units::System> UnitsSystemPtr;
-  typedef std::shared_ptr<Config> ConfigPtr;
-  typedef std::shared_ptr<const Config> ConstConfigPtr;
-  typedef std::shared_ptr<EnthalpyConverter> EnthalpyConverterPtr;
-  typedef std::shared_ptr<Time> TimePtr;
-  typedef std::shared_ptr<const Time> ConstTimePtr;
-  typedef std::shared_ptr<Logger> LoggerPtr;
-  typedef std::shared_ptr<const Logger> ConstLoggerPtr;
-
-  Context(MPI_Comm c, UnitsSystemPtr sys,
-          ConfigPtr conf, EnthalpyConverterPtr EC, TimePtr t,
-          LoggerPtr log,
-          const std::string &p);
+  Context(MPI_Comm c, std::shared_ptr<units::System> sys, std::shared_ptr<Config> conf,
+          std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t,
+          std::shared_ptr<Logger> log, const std::string &p);
   ~Context();
 
   MPI_Comm com() const;
   int size() const;
   int rank() const;
-  UnitsSystemPtr unit_system() const;
-  ConstConfigPtr config() const;
-  EnthalpyConverterPtr enthalpy_converter() const;
-  ConstTimePtr time() const;
+  std::shared_ptr<units::System> unit_system() const;
+  std::shared_ptr<const Config> config() const;
+  std::shared_ptr<EnthalpyConverter> enthalpy_converter() const;
+  std::shared_ptr<const Time> time() const;
   const std::string& prefix() const;
   const Profiling& profiling() const;
 
-  ConstLoggerPtr log() const;
-  LoggerPtr log();
+  std::shared_ptr<const Logger> log() const;
+  std::shared_ptr<Logger> log();
 
-  ConfigPtr config();
-  TimePtr time();
+  std::shared_ptr<Config> config();
+  std::shared_ptr<Time> time();
 
   int pio_iosys_id() const;
 private:
