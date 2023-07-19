@@ -21,6 +21,7 @@ PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
 ./configure \
+  COPTFLAGS="-g -O3" \
   --prefix=${petsc_prefix} \
   --with-cc=mpicc \
   --with-cxx=mpicxx \
@@ -28,6 +29,7 @@ PETSC_ARCH="linux-opt"
   --with-shared-libraries \
   --with-debugging=0 \
   --with-petsc4py \
+  --with-x=0 \
   --download-f2cblaslapack
 
 export PYTHONPATH=${petsc_prefix}/lib
