@@ -457,27 +457,27 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
  * `-foo X` with `X` not equal to `yes`, `no`, `true`, `True`, `false`, `False` results in an error.
  */
 void set_flag_from_option(Config &config, const std::string &option,
-                             const std::string &parameter_name) {
+                          const std::string &parameter_name) {
 
   // get the default value
-  bool value = config.get_flag(parameter_name, Config::FORGET_THIS_USE);
+  bool value      = config.get_flag(parameter_name, Config::FORGET_THIS_USE);
   std::string doc = config.doc(parameter_name);
 
   // process the command-line option
   options::String opt("-" + option, doc, value ? "true" : "false", options::ALLOW_EMPTY);
 
   if (opt.is_set()) {
-    if (member(opt.value(), {"", "on", "yes", "true", "True"})) {
+    if (member(opt.value(), { "", "on", "yes", "true", "True" })) {
 
       value = true;
 
-    } else if (member(opt.value(), {"off", "no", "false", "False"})) {
+    } else if (member(opt.value(), { "off", "no", "false", "False" })) {
 
       value = false;
 
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s argument: %s",
-                                    option.c_str(), opt.value().c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid -%s argument: %s", option.c_str(),
+                                    opt.value().c_str());
     }
   }
 
@@ -510,11 +510,9 @@ void set_flag_from_option(Config &config, const std::string &option,
   input units and converted as needed. (This allows saving parameters without
   converting again.)
 */
-void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name, const std::string &parameter) {
-  options::Real option(unit_system,
-                       "-" + name,
-                       config.doc(parameter),
-                       config.units(parameter),
+void set_number_from_option(units::System::Ptr unit_system, Config &config, const std::string &name,
+                            const std::string &parameter) {
+  options::Real option(unit_system, "-" + name, config.doc(parameter), config.units(parameter),
                        config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
     config.set_number(parameter, option, CONFIG_USER);
@@ -537,9 +535,7 @@ void set_number_list_from_option(Config &config, const std::string &option,
     if (default_value.size() < 2 and list->size() != default_value.size()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "Option -%s requires a list of %d numbers (got %d instead).",
-                                    option.c_str(),
-                                    (int)default_value.size(),
-                                    (int)list->size());
+                                    option.c_str(), (int)default_value.size(), (int)list->size());
     }
 
     config.set_numbers(parameter, list, CONFIG_USER);
@@ -572,16 +568,15 @@ void set_integer_list_from_option(Config &config, const std::string &option,
     if (default_value.size() < 2 and value.size() != default_value.size()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "Option -%s requires a list of %d integers (got %d instead).",
-                                    option.c_str(),
-                                    (int)default_value.size(),
-                                    (int)value.size());
+                                    option.c_str(), (int)default_value.size(), (int)value.size());
     }
 
     config.set_numbers(parameter, value, CONFIG_USER);
   }
 }
 
-void set_integer_from_option(Config &config, const std::string &name, const std::string &parameter) {
+void set_integer_from_option(Config &config, const std::string &name,
+                             const std::string &parameter) {
   options::Integer option("-" + name, config.doc(parameter),
                           (int)config.get_number(parameter, Config::FORGET_THIS_USE));
   if (option.is_set()) {
@@ -604,8 +599,7 @@ void set_string_from_option(Config &config, const std::string &name, const std::
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-void set_keyword_from_option(Config &config, const std::string &name,
-                             const std::string &parameter,
+void set_keyword_from_option(Config &config, const std::string &name, const std::string &parameter,
                              const std::string &choices) {
 
   options::Keyword keyword("-" + name, config.doc(parameter), choices,
@@ -616,8 +610,8 @@ void set_keyword_from_option(Config &config, const std::string &name,
   }
 }
 
-void set_parameter_from_options(units::System::Ptr unit_system,
-                                Config &config, const std::string &name) {
+void set_parameter_from_options(units::System::Ptr unit_system, Config &config,
+                                const std::string &name) {
 
   // skip special parameters ("attributes" of parameters)
   if (special_parameter(name)) {
@@ -658,12 +652,12 @@ void set_parameter_from_options(units::System::Ptr unit_system,
   } else if (type == "keyword") {
     set_keyword_from_option(config, option, name, config.choices(name));
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter type \"%s\" is invalid", type.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "parameter type \"%s\" is invalid",
+                                  type.c_str());
   }
 }
 
-void set_config_from_options(units::System::Ptr unit_system,
-                             Config &config) {
+void set_config_from_options(units::System::Ptr unit_system, Config &config) {
   for (const auto &d : config.all_doubles()) {
     set_parameter_from_options(unit_system, config, d.first);
   }
@@ -694,7 +688,8 @@ void set_config_from_options(units::System::Ptr unit_system,
         config.set_flag("energy.enabled", true, CONFIG_USER);
         config.set_flag("energy.temperature_based", false, CONFIG_USER);
       } else {
-        throw RuntimeError(PISM_ERROR_LOCATION, "this can't happen: options::Keyword validates input");
+        throw RuntimeError(PISM_ERROR_LOCATION,
+                           "this can't happen: options::Keyword validates input");
       }
     }
   }
@@ -708,8 +703,7 @@ void set_config_from_options(units::System::Ptr unit_system,
       config.get_number("basal_yield_stress.mohr_coulomb.topg_to_phi.topg_max")
     };
 
-    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max",
-                                  defaults);
+    options::RealList topg_to_phi("-topg_to_phi", "phi_min, phi_max, topg_min, topg_max", defaults);
     if (topg_to_phi.is_set()) {
       if (topg_to_phi->size() != 4) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -758,8 +752,8 @@ void set_config_from_options(units::System::Ptr unit_system,
     config.set_flag("geometry.part_grid.enabled", true, CONFIG_USER);
   }
 
-  bool test_climate_models = options::Bool("-test_climate_models",
-                                           "Disable ice dynamics to test climate models");
+  bool test_climate_models =
+      options::Bool("-test_climate_models", "Disable ice dynamics to test climate models");
   if (test_climate_models) {
     config.set_string("stress_balance.model", "none", CONFIG_USER);
     config.set_flag("energy.enabled", false, CONFIG_USER);
@@ -784,7 +778,7 @@ void set_config_from_options(units::System::Ptr unit_system,
 Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::Ptr unit_system) {
 
   DefaultConfig::Ptr config(new DefaultConfig(com, "pism_config", "-config", unit_system)),
-    overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
+      overrides(new DefaultConfig(com, "pism_overrides", "-config_override", unit_system));
   overrides->init(log);
   config->init_with_default(log);
   config->import_from(*overrides);
@@ -795,7 +789,7 @@ Config::Ptr config_from_options(MPI_Comm com, const Logger &log, units::System::
 }
 
 ConfigWithPrefix::ConfigWithPrefix(Config::ConstPtr c, const std::string &prefix)
-  : m_prefix(prefix), m_config(c) {
+    : m_prefix(prefix), m_config(c) {
   // empty
 }
 
@@ -811,7 +805,7 @@ std::string ConfigWithPrefix::get_string(const std::string &name) const {
   return m_config->get_string(m_prefix + name);
 }
 
-bool ConfigWithPrefix::get_flag(const std::string& name) const {
+bool ConfigWithPrefix::get_flag(const std::string &name) const {
   return m_config->get_flag(m_prefix + name);
 }
 
