@@ -84,6 +84,10 @@ bool ends_with(const std::string &str, const std::string &suffix) {
 
 template <class T>
 std::string join_impl(const T& input, const std::string& separator) {
+  if (input.empty()) {
+    return "";
+  }
+
   auto j = input.begin();
   std::string result = *j;
   ++j;
