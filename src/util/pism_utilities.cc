@@ -317,8 +317,6 @@ std::string username_prefix(MPI_Comm com) {
     hostname[0] = '\0';
   }
 
-  std::ostringstream message;
-
   auto time          = timestamp(com);
   std::string result = pism::printf("%s@%s %s: ", username, hostname, time.c_str());
 
@@ -363,9 +361,8 @@ std::string args_string() {
  * "name + separator + more stuff + .nc", then removes the string after the
  * separator.
  */
-std::string filename_add_suffix(const std::string &filename,
-                                     const std::string &separator,
-                                     const std::string &suffix) {
+std::string filename_add_suffix(const std::string &filename, const std::string &separator,
+                                const std::string &suffix) {
   std::string basename = filename;
   std::string result;
 
