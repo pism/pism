@@ -57,36 +57,5 @@ Factory::Factory(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::Atmo
   add_modifier<NoGLRetreat>("no_gl_retreat");
 }
 
-std::shared_ptr<SurfaceModel> Factory::create(const std::string &type) {
-
-  std::vector<std::string> choices = split(type, ',');
-
-  // the first element has to be an *actual* model (not a modifier)
-  auto j = choices.begin();
-
-  auto result = surface_model(*j, m_input);
-
-  ++j;
-
-  // process remaining arguments:
-  for (;j != choices.end(); ++j) {
-    result = modifier(*j, result);
-  }
-
-  return result;
-}
-
-std::shared_ptr<SurfaceModel> Factory::surface_model(const std::string &type,
-                                                     std::shared_ptr<InputModel> input) {
-  if (m_surface_models.find(type) == m_surface_models.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot allocate %s \"%s\".\n"
-                                  "Available models:    %s\n",
-                                  m_parameter.c_str(), type.c_str(),
-                                  key_list(m_surface_models).c_str());
-  }
-
-  return m_surface_models[type]->create(m_grid, input);
-}
-
 } // end of namespace surface
 } // end of namespace pism

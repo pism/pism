@@ -141,7 +141,7 @@ netcdf pism_config {
     pism_config:atmosphere.given.periodic_type = "flag";
 
     pism_config:atmosphere.models = "given";
-    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers.";
+    pism_config:atmosphere.models_doc = "Comma-separated list of atmosphere melt models and modifiers";
     pism_config:atmosphere.models_option = "atmosphere";
     pism_config:atmosphere.models_type = "string";
 
@@ -1648,7 +1648,7 @@ netcdf pism_config {
     pism_config:ocean.given.periodic_type = "flag";
 
     pism_config:ocean.models = "constant";
-    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers.";
+    pism_config:ocean.models_doc = "Comma-separated list of ocean models and modifiers";
     pism_config:ocean.models_option = "ocean";
     pism_config:ocean.models_type = "string";
 
@@ -1991,7 +1991,7 @@ netcdf pism_config {
     pism_config:sea_level.constant.value_type = "number";
 
     pism_config:sea_level.models = "constant";
-    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers.";
+    pism_config:sea_level.models_doc = "Comma-separated list of sea level models and modifiers";
     pism_config:sea_level.models_option = "sea_level";
     pism_config:sea_level.models_type = "string";
 
@@ -2501,7 +2501,7 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_type = "string";
 
     pism_config:surface.models = "given";
-    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers.";
+    pism_config:surface.models_doc = "Comma-separated list of surface models and modifiers";
     pism_config:surface.models_option = "surface";
     pism_config:surface.models_type = "string";
 
