@@ -65,7 +65,7 @@ void NullTransportHydrology::update_impl(double t, double dt,
   for (Points p(*m_grid); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ocean(i, j) || cell_type.ice_free(i, j)) {
+    if (cell_type.water(i, j) || cell_type.ice_free(i, j)) {
       m_Wtill(i, j) = 0.0;
     } else {
       m_Wtill(i, j) += dt * (m_surface_input_rate(i, j) - C);
