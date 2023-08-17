@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef FRONTRETREAT_H
-#define FRONTRETREAT_H
+#ifndef PISM_FRONTRETREAT_H
+#define PISM_FRONTRETREAT_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/CellType.hh"
@@ -49,10 +49,6 @@ public:
                            const array::Scalar &bc_mask,
                            const array::Scalar &retreat_rate) const;
 private:
-
-  void compute_modified_mask(const array::CellType1 &input,
-                             array::CellType1 &output) const;
-
   // Ghosted cell type mask
   //
   // We make a copy here because frontal retreat code uses a modified mask if
@@ -66,4 +62,4 @@ private:
 } // end of namespace pism
 
 
-#endif /* FRONTRETREAT_H */
+#endif /* PISM_FRONTRETREAT_H */

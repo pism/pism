@@ -361,14 +361,13 @@ void IceCompModel::initTestABCDH() {
   }
 }
 
-//! Class used initTestL() in generating sorted list for ODE solver.
-class rgrid {
-public:
+//! Structure used by initTestL() in generating a sorted list for the ODE solver.
+struct rgrid {
   double r;
   int    i,j;
 };
 
-//! Comparison used initTestL() in generating sorted list for ODE solver.
+//! Comparison used by initTestL() in generating a sorted list for the ODE solver.
 struct rgridReverseSort {
   bool operator()(rgrid a, rgrid b) {
     return (a.r > b.r);

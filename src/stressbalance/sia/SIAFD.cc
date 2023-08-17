@@ -384,7 +384,7 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
     {
       if ((mask.floating_ice(i,j) && mask.ice_free_water(i+1,j)) ||
           (mask.ice_free_water(i,j) && mask.floating_ice(i+1,j))) {
-        // marine margin
+        // marine or lacustrine margin
         h_x(i, j, 0) = 0;
         w_i(i, j)    = 0;
       } else if ((mask.icy(i, j) && mask.ice_free(i + 1, j) && h(i + 1, j) > h(i, j)) ||
@@ -403,7 +403,7 @@ void SIAFD::surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevatio
     {
       if ((mask.floating_ice(i,j) && mask.ice_free_water(i,j+1)) ||
           (mask.ice_free_water(i,j) && mask.floating_ice(i,j+1))) {
-        // marine margin
+        // marine or lacustrine margin
         h_y(i, j, 1) = 0.0;
         w_j(i, j)    = 0.0;
       } else if ((mask.icy(i, j) && mask.ice_free(i, j + 1) && h(i, j + 1) > h(i, j)) ||

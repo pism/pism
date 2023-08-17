@@ -24,6 +24,7 @@
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Context.hh"
+#include <type_traits>
 
 namespace pism {
 
@@ -40,17 +41,18 @@ FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
  * Compute the modified mask to avoid "wrapping around" of front retreat at domain
  * boundaries.
  */
-void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
-                                         array::CellType1 &output) const {
+static void compute_modified_mask(const array::CellType1 &input, array::CellType1 &output) {
+
+  auto grid = input.grid();
+
+  const int Mx = static_cast<int>(grid->Mx());
+  const int My = static_cast<int>(grid->My());
 
   array::AccessScope list{&input, &output};
 
-  const int Mx = m_grid->Mx();
-  const int My = m_grid->My();
-
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (auto p = m_grid->points(1); p; p.next()) {
+    for (auto p = grid->points(1); p; p.next()) {
       const int i = p.i(), j = p.j();
 
       if (i < 0 or i >= Mx or j < 0 or j >= My) {
@@ -204,7 +206,7 @@ void FrontRetreat::update_geometry(double dt,
         // termini.
         int N = 0;
         {
-          auto M  = m_cell_type.star(i, j);
+          auto M  = m_cell_type.star_int(i, j);
           auto BC = bc_mask.star_int(i, j);
 
           auto
