@@ -103,9 +103,10 @@ VariableMetadata IceModel::run_stats() const {
     model_years      = units::convert(m_sys, m_time->current() - m_time->start(),
                                       "seconds", "years");
 
-  result["wall_clock_hours"]               = {wall_clock_hours};
-  result["processor_hours"]                = {proc_hours};
-  result["model_years_per_processor_hour"] = {model_years / proc_hours};
+  result["wall_clock_hours"]               = { wall_clock_hours };
+  result["processor_hours"]                = { proc_hours };
+  result["model_years_per_processor_hour"] = { model_years / proc_hours };
+  result["number_of_time_steps"]           = { (double)m_step_counter };
 
   return result;
 }

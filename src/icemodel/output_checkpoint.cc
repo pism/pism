@@ -76,7 +76,7 @@ bool IceModel::write_checkpoint() {
               m_ctx->pio_iosys_id());
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-    write_run_stats(file);
+    write_run_stats(file, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_checkpoint_vars, m_time->current());
   }

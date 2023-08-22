@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -63,6 +63,11 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
                             const array::CellType &cell_type,
                             const array::Vector &velocity);
 
+/*!
+ * Compute the max. time step according to the max. diffusivity of the SIA flow
+ */
+MaxTimestep max_timestep_diffusivity(double D_max, double dx, double dy,
+                                     double adaptive_timestepping_ratio);
 } // end of namespace pism
 
 

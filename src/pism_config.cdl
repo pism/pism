@@ -2721,11 +2721,6 @@ netcdf pism_config {
     pism_config:time_stepping.assume_bed_elevation_changed_doc = "If set, assume that bed elevation changes every time step. If not set, PISM tries to avoid unnecessary computations if the bed deformation model did not update bed elevation (to reduce the computational cost a little bit).";
     pism_config:time_stepping.assume_bed_elevation_changed_type = "flag";
 
-    pism_config:time_stepping.count_steps = "no";
-    pism_config:time_stepping.count_steps_doc = "If yes, IceModel::run() will count the number of time steps it took.  Sometimes useful for performance evaluation.  Counts all steps, regardless of whether processes (mass continuity, energy, velocity, ...) occurred within the step.";
-    pism_config:time_stepping.count_steps_option = "count_steps";
-    pism_config:time_stepping.count_steps_type = "flag";
-
     pism_config:time_stepping.hit_extra_times = "yes";
     pism_config:time_stepping.hit_extra_times_doc = "Modify the time-stepping mechanism to hit times requested using :config:`output.extra.times`.";
     pism_config:time_stepping.hit_extra_times_option = "extra_force_output_times";

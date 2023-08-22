@@ -72,7 +72,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid,
     m_thickness_change(grid),
     m_ts_times(new std::vector<double>()),
     m_extra_bounds("time_bounds", m_sys),
-    m_timestamp("timestamp", m_sys) {
+    m_timestamp("timestamp", m_sys),
+    m_step_counter(0) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
@@ -420,6 +421,8 @@ During the time-step we perform the following actions:
 void IceModel::step(bool do_mass_continuity,
                     bool do_skip) {
 
+  m_step_counter++;
+
   const Profiling &profiling = m_ctx->profiling();
 
   double current_time = m_time->current();
@@ -758,8 +761,6 @@ IceModelTerminationReason IceModel::run() {
   bool do_energy = m_config->get_flag("energy.enabled");
   bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
 
-  int stepcount = m_config->get_flag("time_stepping.count_steps") ? 0 : -1;
-
   // de-allocate diagnostics that are not needed
   prune_diagnostics();
 
@@ -820,10 +821,6 @@ IceModelTerminationReason IceModel::run() {
     bool stop_after_chekpoint = write_checkpoint();
     profiling.end("io");
 
-    if (stepcount >= 0) {
-      stepcount++;
-    }
-
     if (stop_after_chekpoint) {
       termination_reason = PISM_CHEKPOINT;
       break;
@@ -836,13 +833,6 @@ IceModelTerminationReason IceModel::run() {
   } // end of the time-stepping loop
   profiling.stage_end("time-stepping loop");
 
-  if (stepcount >= 0) {
-    double run_length = units::convert(m_sys, m_time->current() - m_time->start(), "seconds", "years");
-    m_log->message(1,
-               "count_time_steps:  run() took %d steps\n"
-               "average dt = %.6f years\n",
-               stepcount, run_length / stepcount);
-  }
   return termination_reason;
 }
 

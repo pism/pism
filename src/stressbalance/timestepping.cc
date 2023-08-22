@@ -158,4 +158,14 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
   return result;
 }
 
+MaxTimestep max_timestep_diffusivity(double D_max, double dx, double dy,
+                                     double adaptive_timestepping_ratio) {
+  if (D_max > 0.0) {
+    double grid_factor = 1.0 / (dx * dx) + 1.0 / (dy * dy);
+    return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor), "diffusivity");
+  }
+
+  return {};
+}
+
 } // end of namespace pism

@@ -1972,13 +1972,47 @@ public:
   }
 };
 
+//! \brief Reports the mass continuity time step.
+class TimeStepRatio : public TSDiag<TSSnapshotDiagnostic, IceModel> {
+public:
+  TimeStepRatio(const IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "dt_ratio") {
+
+    set_units("1", "1");
+    m_variable["long_name"] = "ratio of max. allowed time steps "
+        "according to CFL and SIA diffusivity criteria";
+    m_variable["valid_min"] = { 0.0 };
+    m_variable["_FillValue"] = { -1.0 };
+  }
+
+  double compute() {
+
+    const auto *stress_balance = model->stress_balance();
+
+    auto cfl_2d = stress_balance->max_timestep_cfl_2d();
+    auto cfl_3d = stress_balance->max_timestep_cfl_3d();
+
+    auto dt_diff = max_timestep_diffusivity(stress_balance->max_diffusivity(),
+                                            model->grid()->dx(),
+                                            model->grid()->dy(),
+                                            m_config->get_number("time_stepping.adaptive_ratio"));
+
+    auto dt_cfl = std::min(cfl_2d.dt_max, cfl_3d.dt_max);
+
+    if (dt_cfl.finite() and dt_diff.finite() and dt_diff.value() > 0.0) {
+      return dt_cfl.value() / dt_diff.value();
+    }
+
+    return -1.0;
+  }
+};
+
 //! \brief Reports maximum diffusivity.
 class MaxDiffusivity : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   MaxDiffusivity(const IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_diffusivity") {
 
     set_units("m2 s-1", "m2 s-1");
-    m_variable["long_name"] = "maximum diffusivity";
+    m_variable["long_name"] = "maximum diffusivity of the flow (usually from the SIA model)";
     m_variable["valid_min"] = { 0.0 };
   }
 
@@ -2001,11 +2035,11 @@ public:
 class MaxHorizontalVelocity : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   MaxHorizontalVelocity(const IceModel *m)
-      : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_sliding_vel") {
+      : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "max_horizontal_vel") {
 
     set_units("m second-1", "m year-1");
-    m_variable["long_name"] = "max(max(abs(u)), max(abs(v))) for the sliding velocity of ice"
-                              " over grid in last time step during time-series reporting interval";
+    m_variable["long_name"] = "max(max(abs(u)), max(abs(v))) for the horizontal velocity of ice"
+                              " over volume of the ice in last time step during time-series reporting interval";
     m_variable["valid_min"] = { 0.0 };
   }
 
@@ -3206,8 +3240,9 @@ void IceModel::init_diagnostics() {
     {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
     // time-stepping
     {"max_diffusivity", s(new scalar::MaxDiffusivity(this))},
-    {"max_sliding_vel", s(new scalar::MaxHorizontalVelocity(this))},
+    {"max_horizontal_vel", s(new scalar::MaxHorizontalVelocity(this))},
     {"dt",              s(new scalar::TimeStepLength(this))},
+    {"dt_ratio",        s(new scalar::TimeStepRatio(this))},
     // balancing the books
     {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},
     {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToFlow(this))},

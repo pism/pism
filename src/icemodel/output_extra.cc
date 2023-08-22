@@ -341,7 +341,7 @@ void IceModel::write_extras() {
       m_extra_file_is_ready = true;
     }
 
-    write_run_stats(*m_extra_file);
+    write_run_stats(*m_extra_file, run_stats());
 
     save_variables(*m_extra_file,
                    m_extra_vars.empty() ? INCLUDE_MODEL_STATE : JUST_DIAGNOSTICS,

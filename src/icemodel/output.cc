@@ -72,7 +72,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
 void IceModel::write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag) const {
   if (mapping_flag == WRITE_MAPPING) {
-    write_mapping(file);
+    write_mapping(file, m_grid->get_mapping_info());
   }
 
   m_config->write(file);
@@ -133,7 +133,7 @@ void IceModel::save_results() {
 
     write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
 
-    write_run_stats(file);
+    write_run_stats(file, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_output_vars,
                    m_time->current());
@@ -141,9 +141,9 @@ void IceModel::save_results() {
   profiling.end("io.model_state");
 }
 
-void IceModel::write_mapping(const File &file) const {
-  // only write mapping if it is set.
-  const VariableMetadata &mapping = m_grid->get_mapping_info().mapping;
+void write_mapping(const File &file, const pism::MappingInfo &info) {
+
+  const auto &mapping = info.mapping;
   std::string name = mapping.get_name();
   if (mapping.has_attributes()) {
     if (not file.find_variable(name)) {
@@ -152,15 +152,14 @@ void IceModel::write_mapping(const File &file) const {
     io::write_attributes(file, mapping, io::PISM_DOUBLE);
 
     // Write the PROJ string to mapping:proj_params (for CDO).
-    std::string proj = m_grid->get_mapping_info().proj;
+    std::string proj = info.proj;
     if (not proj.empty()) {
       file.write_attribute(name, "proj_params", proj);
     }
   }
 }
 
-void IceModel::write_run_stats(const File &file) const {
-  auto stats = run_stats();
+void write_run_stats(const File &file, const pism::VariableMetadata &stats) {
   if (not file.find_variable(stats.get_name())) {
     file.define_variable(stats.get_name(), io::PISM_DOUBLE, {});
   }
@@ -191,7 +190,7 @@ void IceModel::save_variables(const File &file,
   //
   // FIXME: we should write this to variables instead of attributes because NetCDF-4 crashes after
   // about 2^16 attribute modifications per variable. :-(
-  write_run_stats(file);
+  write_run_stats(file, run_stats());
 
   if (kind == INCLUDE_MODEL_STATE) {
     define_model_state(file);

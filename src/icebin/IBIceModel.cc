@@ -324,7 +324,7 @@ void IBIceModel::dumpToFile(const std::string &filename) const {
             m_ctx->pio_iosys_id());
 
   write_metadata(file, WRITE_MAPPING, PREPEND_HISTORY);
-  write_run_stats(file);
+  write_run_stats(file, run_stats());
 
   // assume that "dumpToFile" is expected to save the model state *only*.
   save_variables(file, INCLUDE_MODEL_STATE, {}, m_time->current());

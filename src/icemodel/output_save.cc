@@ -170,7 +170,7 @@ void IceModel::write_snapshot() {
       m_snapshots_file_is_ready = true;
     }
 
-    write_run_stats(file);
+    write_run_stats(file, run_stats());
 
     save_variables(file, INCLUDE_MODEL_STATE, m_snapshot_vars, m_time->current());
   }

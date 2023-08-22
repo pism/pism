@@ -219,10 +219,6 @@ protected:
   virtual void write_metadata(const File &file, MappingTreatment mapping_flag,
                               HistoryTreatment history_flag) const;
 
-  virtual void write_mapping(const File &file) const;
-  virtual void write_run_stats(const File &file) const;
-
-
   virtual void define_diagnostics(const File &file,
                                   const std::set<std::string> &variables,
                                   io::Type default_type) const;
@@ -320,6 +316,8 @@ protected:
   std::string m_adaptive_timestep_reason;
 
   std::string m_stdout_flags;
+
+  unsigned int m_step_counter;
 
   // see iceModel.cc
   virtual void allocate_storage();
@@ -464,6 +462,9 @@ private:
   VariableMetadata m_timestamp;
   double m_start_time;    // this is used in the wall-clock-time checkpoint code
 };
+
+void write_mapping(const File &file, const pism::MappingInfo &info);
+void write_run_stats(const File &file, const pism::VariableMetadata &stats);
 
 MaxTimestep reporting_max_timestep(const std::vector<double> &times,
                                    double t,

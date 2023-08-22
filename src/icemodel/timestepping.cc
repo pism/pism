@@ -18,6 +18,7 @@
 
 #include <algorithm>            // std::sort
 #include <cmath>                // std::floor
+#include <cassert>
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/util/Grid.hh"
@@ -49,19 +50,15 @@ Reference: [\ref MortonMayers] pp 62--63.
 MaxTimestep IceModel::max_timestep_diffusivity() {
   double D_max = m_stress_balance->max_diffusivity();
 
-  if (D_max > 0.0) {
-    const double
-      dx = m_grid->dx(),
-      dy = m_grid->dy(),
-      adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio"),
-      grid_factor                 = 1.0 / (dx*dx) + 1.0 / (dy*dy);
+  double dx = m_grid->dx(), dy = m_grid->dy(),
+         adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio");
 
-    return MaxTimestep(adaptive_timestepping_ratio * 2.0 / (D_max * grid_factor),
-                       "diffusivity");
-  } else {
-    return MaxTimestep(m_config->get_number("time_stepping.maximum_time_step", "seconds"),
-                       "max time step");
-  }
+  auto dt_diffusivity = ::pism::max_timestep_diffusivity(D_max, dx, dy, adaptive_timestepping_ratio);
+
+  MaxTimestep dt_max(m_config->get_number("time_stepping.maximum_time_step", "seconds"),
+                     "max time step");
+
+  return std::min(dt_diffusivity, dt_max);
 }
 
 /** @brief Compute the skip counter using "long" (usually determined
@@ -70,12 +67,12 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
  * step lengths.
  *
  *
- * @param[in] input_dt long time-step
- * @param[in] input_dt_diffusivity short time-step
+ * @param[in] dt "long" time-step
+ * @param[in] dt_diffusivity "short" time-step
  *
  * @return new skip counter
  */
-unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity) {
+unsigned int IceModel::skip_counter(double dt, double dt_diffusivity) {
 
   if (not m_config->get_flag("time_stepping.skip.enabled")) {
     return 0;
@@ -83,15 +80,13 @@ unsigned int IceModel::skip_counter(double input_dt, double input_dt_diffusivity
 
   const int skip_max = static_cast<int>(m_config->get_number("time_stepping.skip.max"));
 
-  if (input_dt_diffusivity > 0.0) {
-    const double conservativeFactor = 0.95;
-    const double counter = floor(conservativeFactor * (input_dt / input_dt_diffusivity));
+  if (dt_diffusivity > 0.0) {
+    const double conservative_factor = 0.95;
+    const double counter             = floor(conservative_factor * (dt / dt_diffusivity));
     return std::min(static_cast<int>(counter), skip_max);
-  } else {
-    return skip_max;
   }
 
-  return 0;
+  return skip_max;
 }
 
 //! Use various stability criteria to determine the time step for an evolution run.
@@ -115,8 +110,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   }
 
   // mechanisms that use a retreat rate
-  bool front_retreat = (m_eigen_calving or m_vonmises_calving or
-                        m_hayhurst_calving or m_frontal_melt);
+  bool front_retreat =
+      (m_eigen_calving or m_vonmises_calving or m_hayhurst_calving or m_frontal_melt);
   if (front_retreat and m_config->get_flag("geometry.front_retreat.use_cfl")) {
     // at least one of front retreat mechanisms is active *and* PISM is told to use a CFL
     // restriction
@@ -142,13 +137,12 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
     assert(m_front_retreat);
 
-    restrictions.push_back(m_front_retreat->max_timestep(m_geometry.cell_type,
-                                                         m_ice_thickness_bc_mask,
-                                                         retreat_rate));
+    restrictions.push_back(
+        m_front_retreat->max_timestep(m_geometry.cell_type, m_ice_thickness_bc_mask, retreat_rate));
   }
 
-  const char* end = "end of the run";
-  const char* max = "max";
+  const char *end = "end of the run";
+  const char *max = "max";
 
   // Always consider the maximum allowed time-step length.
   double max_timestep = m_config->get_number("time_stepping.maximum_time_step", "seconds");
@@ -182,6 +176,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // note that restrictions has at least 2 elements
   // the first element is the max time step we can take
+  assert(restrictions.size() >= 2);
   auto dt_max = restrictions[0];
   auto dt_other = restrictions[1];
 
