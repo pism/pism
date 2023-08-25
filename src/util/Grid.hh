@@ -66,7 +66,7 @@ public:
                 std::shared_ptr<units::System> unit_system, Registration registration);
   void report(const Logger &log, int threshold, std::shared_ptr<units::System> s) const;
   // dimension lengths
-  unsigned int t_len, x_len, y_len, z_len;
+  unsigned int t_len;
   //! current time (seconds)
   double time;
   //! x-coordinate of the domain center

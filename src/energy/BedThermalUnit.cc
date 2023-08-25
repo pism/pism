@@ -50,7 +50,7 @@ BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
       grid::InputGridInfo info(input_file, "litho_temp", ctx->unit_system(),
                                grid::CELL_CENTER); // grid registration is irrelevant
 
-      result.Mbz = info.z_len;
+      result.Mbz = info.z.size();
       result.Lbz = -info.z_min;
     } else {
       // override values we got using config.get_number() in the constructor

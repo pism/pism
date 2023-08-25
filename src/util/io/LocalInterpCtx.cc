@@ -107,12 +107,12 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
 
   // Z
   start[Z] = 0;                    // always start at the base
-  count[Z] = std::max(input.z_len, 1u); // read at least one level
+  count[Z] = std::max((int)input.z.size(), 1); // read at least one level
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
   // we perform a reduce so that node 0 has the maximum value.
-  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1u);
+  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1U);
   unsigned int proc0_buffer_size = buffer_size;
   MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
 

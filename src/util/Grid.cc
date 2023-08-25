@@ -1013,15 +1013,12 @@ void InputGridInfo::reset() {
   t_len = 0;
   time  = 0;
 
-  x_len = 0;
   x0    = 0;
   Lx    = 0;
 
-  y_len = 0;
   y0    = 0;
   Ly    = 0;
 
-  z_len = 0;
   z_min = 0;
   z_max = 0;
 }
@@ -1030,14 +1027,14 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   units::Converter km(s, "m", "km");
 
   log.message(threshold, "  x:  %5d points, [%10.3f, %10.3f] km, x0 = %10.3f km, Lx = %10.3f km\n",
-              this->x_len, km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
+              (int)this->x.size(), km(this->x0 - this->Lx), km(this->x0 + this->Lx), km(this->x0),
               km(this->Lx));
 
   log.message(threshold, "  y:  %5d points, [%10.3f, %10.3f] km, y0 = %10.3f km, Ly = %10.3f km\n",
-              this->y_len, km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
+              (int)this->y.size(), km(this->y0 - this->Ly), km(this->y0 + this->Ly), km(this->y0),
               km(this->Ly));
 
-  log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", this->z_len, this->z_min,
+  log.message(threshold, "  z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(), this->z_min,
               this->z_max);
 
   log.message(threshold, "  t:  %5d points, last time = %.3f years\n\n", this->t_len,
@@ -1068,7 +1065,6 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       switch (dimtype) {
       case X_AXIS: {
         this->x      = file.read_dimension(dimension_name);
-        this->x_len  = this->x.size();
         double x_min = vector_min(this->x), x_max = vector_max(this->x);
         this->x0 = 0.5 * (x_min + x_max);
         this->Lx = 0.5 * (x_max - x_min);
@@ -1080,7 +1076,6 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       }
       case Y_AXIS: {
         this->y      = file.read_dimension(dimension_name);
-        this->y_len  = this->y.size();
         double y_min = vector_min(this->y), y_max = vector_max(this->y);
         this->y0 = 0.5 * (y_min + y_max);
         this->Ly = 0.5 * (y_max - y_min);
@@ -1092,14 +1087,14 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       }
       case Z_AXIS: {
         this->z     = file.read_dimension(dimension_name);
-        this->z_len = this->z.size();
         this->z_min = vector_min(this->z);
         this->z_max = vector_max(this->z);
         break;
       }
       case T_AXIS: {
-        this->t_len = file.dimension_length(dimension_name);
-        this->time  = vector_max(file.read_dimension(dimension_name));
+        auto T      = file.read_dimension(dimension_name);
+        this->t_len = T.size();
+        this->time  = vector_max(T);
         break;
       }
       default: {
@@ -1154,8 +1149,8 @@ void Parameters::init_from_file(const Context &ctx, const File &file,
   Ly           = input_grid.Ly;
   x0           = input_grid.x0;
   y0           = input_grid.y0;
-  Mx           = input_grid.x_len;
-  My           = input_grid.y_len;
+  Mx           = input_grid.x.size();
+  My           = input_grid.y.size();
   registration = r;
   z            = input_grid.z;
 }
