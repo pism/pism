@@ -236,15 +236,15 @@ pism_class(pism::Time, "pism/util/Time.hh")
 %shared_ptr(pism::Context);
 %include "util/Context.hh"
 
-%include pism_IceGrid.i
+%include pism_Grid.i
 
-/* File uses IceGrid, so IceGrid has to be wrapped first. */
+/* File uses Grid, so Grid has to be wrapped first. */
 %include pism_File.i
 
 /* make sure pism_File.i is included before VariableMetadata.hh */
 %include pism_VariableMetadata.i
 
-/* array::Array uses IceGrid and VariableMetadata so they have to be wrapped first. */
+/* array::Array uses Grid and VariableMetadata so they have to be wrapped first. */
 %include pism_Array.i
 
 /* pism::Vars uses array::Array, so Array has to be wrapped first. */

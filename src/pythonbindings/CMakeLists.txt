@@ -19,7 +19,7 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_DM.i
     pism_FlowLaw.i
     pism_Hydrology.i
-    pism_IceGrid.i
+    pism_Grid.i
     pism_Array.i
     pism_File.i
     pism_SIA.i
