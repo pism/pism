@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -43,7 +43,7 @@ private:
   double m_next_update_time;
   double m_update_interval_years;
 
-  // storage for melange_back_pressure_fraction is inherited from OceanModel
+  // storage for average_water_column_pressure is inherited from OceanModel
   std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 };

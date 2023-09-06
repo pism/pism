@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2021 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2021, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,7 +52,7 @@ private:
   const array::Scalar& shelf_base_mass_flux_impl() const;
   const array::Scalar& average_water_column_pressure_impl() const;
 
-  // storage for melange_back_pressure_fraction is inherited from OceanModel
+  // storage for average_water_column_pressure is inherited from OceanModel
   std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 };

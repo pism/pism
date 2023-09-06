@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2022 PISM Authors
+/* Copyright (C) 2018, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,7 +26,7 @@ namespace pism {
 namespace ocean {
 
 /*!
- * Base lass for ocean models with dedicated storage for output fields.
+ * Base class for ocean models with dedicated storage for output fields.
  *
  * All ocean models have storage for melange back pressure. (All but one set it to zero.)
  */
@@ -41,9 +41,9 @@ public:
 protected:
   virtual const array::Scalar& shelf_base_temperature_impl() const;
   virtual const array::Scalar& shelf_base_mass_flux_impl() const;
-  // getter for melange_back_pressure_fraction is inherited from OceanModel
+  // getter for average_water_column_pressure is inherited from OceanModel
 
-  // storage for melange_back_pressure_fraction is inherited from OceanModel
+  // storage for average_water_column_pressure is inherited from OceanModel
   std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 };
