@@ -51,29 +51,28 @@
 
 namespace pism {
 
-IceModel::IceModel(std::shared_ptr<Grid> grid,
-                   const std::shared_ptr<Context> &context)
-  : m_grid(grid),
-    m_config(context->config()),
-    m_ctx(context),
-    m_sys(context->unit_system()),
-    m_log(context->log()),
-    m_time(context->time()),
-    m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
-    m_output_global_attributes("PISM_GLOBAL", m_sys),
-    m_geometry(m_grid),
-    m_new_bed_elevation(true),
-    m_basal_yield_stress(m_grid, "tauc"),
-    m_basal_melt_rate(m_grid, "bmelt"),
-    m_bedtoptemp(m_grid, "bedtoptemp"),
-    m_velocity_bc_mask(m_grid, "vel_bc_mask"),
-    m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
-    m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
-    m_thickness_change(grid),
-    m_ts_times(new std::vector<double>()),
-    m_extra_bounds("time_bounds", m_sys),
-    m_timestamp("timestamp", m_sys),
-    m_step_counter(0) {
+IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &context)
+    : m_grid(grid),
+      m_config(context->config()),
+      m_ctx(context),
+      m_sys(context->unit_system()),
+      m_log(context->log()),
+      m_time(context->time()),
+      m_wide_stencil(static_cast<int>(m_config->get_number("grid.max_stencil_width"))),
+      m_output_global_attributes("PISM_GLOBAL", m_sys),
+      m_geometry(m_grid),
+      m_new_bed_elevation(true),
+      m_basal_yield_stress(m_grid, "tauc"),
+      m_basal_melt_rate(m_grid, "bmelt"),
+      m_bedtoptemp(m_grid, "bedtoptemp"),
+      m_velocity_bc_mask(m_grid, "vel_bc_mask"),
+      m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
+      m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
+      m_step_counter(0),
+      m_thickness_change(grid),
+      m_ts_times(new std::vector<double>()),
+      m_extra_bounds("time_bounds", m_sys),
+      m_timestamp("timestamp", m_sys) {
 
   m_velocity_bc_mask.set_interpolation_type(NEAREST);
   m_ice_thickness_bc_mask.set_interpolation_type(NEAREST);
