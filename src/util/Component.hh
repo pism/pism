@@ -149,8 +149,8 @@ protected:
       `-regrid_vars`.
   */
   enum RegriddingFlag { REGRID_WITHOUT_REGRID_VARS, NO_REGRID_WITHOUT_REGRID_VARS };
-  virtual void regrid(const std::string &module_name, array::Array &variable,
-                      RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
+  void regrid(const std::string &module_name, array::Array &variable,
+              RegriddingFlag flag = NO_REGRID_WITHOUT_REGRID_VARS);
 
   //! grid used by this component
   const std::shared_ptr<const Grid> m_grid;
