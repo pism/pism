@@ -34,22 +34,29 @@ void PyOceanModel::allocate(std::shared_ptr<const Grid> grid) {
 }
 
 MaxTimestep PyOceanModel::max_timestep(double t) const {
+  (void) t;
   return {};
 }
 
 void PyOceanModel::init(const Geometry &geometry) {
+  (void) geometry;
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.init(geometry) is not implemented");
 }
 
 void PyOceanModel::update(const Geometry &geometry, double t, double dt) {
+  (void) geometry;
+  (void) t;
+  (void) dt;
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.update(geometry, t, dt) is not implemented");
 }
 
 void PyOceanModel::define_model_state(const File &output) const {
+  (void) output;
   // empty
 }
 
 void PyOceanModel::write_model_state(const File &output) const {
+  (void) output;
   // empty
 }
 
