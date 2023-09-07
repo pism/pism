@@ -87,7 +87,7 @@ EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
 }
 
 
-bool marginal(const array::Scalar &thickness, int i, int j, double threshold) {
+bool marginal(const array::Scalar1 &thickness, int i, int j, double threshold) {
   int
     n = j + 1,
     e = i + 1,

@@ -197,10 +197,11 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
-    &ice_thickness            = *inputs.ice_thickness,
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp,
     &till_water_thickness     = *inputs.till_water_thickness;
+
+  const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
   array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
       &cell_type, &basal_heat_flux, &till_water_thickness, &basal_frictional_heating,

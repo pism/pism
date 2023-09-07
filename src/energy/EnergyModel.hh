@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -42,7 +42,7 @@ public:
   const array::CellType *cell_type;
   const array::Scalar *basal_frictional_heating;
   const array::Scalar *basal_heat_flux;
-  const array::Scalar *ice_thickness;
+  const array::Scalar1 *ice_thickness;
   const array::Scalar *surface_liquid_fraction;
   const array::Scalar *shelf_base_temp;
   const array::Scalar *surface_temp;
@@ -150,7 +150,7 @@ private:
 /*!
  * Return true if the grid point (i,j) is near the margin of the ice.
  */
-bool marginal(const array::Scalar &thickness, int i, int j, double threshold);
+bool marginal(const array::Scalar1 &thickness, int i, int j, double threshold);
 
 } // end of namespace energy
 } // end of namespace pism

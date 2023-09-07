@@ -133,10 +133,11 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   const array::Scalar
     &basal_frictional_heating = *inputs.basal_frictional_heating,
     &basal_heat_flux          = *inputs.basal_heat_flux,
-    &ice_thickness            = *inputs.ice_thickness,
     &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
     &shelf_base_temp          = *inputs.shelf_base_temp,
     &ice_surface_temp         = *inputs.surface_temp;
+
+  const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
   energy::enthSystemCtx system(m_grid->z(), "energy.ch_warming", m_grid->dx(), m_grid->dy(), dt,
                                *m_config, m_ice_enthalpy, u3, v3, w3, volumetric_heat, EC);
