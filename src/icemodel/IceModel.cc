@@ -48,6 +48,7 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/coupler/ocean/PyOceanModel.hh"
 
 namespace pism {
 
@@ -1060,6 +1061,11 @@ IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &
     frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
     forced_retreat(grid, "thickness_change_due_to_forced_retreat") {
   // empty
+}
+
+void IceModel::set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model) {
+  m_ocean = std::make_shared<ocean::PyOceanModelAdapter>(m_grid, model);
+  m_submodels["ocean model"] = m_ocean.get();
 }
 
 } // end of namespace pism

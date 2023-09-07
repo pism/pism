@@ -57,6 +57,7 @@ namespace pism {
 
 namespace ocean {
 class OceanModel;
+class PyOceanModel;
 namespace sea_level {
 class SeaLevel;
 }
@@ -149,6 +150,11 @@ public:
   const energy::EnergyModel* energy_balance_model() const;
   const YieldStress* basal_yield_stress_model() const;
   const bed::BedDef* bed_deformation_model() const;
+
+  /*!
+   * Replace the ocean model with an implementation in Python.
+   */
+  void set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model);
 
   const Geometry& geometry() const;
   const GeometryEvolution& geometry_evolution() const;
