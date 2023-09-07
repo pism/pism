@@ -70,13 +70,12 @@ protected:
   static std::shared_ptr<array::Scalar> allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g);
   static std::shared_ptr<array::Scalar> allocate_water_column_pressure(std::shared_ptr<const Grid> g);
 
-  static void compute_average_water_column_pressure(const Geometry &geometry,
-                                                       double ice_density,
-                                                       double water_density,
-                                                       double g,
-                                                       array::Scalar &result);
 
 };
+
+void compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
+                                           double water_density, double standard_gravity,
+                                           array::Scalar &result);
 
 } // end of namespace ocean
 } // end of namespace pism

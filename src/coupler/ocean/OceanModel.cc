@@ -214,9 +214,8 @@ TSDiagnosticList OceanModel::ts_diagnostics_impl() const {
   return {};
 }
 
-void OceanModel::compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
-                                                       double water_density, double g,
-                                                       array::Scalar &result) {
+void compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
+                                           double water_density, double g, array::Scalar &result) {
 
   auto grid = result.grid();
 
