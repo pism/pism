@@ -122,24 +122,24 @@ void enthSystemCtx::init(int i, int j, bool marginal, double ice_thickness) {
     return;
   }
 
-  coarse_to_fine(m_u3, m_i, m_j, &m_u[0]);
-  coarse_to_fine(m_v3, m_i, m_j, &m_v[0]);
+  coarse_to_fine(m_u3, m_i, m_j, m_u.data());
+  coarse_to_fine(m_v3, m_i, m_j, m_v.data());
 
   if (m_marginal and m_exclude_vertical_advection) {
     for (unsigned int k = 0; k < m_w.size(); ++k) {
       m_w[k] = 0.0;
     }
   } else {
-    coarse_to_fine(m_w3, m_i, m_j, &m_w[0]);
+    coarse_to_fine(m_w3, m_i, m_j, m_w.data());
   }
 
-  coarse_to_fine(m_strain_heating3, m_i, m_j, &m_strain_heating[0]);
-  coarse_to_fine(m_Enth3, m_i, m_j, &m_Enth[0]);
+  coarse_to_fine(m_strain_heating3, m_i, m_j, m_strain_heating.data());
+  coarse_to_fine(m_Enth3, m_i, m_j, m_Enth.data());
 
-  coarse_to_fine(m_Enth3, m_i, m_j+1, &m_E_n[0]);
-  coarse_to_fine(m_Enth3, m_i+1, m_j, &m_E_e[0]);
-  coarse_to_fine(m_Enth3, m_i, m_j-1, &m_E_s[0]);
-  coarse_to_fine(m_Enth3, m_i-1, m_j, &m_E_w[0]);
+  coarse_to_fine(m_Enth3, m_i, m_j+1, m_E_n.data());
+  coarse_to_fine(m_Enth3, m_i+1, m_j, m_E_e.data());
+  coarse_to_fine(m_Enth3, m_i, m_j-1, m_E_s.data());
+  coarse_to_fine(m_Enth3, m_i-1, m_j, m_E_w.data());
 
   compute_enthalpy_CTS();
 
