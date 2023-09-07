@@ -88,30 +88,10 @@ EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
 
 
 bool marginal(const array::Scalar1 &thickness, int i, int j, double threshold) {
-  int
-    n = j + 1,
-    e = i + 1,
-    s = j - 1,
-    w = i - 1;
+  auto H = thickness.box(i, j);
 
-  const double
-    N  = thickness(i, n),
-    E  = thickness(e, j),
-    S  = thickness(i, s),
-    W  = thickness(w, j),
-    NW = thickness(w, n),
-    SW = thickness(w, s),
-    NE = thickness(e, n),
-    SE = thickness(e, s);
-
-  return ((E  < threshold) or
-          (NE < threshold) or
-          (N  < threshold) or
-          (NW < threshold) or
-          (W  < threshold) or
-          (SW < threshold) or
-          (S  < threshold) or
-          (SE < threshold));
+  return ((H.e < threshold) or (H.ne < threshold) or (H.n < threshold) or (H.nw < threshold) or
+          (H.w < threshold) or (H.sw < threshold) or (H.s < threshold) or (H.se < threshold));
 }
 
 
