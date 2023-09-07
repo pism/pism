@@ -35,8 +35,6 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
-  const array::Scalar &ice_thickness = geometry.ice_thickness;
-
   const double
     melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -44,7 +42,7 @@ void Constant::update_impl(const Geometry &geometry, double t, double dt) {
     g             = m_config->get_number("constants.standard_gravity"),
     mass_flux     = melt_rate * ice_density;
 
-  melting_point_temperature(ice_thickness, *m_shelf_base_temperature);
+  melting_point_temperature(geometry.ice_thickness, *m_shelf_base_temperature);
 
   m_shelf_base_mass_flux->set(mass_flux);
 
