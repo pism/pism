@@ -47,6 +47,12 @@ public:
   const array::Scalar& shelf_base_mass_flux() const;
   const array::Scalar& average_water_column_pressure() const;
 
+  // These methods allocate storage and set metadata. They are public (and not protected)
+  // so we can use them in PyOceanModel::allocate().
+  static std::shared_ptr<array::Scalar> allocate_shelf_base_temperature(std::shared_ptr<const Grid> g);
+  static std::shared_ptr<array::Scalar> allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g);
+  static std::shared_ptr<array::Scalar> allocate_water_column_pressure(std::shared_ptr<const Grid> g);
+
 protected:
   virtual void init_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
@@ -65,10 +71,6 @@ protected:
 protected:
   std::shared_ptr<OceanModel> m_input_model;
   std::shared_ptr<array::Scalar> m_water_column_pressure;
-
-  static std::shared_ptr<array::Scalar> allocate_shelf_base_temperature(std::shared_ptr<const Grid> g);
-  static std::shared_ptr<array::Scalar> allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g);
-  static std::shared_ptr<array::Scalar> allocate_water_column_pressure(std::shared_ptr<const Grid> g);
 
 
 };

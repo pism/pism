@@ -28,9 +28,9 @@ namespace pism {
 namespace ocean {
 
 void PyOceanModel::allocate(std::shared_ptr<const Grid> grid) {
-  shelf_base_mass_flux = std::make_shared<array::Scalar>(grid, "shelfbmassflux");
-  shelf_base_temperature = std::make_shared<array::Scalar>(grid, "shelfbtemp");
-  water_column_pressure = std::make_shared<array::Scalar>(grid, "water_column_pressure");
+  shelf_base_mass_flux   = OceanModel::allocate_shelf_base_mass_flux(grid);
+  shelf_base_temperature = OceanModel::allocate_shelf_base_temperature(grid);
+  water_column_pressure  = OceanModel::allocate_water_column_pressure(grid);
 }
 
 MaxTimestep PyOceanModel::max_timestep(double t) const {
