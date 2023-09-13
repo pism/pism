@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
 #include <gsl/gsl_interp.h>
 #include <memory>
 
@@ -44,7 +45,7 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
 
   auto requested_times = m_config->get_string("isochrones.deposition_times");
   m_deposition_times = time->parse_times(requested_times);
-  int n_max = m_config->get_number("isochrones.max_n_layers");
+  size_t n_max = (size_t)m_config->get_number("isochrones.max_n_layers");
 
   if (m_deposition_times.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -52,12 +53,12 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
                                   requested_times.c_str());
   }
 
-  if (m_deposition_times.size() > (size_t)n_max) {
+  if (m_deposition_times.size() > n_max) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "deposition times '%s' corresponds to %d isochronal layers, which exceeds the allowed maximum (%d)",
                                   requested_times.c_str(),
                                   (int)m_deposition_times.size(),
-                                  n_max);
+                                  (int)n_max);
   }
 
   m_depths = std::make_shared<array::Array3D>(grid, "isochronal_layer_depths",
@@ -98,9 +99,14 @@ void Isochrones::init(const Geometry &geometry) {
   auto t = m_grid->ctx()->time()->current();
 
   if (t < m_deposition_times[0]) {
-    m_time_index = -1;
+    // FIXME: make sure we treat times before the first deposition time correctly.
+    //
+    // The lowest isochronal layer should contain ice accumulated *before* the first
+    // deposition time... except that we want to avoid layers that are too thick since
+    // that reduces the accuracy of advection.
+    m_time_index = 0;
   } else {
-    int N = static_cast<int>(m_deposition_times.size());
+    size_t N = m_deposition_times.size();
 
     // Find the index k such that m_deposition_times[k] <= T < m_deposition_times[k + 1]
     //
@@ -264,7 +270,7 @@ void Isochrones::update(double t, double dt,
   // add one more layer if we reached the next deposition time
   {
     double T = t + dt;
-    int N = m_deposition_times.size();
+    size_t N = m_deposition_times.size();
 
     // Find the index k such that m_deposition_times[k] <= T < m_deposition_times[k + 1]
     //
@@ -273,7 +279,7 @@ void Isochrones::update(double t, double dt,
     // FIXME: consider using a gsl_interp_accel to speed this up
     size_t k = gsl_interp_bsearch(m_deposition_times.data(), T, 0, N - 1);
 
-    if (k > (size_t)m_time_index and m_top_layer < N - 1) {
+    if (k > m_time_index and m_top_layer < N - 1) {
 
       m_top_layer += 1;
       m_time_index = k;
@@ -336,7 +342,7 @@ public:
     auto &z = m_vars[0].z();
     z.clear()
       .set_name("deposition_time")
-      .long_name("minimum deposition time for an isochronal layer")
+      .long_name("earliest deposition time for an isochronal layer")
       .units(time->units_string());
     z["calendar"] = time->calendar();
     z["axis"] = "T";
@@ -350,7 +356,7 @@ protected:
     auto result = layer_depths.duplicate();
     result->metadata(0) = m_vars[0];
 
-    int N = result->levels().size();
+    size_t N = result->levels().size();
 
     array::AccessScope scope{&layer_depths, result.get()};
 
@@ -361,7 +367,7 @@ protected:
       const double *d = layer_depths.get_column(i, j);
 
       double total_depth = 0.0;
-      for (int k = N - 1; k >= 0; --k) {
+      for (int k = (int)N - 1; k >= 0; --k) {
         total_depth += d[k];
         column[k] = total_depth;
       }
@@ -378,3 +384,7 @@ DiagnosticList Isochrones::diagnostics_impl() const {
 }
 
 } // end of namespace pism
+
+/*
+ * LocalWords: LocalWords deposition
+*/

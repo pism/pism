@@ -47,13 +47,16 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  // managed using pointers because we need a vector of "levels" to construct these
+  //! isochronal layer depths
   std::shared_ptr<array::Array3D> m_depths;
+
+  //! temporary storage needed for time stepping
   std::shared_ptr<array::Array3D> m_tmp;
 
+  //! The index of the topmost isochronal layer.
   int m_top_layer;
 
-  int m_time_index;
+  size_t m_time_index;
   std::vector<double> m_deposition_times;
 };
 
