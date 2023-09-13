@@ -1550,6 +1550,11 @@ netcdf pism_config {
     pism_config:inverse.use_zeta_fixed_mask_option = "inv_use_zeta_fixed_mask";
     pism_config:inverse.use_zeta_fixed_mask_type = "flag";
 
+    pism_config:isochrones.bootstrapping.n_layers = 10;
+    pism_config:isochrones.bootstrapping.n_layers_doc = "number of isochronal layers created during bootstrapping";
+    pism_config:isochrones.bootstrapping.n_layers_type = "integer";
+    pism_config:isochrones.bootstrapping.n_layers_units = "count";
+
     pism_config:isochrones.deposition_times = "";
     pism_config:isochrones.deposition_times_doc = "List or a range of deposition times used to create isochronal layers";
     pism_config:isochrones.deposition_times_type = "string";
