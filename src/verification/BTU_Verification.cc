@@ -45,7 +45,7 @@ void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
   std::vector<double> Tbcol(m_Mbz),
-    zlevels = m_temp->levels();
+    zlevels = m_temp->get_levels();
 
   double time = this->time().current();
 

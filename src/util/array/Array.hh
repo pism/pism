@@ -215,7 +215,9 @@ public:
   //! @brief Returns the number of degrees of freedom per grid point.
   unsigned int ndof() const;
   unsigned int stencil_width() const;
-  const std::vector<double>& levels() const;
+
+  const std::vector<double>& get_levels() const;
+  void set_levels(const std::vector<double>& levels);
 
   std::array<double,2> range() const;
   std::vector<double> norm(int n) const;

@@ -77,7 +77,7 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
   auto u_sigma = m_solver->velocity_u_sigma();
   auto v_sigma = m_solver->velocity_v_sigma();
 
-  const auto &zlevels = m_u.levels();
+  const auto &zlevels = m_u.get_levels();
   int Mz = zlevels.size();
 
   array::AccessScope list{&m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness};

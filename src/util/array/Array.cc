@@ -18,6 +18,7 @@
 
 #include <cassert>
 
+#include <cstddef>
 #include <petscdraw.h>
 
 #include "pism/util/array/Array.hh"
@@ -134,9 +135,18 @@ unsigned int Array::ndof() const {
   return m_impl->dof;
 }
 
-const std::vector<double>& Array::levels() const {
+const std::vector<double>& Array::get_levels() const {
   return m_impl->zlevels;
 }
+
+void Array::set_levels(const std::vector<double>& levels) {
+  assert(m_impl->zlevels.size() == levels.size());
+
+  for (size_t k = 0; k < m_impl->zlevels.size(); ++k) {
+    m_impl->zlevels[k] = levels[k];
+  }
+}
+
 
 //! \brief Increment the object state counter.
 /*!
@@ -159,7 +169,7 @@ std::vector<int> Array::shape() const {
   auto grid = m_impl->grid;
 
   if (ndims() == 3) {
-    return {(int)grid->My(), (int)grid->Mx(), (int)levels().size()};
+    return {(int)grid->My(), (int)grid->Mx(), (int)get_levels().size()};
   }
 
   if (ndof() == 1) {
