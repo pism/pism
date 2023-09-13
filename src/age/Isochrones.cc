@@ -61,11 +61,11 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
                                   (int)n_max);
   }
 
-  m_depths = std::make_shared<array::Array3D>(grid, "isochronal_layer_depths",
+  m_layer_thickness = std::make_shared<array::Array3D>(grid, "isochronal_layer_thickness",
                                               array::WITHOUT_GHOSTS, m_deposition_times);
 
-  m_depths->metadata().long_name("thicknesses of isochronal layers").units("m");
-  auto &z = m_depths->metadata(0).z();
+  m_layer_thickness->metadata().long_name("thicknesses of isochronal layers").units("m");
+  auto &z = m_layer_thickness->metadata(0).z();
   z.clear()
       .set_name("deposition_time")
       .long_name("minimum deposition time for an isochronal layer")
@@ -79,18 +79,18 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
 
 void Isochrones::init(const Geometry &geometry) {
 
-  m_depths->set(0.0);
+  m_layer_thickness->set(0.0);
 
   // use ice thickness to create one layer
   //
   // FIXME: add several layers of equal thickness when bootstrapping (instead of just one)
   {
-    array::AccessScope scope{&geometry.ice_thickness, m_depths.get()};
+    array::AccessScope scope{&geometry.ice_thickness, m_layer_thickness.get()};
 
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      m_depths->get_column(i, j)[0] = geometry.ice_thickness(i, j);
+      m_layer_thickness->get_column(i, j)[0] = geometry.ice_thickness(i, j);
     }
 
     m_top_layer = 0;
@@ -129,12 +129,12 @@ void Isochrones::update(double t, double dt,
   auto ice_density = m_config->get_number("constants.ice.density");
 
   {
-    array::AccessScope scope{&climatic_mass_balance, &basal_melt_rate, m_depths.get()};
+    array::AccessScope scope{&climatic_mass_balance, &basal_melt_rate, m_layer_thickness.get()};
 
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *d = m_depths->get_column(i, j);
+      double *d = m_layer_thickness->get_column(i, j);
 
       // apply the surface mass balance
       {
@@ -174,9 +174,9 @@ void Isochrones::update(double t, double dt,
   }
 
   // note: this updates ghosts of m_tmp
-  m_tmp->copy_from(*m_depths);
+  m_tmp->copy_from(*m_layer_thickness);
 
-  array::AccessScope scope{&u, &v, m_depths.get(), m_tmp.get(), &ice_thickness};
+  array::AccessScope scope{&u, &v, m_layer_thickness.get(), m_tmp.get(), &ice_thickness};
 
   double
     dx = m_grid->dx(),
@@ -198,7 +198,7 @@ void Isochrones::update(double t, double dt,
       *d_s = m_tmp->get_column(i, j - 1),
       *d_w = m_tmp->get_column(i - 1, j);
 
-    double *d = m_depths->get_column(i, j);
+    double *d = m_layer_thickness->get_column(i, j);
 
     pism::stencils::Star<double> z = 0.0;
     double d_total = 0.0;
@@ -274,7 +274,8 @@ void Isochrones::update(double t, double dt,
 
     // Find the index k such that m_deposition_times[k] <= T < m_deposition_times[k + 1]
     //
-    // Note: `k` below will be strictly less than `N - 1`.
+    // Note: `k` below will be strictly less than `N - 1`, ensuring that the index "k + 1"
+    // is valid.
     //
     // FIXME: consider using a gsl_interp_accel to speed this up
     size_t k = gsl_interp_bsearch(m_deposition_times.data(), T, 0, N - 1);
@@ -305,24 +306,25 @@ MaxTimestep Isochrones::max_timestep_impl(double t) const {
 
   // Find the index k such that m_deposition_times[k] <= T < m_deposition_times[k + 1]
   //
-  // Note: `k` below will be strictly less than `N - 1`.
+  // Note: `k` below will be strictly less than `N - 1`, ensuring that the index "k + 1"
+  // is valid.
   //
-  // FIXME: use a gsl_interp_accel to speed this up
+  // FIXME: consider using gsl_interp_accel to speed this up
   size_t k = gsl_interp_bsearch(m_deposition_times.data(), t, 0, N - 1);
 
   return {m_deposition_times[k + 1] - t, "isochrones"};
 }
 
 void Isochrones::define_model_state_impl(const File &output) const {
-  m_depths->define(output, io::PISM_DOUBLE);
+  m_layer_thickness->define(output, io::PISM_DOUBLE);
 }
 
 void Isochrones::write_model_state_impl(const File &output) const {
-  m_depths->write(output);
+  m_layer_thickness->write(output);
 }
 
 const array::Array3D& Isochrones::layer_depths() const {
-  return *m_depths;
+  return *m_layer_thickness;
 }
 
 namespace diagnostics {
@@ -336,7 +338,7 @@ public:
 
     const auto& time = m_grid->ctx()->time();
 
-    m_vars = {{m_sys, "isochrone_depth", model->layer_depths().levels()}};
+    m_vars = {{m_sys, "isochrone_depth", model->layer_depths().get_levels()}};
 
     m_vars[0].long_name("isochrone depth").units("m");
     auto &z = m_vars[0].z();
@@ -356,7 +358,7 @@ protected:
     auto result = layer_depths.duplicate();
     result->metadata(0) = m_vars[0];
 
-    size_t N = result->levels().size();
+    size_t N = result->get_levels().size();
 
     array::AccessScope scope{&layer_depths, result.get()};
 

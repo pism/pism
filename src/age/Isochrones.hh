@@ -47,8 +47,8 @@ private:
 
   DiagnosticList diagnostics_impl() const;
 
-  //! isochronal layer depths
-  std::shared_ptr<array::Array3D> m_depths;
+  //! isochronal layer thicknesses
+  std::shared_ptr<array::Array3D> m_layer_thickness;
 
   //! temporary storage needed for time stepping
   std::shared_ptr<array::Array3D> m_tmp;
