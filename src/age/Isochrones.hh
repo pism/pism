@@ -20,6 +20,7 @@
 #include "pism/util/Component.hh"
 #include "pism/util/array/Array3D.hh"
 #include <memory>
+#include <vector>
 
 namespace pism {
 
@@ -28,7 +29,9 @@ public:
   Isochrones(std::shared_ptr<const Grid> grid);
   virtual ~Isochrones() = default;
 
-  void init(const Geometry &geometry);
+  void bootstrap(const array::Scalar &ice_thickness);
+
+  void restart(const File &input_file, int record);
 
   void update(double t, double dt,
               const array::Array3D &u,
@@ -37,7 +40,7 @@ public:
               const array::Scalar &climatic_mass_balance,
               const array::Scalar &basal_melt_rate);
 
-  const array::Array3D& layer_depths() const;
+  const array::Array3D& layer_thicknesses() const;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
@@ -45,7 +48,11 @@ private:
   void define_model_state_impl(const File &output) const;
   void write_model_state_impl(const File &output) const;
 
+  double top_layer_deposition_time() const;
+
   DiagnosticList diagnostics_impl() const;
+
+  void allocate(const std::vector<double> &levels);
 
   //! isochronal layer thicknesses
   std::shared_ptr<array::Array3D> m_layer_thickness;
@@ -54,9 +61,8 @@ private:
   std::shared_ptr<array::Array3D> m_tmp;
 
   //! The index of the topmost isochronal layer.
-  int m_top_layer;
+  size_t m_top_layer_index;
 
-  size_t m_time_index;
   std::vector<double> m_deposition_times;
 };
 

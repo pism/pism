@@ -277,7 +277,11 @@ void IceModel::model_state_setup() {
   }
 
   if (m_isochrones) {
-    m_isochrones->init(m_geometry);
+    if (input.type == INIT_RESTART) {
+      m_isochrones->restart(*input_file, (int)input.record);
+    } else {
+      m_isochrones->bootstrap(m_geometry.ice_thickness);
+    }
   }
 
   // Initialize the energy balance sub-model.
