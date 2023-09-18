@@ -61,8 +61,8 @@ void regrid_spatial_variable(SpatialVariableMetadata &var,
                              InterpolationType type,
                              double *output);
 
-void read_spatial_variable(const SpatialVariableMetadata &var,
-                           const Grid& grid, const File &nc,
+void read_spatial_variable(const SpatialVariableMetadata &variable,
+                           const Grid& grid, const File &file,
                            unsigned int time, double *output);
 
 void write_spatial_variable(const SpatialVariableMetadata &metadata,
