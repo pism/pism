@@ -8,3 +8,9 @@ ex.nc output.nc: run.sh
 
 clean:
 	@rm -f *.nc
+
+ex_with_restart.nc intermediate_result.nc final_result.nc: run_with_restart.sh
+	bash -x $^
+
+isochrones_with_restart.mpg: ex_with_restart.nc
+	python3 plot.py $^ $@
