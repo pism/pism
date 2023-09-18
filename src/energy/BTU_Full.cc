@@ -23,6 +23,7 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/energy/BedrockColumn.hh"
+#include <memory>
 
 namespace pism {
 namespace energy {
@@ -63,25 +64,22 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
     }
     z.back() = 0.0;
 
-    m_temp.reset(new array::Array3D(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z));
-    m_temp->metadata(0).z().set_name("zb");
+    m_temp = std::make_shared<array::Array3D>(m_grid, "litho_temp", array::WITHOUT_GHOSTS, z);
+    {
+      auto &z_dim = m_temp->metadata(0).z();
 
-    std::map<std::string, std::string> z_attrs =
-      {{"units", "m"},
-       {"long_name", "Z-coordinate in bedrock"},
-       {"axis", "Z"},
-       {"positive", "up"}};
-    for (const auto &z_attr : z_attrs) {
-      m_temp->metadata(0).z().set_string(z_attr.first, z_attr.second);
+      z_dim.set_name("zb").long_name("Z-coordinate in bedrock").units("m");
+      z_dim["axis"]     = "Z";
+      z_dim["positive"] = "up";
     }
 
     m_temp->metadata(0)
         .long_name("lithosphere (bedrock) temperature, in BTU_Full")
         .units("K");
-    m_temp->metadata()["valid_min"] = {0.0};
+    m_temp->metadata(0)["valid_min"] = {0.0};
   }
 
-  m_column.reset(new BedrockColumn("bedrock_column", *m_config, vertical_spacing(), Mz()));
+  m_column = std::make_shared<BedrockColumn>("bedrock_column", *m_config, vertical_spacing(), Mz());
 }
 
 
