@@ -466,6 +466,26 @@ unsigned int File::dimension_length(const std::string &name) const {
   }
 }
 
+AxisType axis_type_from_string(const std::string &input) {
+  if (input == "T" or input == "t") {
+    return T_AXIS;
+  }
+
+  if (input == "X" or input == "x") {
+    return X_AXIS;
+  }
+
+  if (input == "Y" or input == "y") {
+    return Y_AXIS;
+  }
+
+  if (input == "Z" or input == "z") {
+    return Z_AXIS;
+  }
+
+  return UNKNOWN_AXIS;
+}
+
 //! \brief Get the "type" of a dimension.
 /*!
  * The "type" is one of X_AXIS, Y_AXIS, Z_AXIS, T_AXIS.
@@ -502,21 +522,11 @@ AxisType File::dimension_type(const std::string &name,
       return Y_AXIS;
     }
 
-    // check the axis attribute:
-    if (axis == "T" or axis == "t") {
-      return T_AXIS;
-    }
-
-    if (axis == "X" or axis == "x") {
-      return X_AXIS;
-    }
-
-    if (axis == "Y" or axis == "y") {
-      return Y_AXIS;
-    }
-
-    if (axis == "Z" or axis == "z") {
-      return Z_AXIS;
+    {
+      AxisType tmp = axis_type_from_string(axis);
+      if (tmp != UNKNOWN_AXIS) {
+        return tmp;
+      }
     }
 
     // check the variable name:

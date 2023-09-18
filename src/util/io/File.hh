@@ -33,7 +33,9 @@ enum Backend : int;
 enum Mode : int;
 } // namespace io
 
-enum AxisType {X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS};
+enum AxisType { X_AXIS, Y_AXIS, Z_AXIS, T_AXIS, UNKNOWN_AXIS };
+
+AxisType axis_type_from_string(const std::string &input);
 
 class Grid;
 

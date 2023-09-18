@@ -138,16 +138,16 @@ SpatialVariableMetadata::SpatialVariableMetadata(units::System::Ptr system, cons
   m_y["standard_name"] = "projection_y_coordinate";
   m_y["units"]         = "m";
 
-  m_z["axis"]      = "Z";
-  m_z["long_name"] = "Z-coordinate in Cartesian system";
-  m_z["units"]     = "m";
-  m_z["positive"]  = "up";
-
   if (m_zlevels.size() > 1) {
-    z().set_name("z"); // default; can be overridden easily
+    m_z.set_name("z"); // default; can be overridden easily
+    m_z["axis"]      = "Z";
+    m_z["long_name"] = "Z-coordinate in Cartesian system";
+    m_z["units"]     = "m";
+    m_z["positive"]  = "up";
+
     m_n_spatial_dims = 3;
   } else {
-    z().set_name("");
+    z().set_name("").clear();
     m_n_spatial_dims = 2;
   }
 }

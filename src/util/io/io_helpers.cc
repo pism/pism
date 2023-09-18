@@ -379,21 +379,13 @@ static bool use_transposed_io(const File &file, units::System::Ptr unit_system,
 }
 
 //! \brief Read an array distributed according to the grid.
-static void read_distributed_array(const File &file, const Grid &grid,
-                                   const std::string &var_name,
-                                   unsigned int z_count, unsigned int t_start,
-                                   double *output) {
+static void read_distributed_array(const File &file, const Grid &grid, const std::string &var_name,
+                                   unsigned int z_count, unsigned int t_start, double *output) {
   try {
     std::vector<unsigned int> start, count, imap;
     const unsigned int t_count = 1;
-    compute_start_and_count(file,
-                            grid.ctx()->unit_system(),
-                            var_name,
-                            t_start, t_count,
-                            grid.xs(), grid.xm(),
-                            grid.ys(), grid.ym(),
-                            0, z_count,
-                            start, count, imap);
+    compute_start_and_count(file, grid.ctx()->unit_system(), var_name, t_start, t_count, grid.xs(),
+                            grid.xm(), grid.ys(), grid.ym(), 0, z_count, start, count, imap);
 
     bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), var_name);
     if (transposed_io) {
@@ -403,23 +395,18 @@ static void read_distributed_array(const File &file, const Grid &grid,
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("reading variable '%s' from '%s'", var_name.c_str(),
-                  file.filename().c_str());
+    e.add_context("reading variable '%s' from '%s'", var_name.c_str(), file.filename().c_str());
     throw;
   }
 }
 
-static void regrid_vec_generic(const File &file, const Grid &grid,
-                               const std::string &variable_name,
-                               const std::vector<double> &zlevels_out,
-                               unsigned int t_start,
-                               bool fill_missing,
-                               double default_value,
-                               InterpolationType interpolation_type,
-                               double *output) {
+static void regrid_vec_generic(const File &file, const Grid &grid, const std::string &variable_name,
+                               const std::vector<double> &zlevels_out, unsigned int t_start,
+                               bool fill_missing, double default_value,
+                               InterpolationType interpolation_type, double *output) {
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
-  const Profiling& profiling = grid.ctx()->profiling();
+  const Profiling &profiling = grid.ctx()->profiling();
 
   try {
     grid::InputGridInfo gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
@@ -429,14 +416,9 @@ static void regrid_vec_generic(const File &file, const Grid &grid,
 
     const unsigned int t_count = 1;
     std::vector<unsigned int> start, count, imap;
-    compute_start_and_count(file,
-                            grid.ctx()->unit_system(),
-                            variable_name,
-                            t_start, t_count,
-                            lic.start[X], lic.count[X],
-                            lic.start[Y], lic.count[Y],
-                            lic.start[Z], lic.count[Z],
-                            start, count, imap);
+    compute_start_and_count(file, grid.ctx()->unit_system(), variable_name, t_start, t_count,
+                            lic.start[X], lic.count[X], lic.start[Y], lic.count[Y], lic.start[Z],
+                            lic.count[Z], start, count, imap);
 
     bool transposed_io = use_transposed_io(file, grid.ctx()->unit_system(), variable_name);
     profiling.begin("io.regridding.read");
@@ -452,9 +434,7 @@ static void regrid_vec_generic(const File &file, const Grid &grid,
     {
       auto attribute = file.read_double_attribute(variable_name, "_FillValue");
       if (attribute.size() == 1) {
-        double
-          fill_value = attribute[0],
-          epsilon    = 1e-12;
+        double fill_value = attribute[0], epsilon = 1e-12;
         if (fill_missing) {
           for (size_t i = 0; i < buffer.size(); ++i) {
             if (fabs(buffer[i] - fill_value) < epsilon) {
@@ -464,9 +444,10 @@ static void regrid_vec_generic(const File &file, const Grid &grid,
         } else {
           for (size_t i = 0; i < buffer.size(); ++i) {
             if (fabs(buffer[i] - fill_value) < epsilon) {
-              throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                            "Some values of '%s' in '%s' match the _FillValue attribute.",
-                                            variable_name.c_str(), file.filename().c_str());
+              throw RuntimeError::formatted(
+                  PISM_ERROR_LOCATION,
+                  "Some values of '%s' in '%s' match the _FillValue attribute.",
+                  variable_name.c_str(), file.filename().c_str());
             }
           }
         }
@@ -487,16 +468,9 @@ static void regrid_vec_generic(const File &file, const Grid &grid,
 //! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
 //! interpolation to put it on the grid defined by "grid" and zlevels_out.
 static void regrid_vec(const File &file, const Grid &grid, const std::string &var_name,
-                       const std::vector<double> &zlevels_out,
-                       unsigned int t_start,
-                       InterpolationType interpolation_type,
-                       double *output) {
-  regrid_vec_generic(file, grid,
-                     var_name,
-                     zlevels_out,
-                     t_start,
-                     false, 0.0,
-                     interpolation_type,
+                       const std::vector<double> &zlevels_out, unsigned int t_start,
+                       InterpolationType interpolation_type, double *output) {
+  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, false, 0.0, interpolation_type,
                      output);
 }
 
@@ -510,26 +484,17 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
  * @param default_value default value to replace `_FillValue` with
  * @param[out] output resulting interpolated field
  */
-static void regrid_vec_fill_missing(const File &file, const Grid &grid,
-                                    const std::string &var_name,
-                                    const std::vector<double> &zlevels_out,
-                                    unsigned int t_start,
-                                    double default_value,
-                                    InterpolationType interpolation_type,
+static void regrid_vec_fill_missing(const File &file, const Grid &grid, const std::string &var_name,
+                                    const std::vector<double> &zlevels_out, unsigned int t_start,
+                                    double default_value, InterpolationType interpolation_type,
                                     double *output) {
-  regrid_vec_generic(file, grid,
-                     var_name,
-                     zlevels_out,
-                     t_start,
-                     true, default_value,
-                     interpolation_type,
-                     output);
+  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, true, default_value,
+                     interpolation_type, output);
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
-void define_spatial_variable(const SpatialVariableMetadata &metadata,
-                             const Grid &grid, const File &file,
-                             io::Type default_type) {
+void define_spatial_variable(const SpatialVariableMetadata &metadata, const Grid &grid,
+                             const File &file, io::Type default_type) {
   auto config = grid.ctx()->config();
 
   // make a copy of `metadata` so we can override `output_units` if "output.use_MKS" is
@@ -606,25 +571,24 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   // Sanity check: the variable in an input file should have the expected
   // number of spatial dimensions.
   {
-    // Set of spatial dimensions this field has.
+    // Set of spatial dimensions for this field:
     std::set<int> axes{ X_AXIS, Y_AXIS };
-    if (not variable.z().get_name().empty()) {
+    if (axis_type_from_string(variable.z()["axis"]) == Z_AXIS) {
       axes.insert(Z_AXIS);
     }
 
-    std::vector<std::string> input_dims;
-    int input_ndims           = 0; // number of spatial dimensions (input file)
+    int input_spatial_dim_count = 0; // number of spatial dimensions (input file)
     size_t matching_dim_count = 0; // number of matching dimensions
 
-    input_dims = file.dimensions(var.name);
-    for (auto d : input_dims) {
-      AxisType tmp = file.dimension_type(d, variable.unit_system());
+    auto input_dims = file.dimensions(var.name);
+    for (const auto &d : input_dims) {
+      auto dim_type = file.dimension_type(d, variable.unit_system());
 
-      if (tmp != T_AXIS) {
-        ++input_ndims;
+      if (dim_type != T_AXIS) {
+        ++input_spatial_dim_count;
       }
 
-      if (axes.find(tmp) != axes.end()) {
+      if (axes.find(dim_type) != axes.end()) {
         ++matching_dim_count;
       }
     }
@@ -635,7 +599,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                     "found the %dD variable %s (%s) in '%s' while trying to read\n"
                                     "'%s' ('%s'), which is %d-dimensional.",
-                                    input_ndims, var.name.c_str(), join(input_dims, ",").c_str(),
+                                    input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
                                     file.filename().c_str(), variable.get_name().c_str(),
                                     variable.get_string("long_name").c_str(),
                                     static_cast<int>(axes.size()));
