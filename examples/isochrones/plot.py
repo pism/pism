@@ -55,8 +55,19 @@ def plot(ax, f, index=-1):
                  f"Time: {int(time)} years")
 
 if __name__ == "__main__":
-    input_filename = sys.argv[1]
-    output_filename = sys.argv[2]
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog='plot.py',
+        description="Visualizes isochrones using PISM's diagnostic 'isochrone_depth'")
+    parser.add_argument('files', metavar='filename', type=str, nargs='+',
+                        help='files to process')
+    parser.add_argument('-o', dest='output', type=str, nargs=1,
+                        help='output file name', required=True)
+
+    args = parser.parse_args()
+
+    output_filename = args.output[0]
 
     fig, ax = plt.subplots()
     fig.set_size_inches(10, 5)
@@ -64,10 +75,12 @@ if __name__ == "__main__":
     writer = FFMpegWriter(fps=20)
 
     with writer.saving(fig, output_filename, dpi=75):
-        with NC.Dataset(input_filename, 'r') as f:
-            N = len(f.variables['time'])
-            for k in range(N):
-                print(f"Frame {k}...")
-                ax.clear()
-                plot(ax, f, index=k)
-                writer.grab_frame()
+        for filename in args.files:
+            print(f"Processing {filename}...")
+            with NC.Dataset(filename, 'r') as f:
+                N = len(f.variables['time'])
+                for k in range(N):
+                    print(f"Frame {k}...")
+                    ax.clear()
+                    plot(ax, f, index=k)
+                    writer.grab_frame()

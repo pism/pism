@@ -1,7 +1,7 @@
 all: isochrones.mpg
 
 isochrones.mpg: ex.nc
-	python3 plot.py $^ $@
+	python3 plot.py -o $@ $^
 
 ex.nc output.nc: run.sh
 	bash -x $^
@@ -9,8 +9,8 @@ ex.nc output.nc: run.sh
 clean:
 	@rm -f *.nc
 
-ex_with_restart.nc intermediate_result.nc final_result.nc: run_with_restart.sh
+ex_part1.nc ex_part2.nc o_part1.nc o_final.nc: run_with_restart.sh
 	bash -x $^
 
-isochrones_with_restart.mpg: ex_with_restart.nc
-	python3 plot.py $^ $@
+isochrones_with_restart.mpg: ex_part1.nc ex_part2.nc
+	python3 plot.py -o $@ $^
