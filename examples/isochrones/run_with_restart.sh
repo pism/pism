@@ -10,7 +10,7 @@ M=${M:-101}
 
 common_options="
         -output.extra.file ex_with_restart.nc
-        -output.extra.times 100
+        -output.extra.times 50
         -output.extra.vars isochrone_depth,thk
         -output.sizes.medium isochrone_depth,uvel
         -stress_balance.sia.flow_law isothermal_glen
