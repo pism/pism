@@ -246,9 +246,13 @@ void Isochrones::restart(const File &input_file, int record) {
   // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
   // temporary storage into m_layer_thickness:
   {
-    auto tmp         = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
+    auto tmp = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
                                                 array::WITHOUT_GHOSTS, old_deposition_times);
-    tmp->metadata(0) = m_layer_thickness->metadata(0);
+    tmp->metadata().long_name("thicknesses of isochronal layers").units("m");
+    auto &z = tmp->metadata().z();
+    z.clear()
+        .set_name(deposition_time_variable_name)
+        .units(m_layer_thickness->metadata().z()["units"]);
 
     tmp->read(input_file, record);
 
