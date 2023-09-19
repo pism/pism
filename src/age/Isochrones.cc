@@ -146,6 +146,9 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
                                   N_boot_parameter, N_bootstrap);
   }
 
+  m_log->message(2, "* Bootstrapping the isochrone tracking model, adding %d isochronal layers...\n",
+                 N_bootstrap);
+
   if (N_bootstrap + (int)N_deposition_times > N_max) {
     auto deposition_times = m_config->get_string("isochrones.deposition_times");
     throw RuntimeError::formatted(
@@ -196,6 +199,10 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
 void Isochrones::restart(const File &input_file, int record) {
   using namespace details;
+
+  m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
+                 input_file.filename().c_str());
+
 
   // get deposition times from the input file
   std::vector<double> old_deposition_times;
@@ -291,7 +298,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
         double dH = dt * climatic_mass_balance(i, j) / ice_density;
 
         // apply thickness change to a layer, starting from the top-most
-        for (int k = m_top_layer_index; k >= 0; --k) {
+        for (int k = (int)m_top_layer_index; k >= 0; --k) {
           if (d[k] + dH >= 0.0) {
             // thickness change is non-negative or does not remove the whole layer: apply to
             // the current layer and stop
@@ -432,8 +439,9 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
         m_top_layer_index += 1;
       } else {
         // we have as many layers as we can handle: keep adding to the top layer
-        m_log->message(2, "Isochrones: reached isochrones.max_n_layers and can't add more.\n"
-                          "  SMB will contribute to the current top layer.");
+        m_log->message(2,
+                       "Isochrone tracking: reached isochrones.max_n_layers and can't add more.\n"
+                       "  SMB will contribute to the current top layer.");
       }
     }
   }
