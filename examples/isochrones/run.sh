@@ -18,7 +18,7 @@ mpiexec -n ${N} pismr -eisII A \
         -isochrones.deposition_times 1000 \
         -isochrones.bootstrapping.n_layers 0 \
         -output.extra.file ex.nc \
-        -output.extra.times 100 \
+        -output.extra.times 50 \
         -output.extra.vars isochrone_depth,thk \
         -output.file output.nc \
         -output.sizes.medium isochrone_depth,uvel \

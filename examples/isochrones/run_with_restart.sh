@@ -9,7 +9,6 @@ N=${N:-8}
 M=${M:-101}
 
 common_options="
-        -output.extra.file ex_with_restart.nc
         -output.extra.times 50
         -output.extra.vars isochrone_depth,thk
         -output.sizes.medium isochrone_depth,uvel
@@ -26,13 +25,14 @@ mpiexec -n ${N} pismr -eisII A \
         -grid.My ${M} \
         -grid.Mz 21 \
         -isochrones.bootstrapping.n_layers 0 \
-        -output.file intermediate_result.nc \
-        -time.end 5e3 \
+        -output.extra.file ex_part1.nc \
+        -output.file o_part1.nc \
+        -time.end 10e3 \
         ${common_options}
 
 mpiexec -n ${N} pismr \
-        -i intermediate_result.nc \
-        -output.extra.append \
-        -output.file final_result.nc \
-        -time.end 10e3 \
+        -i o_part1.nc \
+        -output.extra.file ex_part2.nc \
+        -output.file o_final.nc \
+        -time.end 20e3 \
         ${common_options}
