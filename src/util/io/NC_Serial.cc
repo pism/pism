@@ -369,10 +369,10 @@ void NC_Serial::get_var_double(const std::string &variable_name,
         stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
                                   processor_0_buffer.data());
       }
-      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
+      check(PISM_ERROR_LOCATION, stat);
 
       if (r != 0) {
-        MPI_Send(processor_0_buffer.data(), local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
+        MPI_Send(processor_0_buffer.data(), (int)local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
       } else {
         for (unsigned int k = 0; k < local_chunk_size; ++k) {
           ip[k] = processor_0_buffer[k];
@@ -386,7 +386,7 @@ void NC_Serial::get_var_double(const std::string &variable_name,
     MPI_Send(imap.data(), ndims, MPI_UNSIGNED, 0, imap_tag, m_com);
     MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Recv(ip, local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
+    MPI_Recv(ip, (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com, &mpi_stat);
   }
 }
 
@@ -458,14 +458,14 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
 
       stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
                                 processor_0_buffer.data());
-      check_and_abort(m_com, PISM_ERROR_LOCATION, stat);
+      check(PISM_ERROR_LOCATION, stat);
     } // end of the for loop
   } else {
     MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
     MPI_Send(count.data(), ndims, MPI_UNSIGNED, 0, count_tag, m_com);
     MPI_Send(&local_chunk_size, 1, MPI_UNSIGNED, 0, chunk_size_tag, m_com);
 
-    MPI_Send(const_cast<double *>(op), local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
+    MPI_Send(const_cast<double *>(op), (int)local_chunk_size, MPI_DOUBLE, 0, data_tag, m_com);
   }
 }
 
