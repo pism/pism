@@ -6,7 +6,7 @@
 N=${N:-8}
 
 # horizontal grid size
-M=${M:-101}
+M=${M:-201}
 
 mpiexec -n ${N} pismr -eisII A \
         -bootstrapping.defaults.geothermal_flux 0 \

@@ -45,14 +45,43 @@ def plot(ax, f, index=-1):
 
     ax.plot(x, thk, color='black', label="ice surface")
 
-    ax.grid()
     ax.set_ylim(ymin=-100, ymax=3100)
-    ax.set_xlim(xmax=600)
+    ax.set_xlim(xmin=0, xmax=600)
     ax.set_xlabel("x, km")
     ax.set_ylabel("elevation, m")
     ax.legend()
     ax.set_title("Isothermal SIA, SMB from EISMINT-II experiment A\n" +
                  f"Time: {int(time)} years")
+
+def animate(fig, ax, input_files, output_file):
+
+    writer = FFMpegWriter(fps=20)
+
+    with writer.saving(fig, output_file, dpi=75):
+        for filename in input_files:
+            print(f"Processing {filename}...")
+            with NC.Dataset(filename, 'r') as f:
+                N = len(f.variables['time'])
+                for k in range(N):
+                    print(f"Frame {k}...")
+                    ax.clear()
+                    plot(ax, f, index=k)
+                    writer.grab_frame()
+
+def plot_final_frame(fig, ax, input_files, model_file, output_file):
+
+    with NC.Dataset(input_files[-1], 'r') as f:
+        plot(ax, f, index=-1)
+
+    with NC.Dataset(model_file, 'r') as f:
+        z = f.variables['z'][:]
+        ax.hlines(z, xmin=0, xmax=600,
+                  linestyles='solid', colors="gray", label="PISM's vertical grid", linewidths=0.5)
+
+    ax.legend()
+    ax.set_ylim(ymin=-100, ymax=3100)
+    ax.set_xlim(xmin=0, xmax=600)
+    fig.savefig(output_file, dpi=200)
 
 if __name__ == "__main__":
     import argparse
@@ -64,23 +93,17 @@ if __name__ == "__main__":
                         help='files to process')
     parser.add_argument('-o', dest='output', type=str, nargs=1,
                         help='output file name', required=True)
+    parser.add_argument('-p', dest='model_output', type=str, nargs=1,
+                        help='model state file')
+    parser.add_argument('-f', dest='final', action="store_true",
+                        help='plot the final frame from "files"')
 
     args = parser.parse_args()
-
-    output_filename = args.output[0]
 
     fig, ax = plt.subplots()
     fig.set_size_inches(10, 5)
 
-    writer = FFMpegWriter(fps=20)
-
-    with writer.saving(fig, output_filename, dpi=75):
-        for filename in args.files:
-            print(f"Processing {filename}...")
-            with NC.Dataset(filename, 'r') as f:
-                N = len(f.variables['time'])
-                for k in range(N):
-                    print(f"Frame {k}...")
-                    ax.clear()
-                    plot(ax, f, index=k)
-                    writer.grab_frame()
+    if args.final:
+        plot_final_frame(fig, ax, args.files, args.model_output[0], args.output[0])
+    else:
+        animate(fig, ax, args.files, args.output[0])
