@@ -49,7 +49,7 @@ static const char *times_parameter = "isochrones.deposition_times";
 static const char *N_max_parameter = "isochrones.max_n_layers";
 
 static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
-}
+} // namespace details
 
 //
 /*!
@@ -63,8 +63,7 @@ static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
  * - deposition times for existing layers
  * - topmost layer index
  */
-Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
-  : Component(grid) {
+Isochrones::Isochrones(std::shared_ptr<const Grid> grid) : Component(grid) {
 
   using namespace details;
 
@@ -146,15 +145,16 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
                                   N_boot_parameter, N_bootstrap);
   }
 
-  m_log->message(2, "* Bootstrapping the isochrone tracking model, adding %d isochronal layers...\n",
+  m_log->message(2,
+                 "* Bootstrapping the isochrone tracking model, adding %d isochronal layers...\n",
                  N_bootstrap);
 
   if (N_bootstrap + (int)N_deposition_times > N_max) {
     auto deposition_times = m_config->get_string("isochrones.deposition_times");
     throw RuntimeError::formatted(
         PISM_ERROR_LOCATION, "%s (%d) + %s (%d) exceeds the amount of storage allocated (%s = %d)",
-        N_boot_parameter, (int)N_bootstrap, times_parameter,
-        (int)N_deposition_times, N_max_parameter, (int)N_max);
+        N_boot_parameter, (int)N_bootstrap, times_parameter, (int)N_deposition_times,
+        N_max_parameter, (int)N_max);
   }
 
   m_top_layer_index = 0;
@@ -562,7 +562,8 @@ protected:
 
 DiagnosticList Isochrones::diagnostics_impl() const {
   return { { details::isochrone_depth_variable_name,
-             Diagnostic::Ptr(new diagnostics::IsochroneDepths(this)) } };
+             Diagnostic::Ptr(new diagnostics::IsochroneDepths(this)) },
+           { details::layer_thickness_variable_name, Diagnostic::wrap(*m_layer_thickness) } };
 }
 
 } // end of namespace pism
