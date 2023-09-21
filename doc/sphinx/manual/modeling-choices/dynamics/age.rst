@@ -67,7 +67,11 @@ an argument in the format identical to :config:`output.extra.times`; see
 .. rubric:: Model state
 
 Layer thicknesses are saved to the variable :var:`isochronal_layer_thickness` in an output
-file. Requested deposition times are saved to :var:`deposition_time`.
+file. Requested deposition times are saved to :var:`deposition_time`. Since the state of
+the model may be saved before a simulation reached all requested deposition times some
+layers may not have been created. To keep track of the number of "active" layers and
+remember which layer in :var:`isochronal_layer_thickness` is the topmost one we also
+save :var:`isochronal_layer_count`.
 
 .. rubric:: Bootstrapping
 
