@@ -1,7 +1,7 @@
 all: isochrones.mpg
 
-isochrones.mpg: ex.nc
-	python3 plot.py -o $@ $^
+isochrones.mpg: ex.nc plot.py
+	python3 plot.py -o $@ ex.nc
 
 isochrones.png: ex.nc output.nc plot.py
 	python3 plot.py -f -p output.nc -o $@ ex.nc

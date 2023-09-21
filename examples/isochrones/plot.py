@@ -18,8 +18,9 @@ matplotlib.use("Agg")
 
 from matplotlib.animation import FFMpegWriter
 
-def plot(ax, f, index=-1):
+def plot_isochrones(ax, f, index=-1):
 
+    H_max = 4000
     Mx = len(f.variables['x'])
     My = len(f.variables['y'])
 
@@ -45,13 +46,12 @@ def plot(ax, f, index=-1):
 
     ax.plot(x, thk, color='black', label="ice surface")
 
-    ax.set_ylim(ymin=-100, ymax=3100)
+    ax.set_ylim(ymin=-100, ymax=H_max)
     ax.set_xlim(xmin=0, xmax=600)
-    ax.set_xlabel("x, km")
+    ax.set_xlabel("distance from the center, km")
     ax.set_ylabel("elevation, m")
     ax.legend()
-    ax.set_title("Isothermal SIA, SMB from EISMINT-II experiment A\n" +
-                 f"Time: {int(time)} years")
+    ax.set_title(f"EISMINT-II experiment A\nTime: {int(time)} years")
 
 def animate(fig, ax, input_files, output_file):
 
@@ -65,13 +65,13 @@ def animate(fig, ax, input_files, output_file):
                 for k in range(N):
                     print(f"Frame {k}...")
                     ax.clear()
-                    plot(ax, f, index=k)
+                    plot_isochrones(ax, f, index=k)
                     writer.grab_frame()
 
 def plot_final_frame(fig, ax, input_files, model_file, output_file):
-
+    H_max = 3500
     with NC.Dataset(input_files[-1], 'r') as f:
-        plot(ax, f, index=-1)
+        plot_isochrones(ax, f, index=-1)
 
     with NC.Dataset(model_file, 'r') as f:
         z = f.variables['z'][:]
@@ -79,7 +79,7 @@ def plot_final_frame(fig, ax, input_files, model_file, output_file):
                   linestyles='solid', colors="gray", label="PISM's vertical grid", linewidths=0.5)
 
     ax.legend()
-    ax.set_ylim(ymin=-100, ymax=3100)
+    ax.set_ylim(ymin=-100, ymax=H_max)
     ax.set_xlim(xmin=0, xmax=600)
     fig.savefig(output_file, dpi=200)
 
