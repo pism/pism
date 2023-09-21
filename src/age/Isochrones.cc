@@ -64,38 +64,49 @@ static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
  */
 Isochrones::Isochrones(std::shared_ptr<const Grid> grid) : Component(grid) {
 
-  using namespace details;
+  try {
 
-  auto N_max = (int)m_config->get_number(N_max_parameter);
+    using namespace details;
 
-  if (N_max < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s have to be non-negative (got %d)",
-                                  N_max_parameter, N_max);
+    auto N_max = (int)m_config->get_number(N_max_parameter);
+
+    if (N_max < 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s have to be non-negative (got %d)",
+                                    N_max_parameter, N_max);
+    }
+
+    const auto &time = grid->ctx()->time();
+
+    auto requested_times = m_config->get_string(times_parameter);
+    try {
+      m_deposition_times = time->parse_times(requested_times);
+
+      auto N_deposition_times = m_deposition_times.size();
+      if (N_deposition_times == 0) {
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot process '%s' = '%s'",
+                                      times_parameter, requested_times.c_str());
+      }
+
+      if ((int)N_deposition_times > N_max) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "the number of times (%d) in '%s' exceeds the amount of storage allocated ('%s' = %d)",
+            (int)N_deposition_times, times_parameter, N_max_parameter, (int)N_max);
+      }
+
+    } catch (RuntimeError &e) {
+      e.add_context("processing parameter '%s'", times_parameter);
+      throw;
+    }
+
+    // Note: array::Array delays allocation until the last moment, so we can cheaply
+    // re-allocate storage if the number of "levels" used here turns out to be
+    // inappropriate.
+    allocate(m_deposition_times);
+  } catch (RuntimeError &e) {
+    e.add_context("allocating the isochrone tracking model");
+    throw;
   }
-
-  const auto &time = grid->ctx()->time();
-
-  auto requested_times = m_config->get_string(times_parameter);
-  m_deposition_times   = time->parse_times(requested_times);
-
-  auto N_deposition_times = m_deposition_times.size();
-  if (N_deposition_times == 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot process isochrones.deposition_times = '%s'",
-                                  requested_times.c_str());
-  }
-
-  if ((int)N_deposition_times > N_max) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "the number of times %d in '%s' exceeds the amount of storage allocated (%s = %d)",
-        (int)N_deposition_times, times_parameter, N_max_parameter, (int)N_max);
-  }
-
-  // Note: array::Array delays allocation until the last moment, so we can cheaply
-  // re-allocate storage if the number of "levels" used here turns out to be
-  // inappropriate.
-  allocate(m_deposition_times);
 }
 
 /*!
@@ -134,67 +145,72 @@ void Isochrones::allocate(const std::vector<double> &levels) {
  */
 void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
   using namespace details;
+  try {
+    m_layer_thickness->set(0.0);
 
-  m_layer_thickness->set(0.0);
+    auto N_bootstrap        = static_cast<int>(m_config->get_number(N_boot_parameter));
+    auto N_max              = static_cast<int>(m_config->get_number(N_max_parameter));
+    auto N_deposition_times = m_deposition_times.size();
 
-  auto N_bootstrap        = static_cast<int>(m_config->get_number(N_boot_parameter));
-  auto N_max              = static_cast<int>(m_config->get_number(N_max_parameter));
-  auto N_deposition_times = m_deposition_times.size();
-
-  if (N_bootstrap < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s have to be non-negative (got %d)",
-                                  N_boot_parameter, N_bootstrap);
-  }
-
-  m_log->message(2,
-                 "* Bootstrapping the isochrone tracking model, adding %d isochronal layers...\n",
-                 N_bootstrap);
-
-  if (N_bootstrap + (int)N_deposition_times > N_max) {
-    auto deposition_times = m_config->get_string("isochrones.deposition_times");
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION, "%s (%d) + %s (%d) exceeds the amount of storage allocated (%s = %d)",
-        N_boot_parameter, (int)N_bootstrap, times_parameter, (int)N_deposition_times,
-        N_max_parameter, (int)N_max);
-  }
-
-  m_top_layer_index = 0;
-  if (N_bootstrap > 0) {
-    // prepend "bootstrapping" layers to m_deposition_times
-    std::vector<double> requested_deposition_times = m_deposition_times;
-    double T_0                                     = m_grid->ctx()->time()->current();
-
-    m_deposition_times.clear();
-    for (int k = 0; k < N_bootstrap; ++k) {
-      m_deposition_times.push_back(T_0);
-      m_top_layer_index += 1;
-    }
-    for (const auto &t : requested_deposition_times) {
-      m_deposition_times.push_back(t);
+    if (N_bootstrap < 0) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s have to be non-negative (got %d)",
+                                    N_boot_parameter, N_bootstrap);
     }
 
-    // re-allocate storage
-    allocate(m_deposition_times);
+    m_log->message(2,
+                   "* Bootstrapping the isochrone tracking model, adding %d isochronal layers...\n",
+                   N_bootstrap);
 
-    array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
+    if (N_bootstrap + (int)N_deposition_times > N_max) {
+      auto deposition_times = m_config->get_string(times_parameter);
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "%s (%d) + %s (%d) exceeds the amount of storage allocated (%s = %d)", N_boot_parameter,
+          (int)N_bootstrap, times_parameter, (int)N_deposition_times, N_max_parameter, (int)N_max);
+    }
 
-    for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
+    m_top_layer_index = 0;
+    if (N_bootstrap > 0) {
+      // prepend "bootstrapping" layers to m_deposition_times
+      std::vector<double> requested_deposition_times = m_deposition_times;
+      double T_0                                     = m_grid->ctx()->time()->current();
 
-      double H = ice_thickness(i, j);
-
-      double *column = m_layer_thickness->get_column(i, j);
+      m_deposition_times.clear();
       for (int k = 0; k < N_bootstrap; ++k) {
-        column[k] = H / static_cast<double>(N_bootstrap);
+        m_deposition_times.push_back(T_0);
+        m_top_layer_index += 1;
+      }
+      for (const auto &t : requested_deposition_times) {
+        m_deposition_times.push_back(t);
+      }
+
+      // re-allocate storage
+      allocate(m_deposition_times);
+
+      array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
+
+      for (auto p = m_grid->points(); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        double H = ice_thickness(i, j);
+
+        double *column = m_layer_thickness->get_column(i, j);
+        for (int k = 0; k < N_bootstrap; ++k) {
+          column[k] = H / static_cast<double>(N_bootstrap);
+        }
+      }
+    } else {
+      array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
+
+      for (auto p = m_grid->points(); p; p.next()) {
+        const int i = p.i(), j = p.j();
+        m_layer_thickness->get_column(i, j)[0] = ice_thickness(i, j);
       }
     }
-  } else {
-    array::AccessScope scope{ &ice_thickness, m_layer_thickness.get() };
 
-    for (auto p = m_grid->points(); p; p.next()) {
-      const int i = p.i(), j = p.j();
-      m_layer_thickness->get_column(i, j)[0] = ice_thickness(i, j);
-    }
+  } catch (RuntimeError &e) {
+    e.add_context("bootstrapping the isochrone tracking model");
+    throw;
   }
 }
 
@@ -202,86 +218,92 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
  * Re-start the model from a PISM output file.
  */
 void Isochrones::restart(const File &input_file, int record) {
-  using namespace details;
+  try {
+    using namespace details;
 
-  m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
-                 input_file.filename().c_str());
+    m_log->message(2, "* Initializing the isochrone tracking model from '%s'...\n",
+                   input_file.filename().c_str());
 
 
-  // get deposition times from the input file
-  std::vector<double> old_deposition_times;
-  {
-    auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
+    // get deposition times from the input file
+    std::vector<double> old_deposition_times;
+    {
+      auto n_deposition_times = input_file.dimension_length(deposition_time_variable_name);
 
-    // read
-    old_deposition_times.resize(n_deposition_times);
-    input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
-                             old_deposition_times.data());
-  }
-
-  // Add requested deposition times
-  //
-  // This trickery is needed because "-isochrones.deposition_times 1000" will generate
-  // deposition times every 1000 years for the duration of the current run... and when we
-  // are re-starting we need to include times from both the current and the /previous/ run.
-  double last_time                         = old_deposition_times.back();
-  std::vector<double> new_deposition_times = old_deposition_times;
-  for (auto t : m_deposition_times) {
-    if (t > last_time) {
-      new_deposition_times.push_back(t);
+      // read
+      old_deposition_times.resize(n_deposition_times);
+      input_file.read_variable(deposition_time_variable_name, { 0 }, { n_deposition_times },
+                               old_deposition_times.data());
     }
-  }
 
-  // check if we are allowed to allocate storage for this many layers
-  auto N_max = (size_t)m_config->get_number(N_max_parameter);
-
-  if (new_deposition_times.size() > N_max) {
-    throw RuntimeError::formatted(
-        PISM_ERROR_LOCATION,
-        "the total number of isochronal layers (from the input file '%s' plus requested) exceeds '%s' = %d",
-        input_file.filename().c_str(), N_max_parameter, (int)N_max);
-  }
-
-  m_deposition_times = new_deposition_times;
-
-  // re-allocate storage now that m_deposition_times is set
-  allocate(m_deposition_times);
-
-  // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
-  // temporary storage into m_layer_thickness:
-  {
-    auto tmp = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
-                                                array::WITHOUT_GHOSTS, old_deposition_times);
-    tmp->metadata().long_name("thicknesses of isochronal layers").units("m");
-    auto &z = tmp->metadata().z();
-    z.clear()
-        .set_name(deposition_time_variable_name)
-        .units(m_layer_thickness->metadata().z()["units"]);
-
-    tmp->read(input_file, record);
-
-    array::AccessScope scope{ tmp.get(), m_layer_thickness.get() };
-
-    size_t N = tmp->get_levels().size();
-    for (Points p(*m_grid); p; p.next()) {
-      const int i = p.i(), j = p.j();
-
-      auto *input  = tmp->get_column(i, j);
-      auto *output = m_layer_thickness->get_column(i, j);
-
-      for (size_t k = 0; k < N; ++k) {
-        output[k] = input[k];
+    // Add requested deposition times
+    //
+    // This trickery is needed because "-isochrones.deposition_times 1000" will generate
+    // deposition times every 1000 years for the duration of the current run... and when we
+    // are re-starting we need to include times from both the current and the /previous/ run.
+    double last_time                         = old_deposition_times.back();
+    std::vector<double> new_deposition_times = old_deposition_times;
+    for (auto t : m_deposition_times) {
+      if (t > last_time) {
+        new_deposition_times.push_back(t);
       }
     }
-  }
 
-  // set m_top_layer_index
-  {
-    double n_active_layers = 0;
-    input_file.read_variable(layer_count_variable_name, { (unsigned int)record }, { 1 },
-                             &n_active_layers);
+    // check if we are allowed to allocate storage for this many layers
+    auto N_max = (size_t)m_config->get_number(N_max_parameter);
 
-    m_top_layer_index = static_cast<size_t>(n_active_layers) - 1;
+    if (new_deposition_times.size() > N_max) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "the total number of isochronal layers (from the input file '%s' plus requested) exceeds '%s' = %d",
+          input_file.filename().c_str(), N_max_parameter, (int)N_max);
+    }
+
+    m_deposition_times = new_deposition_times;
+
+    // re-allocate storage now that m_deposition_times is set
+    allocate(m_deposition_times);
+
+    // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
+    // temporary storage into m_layer_thickness:
+    {
+      auto tmp = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
+                                                  array::WITHOUT_GHOSTS, old_deposition_times);
+      tmp->metadata().long_name("thicknesses of isochronal layers").units("m");
+      auto &z = tmp->metadata().z();
+      z.clear()
+          .set_name(deposition_time_variable_name)
+          .units(m_layer_thickness->metadata().z()["units"]);
+
+      tmp->read(input_file, record);
+
+      array::AccessScope scope{ tmp.get(), m_layer_thickness.get() };
+
+      size_t N = tmp->get_levels().size();
+      for (Points p(*m_grid); p; p.next()) {
+        const int i = p.i(), j = p.j();
+
+        auto *input  = tmp->get_column(i, j);
+        auto *output = m_layer_thickness->get_column(i, j);
+
+        for (size_t k = 0; k < N; ++k) {
+          output[k] = input[k];
+        }
+      }
+    }
+
+    // set m_top_layer_index
+    {
+      double n_active_layers = 0;
+      input_file.read_variable(layer_count_variable_name, { (unsigned int)record }, { 1 },
+                               &n_active_layers);
+
+      m_top_layer_index = static_cast<size_t>(n_active_layers) - 1;
+    }
+
+  } catch (RuntimeError &e) {
+    e.add_context("restarting the isochrone tracking model");
+    throw;
   }
 }
 
