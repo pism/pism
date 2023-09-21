@@ -42,47 +42,66 @@ in the critical, *vertical* direction.
 
 Ice masses are interpreted as "stacks" of layers of varying thickness. Isochrones are
 represented by boundaries between these layers; the depth of an isochrone is the sum of
-thicknesses of all the layers above it (some may have zero thickness, e.g. in ablation
-areas). The surface mass balance is applied to the topmost layer; if a layer is depleted
-by a negative mass balance, the remaining mass loss is used to reduce the thickness of the
-next layer below it. Similarly, the basal melt rate is applied to the bottom layer, then
-the one above it, etc. Within each layer the mass is transported according to the
-horizontal components of the 3D modeled ice velocity by sampling it at the depth
-corresponding the middle of a layer. There is no mass transport between layers. A new
-layer is added to the top of the stack each time PISM reaches a time in
-:config:`isochrones.deposition_times`.
+thicknesses of all the layers above it (some may have zero thickness, e.g. in ablation and
+ice-free areas). The surface mass balance is applied to the topmost layer; if a layer is
+depleted by a negative mass balance, the remaining mass loss is used to reduce the
+thickness of the next layer below it. Similarly, the basal melt rate is applied to the
+bottom layer, then (if necessary) the one above it, etc. Within each layer mass is
+transported according to the horizontal components of the 3D ice velocity by sampling it
+at the depth of the middle of a layer. There is no mass transport between layers. A new
+layer is added to the top of the stack each time the simulation reaches a requested
+deposition time.
+
+Set :config:`isochrones.deposition_times` to enable this mechanism. This parameter takes
+an argument in the format identical to :config:`output.extra.times`; see
+:ref:`sec-saving-diagnostics`.
 
 .. figure:: figures/isochrones.png
    :name: fig-isochrones
 
-   Modeled isochrones in the 20000 year simulation using the isothermal SIA stress balance
-   and the ``examples/isochrones``
+   Modeled isochrones after 20000 years from the start of the EISMINT-II
+   :cite:`EISIIdescribe` experiment A. Note that many isochrones near the base are closer
+   than the vertical grid spacing. See the directory ``examples/isochrones`` in PISM's
+   repository for scripts used to create this figure.
 
-Set :config:`isochrones.deposition_times` to enable this mechanism and see the
-:var:`isochrone_depth` diagnostic it provides. The parameter
-:config:`isochrones.deposition_times` takes an argument in the format similar to
-:config:`output.extra.times`; see :ref:`sec-saving-diagnostics`.
+.. rubric:: Model state
+
+Layer thicknesses are saved to the variable :var:`isochronal_layer_thickness` in an output
+file. Requested deposition times are saved to :var:`deposition_time`.
 
 .. rubric:: Bootstrapping
 
-When starting a simulation that does not have the :var:`isochronal_layer_thickness`
-information available PISM has to interpret existing ice thickness.
+During bootstrapping :var:`deposition_time` is set using :config:`isochrones.deposition_times`.
+
+We implement two ways to initialize :var:`isochronal_layer_thickness`:
+
+1. **Default**: interpret current ice thickness as *one* layer; apply surface
+   mass balance to this layer until a new layer is added. This is appropriate when
+   starting simulations from an ice-free initial state.
+
+2. Divide current ice thickness equally into `N` layers (here `N` is set by
+   :config:`isochrones.bootstrapping.n_layers`), then immediately add one more layer and
+   apply SMB to it until a new layer is added. This is appropriate when starting from an
+   initial state with a significant ice thickness. In this case sampling ice velocity in
+   the middle of the layer (halfway between the base and the surface) is likely give lower
+   accuracy compared to sampling at `N` equally-spaced locations in each column of ice.
 
 .. rubric:: Diagnostics
 
-The isochronal tracing scheme provides the :var:`isochrone_depth` diagnostic (depth below
-the surface for isochrones corresponding to all the requested
-:config:`isochrones.deposition_times`) and the :var:`isochronal_layer_thickness` variable
-(part of the state of this model).
+The isochronal tracing scheme provides one diagnostic: :var:`isochrone_depth` (depth below
+the surface for isochrones corresponding to all requested deposition times).
 
 .. note::
 
-   A restarted simulation may not be able to write diagnostics to the same file because of
-   a difference in the number of deposition times handled by the model during the first
-   and the second run. In other words: using :config:`output.extra.append` is not
-   recommended.
+   It is not recommended to append diagnostics to the same file
+   (:config:`output.extra.append`) when re-starting a simulation. A restarted simulation
+   may not be able to write :var:`isochrone_depth` and :var:`isochronal_layer_thickness`
+   to the same file because of a difference in the number of deposition times handled by
+   the model in the two runs involved.
 
 .. rubric:: Parameters
+
+Prefix: ``isochrones.``
 
 .. pism-parameters::
    :prefix: isochrones.
