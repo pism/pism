@@ -635,8 +635,8 @@ void IceModel::step(bool do_mass_continuity,
                          m_stress_balance->velocity_u(),
                          m_stress_balance->velocity_v(),
                          m_geometry.ice_thickness,
-                         m_surface->mass_flux(),
-                         m_basal_melt_rate);
+                         m_geometry_evolution->top_surface_mass_balance(),
+                         m_geometry_evolution->bottom_surface_mass_balance());
   }
 
   //! \li update the state variables in the subglacial hydrology model (typically

@@ -24,6 +24,9 @@
 
 namespace pism {
 
+/*!
+ * The isochrone tracing scheme of [@ref Born2016] and [@ref Born2021].
+ */
 class Isochrones : public Component {
 public:
   Isochrones(std::shared_ptr<const Grid> grid);
@@ -37,8 +40,8 @@ public:
               const array::Array3D &u,
               const array::Array3D &v,
               const array::Scalar &ice_thickness,
-              const array::Scalar &climatic_mass_balance,
-              const array::Scalar &basal_melt_rate);
+              const array::Scalar &top_surface_mass_balance,
+              const array::Scalar &bottom_surface_mass_balance);
 
   const array::Array3D& layer_thicknesses() const;
 

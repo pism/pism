@@ -33,7 +33,7 @@
 /*!
  *
  * TO DO: merge consecutive layers if the sum of their maximum thicknesses is below a
- * threshold (possibly vertical grid resolution).
+ * threshold (possibly vertical grid resolution). This should probably be a bootstrapping option.
  *
  */
 
@@ -47,7 +47,6 @@ static const char *isochrone_depth_variable_name = "isochrone_depth";
 
 static const char *times_parameter = "isochrones.deposition_times";
 static const char *N_max_parameter = "isochrones.max_n_layers";
-
 static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
 } // namespace details
 
@@ -99,7 +98,9 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid) : Component(grid) {
   allocate(m_deposition_times);
 }
 
-
+/*!
+ * Allocate storage and set metadata for the layer thickness field.
+ */
 void Isochrones::allocate(const std::vector<double> &levels) {
   using namespace details;
 
@@ -197,6 +198,9 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
   }
 }
 
+/*!
+ * Re-start the model from a PISM output file.
+ */
 void Isochrones::restart(const File &input_file, int record) {
   using namespace details;
 
@@ -240,7 +244,7 @@ void Isochrones::restart(const File &input_file, int record) {
 
   m_deposition_times = new_deposition_times;
 
-  // re-allocate storage
+  // re-allocate storage now that m_deposition_times is set
   allocate(m_deposition_times);
 
   // allocate temporary storage, read in layer thicknesses, move layer thicknesses from
@@ -281,54 +285,56 @@ void Isochrones::restart(const File &input_file, int record) {
   }
 }
 
+/*!
+ * Update layer thicknesses.
+ */
 void Isochrones::update(double t, double dt, const array::Array3D &u, const array::Array3D &v,
                         const array::Scalar &ice_thickness,
-                        const array::Scalar &climatic_mass_balance,
-                        const array::Scalar &basal_melt_rate) {
-
-  auto ice_density = m_config->get_number("constants.ice.density");
+                        const array::Scalar &top_surface_mass_balance,
+                        const array::Scalar &bottom_surface_mass_balance) {
 
   // apply top surface and basal mass balance terms:
   {
-    array::AccessScope scope{ &climatic_mass_balance, &basal_melt_rate, m_layer_thickness.get() };
+    array::AccessScope scope{ &top_surface_mass_balance, &bottom_surface_mass_balance,
+                              m_layer_thickness.get() };
 
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *d = m_layer_thickness->get_column(i, j);
+      double *H = m_layer_thickness->get_column(i, j);
 
       // apply the surface mass balance
       {
-        double dH = dt * climatic_mass_balance(i, j) / ice_density;
+        double dH = top_surface_mass_balance(i, j);
 
         // apply thickness change to a layer, starting from the top-most
         for (int k = (int)m_top_layer_index; k >= 0; --k) {
-          if (d[k] + dH >= 0.0) {
+          if (H[k] + dH >= 0.0) {
             // thickness change is non-negative or does not remove the whole layer: apply to
             // the current layer and stop
-            d[k] += dH;
+            H[k] += dH;
             break;
           }
 
-          dH += d[k];
-          d[k] = 0.0;
+          dH += H[k];
+          H[k] = 0.0;
         }
       }
       // apply the basal melt rate
       {
-        double dH = -dt * basal_melt_rate(i, j) / ice_density;
+        double dH = bottom_surface_mass_balance(i, j);
 
         // apply thickness change to a layer, starting from the bottom
         for (size_t k = 0; k <= m_top_layer_index; ++k) {
-          if (d[k] + dH >= 0.0) {
+          if (H[k] + dH >= 0.0) {
             // thickness change is non-negative or does not remove the whole layer: apply to
             // the current layer and stop
-            d[k] += dH;
+            H[k] += dH;
             break;
           }
 
-          dH += d[k];
-          d[k] = 0.0;
+          dH += H[k];
+          H[k] = 0.0;
         }
       }
     }
