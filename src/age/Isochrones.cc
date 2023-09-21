@@ -287,6 +287,16 @@ void Isochrones::restart(const File &input_file, int record) {
 
 /*!
  * Update layer thicknesses.
+ *
+ * @param[in] t time step start, seconds
+ * @param[in] dt time step length, seconds
+ * @param[in] u x-component of the ice velocity, m/s
+ * @param[in] v y-component of the ice velocity, m/s
+ * @param[in] ice thickness, m
+ * @param[in] top_surface_mass_balance total top surface mass balance over the time step, meters
+ * @param[in] bottom_surface_mass_balance total bottom surface mass balance over the time step, meters
+ *
+ * For mass balance inputs, positive corresponds to mass gain.
  */
 void Isochrones::update(double t, double dt, const array::Array3D &u, const array::Array3D &v,
                         const array::Scalar &ice_thickness,
@@ -457,7 +467,11 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
   }
 }
 
-
+/*!
+ * Maximum time step we can take at time `t`.
+ *
+ * We can go up to the next deposition time.
+ */
 MaxTimestep Isochrones::max_timestep_impl(double t) const {
   double t0 = m_deposition_times[0];
   if (t < t0) {
@@ -481,6 +495,11 @@ MaxTimestep Isochrones::max_timestep_impl(double t) const {
   return { m_deposition_times[k + 1] - t, "isochrones" };
 }
 
+/*!
+ * Define the model state in an output file.
+ *
+ * We are saving layer thicknesses, deposition times, and the number of active layers.
+ */
 void Isochrones::define_model_state_impl(const File &output) const {
   using namespace details;
 
@@ -496,6 +515,9 @@ void Isochrones::define_model_state_impl(const File &output) const {
   }
 }
 
+/*!
+ * Write the model state to an output file.
+ */
 void Isochrones::write_model_state_impl(const File &output) const {
   m_layer_thickness->write(output);
 
@@ -512,7 +534,7 @@ const array::Array3D &Isochrones::layer_thicknesses() const {
 
 namespace diagnostics {
 
-/*! @brief Report isochrone depth */
+/*! @brief Report isochrone depth below surface, in meters */
 class IsochroneDepths : public Diag<Isochrones> {
 public:
   IsochroneDepths(const Isochrones *m) : Diag<Isochrones>(m) {
