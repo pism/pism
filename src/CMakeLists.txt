@@ -35,6 +35,7 @@ add_library (pism
   ${CMAKE_CURRENT_BINARY_DIR}/pism_config.cc
   age/AgeColumnSystem.cc
   age/AgeModel.cc
+  age/Isochrones.cc
   basalstrength/ConstantYieldStress.cc
   basalstrength/MohrCoulombYieldStress.cc
   basalstrength/MohrCoulombPointwise.cc

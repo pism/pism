@@ -1012,6 +1012,8 @@ static inline double effective_change(double H, double dH) {
  * @param[out] effective_bmb effective basal mass balance, m
  *
  * This computation is purely local.
+ *
+ * Positive outputs correspond to mass gain.
  */
 void GeometryEvolution::compute_surface_and_basal_mass_balance(
     double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,

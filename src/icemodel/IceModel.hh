@@ -104,6 +104,7 @@ class CellType;
 
 class Grid;
 class AgeModel;
+class Isochrones;
 class Component;
 class FrontRetreat;
 class PrescribedRetreat;
@@ -165,6 +166,7 @@ protected:
   virtual void allocate_submodels();
   virtual void allocate_stressbalance();
   virtual void allocate_age_model();
+  virtual void allocate_isochrones();
   virtual void allocate_bed_deformation();
   virtual void allocate_bedrock_thermal_unit();
   virtual void allocate_energy_model();
@@ -264,6 +266,7 @@ protected:
   std::shared_ptr<energy::EnergyModel> m_energy_model;
 
   std::shared_ptr<AgeModel> m_age_model;
+  std::shared_ptr<Isochrones> m_isochrones;
 
   std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
   std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
