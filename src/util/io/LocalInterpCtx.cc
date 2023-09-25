@@ -111,7 +111,7 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
 
   // We need a buffer for the local data, but node 0 needs to have as much
   // storage as the node with the largest block (which may be anywhere), hence
-  // we perform a reduce so that node 0 has the maximum value.
+  // we perform a reduction so that node 0 has the maximum value.
   unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1U);
   unsigned int proc0_buffer_size = buffer_size;
   MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
@@ -129,11 +129,9 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
   allocation.check();
 
   if (type == LINEAR or type == NEAREST) {
-    x.reset(new Interpolation(type, &input.x[start[X]], count[X],
-                              &grid.x()[grid.xs()], grid.xm()));
+    x.reset(new Interpolation(type, &input.x[start[X]], count[X], &grid.x()[grid.xs()], grid.xm()));
 
-    y.reset(new Interpolation(type, &input.y[start[Y]], count[Y],
-                                &grid.y()[grid.ys()], grid.ym()));
+    y.reset(new Interpolation(type, &input.y[start[Y]], count[Y], &grid.y()[grid.ys()], grid.ym()));
 
     z.reset(new Interpolation(type, input.z, z_output));
   } else {

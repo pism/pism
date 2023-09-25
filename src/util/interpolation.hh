@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2015, 2017, 2018, 2019, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,9 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _INTERPOLATION_H_
-#define _INTERPOLATION_H_
+#ifndef PISM_INTERPOLATION_H
+#define PISM_INTERPOLATION_H
 
+#include <cstddef>              // size_t
 #include <vector>
 #include <map>
 
@@ -129,4 +130,4 @@ std::map<size_t, double> integration_weights(const std::vector<double> &x,
 
 } // end of namespace pism
 
-#endif /* _INTERPOLATION_H_ */
+#endif /* PISM_INTERPOLATION_H */
