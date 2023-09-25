@@ -67,6 +67,7 @@
 #include "pism/util/ScalarForcing.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/array/Forcing.hh"
+#include <memory>
 
 namespace pism {
 
@@ -548,12 +549,12 @@ void IceModel::allocate_age_model() {
   if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
-    if (m_stress_balance == NULL) {
+    if (m_stress_balance == nullptr) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot allocate an age model: m_stress_balance == NULL.");
+                                    "Cannot allocate an age model: m_stress_balance == nullptr.");
     }
 
-    m_age_model.reset(new AgeModel(m_grid, m_stress_balance.get()));
+    m_age_model = std::make_shared<AgeModel>(m_grid, m_stress_balance);
     m_submodels["age model"] = m_age_model.get();
   }
 }
@@ -567,6 +568,12 @@ void IceModel::allocate_isochrones() {
   auto deposition_times = m_config->get_string("isochrones.deposition_times");
   if (not deposition_times.empty()) {
     m_log->message(2, "# Allocating isochrone tracking...\n");
+
+    if (m_stress_balance == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
+    }
 
     m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
 
@@ -584,12 +591,12 @@ void IceModel::allocate_energy_model() {
 
   if (m_config->get_flag("energy.enabled")) {
     if (m_config->get_flag("energy.temperature_based")) {
-      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
     } else {
-      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance.get());
+      m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
     }
   } else {
-    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
 
   m_submodels["energy balance model"] = m_energy_model.get();

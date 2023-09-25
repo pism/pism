@@ -18,16 +18,16 @@
  */
 
 #include "pism/regional/IceRegionalModel.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/regional/RegionalYieldStress.hh"
-#include "pism/util/io/File.hh"
 #include "pism/coupler/SurfaceModel.hh"
-#include "pism/regional/EnthalpyModel_Regional.hh"
-#include "pism/energy/CHSystem.hh"
 #include "pism/energy/BedThermalUnit.hh"
+#include "pism/energy/CHSystem.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/hydrology/Hydrology.hh"
+#include "pism/regional/EnthalpyModel_Regional.hh"
+#include "pism/regional/RegionalYieldStress.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/array/Forcing.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 
@@ -109,33 +109,23 @@ void IceRegionalModel::model_state_setup() {
     }
 
     switch (input.type) {
-    case INIT_RESTART:
-      {
-        m_ch_system->restart(*input_file, input.record);
-        break;
-      }
-    case INIT_BOOTSTRAP:
-      {
+    case INIT_RESTART: {
+      m_ch_system->restart(*input_file, input.record);
+      break;
+    }
+    case INIT_BOOTSTRAP: {
 
-        m_ch_system->bootstrap(*input_file,
-                               m_geometry.ice_thickness,
-                               m_surface->temperature(),
-                               m_surface->mass_flux(),
-                               m_btu->flux_through_top_surface());
-        break;
-      }
+      m_ch_system->bootstrap(*input_file, m_geometry.ice_thickness, m_surface->temperature(),
+                             m_surface->mass_flux(), m_btu->flux_through_top_surface());
+      break;
+    }
     case INIT_OTHER:
-    default:
-      {
-        m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
+    default: {
+      m_basal_melt_rate.set(m_config->get_number("bootstrapping.defaults.bmelt"));
 
-        m_ch_system->initialize(m_basal_melt_rate,
-                                m_geometry.ice_thickness,
-                                m_surface->temperature(),
-                                m_surface->mass_flux(),
-                                m_btu->flux_through_top_surface());
-
-      }
+      m_ch_system->initialize(m_basal_melt_rate, m_geometry.ice_thickness, m_surface->temperature(),
+                              m_surface->mass_flux(), m_btu->flux_through_top_surface());
+    }
     }
   }
 }
@@ -166,10 +156,9 @@ void IceRegionalModel::allocate_energy_model() {
                          "pismr -regional does not support the '-energy cold' mode.");
     }
 
-    m_energy_model =
-        std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance);
   } else {
-    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance.get());
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
   }
 
   m_submodels["energy balance model"] = m_energy_model.get();
@@ -179,7 +168,7 @@ void IceRegionalModel::allocate_energy_model() {
 
     m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
 
-    m_ch_system.reset(new energy::CHSystem(m_grid, m_stress_balance.get()));
+     m_ch_system = std::make_shared<energy::CHSystem>(m_grid, m_stress_balance);
     m_submodels["cryo-hydrologic warming"] = m_ch_system.get();
   }
 }

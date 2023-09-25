@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017 PISM Authors
+/* Copyright (C) 2016, 2017, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,7 +29,7 @@ namespace energy {
 class TemperatureModel_Verification : public TemperatureModel {
 public:
   TemperatureModel_Verification(std::shared_ptr<const Grid> grid,
-                                stressbalance::StressBalance *stress_balance,
+                                std::shared_ptr<const stressbalance::StressBalance> stress_balance,
                                 int testname, bool bedrock_is_ice);
 
   void initialize_impl(const array::Scalar &basal_melt_rate,

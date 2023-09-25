@@ -25,6 +25,7 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/CellType.hh"
+#include <memory>
 
 namespace pism {
 
@@ -73,7 +74,8 @@ public:
 
 class EnergyModel : public Component {
 public:
-  EnergyModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance);
+  EnergyModel(std::shared_ptr<const Grid> grid,
+              std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
   void restart(const File &input_file, int record);
 
@@ -144,7 +146,7 @@ protected:
 
 private:
   std::string m_stdout_flags;
-  stressbalance::StressBalance *m_stress_balance;
+  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 /*!

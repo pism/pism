@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -22,6 +22,7 @@
 
 #include "pism/util/Component.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include <memory>
 
 namespace pism {
 
@@ -42,7 +43,8 @@ public:
 
 class AgeModel : public Component {
 public:
-  AgeModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance);
+  AgeModel(std::shared_ptr<const Grid> grid,
+           std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
   void update(double t, double dt, const AgeModelInputs &inputs);
 
@@ -56,7 +58,7 @@ protected:
 
   array::Array3D m_ice_age;
   array::Array3D m_work;
-  stressbalance::StressBalance *m_stress_balance;
+  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 } // end of namespace pism

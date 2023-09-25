@@ -21,6 +21,7 @@
 #include "pism/age/AgeColumnSystem.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include <memory>
 
 namespace pism {
 
@@ -53,7 +54,8 @@ void AgeModelInputs::check() const {
   check_input(w3, "w3");
 }
 
-AgeModel::AgeModel(std::shared_ptr<const Grid> grid, stressbalance::StressBalance *stress_balance)
+AgeModel::AgeModel(std::shared_ptr<const Grid> grid,
+                   std::shared_ptr<const stressbalance::StressBalance> stress_balance)
   : Component(grid),
     // FIXME: should be able to use width=1...
     m_ice_age(m_grid, "age", array::WITH_GHOSTS, m_grid->z(), m_config->get_number("grid.max_stencil_width")),
@@ -171,11 +173,9 @@ const array::Array3D & AgeModel::age() const {
   return m_ice_age;
 }
 
-MaxTimestep AgeModel::max_timestep_impl(double t) const {
-  // fix a compiler warning
-  (void) t;
+MaxTimestep AgeModel::max_timestep_impl(double /*t*/) const {
 
-  if (m_stress_balance == NULL) {
+  if (m_stress_balance == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "AgeModel: no stress balance provided."
                                   " Cannot compute max. time step.");

@@ -23,9 +23,10 @@
 namespace pism {
 namespace energy {
 
-DummyEnergyModel::DummyEnergyModel(std::shared_ptr<const Grid> grid,
-                                   stressbalance::StressBalance *stress_balance)
-  : EnthalpyModel(grid, stress_balance) {
+DummyEnergyModel::DummyEnergyModel(
+    std::shared_ptr<const Grid> grid,
+    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : EnthalpyModel(grid, stress_balance) {
   // empty
 }
 
