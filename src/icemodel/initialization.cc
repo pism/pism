@@ -568,7 +568,7 @@ void IceModel::allocate_isochrones() {
   if (not deposition_times.empty()) {
     m_log->message(2, "# Allocating isochrone tracking...\n");
 
-    m_isochrones = std::make_shared<Isochrones>(m_grid);
+    m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
 
     m_submodels["isochrones"] = m_isochrones.get();
   }

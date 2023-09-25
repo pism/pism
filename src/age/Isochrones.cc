@@ -29,6 +29,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
+#include "pism/stressbalance/StressBalance.hh"
 
 /*!
  *
@@ -62,7 +63,9 @@ static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
  * - deposition times for existing layers
  * - topmost layer index
  */
-Isochrones::Isochrones(std::shared_ptr<const Grid> grid) : Component(grid) {
+Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
+                       std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+    : Component(grid), m_stress_balance(stress_balance) {
 
   try {
 
@@ -489,12 +492,27 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
   }
 }
 
+MaxTimestep Isochrones::max_timestep_impl(double t) const {
+  return std::min(max_timestep_deposition_times(t), max_timestep_cfl(t));
+}
+
+MaxTimestep Isochrones::max_timestep_cfl(double t) const {
+
+  if (m_stress_balance == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Isochrone tracking: no stress balance provided. "
+                                  "Cannot compute max. time step.");
+  }
+
+  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "isochrones");
+}
+
 /*!
  * Maximum time step we can take at time `t`.
  *
  * We can go up to the next deposition time.
  */
-MaxTimestep Isochrones::max_timestep_impl(double t) const {
+MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
   double t0 = m_deposition_times[0];
   if (t < t0) {
     return { t0 - t, "isochrones" };
