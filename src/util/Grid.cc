@@ -1058,6 +1058,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
 
     auto dimensions = file.dimensions(var.name);
 
+    bool time_was_set = false;
     for (const auto &dimension_name : dimensions) {
 
       AxisType dimtype = file.dimension_type(dimension_name, unit_system);
@@ -1092,6 +1093,12 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       case T_AXIS: {
+        // ignore the second, third, etc dimension interpreted as "time"
+        if (time_was_set) {
+          continue;
+        }
+        time_was_set = true;
+
         auto T      = file.read_dimension(dimension_name);
         this->t_len = T.size();
         this->time  = vector_max(T);
