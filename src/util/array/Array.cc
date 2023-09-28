@@ -42,7 +42,9 @@
 
 namespace pism {
 
-static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
+namespace array {
+
+void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
   PetscErrorCode ierr;
 
   ierr = DMGlobalToLocalBegin(dm, source, INSERT_VALUES, destination);
@@ -51,8 +53,6 @@ static void global_to_local(petsc::DM &dm, Vec source, Vec destination) {
   ierr = DMGlobalToLocalEnd(dm, source, INSERT_VALUES, destination);
   PISM_CHK(ierr, "DMGlobalToLocalEnd");
 }
-
-namespace array {
 
 Array::Array(std::shared_ptr<const Grid> grid,
              const std::string &name,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -110,6 +110,8 @@ struct Array::Impl {
   // binary search accelerator (used for interpolation in a column in 3D fields)
   gsl_interp_accel *bsearch_accel;
 };
+
+void global_to_local(petsc::DM &dm, Vec source, Vec destination);
 
 } // end of namespace array
 } // end of namespace pism
