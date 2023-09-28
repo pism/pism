@@ -19,7 +19,10 @@
 
 #include <cassert>
 #include <cmath> // isfinite
+#include <cstddef>
 #include <memory>
+#include <array>
+#include <vector>
 
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
@@ -56,18 +59,17 @@ namespace io {
  * We should be able to switch to using an external interpolation library
  * fairly easily...
  */
-static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, LocalInterpCtx *lic,
-                   double *output_array) {
+static void regrid(const Grid &grid, const std::vector<double> &zlevels_out,
+                   const LocalInterpCtx &lic, double const *input_array, double *output_array) {
   // We'll work with the raw storage here so that the array we are filling is
   // indexed the same way as the buffer we are pulling from (input_array)
 
   const int X = 1, Z = 3; // indices, just for clarity
 
   unsigned int nlevels = zlevels_out.size();
-  double *input_array  = (lic->buffer).data();
 
   // array sizes for mapping from logical to "flat" indices
-  int x_count = lic->count[X], z_count = lic->count[Z];
+  int x_count = lic.count[X], z_count = lic.count[Z];
 
   for (auto p = grid.points(); p; p.next()) {
     const int i_global = p.i(), j_global = p.j();
@@ -75,17 +77,17 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, Loc
     const int i = i_global - grid.xs(), j = j_global - grid.ys();
 
     // Indices of neighboring points.
-    const int X_m = lic->x->left(i), X_p = lic->x->right(i), Y_m = lic->y->left(j),
-              Y_p = lic->y->right(j);
+    const int X_m = lic.x->left(i), X_p = lic.x->right(i), Y_m = lic.y->left(j),
+              Y_p = lic.y->right(j);
 
     for (unsigned int k = 0; k < nlevels; k++) {
 
       double a_mm = 0.0, a_mp = 0.0, a_pm = 0.0, a_pp = 0.0;
 
       if (nlevels > 1) {
-        const int Z_m = lic->z->left(k), Z_p = lic->z->right(k);
+        const int Z_m = lic.z->left(k), Z_p = lic.z->right(k);
 
-        const double alpha_z = lic->z->alpha(k);
+        const double alpha_z = lic.z->alpha(k);
 
         // We pretend that there are always 8 neighbors (4 in the map plane,
         // 2 vertical levels). And compute the indices into the input_array for
@@ -113,9 +115,9 @@ static void regrid(const Grid &grid, const std::vector<double> &zlevels_out, Loc
       }
 
       // interpolation coefficient in the x direction
-      const double x_alpha = lic->x->alpha(i);
+      const double x_alpha = lic.x->alpha(i);
       // interpolation coefficient in the y direction
-      const double y_alpha = lic->y->alpha(j);
+      const double y_alpha = lic.y->alpha(j);
 
       // interpolate in x direction
       const double a_m = a_mm * (1.0 - x_alpha) + a_mp * x_alpha;
@@ -421,10 +423,10 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
   const Profiling &profiling = grid.ctx()->profiling();
 
   try {
-    grid::InputGridInfo gi(file, variable_name, grid.ctx()->unit_system(), grid.registration());
-    LocalInterpCtx lic(gi, grid, zlevels_out, interpolation_type);
+    grid::InputGridInfo input_grid(file, variable_name, grid.ctx()->unit_system(), grid.registration());
+    LocalInterpCtx lic(input_grid, grid, zlevels_out, interpolation_type);
 
-    std::vector<double> &buffer = lic.buffer;
+    std::vector<double> buffer(lic.buffer_size());
 
     const unsigned int t_count = 1;
     std::vector<unsigned int> start, count, imap;
@@ -468,7 +470,7 @@ static void regrid_vec(const File &file, const Grid &grid, const std::string &va
 
     // interpolate
     profiling.begin("io.regridding.interpolate");
-    regrid(grid, zlevels_out, &lic, output);
+    regrid(grid, zlevels_out, lic, buffer.data(), output);
     profiling.end("io.regridding.interpolate");
   } catch (RuntimeError &e) {
     e.add_context("reading variable '%s' (using linear interpolation) from '%s'",
@@ -592,8 +594,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
   }
 
   // make sure we have at least one level
-  auto zlevels         = variable.levels();
-  unsigned int nlevels = std::max(zlevels.size(), (size_t)1);
+  size_t nlevels = std::max(variable.levels().size(), (size_t)1);
 
   read_distributed_array(file, grid, var.name, nlevels, time, output);
 
@@ -694,20 +695,14 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   }
 }
 
-static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
+static std::array<double, 2> compute_range(MPI_Comm com, double *data, size_t data_size) {
   double min_result = data[0], max_result = data[0];
   for (size_t k = 0; k < data_size; ++k) {
     min_result = std::min(min_result, data[k]);
     max_result = std::max(max_result, data[k]);
   }
 
-  if (min != nullptr) {
-    *min = GlobalMin(com, min_result);
-  }
-
-  if (max != nullptr) {
-    *max = GlobalMax(com, max_result);
-  }
+  return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
 }
 
 /*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
@@ -872,10 +867,11 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
 
     // Check the range and report it if necessary.
     {
-      double min = 0.0, max = 0.0;
       read_valid_range(file, var.name, variable);
 
-      compute_range(grid.com, output, data_size, &min, &max);
+      auto range = compute_range(grid.com, output, data_size);
+      auto min = range[0];
+      auto max = range[1];
 
       if ((not std::isfinite(min)) or (not std::isfinite(max))) {
         throw RuntimeError::formatted(
