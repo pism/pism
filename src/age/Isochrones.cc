@@ -30,6 +30,8 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/array/Array3DCollection.hh"
+#include "pism/util/array/Scalar.hh"
 
 /*!
  *
@@ -120,8 +122,8 @@ void Isochrones::allocate(const std::vector<double> &levels) {
 
   const auto &time = m_grid->ctx()->time();
 
-  m_layer_thickness = std::make_shared<array::Array3D>(m_grid, layer_thickness_variable_name,
-                                                       array::WITHOUT_GHOSTS, levels);
+  m_layer_thickness = std::make_shared<array::Array3DCollection>(
+      m_grid, layer_thickness_variable_name, array::WITHOUT_GHOSTS, levels);
 
   m_layer_thickness->metadata().long_name("thicknesses of isochronal layers").units("m");
 
@@ -135,7 +137,8 @@ void Isochrones::allocate(const std::vector<double> &levels) {
       .units(time->units_string());
   z["calendar"] = time->calendar();
 
-  m_tmp = std::make_shared<array::Array3D>(m_grid, "temporary storage", array::WITH_GHOSTS, levels);
+  m_tmp = std::make_shared<array::Array3DCollection>(m_grid, "temporary storage",
+                                                     array::WITH_GHOSTS, levels);
 }
 
 /*!
@@ -197,7 +200,7 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
         double H = ice_thickness(i, j);
 
-        double *column = m_layer_thickness->get_column(i, j);
+        double *column = m_layer_thickness->column(i, j);
         for (int k = 0; k < N_bootstrap; ++k) {
           column[k] = H / static_cast<double>(N_bootstrap);
         }
@@ -207,7 +210,7 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
       for (auto p = m_grid->points(); p; p.next()) {
         const int i = p.i(), j = p.j();
-        m_layer_thickness->get_column(i, j)[0] = ice_thickness(i, j);
+        m_layer_thickness->column(i, j)[0] = ice_thickness(i, j);
       }
     }
 
@@ -287,7 +290,7 @@ void Isochrones::restart(const File &input_file, int record) {
         const int i = p.i(), j = p.j();
 
         auto *input  = tmp->get_column(i, j);
-        auto *output = m_layer_thickness->get_column(i, j);
+        auto *output = m_layer_thickness->column(i, j);
 
         for (size_t k = 0; k < N; ++k) {
           output[k] = input[k];
@@ -336,7 +339,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *H = m_layer_thickness->get_column(i, j);
+      double *H = m_layer_thickness->column(i, j);
 
       // apply the surface mass balance
       {
@@ -391,11 +394,11 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      const double *d_c = m_tmp->get_column(i, j), *d_n = m_tmp->get_column(i, j + 1),
-                   *d_e = m_tmp->get_column(i + 1, j), *d_s = m_tmp->get_column(i, j - 1),
-                   *d_w = m_tmp->get_column(i - 1, j);
+      const double *d_c = m_tmp->column(i, j), *d_n = m_tmp->column(i, j + 1),
+                   *d_e = m_tmp->column(i + 1, j), *d_s = m_tmp->column(i, j - 1),
+                   *d_w = m_tmp->column(i - 1, j);
 
-      double *d = m_layer_thickness->get_column(i, j);
+      double *d = m_layer_thickness->column(i, j);
 
       pism::stencils::Star<double> z = 0.0;
       double d_total                 = 0.0;
@@ -568,7 +571,7 @@ void Isochrones::write_model_state_impl(const File &output) const {
   output.write_variable(details::layer_count_variable_name, { t_last }, { 1 }, &N);
 }
 
-const array::Array3D &Isochrones::layer_thicknesses() const {
+const array::Array3DCollection &Isochrones::layer_thicknesses() const {
   return *m_layer_thickness;
 }
 
@@ -612,8 +615,8 @@ protected:
     for (auto p = m_grid->points(); p; p.next()) {
       const int i = p.i(), j = p.j();
 
-      double *column  = result->get_column(i, j);
-      const double *d = layer_thicknesses.get_column(i, j);
+      double *column  = result->column(i, j);
+      const double *d = layer_thicknesses.column(i, j);
 
       double total_depth = 0.0;
       for (int k = (int)N - 1; k >= 0; --k) {

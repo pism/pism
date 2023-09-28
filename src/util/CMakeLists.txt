@@ -27,6 +27,7 @@ add_library (util OBJECT
   array/Forcing.cc
   array/Vector.cc
   array/Array3D.cc
+  array/Array3DCollection.cc
   array/Scalar.cc
   array/Staggered.cc
   interpolation.cc

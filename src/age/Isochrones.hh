@@ -18,11 +18,16 @@
  */
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/Array3D.hh"
 #include <memory>
 #include <vector>
 
 namespace pism {
+
+namespace array {
+class Array3D;
+class Array3DCollection;
+class Scalar;
+} // namespace array
 
 namespace stressbalance {
 class StressBalance;
@@ -48,7 +53,7 @@ public:
               const array::Scalar &top_surface_mass_balance,
               const array::Scalar &bottom_surface_mass_balance);
 
-  const array::Array3D& layer_thicknesses() const;
+  const array::Array3DCollection& layer_thicknesses() const;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;
@@ -66,10 +71,10 @@ private:
   void allocate(const std::vector<double> &levels);
 
   //! isochronal layer thicknesses
-  std::shared_ptr<array::Array3D> m_layer_thickness;
+  std::shared_ptr<array::Array3DCollection> m_layer_thickness;
 
   //! temporary storage needed for time stepping
-  std::shared_ptr<array::Array3D> m_tmp;
+  std::shared_ptr<array::Array3DCollection> m_tmp;
 
   //! The index of the topmost isochronal layer.
   size_t m_top_layer_index;
