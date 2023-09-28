@@ -17,12 +17,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <memory>
 #include <cassert>
-#include <cmath>                // isfinite
+#include <cmath> // isfinite
+#include <memory>
 
-#include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/ConfigInterface.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -32,8 +30,10 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/interpolation.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 
@@ -400,10 +400,22 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
   }
 }
 
-static void regrid_vec_generic(const File &file, const Grid &grid, const std::string &variable_name,
-                               const std::vector<double> &zlevels_out, unsigned int t_start,
-                               bool fill_missing, double default_value,
-                               InterpolationType interpolation_type, double *output) {
+/** Regrid `variable_name` from a file, possibly replacing missing values with `default_value`.
+ *
+ * @param[in] file input file
+ * @param grid computational grid; used to initialize interpolation
+ * @param variable_name variable to regrid
+ * @param zlevels_out vertical levels of the resulting grid
+ * @param t_start time index of the record to regrid
+ * @param[in] fill_missing set to `true` to replace missing values with `default_value`
+ * @param[in] default_value default value to use when `fill_missing == true`
+ * @param[in] interpolation_type interpolation type
+ * @param[out] output resulting interpolated field
+ */
+static void regrid_vec(const File &file, const Grid &grid, const std::string &variable_name,
+                       const std::vector<double> &zlevels_out, unsigned int t_start,
+                       bool fill_missing, double default_value,
+                       InterpolationType interpolation_type, double *output) {
   const int X = 1, Y = 2, Z = 3; // indices, just for clarity
 
   const Profiling &profiling = grid.ctx()->profiling();
@@ -463,33 +475,6 @@ static void regrid_vec_generic(const File &file, const Grid &grid, const std::st
                   variable_name.c_str(), file.filename().c_str());
     throw;
   }
-}
-
-//! \brief Read a PETSc Vec from a file, using bilinear (or trilinear)
-//! interpolation to put it on the grid defined by "grid" and zlevels_out.
-static void regrid_vec(const File &file, const Grid &grid, const std::string &var_name,
-                       const std::vector<double> &zlevels_out, unsigned int t_start,
-                       InterpolationType interpolation_type, double *output) {
-  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, false, 0.0, interpolation_type,
-                     output);
-}
-
-/** Regrid `var_name` from a file, replacing missing values with `default_value`.
- *
- * @param[in] file input file
- * @param grid computational grid; used to initialize interpolation
- * @param var_name variable to regrid
- * @param zlevels_out vertical levels of the resulting grid
- * @param t_start time index of the record to regrid
- * @param default_value default value to replace `_FillValue` with
- * @param[out] output resulting interpolated field
- */
-static void regrid_vec_fill_missing(const File &file, const Grid &grid, const std::string &var_name,
-                                    const std::vector<double> &zlevels_out, unsigned int t_start,
-                                    double default_value, InterpolationType interpolation_type,
-                                    double *output) {
-  regrid_vec_generic(file, grid, var_name, zlevels_out, t_start, true, default_value,
-                     interpolation_type, output);
 }
 
 //! Define a NetCDF variable corresponding to a VariableMetadata object.
@@ -578,7 +563,7 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
     }
 
     int input_spatial_dim_count = 0; // number of spatial dimensions (input file)
-    size_t matching_dim_count = 0; // number of matching dimensions
+    size_t matching_dim_count   = 0; // number of matching dimensions
 
     auto input_dims = file.dimensions(var.name);
     for (const auto &d : input_dims) {
@@ -596,13 +581,13 @@ void read_spatial_variable(const SpatialVariableMetadata &variable, const Grid &
     if (axes.size() != matching_dim_count) {
 
       // Print the error message and stop:
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "found the %dD variable %s (%s) in '%s' while trying to read\n"
-                                    "'%s' ('%s'), which is %d-dimensional.",
-                                    input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
-                                    file.filename().c_str(), variable.get_name().c_str(),
-                                    variable.get_string("long_name").c_str(),
-                                    static_cast<int>(axes.size()));
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "found the %dD variable %s (%s) in '%s' while trying to read\n"
+          "'%s' ('%s'), which is %d-dimensional.",
+          input_spatial_dim_count, var.name.c_str(), join(input_dims, ",").c_str(),
+          file.filename().c_str(), variable.get_name().c_str(),
+          variable.get_string("long_name").c_str(), static_cast<int>(axes.size()));
     }
   }
 
@@ -665,8 +650,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   auto name = var.get_name();
 
   if (not file.find_variable(name)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.",
-                                  name.c_str(),
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't find '%s' in '%s'.", name.c_str(),
                                   file.filename().c_str());
   }
 
@@ -689,9 +673,7 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   // make sure we have at least one level
   unsigned int nlevels = std::max(var.levels().size(), (size_t)1);
 
-  std::string
-    units               = var["units"],
-    output_units = var["output_units"];
+  std::string units = var["units"], output_units = var["output_units"];
 
   if (units != output_units) {
     size_t data_size = grid.xm() * grid.ym() * nlevels;
@@ -856,18 +838,18 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
       }
     }
 
+    bool fill_missing = false;
     if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
+      fill_missing = true;
       log.message(
           2,
           "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
           default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
           file.filename().c_str());
-
-      regrid_vec_fill_missing(file, grid, var.name, levels, t_start, default_value,
-                              interpolation_type, output);
-    } else {
-      regrid_vec(file, grid, var.name, levels, t_start, interpolation_type, output);
     }
+
+    regrid_vec(file, grid, var.name, levels, t_start, fill_missing, default_value,
+               interpolation_type, output);
 
     // Now we need to get the units string from the file and convert
     // the units, because check_range and report_range expect data to
