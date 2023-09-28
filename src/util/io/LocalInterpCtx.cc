@@ -16,15 +16,14 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cstddef>              // size_t
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>            // std::min
 #include <gsl/gsl_interp.h>
 
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
-#include "pism/util/ConfigInterface.hh"
 #include "pism/util/Grid.hh"
 
 #include "pism/util/interpolation.hh"
@@ -51,11 +50,11 @@ namespace pism {
 static void subset_start_and_count(const std::vector<double> &x,
                                    double subset_x_min, double subset_x_max,
                                    unsigned int &x_start, unsigned int &x_count) {
-  unsigned int x_size = x.size();
+  size_t x_size = x.size();
 
-  x_start = gsl_interp_bsearch(&x[0], subset_x_min, 0, x_size - 1);
+  x_start = gsl_interp_bsearch(x.data(), subset_x_min, 0, x_size - 1);
 
-  unsigned int x_end = gsl_interp_bsearch(&x[0], subset_x_max, 0, x_size - 1) + 1;
+  size_t x_end = gsl_interp_bsearch(x.data(), subset_x_max, 0, x_size - 1) + 1;
 
   x_end = std::min(x_size - 1, x_end);
 
