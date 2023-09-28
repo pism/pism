@@ -85,20 +85,10 @@ using namespace pism;
     %pythoncode "ArrayVector.py"
 };
 
-%ignore pism::array::Array3D::operator();
 %ignore pism::array::Array3D::get_column(int, int);
 %ignore pism::array::Array3D::set_column(int, int, const double*);
 %extend pism::array::Array3D
 {
-
-  double getitem(int i, int j, int k) const {
-    return (*($self))(i,j,k);
-  }
-
-  void setitem(int i, int j, int k, double val) {
-    (*($self))(i,j,k) = val;
-  }
-
   std::vector<double> _get_column(int i, int j) const {
     size_t n = $self->get_levels().size();
     std::vector<double> result(n);
@@ -117,17 +107,6 @@ using namespace pism;
     %pythoncode {
     def get_column(self, i, j):
           return self._get_column(i, j)
-
-    def __getitem__(self,*args):
-          i, j, k = args[0]
-          return self.getitem(i, j, k)
-
-    def __setitem__(self,*args):
-        if(len(args)==2):
-            i, j, k = args[0]
-            self.setitem(i, j, k, args[1])
-        else:
-            raise ValueError("__setitem__ requires 2 arguments; received %d" % len(args));
     }
 };
 

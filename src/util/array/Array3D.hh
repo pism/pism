@@ -51,9 +51,6 @@ public:
 
   double interpolate(int i, int j, double z) const;
 
-  inline double& operator() (int i, int j, int k);
-  inline const double& operator() (int i, int j, int k) const;
-
   void copy_from(const Array3D &input);
 };
 
@@ -61,20 +58,6 @@ void extract_surface(const Array3D &data, double z, Scalar &output);
 void extract_surface(const Array3D &data, const Scalar &z, Scalar &output);
 
 void sum_columns(const Array3D &data, double A, double B, Scalar &output);
-
-inline double& Array3D::operator() (int i, int j, int k) {
-#if (Pism_DEBUG==1)
-  check_array_indices(i, j, k);
-#endif
-  return static_cast<double***>(m_array)[j][i][k];
-}
-
-inline const double& Array3D::operator() (int i, int j, int k) const {
-#if (Pism_DEBUG==1)
-  check_array_indices(i, j, k);
-#endif
-  return static_cast<double***>(m_array)[j][i][k];
-}
 
 } // end of namespace array
 } // end of namespace pism
