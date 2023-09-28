@@ -303,7 +303,6 @@ void NC_Serial::get_var_double(const std::string &variable_name,
   std::vector<unsigned int> imap  = imap_input;
   const int start_tag = 1, count_tag = 2, data_tag = 3, imap_tag = 4, chunk_size_tag = 5;
   int stat = NC_NOERR, com_size, ndims = static_cast<int>(start.size());
-  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
 
@@ -325,6 +324,7 @@ void NC_Serial::get_var_double(const std::string &variable_name,
 
   // now we need to send start, count and imap data to processor 0 and receive data
   if (m_rank == 0) {
+    std::vector<double> processor_0_buffer;
     // Note: this could be optimized: if processor_0_chunk_size <=
     // max(local_chunk_size) we can avoid allocating this buffer. The inner for
     // loop will have to be re-ordered, though.
@@ -399,7 +399,6 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
   std::vector<unsigned int> count = count_input;
   const int start_tag = 1, count_tag = 2, data_tag = 3, chunk_size_tag = 4;
   int stat = NC_NOERR, com_size = 0, ndims = static_cast<int>(start.size());
-  std::vector<double> processor_0_buffer;
   MPI_Status mpi_stat;
   unsigned int local_chunk_size = 1, processor_0_chunk_size = 0;
 
@@ -417,6 +416,7 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
 
   // now we need to send start and count data to processor 0 and receive data
   if (m_rank == 0) {
+    std::vector<double> processor_0_buffer;
     processor_0_buffer.resize(processor_0_chunk_size);
 
     // MPI calls below require C datatypes (so that we don't have to worry about sizes of
