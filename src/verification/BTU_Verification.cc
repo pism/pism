@@ -44,8 +44,7 @@ void BTU_Verification::initialize_bottom_surface_flux() {
 void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   (void) bedrock_top_temperature;
 
-  std::vector<double> Tbcol(m_Mbz),
-    zlevels = m_temp->get_levels();
+  std::vector<double> temperature(m_Mbz), zlevels = m_temp->get_levels();
 
   double time = this->time().current();
 
@@ -54,29 +53,29 @@ void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
   default:
   case 'K':
     for (unsigned int k = 0; k < m_Mbz; k++) {
-      TestKParameters P = exactK(time, zlevels[k], m_bedrock_is_ice);
+      TestKParameters P = exactK(time, zlevels[k], m_bedrock_is_ice ? 1 : 0);
       if (P.error_code != 0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "exactK() reports that level %9.7f is below B0 = -1000.0 m",
                                       zlevels[k]);
       }
-      Tbcol[k] = P.T;
+      temperature[k] = P.T;
     }
     break;
   case 'O':
     for (unsigned int k = 0; k < m_Mbz; k++) {
-      Tbcol[k] = exactO(zlevels[k]).TT;
+      temperature[k] = exactO(zlevels[k]).TT;
     }
     break;
   }
 
-  // copy column values into 3D arrays
+  // copy column values into the 3D array
   array::AccessScope list(*m_temp);
 
   ParallelSection loop(m_grid->com);
   try {
     for (auto p = m_grid->points(); p; p.next()) {
-      m_temp->set_column(p.i(), p.j(), &Tbcol[0]);
+      m_temp->set_column(p.i(), p.j(), temperature.data());
     }
   } catch (...) {
     loop.failed();

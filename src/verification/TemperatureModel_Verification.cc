@@ -94,7 +94,7 @@ void TemperatureModel_Verification::initTestFG() {
       m_ice_temperature.set_column(i, j, Tmin + ST * r);
     } else {
       TestFGParameters P = exactFG(time, r, m_grid->z(), A);
-      m_ice_temperature.set_column(i, j, &P.T[0]);
+      m_ice_temperature.set_column(i, j, P.T.data());
     }
   }
 }
@@ -103,16 +103,16 @@ void TemperatureModel_Verification::initTestsKO() {
 
   const unsigned int Mz = m_grid->Mz();
 
-  std::vector<double> T_column(Mz);
+  std::vector<double> temperature(Mz);
 
   const double time = this->time().current();
 
   // evaluate exact solution in a column; all columns are the same
   for (unsigned int k = 0; k < Mz; k++) {
     if (m_testname == 'K') {
-      T_column[k] = exactK(time, m_grid->z(k), m_bedrock_is_ice).T;
+      temperature[k] = exactK(time, m_grid->z(k), m_bedrock_is_ice ? 1 : 0).T;
     } else {
-      T_column[k] = exactO(m_grid->z(k)).TT;
+      temperature[k] = exactO(m_grid->z(k)).TT;
     }
   }
 
@@ -122,7 +122,7 @@ void TemperatureModel_Verification::initTestsKO() {
   ParallelSection loop(m_grid->com);
   try {
     for (auto p = m_grid->points(); p; p.next()) {
-      m_ice_temperature.set_column(p.i(), p.j(), &T_column[0]);
+      m_ice_temperature.set_column(p.i(), p.j(), temperature.data());
     }
   } catch (...) {
     loop.failed();
