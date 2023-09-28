@@ -399,21 +399,23 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 
   if (ndof() == 1) {
+    auto var = metadata(0);
+    unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
+    unsigned int t_start  = t_length - 1;
+
     if (m_impl->ghosted) {
       petsc::TemporaryGlobalVec tmp(dm());
       petsc::VecArray tmp_array(tmp);
 
-      io::regrid_spatial_variable(metadata(0), *grid(), file, flag,
-                                  m_impl->report_range, allow_extrapolation,
-                                  default_value, m_impl->interpolation_type,
+      io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
+                                  allow_extrapolation, default_value, m_impl->interpolation_type,
                                   tmp_array.get());
 
       global_to_local(*dm(), tmp, vec());
     } else {
       petsc::VecArray v_array(vec());
-      io::regrid_spatial_variable(metadata(0), *grid(),  file, flag,
-                                  m_impl->report_range, allow_extrapolation,
-                                  default_value, m_impl->interpolation_type,
+      io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
+                                  allow_extrapolation, default_value, m_impl->interpolation_type,
                                   v_array.get());
     }
     return;
@@ -428,9 +430,13 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < ndof(); ++j) {
+    auto var = metadata(j);
+    unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
+    unsigned int t_start  = t_length - 1;
+
     {
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), *grid(), file, flag,
+      io::regrid_spatial_variable(metadata(j), *grid(), file, t_start, flag,
                                   m_impl->report_range, allow_extrapolation,
                                   default_value, m_impl->interpolation_type,
                                   tmp_array.get());

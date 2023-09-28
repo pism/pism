@@ -712,26 +712,6 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   }
 }
 
-//! \brief Regrid from a NetCDF file into a distributed array `output`.
-/*!
-  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
-  variable was not found in the input file
-  - if `flag` is one of `CRITICAL_FILL_MISSING` and
-  `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
-  - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
-  variable was not found in the input file
-  - uses the last record in the file
-*/
-void regrid_spatial_variable(SpatialVariableMetadata &var, const Grid &grid, const File &file,
-                             RegriddingFlag flag, bool report_range, bool allow_extrapolation,
-                             double default_value, InterpolationType interpolation_type,
-                             double *output) {
-  unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
-
-  regrid_spatial_variable(var, grid, file, t_length - 1, flag, report_range, allow_extrapolation,
-                          default_value, interpolation_type, output);
-}
-
 static void compute_range(MPI_Comm com, double *data, size_t data_size, double *min, double *max) {
   double min_result = data[0], max_result = data[0];
   for (size_t k = 0; k < data_size; ++k) {
@@ -839,6 +819,17 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
     }
   }
 }
+
+//! \brief Regrid from a NetCDF file into a distributed array `output`.
+/*!
+  - if `flag` is `CRITICAL` or `CRITICAL_FILL_MISSING`, stops if the
+  variable was not found in the input file
+  - if `flag` is one of `CRITICAL_FILL_MISSING` and
+  `OPTIONAL_FILL_MISSING`, replace _FillValue with `default_value`.
+  - sets `v` to `default_value` if `flag` is `OPTIONAL` and the
+  variable was not found in the input file
+  - uses the last record in the file
+*/
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
                              unsigned int t_start, RegriddingFlag flag, bool report_range,

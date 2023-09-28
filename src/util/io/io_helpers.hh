@@ -44,21 +44,13 @@ namespace io {
 enum Type : int;
 enum RegriddingFlag : int;
 
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const Grid& grid, const File &nc,
-                             RegriddingFlag flag, bool do_report_range,
-                             bool allow_extrapolation,
-                             double default_value,
-                             InterpolationType type,
-                             double *output);
-
-void regrid_spatial_variable(SpatialVariableMetadata &var,
-                             const Grid& grid, const File &nc,
+void regrid_spatial_variable(SpatialVariableMetadata &variable,
+                             const Grid& grid, const File &file,
                              unsigned int t_start,
-                             RegriddingFlag flag, bool do_report_range,
+                             RegriddingFlag flag, bool report_range,
                              bool allow_extrapolation,
                              double default_value,
-                             InterpolationType type,
+                             InterpolationType interpolation_type,
                              double *output);
 
 void read_spatial_variable(const SpatialVariableMetadata &variable,
