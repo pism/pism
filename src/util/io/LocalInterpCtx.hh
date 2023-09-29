@@ -54,12 +54,13 @@ class LocalInterpCtx {
 public:
   LocalInterpCtx(const grid::InputGridInfo &input, const Grid &grid,
                  const std::vector<double> &z_output, InterpolationType type);
+
+  size_t buffer_size() const;
+
   // Indices in netCDF file.
   unsigned int start[4], count[4];
   // indexes and coefficients for 1D linear interpolation
   std::shared_ptr<Interpolation> x, y, z;
-  //! temporary storage
-  std::vector<double> buffer;
 };
 
 } // end of namespace pism

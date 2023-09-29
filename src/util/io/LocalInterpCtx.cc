@@ -108,25 +108,6 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
   start[Z] = 0;                    // always start at the base
   count[Z] = std::max((int)input.z.size(), 1); // read at least one level
 
-  // We need a buffer for the local data, but node 0 needs to have as much
-  // storage as the node with the largest block (which may be anywhere), hence
-  // we perform a reduction so that node 0 has the maximum value.
-  unsigned int buffer_size = count[X] * count[Y] * std::max(count[Z], 1U);
-  unsigned int proc0_buffer_size = buffer_size;
-  MPI_Reduce(&buffer_size, &proc0_buffer_size, 1, MPI_UNSIGNED, MPI_MAX, 0, grid.com);
-
-  ParallelSection allocation(grid.com);
-  try {
-    if (grid.rank() == 0) {
-      buffer.resize(proc0_buffer_size);
-    } else {
-      buffer.resize(buffer_size);
-    }
-  } catch (...) {
-    allocation.failed();
-  }
-  allocation.check();
-
   if (type == LINEAR or type == NEAREST) {
     x.reset(new Interpolation(type, &input.x[start[X]], count[X], &grid.x()[grid.xs()], grid.xm()));
 
@@ -137,5 +118,11 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input, const Grid &gri
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }
 }
+
+size_t LocalInterpCtx::buffer_size() const {
+  const int T = 0, X = 1, Y = 2, Z = 3; // indices, just for clarity
+  return count[X] * count[Y] * std::max(count[Z], 1U);
+}
+
 
 } // end of namespace pism
