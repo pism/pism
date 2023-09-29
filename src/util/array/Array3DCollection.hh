@@ -47,6 +47,8 @@ public:
   const double* column(int i, int j) const;
 
   void copy_from(const Array3DCollection &input);
+private:
+  void regrid_impl(const File &file, io::RegriddingFlag flag, double default_value = 0.0);
 };
 
 } // end of namespace array

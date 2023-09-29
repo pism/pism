@@ -27,6 +27,8 @@
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/ConfigInterface.hh"
 
 namespace pism {
 namespace array {
@@ -92,6 +94,33 @@ std::shared_ptr<Array3DCollection> Array3DCollection::duplicate() const {
   result->metadata() = this->metadata();
 
   return result;
+}
+
+void Array3DCollection::regrid_impl(const File &file, io::RegriddingFlag flag,
+                                    double default_value) {
+
+  bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+
+  if (ndof() == 1) {
+    if (m_impl->ghosted) {
+      petsc::TemporaryGlobalVec tmp(dm());
+      petsc::VecArray tmp_array(tmp);
+
+      // io::regrid_spatial_variable(metadata(0), *grid(), file, flag,
+      //                             m_impl->report_range, allow_extrapolation,
+      //                             default_value, m_impl->interpolation_type,
+      //                             tmp_array.get());
+
+      global_to_local(*dm(), tmp, vec());
+    } else {
+      petsc::VecArray v_array(vec());
+      // io::regrid_spatial_variable(metadata(0), *grid(),  file, flag,
+      //                             m_impl->report_range, allow_extrapolation,
+      //                             default_value, m_impl->interpolation_type,
+      //                             v_array.get());
+    }
+    return;
+  }
 }
 
 } // end of namespace array
