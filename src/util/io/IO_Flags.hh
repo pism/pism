@@ -72,7 +72,46 @@ enum Dim_Length : int { PISM_UNLIMITED = 0 };
 // "Fill" mode. Gets cast to "int", so it should match values used by NetCDF.
 enum Fill_Mode : int { PISM_FILL = 0, PISM_NOFILL = 0x100 };
 
-enum RegriddingFlag : int { OPTIONAL, OPTIONAL_FILL_MISSING, CRITICAL, CRITICAL_FILL_MISSING };
+class Default {
+public:
+
+  /*!
+   * No default value: stop if the variable was not found.
+   */
+  static Default Nil() {
+    return {};
+  }
+
+  /*!
+   * Use this default value if the variable was not found.
+   */
+  Default(double v) {
+    m_exists = true;
+    m_value  = v;
+  }
+
+  /*!
+   * True if the default value exists.
+   */
+  bool exists() const {
+    return m_exists;
+  }
+
+  /*!
+   * Convert the default value to `double`.
+   */
+  operator double() const {
+    return m_value;
+  }
+
+private:
+  Default() {
+    m_exists = false;
+    m_value  = 0;
+  }
+  double m_value;
+  bool m_exists;
+};
 
 } // namespace io
 

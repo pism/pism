@@ -24,6 +24,7 @@
 #include <vector>
 #include <mpi.h>
 
+#include "IO_Flags.hh"
 #include "pism/util/Units.hh"
 
 namespace pism {
@@ -42,14 +43,13 @@ enum InterpolationType : int;
 namespace io {
 
 enum Type : int;
-enum RegriddingFlag : int;
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable,
                              const Grid& grid, const File &file,
                              unsigned int t_start,
-                             RegriddingFlag flag, bool report_range,
+                             Default default_value,
+                             bool report_range,
                              bool allow_extrapolation,
-                             double default_value,
                              InterpolationType interpolation_type,
                              double *output);
 

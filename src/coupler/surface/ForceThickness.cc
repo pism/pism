@@ -93,7 +93,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
         .units("m")
         .standard_name("land_ice_thickness"); // standard_name *to read by*
 
-    m_target_thickness.regrid(input_file, io::CRITICAL);
+    m_target_thickness.regrid(input_file, io::Default::Nil());
 
     // reset name to avoid confusion; set attributes again to overwrite "read by" choices above
     m_target_thickness.metadata(0).set_name("ftt_target_thk");
@@ -104,7 +104,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
     m_log->message(2,
                    "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                    input_file.c_str());
-    m_ftt_mask.regrid(input_file, io::CRITICAL);
+    m_ftt_mask.regrid(input_file, io::Default::Nil());
   }
 }
 

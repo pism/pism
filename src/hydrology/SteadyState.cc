@@ -245,7 +245,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
   // Read water flux
   if (input_file.find_variable(m_Q.metadata().get_name())) {
     // Regrid from the input file.
-    m_Q.regrid(input_file, io::CRITICAL);
+    m_Q.regrid(input_file, io::Default::Nil());
 
     // Allow regridding from a different file.
     regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);

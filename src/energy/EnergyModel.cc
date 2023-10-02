@@ -136,7 +136,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
 
   if (input_file.find_variable("enthalpy")) {
     if (do_regrid) {
-      m_ice_enthalpy.regrid(input_file, io::CRITICAL);
+      m_ice_enthalpy.regrid(input_file, io::Default::Nil());
     } else {
       m_ice_enthalpy.read(input_file, record);
     }
@@ -152,7 +152,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
           .standard_name("land_ice_temperature");
 
       if (do_regrid) {
-        temp.regrid(input_file, io::CRITICAL);
+        temp.regrid(input_file, io::Default::Nil());
       } else {
         temp.read(input_file, record);
       }
@@ -168,7 +168,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       liqfrac.metadata(0).long_name("ice liquid water fraction").units("1");
 
       if (do_regrid) {
-        liqfrac.regrid(input_file, io::CRITICAL);
+        liqfrac.regrid(input_file, io::Default::Nil());
       } else {
         liqfrac.read(input_file, record);
       }

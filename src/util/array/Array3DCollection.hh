@@ -48,7 +48,7 @@ public:
 
   void copy_from(const Array3DCollection &input);
 private:
-  void regrid_impl(const File &file, io::RegriddingFlag flag, double default_value = 0.0);
+  void regrid_impl(const File &file, io::Default default_value);
 };
 
 } // end of namespace array

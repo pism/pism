@@ -319,7 +319,7 @@ void PrescribedSliding::init_impl() {
     throw RuntimeError(PISM_ERROR_LOCATION, "stress_balance.prescribed_sliding.file is required.");
   }
 
-  m_velocity.regrid(input_filename, io::CRITICAL);
+  m_velocity.regrid(input_filename, io::Default::Nil());
 }
 
 SSB_beta::SSB_beta(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {

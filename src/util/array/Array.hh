@@ -32,7 +32,7 @@ enum InterpolationType : int;
 
 namespace io {
 enum Type : int;
-enum RegriddingFlag : int;
+class Default;
 }
 
 class Grid;
@@ -240,10 +240,8 @@ public:
   void write(const std::string &filename) const;
   void write(const File &file) const;
 
-  void regrid(const std::string &filename, io::RegriddingFlag flag,
-              double default_value = 0.0);
-  void regrid(const File &file, io::RegriddingFlag flag,
-              double default_value = 0.0);
+  void regrid(const std::string &filename, io::Default default_value);
+  void regrid(const File &file, io::Default default_value);
 
   virtual void begin_access() const;
   virtual void end_access() const;
@@ -283,7 +281,7 @@ protected:
   void set_begin_access_use_dof(bool flag);
 
   void read_impl(const File &file, unsigned int time);
-  virtual void regrid_impl(const File &file, io::RegriddingFlag flag, double default_value = 0.0);
+  virtual void regrid_impl(const File &file, io::Default default_value);
   void write_impl(const File &file) const;
 
   void checkCompatibility(const char *function, const Array &other) const;

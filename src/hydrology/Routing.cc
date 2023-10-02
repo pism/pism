@@ -337,7 +337,7 @@ void Routing::bootstrap_impl(const File &input_file,
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
   double bwat_default = m_config->get_number("bootstrapping.defaults.bwat");
-  m_W.regrid(input_file, io::OPTIONAL, bwat_default);
+  m_W.regrid(input_file, io::Default(bwat_default));
 
   regrid("Hydrology", m_W);
 }

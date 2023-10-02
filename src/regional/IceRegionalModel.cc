@@ -218,7 +218,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   // no_model_mask
   {
     if (input_file.find_variable(m_no_model_mask.metadata().get_name())) {
-      m_no_model_mask.regrid(input_file, io::CRITICAL);
+      m_no_model_mask.regrid(input_file, io::Default::Nil());
     } else {
       // set using the no_model_strip parameter
       double strip_width = m_config->get_number("regional.no_model_strip", "meters");

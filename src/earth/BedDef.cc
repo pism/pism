@@ -118,9 +118,9 @@ void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickn
     break;
   case INIT_BOOTSTRAP:
     // bootstrapping
-    m_topg.regrid(opts.filename, io::OPTIONAL, m_config->get_number("bootstrapping.defaults.bed"));
-    m_uplift.regrid(opts.filename, io::OPTIONAL,
-                    m_config->get_number("bootstrapping.defaults.uplift"));
+    m_topg.regrid(opts.filename, io::Default(m_config->get_number("bootstrapping.defaults.bed")));
+    m_uplift.regrid(opts.filename,
+                    io::Default(m_config->get_number("bootstrapping.defaults.uplift")));
     break;
   case INIT_OTHER:
   default: {
@@ -137,7 +137,7 @@ void BedDef::init_impl(const InputOptions &opts, const array::Scalar &ice_thickn
   std::string uplift_file = m_config->get_string("bed_deformation.bed_uplift_file");
   if (not uplift_file.empty()) {
     m_log->message(2, "    reading bed uplift from %s ... \n", uplift_file.c_str());
-    m_uplift.regrid(uplift_file, io::CRITICAL);
+    m_uplift.regrid(uplift_file, io::Default::Nil());
   }
 
   std::string correction_file = m_config->get_string("bed_deformation.bed_topography_delta_file");
@@ -158,7 +158,7 @@ void BedDef::apply_topg_offset(const std::string &filename) {
   array::Scalar topg_delta(m_grid, "topg_delta");
   topg_delta.metadata(0).long_name("bed topography correction").units("meters");
 
-  topg_delta.regrid(filename, io::CRITICAL);
+  topg_delta.regrid(filename, io::Default::Nil());
 
   m_topg.add(1.0, topg_delta);
 }

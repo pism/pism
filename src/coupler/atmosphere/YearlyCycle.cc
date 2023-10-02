@@ -78,7 +78,7 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
              "      from %s ... \n",
              input_filename.c_str());
   if (do_regrid == true) {
-    m_precipitation.regrid(input_filename, io::CRITICAL); // fails if not found!
+    m_precipitation.regrid(input_filename, io::Default::Nil()); // fails if not found!
   } else {
     m_precipitation.read(input_filename, start); // fails if not found!
   }

@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/ConfigInterface.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace array {
@@ -96,8 +97,7 @@ std::shared_ptr<Array3DCollection> Array3DCollection::duplicate() const {
   return result;
 }
 
-void Array3DCollection::regrid_impl(const File &file, io::RegriddingFlag flag,
-                                    double default_value) {
+void Array3DCollection::regrid_impl(const File &file, io::Default default_value) {
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 

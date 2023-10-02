@@ -431,7 +431,6 @@ static void read_distributed_array(const File &file, const Grid &grid, const std
  */
 static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, const Grid &grid,
                        const std::vector<double> &zlevels_out, unsigned int t_start,
-                       bool fill_missing, double default_value,
                        InterpolationType interpolation_type, double *output) {
 
   const Profiling &profiling = grid.ctx()->profiling();
@@ -464,20 +463,12 @@ static void regrid_vec(const File &file, const grid::InputGridInfo &input_grid, 
       auto attribute = file.read_double_attribute(variable_name, "_FillValue");
       if (attribute.size() == 1) {
         double fill_value = attribute[0], epsilon = 1e-12;
-        if (fill_missing) {
-          for (size_t i = 0; i < buffer.size(); ++i) {
-            if (fabs(buffer[i] - fill_value) < epsilon) {
-              buffer[i] = default_value;
-            }
-          }
-        } else {
-          for (size_t i = 0; i < buffer.size(); ++i) {
-            if (fabs(buffer[i] - fill_value) < epsilon) {
-              throw RuntimeError::formatted(
-                  PISM_ERROR_LOCATION,
-                  "Some values of '%s' in '%s' match the _FillValue attribute.",
-                  variable_name.c_str(), file.filename().c_str());
-            }
+
+        for (size_t i = 0; i < buffer.size(); ++i) {
+          if (fabs(buffer[i] - fill_value) < epsilon) {
+            throw RuntimeError::formatted(
+                PISM_ERROR_LOCATION, "Some values of '%s' in '%s' match the _FillValue attribute.",
+                variable_name.c_str(), file.filename().c_str());
           }
         }
       }
@@ -824,9 +815,9 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
 */
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
-                             unsigned int t_start, RegriddingFlag flag, bool report_range,
-                             bool allow_extrapolation, double default_value,
-                             InterpolationType interpolation_type, double *output) {
+                             unsigned int t_start, Default default_value, bool report_range,
+                             bool allow_extrapolation, InterpolationType interpolation_type,
+                             double *output) {
   const Logger &log = *grid.ctx()->log();
 
   auto sys               = variable.unit_system();
@@ -845,17 +836,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
     check_grid_overlap(input_grid, grid, levels);
   }
 
-  bool fill_missing = false;
-  if (flag == OPTIONAL_FILL_MISSING or flag == CRITICAL_FILL_MISSING) {
-    fill_missing = true;
-    log.message(
-        2, "PISM WARNING: Replacing missing values with %f [%s] in variable '%s' read from '%s'.\n",
-        default_value, variable.get_string("units").c_str(), variable.get_name().c_str(),
-        file.filename().c_str());
-  }
-
-  regrid_vec(file, input_grid, grid, levels, t_start, fill_missing, default_value,
-             interpolation_type, output);
+  regrid_vec(file, input_grid, grid, levels, t_start, interpolation_type, output);
 
   // Now we need to get the units string from the file and convert
   // the units, because check_range and report_range expect data to

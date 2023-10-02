@@ -63,7 +63,7 @@ void Given::init_impl(const InputOptions &opts, const array::Scalar &ice_thickne
 
   {
     auto reference_filename = m_config->get_string("bed_deformation.given.reference_file");
-    m_topg_reference.regrid(reference_filename, io::CRITICAL); // fails if not found!
+    m_topg_reference.regrid(reference_filename, io::Default::Nil()); // fails if not found!
   }
 
   {

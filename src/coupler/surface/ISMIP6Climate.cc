@@ -133,9 +133,9 @@ void ISMIP6::init_impl(const Geometry &geometry) {
     auto reference_filename = m_config->get_string("surface.ismip6.reference_file");
     File reference_file(m_grid->com, reference_filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    m_mass_flux_reference.regrid(reference_file, io::CRITICAL);
-    m_surface_reference.regrid(reference_file, io::CRITICAL);
-    m_temperature_reference.regrid(reference_file, io::CRITICAL);
+    m_mass_flux_reference.regrid(reference_file, io::Default::Nil());
+    m_surface_reference.regrid(reference_file, io::Default::Nil());
+    m_temperature_reference.regrid(reference_file, io::Default::Nil());
   }
 
   {

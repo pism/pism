@@ -90,7 +90,7 @@ void PicoGeometry::init() {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.pico");
 
-  m_basin_mask.regrid(opt.filename, io::CRITICAL);
+  m_basin_mask.regrid(opt.filename, io::Default::Nil());
 
   m_n_basins = static_cast<int>(max(m_basin_mask)) + 1;
 }

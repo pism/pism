@@ -395,10 +395,10 @@ const std::string &Array::get_name() const {
 }
 
 void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
-                               io::RegriddingFlag flag, double default_value, const Logger &log,
+                               io::Default default_value, const Logger &log,
                                Vec output) {
 
-  if (flag == io::CRITICAL or flag == io::CRITICAL_FILL_MISSING) {
+  if (not default_value.exists()) {
     // if it's critical, print an error message and stop
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Can't find '%s' in the regridding file '%s'.",
@@ -423,7 +423,7 @@ void set_default_value_or_stop(const std::string &filename, const VariableMetada
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
-void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
+void Array::regrid_impl(const File &file, io::Default default_value) {
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 
@@ -442,17 +442,16 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
     if (not V.exists) {
-      set_default_value_or_stop(file.filename(), variable, flag, default_value, *log, tmp);
+      set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
     } else {
       unsigned int t_length =
           file.nrecords(variable.get_name(), variable["standard_name"], variable.unit_system());
       unsigned int t_start = t_length - 1;
 
       petsc::VecArray tmp_array(tmp);
-      io::regrid_spatial_variable(metadata(j), *grid(), file, t_start, flag,
+      io::regrid_spatial_variable(metadata(j), *grid(), file, t_start, default_value,
                                   m_impl->report_range, allow_extrapolation,
-                                  default_value, m_impl->interpolation_type,
-                                  tmp_array.get());
+                                  m_impl->interpolation_type, tmp_array.get());
     }
 
     set_dof(da2, tmp, j);
@@ -787,9 +786,9 @@ void Array::read(const std::string &filename, unsigned int time) {
   this->read(file, time);
 }
 
-void Array::regrid(const std::string &filename, io::RegriddingFlag flag, double default_value) {
+void Array::regrid(const std::string &filename, io::Default default_value) {
   File file(m_impl->grid->com, filename, io::PISM_GUESS, io::PISM_READONLY);
-  this->regrid(file, flag, default_value);
+  this->regrid(file, default_value);
 }
 
 /** Read a field from a file, interpolating onto the current grid.
@@ -817,13 +816,13 @@ void Array::regrid(const std::string &filename, io::RegriddingFlag flag, double 
  *
  * @return 0 on success
  */
-void Array::regrid(const File &file, io::RegriddingFlag flag, double default_value) {
+void Array::regrid(const File &file, io::Default default_value) {
   m_impl->grid->ctx()->log()->message(3, "  [%s] Regridding %s...\n",
                                       timestamp(m_impl->grid->com).c_str(), m_impl->name.c_str());
   double start_time = get_time(m_impl->grid->com);
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
-    this->regrid_impl(file, flag, default_value);
+    this->regrid_impl(file, default_value);
     inc_state_counter();          // mark as modified
   } catch (RuntimeError &e) {
     e.add_context("regridding '%s' from '%s'",

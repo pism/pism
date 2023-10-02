@@ -32,6 +32,7 @@
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
@@ -39,73 +40,70 @@ namespace array {
 
 // this file contains method for derived class array::Array3D
 
-Array3D::Array3D(std::shared_ptr<const Grid> grid,
-                 const std::string &name,
-                 Kind ghostedp,
-                 const std::vector<double> &levels,
-                 unsigned int stencil_width)
-  : Array(grid, name, ghostedp, 1, stencil_width, levels) {
+Array3D::Array3D(std::shared_ptr<const Grid> grid, const std::string &name, Kind ghostedp,
+                 const std::vector<double> &levels, unsigned int stencil_width)
+    : Array(grid, name, ghostedp, 1, stencil_width, levels) {
   set_begin_access_use_dof(true);
 }
 
 //! Set all values of scalar quantity to given a single value in a particular column.
 void Array3D::set_column(int i, int j, double c) {
   PetscErrorCode ierr;
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   assert(m_array != NULL);
   check_array_indices(i, j, 0);
 #endif
 
-  double ***arr = (double***) m_array;
+  double ***arr = (double ***)m_array;
 
   if (c == 0.0) {
     ierr = PetscMemzero(arr[j][i], get_levels().size() * sizeof(double));
     PISM_CHK(ierr, "PetscMemzero");
   } else {
     unsigned int nlevels = get_levels().size();
-    for (unsigned int k=0; k < nlevels; k++) {
+    for (unsigned int k = 0; k < nlevels; k++) {
       arr[j][i][k] = c;
     }
   }
 }
 
-void  Array3D::set_column(int i, int j, const double *input) {
-#if (Pism_DEBUG==1)
+void Array3D::set_column(int i, int j, const double *input) {
+#if (Pism_DEBUG == 1)
   check_array_indices(i, j, 0);
 #endif
-  double ***arr = (double***) m_array;
-  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, m_impl->zlevels.size()*sizeof(double));
+  double ***arr       = (double ***)m_array;
+  PetscErrorCode ierr = PetscMemcpy(arr[j][i], input, m_impl->zlevels.size() * sizeof(double));
   PISM_CHK(ierr, "PetscMemcpy");
 }
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
 static bool legal_level(const std::vector<double> &levels, double z) {
-  double z_min = levels.front();
-  double z_max = levels.back();
+  double z_min     = levels.front();
+  double z_max     = levels.back();
   const double eps = 1.0e-6;
-  return not (z < z_min - eps || z > z_max + eps);
+  return not(z < z_min - eps || z > z_max + eps);
 }
 #endif
 
 //! Return value of scalar quantity at level z (m) above base of ice (by linear interpolation).
 double Array3D::interpolate(int i, int j, double z) const {
-  const auto& zs = get_levels();
-  auto N = zs.size();
+  const auto &zs = get_levels();
+  auto N         = zs.size();
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   assert(m_array != NULL);
   check_array_indices(i, j, 0);
 
   if (not legal_level(zs, z)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Array3D interpolate(): level %f is not legal; name = %s",
-                                  z, m_impl->name.c_str());
+                                  "Array3D interpolate(): level %f is not legal; name = %s", z,
+                                  m_impl->name.c_str());
   }
 #endif
 
-  const auto* column = get_column(i, j);
+  const auto *column = get_column(i, j);
 
-  if (z >= zs[N-1]) {
+  if (z >= zs[N - 1]) {
     return column[N - 1];
   }
 
@@ -115,28 +113,28 @@ double Array3D::interpolate(int i, int j, double z) const {
 
   auto mcurr = gsl_interp_accel_find(m_impl->bsearch_accel, zs.data(), N, z);
 
-  const double incr = (z - zs[mcurr]) / (zs[mcurr+1] - zs[mcurr]);
+  const double incr = (z - zs[mcurr]) / (zs[mcurr + 1] - zs[mcurr]);
   const double valm = column[mcurr];
   return valm + incr * (column[mcurr + 1] - valm);
 }
 
-double* Array3D::get_column(int i, int j) {
-#if (Pism_DEBUG==1)
+double *Array3D::get_column(int i, int j) {
+#if (Pism_DEBUG == 1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) m_array)[j][i];
+  return ((double ***)m_array)[j][i];
 }
 
-const double* Array3D::get_column(int i, int j) const {
-#if (Pism_DEBUG==1)
+const double *Array3D::get_column(int i, int j) const {
+#if (Pism_DEBUG == 1)
   check_array_indices(i, j, 0);
 #endif
-  return ((double***) m_array)[j][i];
+  return ((double ***)m_array)[j][i];
 }
 
 //! Copies a horizontal slice at level z of an Array3D into `output`.
 void extract_surface(const Array3D &data, double z, Scalar &output) {
-  array::AccessScope list{&data, &output};
+  array::AccessScope list{ &data, &output };
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -154,7 +152,7 @@ void extract_surface(const Array3D &data, double z, Scalar &output) {
 //! Copies the values of an Array3D at the ice surface (specified by the level `z`) into
 //! `output`.
 void extract_surface(const Array3D &data, const Scalar &z, Scalar &output) {
-  array::AccessScope list{&data, &output, &z};
+  array::AccessScope list{ &data, &output, &z };
 
   ParallelSection loop(output.grid()->com);
   try {
@@ -193,23 +191,23 @@ Computes output = A*output + B*sum_columns(input) + C
 void sum_columns(const Array3D &data, double A, double B, Scalar &output) {
   const unsigned int Mz = data.grid()->Mz();
 
-  AccessScope access{&data, &output};
+  AccessScope access{ &data, &output };
 
   for (auto p = data.grid()->points(); p; p.next()) {
     const int i = p.i(), j = p.j();
 
-    const double *column = data.get_column(i,j);
+    const double *column = data.get_column(i, j);
 
     double scalar_sum = 0.0;
     for (unsigned int k = 0; k < Mz; ++k) {
       scalar_sum += column[k];
     }
-    output(i,j) = A * output(i,j) + B * scalar_sum;
+    output(i, j) = A * output(i, j) + B * scalar_sum;
   }
 }
 
 void Array3D::copy_from(const Array3D &input) {
-  array::AccessScope list {this, &input};
+  array::AccessScope list{ this, &input };
 
   assert(get_levels().size() == input.get_levels().size());
   assert(ndof() == input.ndof());
@@ -224,8 +222,8 @@ void Array3D::copy_from(const Array3D &input) {
       const int i = p.i(), j = p.j();
 
 #if PETSC_VERSION_LT(3, 12, 0)
-      PetscMemmove(this->get_column(i, j),
-                   const_cast<double*>(input.get_column(i, j)), N*sizeof(double));
+      PetscMemmove(this->get_column(i, j), const_cast<double *>(input.get_column(i, j)),
+                   N * sizeof(double));
 #else
       PetscArraymove(this->get_column(i, j), input.get_column(i, j), N);
 #endif
@@ -242,17 +240,15 @@ void Array3D::copy_from(const Array3D &input) {
 
 std::shared_ptr<Array3D> Array3D::duplicate() const {
 
-  auto result = std::make_shared<Array3D>(this->grid(),
-                                          this->get_name(),
-                                          WITHOUT_GHOSTS,
-                                          this->get_levels());
+  auto result =
+      std::make_shared<Array3D>(this->grid(), this->get_name(), WITHOUT_GHOSTS, this->get_levels());
 
   result->metadata() = this->metadata();
 
   return result;
 }
 
-void Array3D::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
+void Array3D::regrid_impl(const File &file, io::Default default_value) {
 
   auto log = grid()->ctx()->log();
 
@@ -263,7 +259,7 @@ void Array3D::regrid_impl(const File &file, io::RegriddingFlag flag, double defa
   petsc::TemporaryGlobalVec tmp(dm());
 
   if (not V.exists) {
-    set_default_value_or_stop(file.filename(), variable, flag, default_value, *log, tmp);
+    set_default_value_or_stop(file.filename(), variable, default_value, *log, tmp);
   } else {
     bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
 
@@ -272,10 +268,9 @@ void Array3D::regrid_impl(const File &file, io::RegriddingFlag flag, double defa
     unsigned int t_start = t_length - 1;
     petsc::VecArray tmp_array(tmp);
 
-    io::regrid_spatial_variable(variable, *grid(), file, t_start, flag, m_impl->report_range,
-                                allow_extrapolation, default_value, m_impl->interpolation_type,
-                                tmp_array.get());
-
+    io::regrid_spatial_variable(variable, *grid(), file, t_start, default_value,
+                                m_impl->report_range, allow_extrapolation,
+                                m_impl->interpolation_type, tmp_array.get());
   }
 
   if (m_impl->ghosted) {

@@ -60,7 +60,7 @@ void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ic
   Routing::bootstrap_impl(input_file, ice_thickness);
 
   double bwp_default = m_config->get_number("bootstrapping.defaults.bwp");
-  m_P.regrid(input_file, io::OPTIONAL, bwp_default);
+  m_P.regrid(input_file, io::Default(bwp_default));
 
   regrid("Hydrology", m_P);
 
@@ -81,7 +81,7 @@ void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ic
                                     "hydrology.distributed.sliding_speed_file is not set");
     }
 
-    sliding_speed.regrid(filename, io::CRITICAL);
+    sliding_speed.regrid(filename, io::Default::Nil());
 
     P_from_W_steady(m_W, m_Pover, sliding_speed,
                     m_P);
