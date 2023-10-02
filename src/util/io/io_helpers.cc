@@ -701,16 +701,6 @@ void write_spatial_variable(const SpatialVariableMetadata &metadata, const Grid 
   }
 }
 
-static std::array<double, 2> compute_range(MPI_Comm com, double *data, size_t data_size) {
-  double min_result = data[0], max_result = data[0];
-  for (size_t k = 0; k < data_size; ++k) {
-    min_result = std::min(min_result, data[k]);
-    max_result = std::max(max_result, data[k]);
-  }
-
-  return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
-}
-
 /*! @brief Check that x, y, and z coordinates of the input grid are strictly increasing. */
 void check_input_grid(const grid::InputGridInfo &input) {
   if (not is_increasing(input.x)) {
@@ -857,27 +847,7 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
   // Convert data:
   units::Converter(sys, input_units, internal_units).convert_doubles(output, data_size);
 
-  // Check the range and report it if necessary.
-  {
-    read_valid_range(file, var.name, variable);
-
-    auto range = compute_range(grid.com, output, data_size);
-    auto min   = range[0];
-    auto max   = range[1];
-
-    if ((not std::isfinite(min)) or (not std::isfinite(max))) {
-      throw RuntimeError::formatted(
-          PISM_ERROR_LOCATION,
-          "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
-          variable.get_name().c_str(), variable.get_string("long_name").c_str());
-    }
-
-    // Check the range and warn the user if needed:
-    variable.check_range(file.filename(), min, max);
-    if (report_range) {
-      variable.report_range(log, min, max, var.found_using_standard_name);
-    }
-  }
+  read_valid_range(file, var.name, variable);
 }
 
 

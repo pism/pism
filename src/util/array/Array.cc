@@ -420,6 +420,16 @@ void set_default_value_or_stop(const std::string &filename, const VariableMetada
   PISM_CHK(ierr, "VecSet");
 }
 
+static std::array<double, 2> compute_range(MPI_Comm com, const double *data, size_t data_size) {
+  double min_result = data[0], max_result = data[0];
+  for (size_t k = 0; k < data_size; ++k) {
+    min_result = std::min(min_result, data[k]);
+    max_result = std::max(max_result, data[k]);
+  }
+
+  return { GlobalMin(com, min_result), GlobalMax(com, max_result) };
+}
+
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
@@ -452,6 +462,27 @@ void Array::regrid_impl(const File &file, io::Default default_value) {
       io::regrid_spatial_variable(metadata(j), *grid(), file, t_start,
                                   m_impl->report_range, allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
+
+      // Check the range and report it if necessary.
+      {
+        const size_t data_size = grid()->xm() * grid()->ym() * get_levels().size();
+        auto range = compute_range(grid()->com, tmp_array.get(), data_size);
+        auto min   = range[0];
+        auto max   = range[1];
+
+        if ((not std::isfinite(min)) or (not std::isfinite(max))) {
+          throw RuntimeError::formatted(
+              PISM_ERROR_LOCATION,
+              "Variable '%s' ('%s') contains numbers that are not finite (NaN or infinity)",
+              variable.get_name().c_str(), variable.get_string("long_name").c_str());
+        }
+
+        // Check the range and warn the user if needed:
+        variable.check_range(file.filename(), min, max);
+        if (m_impl->report_range) {
+          variable.report_range(*log, min, max, V.found_using_standard_name);
+        }
+      }
     }
 
     set_dof(da2, tmp, j);
