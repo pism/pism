@@ -402,8 +402,7 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
   // and we just need a global Vec):
   auto da2 = grid()->get_dm(1, 0);
 
-  // a temporary one-component vector, distributed across processors
-  // the same way v is
+  // a temporary one-component vector that uses a compatible domain decomposition
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < ndof(); ++j) {
