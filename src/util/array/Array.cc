@@ -18,8 +18,11 @@
 
 #include <cassert>
 
+#include <cmath>
 #include <cstddef>
 #include <petscdraw.h>
+#include <petscsystypes.h>
+#include <string>
 
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array_impl.hh"
@@ -391,12 +394,40 @@ const std::string &Array::get_name() const {
   return m_impl->name;
 }
 
+void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
+                               io::RegriddingFlag flag, double default_value, const Logger &log,
+                               Vec output) {
+
+  if (flag == io::CRITICAL or flag == io::CRITICAL_FILL_MISSING) {
+    // if it's critical, print an error message and stop
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Can't find '%s' in the regridding file '%s'.",
+                                  variable.get_name().c_str(), filename.c_str());
+  }
+
+  // If it is optional, fill with the provided default value.
+  // units::Converter constructor will make sure that units are compatible.
+  units::Converter c(variable.unit_system(), variable["units"], variable["output_units"]);
+
+  std::string spacer(variable.get_name().size(), ' ');
+  log.message(2,
+              "  absent %s / %-10s\n"
+              "         %s \\ not found; using default constant %7.2f (%s)\n",
+              variable.get_name().c_str(), variable.get_string("long_name").c_str(), spacer.c_str(),
+              c(default_value), variable.get_string("output_units").c_str());
+
+  PetscErrorCode ierr = VecSet(output, default_value);
+  PISM_CHK(ierr, "VecSet");
+}
+
 //! Gets an Array from a file `file`, interpolating onto the current grid.
 /*! Stops if the variable was not found and `critical` == true.
  */
 void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
 
   bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+
+  auto log = grid()->ctx()->log();
 
   // Get the dof=1, stencil_width=0 DMDA (components are always scalar
   // and we just need a global Vec):
@@ -406,11 +437,17 @@ void Array::regrid_impl(const File &file, io::RegriddingFlag flag, double defaul
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int j = 0; j < ndof(); ++j) {
-    auto var = metadata(j);
-    unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
-    unsigned int t_start  = t_length - 1;
+    auto variable = metadata(j);
 
-    {
+    auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+
+    if (not V.exists) {
+      set_default_value_or_stop(file.filename(), variable, flag, default_value, *log, tmp);
+    } else {
+      unsigned int t_length =
+          file.nrecords(variable.get_name(), variable["standard_name"], variable.unit_system());
+      unsigned int t_start = t_length - 1;
+
       petsc::VecArray tmp_array(tmp);
       io::regrid_spatial_variable(metadata(j), *grid(), file, t_start, flag,
                                   m_impl->report_range, allow_extrapolation,
@@ -813,7 +850,7 @@ void Array::read(const File &file, const unsigned int time) {
 void Array::write(const File &file) const {
   define(file, io::PISM_DOUBLE);
 
-  auto com = m_impl->grid->com;
+  MPI_Comm com = m_impl->grid->com;
   double start_time = get_time(com);
   write_impl(file);
   double end_time = get_time(com);
@@ -826,7 +863,7 @@ void Array::write(const File &file) const {
     mb_double  = static_cast<double>(sizeof(double)) * N / megabyte,
     mb_float   = static_cast<double>(sizeof(float)) * N / megabyte;
 
-  std::string timestamp = pism::timestamp(m_impl->grid->com);
+  std::string timestamp = pism::timestamp(com);
   std::string spacer(timestamp.size(), ' ');
   if (time_spent > 1) {
     m_impl->grid->ctx()->log()->message(3,

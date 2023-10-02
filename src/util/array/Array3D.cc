@@ -254,25 +254,35 @@ std::shared_ptr<Array3D> Array3D::duplicate() const {
 
 void Array3D::regrid_impl(const File &file, io::RegriddingFlag flag, double default_value) {
 
-  bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+  auto log = grid()->ctx()->log();
 
-  auto var              = metadata(0);
-  unsigned int t_length = file.nrecords(var.get_name(), var["standard_name"], var.unit_system());
-  unsigned int t_start  = t_length - 1;
+  auto variable = metadata(0);
 
-  {
-    petsc::TemporaryGlobalVec tmp(dm());
+  auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+
+  petsc::TemporaryGlobalVec tmp(dm());
+
+  if (not V.exists) {
+    set_default_value_or_stop(file.filename(), variable, flag, default_value, *log, tmp);
+  } else {
+    bool allow_extrapolation = grid()->ctx()->config()->get_flag("grid.allow_extrapolation");
+
+    unsigned int t_length =
+        file.nrecords(variable.get_name(), variable["standard_name"], variable.unit_system());
+    unsigned int t_start = t_length - 1;
     petsc::VecArray tmp_array(tmp);
 
-    io::regrid_spatial_variable(var, *grid(), file, t_start, flag, m_impl->report_range,
+    io::regrid_spatial_variable(variable, *grid(), file, t_start, flag, m_impl->report_range,
                                 allow_extrapolation, default_value, m_impl->interpolation_type,
                                 tmp_array.get());
 
-    if (m_impl->ghosted) {
-      global_to_local(*dm(), tmp, vec());
-    } else {
-      PetscErrorCode ierr = VecCopy(tmp, vec()); PISM_CHK(ierr, "VecCopy");
-    }
+  }
+
+  if (m_impl->ghosted) {
+    global_to_local(*dm(), tmp, vec());
+  } else {
+    PetscErrorCode ierr = VecCopy(tmp, vec());
+    PISM_CHK(ierr, "VecCopy");
   }
 }
 

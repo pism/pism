@@ -113,6 +113,11 @@ struct Array::Impl {
 
 void global_to_local(petsc::DM &dm, Vec source, Vec destination);
 
+// set default value or stop with an error message (during regridding)
+void set_default_value_or_stop(const std::string &filename, const VariableMetadata &variable,
+                               io::RegriddingFlag flag, double default_value, const Logger &log,
+                               Vec output);
+
 } // end of namespace array
 } // end of namespace pism
 

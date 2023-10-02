@@ -836,32 +836,6 @@ void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid
   // Find the variable
   auto var = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  if (not var.exists) { // couldn't find the variable
-    if (flag == CRITICAL or flag == CRITICAL_FILL_MISSING) {
-      // if it's critical, print an error message and stop
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Can't find '%s' in the regridding file '%s'.",
-                                    variable.get_name().c_str(), file.filename().c_str());
-    }
-
-    // If it is optional, fill with the provided default value.
-    // units::Converter constructor will make sure that units are compatible.
-    units::Converter c(sys, variable["units"], variable["output_units"]);
-
-    std::string spacer(variable.get_name().size(), ' ');
-    log.message(2,
-                "  absent %s / %-10s\n"
-                "         %s \\ not found; using default constant %7.2f (%s)\n",
-                variable.get_name().c_str(), variable.get_string("long_name").c_str(),
-                spacer.c_str(), c(default_value), variable.get_string("output_units").c_str());
-
-    for (size_t k = 0; k < data_size; ++k) {
-      output[k] = default_value;
-    }
-
-    return;
-  }
-
   // the variable was found successfully
   grid::InputGridInfo input_grid(file, var.name, sys, grid.registration());
 
