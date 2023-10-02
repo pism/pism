@@ -815,7 +815,7 @@ static void check_grid_overlap(const grid::InputGridInfo &input, const Grid &int
 */
 
 void regrid_spatial_variable(SpatialVariableMetadata &variable, const Grid &grid, const File &file,
-                             unsigned int t_start, Default default_value, bool report_range,
+                             unsigned int t_start, bool report_range,
                              bool allow_extrapolation, InterpolationType interpolation_type,
                              double *output) {
   const Logger &log = *grid.ctx()->log();

@@ -335,7 +335,7 @@ void Forcing::init_periodic_data(const File &file) {
   for (unsigned int j = 0; j < n_records; ++j) {
     {
       petsc::VecArray tmp_array(vec());
-      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j, io::Default::Nil(),
+      io::regrid_spatial_variable(m_impl->metadata[0], *grid(), file, j,
                                   m_impl->report_range, allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
     }
@@ -535,7 +535,7 @@ void Forcing::update(unsigned int start) {
     try {
       petsc::VecArray tmp_array(vec());
       io::regrid_spatial_variable(m_impl->metadata[0], *m_impl->grid, file, start + j,
-                                  io::Default::Nil(), m_impl->report_range, allow_extrapolation,
+                                  m_impl->report_range, allow_extrapolation,
                                   m_impl->interpolation_type, tmp_array.get());
     } catch (RuntimeError &e) {
       e.add_context("regridding '%s' from '%s'",
